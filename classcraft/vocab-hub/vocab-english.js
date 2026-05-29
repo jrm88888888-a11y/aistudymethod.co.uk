@@ -1,5 +1,5 @@
 // ============================================================
-// ClassCraft English Vocabulary Data
+// AI Study Method English Vocabulary Data
 // Structure: VOCAB['english'][examType][frequencyBand] = [{term, definition, hint, example}]
 //
 // Exam types:

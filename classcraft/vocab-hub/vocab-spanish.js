@@ -1,5 +1,5 @@
 // ============================================================
-// ClassCraft Spanish Vocabulary Data
+// AI Study Method Spanish Vocabulary Data
 // Structure: VOCAB['spanish'][level][topic] = [{term, definition, hint}]
 //
 // Levels: ks3, aqa-gcse, aqa-alevel

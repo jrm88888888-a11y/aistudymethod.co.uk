@@ -1,5 +1,5 @@
 // ============================================================
-// ClassCraft French Vocabulary Data
+// AI Study Method French Vocabulary Data
 // Structure: VOCAB['french'][level][topic] = [{term, definition, hint}]
 //
 // Levels:

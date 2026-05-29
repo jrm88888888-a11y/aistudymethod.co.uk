@@ -1,5 +1,5 @@
 /* ============================================
-   ClassCraft — nav.js
+   AI Study Method — nav.js
    Shared navigation + footer, injected via JS.
    Include on every parchment-themed page:
      <script src="nav.js"></script>        (root pages)
@@ -76,7 +76,7 @@
   var footerHTML = '' +
     '<footer>\n' +
     '  <div class="container">\n' +
-    '    <p>&copy; ' + new Date().getFullYear() + ' ClassCraft &nbsp;&middot;&nbsp; classcraft.co.uk &nbsp;&middot;&nbsp; Created by <a href="' + link('about.html') + '" style="color:inherit;text-decoration:underline;text-underline-offset:3px;">James Martin</a> &nbsp;&middot;&nbsp; <a href="' + link('privacy.html') + '" style="color:inherit;text-decoration:underline;text-underline-offset:3px;">Privacy</a></p>\n' +
+    '    <p>&copy; ' + new Date().getFullYear() + ' AI Study Method &nbsp;&middot;&nbsp; aistudymethod.co.uk &nbsp;&middot;&nbsp; Created by <a href="' + link('about.html') + '" style="color:inherit;text-decoration:underline;text-underline-offset:3px;">James Martin</a> &nbsp;&middot;&nbsp; <a href="' + link('privacy.html') + '" style="color:inherit;text-decoration:underline;text-underline-offset:3px;">Privacy</a></p>\n' +
     '  </div>\n' +
     '</footer>';
 
