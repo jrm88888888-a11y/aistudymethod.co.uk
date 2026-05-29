@@ -1,5 +1,5 @@
 // ============================================================
-// ClassCraft German Vocabulary Data
+// AI Study Method German Vocabulary Data
 // Structure: VOCAB[subject][level][topic] = [{term, definition, hint}]
 // Levels: ks3, aqa-gcse, aqa-alevel
 // ============================================================

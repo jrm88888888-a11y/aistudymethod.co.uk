@@ -1,5 +1,5 @@
 // ============================================================
-// ClassCraft Vocabulary Data
+// AI Study Method Vocabulary Data
 // Structure: VOCAB[subject][board][topic] = [{term, definition, hint}]
 //
 // board keys:
@@ -924,7 +924,7 @@ VOCAB['computing']['aqa-gcse'] = {
 // ────────────────────────────────────────────────────────────
 
 // ============================================================
-// ClassCraft French Vocabulary Data
+// AI Study Method French Vocabulary Data
 // Structure: VOCAB['french'][level][topic] = [{term, definition, hint}]
 //
 // Levels:
@@ -4046,7 +4046,7 @@ VOCAB['french']['aqa-alevel'] = {
 };
 
 // ============================================================
-// ClassCraft German Vocabulary Data
+// AI Study Method German Vocabulary Data
 // Structure: VOCAB[subject][level][topic] = [{term, definition, hint}]
 // Levels: ks3, aqa-gcse, aqa-alevel
 // ============================================================
@@ -7206,7 +7206,7 @@ VOCAB['german']['aqa-alevel'] = {
 
 
 // ============================================================
-// ClassCraft Spanish Vocabulary Data
+// AI Study Method Spanish Vocabulary Data
 // Structure: VOCAB['spanish'][level][topic] = [{term, definition, hint}]
 //
 // Levels: ks3, aqa-gcse, aqa-alevel
@@ -14407,7 +14407,7 @@ VOCAB['geography']['ib-hl'] = {
   ],
 };
 // ============================================================
-// ClassCraft Vocabulary Data — Additions
+// AI Study Method Vocabulary Data — Additions
 // Religious Education GCSE + A-Level
 // Append this block to the end of vocab-data.js
 // (before the closing lines)
@@ -14689,7 +14689,7 @@ VOCAB['religious education']['ocr-alevel']     = VOCAB['religious education']['a
 // SUBJECTS.push('Religious Education');
 // ────────────────────────────────────────────────────────────
 // ============================================================
-// ClassCraft Vocabulary Data — Gap Fill 2
+// AI Study Method Vocabulary Data — Gap Fill 2
 // PE A-Level, French/German/Spanish IGCSE,
 // Astronomy (Edexcel/OCR/Cambridge IGCSE),
 // Computing IB SL/HL, RE Cambridge/Edexcel IGCSE
@@ -14988,7 +14988,7 @@ VOCAB['pe']['edexcel-igcse']   = VOCAB['pe']['aqa-gcse'];
 // ────────────────────────────────────────────────────────────
 VOCAB['astronomy']['ks3'] = VOCAB['astronomy']['aqa-gcse'];
 // ============================================================
-// ClassCraft Vocabulary Data — Gap Fill 3
+// AI Study Method Vocabulary Data — Gap Fill 3
 // Quick-win shared references + Art/Music/Drama IGCSE & A-Level
 // + Astronomy A-Level
 // Append to end of vocab-data.js
