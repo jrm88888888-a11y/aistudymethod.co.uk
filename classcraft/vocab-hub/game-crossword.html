@@ -906,5 +906,144 @@ document.getElementById('tablet-input').addEventListener('keydown', e => {
 
 document.getElementById('btn-quit').addEventListener('click', () => window.location.href = 'vocab-hub.html');
 </script>
+<!-- aism-study-screen:v1 -->
+<style id="aism-study-css">
+#aism-study-overlay {
+  position: fixed; inset: 0; background: rgba(15,17,23,0.94);
+  z-index: 99999; display: none; align-items: center; justify-content: center;
+  padding: 24px; overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+#aism-study-overlay[data-show="1"] { display: flex; }
+.aism-study-card {
+  background: #fff; color: #1a1a1a; max-width: 760px; width: 100%;
+  max-height: 90vh; overflow-y: auto; border-radius: 18px; padding: 32px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.aism-study-card h2 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px; margin: 0 0 6px; color: #1a1a1a; line-height: 1.2;
+}
+.aism-study-card .aism-study-sub {
+  color: #555; font-size: 14px; margin: 0 0 20px; line-height: 1.5;
+}
+#aism-study-content { display: grid; gap: 8px; margin-bottom: 24px; }
+.aism-study-item {
+  padding: 12px 16px; background: #f6f7f9; border-radius: 10px;
+  font-size: 14px; line-height: 1.55; color: #1a1a1a;
+}
+.aism-study-item .aism-term {
+  font-weight: 700; color: #267a4d;
+}
+.aism-study-cat { margin-top: 14px; }
+.aism-study-cat:first-child { margin-top: 0; }
+.aism-study-cat-head {
+  font-size: 12px; font-weight: 700; color: #267a4d;
+  text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 8px;
+}
+.aism-study-btn {
+  background: #267a4d; color: #fff; border: none;
+  padding: 14px 30px; border-radius: 30px;
+  font-size: 15px; font-weight: 600; cursor: pointer; width: 100%;
+  transition: background 0.15s ease;
+}
+.aism-study-btn:hover { background: #1e6240; }
+.aism-study-skip {
+  background: none; border: none; color: #888; font-size: 12px;
+  cursor: pointer; margin-top: 12px; width: 100%; padding: 8px;
+  text-decoration: underline;
+}
+.aism-study-skip:hover { color: #555; }
+</style>
+<div id="aism-study-overlay" aria-hidden="true">
+  <div class="aism-study-card" role="dialog" aria-modal="true" aria-label="Study these before you play">
+    <h2 id="aism-study-title">Study first &mdash; then play to test your memory</h2>
+    <p class="aism-study-sub">Take your time. When you&rsquo;re ready, start the game.</p>
+    <div id="aism-study-content"></div>
+    <button id="aism-study-start" class="aism-study-btn" type="button">I&rsquo;m ready &mdash; start game &rarr;</button>
+    <button id="aism-study-skip" class="aism-study-skip" type="button">Skip and go straight to game</button>
+  </div>
+</div>
+<script>
+(function(){
+  if (window.__aismStudyInstalled) return;
+  window.__aismStudyInstalled = true;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
+  function buildContent(){
+    var c = document.getElementById('aism-study-content');
+    if (!c) return false;
+    c.innerHTML = '';
+    var rendered = false;
+    var pairs = null;
+    if (typeof ALL_PAIRS !== 'undefined' && Array.isArray(ALL_PAIRS) && ALL_PAIRS.length) pairs = ALL_PAIRS;
+    else if (typeof VOCAB_DATA !== 'undefined' && Array.isArray(VOCAB_DATA) && VOCAB_DATA.length) pairs = VOCAB_DATA;
+    if (pairs) {
+      pairs.forEach(function(p){
+        var term = p.term || p.front || p.word || '';
+        var def  = p.def || p.definition || p.back || '';
+        var div = document.createElement('div');
+        div.className = 'aism-study-item';
+        div.innerHTML = '<span class="aism-term">' + esc(term) + '</span>' + (def ? ' &mdash; ' + esc(def) : '');
+        c.appendChild(div);
+      });
+      rendered = true;
+    }
+    if (!rendered && typeof CATEGORIES !== 'undefined' && typeof ALL_ITEMS !== 'undefined' && Array.isArray(CATEGORIES) && Array.isArray(ALL_ITEMS)) {
+      CATEGORIES.forEach(function(catName, idx){
+        var wrap = document.createElement('div'); wrap.className = 'aism-study-cat';
+        var h = document.createElement('div'); h.className = 'aism-study-cat-head'; h.textContent = catName; wrap.appendChild(h);
+        ALL_ITEMS.filter(function(i){ return i.cat === idx; }).forEach(function(i){
+          var d = document.createElement('div'); d.className = 'aism-study-item';
+          d.textContent = i.text || i.label || '';
+          wrap.appendChild(d);
+        });
+        c.appendChild(wrap);
+      });
+      rendered = true;
+    }
+    if (!rendered && typeof ALL_EVENTS !== 'undefined' && Array.isArray(ALL_EVENTS) && ALL_EVENTS.length) {
+      var sorted = ALL_EVENTS.slice().sort(function(a,b){
+        var ay = parseInt(String(a.year||a.date||'0').replace(/[^-\d]/g,''))||0;
+        var by = parseInt(String(b.year||b.date||'0').replace(/[^-\d]/g,''))||0;
+        return ay - by;
+      });
+      sorted.forEach(function(e){
+        var div = document.createElement('div');
+        div.className = 'aism-study-item';
+        div.innerHTML = '<span class="aism-term">' + esc(e.year || e.date || '') + '</span>' + (e.text ? ' &mdash; ' + esc(e.text) : '');
+        c.appendChild(div);
+      });
+      rendered = true;
+    }
+    return rendered;
+  }
+  function install(){
+    if (typeof window.startGame !== 'function') { setTimeout(install, 80); return; }
+    var orig = window.startGame;
+    var shown = false;
+    window.startGame = function(){
+      if (shown) return orig.apply(this, arguments);
+      var args = arguments, ctx = this;
+      var ov = document.getElementById('aism-study-overlay');
+      if (!ov || !buildContent()) return orig.apply(ctx, args);
+      ov.dataset.show = '1';
+      ov.setAttribute('aria-hidden','false');
+      var startBtn = document.getElementById('aism-study-start');
+      var skipBtn  = document.getElementById('aism-study-skip');
+      function go(){
+        ov.dataset.show = '';
+        ov.setAttribute('aria-hidden','true');
+        shown = true;
+        try { orig.apply(ctx, args); } catch(e){ console.error(e); }
+      }
+      startBtn.onclick = go;
+      skipBtn.onclick  = go;
+    };
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') install();
+  else document.addEventListener('DOMContentLoaded', install);
+})();
+</script>
+
 </body>
 </html>
