@@ -16,7 +16,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level Biology specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/bio-alevel-quiz.html",
+    "href": "https://classcraft.co.uk/games/bio-alevel-quiz.html",
     "screenshot": null
   },
   {
@@ -32,7 +32,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Paper 2-focused diagnostic for A-Level Biology. Identifies the gaps before you start revising in depth.",
-    "href": "classcraft/games/bio-alevel-quiz2.html",
+    "href": "https://classcraft.co.uk/games/bio-alevel-quiz2.html",
     "screenshot": null
   },
   {
@@ -48,7 +48,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a animal cell diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/bio-animal-cell-diagram.html",
+    "href": "https://classcraft.co.uk/games/bio-animal-cell-diagram.html",
     "screenshot": null
   },
   {
@@ -64,7 +64,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key cell biology terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-cells-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-cells-memory.html",
     "screenshot": null
   },
   {
@@ -80,7 +80,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort cell biology terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/bio-cells-sort.html",
+    "href": "https://classcraft.co.uk/games/bio-cells-sort.html",
     "screenshot": null
   },
   {
@@ -96,7 +96,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort classification terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/bio-classification-sort.html",
+    "href": "https://classcraft.co.uk/games/bio-classification-sort.html",
     "screenshot": null
   },
   {
@@ -112,7 +112,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key digestion and nutrition terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-digestion-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-digestion-memory.html",
     "screenshot": null
   },
   {
@@ -128,7 +128,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key infection and disease terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-disease-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-disease-memory.html",
     "screenshot": null
   },
   {
@@ -144,7 +144,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a dna structure diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/bio-dna-diagram.html",
+    "href": "https://classcraft.co.uk/games/bio-dna-diagram.html",
     "screenshot": null
   },
   {
@@ -160,7 +160,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key ecology terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-ecology-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-ecology-memory.html",
     "screenshot": null
   },
   {
@@ -176,7 +176,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key evolution terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-evolution-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-evolution-memory.html",
     "screenshot": null
   },
   {
@@ -192,7 +192,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a the eye diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/bio-eye-diagram.html",
+    "href": "https://classcraft.co.uk/games/bio-eye-diagram.html",
     "screenshot": null
   },
   {
@@ -208,7 +208,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full GCSE Biology specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/bio-gcse-quiz.html",
+    "href": "https://classcraft.co.uk/games/bio-gcse-quiz.html",
     "screenshot": null
   },
   {
@@ -224,7 +224,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort genetic engineering terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/bio-genetic-engineering-sort.html",
+    "href": "https://classcraft.co.uk/games/bio-genetic-engineering-sort.html",
     "screenshot": null
   },
   {
@@ -240,7 +240,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key genetics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-genetics-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-genetics-memory.html",
     "screenshot": null
   },
   {
@@ -256,7 +256,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a the heart diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/bio-heart-diagram.html",
+    "href": "https://classcraft.co.uk/games/bio-heart-diagram.html",
     "screenshot": null
   },
   {
@@ -272,7 +272,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key hormones terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-hormones-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-hormones-memory.html",
     "screenshot": null
   },
   {
@@ -288,7 +288,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort hormones terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/bio-hormones-sort.html",
+    "href": "https://classcraft.co.uk/games/bio-hormones-sort.html",
     "screenshot": null
   },
   {
@@ -304,7 +304,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key immunity terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-immunity-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-immunity-memory.html",
     "screenshot": null
   },
   {
@@ -320,7 +320,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a mitosis diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/bio-mitosis-diagram.html",
+    "href": "https://classcraft.co.uk/games/bio-mitosis-diagram.html",
     "screenshot": null
   },
   {
@@ -336,7 +336,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a the nephron diagram. Retrieval practice that mirrors A-Level exam-style labelling questions.",
-    "href": "classcraft/games/bio-nephron-diagram.html",
+    "href": "https://classcraft.co.uk/games/bio-nephron-diagram.html",
     "screenshot": null
   },
   {
@@ -352,7 +352,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key nervous system terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-nervous-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-nervous-memory.html",
     "screenshot": null
   },
   {
@@ -368,7 +368,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a the neuron diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/bio-neuron-diagram.html",
+    "href": "https://classcraft.co.uk/games/bio-neuron-diagram.html",
     "screenshot": null
   },
   {
@@ -384,7 +384,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort nutrients terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/bio-nutrients-sort.html",
+    "href": "https://classcraft.co.uk/games/bio-nutrients-sort.html",
     "screenshot": null
   },
   {
@@ -400,7 +400,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key photosynthesis terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-photosynthesis-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-photosynthesis-memory.html",
     "screenshot": null
   },
   {
@@ -416,7 +416,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a plant cell diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/bio-plant-cell-diagram.html",
+    "href": "https://classcraft.co.uk/games/bio-plant-cell-diagram.html",
     "screenshot": null
   },
   {
@@ -432,7 +432,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key plants terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-plants-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-plants-memory.html",
     "screenshot": null
   },
   {
@@ -448,7 +448,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key populations terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-populations-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-populations-memory.html",
     "screenshot": null
   },
   {
@@ -464,7 +464,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key reproduction terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/bio-reproduction-memory.html",
+    "href": "https://classcraft.co.uk/games/bio-reproduction-memory.html",
     "screenshot": null
   },
   {
@@ -480,7 +480,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort respiration terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/bio-respiration-sort.html",
+    "href": "https://classcraft.co.uk/games/bio-respiration-sort.html",
     "screenshot": null
   },
   {
@@ -496,7 +496,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort transport in cells terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/bio-transport-sort.html",
+    "href": "https://classcraft.co.uk/games/bio-transport-sort.html",
     "screenshot": null
   },
   {
@@ -512,7 +512,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key general terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/biology-memory.html",
+    "href": "https://classcraft.co.uk/games/biology-memory.html",
     "screenshot": null
   },
   {
@@ -528,7 +528,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a general diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/biology-organs.html",
+    "href": "https://classcraft.co.uk/games/biology-organs.html",
     "screenshot": null
   },
   {
@@ -544,7 +544,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key acids and bases terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-acids-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-acids-memory.html",
     "screenshot": null
   },
   {
@@ -560,7 +560,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level Chemistry specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/chem-alevel-quiz.html",
+    "href": "https://classcraft.co.uk/games/chem-alevel-quiz.html",
     "screenshot": null
   },
   {
@@ -576,7 +576,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a the atom diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/chem-atom-diagram.html",
+    "href": "https://classcraft.co.uk/games/chem-atom-diagram.html",
     "screenshot": null
   },
   {
@@ -592,7 +592,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key atomic structure terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-atoms-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-atoms-memory.html",
     "screenshot": null
   },
   {
@@ -608,7 +608,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key chemical bonding terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-bonding-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-bonding-memory.html",
     "screenshot": null
   },
   {
@@ -624,7 +624,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort chemical bonding terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/chem-bonding-sort.html",
+    "href": "https://classcraft.co.uk/games/chem-bonding-sort.html",
     "screenshot": null
   },
   {
@@ -640,7 +640,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort elements terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/chem-elements-sort.html",
+    "href": "https://classcraft.co.uk/games/chem-elements-sort.html",
     "screenshot": null
   },
   {
@@ -656,7 +656,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key entropy and energetics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-entropy-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-entropy-memory.html",
     "screenshot": null
   },
   {
@@ -672,7 +672,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full GCSE Chemistry specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/chem-gcse-quiz.html",
+    "href": "https://classcraft.co.uk/games/chem-gcse-quiz.html",
     "screenshot": null
   },
   {
@@ -688,7 +688,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key reaction kinetics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-kinetics-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-kinetics-memory.html",
     "screenshot": null
   },
   {
@@ -704,7 +704,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort organic families terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/chem-organic-families-sort.html",
+    "href": "https://classcraft.co.uk/games/chem-organic-families-sort.html",
     "screenshot": null
   },
   {
@@ -720,7 +720,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key organic chemistry terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-organics-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-organics-memory.html",
     "screenshot": null
   },
   {
@@ -736,7 +736,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key periodic table terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-periodic-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-periodic-memory.html",
     "screenshot": null
   },
   {
@@ -752,7 +752,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key polymers terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-polymers-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-polymers-memory.html",
     "screenshot": null
   },
   {
@@ -768,7 +768,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key chemical reactions terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-reactions-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-reactions-memory.html",
     "screenshot": null
   },
   {
@@ -784,7 +784,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort chemical reactions terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/chem-reactions-sort.html",
+    "href": "https://classcraft.co.uk/games/chem-reactions-sort.html",
     "screenshot": null
   },
   {
@@ -800,7 +800,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort chemical reactions (advanced) terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/chem-reactions2-sort.html",
+    "href": "https://classcraft.co.uk/games/chem-reactions2-sort.html",
     "screenshot": null
   },
   {
@@ -816,7 +816,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key spectroscopy terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-spectroscopy-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-spectroscopy-memory.html",
     "screenshot": null
   },
   {
@@ -832,7 +832,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort spectroscopy terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/chem-spectroscopy-sort.html",
+    "href": "https://classcraft.co.uk/games/chem-spectroscopy-sort.html",
     "screenshot": null
   },
   {
@@ -848,7 +848,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key transition metals terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/chem-transition-memory.html",
+    "href": "https://classcraft.co.uk/games/chem-transition-memory.html",
     "screenshot": null
   },
   {
@@ -864,7 +864,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort general terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/chemistry-categorise.html",
+    "href": "https://classcraft.co.uk/games/chemistry-categorise.html",
     "screenshot": null
   },
   {
@@ -880,7 +880,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level Economics specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/econ-alevel-quiz.html",
+    "href": "https://classcraft.co.uk/games/econ-alevel-quiz.html",
     "screenshot": null
   },
   {
@@ -896,7 +896,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort market efficiency terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/econ-efficiency-sort.html",
+    "href": "https://classcraft.co.uk/games/econ-efficiency-sort.html",
     "screenshot": null
   },
   {
@@ -912,7 +912,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key theory of the firm terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/econ-firms-memory.html",
+    "href": "https://classcraft.co.uk/games/econ-firms-memory.html",
     "screenshot": null
   },
   {
@@ -928,7 +928,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key globalisation terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/econ-globalisation-memory.html",
+    "href": "https://classcraft.co.uk/games/econ-globalisation-memory.html",
     "screenshot": null
   },
   {
@@ -944,7 +944,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort goods and markets terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/econ-goods-sort.html",
+    "href": "https://classcraft.co.uk/games/econ-goods-sort.html",
     "screenshot": null
   },
   {
@@ -960,7 +960,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key labour markets terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/econ-labour-memory.html",
+    "href": "https://classcraft.co.uk/games/econ-labour-memory.html",
     "screenshot": null
   },
   {
@@ -976,7 +976,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key macroeconomics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/econ-macro-memory.html",
+    "href": "https://classcraft.co.uk/games/econ-macro-memory.html",
     "screenshot": null
   },
   {
@@ -992,7 +992,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort market failure terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/econ-market-failure-sort.html",
+    "href": "https://classcraft.co.uk/games/econ-market-failure-sort.html",
     "screenshot": null
   },
   {
@@ -1008,7 +1008,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key microeconomics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/econ-micro-memory.html",
+    "href": "https://classcraft.co.uk/games/econ-micro-memory.html",
     "screenshot": null
   },
   {
@@ -1024,7 +1024,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort economic policy terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/econ-policy-sort.html",
+    "href": "https://classcraft.co.uk/games/econ-policy-sort.html",
     "screenshot": null
   },
   {
@@ -1040,7 +1040,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full GCSE Economics specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/econ-quiz.html",
+    "href": "https://classcraft.co.uk/games/econ-quiz.html",
     "screenshot": null
   },
   {
@@ -1056,7 +1056,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level English Literature specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/eng-alevel-quiz.html",
+    "href": "https://classcraft.co.uk/games/eng-alevel-quiz.html",
     "screenshot": null
   },
   {
@@ -1072,7 +1072,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key literary context terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/eng-context-memory.html",
+    "href": "https://classcraft.co.uk/games/eng-context-memory.html",
     "screenshot": null
   },
   {
@@ -1088,7 +1088,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key language terminology terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/eng-lang-terms-memory.html",
+    "href": "https://classcraft.co.uk/games/eng-lang-terms-memory.html",
     "screenshot": null
   },
   {
@@ -1104,7 +1104,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort language features terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/eng-language-features-sort.html",
+    "href": "https://classcraft.co.uk/games/eng-language-features-sort.html",
     "screenshot": null
   },
   {
@@ -1120,7 +1120,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key literary terminology terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/eng-lit-terms-memory.html",
+    "href": "https://classcraft.co.uk/games/eng-lit-terms-memory.html",
     "screenshot": null
   },
   {
@@ -1136,7 +1136,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key poetry terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/eng-poetry-memory.html",
+    "href": "https://classcraft.co.uk/games/eng-poetry-memory.html",
     "screenshot": null
   },
   {
@@ -1152,7 +1152,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key prose fiction terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/eng-prose-memory.html",
+    "href": "https://classcraft.co.uk/games/eng-prose-memory.html",
     "screenshot": null
   },
   {
@@ -1168,7 +1168,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key shakespeare terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/eng-shakespeare-memory.html",
+    "href": "https://classcraft.co.uk/games/eng-shakespeare-memory.html",
     "screenshot": null
   },
   {
@@ -1184,7 +1184,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level Geography specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/geog-alevel-quiz.html",
+    "href": "https://classcraft.co.uk/games/geog-alevel-quiz.html",
     "screenshot": null
   },
   {
@@ -1200,7 +1200,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key climate terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/geog-climate-memory.html",
+    "href": "https://classcraft.co.uk/games/geog-climate-memory.html",
     "screenshot": null
   },
   {
@@ -1216,7 +1216,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort climate terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/geog-climate-sort.html",
+    "href": "https://classcraft.co.uk/games/geog-climate-sort.html",
     "screenshot": null
   },
   {
@@ -1232,7 +1232,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort coasts terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/geog-coasts-sort.html",
+    "href": "https://classcraft.co.uk/games/geog-coasts-sort.html",
     "screenshot": null
   },
   {
@@ -1248,7 +1248,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort development terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/geog-development-sort.html",
+    "href": "https://classcraft.co.uk/games/geog-development-sort.html",
     "screenshot": null
   },
   {
@@ -1264,7 +1264,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key ecosystems terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/geog-ecosystems-memory.html",
+    "href": "https://classcraft.co.uk/games/geog-ecosystems-memory.html",
     "screenshot": null
   },
   {
@@ -1280,7 +1280,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full GCSE Geography specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/geog-gcse-quiz.html",
+    "href": "https://classcraft.co.uk/games/geog-gcse-quiz.html",
     "screenshot": null
   },
   {
@@ -1296,7 +1296,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key human geography terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/geog-human-memory.html",
+    "href": "https://classcraft.co.uk/games/geog-human-memory.html",
     "screenshot": null
   },
   {
@@ -1312,7 +1312,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort landforms terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/geog-landforms-sort.html",
+    "href": "https://classcraft.co.uk/games/geog-landforms-sort.html",
     "screenshot": null
   },
   {
@@ -1328,7 +1328,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key physical geography terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/geog-physical-memory.html",
+    "href": "https://classcraft.co.uk/games/geog-physical-memory.html",
     "screenshot": null
   },
   {
@@ -1344,7 +1344,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a rivers diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/geog-river-diagram.html",
+    "href": "https://classcraft.co.uk/games/geog-river-diagram.html",
     "screenshot": null
   },
   {
@@ -1360,7 +1360,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a rock cycle diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/geog-rock-cycle-diagram.html",
+    "href": "https://classcraft.co.uk/games/geog-rock-cycle-diagram.html",
     "screenshot": null
   },
   {
@@ -1376,7 +1376,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort rocks and minerals terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/geog-rocks-sort.html",
+    "href": "https://classcraft.co.uk/games/geog-rocks-sort.html",
     "screenshot": null
   },
   {
@@ -1392,7 +1392,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a tectonics diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/geog-tectonics-diagram.html",
+    "href": "https://classcraft.co.uk/games/geog-tectonics-diagram.html",
     "screenshot": null
   },
   {
@@ -1408,7 +1408,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key tectonics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/geog-tectonics-memory.html",
+    "href": "https://classcraft.co.uk/games/geog-tectonics-memory.html",
     "screenshot": null
   },
   {
@@ -1424,7 +1424,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort urbanisation terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/geog-urbanisation-sort.html",
+    "href": "https://classcraft.co.uk/games/geog-urbanisation-sort.html",
     "screenshot": null
   },
   {
@@ -1440,7 +1440,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a water cycle diagram. Retrieval practice that mirrors GCSE exam-style labelling questions.",
-    "href": "classcraft/games/geog-water-cycle-diagram.html",
+    "href": "https://classcraft.co.uk/games/geog-water-cycle-diagram.html",
     "screenshot": null
   },
   {
@@ -1456,7 +1456,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key water systems terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/geog-water-memory.html",
+    "href": "https://classcraft.co.uk/games/geog-water-memory.html",
     "screenshot": null
   },
   {
@@ -1472,7 +1472,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full GCSE Geography specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/geography-quiz.html",
+    "href": "https://classcraft.co.uk/games/geography-quiz.html",
     "screenshot": null
   },
   {
@@ -1488,7 +1488,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from 20th Century into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-20c-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-20c-timeline.html",
     "screenshot": null
   },
   {
@@ -1504,7 +1504,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level History specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/hist-alevel-quiz.html",
+    "href": "https://classcraft.co.uk/games/hist-alevel-quiz.html",
     "screenshot": null
   },
   {
@@ -1520,7 +1520,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Ancient World into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-ancient-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-ancient-timeline.html",
     "screenshot": null
   },
   {
@@ -1536,7 +1536,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort causes of war terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/hist-causes-sort.html",
+    "href": "https://classcraft.co.uk/games/hist-causes-sort.html",
     "screenshot": null
   },
   {
@@ -1552,7 +1552,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Modern China into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-china-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-china-timeline.html",
     "screenshot": null
   },
   {
@@ -1568,7 +1568,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Civil Rights Movement into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-civilrights-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-civilrights-timeline.html",
     "screenshot": null
   },
   {
@@ -1584,7 +1584,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Cold War (Detailed) into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-cold-war-detailed-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-cold-war-detailed-timeline.html",
     "screenshot": null
   },
   {
@@ -1600,7 +1600,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key cold war terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/hist-coldwar-memory.html",
+    "href": "https://classcraft.co.uk/games/hist-coldwar-memory.html",
     "screenshot": null
   },
   {
@@ -1616,7 +1616,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Decolonisation into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-decolonisation-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-decolonisation-timeline.html",
     "screenshot": null
   },
   {
@@ -1632,7 +1632,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from The British Empire into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-empire-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-empire-timeline.html",
     "screenshot": null
   },
   {
@@ -1648,7 +1648,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from French Revolution into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-french-revolution-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-french-revolution-timeline.html",
     "screenshot": null
   },
   {
@@ -1664,7 +1664,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full GCSE History specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/hist-gcse-quiz.html",
+    "href": "https://classcraft.co.uk/games/hist-gcse-quiz.html",
     "screenshot": null
   },
   {
@@ -1680,7 +1680,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort forms of government terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/hist-governments-sort.html",
+    "href": "https://classcraft.co.uk/games/hist-governments-sort.html",
     "screenshot": null
   },
   {
@@ -1696,7 +1696,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Industrial Revolution into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-industrial-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-industrial-timeline.html",
     "screenshot": null
   },
   {
@@ -1712,7 +1712,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Medieval Britain into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-medieval-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-medieval-timeline.html",
     "screenshot": null
   },
   {
@@ -1728,7 +1728,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from The Renaissance into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-renaissance-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-renaissance-timeline.html",
     "screenshot": null
   },
   {
@@ -1744,7 +1744,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort revolutions terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/hist-revolution-sort.html",
+    "href": "https://classcraft.co.uk/games/hist-revolution-sort.html",
     "screenshot": null
   },
   {
@@ -1760,7 +1760,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Russian History into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-russia-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-russia-timeline.html",
     "screenshot": null
   },
   {
@@ -1776,7 +1776,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort source analysis terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/hist-sources-sort.html",
+    "href": "https://classcraft.co.uk/games/hist-sources-sort.html",
     "screenshot": null
   },
   {
@@ -1792,7 +1792,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Tudor England into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-tudor-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-tudor-timeline.html",
     "screenshot": null
   },
   {
@@ -1808,7 +1808,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from American History into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-usa-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-usa-timeline.html",
     "screenshot": null
   },
   {
@@ -1824,7 +1824,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Weimar Republic into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-weimar-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-weimar-timeline.html",
     "screenshot": null
   },
   {
@@ -1840,7 +1840,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from Causes of WWI into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-ww1-causes-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-ww1-causes-timeline.html",
     "screenshot": null
   },
   {
@@ -1856,7 +1856,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key wwi terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/hist-ww1-memory.html",
+    "href": "https://classcraft.co.uk/games/hist-ww1-memory.html",
     "screenshot": null
   },
   {
@@ -1872,7 +1872,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort causes of wwii terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/hist-ww2-causes-sort.html",
+    "href": "https://classcraft.co.uk/games/hist-ww2-causes-sort.html",
     "screenshot": null
   },
   {
@@ -1888,7 +1888,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key wwii terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/hist-ww2-memory.html",
+    "href": "https://classcraft.co.uk/games/hist-ww2-memory.html",
     "screenshot": null
   },
   {
@@ -1904,7 +1904,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from WWII Pacific Theatre into the correct sequence. Reinforces chronology and causation for A-Level History.",
-    "href": "classcraft/games/hist-ww2-pacific-timeline.html",
+    "href": "https://classcraft.co.uk/games/hist-ww2-pacific-timeline.html",
     "screenshot": null
   },
   {
@@ -1920,7 +1920,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Timeline Game",
     "desc": "Order key events from General into the correct sequence. Reinforces chronology and causation for GCSE History.",
-    "href": "classcraft/games/history-timeline.html",
+    "href": "https://classcraft.co.uk/games/history-timeline.html",
     "screenshot": null
   },
   {
@@ -1936,7 +1936,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level Mathematics specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/maths-alevel-quiz.html",
+    "href": "https://classcraft.co.uk/games/maths-alevel-quiz.html",
     "screenshot": null
   },
   {
@@ -1952,7 +1952,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key algebra terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/maths-algebra-memory.html",
+    "href": "https://classcraft.co.uk/games/maths-algebra-memory.html",
     "screenshot": null
   },
   {
@@ -1968,7 +1968,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key calculus terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/maths-calculus-memory.html",
+    "href": "https://classcraft.co.uk/games/maths-calculus-memory.html",
     "screenshot": null
   },
   {
@@ -1984,7 +1984,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort calculus terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/maths-calculus-sort.html",
+    "href": "https://classcraft.co.uk/games/maths-calculus-sort.html",
     "screenshot": null
   },
   {
@@ -2000,7 +2000,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort functions terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/maths-functions-sort.html",
+    "href": "https://classcraft.co.uk/games/maths-functions-sort.html",
     "screenshot": null
   },
   {
@@ -2016,7 +2016,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full GCSE Mathematics specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/maths-gcse-quiz.html",
+    "href": "https://classcraft.co.uk/games/maths-gcse-quiz.html",
     "screenshot": null
   },
   {
@@ -2032,7 +2032,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key geometry terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/maths-geometry-memory.html",
+    "href": "https://classcraft.co.uk/games/maths-geometry-memory.html",
     "screenshot": null
   },
   {
@@ -2048,7 +2048,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key mathematical proof terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/maths-proof-memory.html",
+    "href": "https://classcraft.co.uk/games/maths-proof-memory.html",
     "screenshot": null
   },
   {
@@ -2064,7 +2064,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key sequences and series terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/maths-sequences-memory.html",
+    "href": "https://classcraft.co.uk/games/maths-sequences-memory.html",
     "screenshot": null
   },
   {
@@ -2080,7 +2080,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key statistics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/maths-stats-memory.html",
+    "href": "https://classcraft.co.uk/games/maths-stats-memory.html",
     "screenshot": null
   },
   {
@@ -2096,7 +2096,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key vectors terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/maths-vectors-memory.html",
+    "href": "https://classcraft.co.uk/games/maths-vectors-memory.html",
     "screenshot": null
   },
   {
@@ -2112,7 +2112,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level Physics specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/phys-alevel-quiz.html",
+    "href": "https://classcraft.co.uk/games/phys-alevel-quiz.html",
     "screenshot": null
   },
   {
@@ -2128,7 +2128,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Paper 2-focused diagnostic for A-Level Physics. Identifies the gaps before you start revising in depth.",
-    "href": "classcraft/games/phys-alevel-quiz2.html",
+    "href": "https://classcraft.co.uk/games/phys-alevel-quiz2.html",
     "screenshot": null
   },
   {
@@ -2144,7 +2144,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key electricity terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/phys-electricity-memory.html",
+    "href": "https://classcraft.co.uk/games/phys-electricity-memory.html",
     "screenshot": null
   },
   {
@@ -2160,7 +2160,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Label the Diagram",
     "desc": "Drag labels onto a electromagnetic spectrum diagram. Retrieval practice that mirrors A-Level exam-style labelling questions.",
-    "href": "classcraft/games/phys-em-spectrum-diagram.html",
+    "href": "https://classcraft.co.uk/games/phys-em-spectrum-diagram.html",
     "screenshot": null
   },
   {
@@ -2176,7 +2176,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort energy terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/phys-energy-sort.html",
+    "href": "https://classcraft.co.uk/games/phys-energy-sort.html",
     "screenshot": null
   },
   {
@@ -2192,7 +2192,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key electric & magnetic fields terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/phys-fields-memory.html",
+    "href": "https://classcraft.co.uk/games/phys-fields-memory.html",
     "screenshot": null
   },
   {
@@ -2208,7 +2208,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key forces terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/phys-forces-memory.html",
+    "href": "https://classcraft.co.uk/games/phys-forces-memory.html",
     "screenshot": null
   },
   {
@@ -2224,7 +2224,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort forces terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/phys-forces-sort.html",
+    "href": "https://classcraft.co.uk/games/phys-forces-sort.html",
     "screenshot": null
   },
   {
@@ -2240,7 +2240,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full GCSE Physics specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/phys-gcse-quiz.html",
+    "href": "https://classcraft.co.uk/games/phys-gcse-quiz.html",
     "screenshot": null
   },
   {
@@ -2256,7 +2256,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key nuclear physics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/phys-nuclear-memory.html",
+    "href": "https://classcraft.co.uk/games/phys-nuclear-memory.html",
     "screenshot": null
   },
   {
@@ -2272,7 +2272,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort particle physics terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/phys-particles-sort.html",
+    "href": "https://classcraft.co.uk/games/phys-particles-sort.html",
     "screenshot": null
   },
   {
@@ -2288,7 +2288,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key quantum physics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/phys-quantum-memory.html",
+    "href": "https://classcraft.co.uk/games/phys-quantum-memory.html",
     "screenshot": null
   },
   {
@@ -2304,7 +2304,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort radiation terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/phys-radiation-sort.html",
+    "href": "https://classcraft.co.uk/games/phys-radiation-sort.html",
     "screenshot": null
   },
   {
@@ -2320,7 +2320,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key simple harmonic motion terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/phys-shm-memory.html",
+    "href": "https://classcraft.co.uk/games/phys-shm-memory.html",
     "screenshot": null
   },
   {
@@ -2336,7 +2336,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key thermal physics terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/phys-thermal-memory.html",
+    "href": "https://classcraft.co.uk/games/phys-thermal-memory.html",
     "screenshot": null
   },
   {
@@ -2352,7 +2352,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key waves terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/phys-waves-memory.html",
+    "href": "https://classcraft.co.uk/games/phys-waves-memory.html",
     "screenshot": null
   },
   {
@@ -2368,7 +2368,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort waves terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/phys-waves-sort.html",
+    "href": "https://classcraft.co.uk/games/phys-waves-sort.html",
     "screenshot": null
   },
   {
@@ -2384,7 +2384,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key abnormal psychology terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/psych-abnormal-memory.html",
+    "href": "https://classcraft.co.uk/games/psych-abnormal-memory.html",
     "screenshot": null
   },
   {
@@ -2400,7 +2400,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level Psychology specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/psych-alevel-quiz.html",
+    "href": "https://classcraft.co.uk/games/psych-alevel-quiz.html",
     "screenshot": null
   },
   {
@@ -2416,7 +2416,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Paper 2-focused diagnostic for A-Level Psychology. Identifies the gaps before you start revising in depth.",
-    "href": "classcraft/games/psych-alevel-quiz2.html",
+    "href": "https://classcraft.co.uk/games/psych-alevel-quiz2.html",
     "screenshot": null
   },
   {
@@ -2432,7 +2432,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key psychological approaches terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/psych-approaches-memory.html",
+    "href": "https://classcraft.co.uk/games/psych-approaches-memory.html",
     "screenshot": null
   },
   {
@@ -2448,7 +2448,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort psychological approaches terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/psych-approaches-sort.html",
+    "href": "https://classcraft.co.uk/games/psych-approaches-sort.html",
     "screenshot": null
   },
   {
@@ -2464,7 +2464,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key biopsychology terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/psych-biopsych-memory.html",
+    "href": "https://classcraft.co.uk/games/psych-biopsych-memory.html",
     "screenshot": null
   },
   {
@@ -2480,7 +2480,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key memory terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/psych-memory-memory.html",
+    "href": "https://classcraft.co.uk/games/psych-memory-memory.html",
     "screenshot": null
   },
   {
@@ -2496,7 +2496,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Diagnostic quiz across the full A-Level Psychology specification. Use the results to build your priority study list.",
-    "href": "classcraft/games/psych-quiz.html",
+    "href": "https://classcraft.co.uk/games/psych-quiz.html",
     "screenshot": null
   },
   {
@@ -2512,7 +2512,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key research methods terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/psych-research-memory.html",
+    "href": "https://classcraft.co.uk/games/psych-research-memory.html",
     "screenshot": null
   },
   {
@@ -2528,7 +2528,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort research methods terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/psych-research-sort.html",
+    "href": "https://classcraft.co.uk/games/psych-research-sort.html",
     "screenshot": null
   },
   {
@@ -2544,7 +2544,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match key social influence terms to their definitions across six difficulty levels from Starter to Legend.",
-    "href": "classcraft/games/psych-social-memory.html",
+    "href": "https://classcraft.co.uk/games/psych-social-memory.html",
     "screenshot": null
   },
   {
@@ -2560,7 +2560,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Sort It Game",
     "desc": "Sort therapies terms into their correct categories under time pressure. Builds the categorical thinking exam questions reward.",
-    "href": "classcraft/games/psych-therapies-sort.html",
+    "href": "https://classcraft.co.uk/games/psych-therapies-sort.html",
     "screenshot": null
   },
   {
@@ -2576,7 +2576,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Pac-Man Game",
     "desc": "Guide Pac-Man through the maze eating correct answers. Dopamine-driven repetition that makes vocabulary stick. French word list.",
-    "href": "classcraft/vocab-hub/game-pacman.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-pacman.html",
     "screenshot": null
   },
   {
@@ -2592,7 +2592,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Pac-Man Game",
     "desc": "Guide Pac-Man through the maze eating correct answers. Dopamine-driven repetition that makes vocabulary stick. Spanish word list.",
-    "href": "classcraft/vocab-hub/game-pacman.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-pacman.html",
     "screenshot": null
   },
   {
@@ -2608,7 +2608,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Pac-Man Game",
     "desc": "Guide Pac-Man through the maze eating correct answers. Dopamine-driven repetition that makes vocabulary stick. German word list.",
-    "href": "classcraft/vocab-hub/game-pacman.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-pacman.html",
     "screenshot": null
   },
   {
@@ -2624,7 +2624,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Pac-Man Game",
     "desc": "Guide Pac-Man through the maze eating correct answers. Dopamine-driven repetition that makes vocabulary stick. English Literary Terms word list.",
-    "href": "classcraft/vocab-hub/game-pacman.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-pacman.html",
     "screenshot": null
   },
   {
@@ -2640,7 +2640,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Space Invaders",
     "desc": "Shoot the correct translation before the invaders reach the bottom. Time pressure that mirrors exam retrieval. French word list.",
-    "href": "classcraft/vocab-hub/game-spaceinvaders.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-spaceinvaders.html",
     "screenshot": null
   },
   {
@@ -2656,7 +2656,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Space Invaders",
     "desc": "Shoot the correct translation before the invaders reach the bottom. Time pressure that mirrors exam retrieval. Spanish word list.",
-    "href": "classcraft/vocab-hub/game-spaceinvaders.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-spaceinvaders.html",
     "screenshot": null
   },
   {
@@ -2672,7 +2672,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Space Invaders",
     "desc": "Shoot the correct translation before the invaders reach the bottom. Time pressure that mirrors exam retrieval. German word list.",
-    "href": "classcraft/vocab-hub/game-spaceinvaders.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-spaceinvaders.html",
     "screenshot": null
   },
   {
@@ -2688,7 +2688,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Space Invaders",
     "desc": "Shoot the correct translation before the invaders reach the bottom. Time pressure that mirrors exam retrieval. English Literary Terms word list.",
-    "href": "classcraft/vocab-hub/game-spaceinvaders.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-spaceinvaders.html",
     "screenshot": null
   },
   {
@@ -2704,7 +2704,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Hangman",
     "desc": "Classic word-guess on key vocabulary. Forces recall of spelling and meaning together. French word list.",
-    "href": "classcraft/vocab-hub/game-hangman.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-hangman.html",
     "screenshot": null
   },
   {
@@ -2720,7 +2720,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Hangman",
     "desc": "Classic word-guess on key vocabulary. Forces recall of spelling and meaning together. Spanish word list.",
-    "href": "classcraft/vocab-hub/game-hangman.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-hangman.html",
     "screenshot": null
   },
   {
@@ -2736,7 +2736,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Hangman",
     "desc": "Classic word-guess on key vocabulary. Forces recall of spelling and meaning together. German word list.",
-    "href": "classcraft/vocab-hub/game-hangman.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-hangman.html",
     "screenshot": null
   },
   {
@@ -2752,7 +2752,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Hangman",
     "desc": "Classic word-guess on key vocabulary. Forces recall of spelling and meaning together. English Literary Terms word list.",
-    "href": "classcraft/vocab-hub/game-hangman.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-hangman.html",
     "screenshot": null
   },
   {
@@ -2768,7 +2768,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Crossword",
     "desc": "Fill the grid from clues. Strong for spelling, gender, and recognising terms in context. French word list.",
-    "href": "classcraft/vocab-hub/game-crossword.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-crossword.html",
     "screenshot": null
   },
   {
@@ -2784,7 +2784,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Crossword",
     "desc": "Fill the grid from clues. Strong for spelling, gender, and recognising terms in context. Spanish word list.",
-    "href": "classcraft/vocab-hub/game-crossword.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-crossword.html",
     "screenshot": null
   },
   {
@@ -2800,7 +2800,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Crossword",
     "desc": "Fill the grid from clues. Strong for spelling, gender, and recognising terms in context. German word list.",
-    "href": "classcraft/vocab-hub/game-crossword.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-crossword.html",
     "screenshot": null
   },
   {
@@ -2816,7 +2816,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Crossword",
     "desc": "Fill the grid from clues. Strong for spelling, gender, and recognising terms in context. English Literary Terms word list.",
-    "href": "classcraft/vocab-hub/game-crossword.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-crossword.html",
     "screenshot": null
   },
   {
@@ -2832,7 +2832,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match term cards to their definitions. The simplest, fastest way to drill new vocabulary. French word list.",
-    "href": "classcraft/vocab-hub/game-pairs.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-pairs.html",
     "screenshot": null
   },
   {
@@ -2848,7 +2848,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match term cards to their definitions. The simplest, fastest way to drill new vocabulary. Spanish word list.",
-    "href": "classcraft/vocab-hub/game-pairs.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-pairs.html",
     "screenshot": null
   },
   {
@@ -2864,7 +2864,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match term cards to their definitions. The simplest, fastest way to drill new vocabulary. German word list.",
-    "href": "classcraft/vocab-hub/game-pairs.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-pairs.html",
     "screenshot": null
   },
   {
@@ -2880,7 +2880,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Memory Match",
     "desc": "Match term cards to their definitions. The simplest, fastest way to drill new vocabulary. English Literary Terms word list.",
-    "href": "classcraft/vocab-hub/game-pairs.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-pairs.html",
     "screenshot": null
   },
   {
@@ -2896,7 +2896,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Anagram Game",
     "desc": "Unscramble the letters to reveal the term. Trains recognition and spelling under pressure. French word list.",
-    "href": "classcraft/vocab-hub/game-anagram.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-anagram.html",
     "screenshot": null
   },
   {
@@ -2912,7 +2912,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Anagram Game",
     "desc": "Unscramble the letters to reveal the term. Trains recognition and spelling under pressure. Spanish word list.",
-    "href": "classcraft/vocab-hub/game-anagram.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-anagram.html",
     "screenshot": null
   },
   {
@@ -2928,7 +2928,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Anagram Game",
     "desc": "Unscramble the letters to reveal the term. Trains recognition and spelling under pressure. German word list.",
-    "href": "classcraft/vocab-hub/game-anagram.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-anagram.html",
     "screenshot": null
   },
   {
@@ -2944,7 +2944,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Anagram Game",
     "desc": "Unscramble the letters to reveal the term. Trains recognition and spelling under pressure. English Literary Terms word list.",
-    "href": "classcraft/vocab-hub/game-anagram.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-anagram.html",
     "screenshot": null
   },
   {
@@ -2960,7 +2960,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Vocabulary / Terms Tester",
     "desc": "Type the term that matches the definition. Pure recall — the hardest test of retention. French word list.",
-    "href": "classcraft/vocab-hub/game-termguess.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-termguess.html",
     "screenshot": null
   },
   {
@@ -2976,7 +2976,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Vocabulary / Terms Tester",
     "desc": "Type the term that matches the definition. Pure recall — the hardest test of retention. Spanish word list.",
-    "href": "classcraft/vocab-hub/game-termguess.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-termguess.html",
     "screenshot": null
   },
   {
@@ -2992,7 +2992,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Vocabulary / Terms Tester",
     "desc": "Type the term that matches the definition. Pure recall — the hardest test of retention. German word list.",
-    "href": "classcraft/vocab-hub/game-termguess.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-termguess.html",
     "screenshot": null
   },
   {
@@ -3008,7 +3008,7 @@ const RESOURCES = [
     "stageDisplay": "V · Verify",
     "typeDisplay": "Vocabulary / Terms Tester",
     "desc": "Type the term that matches the definition. Pure recall — the hardest test of retention. English Literary Terms word list.",
-    "href": "classcraft/vocab-hub/game-termguess.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-termguess.html",
     "screenshot": null
   },
   {
@@ -3024,7 +3024,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Multiple-choice diagnostic across your vocabulary set. Use the results to focus revision. French word list.",
-    "href": "classcraft/vocab-hub/game-quiz.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-quiz.html",
     "screenshot": null
   },
   {
@@ -3040,7 +3040,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Multiple-choice diagnostic across your vocabulary set. Use the results to focus revision. Spanish word list.",
-    "href": "classcraft/vocab-hub/game-quiz.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-quiz.html",
     "screenshot": null
   },
   {
@@ -3056,7 +3056,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Multiple-choice diagnostic across your vocabulary set. Use the results to focus revision. German word list.",
-    "href": "classcraft/vocab-hub/game-quiz.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-quiz.html",
     "screenshot": null
   },
   {
@@ -3072,7 +3072,7 @@ const RESOURCES = [
     "stageDisplay": "E · Evaluate",
     "typeDisplay": "Diagnostic Quiz",
     "desc": "Multiple-choice diagnostic across your vocabulary set. Use the results to focus revision. English Literary Terms word list.",
-    "href": "classcraft/vocab-hub/game-quiz.html",
+    "href": "https://classcraft.co.uk/vocab-hub/game-quiz.html",
     "screenshot": null
   },
   {
@@ -3088,7 +3088,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Semiotics unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0381_the_semiotics.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0381_the_semiotics.html",
     "screenshot": null
   },
   {
@@ -3104,7 +3104,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Postmodern Work unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0382_the_postmodern_work.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0382_the_postmodern_work.html",
     "screenshot": null
   },
   {
@@ -3120,7 +3120,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Installation unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0383_the_installation.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0383_the_installation.html",
     "screenshot": null
   },
   {
@@ -3136,7 +3136,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Extended Essay unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0384_the_extended_essay.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0384_the_extended_essay.html",
     "screenshot": null
   },
   {
@@ -3152,7 +3152,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cross Cultural unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0385_the_cross_cultural.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0385_the_cross_cultural.html",
     "screenshot": null
   },
   {
@@ -3168,7 +3168,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ethics Of Representation unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0386_the_ethics_of_representation.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0386_the_ethics_of_representation.html",
     "screenshot": null
   },
   {
@@ -3184,7 +3184,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Collaborative unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0387_the_collaborative.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0387_the_collaborative.html",
     "screenshot": null
   },
   {
@@ -3200,7 +3200,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Commission unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0388_the_commission.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0388_the_commission.html",
     "screenshot": null
   },
   {
@@ -3216,7 +3216,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Conservation unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0389_the_conservation.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0389_the_conservation.html",
     "screenshot": null
   },
   {
@@ -3232,7 +3232,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Personal Investigation unfolds as a narrative challenge that tests A-Level Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/a_level/S0390_the_personal_investigation.html",
+    "href": "https://classcraft.co.uk/stories/art_design/a_level/S0390_the_personal_investigation.html",
     "screenshot": null
   },
   {
@@ -3248,7 +3248,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Critical Response unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0371_the_critical_response.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0371_the_critical_response.html",
     "screenshot": null
   },
   {
@@ -3264,7 +3264,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Artist Influence unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0372_the_artist_influence.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0372_the_artist_influence.html",
     "screenshot": null
   },
   {
@@ -3280,7 +3280,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Media Choice unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0373_the_media_choice.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0373_the_media_choice.html",
     "screenshot": null
   },
   {
@@ -3296,7 +3296,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Annotation unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0374_the_annotation.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0374_the_annotation.html",
     "screenshot": null
   },
   {
@@ -3312,7 +3312,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Typography unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0375_the_typography.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0375_the_typography.html",
     "screenshot": null
   },
   {
@@ -3328,7 +3328,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Photography unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0376_the_photography.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0376_the_photography.html",
     "screenshot": null
   },
   {
@@ -3344,7 +3344,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The 3d Form unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0377_the_3d_form.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0377_the_3d_form.html",
     "screenshot": null
   },
   {
@@ -3360,7 +3360,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Digital Artwork unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0378_the_digital_artwork.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0378_the_digital_artwork.html",
     "screenshot": null
   },
   {
@@ -3376,7 +3376,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Colour Psychology unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0379_the_colour_psychology.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0379_the_colour_psychology.html",
     "screenshot": null
   },
   {
@@ -3392,7 +3392,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Final Outcome unfolds as a narrative challenge that tests GCSE Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/gcse/S0380_the_final_outcome.html",
+    "href": "https://classcraft.co.uk/stories/art_design/gcse/S0380_the_final_outcome.html",
     "screenshot": null
   },
   {
@@ -3408,7 +3408,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Colour Mix unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0361_the_colour_mix.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0361_the_colour_mix.html",
     "screenshot": null
   },
   {
@@ -3424,7 +3424,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Composition unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0362_the_composition.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0362_the_composition.html",
     "screenshot": null
   },
   {
@@ -3440,7 +3440,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Perspective unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0363_the_perspective.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0363_the_perspective.html",
     "screenshot": null
   },
   {
@@ -3456,7 +3456,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Texture Study unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0364_the_texture_study.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0364_the_texture_study.html",
     "screenshot": null
   },
   {
@@ -3472,7 +3472,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Artists Movement unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0365_the_artists_movement.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0365_the_artists_movement.html",
     "screenshot": null
   },
   {
@@ -3488,7 +3488,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Line Weight unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0366_the_line_weight.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0366_the_line_weight.html",
     "screenshot": null
   },
   {
@@ -3504,7 +3504,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Proportion unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0367_the_proportion.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0367_the_proportion.html",
     "screenshot": null
   },
   {
@@ -3520,7 +3520,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Mood Board unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0368_the_mood_board.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0368_the_mood_board.html",
     "screenshot": null
   },
   {
@@ -3536,7 +3536,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Tonal Value unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0369_the_tonal_value.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0369_the_tonal_value.html",
     "screenshot": null
   },
   {
@@ -3552,7 +3552,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Pattern unfolds as a narrative challenge that tests KS3 Art & Design understanding through decision-making.",
-    "href": "classcraft/stories/art_design/ks3/S0370_the_pattern.html",
+    "href": "https://classcraft.co.uk/stories/art_design/ks3/S0370_the_pattern.html",
     "screenshot": null
   },
   {
@@ -3568,7 +3568,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Chandrasekhar unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0591_the_chandrasekhar.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0591_the_chandrasekhar.html",
     "screenshot": null
   },
   {
@@ -3584,7 +3584,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gravitational Wave unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0592_the_gravitational_wave.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0592_the_gravitational_wave.html",
     "screenshot": null
   },
   {
@@ -3600,7 +3600,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Dark Energy unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0593_the_dark_energy.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0593_the_dark_energy.html",
     "screenshot": null
   },
   {
@@ -3616,7 +3616,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Accretion Disc unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0594_the_accretion_disc.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0594_the_accretion_disc.html",
     "screenshot": null
   },
   {
@@ -3632,7 +3632,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Parallax unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0595_the_parallax.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0595_the_parallax.html",
     "screenshot": null
   },
   {
@@ -3648,7 +3648,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Pulsar Timing unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0596_the_pulsar_timing.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0596_the_pulsar_timing.html",
     "screenshot": null
   },
   {
@@ -3664,7 +3664,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Nucleosynthesis unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0597_the_nucleosynthesis.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0597_the_nucleosynthesis.html",
     "screenshot": null
   },
   {
@@ -3680,7 +3680,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Redshift Survey unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0598_the_redshift_survey.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0598_the_redshift_survey.html",
     "screenshot": null
   },
   {
@@ -3696,7 +3696,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Inflation Model unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0599_the_inflation_model.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0599_the_inflation_model.html",
     "screenshot": null
   },
   {
@@ -3712,7 +3712,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Event Horizon unfolds as a narrative challenge that tests A-Level Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/a_level/S0600_the_event_horizon.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/a_level/S0600_the_event_horizon.html",
     "screenshot": null
   },
   {
@@ -3728,7 +3728,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Hubble Constant unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0581_the_hubble_constant.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0581_the_hubble_constant.html",
     "screenshot": null
   },
   {
@@ -3744,7 +3744,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Life Cycle unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0582_the_life_cycle.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0582_the_life_cycle.html",
     "screenshot": null
   },
   {
@@ -3760,7 +3760,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Exoplanet unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0583_the_exoplanet.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0583_the_exoplanet.html",
     "screenshot": null
   },
   {
@@ -3776,7 +3776,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Black Hole unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0584_the_black_hole.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0584_the_black_hole.html",
     "screenshot": null
   },
   {
@@ -3792,7 +3792,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Supernova unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0585_the_supernova.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0585_the_supernova.html",
     "screenshot": null
   },
   {
@@ -3808,7 +3808,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Satellite Orbit unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0586_the_satellite_orbit.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0586_the_satellite_orbit.html",
     "screenshot": null
   },
   {
@@ -3824,7 +3824,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cmb unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0587_the_cmb.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0587_the_cmb.html",
     "screenshot": null
   },
   {
@@ -3840,7 +3840,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Tidal Force unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0588_the_tidal_force.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0588_the_tidal_force.html",
     "screenshot": null
   },
   {
@@ -3856,7 +3856,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Space Mission unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0589_the_space_mission.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0589_the_space_mission.html",
     "screenshot": null
   },
   {
@@ -3872,7 +3872,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Seti Signal unfolds as a narrative challenge that tests GCSE Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/gcse/S0590_the_seti_signal.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/gcse/S0590_the_seti_signal.html",
     "screenshot": null
   },
   {
@@ -3888,7 +3888,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Rocket Launch unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0571_the_rocket_launch.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0571_the_rocket_launch.html",
     "screenshot": null
   },
   {
@@ -3904,7 +3904,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Planet Distance unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0572_the_planet_distance.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0572_the_planet_distance.html",
     "screenshot": null
   },
   {
@@ -3920,7 +3920,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Eclipse unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0573_the_eclipse.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0573_the_eclipse.html",
     "screenshot": null
   },
   {
@@ -3936,7 +3936,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Constellation unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0574_the_constellation.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0574_the_constellation.html",
     "screenshot": null
   },
   {
@@ -3952,7 +3952,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Moon Phase unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0575_the_moon_phase.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0575_the_moon_phase.html",
     "screenshot": null
   },
   {
@@ -3968,7 +3968,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gravity Well unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0576_the_gravity_well.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0576_the_gravity_well.html",
     "screenshot": null
   },
   {
@@ -3984,7 +3984,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Space Junk unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0577_the_space_junk.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0577_the_space_junk.html",
     "screenshot": null
   },
   {
@@ -4000,7 +4000,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Day Length unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0578_the_day_length.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0578_the_day_length.html",
     "screenshot": null
   },
   {
@@ -4016,7 +4016,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Star Colour unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0579_the_star_colour.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0579_the_star_colour.html",
     "screenshot": null
   },
   {
@@ -4032,7 +4032,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Light Year unfolds as a narrative challenge that tests KS3 Astronomy & Space Science understanding through decision-making.",
-    "href": "classcraft/stories/astronomy_space_science/ks3/S0580_the_light_year.html",
+    "href": "https://classcraft.co.uk/stories/astronomy_space_science/ks3/S0580_the_light_year.html",
     "screenshot": null
   },
   {
@@ -4048,7 +4048,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Michaelis Constant unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0081_the_michaelis_constant.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0081_the_michaelis_constant.html",
     "screenshot": null
   },
   {
@@ -4064,7 +4064,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Chi Squared Test unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0082_the_chi_squared_test.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0082_the_chi_squared_test.html",
     "screenshot": null
   },
   {
@@ -4080,7 +4080,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Action Potential unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0083_the_action_potential.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0083_the_action_potential.html",
     "screenshot": null
   },
   {
@@ -4096,7 +4096,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Lac Operon unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0084_the_lac_operon.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0084_the_lac_operon.html",
     "screenshot": null
   },
   {
@@ -4112,7 +4112,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Pcr Evidence unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0085_the_pcr_evidence.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0085_the_pcr_evidence.html",
     "screenshot": null
   },
   {
@@ -4128,7 +4128,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Succession Plot unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0086_the_succession_plot.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0086_the_succession_plot.html",
     "screenshot": null
   },
   {
@@ -4144,7 +4144,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Hardy Weinberg unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0087_the_hardy_weinberg.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0087_the_hardy_weinberg.html",
     "screenshot": null
   },
   {
@@ -4160,7 +4160,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Atp Yield unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0088_the_atp_yield.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0088_the_atp_yield.html",
     "screenshot": null
   },
   {
@@ -4176,7 +4176,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Signal Cascade unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0089_the_signal_cascade.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0089_the_signal_cascade.html",
     "screenshot": null
   },
   {
@@ -4192,7 +4192,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Crispr Edit unfolds as a narrative challenge that tests A-Level Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/a_level/S0090_the_crispr_edit.html",
+    "href": "https://classcraft.co.uk/stories/biology/a_level/S0090_the_crispr_edit.html",
     "screenshot": null
   },
   {
@@ -4208,7 +4208,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Population Crash unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0071_the_population_crash.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0071_the_population_crash.html",
     "screenshot": null
   },
   {
@@ -4224,7 +4224,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Transplant unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0072_the_transplant.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0072_the_transplant.html",
     "screenshot": null
   },
   {
@@ -4240,7 +4240,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Hormone Hijack unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0073_the_hormone_hijack.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0073_the_hormone_hijack.html",
     "screenshot": null
   },
   {
@@ -4256,7 +4256,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Mitosis Spy unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0074_the_mitosis_spy.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0074_the_mitosis_spy.html",
     "screenshot": null
   },
   {
@@ -4272,7 +4272,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Meiosis Mistake unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0075_the_meiosis_mistake.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0075_the_meiosis_mistake.html",
     "screenshot": null
   },
   {
@@ -4288,7 +4288,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Photosynthesis Rate unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0076_the_photosynthesis_rate.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0076_the_photosynthesis_rate.html",
     "screenshot": null
   },
   {
@@ -4304,7 +4304,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Respiration Meter unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0077_the_respiration_meter.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0077_the_respiration_meter.html",
     "screenshot": null
   },
   {
@@ -4320,7 +4320,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Kidney Filter unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0078_the_kidney_filter.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0078_the_kidney_filter.html",
     "screenshot": null
   },
   {
@@ -4336,7 +4336,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Vaccine Decision unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0079_the_vaccine_decision.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0079_the_vaccine_decision.html",
     "screenshot": null
   },
   {
@@ -4352,7 +4352,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Dna Fingerprint unfolds as a narrative challenge that tests GCSE Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/gcse/S0080_the_dna_fingerprint.html",
+    "href": "https://classcraft.co.uk/stories/biology/gcse/S0080_the_dna_fingerprint.html",
     "screenshot": null
   },
   {
@@ -4368,7 +4368,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Outbreak unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0061_the_outbreak.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0061_the_outbreak.html",
     "screenshot": null
   },
   {
@@ -4384,7 +4384,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Photosynthesis Plot unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0062_the_photosynthesis_plot.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0062_the_photosynthesis_plot.html",
     "screenshot": null
   },
   {
@@ -4400,7 +4400,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Food Chain Collapse unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0063_the_food_chain_collapse.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0063_the_food_chain_collapse.html",
     "screenshot": null
   },
   {
@@ -4416,7 +4416,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cell Intruder unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0064_the_cell_intruder.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0064_the_cell_intruder.html",
     "screenshot": null
   },
   {
@@ -4432,7 +4432,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Enzyme Crisis unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0065_the_enzyme_crisis.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0065_the_enzyme_crisis.html",
     "screenshot": null
   },
   {
@@ -4448,7 +4448,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Osmosis Disaster unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0066_the_osmosis_disaster.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0066_the_osmosis_disaster.html",
     "screenshot": null
   },
   {
@@ -4464,7 +4464,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Genetics Lab unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0067_the_genetics_lab.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0067_the_genetics_lab.html",
     "screenshot": null
   },
   {
@@ -4480,7 +4480,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Antibiotic Crisis unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0068_the_antibiotic_crisis.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0068_the_antibiotic_crisis.html",
     "screenshot": null
   },
   {
@@ -4496,7 +4496,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Blood Type unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0069_the_blood_type.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0069_the_blood_type.html",
     "screenshot": null
   },
   {
@@ -4512,7 +4512,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Nervous System Relay unfolds as a narrative challenge that tests KS3 Biology understanding through decision-making.",
-    "href": "classcraft/stories/biology/ks3/S0070_the_nervous_system_relay.html",
+    "href": "https://classcraft.co.uk/stories/biology/ks3/S0070_the_nervous_system_relay.html",
     "screenshot": null
   },
   {
@@ -4528,7 +4528,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Investment Appraisal unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0531_the_investment_appraisal.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0531_the_investment_appraisal.html",
     "screenshot": null
   },
   {
@@ -4544,7 +4544,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Porters Five unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0532_the_porters_five.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0532_the_porters_five.html",
     "screenshot": null
   },
   {
@@ -4560,7 +4560,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ansoff Matrix unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0533_the_ansoff_matrix.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0533_the_ansoff_matrix.html",
     "screenshot": null
   },
   {
@@ -4576,7 +4576,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Kaizen unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0534_the_kaizen.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0534_the_kaizen.html",
     "screenshot": null
   },
   {
@@ -4592,7 +4592,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Swot unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0535_the_swot.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0535_the_swot.html",
     "screenshot": null
   },
   {
@@ -4608,7 +4608,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Exchange Rate Impact unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0536_the_exchange_rate_impact.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0536_the_exchange_rate_impact.html",
     "screenshot": null
   },
   {
@@ -4624,7 +4624,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Motivation Theory unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0537_the_motivation_theory.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0537_the_motivation_theory.html",
     "screenshot": null
   },
   {
@@ -4640,7 +4640,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Innovation unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0538_the_innovation.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0538_the_innovation.html",
     "screenshot": null
   },
   {
@@ -4656,7 +4656,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Corporate Strategy unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0539_the_corporate_strategy.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0539_the_corporate_strategy.html",
     "screenshot": null
   },
   {
@@ -4672,7 +4672,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Stakeholder Mapping unfolds as a narrative challenge that tests A-Level Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/a_level/S0540_the_stakeholder_mapping.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/a_level/S0540_the_stakeholder_mapping.html",
     "screenshot": null
   },
   {
@@ -4688,7 +4688,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Break Even unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0521_the_break_even.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0521_the_break_even.html",
     "screenshot": null
   },
   {
@@ -4704,7 +4704,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cash Flow unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0522_the_cash_flow.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0522_the_cash_flow.html",
     "screenshot": null
   },
   {
@@ -4720,7 +4720,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Elasticity unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0523_the_elasticity.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0523_the_elasticity.html",
     "screenshot": null
   },
   {
@@ -4736,7 +4736,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ratio unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0524_the_ratio.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0524_the_ratio.html",
     "screenshot": null
   },
   {
@@ -4752,7 +4752,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Hierarchy unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0525_the_hierarchy.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0525_the_hierarchy.html",
     "screenshot": null
   },
   {
@@ -4768,7 +4768,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Trade Off unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0526_the_trade_off.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0526_the_trade_off.html",
     "screenshot": null
   },
   {
@@ -4784,7 +4784,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ethics unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0527_the_ethics.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0527_the_ethics.html",
     "screenshot": null
   },
   {
@@ -4800,7 +4800,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Global unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0528_the_global.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0528_the_global.html",
     "screenshot": null
   },
   {
@@ -4816,7 +4816,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Legal Form unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0529_the_legal_form.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0529_the_legal_form.html",
     "screenshot": null
   },
   {
@@ -4832,7 +4832,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Hrm unfolds as a narrative challenge that tests GCSE Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/gcse/S0530_the_hrm.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/gcse/S0530_the_hrm.html",
     "screenshot": null
   },
   {
@@ -4848,7 +4848,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Start Up unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0511_the_start_up.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0511_the_start_up.html",
     "screenshot": null
   },
   {
@@ -4864,7 +4864,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Customer unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0512_the_customer.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0512_the_customer.html",
     "screenshot": null
   },
   {
@@ -4880,7 +4880,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Profit unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0513_the_profit.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0513_the_profit.html",
     "screenshot": null
   },
   {
@@ -4896,7 +4896,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Employee unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0514_the_employee.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0514_the_employee.html",
     "screenshot": null
   },
   {
@@ -4912,7 +4912,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Stakeholder unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0515_the_stakeholder.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0515_the_stakeholder.html",
     "screenshot": null
   },
   {
@@ -4928,7 +4928,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Brand unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0516_the_brand.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0516_the_brand.html",
     "screenshot": null
   },
   {
@@ -4944,7 +4944,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Location unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0517_the_location.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0517_the_location.html",
     "screenshot": null
   },
   {
@@ -4960,7 +4960,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Loan unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0518_the_loan.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0518_the_loan.html",
     "screenshot": null
   },
   {
@@ -4976,7 +4976,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Risk unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0519_the_risk.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0519_the_risk.html",
     "screenshot": null
   },
   {
@@ -4992,7 +4992,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Supply Chain unfolds as a narrative challenge that tests KS3 Business Studies understanding through decision-making.",
-    "href": "classcraft/stories/business_studies/ks3/S0520_the_supply_chain.html",
+    "href": "https://classcraft.co.uk/stories/business_studies/ks3/S0520_the_supply_chain.html",
     "screenshot": null
   },
   {
@@ -5008,7 +5008,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Electron Configuration unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0051_the_electron_configuration.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0051_the_electron_configuration.html",
     "screenshot": null
   },
   {
@@ -5024,7 +5024,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Acid Equilibrium unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0052_the_acid_equilibrium.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0052_the_acid_equilibrium.html",
     "screenshot": null
   },
   {
@@ -5040,7 +5040,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Reaction Mechanism unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0053_the_reaction_mechanism.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0053_the_reaction_mechanism.html",
     "screenshot": null
   },
   {
@@ -5056,7 +5056,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Entropy Engine unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0054_the_entropy_engine.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0054_the_entropy_engine.html",
     "screenshot": null
   },
   {
@@ -5072,7 +5072,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Kinetics Lab unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0055_the_kinetics_lab.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0055_the_kinetics_lab.html",
     "screenshot": null
   },
   {
@@ -5088,7 +5088,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Spectroscopy Suite unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0056_the_spectroscopy_suite.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0056_the_spectroscopy_suite.html",
     "screenshot": null
   },
   {
@@ -5104,7 +5104,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Electrode Potential unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0057_the_electrode_potential.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0057_the_electrode_potential.html",
     "screenshot": null
   },
   {
@@ -5120,7 +5120,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Isomer Identity unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0058_the_isomer_identity.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0058_the_isomer_identity.html",
     "screenshot": null
   },
   {
@@ -5136,7 +5136,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Transition Metal unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0059_the_transition_metal.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0059_the_transition_metal.html",
     "screenshot": null
   },
   {
@@ -5152,7 +5152,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Polymer Bomb unfolds as a narrative challenge that tests A-Level Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/a_level/S0060_the_polymer_bomb.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/a_level/S0060_the_polymer_bomb.html",
     "screenshot": null
   },
   {
@@ -5168,7 +5168,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Electrolysis Prison unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0041_the_electrolysis_prison.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0041_the_electrolysis_prison.html",
     "screenshot": null
   },
   {
@@ -5184,7 +5184,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Rate Race unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0042_the_rate_race.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0042_the_rate_race.html",
     "screenshot": null
   },
   {
@@ -5200,7 +5200,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Equilibrium Sabotage unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0043_the_equilibrium_sabotage.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0043_the_equilibrium_sabotage.html",
     "screenshot": null
   },
   {
@@ -5216,7 +5216,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Titration unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0044_the_titration.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0044_the_titration.html",
     "screenshot": null
   },
   {
@@ -5232,7 +5232,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Organic Fingerprint unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0045_the_organic_fingerprint.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0045_the_organic_fingerprint.html",
     "screenshot": null
   },
   {
@@ -5248,7 +5248,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Atomic Mass Mystery unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0046_the_atomic_mass_mystery.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0046_the_atomic_mass_mystery.html",
     "screenshot": null
   },
   {
@@ -5264,7 +5264,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Yield Calculation unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0047_the_yield_calculation.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0047_the_yield_calculation.html",
     "screenshot": null
   },
   {
@@ -5280,7 +5280,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Energy Profile unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0048_the_energy_profile.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0048_the_energy_profile.html",
     "screenshot": null
   },
   {
@@ -5296,7 +5296,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Hardness Test unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0049_the_hardness_test.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0049_the_hardness_test.html",
     "screenshot": null
   },
   {
@@ -5312,7 +5312,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Green Chemistry Lab unfolds as a narrative challenge that tests GCSE Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/gcse/S0050_the_green_chemistry_lab.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/gcse/S0050_the_green_chemistry_lab.html",
     "screenshot": null
   },
   {
@@ -5328,7 +5328,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Poisoned Well unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0031_the_poisoned_well.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0031_the_poisoned_well.html",
     "screenshot": null
   },
   {
@@ -5344,7 +5344,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Vanishing Ink unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0032_the_vanishing_ink.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0032_the_vanishing_ink.html",
     "screenshot": null
   },
   {
@@ -5360,7 +5360,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Rusting Bridge unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0033_the_rusting_bridge.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0033_the_rusting_bridge.html",
     "screenshot": null
   },
   {
@@ -5376,7 +5376,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Fake Diamond unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0034_the_fake_diamond.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0034_the_fake_diamond.html",
     "screenshot": null
   },
   {
@@ -5392,7 +5392,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gas Leak unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0035_the_gas_leak.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0035_the_gas_leak.html",
     "screenshot": null
   },
   {
@@ -5408,7 +5408,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Burning Candle unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0036_the_burning_candle.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0036_the_burning_candle.html",
     "screenshot": null
   },
   {
@@ -5424,7 +5424,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Metal Detective unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0037_the_metal_detective.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0037_the_metal_detective.html",
     "screenshot": null
   },
   {
@@ -5440,7 +5440,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Clean Energy Cell unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0038_the_clean_energy_cell.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0038_the_clean_energy_cell.html",
     "screenshot": null
   },
   {
@@ -5456,7 +5456,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Limestone Quarry unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0039_the_limestone_quarry.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0039_the_limestone_quarry.html",
     "screenshot": null
   },
   {
@@ -5472,7 +5472,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Invisible Ink Factory unfolds as a narrative challenge that tests KS3 Chemistry understanding through decision-making.",
-    "href": "classcraft/stories/chemistry/ks3/S0040_the_invisible_ink_factory.html",
+    "href": "https://classcraft.co.uk/stories/chemistry/ks3/S0040_the_invisible_ink_factory.html",
     "screenshot": null
   },
   {
@@ -5488,7 +5488,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Big O unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0321_the_big_o.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0321_the_big_o.html",
     "screenshot": null
   },
   {
@@ -5504,7 +5504,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Turing Test unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0322_the_turing_test.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0322_the_turing_test.html",
     "screenshot": null
   },
   {
@@ -5520,7 +5520,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Graph Traversal unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0323_the_graph_traversal.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0323_the_graph_traversal.html",
     "screenshot": null
   },
   {
@@ -5536,7 +5536,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Hashing Clash unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0324_the_hashing_clash.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0324_the_hashing_clash.html",
     "screenshot": null
   },
   {
@@ -5552,7 +5552,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Finite State Machine unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0325_the_finite_state_machine.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0325_the_finite_state_machine.html",
     "screenshot": null
   },
   {
@@ -5568,7 +5568,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Oop Design unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0326_the_oop_design.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0326_the_oop_design.html",
     "screenshot": null
   },
   {
@@ -5584,7 +5584,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Compression Algorithm unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0327_the_compression_algorithm.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0327_the_compression_algorithm.html",
     "screenshot": null
   },
   {
@@ -5600,7 +5600,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Neural Net unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0328_the_neural_net.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0328_the_neural_net.html",
     "screenshot": null
   },
   {
@@ -5616,7 +5616,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Language Theory unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0329_the_language_theory.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0329_the_language_theory.html",
     "screenshot": null
   },
   {
@@ -5632,7 +5632,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Concurrency Bug unfolds as a narrative challenge that tests A-Level Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/a_level/S0330_the_concurrency_bug.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/a_level/S0330_the_concurrency_bug.html",
     "screenshot": null
   },
   {
@@ -5648,7 +5648,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sql Heist unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0311_the_sql_heist.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0311_the_sql_heist.html",
     "screenshot": null
   },
   {
@@ -5664,7 +5664,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Compression unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0312_the_compression.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0312_the_compression.html",
     "screenshot": null
   },
   {
@@ -5680,7 +5680,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Stack Trace unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0313_the_stack_trace.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0313_the_stack_trace.html",
     "screenshot": null
   },
   {
@@ -5696,7 +5696,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Boolean Logic unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0314_the_boolean_logic.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0314_the_boolean_logic.html",
     "screenshot": null
   },
   {
@@ -5712,7 +5712,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Virus Hunt unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0315_the_virus_hunt.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0315_the_virus_hunt.html",
     "screenshot": null
   },
   {
@@ -5728,7 +5728,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sorting Race unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0316_the_sorting_race.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0316_the_sorting_race.html",
     "screenshot": null
   },
   {
@@ -5744,7 +5744,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Subroutine unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0317_the_subroutine.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0317_the_subroutine.html",
     "screenshot": null
   },
   {
@@ -5760,7 +5760,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Fetch Decode Execute unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0318_the_fetch_decode_execute.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0318_the_fetch_decode_execute.html",
     "screenshot": null
   },
   {
@@ -5776,7 +5776,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ethical Hack unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0319_the_ethical_hack.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0319_the_ethical_hack.html",
     "screenshot": null
   },
   {
@@ -5792,7 +5792,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Recursion unfolds as a narrative challenge that tests GCSE Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/gcse/S0320_the_recursion.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/gcse/S0320_the_recursion.html",
     "screenshot": null
   },
   {
@@ -5808,7 +5808,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Binary Message unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0301_the_binary_message.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0301_the_binary_message.html",
     "screenshot": null
   },
   {
@@ -5824,7 +5824,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Logic Gate Trap unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0302_the_logic_gate_trap.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0302_the_logic_gate_trap.html",
     "screenshot": null
   },
   {
@@ -5840,7 +5840,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Algorithm Race unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0303_the_algorithm_race.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0303_the_algorithm_race.html",
     "screenshot": null
   },
   {
@@ -5856,7 +5856,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Bug Hunt unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0304_the_bug_hunt.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0304_the_bug_hunt.html",
     "screenshot": null
   },
   {
@@ -5872,7 +5872,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Flowchart Mission unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0305_the_flowchart_mission.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0305_the_flowchart_mission.html",
     "screenshot": null
   },
   {
@@ -5888,7 +5888,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Data Type unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0306_the_data_type.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0306_the_data_type.html",
     "screenshot": null
   },
   {
@@ -5904,7 +5904,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Network Path unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0307_the_network_path.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0307_the_network_path.html",
     "screenshot": null
   },
   {
@@ -5920,7 +5920,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Encryption Key unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0308_the_encryption_key.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0308_the_encryption_key.html",
     "screenshot": null
   },
   {
@@ -5936,7 +5936,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Representation unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0309_the_representation.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0309_the_representation.html",
     "screenshot": null
   },
   {
@@ -5952,7 +5952,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Search unfolds as a narrative challenge that tests KS3 Computer Science understanding through decision-making.",
-    "href": "classcraft/stories/computer_science/ks3/S0310_the_search.html",
+    "href": "https://classcraft.co.uk/stories/computer_science/ks3/S0310_the_search.html",
     "screenshot": null
   },
   {
@@ -5968,7 +5968,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Fea Model unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0351_the_fea_model.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0351_the_fea_model.html",
     "screenshot": null
   },
   {
@@ -5984,7 +5984,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Manufacturing System unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0352_the_manufacturing_system.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0352_the_manufacturing_system.html",
     "screenshot": null
   },
   {
@@ -6000,7 +6000,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Composite unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0353_the_composite.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0353_the_composite.html",
     "screenshot": null
   },
   {
@@ -6016,7 +6016,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Control System unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0354_the_control_system.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0354_the_control_system.html",
     "screenshot": null
   },
   {
@@ -6032,7 +6032,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Patent Search unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0355_the_patent_search.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0355_the_patent_search.html",
     "screenshot": null
   },
   {
@@ -6048,7 +6048,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Design Ethics unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0356_the_design_ethics.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0356_the_design_ethics.html",
     "screenshot": null
   },
   {
@@ -6064,7 +6064,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Injection Mould unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0357_the_injection_mould.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0357_the_injection_mould.html",
     "screenshot": null
   },
   {
@@ -6080,7 +6080,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Topology unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0358_the_topology.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0358_the_topology.html",
     "screenshot": null
   },
   {
@@ -6096,7 +6096,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Reliability unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0359_the_reliability.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0359_the_reliability.html",
     "screenshot": null
   },
   {
@@ -6112,7 +6112,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Innovation unfolds as a narrative challenge that tests A-Level Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/a_level/S0360_the_innovation.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/a_level/S0360_the_innovation.html",
     "screenshot": null
   },
   {
@@ -6128,7 +6128,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Finite Element unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0341_the_finite_element.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0341_the_finite_element.html",
     "screenshot": null
   },
   {
@@ -6144,7 +6144,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cad Cam Pipeline unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0342_the_cad_cam_pipeline.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0342_the_cad_cam_pipeline.html",
     "screenshot": null
   },
   {
@@ -6160,7 +6160,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Systems Diagram unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0343_the_systems_diagram.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0343_the_systems_diagram.html",
     "screenshot": null
   },
   {
@@ -6176,7 +6176,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Specification unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0344_the_specification.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0344_the_specification.html",
     "screenshot": null
   },
   {
@@ -6192,7 +6192,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Market Research unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0345_the_market_research.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0345_the_market_research.html",
     "screenshot": null
   },
   {
@@ -6208,7 +6208,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Casting unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0346_the_casting.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0346_the_casting.html",
     "screenshot": null
   },
   {
@@ -6224,7 +6224,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Pcb unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0347_the_pcb.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0347_the_pcb.html",
     "screenshot": null
   },
   {
@@ -6240,7 +6240,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Energy Harvest unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0348_the_energy_harvest.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0348_the_energy_harvest.html",
     "screenshot": null
   },
   {
@@ -6256,7 +6256,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Stress Test unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0349_the_stress_test.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0349_the_stress_test.html",
     "screenshot": null
   },
   {
@@ -6272,7 +6272,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Feedback Loop unfolds as a narrative challenge that tests GCSE Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/gcse/S0350_the_feedback_loop.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/gcse/S0350_the_feedback_loop.html",
     "screenshot": null
   },
   {
@@ -6288,7 +6288,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Prototype unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0331_the_prototype.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0331_the_prototype.html",
     "screenshot": null
   },
   {
@@ -6304,7 +6304,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Material Choice unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0332_the_material_choice.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0332_the_material_choice.html",
     "screenshot": null
   },
   {
@@ -6320,7 +6320,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Isometric View unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0333_the_isometric_view.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0333_the_isometric_view.html",
     "screenshot": null
   },
   {
@@ -6336,7 +6336,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Force Diagram unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0334_the_force_diagram.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0334_the_force_diagram.html",
     "screenshot": null
   },
   {
@@ -6352,7 +6352,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ergonomics unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0335_the_ergonomics.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0335_the_ergonomics.html",
     "screenshot": null
   },
   {
@@ -6368,7 +6368,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Circuit Test unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0336_the_circuit_test.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0336_the_circuit_test.html",
     "screenshot": null
   },
   {
@@ -6384,7 +6384,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sustainability unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0337_the_sustainability.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0337_the_sustainability.html",
     "screenshot": null
   },
   {
@@ -6400,7 +6400,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Mechanism unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0338_the_mechanism.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0338_the_mechanism.html",
     "screenshot": null
   },
   {
@@ -6416,7 +6416,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Tolerance unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0339_the_tolerance.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0339_the_tolerance.html",
     "screenshot": null
   },
   {
@@ -6432,7 +6432,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Smart Material unfolds as a narrative challenge that tests KS3 Design Technology understanding through decision-making.",
-    "href": "classcraft/stories/design_technology/ks3/S0340_the_smart_material.html",
+    "href": "https://classcraft.co.uk/stories/design_technology/ks3/S0340_the_smart_material.html",
     "screenshot": null
   },
   {
@@ -6448,7 +6448,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Prisoners Dilemma unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0291_the_prisoners_dilemma.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0291_the_prisoners_dilemma.html",
     "screenshot": null
   },
   {
@@ -6464,7 +6464,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Is Lm Crisis unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0292_the_is_lm_crisis.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0292_the_is_lm_crisis.html",
     "screenshot": null
   },
   {
@@ -6480,7 +6480,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Phillips Curve unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0293_the_phillips_curve.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0293_the_phillips_curve.html",
     "screenshot": null
   },
   {
@@ -6496,7 +6496,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Monopsony unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0294_the_monopsony.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0294_the_monopsony.html",
     "screenshot": null
   },
   {
@@ -6512,7 +6512,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Laffer Curve unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0295_the_laffer_curve.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0295_the_laffer_curve.html",
     "screenshot": null
   },
   {
@@ -6528,7 +6528,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Capital Flight unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0296_the_capital_flight.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0296_the_capital_flight.html",
     "screenshot": null
   },
   {
@@ -6544,7 +6544,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Deadweight Loss unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0297_the_deadweight_loss.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0297_the_deadweight_loss.html",
     "screenshot": null
   },
   {
@@ -6560,7 +6560,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Asymmetric Info unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0298_the_asymmetric_info.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0298_the_asymmetric_info.html",
     "screenshot": null
   },
   {
@@ -6576,7 +6576,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Growth Model unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0299_the_growth_model.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0299_the_growth_model.html",
     "screenshot": null
   },
   {
@@ -6592,7 +6592,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Financial Contagion unfolds as a narrative challenge that tests A-Level Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/a_level/S0300_the_financial_contagion.html",
+    "href": "https://classcraft.co.uk/stories/economics/a_level/S0300_the_financial_contagion.html",
     "screenshot": null
   },
   {
@@ -6608,7 +6608,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Elasticity Trap unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0281_the_elasticity_trap.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0281_the_elasticity_trap.html",
     "screenshot": null
   },
   {
@@ -6624,7 +6624,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Multiplier unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0282_the_multiplier.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0282_the_multiplier.html",
     "screenshot": null
   },
   {
@@ -6640,7 +6640,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Exchange Rate unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0283_the_exchange_rate.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0283_the_exchange_rate.html",
     "screenshot": null
   },
   {
@@ -6656,7 +6656,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Market Failure unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0284_the_market_failure.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0284_the_market_failure.html",
     "screenshot": null
   },
   {
@@ -6672,7 +6672,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Fiscal Policy unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0285_the_fiscal_policy.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0285_the_fiscal_policy.html",
     "screenshot": null
   },
   {
@@ -6688,7 +6688,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Poverty Trap unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0286_the_poverty_trap.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0286_the_poverty_trap.html",
     "screenshot": null
   },
   {
@@ -6704,7 +6704,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Business Cycle unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0287_the_business_cycle.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0287_the_business_cycle.html",
     "screenshot": null
   },
   {
@@ -6720,7 +6720,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Labour Market unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0288_the_labour_market.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0288_the_labour_market.html",
     "screenshot": null
   },
   {
@@ -6736,7 +6736,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cost Curve unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0289_the_cost_curve.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0289_the_cost_curve.html",
     "screenshot": null
   },
   {
@@ -6752,7 +6752,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Comparative Advantage unfolds as a narrative challenge that tests GCSE Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/gcse/S0290_the_comparative_advantage.html",
+    "href": "https://classcraft.co.uk/stories/economics/gcse/S0290_the_comparative_advantage.html",
     "screenshot": null
   },
   {
@@ -6768,7 +6768,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Market Stall unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0271_the_market_stall.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0271_the_market_stall.html",
     "screenshot": null
   },
   {
@@ -6784,7 +6784,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Budget Crisis unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0272_the_budget_crisis.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0272_the_budget_crisis.html",
     "screenshot": null
   },
   {
@@ -6800,7 +6800,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Trade Deal unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0273_the_trade_deal.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0273_the_trade_deal.html",
     "screenshot": null
   },
   {
@@ -6816,7 +6816,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Price Rise unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0274_the_price_rise.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0274_the_price_rise.html",
     "screenshot": null
   },
   {
@@ -6832,7 +6832,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Tax Question unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0275_the_tax_question.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0275_the_tax_question.html",
     "screenshot": null
   },
   {
@@ -6848,7 +6848,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Bank Run unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0276_the_bank_run.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0276_the_bank_run.html",
     "screenshot": null
   },
   {
@@ -6864,7 +6864,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Scarce Resource unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0277_the_scarce_resource.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0277_the_scarce_resource.html",
     "screenshot": null
   },
   {
@@ -6880,7 +6880,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Monopoly unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0278_the_monopoly.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0278_the_monopoly.html",
     "screenshot": null
   },
   {
@@ -6896,7 +6896,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Unemployment Spike unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0279_the_unemployment_spike.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0279_the_unemployment_spike.html",
     "screenshot": null
   },
   {
@@ -6912,7 +6912,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Globalisation Split unfolds as a narrative challenge that tests KS3 Economics understanding through decision-making.",
-    "href": "classcraft/stories/economics/ks3/S0280_the_globalisation_split.html",
+    "href": "https://classcraft.co.uk/stories/economics/ks3/S0280_the_globalisation_split.html",
     "screenshot": null
   },
   {
@@ -6928,7 +6928,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Language Change unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0171_the_language_change.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0171_the_language_change.html",
     "screenshot": null
   },
   {
@@ -6944,7 +6944,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sociolect Signal unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0172_the_sociolect_signal.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0172_the_sociolect_signal.html",
     "screenshot": null
   },
   {
@@ -6960,7 +6960,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Politeness Strategy unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0173_the_politeness_strategy.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0173_the_politeness_strategy.html",
     "screenshot": null
   },
   {
@@ -6976,7 +6976,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Grice Violation unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0174_the_grice_violation.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0174_the_grice_violation.html",
     "screenshot": null
   },
   {
@@ -6992,7 +6992,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sapir Whorf unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0175_the_sapir_whorf.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0175_the_sapir_whorf.html",
     "screenshot": null
   },
   {
@@ -7008,7 +7008,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Critical Discourse unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0176_the_critical_discourse.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0176_the_critical_discourse.html",
     "screenshot": null
   },
   {
@@ -7024,7 +7024,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Accent Study unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0177_the_accent_study.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0177_the_accent_study.html",
     "screenshot": null
   },
   {
@@ -7040,7 +7040,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Acquisition Stage unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0178_the_acquisition_stage.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0178_the_acquisition_stage.html",
     "screenshot": null
   },
   {
@@ -7056,7 +7056,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Corpus Clue unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0179_the_corpus_clue.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0179_the_corpus_clue.html",
     "screenshot": null
   },
   {
@@ -7072,7 +7072,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Multimodal Text unfolds as a narrative challenge that tests A-Level English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/a_level/S0180_the_multimodal_text.html",
+    "href": "https://classcraft.co.uk/stories/english_language/a_level/S0180_the_multimodal_text.html",
     "screenshot": null
   },
   {
@@ -7088,7 +7088,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Editorial Bias unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0161_the_editorial_bias.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0161_the_editorial_bias.html",
     "screenshot": null
   },
   {
@@ -7104,7 +7104,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Descriptive Trap unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0162_the_descriptive_trap.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0162_the_descriptive_trap.html",
     "screenshot": null
   },
   {
@@ -7120,7 +7120,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Transactional Text unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0163_the_transactional_text.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0163_the_transactional_text.html",
     "screenshot": null
   },
   {
@@ -7136,7 +7136,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Narrative Hook unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0164_the_narrative_hook.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0164_the_narrative_hook.html",
     "screenshot": null
   },
   {
@@ -7152,7 +7152,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Semantic Field unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0165_the_semantic_field.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0165_the_semantic_field.html",
     "screenshot": null
   },
   {
@@ -7168,7 +7168,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Speech Transcript unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0166_the_speech_transcript.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0166_the_speech_transcript.html",
     "screenshot": null
   },
   {
@@ -7184,7 +7184,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Representation unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0167_the_representation.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0167_the_representation.html",
     "screenshot": null
   },
   {
@@ -7200,7 +7200,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Argument Structure unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0168_the_argument_structure.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0168_the_argument_structure.html",
     "screenshot": null
   },
   {
@@ -7216,7 +7216,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Stylistic Choice unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0169_the_stylistic_choice.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0169_the_stylistic_choice.html",
     "screenshot": null
   },
   {
@@ -7232,7 +7232,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Subtext Message unfolds as a narrative challenge that tests GCSE English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/gcse/S0170_the_subtext_message.html",
+    "href": "https://classcraft.co.uk/stories/english_language/gcse/S0170_the_subtext_message.html",
     "screenshot": null
   },
   {
@@ -7248,7 +7248,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Persuasion Machine unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0151_the_persuasion_machine.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0151_the_persuasion_machine.html",
     "screenshot": null
   },
   {
@@ -7264,7 +7264,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The News Report unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0152_the_news_report.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0152_the_news_report.html",
     "screenshot": null
   },
   {
@@ -7280,7 +7280,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Dialect Detective unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0153_the_dialect_detective.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0153_the_dialect_detective.html",
     "screenshot": null
   },
   {
@@ -7296,7 +7296,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Register Shift unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0154_the_register_shift.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0154_the_register_shift.html",
     "screenshot": null
   },
   {
@@ -7312,7 +7312,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Headline Hook unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0155_the_headline_hook.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0155_the_headline_hook.html",
     "screenshot": null
   },
   {
@@ -7328,7 +7328,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Speech Act unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0156_the_speech_act.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0156_the_speech_act.html",
     "screenshot": null
   },
   {
@@ -7344,7 +7344,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ambiguous Sign unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0157_the_ambiguous_sign.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0157_the_ambiguous_sign.html",
     "screenshot": null
   },
   {
@@ -7360,7 +7360,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Genre Switch unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0158_the_genre_switch.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0158_the_genre_switch.html",
     "screenshot": null
   },
   {
@@ -7376,7 +7376,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Slogan Writer unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0159_the_slogan_writer.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0159_the_slogan_writer.html",
     "screenshot": null
   },
   {
@@ -7392,7 +7392,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Instruction Fail unfolds as a narrative challenge that tests KS3 English Language understanding through decision-making.",
-    "href": "classcraft/stories/english_language/ks3/S0160_the_instruction_fail.html",
+    "href": "https://classcraft.co.uk/stories/english_language/ks3/S0160_the_instruction_fail.html",
     "screenshot": null
   },
   {
@@ -7408,7 +7408,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Unreliable Confession unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0141_the_unreliable_confession.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0141_the_unreliable_confession.html",
     "screenshot": null
   },
   {
@@ -7424,7 +7424,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Genre Hybrid unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0142_the_genre_hybrid.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0142_the_genre_hybrid.html",
     "screenshot": null
   },
   {
@@ -7440,7 +7440,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Feminist Reading unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0143_the_feminist_reading.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0143_the_feminist_reading.html",
     "screenshot": null
   },
   {
@@ -7456,7 +7456,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Marxist Subtext unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0144_the_marxist_subtext.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0144_the_marxist_subtext.html",
     "screenshot": null
   },
   {
@@ -7472,7 +7472,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Intertextual Echo unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0145_the_intertextual_echo.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0145_the_intertextual_echo.html",
     "screenshot": null
   },
   {
@@ -7488,7 +7488,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Free Indirect Style unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0146_the_free_indirect_style.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0146_the_free_indirect_style.html",
     "screenshot": null
   },
   {
@@ -7504,7 +7504,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Tragic Catharsis unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0147_the_tragic_catharsis.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0147_the_tragic_catharsis.html",
     "screenshot": null
   },
   {
@@ -7520,7 +7520,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Postcolonial Text unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0148_the_postcolonial_text.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0148_the_postcolonial_text.html",
     "screenshot": null
   },
   {
@@ -7536,7 +7536,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Dramatic Silence unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0149_the_dramatic_silence.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0149_the_dramatic_silence.html",
     "screenshot": null
   },
   {
@@ -7552,7 +7552,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Authorial Intent unfolds as a narrative challenge that tests A-Level English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/a_level/S0150_the_authorial_intent.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/a_level/S0150_the_authorial_intent.html",
     "screenshot": null
   },
   {
@@ -7568,7 +7568,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Macbeth Verdict unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0131_the_macbeth_verdict.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0131_the_macbeth_verdict.html",
     "screenshot": null
   },
   {
@@ -7584,7 +7584,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Inequality Map unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0132_the_inequality_map.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0132_the_inequality_map.html",
     "screenshot": null
   },
   {
@@ -7600,7 +7600,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Power Shift unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0133_the_power_shift.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0133_the_power_shift.html",
     "screenshot": null
   },
   {
@@ -7616,7 +7616,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gothic Secret unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0134_the_gothic_secret.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0134_the_gothic_secret.html",
     "screenshot": null
   },
   {
@@ -7632,7 +7632,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Inspectors Trap unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0135_the_inspectors_trap.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0135_the_inspectors_trap.html",
     "screenshot": null
   },
   {
@@ -7648,7 +7648,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sympathy Test unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0136_the_sympathy_test.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0136_the_sympathy_test.html",
     "screenshot": null
   },
   {
@@ -7664,7 +7664,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Context Clue unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0137_the_context_clue.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0137_the_context_clue.html",
     "screenshot": null
   },
   {
@@ -7680,7 +7680,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ambiguous Ending unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0138_the_ambiguous_ending.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0138_the_ambiguous_ending.html",
     "screenshot": null
   },
   {
@@ -7696,7 +7696,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sonnet Structure unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0139_the_sonnet_structure.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0139_the_sonnet_structure.html",
     "screenshot": null
   },
   {
@@ -7712,7 +7712,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Animal Farm Allegory unfolds as a narrative challenge that tests GCSE English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/gcse/S0140_the_animal_farm_allegory.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/gcse/S0140_the_animal_farm_allegory.html",
     "screenshot": null
   },
   {
@@ -7728,7 +7728,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Missing Chapter unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0121_the_missing_chapter.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0121_the_missing_chapter.html",
     "screenshot": null
   },
   {
@@ -7744,7 +7744,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Character Witness unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0122_the_character_witness.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0122_the_character_witness.html",
     "screenshot": null
   },
   {
@@ -7760,7 +7760,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Villains Voice unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0123_the_villains_voice.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0123_the_villains_voice.html",
     "screenshot": null
   },
   {
@@ -7776,7 +7776,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Hidden Theme unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0124_the_hidden_theme.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0124_the_hidden_theme.html",
     "screenshot": null
   },
   {
@@ -7792,7 +7792,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Setting Spy unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0125_the_setting_spy.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0125_the_setting_spy.html",
     "screenshot": null
   },
   {
@@ -7808,7 +7808,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Metaphor Mission unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0126_the_metaphor_mission.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0126_the_metaphor_mission.html",
     "screenshot": null
   },
   {
@@ -7824,7 +7824,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Prologue Puzzle unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0127_the_prologue_puzzle.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0127_the_prologue_puzzle.html",
     "screenshot": null
   },
   {
@@ -7840,7 +7840,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Reliable Narrator unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0128_the_reliable_narrator.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0128_the_reliable_narrator.html",
     "screenshot": null
   },
   {
@@ -7856,7 +7856,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cliffhanger unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0129_the_cliffhanger.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0129_the_cliffhanger.html",
     "screenshot": null
   },
   {
@@ -7872,7 +7872,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Archetype unfolds as a narrative challenge that tests KS3 English Literature understanding through decision-making.",
-    "href": "classcraft/stories/english_literature/ks3/S0130_the_archetype.html",
+    "href": "https://classcraft.co.uk/stories/english_literature/ks3/S0130_the_archetype.html",
     "screenshot": null
   },
   {
@@ -7888,7 +7888,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Biogeochemical Cycle unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0561_the_biogeochemical_cycle.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0561_the_biogeochemical_cycle.html",
     "screenshot": null
   },
   {
@@ -7904,7 +7904,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ecological Footprint unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0562_the_ecological_footprint.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0562_the_ecological_footprint.html",
     "screenshot": null
   },
   {
@@ -7920,7 +7920,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Population Ecology unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0563_the_population_ecology.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0563_the_population_ecology.html",
     "screenshot": null
   },
   {
@@ -7936,7 +7936,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Bioaccumulation unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0564_the_bioaccumulation.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0564_the_bioaccumulation.html",
     "screenshot": null
   },
   {
@@ -7952,7 +7952,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Climate Sensitivity unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0565_the_climate_sensitivity.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0565_the_climate_sensitivity.html",
     "screenshot": null
   },
   {
@@ -7968,7 +7968,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Remediation unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0566_the_remediation.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0566_the_remediation.html",
     "screenshot": null
   },
   {
@@ -7984,7 +7984,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Biodiversity Index unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0567_the_biodiversity_index.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0567_the_biodiversity_index.html",
     "screenshot": null
   },
   {
@@ -8000,7 +8000,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Energy Transition unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0568_the_energy_transition.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0568_the_energy_transition.html",
     "screenshot": null
   },
   {
@@ -8016,7 +8016,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The International unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0569_the_international.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0569_the_international.html",
     "screenshot": null
   },
   {
@@ -8032,7 +8032,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Systems Model unfolds as a narrative challenge that tests A-Level Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/a_level/S0570_the_systems_model.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/a_level/S0570_the_systems_model.html",
     "screenshot": null
   },
   {
@@ -8048,7 +8048,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Carbon Footprint unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0551_the_carbon_footprint.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0551_the_carbon_footprint.html",
     "screenshot": null
   },
   {
@@ -8064,7 +8064,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Eutrophication unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0552_the_eutrophication.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0552_the_eutrophication.html",
     "screenshot": null
   },
   {
@@ -8080,7 +8080,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Climate Model unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0553_the_climate_model.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0553_the_climate_model.html",
     "screenshot": null
   },
   {
@@ -8096,7 +8096,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Keystone Species unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0554_the_keystone_species.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0554_the_keystone_species.html",
     "screenshot": null
   },
   {
@@ -8112,7 +8112,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sustainable City unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0555_the_sustainable_city.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0555_the_sustainable_city.html",
     "screenshot": null
   },
   {
@@ -8128,7 +8128,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Fisheries unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0556_the_fisheries.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0556_the_fisheries.html",
     "screenshot": null
   },
   {
@@ -8144,7 +8144,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Energy Mix unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0557_the_energy_mix.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0557_the_energy_mix.html",
     "screenshot": null
   },
   {
@@ -8160,7 +8160,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ecosystem Service unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0558_the_ecosystem_service.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0558_the_ecosystem_service.html",
     "screenshot": null
   },
   {
@@ -8176,7 +8176,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Pollution Legislation unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0559_the_pollution_legislation.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0559_the_pollution_legislation.html",
     "screenshot": null
   },
   {
@@ -8192,7 +8192,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ipcc Report unfolds as a narrative challenge that tests GCSE Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/gcse/S0560_the_ipcc_report.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/gcse/S0560_the_ipcc_report.html",
     "screenshot": null
   },
   {
@@ -8208,7 +8208,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Carbon Cycle unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0541_the_carbon_cycle.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0541_the_carbon_cycle.html",
     "screenshot": null
   },
   {
@@ -8224,7 +8224,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Biodiversity Threat unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0542_the_biodiversity_threat.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0542_the_biodiversity_threat.html",
     "screenshot": null
   },
   {
@@ -8240,7 +8240,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Pollution Source unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0543_the_pollution_source.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0543_the_pollution_source.html",
     "screenshot": null
   },
   {
@@ -8256,7 +8256,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Water Cycle unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0544_the_water_cycle.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0544_the_water_cycle.html",
     "screenshot": null
   },
   {
@@ -8272,7 +8272,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Renewable unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0545_the_renewable.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0545_the_renewable.html",
     "screenshot": null
   },
   {
@@ -8288,7 +8288,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Plastic Odyssey unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0546_the_plastic_odyssey.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0546_the_plastic_odyssey.html",
     "screenshot": null
   },
   {
@@ -8304,7 +8304,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Food Chain Energy unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0547_the_food_chain_energy.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0547_the_food_chain_energy.html",
     "screenshot": null
   },
   {
@@ -8320,7 +8320,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Soil unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0548_the_soil.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0548_the_soil.html",
     "screenshot": null
   },
   {
@@ -8336,7 +8336,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Acid Rain Effect unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0549_the_acid_rain_effect.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0549_the_acid_rain_effect.html",
     "screenshot": null
   },
   {
@@ -8352,7 +8352,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Wildlife Corridor unfolds as a narrative challenge that tests KS3 Environmental Science understanding through decision-making.",
-    "href": "classcraft/stories/environmental_science/ks3/S0550_the_wildlife_corridor.html",
+    "href": "https://classcraft.co.uk/stories/environmental_science/ks3/S0550_the_wildlife_corridor.html",
     "screenshot": null
   },
   {
@@ -8368,7 +8368,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Glacial Budget unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0231_the_glacial_budget.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0231_the_glacial_budget.html",
     "screenshot": null
   },
   {
@@ -8384,7 +8384,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Erosion Model unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0232_the_erosion_model.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0232_the_erosion_model.html",
     "screenshot": null
   },
   {
@@ -8400,7 +8400,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gini Coefficient unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0233_the_gini_coefficient.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0233_the_gini_coefficient.html",
     "screenshot": null
   },
   {
@@ -8416,7 +8416,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Superpower Shift unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0234_the_superpower_shift.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0234_the_superpower_shift.html",
     "screenshot": null
   },
   {
@@ -8432,7 +8432,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Systems Approach unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0235_the_systems_approach.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0235_the_systems_approach.html",
     "screenshot": null
   },
   {
@@ -8448,7 +8448,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Urban Model unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0236_the_urban_model.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0236_the_urban_model.html",
     "screenshot": null
   },
   {
@@ -8464,7 +8464,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Biome Shift unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0237_the_biome_shift.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0237_the_biome_shift.html",
     "screenshot": null
   },
   {
@@ -8480,7 +8480,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Coastal Sediment unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0238_the_coastal_sediment.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0238_the_coastal_sediment.html",
     "screenshot": null
   },
   {
@@ -8496,7 +8496,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Megacity unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0239_the_megacity.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0239_the_megacity.html",
     "screenshot": null
   },
   {
@@ -8512,7 +8512,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Risk Index unfolds as a narrative challenge that tests A-Level Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/a_level/S0240_the_risk_index.html",
+    "href": "https://classcraft.co.uk/stories/geography/a_level/S0240_the_risk_index.html",
     "screenshot": null
   },
   {
@@ -8528,7 +8528,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Development Gap unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0221_the_development_gap.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0221_the_development_gap.html",
     "screenshot": null
   },
   {
@@ -8544,7 +8544,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Earthquake Response unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0222_the_earthquake_response.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0222_the_earthquake_response.html",
     "screenshot": null
   },
   {
@@ -8560,7 +8560,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Globalisation Chain unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0223_the_globalisation_chain.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0223_the_globalisation_chain.html",
     "screenshot": null
   },
   {
@@ -8576,7 +8576,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Urban Sprawl unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0224_the_urban_sprawl.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0224_the_urban_sprawl.html",
     "screenshot": null
   },
   {
@@ -8592,7 +8592,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Water Conflict unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0225_the_water_conflict.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0225_the_water_conflict.html",
     "screenshot": null
   },
   {
@@ -8608,7 +8608,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Carbon Footprint unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0226_the_carbon_footprint.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0226_the_carbon_footprint.html",
     "screenshot": null
   },
   {
@@ -8624,7 +8624,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cold Environment unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0227_the_cold_environment.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0227_the_cold_environment.html",
     "screenshot": null
   },
   {
@@ -8640,7 +8640,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Tropical Storm unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0228_the_tropical_storm.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0228_the_tropical_storm.html",
     "screenshot": null
   },
   {
@@ -8656,7 +8656,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Fieldwork Question unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0229_the_fieldwork_question.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0229_the_fieldwork_question.html",
     "screenshot": null
   },
   {
@@ -8672,7 +8672,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Demographic Transition unfolds as a narrative challenge that tests GCSE Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/gcse/S0230_the_demographic_transition.html",
+    "href": "https://classcraft.co.uk/stories/geography/gcse/S0230_the_demographic_transition.html",
     "screenshot": null
   },
   {
@@ -8688,7 +8688,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Flood Warning unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0211_the_flood_warning.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0211_the_flood_warning.html",
     "screenshot": null
   },
   {
@@ -8704,7 +8704,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Volcano Watch unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0212_the_volcano_watch.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0212_the_volcano_watch.html",
     "screenshot": null
   },
   {
@@ -8720,7 +8720,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Tectonic Shift unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0213_the_tectonic_shift.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0213_the_tectonic_shift.html",
     "screenshot": null
   },
   {
@@ -8736,7 +8736,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Urban Heat unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0214_the_urban_heat.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0214_the_urban_heat.html",
     "screenshot": null
   },
   {
@@ -8752,7 +8752,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Migration unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0215_the_migration.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0215_the_migration.html",
     "screenshot": null
   },
   {
@@ -8768,7 +8768,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The River Meander unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0216_the_river_meander.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0216_the_river_meander.html",
     "screenshot": null
   },
   {
@@ -8784,7 +8784,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Deforestation unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0217_the_deforestation.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0217_the_deforestation.html",
     "screenshot": null
   },
   {
@@ -8800,7 +8800,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Settlement Site unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0218_the_settlement_site.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0218_the_settlement_site.html",
     "screenshot": null
   },
   {
@@ -8816,7 +8816,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Climate Zone unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0219_the_climate_zone.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0219_the_climate_zone.html",
     "screenshot": null
   },
   {
@@ -8832,7 +8832,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Coastal Erosion unfolds as a narrative challenge that tests KS3 Geography understanding through decision-making.",
-    "href": "classcraft/stories/geography/ks3/S0220_the_coastal_erosion.html",
+    "href": "https://classcraft.co.uk/stories/geography/ks3/S0220_the_coastal_erosion.html",
     "screenshot": null
   },
   {
@@ -8848,7 +8848,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Blank Cheque unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0201_the_blank_cheque.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0201_the_blank_cheque.html",
     "screenshot": null
   },
   {
@@ -8864,7 +8864,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Intentionalism Debate unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0202_the_intentionalism_debate.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0202_the_intentionalism_debate.html",
     "screenshot": null
   },
   {
@@ -8880,7 +8880,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The New Deal unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0203_the_new_deal.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0203_the_new_deal.html",
     "screenshot": null
   },
   {
@@ -8896,7 +8896,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Marshall Plan unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0204_the_marshall_plan.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0204_the_marshall_plan.html",
     "screenshot": null
   },
   {
@@ -8912,7 +8912,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Suez Crisis unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0205_the_suez_crisis.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0205_the_suez_crisis.html",
     "screenshot": null
   },
   {
@@ -8928,7 +8928,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cultural Revolution unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0206_the_cultural_revolution.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0206_the_cultural_revolution.html",
     "screenshot": null
   },
   {
@@ -8944,7 +8944,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Revisionism unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0207_the_revisionism.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0207_the_revisionism.html",
     "screenshot": null
   },
   {
@@ -8960,7 +8960,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Genocide Question unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0208_the_genocide_question.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0208_the_genocide_question.html",
     "screenshot": null
   },
   {
@@ -8976,7 +8976,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Source Problem unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0209_the_source_problem.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0209_the_source_problem.html",
     "screenshot": null
   },
   {
@@ -8992,7 +8992,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Counterfactual unfolds as a narrative challenge that tests A-Level History understanding through decision-making.",
-    "href": "classcraft/stories/history/a_level/S0210_the_counterfactual.html",
+    "href": "https://classcraft.co.uk/stories/history/a_level/S0210_the_counterfactual.html",
     "screenshot": null
   },
   {
@@ -9008,7 +9008,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Appeasement unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0191_the_appeasement.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0191_the_appeasement.html",
     "screenshot": null
   },
   {
@@ -9024,7 +9024,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Reichstag Fire unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0192_the_reichstag_fire.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0192_the_reichstag_fire.html",
     "screenshot": null
   },
   {
@@ -9040,7 +9040,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cuban Missile unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0193_the_cuban_missile.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0193_the_cuban_missile.html",
     "screenshot": null
   },
   {
@@ -9056,7 +9056,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Weimar Inflation unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0194_the_weimar_inflation.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0194_the_weimar_inflation.html",
     "screenshot": null
   },
   {
@@ -9072,7 +9072,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Treaty Verdict unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0195_the_treaty_verdict.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0195_the_treaty_verdict.html",
     "screenshot": null
   },
   {
@@ -9088,7 +9088,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Conscientious Objector unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0196_the_conscientious_objector.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0196_the_conscientious_objector.html",
     "screenshot": null
   },
   {
@@ -9104,7 +9104,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Civil Rights March unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0197_the_civil_rights_march.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0197_the_civil_rights_march.html",
     "screenshot": null
   },
   {
@@ -9120,7 +9120,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Collectivisation unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0198_the_collectivisation.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0198_the_collectivisation.html",
     "screenshot": null
   },
   {
@@ -9136,7 +9136,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The D Day Decision unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0199_the_d_day_decision.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0199_the_d_day_decision.html",
     "screenshot": null
   },
   {
@@ -9152,7 +9152,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Partition unfolds as a narrative challenge that tests GCSE History understanding through decision-making.",
-    "href": "classcraft/stories/history/gcse/S0200_the_partition.html",
+    "href": "https://classcraft.co.uk/stories/history/gcse/S0200_the_partition.html",
     "screenshot": null
   },
   {
@@ -9168,7 +9168,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Choice unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0181_the_choice.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0181_the_choice.html",
     "screenshot": null
   },
   {
@@ -9184,7 +9184,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Plague Doctor unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0182_the_plague_doctor.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0182_the_plague_doctor.html",
     "screenshot": null
   },
   {
@@ -9200,7 +9200,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Magna Carta Moment unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0183_the_magna_carta_moment.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0183_the_magna_carta_moment.html",
     "screenshot": null
   },
   {
@@ -9216,7 +9216,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Trench unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0184_the_trench.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0184_the_trench.html",
     "screenshot": null
   },
   {
@@ -9232,7 +9232,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Slavery Ship unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0185_the_slavery_ship.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0185_the_slavery_ship.html",
     "screenshot": null
   },
   {
@@ -9248,7 +9248,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gunpowder Plot unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0186_the_gunpowder_plot.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0186_the_gunpowder_plot.html",
     "screenshot": null
   },
   {
@@ -9264,7 +9264,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Reformation unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0187_the_reformation.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0187_the_reformation.html",
     "screenshot": null
   },
   {
@@ -9280,7 +9280,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Empire Builder unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0188_the_empire_builder.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0188_the_empire_builder.html",
     "screenshot": null
   },
   {
@@ -9296,7 +9296,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Industrial Worker unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0189_the_industrial_worker.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0189_the_industrial_worker.html",
     "screenshot": null
   },
   {
@@ -9312,7 +9312,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Suffragette unfolds as a narrative challenge that tests KS3 History understanding through decision-making.",
-    "href": "classcraft/stories/history/ks3/S0190_the_suffragette.html",
+    "href": "https://classcraft.co.uk/stories/history/ks3/S0190_the_suffragette.html",
     "screenshot": null
   },
   {
@@ -9328,7 +9328,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0111 The Integral Mission unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0111_the_integral_mission.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0111_the_integral_mission.html",
     "screenshot": null
   },
   {
@@ -9344,7 +9344,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0112 The Differential Equation unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0112_the_differential_equation.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0112_the_differential_equation.html",
     "screenshot": null
   },
   {
@@ -9360,7 +9360,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0113 The Binomial Bomb unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0113_the_binomial_bomb.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0113_the_binomial_bomb.html",
     "screenshot": null
   },
   {
@@ -9376,7 +9376,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0114 The Normal Agent unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0114_the_normal_agent.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0114_the_normal_agent.html",
     "screenshot": null
   },
   {
@@ -9392,7 +9392,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0115 The Hypothesis Test unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0115_the_hypothesis_test.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0115_the_hypothesis_test.html",
     "screenshot": null
   },
   {
@@ -9408,7 +9408,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0116 The Complex Circuit unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0116_the_complex_circuit.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0116_the_complex_circuit.html",
     "screenshot": null
   },
   {
@@ -9424,7 +9424,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0117 The Proof unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0117_the_proof.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0117_the_proof.html",
     "screenshot": null
   },
   {
@@ -9440,7 +9440,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0118 The Parametric Path unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0118_the_parametric_path.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0118_the_parametric_path.html",
     "screenshot": null
   },
   {
@@ -9456,7 +9456,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0119 The Series Signal unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0119_the_series_signal.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0119_the_series_signal.html",
     "screenshot": null
   },
   {
@@ -9472,7 +9472,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. S0120 The Vector Plane unfolds as a narrative challenge that tests A-Level Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/a_level/s0120_the_vector_plane.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/a_level/s0120_the_vector_plane.html",
     "screenshot": null
   },
   {
@@ -9488,7 +9488,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Heist Angle unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0101_the_heist_angle.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0101_the_heist_angle.html",
     "screenshot": null
   },
   {
@@ -9504,7 +9504,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Drone Path unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0102_the_drone_path.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0102_the_drone_path.html",
     "screenshot": null
   },
   {
@@ -9520,7 +9520,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Graph Intercept unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0103_the_graph_intercept.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0103_the_graph_intercept.html",
     "screenshot": null
   },
   {
@@ -9536,7 +9536,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Growth Curve unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0104_the_growth_curve.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0104_the_growth_curve.html",
     "screenshot": null
   },
   {
@@ -9552,7 +9552,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Histogram Clue unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0105_the_histogram_clue.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0105_the_histogram_clue.html",
     "screenshot": null
   },
   {
@@ -9568,7 +9568,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Circle Vault unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0106_the_circle_vault.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0106_the_circle_vault.html",
     "screenshot": null
   },
   {
@@ -9584,7 +9584,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Quadratic Trap unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0107_the_quadratic_trap.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0107_the_quadratic_trap.html",
     "screenshot": null
   },
   {
@@ -9600,7 +9600,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Transformation unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0108_the_transformation.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0108_the_transformation.html",
     "screenshot": null
   },
   {
@@ -9616,7 +9616,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gradient Mission unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0109_the_gradient_mission.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0109_the_gradient_mission.html",
     "screenshot": null
   },
   {
@@ -9632,7 +9632,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Outlier unfolds as a narrative challenge that tests GCSE Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/gcse/S0110_the_outlier.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/gcse/S0110_the_outlier.html",
     "screenshot": null
   },
   {
@@ -9648,7 +9648,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Bridge Engineer unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0091_the_bridge_engineer.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0091_the_bridge_engineer.html",
     "screenshot": null
   },
   {
@@ -9664,7 +9664,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Code Cracker unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0092_the_code_cracker.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0092_the_code_cracker.html",
     "screenshot": null
   },
   {
@@ -9680,7 +9680,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Navigator unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0093_the_navigator.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0093_the_navigator.html",
     "screenshot": null
   },
   {
@@ -9696,7 +9696,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Tax Collector unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0094_the_tax_collector.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0094_the_tax_collector.html",
     "screenshot": null
   },
   {
@@ -9712,7 +9712,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Map Maker unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0095_the_map_maker.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0095_the_map_maker.html",
     "screenshot": null
   },
   {
@@ -9728,7 +9728,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Treasure Share unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0096_the_treasure_share.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0096_the_treasure_share.html",
     "screenshot": null
   },
   {
@@ -9744,7 +9744,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Angle Of Attack unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0097_the_angle_of_attack.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0097_the_angle_of_attack.html",
     "screenshot": null
   },
   {
@@ -9760,7 +9760,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Symmetry Vault unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0098_the_symmetry_vault.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0098_the_symmetry_vault.html",
     "screenshot": null
   },
   {
@@ -9776,7 +9776,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Dice Game unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0099_the_dice_game.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0099_the_dice_game.html",
     "screenshot": null
   },
   {
@@ -9792,7 +9792,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Missing Measurement unfolds as a narrative challenge that tests KS3 Mathematics understanding through decision-making.",
-    "href": "classcraft/stories/mathematics/ks3/S0100_the_missing_measurement.html",
+    "href": "https://classcraft.co.uk/stories/mathematics/ks3/S0100_the_missing_measurement.html",
     "screenshot": null
   },
   {
@@ -9808,7 +9808,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Counterpoint unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0411_the_counterpoint.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0411_the_counterpoint.html",
     "screenshot": null
   },
   {
@@ -9824,7 +9824,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Figured Bass unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0412_the_figured_bass.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0412_the_figured_bass.html",
     "screenshot": null
   },
   {
@@ -9840,7 +9840,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Serial Technique unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0413_the_serial_technique.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0413_the_serial_technique.html",
     "screenshot": null
   },
   {
@@ -9856,7 +9856,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Analysis unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0414_the_analysis.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0414_the_analysis.html",
     "screenshot": null
   },
   {
@@ -9872,7 +9872,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ethnomusicology unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0415_the_ethnomusicology.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0415_the_ethnomusicology.html",
     "screenshot": null
   },
   {
@@ -9888,7 +9888,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Spectralism unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0416_the_spectralism.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0416_the_spectralism.html",
     "screenshot": null
   },
   {
@@ -9904,7 +9904,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Critical Essay unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0417_the_critical_essay.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0417_the_critical_essay.html",
     "screenshot": null
   },
   {
@@ -9920,7 +9920,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Modal Jazz unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0418_the_modal_jazz.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0418_the_modal_jazz.html",
     "screenshot": null
   },
   {
@@ -9936,7 +9936,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Minimalism unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0419_the_minimalism.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0419_the_minimalism.html",
     "screenshot": null
   },
   {
@@ -9952,7 +9952,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Notation System unfolds as a narrative challenge that tests A-Level Music understanding through decision-making.",
-    "href": "classcraft/stories/music/a_level/S0420_the_notation_system.html",
+    "href": "https://classcraft.co.uk/stories/music/a_level/S0420_the_notation_system.html",
     "screenshot": null
   },
   {
@@ -9968,7 +9968,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Harmony unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0401_the_harmony.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0401_the_harmony.html",
     "screenshot": null
   },
   {
@@ -9984,7 +9984,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Score Reading unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0402_the_score_reading.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0402_the_score_reading.html",
     "screenshot": null
   },
   {
@@ -10000,7 +10000,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Modulation unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0403_the_modulation.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0403_the_modulation.html",
     "screenshot": null
   },
   {
@@ -10016,7 +10016,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Performance unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0404_the_performance.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0404_the_performance.html",
     "screenshot": null
   },
   {
@@ -10032,7 +10032,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Technology unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0405_the_technology.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0405_the_technology.html",
     "screenshot": null
   },
   {
@@ -10048,7 +10048,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The World Music unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0406_the_world_music.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0406_the_world_music.html",
     "screenshot": null
   },
   {
@@ -10064,7 +10064,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Composition Brief unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0407_the_composition_brief.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0407_the_composition_brief.html",
     "screenshot": null
   },
   {
@@ -10080,7 +10080,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Listening Test unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0408_the_listening_test.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0408_the_listening_test.html",
     "screenshot": null
   },
   {
@@ -10096,7 +10096,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Interval unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0409_the_interval.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0409_the_interval.html",
     "screenshot": null
   },
   {
@@ -10112,7 +10112,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Bass Line unfolds as a narrative challenge that tests GCSE Music understanding through decision-making.",
-    "href": "classcraft/stories/music/gcse/S0410_the_bass_line.html",
+    "href": "https://classcraft.co.uk/stories/music/gcse/S0410_the_bass_line.html",
     "screenshot": null
   },
   {
@@ -10128,7 +10128,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Rhythm Trap unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0391_the_rhythm_trap.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0391_the_rhythm_trap.html",
     "screenshot": null
   },
   {
@@ -10144,7 +10144,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Chord Change unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0392_the_chord_change.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0392_the_chord_change.html",
     "screenshot": null
   },
   {
@@ -10160,7 +10160,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Melody Spy unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0393_the_melody_spy.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0393_the_melody_spy.html",
     "screenshot": null
   },
   {
@@ -10176,7 +10176,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Dynamics unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0394_the_dynamics.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0394_the_dynamics.html",
     "screenshot": null
   },
   {
@@ -10192,7 +10192,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Structure unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0395_the_structure.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0395_the_structure.html",
     "screenshot": null
   },
   {
@@ -10208,7 +10208,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Instrument unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0396_the_instrument.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0396_the_instrument.html",
     "screenshot": null
   },
   {
@@ -10224,7 +10224,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Texture unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0397_the_texture.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0397_the_texture.html",
     "screenshot": null
   },
   {
@@ -10240,7 +10240,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Note Value unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0398_the_note_value.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0398_the_note_value.html",
     "screenshot": null
   },
   {
@@ -10256,7 +10256,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Key Signature unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0399_the_key_signature.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0399_the_key_signature.html",
     "screenshot": null
   },
   {
@@ -10272,7 +10272,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Genre unfolds as a narrative challenge that tests KS3 Music understanding through decision-making.",
-    "href": "classcraft/stories/music/ks3/S0400_the_genre.html",
+    "href": "https://classcraft.co.uk/stories/music/ks3/S0400_the_genre.html",
     "screenshot": null
   },
   {
@@ -10288,7 +10288,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Lactate Threshold unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0441_the_lactate_threshold.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0441_the_lactate_threshold.html",
     "screenshot": null
   },
   {
@@ -10304,7 +10304,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Force Velocity unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0442_the_force_velocity.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0442_the_force_velocity.html",
     "screenshot": null
   },
   {
@@ -10320,7 +10320,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Periodisation unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0443_the_periodisation.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0443_the_periodisation.html",
     "screenshot": null
   },
   {
@@ -10336,7 +10336,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Motor Programme unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0444_the_motor_programme.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0444_the_motor_programme.html",
     "screenshot": null
   },
   {
@@ -10352,7 +10352,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Respiratory Exchange unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0445_the_respiratory_exchange.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0445_the_respiratory_exchange.html",
     "screenshot": null
   },
   {
@@ -10368,7 +10368,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Blood Doping unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0446_the_blood_doping.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0446_the_blood_doping.html",
     "screenshot": null
   },
   {
@@ -10384,7 +10384,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Anxiety Type unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0447_the_anxiety_type.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0447_the_anxiety_type.html",
     "screenshot": null
   },
   {
@@ -10400,7 +10400,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Kinematic Analysis unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0448_the_kinematic_analysis.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0448_the_kinematic_analysis.html",
     "screenshot": null
   },
   {
@@ -10416,7 +10416,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Altitude Training unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0449_the_altitude_training.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0449_the_altitude_training.html",
     "screenshot": null
   },
   {
@@ -10432,7 +10432,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Group Dynamics unfolds as a narrative challenge that tests A-Level PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/a_level/S0450_the_group_dynamics.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/a_level/S0450_the_group_dynamics.html",
     "screenshot": null
   },
   {
@@ -10448,7 +10448,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Vo2 Max unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0431_the_vo2_max.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0431_the_vo2_max.html",
     "screenshot": null
   },
   {
@@ -10464,7 +10464,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cardiac Output unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0432_the_cardiac_output.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0432_the_cardiac_output.html",
     "screenshot": null
   },
   {
@@ -10480,7 +10480,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Somatotype unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0433_the_somatotype.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0433_the_somatotype.html",
     "screenshot": null
   },
   {
@@ -10496,7 +10496,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Injury Rehab unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0434_the_injury_rehab.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0434_the_injury_rehab.html",
     "screenshot": null
   },
   {
@@ -10512,7 +10512,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Anaerobic System unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0435_the_anaerobic_system.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0435_the_anaerobic_system.html",
     "screenshot": null
   },
   {
@@ -10528,7 +10528,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Arousal unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0436_the_arousal.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0436_the_arousal.html",
     "screenshot": null
   },
   {
@@ -10544,7 +10544,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Feedback unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0437_the_feedback.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0437_the_feedback.html",
     "screenshot": null
   },
   {
@@ -10560,7 +10560,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Lever Calculation unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0438_the_lever_calculation.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0438_the_lever_calculation.html",
     "screenshot": null
   },
   {
@@ -10576,7 +10576,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Diet Plan unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0439_the_diet_plan.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0439_the_diet_plan.html",
     "screenshot": null
   },
   {
@@ -10592,7 +10592,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Psychological Skills unfolds as a narrative challenge that tests GCSE PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/gcse/S0440_the_psychological_skills.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/gcse/S0440_the_psychological_skills.html",
     "screenshot": null
   },
   {
@@ -10608,7 +10608,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sprint Test unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0421_the_sprint_test.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0421_the_sprint_test.html",
     "screenshot": null
   },
   {
@@ -10624,7 +10624,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Heart Rate Zone unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0422_the_heart_rate_zone.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0422_the_heart_rate_zone.html",
     "screenshot": null
   },
   {
@@ -10640,7 +10640,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Team Tactics unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0423_the_team_tactics.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0423_the_team_tactics.html",
     "screenshot": null
   },
   {
@@ -10656,7 +10656,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Muscle Group unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0424_the_muscle_group.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0424_the_muscle_group.html",
     "screenshot": null
   },
   {
@@ -10672,7 +10672,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Warm Up unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0425_the_warm_up.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0425_the_warm_up.html",
     "screenshot": null
   },
   {
@@ -10688,7 +10688,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Nutrition unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0426_the_nutrition.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0426_the_nutrition.html",
     "screenshot": null
   },
   {
@@ -10704,7 +10704,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Balance unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0427_the_balance.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0427_the_balance.html",
     "screenshot": null
   },
   {
@@ -10720,7 +10720,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Skill Acquisition unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0428_the_skill_acquisition.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0428_the_skill_acquisition.html",
     "screenshot": null
   },
   {
@@ -10736,7 +10736,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Lever System unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0429_the_lever_system.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0429_the_lever_system.html",
     "screenshot": null
   },
   {
@@ -10752,7 +10752,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Training Method unfolds as a narrative challenge that tests KS3 PE & Sport Science understanding through decision-making.",
-    "href": "classcraft/stories/pe_sport_science/ks3/S0430_the_training_method.html",
+    "href": "https://classcraft.co.uk/stories/pe_sport_science/ks3/S0430_the_training_method.html",
     "screenshot": null
   },
   {
@@ -10768,7 +10768,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gravity Assist unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0021_the_gravity_assist.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0021_the_gravity_assist.html",
     "screenshot": null
   },
   {
@@ -10784,7 +10784,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Fusion Reactor unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0022_the_fusion_reactor.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0022_the_fusion_reactor.html",
     "screenshot": null
   },
   {
@@ -10800,7 +10800,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Capacitor Bomb unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0023_the_capacitor_bomb.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0023_the_capacitor_bomb.html",
     "screenshot": null
   },
   {
@@ -10816,7 +10816,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Quantum Detector unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0024_the_quantum_detector.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0024_the_quantum_detector.html",
     "screenshot": null
   },
   {
@@ -10832,7 +10832,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Orbital Decay unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0025_the_orbital_decay.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0025_the_orbital_decay.html",
     "screenshot": null
   },
   {
@@ -10848,7 +10848,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Dark Matter Signal unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0026_the_dark_matter_signal.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0026_the_dark_matter_signal.html",
     "screenshot": null
   },
   {
@@ -10864,7 +10864,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Superconductor Heist unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0027_the_superconductor_heist.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0027_the_superconductor_heist.html",
     "screenshot": null
   },
   {
@@ -10880,7 +10880,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Neutron Star unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0028_the_neutron_star.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0028_the_neutron_star.html",
     "screenshot": null
   },
   {
@@ -10896,7 +10896,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Shm Detonator unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0029_the_shm_detonator.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0029_the_shm_detonator.html",
     "screenshot": null
   },
   {
@@ -10912,7 +10912,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Plasma Cutter unfolds as a narrative challenge that tests A-Level Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/a_level/S0030_the_plasma_cutter.html",
+    "href": "https://classcraft.co.uk/stories/physics/a_level/S0030_the_plasma_cutter.html",
     "screenshot": null
   },
   {
@@ -10928,7 +10928,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Runaway Train unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0011_the_runaway_train.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0011_the_runaway_train.html",
     "screenshot": null
   },
   {
@@ -10944,7 +10944,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Blackout unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0012_the_blackout.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0012_the_blackout.html",
     "screenshot": null
   },
   {
@@ -10960,7 +10960,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Sniper S Angle unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0013_the_sniper_s_angle.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0013_the_sniper_s_angle.html",
     "screenshot": null
   },
   {
@@ -10976,7 +10976,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Decoy Transmitter unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0014_the_decoy_transmitter.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0014_the_decoy_transmitter.html",
     "screenshot": null
   },
   {
@@ -10992,7 +10992,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Radiation Leak unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0015_the_radiation_leak.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0015_the_radiation_leak.html",
     "screenshot": null
   },
   {
@@ -11008,7 +11008,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Magnetic Lock unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0016_the_magnetic_lock.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0016_the_magnetic_lock.html",
     "screenshot": null
   },
   {
@@ -11024,7 +11024,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Underwater Cable unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0017_the_underwater_cable.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0017_the_underwater_cable.html",
     "screenshot": null
   },
   {
@@ -11040,7 +11040,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Speeding Bullet unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0018_the_speeding_bullet.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0018_the_speeding_bullet.html",
     "screenshot": null
   },
   {
@@ -11056,7 +11056,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Heat Shield unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0019_the_heat_shield.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0019_the_heat_shield.html",
     "screenshot": null
   },
   {
@@ -11072,7 +11072,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Laser Tripwire unfolds as a narrative challenge that tests GCSE Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/gcse/S0020_the_laser_tripwire.html",
+    "href": "https://classcraft.co.uk/stories/physics/gcse/S0020_the_laser_tripwire.html",
     "screenshot": null
   },
   {
@@ -11088,7 +11088,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Spy Meet unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0001_the_spy_meet.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0001_the_spy_meet.html",
     "screenshot": null
   },
   {
@@ -11104,7 +11104,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Escape Artist unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0002_the_escape_artist.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0002_the_escape_artist.html",
     "screenshot": null
   },
   {
@@ -11120,7 +11120,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Lighthouse Keeper unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0003_the_lighthouse_keeper.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0003_the_lighthouse_keeper.html",
     "screenshot": null
   },
   {
@@ -11136,7 +11136,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Circuit Saboteur unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0004_the_circuit_saboteur.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0004_the_circuit_saboteur.html",
     "screenshot": null
   },
   {
@@ -11152,7 +11152,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Slingshot unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0005_the_slingshot.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0005_the_slingshot.html",
     "screenshot": null
   },
   {
@@ -11168,7 +11168,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Submarine Sonar unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0006_the_submarine_sonar.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0006_the_submarine_sonar.html",
     "screenshot": null
   },
   {
@@ -11184,7 +11184,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Frozen River unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0007_the_frozen_river.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0007_the_frozen_river.html",
     "screenshot": null
   },
   {
@@ -11200,7 +11200,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Hot Air Balloon unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0008_the_hot_air_balloon.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0008_the_hot_air_balloon.html",
     "screenshot": null
   },
   {
@@ -11216,7 +11216,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Earthquake Monitor unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0009_the_earthquake_monitor.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0009_the_earthquake_monitor.html",
     "screenshot": null
   },
   {
@@ -11232,7 +11232,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Mirror Signal unfolds as a narrative challenge that tests KS3 Physics understanding through decision-making.",
-    "href": "classcraft/stories/physics/ks3/S0010_the_mirror_signal.html",
+    "href": "https://classcraft.co.uk/stories/physics/ks3/S0010_the_mirror_signal.html",
     "screenshot": null
   },
   {
@@ -11248,7 +11248,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Replication Crisis unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0261_the_replication_crisis.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0261_the_replication_crisis.html",
     "screenshot": null
   },
   {
@@ -11264,7 +11264,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Psychopathology unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0262_the_psychopathology.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0262_the_psychopathology.html",
     "screenshot": null
   },
   {
@@ -11280,7 +11280,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Schizophrenia Evidence unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0263_the_schizophrenia_evidence.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0263_the_schizophrenia_evidence.html",
     "screenshot": null
   },
   {
@@ -11296,7 +11296,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Depression Dilemma unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0264_the_depression_dilemma.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0264_the_depression_dilemma.html",
     "screenshot": null
   },
   {
@@ -11312,7 +11312,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gender Debate unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0265_the_gender_debate.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0265_the_gender_debate.html",
     "screenshot": null
   },
   {
@@ -11328,7 +11328,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Addiction Model unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0266_the_addiction_model.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0266_the_addiction_model.html",
     "screenshot": null
   },
   {
@@ -11344,7 +11344,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Forensic Profile unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0267_the_forensic_profile.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0267_the_forensic_profile.html",
     "screenshot": null
   },
   {
@@ -11360,7 +11360,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Iq Controversy unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0268_the_iq_controversy.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0268_the_iq_controversy.html",
     "screenshot": null
   },
   {
@@ -11376,7 +11376,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Evolutionary Fit unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0269_the_evolutionary_fit.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0269_the_evolutionary_fit.html",
     "screenshot": null
   },
   {
@@ -11392,7 +11392,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ethical Board unfolds as a narrative challenge that tests A-Level Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/a_level/S0270_the_ethical_board.html",
+    "href": "https://classcraft.co.uk/stories/psychology/a_level/S0270_the_ethical_board.html",
     "screenshot": null
   },
   {
@@ -11408,7 +11408,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Obedience Study unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0251_the_obedience_study.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0251_the_obedience_study.html",
     "screenshot": null
   },
   {
@@ -11424,7 +11424,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Minority Influence unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0252_the_minority_influence.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0252_the_minority_influence.html",
     "screenshot": null
   },
   {
@@ -11440,7 +11440,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Eyewitness unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0253_the_eyewitness.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0253_the_eyewitness.html",
     "screenshot": null
   },
   {
@@ -11456,7 +11456,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Diagnosis unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0254_the_diagnosis.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0254_the_diagnosis.html",
     "screenshot": null
   },
   {
@@ -11472,7 +11472,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Experiment Design unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0255_the_experiment_design.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0255_the_experiment_design.html",
     "screenshot": null
   },
   {
@@ -11488,7 +11488,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Aggression Study unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0256_the_aggression_study.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0256_the_aggression_study.html",
     "screenshot": null
   },
   {
@@ -11504,7 +11504,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Stress At Work unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0257_the_stress_at_work.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0257_the_stress_at_work.html",
     "screenshot": null
   },
   {
@@ -11520,7 +11520,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Brain Scan unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0258_the_brain_scan.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0258_the_brain_scan.html",
     "screenshot": null
   },
   {
@@ -11536,7 +11536,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Developmental Stage unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0259_the_developmental_stage.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0259_the_developmental_stage.html",
     "screenshot": null
   },
   {
@@ -11552,7 +11552,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Therapy Choice unfolds as a narrative challenge that tests GCSE Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/gcse/S0260_the_therapy_choice.html",
+    "href": "https://classcraft.co.uk/stories/psychology/gcse/S0260_the_therapy_choice.html",
     "screenshot": null
   },
   {
@@ -11568,7 +11568,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Memory Lab unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0241_the_memory_lab.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0241_the_memory_lab.html",
     "screenshot": null
   },
   {
@@ -11584,7 +11584,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Crowd Effect unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0242_the_crowd_effect.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0242_the_crowd_effect.html",
     "screenshot": null
   },
   {
@@ -11600,7 +11600,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Dream Decoder unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0243_the_dream_decoder.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0243_the_dream_decoder.html",
     "screenshot": null
   },
   {
@@ -11616,7 +11616,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Phobia Trap unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0244_the_phobia_trap.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0244_the_phobia_trap.html",
     "screenshot": null
   },
   {
@@ -11632,7 +11632,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Reward System unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0245_the_reward_system.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0245_the_reward_system.html",
     "screenshot": null
   },
   {
@@ -11648,7 +11648,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Mirror Test unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0246_the_mirror_test.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0246_the_mirror_test.html",
     "screenshot": null
   },
   {
@@ -11664,7 +11664,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Stress Response unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0247_the_stress_response.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0247_the_stress_response.html",
     "screenshot": null
   },
   {
@@ -11680,7 +11680,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Perception Puzzle unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0248_the_perception_puzzle.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0248_the_perception_puzzle.html",
     "screenshot": null
   },
   {
@@ -11696,7 +11696,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Attachment Study unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0249_the_attachment_study.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0249_the_attachment_study.html",
     "screenshot": null
   },
   {
@@ -11712,7 +11712,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Emotion Map unfolds as a narrative challenge that tests KS3 Psychology understanding through decision-making.",
-    "href": "classcraft/stories/psychology/ks3/S0250_the_emotion_map.html",
+    "href": "https://classcraft.co.uk/stories/psychology/ks3/S0250_the_emotion_map.html",
     "screenshot": null
   },
   {
@@ -11728,7 +11728,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ontological unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0471_the_ontological.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0471_the_ontological.html",
     "screenshot": null
   },
   {
@@ -11744,7 +11744,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Verification Principle unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0472_the_verification_principle.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0472_the_verification_principle.html",
     "screenshot": null
   },
   {
@@ -11760,7 +11760,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Soul unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0473_the_soul.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0473_the_soul.html",
     "screenshot": null
   },
   {
@@ -11776,7 +11776,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Virtue Ethics unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0474_the_virtue_ethics.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0474_the_virtue_ethics.html",
     "screenshot": null
   },
   {
@@ -11792,7 +11792,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Utilitarianism unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0475_the_utilitarianism.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0475_the_utilitarianism.html",
     "screenshot": null
   },
   {
@@ -11808,7 +11808,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Natural Law unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0476_the_natural_law.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0476_the_natural_law.html",
     "screenshot": null
   },
   {
@@ -11824,7 +11824,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Free Will unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0477_the_free_will.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0477_the_free_will.html",
     "screenshot": null
   },
   {
@@ -11840,7 +11840,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Myth unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0478_the_myth.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0478_the_myth.html",
     "screenshot": null
   },
   {
@@ -11856,7 +11856,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Liberation Theology unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0479_the_liberation_theology.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0479_the_liberation_theology.html",
     "screenshot": null
   },
   {
@@ -11872,7 +11872,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Eschatology unfolds as a narrative challenge that tests A-Level Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/a_level/S0480_the_eschatology.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/a_level/S0480_the_eschatology.html",
     "screenshot": null
   },
   {
@@ -11888,7 +11888,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Abortion Debate unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0461_the_abortion_debate.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0461_the_abortion_debate.html",
     "screenshot": null
   },
   {
@@ -11904,7 +11904,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Capital Punishment unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0462_the_capital_punishment.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0462_the_capital_punishment.html",
     "screenshot": null
   },
   {
@@ -11920,7 +11920,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Euthanasia Question unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0463_the_euthanasia_question.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0463_the_euthanasia_question.html",
     "screenshot": null
   },
   {
@@ -11936,7 +11936,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Environmental Duty unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0464_the_environmental_duty.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0464_the_environmental_duty.html",
     "screenshot": null
   },
   {
@@ -11952,7 +11952,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Prejudice unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0465_the_prejudice.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0465_the_prejudice.html",
     "screenshot": null
   },
   {
@@ -11968,7 +11968,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Poverty Response unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0466_the_poverty_response.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0466_the_poverty_response.html",
     "screenshot": null
   },
   {
@@ -11984,7 +11984,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Interfaith Dialogue unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0467_the_interfaith_dialogue.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0467_the_interfaith_dialogue.html",
     "screenshot": null
   },
   {
@@ -12000,7 +12000,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Cosmological Argument unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0468_the_cosmological_argument.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0468_the_cosmological_argument.html",
     "screenshot": null
   },
   {
@@ -12016,7 +12016,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Design Argument unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0469_the_design_argument.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0469_the_design_argument.html",
     "screenshot": null
   },
   {
@@ -12032,7 +12032,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Religious Experience unfolds as a narrative challenge that tests GCSE Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/gcse/S0470_the_religious_experience.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/gcse/S0470_the_religious_experience.html",
     "screenshot": null
   },
   {
@@ -12048,7 +12048,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Creation Debate unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0451_the_creation_debate.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0451_the_creation_debate.html",
     "screenshot": null
   },
   {
@@ -12064,7 +12064,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Charity Mission unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0452_the_charity_mission.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0452_the_charity_mission.html",
     "screenshot": null
   },
   {
@@ -12080,7 +12080,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Just War unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0453_the_just_war.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0453_the_just_war.html",
     "screenshot": null
   },
   {
@@ -12096,7 +12096,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Afterlife unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0454_the_afterlife.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0454_the_afterlife.html",
     "screenshot": null
   },
   {
@@ -12112,7 +12112,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Moral Dilemma unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0455_the_moral_dilemma.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0455_the_moral_dilemma.html",
     "screenshot": null
   },
   {
@@ -12128,7 +12128,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Holy Text unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0456_the_holy_text.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0456_the_holy_text.html",
     "screenshot": null
   },
   {
@@ -12144,7 +12144,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Rite Of Passage unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0457_the_rite_of_passage.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0457_the_rite_of_passage.html",
     "screenshot": null
   },
   {
@@ -12160,7 +12160,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Evil Problem unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0458_the_evil_problem.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0458_the_evil_problem.html",
     "screenshot": null
   },
   {
@@ -12176,7 +12176,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Pilgrimage unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0459_the_pilgrimage.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0459_the_pilgrimage.html",
     "screenshot": null
   },
   {
@@ -12192,7 +12192,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gender Equality unfolds as a narrative challenge that tests KS3 Religious Studies understanding through decision-making.",
-    "href": "classcraft/stories/religious_studies/ks3/S0460_the_gender_equality.html",
+    "href": "https://classcraft.co.uk/stories/religious_studies/ks3/S0460_the_gender_equality.html",
     "screenshot": null
   },
   {
@@ -12208,7 +12208,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Structure Vs Agency unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0501_the_structure_vs_agency.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0501_the_structure_vs_agency.html",
     "screenshot": null
   },
   {
@@ -12224,7 +12224,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Postmodern Society unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0502_the_postmodern_society.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0502_the_postmodern_society.html",
     "screenshot": null
   },
   {
@@ -12240,7 +12240,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Intersectionality unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0503_the_intersectionality.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0503_the_intersectionality.html",
     "screenshot": null
   },
   {
@@ -12256,7 +12256,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Suicide Study unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0504_the_suicide_study.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0504_the_suicide_study.html",
     "screenshot": null
   },
   {
@@ -12272,7 +12272,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Power unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0505_the_power.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0505_the_power.html",
     "screenshot": null
   },
   {
@@ -12288,7 +12288,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Global Culture unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0506_the_global_culture.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0506_the_global_culture.html",
     "screenshot": null
   },
   {
@@ -12304,7 +12304,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Health Inequality unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0507_the_health_inequality.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0507_the_health_inequality.html",
     "screenshot": null
   },
   {
@@ -12320,7 +12320,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Prison unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0508_the_prison.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0508_the_prison.html",
     "screenshot": null
   },
   {
@@ -12336,7 +12336,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The New Right unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0509_the_new_right.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0509_the_new_right.html",
     "screenshot": null
   },
   {
@@ -12352,7 +12352,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Mixed Methods unfolds as a narrative challenge that tests A-Level Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/a_level/S0510_the_mixed_methods.html",
+    "href": "https://classcraft.co.uk/stories/sociology/a_level/S0510_the_mixed_methods.html",
     "screenshot": null
   },
   {
@@ -12368,7 +12368,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Functionalist School unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0491_the_functionalist_school.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0491_the_functionalist_school.html",
     "screenshot": null
   },
   {
@@ -12384,7 +12384,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Marxist View unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0492_the_marxist_view.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0492_the_marxist_view.html",
     "screenshot": null
   },
   {
@@ -12400,7 +12400,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Feminist Study unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0493_the_feminist_study.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0493_the_feminist_study.html",
     "screenshot": null
   },
   {
@@ -12416,7 +12416,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Crime Data unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0494_the_crime_data.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0494_the_crime_data.html",
     "screenshot": null
   },
   {
@@ -12432,7 +12432,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Research Method unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0495_the_research_method.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0495_the_research_method.html",
     "screenshot": null
   },
   {
@@ -12448,7 +12448,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Labelling Theory unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0496_the_labelling_theory.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0496_the_labelling_theory.html",
     "screenshot": null
   },
   {
@@ -12464,7 +12464,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Mass Media unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0497_the_mass_media.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0497_the_mass_media.html",
     "screenshot": null
   },
   {
@@ -12480,7 +12480,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Global Inequality unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0498_the_global_inequality.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0498_the_global_inequality.html",
     "screenshot": null
   },
   {
@@ -12496,7 +12496,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Religion Decline unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0499_the_religion_decline.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0499_the_religion_decline.html",
     "screenshot": null
   },
   {
@@ -12512,7 +12512,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Ethnicity unfolds as a narrative challenge that tests GCSE Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/gcse/S0500_the_ethnicity.html",
+    "href": "https://classcraft.co.uk/stories/sociology/gcse/S0500_the_ethnicity.html",
     "screenshot": null
   },
   {
@@ -12528,7 +12528,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Social Norm unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0481_the_social_norm.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0481_the_social_norm.html",
     "screenshot": null
   },
   {
@@ -12544,7 +12544,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Family Type unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0482_the_family_type.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0482_the_family_type.html",
     "screenshot": null
   },
   {
@@ -12560,7 +12560,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The School unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0483_the_school.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0483_the_school.html",
     "screenshot": null
   },
   {
@@ -12576,7 +12576,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Crime Scene unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0484_the_crime_scene.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0484_the_crime_scene.html",
     "screenshot": null
   },
   {
@@ -12592,7 +12592,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Media Effect unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0485_the_media_effect.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0485_the_media_effect.html",
     "screenshot": null
   },
   {
@@ -12608,7 +12608,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Class unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0486_the_class.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0486_the_class.html",
     "screenshot": null
   },
   {
@@ -12624,7 +12624,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Religion unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0487_the_religion.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0487_the_religion.html",
     "screenshot": null
   },
   {
@@ -12640,7 +12640,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Gender Gap unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0488_the_gender_gap.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0488_the_gender_gap.html",
     "screenshot": null
   },
   {
@@ -12656,7 +12656,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Poverty unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0489_the_poverty.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0489_the_poverty.html",
     "screenshot": null
   },
   {
@@ -12672,7 +12672,7 @@ const RESOURCES = [
     "stageDisplay": "L · Learn",
     "typeDisplay": "Roleplay Story",
     "desc": "Step into the scenario. The Identity unfolds as a narrative challenge that tests KS3 Sociology understanding through decision-making.",
-    "href": "classcraft/stories/sociology/ks3/S0490_the_identity.html",
+    "href": "https://classcraft.co.uk/stories/sociology/ks3/S0490_the_identity.html",
     "screenshot": null
   },
   {
@@ -12688,7 +12688,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A A-Level simulation challenge. AI Ethics Board puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/AI_Ethics_Board_A-level.html",
+    "href": "https://classcraft.co.uk/simulations/AI_Ethics_Board_A-level.html",
     "screenshot": null
   },
   {
@@ -12704,7 +12704,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A KS3 simulation challenge. Castle Under Siege puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Castle_Under_Siege_KS3.html",
+    "href": "https://classcraft.co.uk/simulations/Castle_Under_Siege_KS3.html",
     "screenshot": null
   },
   {
@@ -12720,7 +12720,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A A-Level simulation challenge. Climate Summit Negotiator puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Climate_Summit_Negotiator_A-level.html",
+    "href": "https://classcraft.co.uk/simulations/Climate_Summit_Negotiator_A-level.html",
     "screenshot": null
   },
   {
@@ -12736,7 +12736,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A A-Level simulation challenge. Cold War Brinkmanship puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Cold_War_Brinkmanship_A-level.html",
+    "href": "https://classcraft.co.uk/simulations/Cold_War_Brinkmanship_A-level.html",
     "screenshot": null
   },
   {
@@ -12752,7 +12752,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A KS3 simulation challenge. Community Council puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Community_Council_KS3.html",
+    "href": "https://classcraft.co.uk/simulations/Community_Council_KS3.html",
     "screenshot": null
   },
   {
@@ -12768,7 +12768,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A GCSE simulation challenge. Courtroom Drama puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Courtroom_Drama_GCSE.html",
+    "href": "https://classcraft.co.uk/simulations/Courtroom_Drama_GCSE.html",
     "screenshot": null
   },
   {
@@ -12784,7 +12784,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A GCSE simulation challenge. Dragons Den Startup puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Dragons_Den_Startup_GCSE.html",
+    "href": "https://classcraft.co.uk/simulations/Dragons_Den_Startup_GCSE.html",
     "screenshot": null
   },
   {
@@ -12800,7 +12800,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A KS3 simulation challenge. Ecosystem Architects puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Ecosystem_Architects_KS3.html",
+    "href": "https://classcraft.co.uk/simulations/Ecosystem_Architects_KS3.html",
     "screenshot": null
   },
   {
@@ -12816,7 +12816,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A A-Level simulation challenge. Election Campaign puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Election_Campaign_A-level.html",
+    "href": "https://classcraft.co.uk/simulations/Election_Campaign_A-level.html",
     "screenshot": null
   },
   {
@@ -12832,7 +12832,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A A-Level simulation challenge. Global Trade War puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Global_Trade_War_A-level.html",
+    "href": "https://classcraft.co.uk/simulations/Global_Trade_War_A-level.html",
     "screenshot": null
   },
   {
@@ -12848,7 +12848,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A A-Level simulation challenge. Hedge Fund Challenge puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Hedge_Fund_Challenge_A-level.html",
+    "href": "https://classcraft.co.uk/simulations/Hedge_Fund_Challenge_A-level.html",
     "screenshot": null
   },
   {
@@ -12864,7 +12864,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A GCSE simulation challenge. Island Economy puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Island_Economy_GCSE.html",
+    "href": "https://classcraft.co.uk/simulations/Island_Economy_GCSE.html",
     "screenshot": null
   },
   {
@@ -12880,7 +12880,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A KS3 simulation challenge. Market Traders puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Market_Traders_KS3.html",
+    "href": "https://classcraft.co.uk/simulations/Market_Traders_KS3.html",
     "screenshot": null
   },
   {
@@ -12896,7 +12896,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A GCSE simulation challenge. Mars Colony Survival puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Mars_Colony_Survival_GCSE.html",
+    "href": "https://classcraft.co.uk/simulations/Mars_Colony_Survival_GCSE.html",
     "screenshot": null
   },
   {
@@ -12912,7 +12912,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A GCSE simulation challenge. Megacity Mayor puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Megacity_Mayor_GCSE.html",
+    "href": "https://classcraft.co.uk/simulations/Megacity_Mayor_GCSE.html",
     "screenshot": null
   },
   {
@@ -12928,7 +12928,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A KS3 simulation challenge. Newsroom Deadline puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Newsroom_Deadline_KS3.html",
+    "href": "https://classcraft.co.uk/simulations/Newsroom_Deadline_KS3.html",
     "screenshot": null
   },
   {
@@ -12944,7 +12944,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A A-Level simulation challenge. Pandemic Response Lab puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Pandemic_Response_Lab_A-level.html",
+    "href": "https://classcraft.co.uk/simulations/Pandemic_Response_Lab_A-level.html",
     "screenshot": null
   },
   {
@@ -12960,7 +12960,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A A-Level simulation challenge. Publishing House puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Publishing_House_A-level.html",
+    "href": "https://classcraft.co.uk/simulations/Publishing_House_A-level.html",
     "screenshot": null
   },
   {
@@ -12976,7 +12976,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A KS3 simulation challenge. River Valley Settlement puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/River_Valley_Settlement_KS3.html",
+    "href": "https://classcraft.co.uk/simulations/River_Valley_Settlement_KS3.html",
     "screenshot": null
   },
   {
@@ -12992,7 +12992,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A KS3 simulation challenge. Robot Factory puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Robot_Factory_KS3.html",
+    "href": "https://classcraft.co.uk/simulations/Robot_Factory_KS3.html",
     "screenshot": null
   },
   {
@@ -13008,7 +13008,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A GCSE simulation challenge. Rocket Launch Programme puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Rocket_Launch_Programme_GCSE.html",
+    "href": "https://classcraft.co.uk/simulations/Rocket_Launch_Programme_GCSE.html",
     "screenshot": null
   },
   {
@@ -13024,7 +13024,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A GCSE simulation challenge. Startup CTO puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Startup_CTO_GCSE.html",
+    "href": "https://classcraft.co.uk/simulations/Startup_CTO_GCSE.html",
     "screenshot": null
   },
   {
@@ -13040,7 +13040,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A KS3 simulation challenge. Theme Park Tycoon puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Theme_Park_Tycoon_KS3.html",
+    "href": "https://classcraft.co.uk/simulations/Theme_Park_Tycoon_KS3.html",
     "screenshot": null
   },
   {
@@ -13056,7 +13056,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Simulation",
     "desc": "A GCSE simulation challenge. Weimar Republic Crisis puts you in the decision-maker's seat — trade-offs, consequences, and the higher-order thinking exam markers reward.",
-    "href": "classcraft/simulations/Weimar_Republic_Crisis_GCSE.html",
+    "href": "https://classcraft.co.uk/simulations/Weimar_Republic_Crisis_GCSE.html",
     "screenshot": null
   },
   {
@@ -13072,7 +13072,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Biology. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Biology/A-Level%20Biology.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Biology/A-Level%20Biology.pdf",
     "screenshot": null
   },
   {
@@ -13088,7 +13088,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Business Studies. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Business%20Studies/A-Level%20Business%20Studies.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Business%20Studies/A-Level%20Business%20Studies.pdf",
     "screenshot": null
   },
   {
@@ -13104,7 +13104,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Chemistry. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Chemistry/A-Level%20Chemistry.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Chemistry/A-Level%20Chemistry.pdf",
     "screenshot": null
   },
   {
@@ -13120,7 +13120,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Computer Science. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Computer%20Science/A-Level%20Computer%20Science.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Computer%20Science/A-Level%20Computer%20Science.pdf",
     "screenshot": null
   },
   {
@@ -13136,7 +13136,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Economics. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Economics/A-Level%20Economics.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Economics/A-Level%20Economics.pdf",
     "screenshot": null
   },
   {
@@ -13152,7 +13152,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level English Language. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20English%20Language/A-Level%20English%20Language.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20English%20Language/A-Level%20English%20Language.pdf",
     "screenshot": null
   },
   {
@@ -13168,7 +13168,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level English Literature. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20English%20Literature/A-Level%20English%20Literature.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20English%20Literature/A-Level%20English%20Literature.pdf",
     "screenshot": null
   },
   {
@@ -13184,7 +13184,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level French. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20French/A-Level%20French.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20French/A-Level%20French.pdf",
     "screenshot": null
   },
   {
@@ -13200,7 +13200,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Geography. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Geography/A-Level%20Geography.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Geography/A-Level%20Geography.pdf",
     "screenshot": null
   },
   {
@@ -13216,7 +13216,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level German. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20German/A-Level%20German.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20German/A-Level%20German.pdf",
     "screenshot": null
   },
   {
@@ -13232,7 +13232,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level History. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20History/A-Level%20History.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20History/A-Level%20History.pdf",
     "screenshot": null
   },
   {
@@ -13248,7 +13248,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Mathematics. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Mathematics/A-Level%20Mathematics.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Mathematics/A-Level%20Mathematics.pdf",
     "screenshot": null
   },
   {
@@ -13264,7 +13264,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Physics. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Physics/A-Level%20Physics.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Physics/A-Level%20Physics.pdf",
     "screenshot": null
   },
   {
@@ -13280,7 +13280,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Psychology. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Psychology/A-Level%20Psychology.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Psychology/A-Level%20Psychology.pdf",
     "screenshot": null
   },
   {
@@ -13296,7 +13296,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Religious Studies. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Religious%20Studies/A-Level%20Religious%20Studies.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Religious%20Studies/A-Level%20Religious%20Studies.pdf",
     "screenshot": null
   },
   {
@@ -13312,7 +13312,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for A-Level Spanish. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/A-Level%20Spanish/A-Level%20Spanish.pdf",
+    "href": "https://classcraft.co.uk/Books/A-Level%20Spanish/A-Level%20Spanish.pdf",
     "screenshot": null
   },
   {
@@ -13328,7 +13328,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Biology. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Biology/GCSE%20Biology%20-%20100%20AI%20Prompts%20for%20More%20Effective%20Revision%20and%20Exam%20Prep.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Biology/GCSE%20Biology%20-%20100%20AI%20Prompts%20for%20More%20Effective%20Revision%20and%20Exam%20Prep.pdf",
     "screenshot": null
   },
   {
@@ -13344,7 +13344,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Business Studies. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Business%20Studies/GCSE%20Business%20Studies.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Business%20Studies/GCSE%20Business%20Studies.pdf",
     "screenshot": null
   },
   {
@@ -13360,7 +13360,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Chemistry. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Chemistry/GCSE%20Chemistry.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Chemistry/GCSE%20Chemistry.pdf",
     "screenshot": null
   },
   {
@@ -13376,7 +13376,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Computer Science. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Computer%20Science/GCSE%20Computer%20Science.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Computer%20Science/GCSE%20Computer%20Science.pdf",
     "screenshot": null
   },
   {
@@ -13392,7 +13392,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Economics. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Economics/GCSE%20Economics.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Economics/GCSE%20Economics.pdf",
     "screenshot": null
   },
   {
@@ -13408,7 +13408,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE English Language. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20English%20Language/GCSE%20English%20Language.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20English%20Language/GCSE%20English%20Language.pdf",
     "screenshot": null
   },
   {
@@ -13424,7 +13424,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE English Literature. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20English%20Literature/GCSE%20English%20Literature.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20English%20Literature/GCSE%20English%20Literature.pdf",
     "screenshot": null
   },
   {
@@ -13440,7 +13440,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE French. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20French/GCSE%20French.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20French/GCSE%20French.pdf",
     "screenshot": null
   },
   {
@@ -13456,7 +13456,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Geography. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Geography/GCSE%20Geography.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Geography/GCSE%20Geography.pdf",
     "screenshot": null
   },
   {
@@ -13472,7 +13472,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE German. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20German/GCSE%20German.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20German/GCSE%20German.pdf",
     "screenshot": null
   },
   {
@@ -13488,7 +13488,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE History. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20History/GCSE%20History.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20History/GCSE%20History.pdf",
     "screenshot": null
   },
   {
@@ -13504,7 +13504,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Mathematics. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Mathematics/GCSE%20Mathematics.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Mathematics/GCSE%20Mathematics.pdf",
     "screenshot": null
   },
   {
@@ -13520,7 +13520,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Physics. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Physics/GCSE%20Physics.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Physics/GCSE%20Physics.pdf",
     "screenshot": null
   },
   {
@@ -13536,7 +13536,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Psychology. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Psychology/GCSE%20Psychology.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Psychology/GCSE%20Psychology.pdf",
     "screenshot": null
   },
   {
@@ -13552,7 +13552,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Religious Studies. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Religious%20Studies/GCSE%20Religious%20Studies.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Religious%20Studies/GCSE%20Religious%20Studies.pdf",
     "screenshot": null
   },
   {
@@ -13568,7 +13568,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for GCSE Spanish. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/GCSE%20Spanish/GCSE%20Spanish.pdf",
+    "href": "https://classcraft.co.uk/Books/GCSE%20Spanish/GCSE%20Spanish.pdf",
     "screenshot": null
   },
   {
@@ -13584,7 +13584,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Biology. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Biology/IBDP%20Biology.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Biology/IBDP%20Biology.pdf",
     "screenshot": null
   },
   {
@@ -13600,7 +13600,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Business Studies. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Business%20Management/IBDP%20Business%20Management.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Business%20Management/IBDP%20Business%20Management.pdf",
     "screenshot": null
   },
   {
@@ -13616,7 +13616,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Chemistry. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Chemistry/IBDP%20Chemistry.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Chemistry/IBDP%20Chemistry.pdf",
     "screenshot": null
   },
   {
@@ -13632,7 +13632,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Computer Science. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Computer%20Science/IBDP%20Computer%20Science.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Computer%20Science/IBDP%20Computer%20Science.pdf",
     "screenshot": null
   },
   {
@@ -13648,7 +13648,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Economics. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Economics/IBDP%20Economics.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Economics/IBDP%20Economics.pdf",
     "screenshot": null
   },
   {
@@ -13664,7 +13664,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP English Literature. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20English%20Language%20and%20Literature/IBDP%20English%20Language%20and%20Literature.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20English%20Language%20and%20Literature/IBDP%20English%20Language%20and%20Literature.pdf",
     "screenshot": null
   },
   {
@@ -13680,7 +13680,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP English Literature. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20English%20Literature/IBDP%20English%20Literature.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20English%20Literature/IBDP%20English%20Literature.pdf",
     "screenshot": null
   },
   {
@@ -13696,7 +13696,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP French. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20French/IBDP%20French.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20French/IBDP%20French.pdf",
     "screenshot": null
   },
   {
@@ -13712,7 +13712,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Geography. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Geography/IBDP%20Geography.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Geography/IBDP%20Geography.pdf",
     "screenshot": null
   },
   {
@@ -13728,7 +13728,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP German. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20German/IBDP%20German.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20German/IBDP%20German.pdf",
     "screenshot": null
   },
   {
@@ -13744,7 +13744,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP History. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20History/IBDP%20History.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20History/IBDP%20History.pdf",
     "screenshot": null
   },
   {
@@ -13760,7 +13760,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Mathematics. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Mathematics/IBDP%20Mathematics.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Mathematics/IBDP%20Mathematics.pdf",
     "screenshot": null
   },
   {
@@ -13776,7 +13776,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Physics. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Physics/IBDP%20Physics.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Physics/IBDP%20Physics.pdf",
     "screenshot": null
   },
   {
@@ -13792,7 +13792,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Psychology. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Psychology/IBDP%20Psychology.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Psychology/IBDP%20Psychology.pdf",
     "screenshot": null
   },
   {
@@ -13808,7 +13808,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Spanish. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Spanish/IBDP%20Spanish.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Spanish/IBDP%20Spanish.pdf",
     "screenshot": null
   },
   {
@@ -13824,7 +13824,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Religious Studies. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20Theory%20of%20Knowledge/IBDP%20Theory%20of%20Knowledge.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20Theory%20of%20Knowledge/IBDP%20Theory%20of%20Knowledge.pdf",
     "screenshot": null
   },
   {
@@ -13840,7 +13840,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Revision Book",
     "desc": "A downloadable revision book of 100 carefully designed AI prompts for IBDP Religious Studies. Use Claude, ChatGPT or Gemini to revise smarter, not harder.",
-    "href": "classcraft/Books/IBDP%20World%20Religions/IBDP%20World%20Religions.pdf",
+    "href": "https://classcraft.co.uk/Books/IBDP%20World%20Religions/IBDP%20World%20Religions.pdf",
     "screenshot": null
   },
   {
@@ -13856,7 +13856,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Nature Gallery",
     "desc": "A photo gallery of 40 species native to Midlands & East England. Visual reference for environmental science fieldwork and ecology revision.",
-    "href": "classcraft/nature.html#midlands-east",
+    "href": "https://classcraft.co.uk/nature.html#midlands-east",
     "screenshot": null
   },
   {
@@ -13872,7 +13872,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Nature Gallery",
     "desc": "A photo gallery of 40 species native to North England. Visual reference for environmental science fieldwork and ecology revision.",
-    "href": "classcraft/nature.html#north-england",
+    "href": "https://classcraft.co.uk/nature.html#north-england",
     "screenshot": null
   },
   {
@@ -13888,7 +13888,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Nature Gallery",
     "desc": "A photo gallery of 40 species native to Northern Ireland. Visual reference for environmental science fieldwork and ecology revision.",
-    "href": "classcraft/nature.html#northern-ireland",
+    "href": "https://classcraft.co.uk/nature.html#northern-ireland",
     "screenshot": null
   },
   {
@@ -13904,7 +13904,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Nature Gallery",
     "desc": "A photo gallery of 40 species native to Republic of Ireland. Visual reference for environmental science fieldwork and ecology revision.",
-    "href": "classcraft/nature.html#republic-ireland",
+    "href": "https://classcraft.co.uk/nature.html#republic-ireland",
     "screenshot": null
   },
   {
@@ -13920,7 +13920,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Nature Gallery",
     "desc": "A photo gallery of 40 species native to Scotland. Visual reference for environmental science fieldwork and ecology revision.",
-    "href": "classcraft/nature.html#scotland",
+    "href": "https://classcraft.co.uk/nature.html#scotland",
     "screenshot": null
   },
   {
@@ -13936,7 +13936,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Nature Gallery",
     "desc": "A photo gallery of 40 species native to South England. Visual reference for environmental science fieldwork and ecology revision.",
-    "href": "classcraft/nature.html#south-england",
+    "href": "https://classcraft.co.uk/nature.html#south-england",
     "screenshot": null
   },
   {
@@ -13952,7 +13952,7 @@ const RESOURCES = [
     "stageDisplay": "E · Explore",
     "typeDisplay": "Nature Gallery",
     "desc": "A photo gallery of 40 species native to Wales. Visual reference for environmental science fieldwork and ecology revision.",
-    "href": "classcraft/nature.html#wales",
+    "href": "https://classcraft.co.uk/nature.html#wales",
     "screenshot": null
   },
   {
@@ -13968,7 +13968,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of art & design jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/art/Art%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/art/Art%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -13984,7 +13984,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of astronomy & space science jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/astronomy/Astronomy%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/astronomy/Astronomy%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14000,7 +14000,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of biology jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/biology/Biology%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/biology/Biology%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14016,7 +14016,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of business studies jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/business-studies/Business%20Studies%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/business-studies/Business%20Studies%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14032,7 +14032,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of chemistry jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/chemistry/Chemistry%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/chemistry/Chemistry%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14048,7 +14048,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of computer science jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/computing/Computing%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/computing/Computing%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14064,7 +14064,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of design technology jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/design-technology/Design%20%26%20Technology%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/design-technology/Design%20%26%20Technology%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14080,7 +14080,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of english literature jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/drama/Drama%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/drama/Drama%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14096,7 +14096,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of english literature jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/english/English%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/english/English%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14112,7 +14112,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of food technology jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/food-technology/Food%20Technology%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/food-technology/Food%20Technology%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14128,7 +14128,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of french jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/french/French%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/french/French%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14144,7 +14144,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of geography jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/geography/Geography%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/geography/Geography%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14160,7 +14160,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of german jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/german/German%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/german/German%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14176,7 +14176,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of history jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/history/History%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/history/History%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14192,7 +14192,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of mathematics jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/maths/Maths%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/maths/Maths%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14208,7 +14208,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of music jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/music/Music%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/music/Music%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14224,7 +14224,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of pe & sport science jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/pe/PE%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/pe/PE%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14240,7 +14240,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of physics jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/physics/Physics%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/physics/Physics%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14256,7 +14256,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of religious studies jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/religious-education/Religious%20Education%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/religious-education/Religious%20Education%20Jokes.docx",
     "screenshot": null
   },
   {
@@ -14272,7 +14272,7 @@ const RESOURCES = [
     "stageDisplay": "T · Transform",
     "typeDisplay": "Joke Pack",
     "desc": "A curated set of spanish jokes. Print, share with your class, or use as a memory hook — humour aids retention of unfamiliar terminology.",
-    "href": "classcraft/jokes/spanish/Spanish%20Jokes.docx",
+    "href": "https://classcraft.co.uk/jokes/spanish/Spanish%20Jokes.docx",
     "screenshot": null
   }
 ];
