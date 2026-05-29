@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Vocab Pac-Man | Free Revision Game | classcraft.co.uk</title>
+  <meta name="description" content="Play Vocab Pac-Man — eat red dots to trigger vocabulary questions. Free revision game for all subjects. No login required.">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#0f1117; --surface:#1a1d27; --surface2:#22253a;
+      --border:rgba(255,255,255,0.08); --border-hi:rgba(255,255,255,0.14);
+      --accent:#4ade9a; --accent2:#7b6fff; --warn:#ff6b6b;
+      --text:#e8eaf0; --text-mid:#8b90a8; --text-dim:#4a4f68;
+      --correct:#4ade9a; --wrong:#ff6b6b;
+      --font-d:'Nunito',sans-serif; --font-b:'Nunito',sans-serif;
+      --r:10px; --trans:0.18s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;overflow:hidden;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:15px;line-height:1.5;display:flex;flex-direction:column;height:100vh;height:100dvh;}
+
+    /* Header */
+    .hd{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.25rem;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:0.75rem;}
+    .hd-left{display:flex;align-items:center;gap:0.85rem;min-width:0;}
+    .hd-logo{font-family:var(--font-d);font-size:1.05rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-0.02em;flex-shrink:0;}
+    .hd-logo span{color:var(--accent);}
+    .hd-title{font-family:var(--font-d);font-size:0.8rem;font-weight:600;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+    .hd-sep{color:var(--text-dim);flex-shrink:0;}
+    .hd-right{display:flex;align-items:center;gap:0.5rem;flex-shrink:0;}
+    .btn-hd{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.22rem 0.75rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);white-space:nowrap;}
+    .btn-hd:hover{border-color:var(--accent);color:var(--accent);}
+    .progress-bar{height:3px;background:var(--surface2);flex-shrink:0;}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));width:0%;transition:width 0.4s ease;box-shadow:0 0 6px rgba(74,222,154,0.5);}
+
+    /* Screens */
+    .screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;min-height:0;}
+    .screen.active{display:flex;}
+
+    /* Start screen */
+    .start-title{font-family:var(--font-d);font-size:clamp(1.4rem,3vw,1.9rem);font-weight:800;letter-spacing:-0.03em;margin-bottom:0.25rem;text-align:center;}
+    .start-topic{font-family:var(--font-d);font-size:0.78rem;font-weight:600;color:var(--accent2);text-align:center;margin-bottom:1rem;letter-spacing:0.05em;}
+    .start-sub{color:var(--text-mid);font-size:0.85rem;margin-bottom:1.5rem;text-align:center;max-width:44ch;}
+    .start-info{background:var(--surface);border:1px solid var(--border-hi);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:1.5rem;max-width:420px;width:100%;}
+    .start-info-row{display:flex;align-items:center;gap:0.75rem;font-size:0.82rem;color:var(--text-mid);}
+    .start-info-row+.start-info-row{margin-top:0.5rem;}
+    .start-info-icon{font-size:1.1rem;flex-shrink:0;}
+    .btn-start{font-family:var(--font-d);font-size:0.85rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.85rem 2.5rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);}
+    .btn-start:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 20px rgba(74,222,154,0.35);}
+    .btn-start:active{transform:translateY(0);box-shadow:none;}
+
+    /* Game screen */
+    #screen-game{padding:0;justify-content:flex-start;overflow:hidden;}
+
+    /* HUD */
+    .game-hud{width:100%;display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.85rem;background:rgba(15,17,23,0.9);border-bottom:1px solid var(--border-hi);flex-shrink:0;gap:0.5rem;z-index:10;}
+    .hud-lives{display:flex;gap:0.2rem;align-items:center;}
+    .hud-life{font-size:1rem;transition:all 0.2s;}
+    .hud-life.lost{opacity:0.15;filter:grayscale(1);}
+    .hud-score{font-family:var(--font-d);font-size:0.85rem;font-weight:800;color:var(--accent);}
+    .hud-score-label{font-family:var(--font-d);font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-right:0.25rem;}
+    .hud-timer{font-family:var(--font-d);font-size:0.82rem;font-weight:700;color:var(--text-mid);}
+    .hud-timer.urgent{color:var(--warn);animation:pulse 0.5s ease infinite alternate;}
+    @keyframes pulse{from{opacity:1}to{opacity:0.35}}
+    .hud-words{font-family:var(--font-d);font-size:0.7rem;font-weight:700;color:var(--accent2);}
+
+    /* Canvas */
+    #game-canvas{flex:1;width:100%;min-height:0;display:block;}
+
+    /* Touch D-pad */
+    .touch-controls{display:none;width:100%;padding:0.4rem 1rem 0.5rem;background:rgba(15,17,23,0.95);border-top:1px solid var(--border-hi);flex-shrink:0;justify-content:center;align-items:center;}
+    @media(pointer:coarse){.touch-controls{display:flex;}}
+    .dpad{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:3px;}
+    .dp-btn{background:var(--surface2);border:1.5px solid var(--border-hi);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:background var(--trans);}
+    .dp-btn:active{background:rgba(123,111,255,0.25);border-color:var(--accent2);}
+    .dp-empty{visibility:hidden;}
+
+    /* Question overlay */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(8,10,18,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:500;align-items:center;justify-content:center;padding:1.25rem;}
+    .overlay.open{display:flex;}
+    .q-card{background:var(--surface);border:1px solid var(--border-hi);border-radius:18px;padding:1.75rem 2rem;max-width:480px;width:100%;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden;}
+    .q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--warn),var(--accent2));}
+    @keyframes slideUp{from{opacity:0;transform:translateY(28px) scale(0.95)}to{opacity:1;transform:none}}
+    .q-badge{display:inline-flex;align-items:center;gap:0.4rem;font-family:var(--font-d);font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--warn);background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);border-radius:20px;padding:0.2rem 0.65rem;margin-bottom:0.75rem;}
+    .q-term{font-family:var(--font-d);font-size:1.3rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:0.35rem;color:var(--warn);}
+    .q-prompt{font-size:0.9rem;color:var(--text-mid);margin-bottom:1.1rem;}
+    .q-options{display:flex;flex-direction:column;gap:0.45rem;margin-bottom:1.25rem;}
+    .q-option{background:var(--surface2);border:1.5px solid var(--border-hi);border-radius:var(--r);padding:0.7rem 1rem;cursor:pointer;display:flex;align-items:center;gap:0.65rem;transition:all var(--trans);user-select:none;}
+    .q-option:hover{border-color:var(--accent2);background:rgba(123,111,255,0.1);}
+    .q-option:active{transform:scale(0.99);}
+    .q-option.correct{border-color:var(--correct);background:rgba(74,222,154,0.12);pointer-events:none;}
+    .q-option.wrong{border-color:var(--wrong);background:rgba(255,107,107,0.1);pointer-events:none;}
+    .q-key{font-family:var(--font-d);font-size:0.65rem;font-weight:800;min-width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-hi);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-dim);transition:all var(--trans);}
+    .q-option.correct .q-key{background:var(--correct);border-color:var(--correct);color:#0f1117;}
+    .q-option.wrong .q-key{background:var(--wrong);border-color:var(--wrong);color:#fff;}
+    .q-opt-text{font-family:var(--font-d);font-size:0.95rem;font-weight:600;color:var(--text);}
+    .q-points{font-family:var(--font-d);font-size:0.75rem;font-weight:700;text-align:center;}
+    .q-points.gain{color:var(--correct);}
+    .q-points.miss{color:var(--text-mid);}
+    .btn-continue{font-family:var(--font-d);font-size:0.82rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent2);color:#fff;border:none;padding:0.75rem 2rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);width:100%;margin-top:0.75rem;display:none;}
+    .btn-continue:hover{background:#9a8fff;transform:translateY(-1px);}
+    .btn-continue.visible{display:block;}
+
+    /* Results */
+    .result-card{background:var(--surface);border:1px solid var(--border-hi);border-radius:18px;padding:2rem 2rem 1.75rem;max-width:420px;width:100%;text-align:center;animation:slideUp 0.38s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden;}
+    .result-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));}
+    .result-emoji{font-size:2.8rem;margin-bottom:0.5rem;display:block;}
+    .result-heading{font-family:var(--font-d);font-size:1.8rem;font-weight:800;letter-spacing:-0.03em;margin-bottom:0.3rem;}
+    .result-sub{color:var(--text-mid);font-size:0.85rem;margin-bottom:1.25rem;}
+    .result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-bottom:1.5rem;}
+    .result-stat{background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:0.9rem 0.4rem;}
+    .result-stat-val{font-family:var(--font-d);font-size:1.8rem;font-weight:800;line-height:1;margin-bottom:0.2rem;}
+    .result-stat-val.score{color:var(--accent);}
+    .result-stat-val.vocab{color:var(--accent2);}
+    .result-stat-val.dots{color:var(--warn);}
+    .result-stat-label{font-size:0.6rem;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;}
+    .btn-retry{font-family:var(--font-d);font-size:0.85rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.9rem 2rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);width:100%;margin-bottom:0.6rem;}
+    .btn-retry:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 18px rgba(74,222,154,0.3);}
+    .btn-retry:active{transform:translateY(0);box-shadow:none;}
+    .btn-hub{font-family:var(--font-d);font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.65rem 2rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);width:100%;}
+    .btn-hub:hover{border-color:var(--accent2);color:var(--accent2);}
+
+    @media(max-width:400px){.hd{padding:0 0.85rem;}.hd-sep,.hd-title{display:none;}}
+  </style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="hd-left">
+    <a href="vocab-hub.html" class="hd-logo">Class<span>Craft</span></a>
+    <span class="hd-sep">·</span>
+    <span class="hd-title" id="hd-title">Vocab Pac-Man</span>
+  </div>
+  <div class="hd-right">
+    <button class="btn-hd" id="btn-quit">✕ Quit</button>
+  </div>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+<!-- Start screen -->
+<div class="screen active" id="screen-start">
+  <h1 class="start-title" id="start-title">Vocab Pac-Man</h1>
+  <div class="start-topic" id="start-topic"></div>
+  <p class="start-sub">Eat dots to score — but eating a red dot triggers a vocabulary question worth bonus points!</p>
+  <div class="start-info">
+    <div class="start-info-row"><span class="start-info-icon">⚪</span><span>White dots = <strong>10 pts</strong> each</span></div>
+    <div class="start-info-row"><span class="start-info-icon">🔴</span><span>Red dots = <strong>50 pts</strong> + multiple-choice question</span></div>
+    <div class="start-info-row"><span class="start-info-icon">👻</span><span>Avoid the ghosts — you have <strong>3 lives</strong></span></div>
+    <div class="start-info-row"><span class="start-info-icon">⌨️</span><span>Arrow keys to move, or swipe / use the D-pad on mobile</span></div>
+  </div>
+  <button class="btn-start" onclick="startGame()">Start Game →</button>
+</div>
+
+<!-- Game screen -->
+<div class="screen" id="screen-game">
+  <div class="game-hud">
+    <div class="hud-lives" id="hud-lives"></div>
+    <div style="display:flex;align-items:center;gap:0.4rem;">
+      <span class="hud-score-label">Score</span>
+      <span class="hud-score" id="hud-score">0</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <span class="hud-words" id="hud-words">📚 0/0</span>
+      <span class="hud-timer" id="hud-timer">3:00</span>
+    </div>
+  </div>
+  <canvas id="game-canvas"></canvas>
+  <div class="touch-controls">
+    <div class="dpad">
+      <div class="dp-empty"></div>
+      <div class="dp-btn" id="dp-up">▲</div>
+      <div class="dp-empty"></div>
+      <div class="dp-btn" id="dp-left">◀</div>
+      <div class="dp-empty"></div>
+      <div class="dp-btn" id="dp-right">▶</div>
+      <div class="dp-empty"></div>
+      <div class="dp-btn" id="dp-down">▼</div>
+      <div class="dp-empty"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Question overlay -->
+<div class="overlay" id="overlay-q">
+  <div class="q-card">
+    <div class="q-badge">🔴 Red Dot!</div>
+    <div class="q-term" id="q-term"></div>
+    <div class="q-prompt">What is the definition of this term?</div>
+    <div class="q-options" id="q-options"></div>
+    <div class="q-points" id="q-points"></div>
+    <button class="btn-continue" id="btn-continue" onclick="closeQuestion()">Continue →</button>
+  </div>
+</div>
+
+<!-- Results overlay -->
+<div class="overlay" id="overlay-result">
+  <div class="result-card">
+    <span class="result-emoji" id="res-emoji">🟡</span>
+    <h2 class="result-heading" id="res-heading">Game Over!</h2>
+    <p class="result-sub" id="res-sub"></p>
+    <div class="result-stats">
+      <div class="result-stat"><div class="result-stat-val score" id="res-score">0</div><div class="result-stat-label">Score</div></div>
+      <div class="result-stat"><div class="result-stat-val vocab" id="res-vocab">0/0</div><div class="result-stat-label">Vocab</div></div>
+      <div class="result-stat"><div class="result-stat-val dots" id="res-dots">0</div><div class="result-stat-label">Dots Eaten</div></div>
+    </div>
+    <button class="btn-retry" onclick="startGame()">Play Again</button>
+    <button class="btn-hub" onclick="window.location.href='vocab-hub.html'">← Back to Hub</button>
+  </div>
+</div>
+
+<script>
+// ── Vocab data ──
+const VOCAB_DATA = JSON.parse(sessionStorage.getItem('vocab') || '[]');
+const META       = JSON.parse(sessionStorage.getItem('vocabMeta') || '{}');
+
+if (!VOCAB_DATA.length) {
+  document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#8b90a8;font-family:sans-serif;text-align:center;padding:2rem;"><div><p style="font-size:1.2rem;margin-bottom:1rem">No vocabulary data found.</p><a href="vocab-hub.html" style="color:#4ade9a">← Back to hub</a></div></div>';
+}
+
+if (META.topic) {
+  document.getElementById('hd-title').textContent   = `${META.topic} — Pac-Man`;
+  document.getElementById('start-title').textContent = META.topic;
+  document.getElementById('start-topic').textContent = `${META.subject || ''} · ${META.board || ''}`;
+}
+document.getElementById('btn-quit').addEventListener('click', () => window.location.href = 'vocab-hub.html');
+
+// ── Maze definition ──
+// 0=wall, 1=dot, 2=empty, 3=ghost-house, 4=red-dot-placeholder (replaced at runtime)
+// 21 cols × 23 rows
+const MAZE_TEMPLATE = [
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],
+  [0,1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1,0],
+  [0,1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1,0],
+  [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+  [0,1,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0],
+  [0,1,1,1,1,0,1,1,1,1,2,1,1,1,1,0,1,1,1,1,0],
+  [0,0,0,0,1,0,0,0,2,0,2,0,2,0,0,0,1,0,0,0,0],
+  [0,0,0,0,1,0,2,0,0,0,2,0,0,0,2,0,1,0,0,0,0],
+  [0,0,0,0,1,0,2,0,3,3,2,3,3,0,2,0,1,0,0,0,0],
+  [1,1,1,1,1,1,1,0,3,2,2,2,3,0,1,1,1,1,1,1,1],
+  [0,0,0,0,1,0,2,0,3,3,3,3,3,0,2,0,1,0,0,0,0],
+  [0,0,0,0,1,0,2,0,0,0,0,0,0,0,2,0,1,0,0,0,0],
+  [0,0,0,0,1,0,2,0,2,2,2,2,2,0,2,0,1,0,0,0,0],
+  [0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0],
+  [0,1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1,0],
+  [0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0],
+  [0,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,0],
+  [0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],
+  [0,1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0],
+  [0,1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0],
+  [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+
+const MAZE_COLS = MAZE_TEMPLATE[0].length; // 21
+const MAZE_ROWS = MAZE_TEMPLATE.length;    // 23
+const GHOST_START_POSITIONS = [
+  {col:9, row:10}, {col:11, row:10}
+];
+const PLAYER_START = {col:10, row:16};
+
+// ── Constants ──
+const GAME_DURATION  = 180;
+const VOCAB_INTERVAL = 10;
+const MAX_VOCAB      = 20;
+const LIVES_MAX      = 3;
+
+const DIR = { NONE:{x:0,y:0}, UP:{x:0,y:-1}, DOWN:{x:0,y:1}, LEFT:{x:-1,y:0}, RIGHT:{x:1,y:0} };
+
+// Ghost colours
+const GHOST_COLORS = ['#ff6b6b','#7b6fff'];
+const GHOST_DEAD   = 'rgba(255,255,255,0.3)';
+
+// ── State ──
+let canvas, ctx, animId;
+let gameRunning = false, gamePaused = false, gameOver = false;
+let maze, dotsEaten;
+let player, ghosts;
+let score, lives;
+let timerSecs, timerInterval;
+let vocabQueue, vocabShownCount, vocabCorrect, vocabAnswered;
+let redDotCells = [];
+let floatingTexts = [];
+let keys = {};
+let swipeDir = null;
+let cellSize = 0;
+let offsetX = 0, offsetY = 0;
+let deathAnimating = false;
+let deathFrame = 0;
+let deathTimer = 0;
+let dying = false; // guard: prevents double-hit during death sequence
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// ── Canvas init ──
+function initCanvas() {
+  canvas = document.getElementById('game-canvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+}
+
+function resizeCanvas() {
+  const screenEl = document.getElementById('screen-game');
+  const hud = screenEl.querySelector('.game-hud');
+  const tc  = screenEl.querySelector('.touch-controls');
+  const hudH = hud ? hud.offsetHeight : 0;
+  const tcH  = (tc && getComputedStyle(tc).display !== 'none') ? tc.offsetHeight : 0;
+  const availW = screenEl.clientWidth;
+  const availH = screenEl.clientHeight - hudH - tcH;
+  canvas.width  = availW;
+  canvas.height = availH;
+  // Compute cell size to fit maze in available space with padding
+  const csW = Math.floor((availW - 8) / MAZE_COLS);
+  const csH = Math.floor((availH - 8) / MAZE_ROWS);
+  cellSize = Math.min(csW, csH);
+  offsetX = Math.floor((availW - cellSize * MAZE_COLS) / 2);
+  offsetY = Math.floor((availH - cellSize * MAZE_ROWS) / 2);
+}
+
+// ── Maze ──
+function initMaze() {
+  maze = MAZE_TEMPLATE.map(row => [...row]);
+  dotsEaten = 0;
+  redDotCells = [];
+
+  // Place red dots — up to MAX_VOCAB evenly spaced among dot cells
+  const dotCells = [];
+  for (let r = 0; r < MAZE_ROWS; r++) {
+    for (let c = 0; c < MAZE_COLS; c++) {
+      if (maze[r][c] === 1) dotCells.push({r, c});
+    }
+  }
+  const shuffledDots = shuffle(dotCells);
+  const redCount = Math.min(MAX_VOCAB, vocabQueue.length, shuffledDots.length);
+  for (let i = 0; i < redCount; i++) {
+    const {r, c} = shuffledDots[i];
+    maze[r][c] = 4;
+    redDotCells.push({r, c});
+  }
+}
+
+// ── Player ──
+function initPlayer() {
+  player = {
+    col: PLAYER_START.col,
+    row: PLAYER_START.row,
+    x:   PLAYER_START.col + 0.5,
+    y:   PLAYER_START.row + 0.5,
+    dir: DIR.NONE,
+    nextDir: DIR.NONE,
+    speed: 0.02,
+    mouthAngle: 0.25,
+    mouthDir: 1,
+    dead: false,
+  };
+}
+
+// ── Ghosts ──
+function initGhosts() {
+  ghosts = GHOST_START_POSITIONS.map((pos, i) => ({
+    col: pos.col,
+    row: pos.row,
+    x:   pos.col + 0.5,
+    y:   pos.row + 0.5,
+    dir: i === 0 ? DIR.LEFT : DIR.RIGHT,
+    speed: 0.015,
+    color: GHOST_COLORS[i],
+    mode: 'house',
+    houseTimer: i * 60,
+    dead: false,
+  }));
+}
+
+// ── Start game ──
+function startGame() {
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+  document.getElementById('overlay-result').classList.remove('open');
+  document.getElementById('overlay-q').classList.remove('open');
+
+  initCanvas();
+
+  score        = 0;
+  lives        = LIVES_MAX;
+  timerSecs    = GAME_DURATION;
+  vocabQueue   = shuffle([...VOCAB_DATA]).slice(0, MAX_VOCAB);
+  vocabShownCount = 0;
+  vocabCorrect = 0;
+  vocabAnswered = 0;
+  gameOver     = false;
+  gamePaused   = false;
+  floatingTexts = [];
+  keys         = {};
+  swipeDir     = null;
+  deathAnimating = false;
+  dying = false;
+
+  initMaze();
+  initPlayer();
+  initGhosts();
+  updateHUD();
+
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(tickTimer, 1000);
+
+  if (animId) cancelAnimationFrame(animId);
+  gameRunning = true;
+  requestAnimationFrame(gameLoop);
+}
+
+// ── Timer ──
+function tickTimer() {
+  if (!gameRunning || gamePaused || gameOver) return;
+  timerSecs--;
+  updateTimerDisplay();
+  document.getElementById('progress-fill').style.width =
+    ((GAME_DURATION - timerSecs) / GAME_DURATION * 100) + '%';
+  if (timerSecs <= 0) endGame('time');
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('hud-timer');
+  if (!el) return;
+  const m = Math.floor(timerSecs/60), s = timerSecs%60;
+  el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  el.classList.toggle('urgent', timerSecs <= 30);
+}
+
+function updateHUD() {
+  document.getElementById('hud-score').textContent = score;
+  document.getElementById('hud-words').textContent = `📚 ${vocabCorrect}/${vocabAnswered}`;
+  const livesEl = document.getElementById('hud-lives');
+  livesEl.innerHTML = '';
+  for (let i = 0; i < LIVES_MAX; i++) {
+    const h = document.createElement('span');
+    h.className = 'hud-life' + (i >= lives ? ' lost' : '');
+    h.textContent = '🟡';
+    livesEl.appendChild(h);
+  }
+}
+
+// ── Game loop ──
+let lastTime = 0;
+function gameLoop(ts) {
+  if (!gameRunning) return;
+  const dt = ts - lastTime;
+  lastTime = ts;
+  if (!gameOver) {
+    if (deathAnimating) {
+      updateDeathAnim(dt);  // always runs during death regardless of gamePaused
+    } else if (!gamePaused) {
+      update(dt);
+    }
+  }
+  draw(ts);
+  animId = requestAnimationFrame(gameLoop);
+}
+
+// ── Update ──
+function update(dt) {
+  movePlayer(dt);
+  moveGhosts(dt);
+  checkCollisions();
+  updateFloatingTexts(dt);
+}
+
+// ── Player movement ──
+function movePlayer(dt) {
+  // Accept input direction
+  const wantDir = swipeDir || getKeyDir();
+  if (wantDir) {
+    // Try to turn if the next cell in wantDir is open
+    if (canMove(player.col, player.row, wantDir)) {
+      player.dir = wantDir;
+    } else {
+      player.nextDir = wantDir;
+    }
+  }
+  // Try queued direction
+  if (player.nextDir && player.nextDir !== DIR.NONE) {
+    if (canMove(player.col, player.row, player.nextDir)) {
+      player.dir = player.nextDir;
+      player.nextDir = DIR.NONE;
+    }
+  }
+
+  if (player.dir === DIR.NONE) return;
+  if (!canMove(player.col, player.row, player.dir)) { player.dir = DIR.NONE; return; }
+
+  player.x += player.dir.x * player.speed;
+  player.y += player.dir.y * player.speed;
+
+  // Snap to grid centre when crossing cell boundary
+  const snapCol = Math.round(player.x - 0.5);
+  const snapRow = Math.round(player.y - 0.5);
+  if (snapCol !== player.col || snapRow !== player.row) {
+    player.col = snapCol;
+    player.row = snapRow;
+    player.x = snapCol + 0.5;
+    player.y = snapRow + 0.5;
+    eatDot(player.col, player.row);
+  }
+
+  // Wrap tunnel (row 10, left/right edges)
+  if (player.col < 0) { player.col = MAZE_COLS - 1; player.x = player.col + 0.5; }
+  if (player.col >= MAZE_COLS) { player.col = 0; player.x = 0.5; }
+
+  // Mouth animation
+  player.mouthAngle += player.mouthDir * 0.05;
+  if (player.mouthAngle > 0.4) player.mouthDir = -1;
+  if (player.mouthAngle < 0.02) player.mouthDir = 1;
+}
+
+function getKeyDir() {
+  if (keys['ArrowUp']    || keys['w'] || keys['W']) return DIR.UP;
+  if (keys['ArrowDown']  || keys['s'] || keys['S']) return DIR.DOWN;
+  if (keys['ArrowLeft']  || keys['a'] || keys['A']) return DIR.LEFT;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) return DIR.RIGHT;
+  return null;
+}
+
+function canMove(col, row, dir) {
+  const nc = col + dir.x;
+  const nr = row + dir.y;
+  if (nr < 0 || nr >= MAZE_ROWS) return false;
+  if (nc < 0 || nc >= MAZE_COLS) return true; // tunnel wrap
+  const cell = maze[nr][nc];
+  return cell !== 0 && cell !== 3;
+}
+
+function eatDot(col, row) {
+  const cell = maze[row]?.[col];
+  if (cell === 1) {
+    maze[row][col] = 2;
+    score += 10;
+    dotsEaten++;
+    spawnFloat(col, row, '+10', '#e8eaf0');
+    updateHUD();
+    checkMazeCleared();
+  } else if (cell === 4) {
+    maze[row][col] = 2;
+    dotsEaten++;
+    updateHUD();
+    checkMazeCleared();
+    // Show vocab question
+    if (vocabShownCount < vocabQueue.length) {
+      const item = vocabQueue[vocabShownCount++];
+      showQuestion(item);
+    }
+  }
+}
+
+function checkMazeCleared() {
+  let remaining = 0;
+  for (let r = 0; r < MAZE_ROWS; r++) {
+    for (let c = 0; c < MAZE_COLS; c++) {
+      if (maze[r][c] === 1 || maze[r][c] === 4) remaining++;
+    }
+  }
+  if (remaining === 0 && !gamePaused) {
+    // Defer respawn so any pending question resolves first
+    setTimeout(() => {
+      initMaze();
+      initPlayer();
+      initGhosts();
+      spawnFloat(Math.floor(MAZE_COLS/2), Math.floor(MAZE_ROWS/2), 'CLEAR!', '#4ade9a');
+    }, 50);
+  }
+}
+
+// ── Ghost movement ──
+function moveGhosts(dt) {
+  ghosts.forEach(g => {
+    if (g.dead) return;
+
+    // Release from house
+    if (g.mode === 'house') {
+      g.houseTimer -= dt * 0.06;
+      if (g.houseTimer <= 0) {
+        g.mode = 'chase';
+        g.col = 10; g.row = 6;
+        g.x = 10.5; g.y = 6.5;
+        g.dir = DIR.UP;
+      }
+      return;
+    }
+
+    g.x += g.dir.x * g.speed;
+    g.y += g.dir.y * g.speed;
+
+    // Snap and choose next direction
+    const snapCol = Math.round(g.x - 0.5);
+    const snapRow = Math.round(g.y - 0.5);
+    if (snapCol !== g.col || snapRow !== g.row) {
+      g.col = snapCol;
+      g.row = snapRow;
+      g.x = snapCol + 0.5;
+      g.y = snapRow + 0.5;
+      chooseGhostDir(g);
+    }
+
+    // Wrap tunnel
+    if (g.col < 0) { g.col = MAZE_COLS-1; g.x = g.col+0.5; }
+    if (g.col >= MAZE_COLS) { g.col = 0; g.x = 0.5; }
+  });
+}
+
+function dirKey(d) {
+  if (d === DIR.UP)    return 'UP';
+  if (d === DIR.DOWN)  return 'DOWN';
+  if (d === DIR.LEFT)  return 'LEFT';
+  if (d === DIR.RIGHT) return 'RIGHT';
+  return 'NONE';
+}
+
+function chooseGhostDir(g) {
+  const oppMap = { UP: DIR.DOWN, DOWN: DIR.UP, LEFT: DIR.RIGHT, RIGHT: DIR.LEFT };
+  const opp = oppMap[dirKey(g.dir)];
+  const dirs = [DIR.UP, DIR.DOWN, DIR.LEFT, DIR.RIGHT].filter(d => {
+    if (d === opp) return false;
+    const nc = g.col + d.x;
+    const nr = g.row + d.y;
+    if (nr < 0 || nr >= MAZE_ROWS) return false;
+    const cell = maze[nr]?.[nc];
+    return cell !== undefined && cell !== 0 && cell !== 3;
+  });
+
+  if (!dirs.length) { g.dir = opp || DIR.LEFT; return; }
+
+  // Chase: move toward player; 30% random to avoid perfect prediction
+  if (g.mode === 'chase' && Math.random() > 0.3) {
+    let best = dirs[0], bestDist = Infinity;
+    dirs.forEach(d => {
+      const nc = g.col + d.x, nr = g.row + d.y;
+      const dist = (nc - player.col)**2 + (nr - player.row)**2;
+      if (dist < bestDist) { bestDist = dist; best = d; }
+    });
+    g.dir = best;
+  } else {
+    g.dir = dirs[Math.floor(Math.random() * dirs.length)];
+  }
+}
+
+// ── Collision ──
+function checkCollisions() {
+  if (dying) return;
+  ghosts.forEach(g => {
+    if (g.dead || g.mode === 'house') return;
+    const dx = Math.abs(g.x - player.x);
+    const dy = Math.abs(g.y - player.y);
+    if (dx < 0.7 && dy < 0.7) {
+      hitByGhost();
+    }
+  });
+}
+
+function hitByGhost() {
+  dying = true;
+  lives--;
+  updateHUD();
+  deathAnimating = true;
+  deathFrame = 0;
+  deathTimer = 0;
+  if (lives <= 0) {
+    setTimeout(() => { dying = false; endGame('lives'); }, 900);
+  } else {
+    setTimeout(() => {
+      initPlayer();
+      initGhosts();
+      deathAnimating = false;
+      dying = false;
+    }, 900);
+  }
+}
+
+function updateDeathAnim(dt) {
+  deathTimer += dt;
+  deathFrame = Math.floor(deathTimer / 60);
+}
+
+// ── Floating texts ──
+function spawnFloat(col, row, text, colour) {
+  floatingTexts.push({ col, row, text, colour, life: 1000, age: 0 });
+}
+
+function updateFloatingTexts(dt) {
+  floatingTexts = floatingTexts.filter(ft => {
+    ft.age += dt; ft.life -= dt;
+    return ft.life > 0;
+  });
+}
+
+// ── Question ──
+function showQuestion(item) {
+  gamePaused = true;
+  vocabAnswered++;
+
+  document.getElementById('q-term').textContent = item.term;
+  document.getElementById('q-points').textContent = '';
+  document.getElementById('btn-continue').classList.remove('visible');
+
+  const wrong = shuffle(VOCAB_DATA.filter(v => v.term !== item.term))
+    .slice(0, 3).map(v => v.definition);
+  const options = shuffle([item.definition, ...wrong]);
+
+  const cont = document.getElementById('q-options');
+  cont.innerHTML = '';
+  const KEYS = ['A','B','C','D'];
+  options.forEach((opt, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'q-option';
+    btn.dataset.value = opt;
+    btn.innerHTML = `<span class="q-key">${KEYS[i]}</span><span class="q-opt-text">${opt}</span>`;
+    btn.addEventListener('click', () => answerQuestion(opt, item.definition, btn, cont));
+    cont.appendChild(btn);
+  });
+
+  document.getElementById('overlay-q').classList.add('open');
+}
+
+function answerQuestion(chosen, correct, btn, cont) {
+  cont.querySelectorAll('.q-option').forEach(o => {
+    o.style.pointerEvents = 'none';
+    if (o.dataset.value === correct) o.classList.add('correct');
+  });
+
+  const pointsEl = document.getElementById('q-points');
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    score += 50;
+    vocabCorrect++;
+    pointsEl.textContent = '+50 points! Excellent!';
+    pointsEl.className = 'q-points gain';
+  } else {
+    btn.classList.add('wrong');
+    pointsEl.textContent = 'Not quite — no points this time.';
+    pointsEl.className = 'q-points miss';
+  }
+
+  updateHUD();
+  document.getElementById('btn-continue').classList.add('visible');
+}
+
+function closeQuestion() {
+  document.getElementById('overlay-q').classList.remove('open');
+  gamePaused = false;
+  updateHUD();
+}
+
+// ── End game ──
+function endGame(reason) {
+  gameRunning = false;
+  gameOver = true;
+  clearInterval(timerInterval);
+  cancelAnimationFrame(animId);
+
+  const [emoji, heading, sub] = score >= 500
+    ? ['🏆','Outstanding!',`Score: ${score} — brilliant work!`]
+    : score >= 250
+    ? ['🎉','Great run!',`Score: ${score} — solid performance.`]
+    : score >= 100
+    ? ['👍','Good effort!',`Score: ${score} — keep practising.`]
+    : ['📚','Keep going!',`Score: ${score} — eat those red dots!`];
+
+  document.getElementById('res-emoji').textContent  = emoji;
+  document.getElementById('res-heading').textContent = heading;
+  document.getElementById('res-sub').textContent     = sub;
+  document.getElementById('res-score').textContent   = score;
+  document.getElementById('res-vocab').textContent   = `${vocabCorrect}/${vocabAnswered}`;
+  document.getElementById('res-dots').textContent    = dotsEaten;
+  document.getElementById('overlay-result').classList.add('open');
+  document.getElementById('progress-fill').style.width = '100%';
+}
+
+// ── Draw ──
+function draw(ts) {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#0a0c14';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawMaze();
+  drawFloats();
+  if (!deathAnimating) {
+    drawGhosts(ts);
+    drawPlayer(ts);
+  } else {
+    drawDeathAnim();
+  }
+}
+
+function cx(col) { return offsetX + col * cellSize; }
+function cy(row) { return offsetY + row * cellSize; }
+function cc(col) { return offsetX + (col + 0.5) * cellSize; }
+function cr(row) { return offsetY + (row + 0.5) * cellSize; }
+
+function drawMaze() {
+  const wallColor  = '#1a3a6a';
+  const wallStroke = '#2a5aaa';
+  const dotR  = Math.max(2, cellSize * 0.12);
+  const rdotR = Math.max(3, cellSize * 0.22);
+
+  for (let r = 0; r < MAZE_ROWS; r++) {
+    for (let c = 0; c < MAZE_COLS; c++) {
+      const cell = maze[r][c];
+      const x = cx(c), y = cy(r);
+
+      if (cell === 0) {
+        ctx.fillStyle = wallColor;
+        ctx.fillRect(x, y, cellSize, cellSize);
+        // Draw rounded wall corners for classic look
+        ctx.strokeStyle = wallStroke;
+        ctx.lineWidth = Math.max(1, cellSize * 0.08);
+        ctx.strokeRect(x + ctx.lineWidth/2, y + ctx.lineWidth/2,
+          cellSize - ctx.lineWidth, cellSize - ctx.lineWidth);
+      } else if (cell === 1) {
+        ctx.beginPath();
+        ctx.arc(cc(c), cr(r), dotR, 0, Math.PI*2);
+        ctx.fillStyle = '#c8cce0';
+        ctx.fill();
+      } else if (cell === 4) {
+        // Red dot — pulsing glow
+        ctx.shadowColor = '#ff6b6b';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(cc(c), cr(r), rdotR, 0, Math.PI*2);
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      // 2 = empty passage, 3 = ghost house interior — draw nothing (bg shows)
+    }
+  }
+
+  // Ghost house door (thin line)
+  const doorY = cy(9) + cellSize - 1;
+  ctx.fillStyle = '#ffdd44';
+  ctx.fillRect(cx(8), doorY, cellSize * 5, 3);
+}
+
+function drawPlayer(ts) {
+  const x  = offsetX + player.x * cellSize;
+  const y  = offsetY + player.y * cellSize;
+  const r  = cellSize * 0.44;
+  const mouthOpen = player.mouthAngle * Math.PI;
+
+  // Rotation angle based on direction
+  let rot = 0;
+  if      (player.dir === DIR.LEFT)  rot = Math.PI;
+  else if (player.dir === DIR.UP)    rot = -Math.PI/2;
+  else if (player.dir === DIR.DOWN)  rot =  Math.PI/2;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+
+  ctx.shadowColor = '#ffe066';
+  ctx.shadowBlur  = 10;
+  ctx.fillStyle = '#ffe066';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.arc(0, 0, r, mouthOpen, Math.PI*2 - mouthOpen);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Eye
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.arc(r * 0.3, -r * 0.45, r * 0.12, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawDeathAnim() {
+  const x = offsetX + player.x * cellSize;
+  const y = offsetY + player.y * cellSize;
+  const r = cellSize * 0.44;
+  const progress = Math.min(1, deathFrame / 10);
+  const mouthOpen = (0.25 + progress * 0.45) * Math.PI;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = `rgba(255,224,102,${1 - progress * 0.6})`;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.arc(0, 0, r * (1 - progress * 0.5), mouthOpen, Math.PI*2 - mouthOpen);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawGhosts(ts) {
+  ghosts.forEach(g => {
+    if (g.mode === 'house') return;
+    const x = offsetX + g.x * cellSize;
+    const y = offsetY + g.y * cellSize;
+    const r = cellSize * 0.42;
+    const col = g.dead ? GHOST_DEAD : g.color;
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Body
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(0, -r*0.15, r, Math.PI, 0);
+    // Wavy bottom
+    const waves = 3;
+    const waveW = (r * 2) / waves;
+    ctx.lineTo(r, r * 0.7);
+    for (let i = 0; i < waves; i++) {
+      const frame = Math.floor(ts / 200) % 2;
+      const wy = r * (0.5 + (frame === 0 ? (i % 2 === 0 ? 0.2 : -0.1) : (i % 2 === 0 ? -0.1 : 0.2)));
+      ctx.quadraticCurveTo(r - i * waveW - waveW/2, wy, r - (i+1)*waveW, r*0.7);
+    }
+    ctx.lineTo(-r, r * 0.7);
+    ctx.closePath();
+    ctx.fill();
+
+    // Eyes
+    if (!g.dead) {
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.ellipse(-r*0.3, -r*0.2, r*0.22, r*0.28, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(r*0.3, -r*0.2, r*0.22, r*0.28, 0, 0, Math.PI*2); ctx.fill();
+      // Pupils — look toward player
+      const pdx = player.x - g.x, pdy = player.y - g.y;
+      const pl = Math.sqrt(pdx*pdx + pdy*pdy) || 1;
+      const px = (pdx/pl) * r*0.1, py = (pdy/pl) * r*0.1;
+      ctx.fillStyle = '#2244bb';
+      ctx.beginPath(); ctx.arc(-r*0.3 + px, -r*0.2 + py, r*0.12, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(r*0.3 + px, -r*0.2 + py, r*0.12, 0, Math.PI*2); ctx.fill();
+    }
+
+    ctx.restore();
+  });
+}
+
+function drawFloats() {
+  floatingTexts.forEach(ft => {
+    const x = cc(ft.col), y = cr(ft.row) - (ft.age / ft.life) * cellSize * 2;
+    ctx.globalAlpha = ft.life / 1000;
+    ctx.fillStyle = ft.colour;
+    ctx.font = `bold ${Math.max(10, cellSize * 0.55)}px 'Nunito', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ft.text, x, y);
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ── Keyboard ──
+document.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// ── D-pad ──
+function setupDpad() {
+  const map = { 'dp-up': DIR.UP, 'dp-down': DIR.DOWN, 'dp-left': DIR.LEFT, 'dp-right': DIR.RIGHT };
+  Object.entries(map).forEach(([id, dir]) => {
+    const btn = document.getElementById(id);
+    ['touchstart','mousedown'].forEach(ev => {
+      btn.addEventListener(ev, e => { e.preventDefault(); swipeDir = dir; }, { passive: false });
+    });
+    ['touchend','mouseup'].forEach(ev => {
+      btn.addEventListener(ev, e => { e.preventDefault(); swipeDir = null; }, { passive: false });
+    });
+  });
+}
+setupDpad();
+
+// ── Swipe gestures ──
+let touchStartX = 0, touchStartY = 0;
+canvas_swipe_init();
+function canvas_swipe_init() {
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const absDx = Math.abs(dx), absDy = Math.abs(dy);
+    if (Math.max(absDx, absDy) < 20) return;
+    if (!player) return;
+    if (absDx > absDy) {
+      player.nextDir = dx > 0 ? DIR.RIGHT : DIR.LEFT;
+    } else {
+      player.nextDir = dy > 0 ? DIR.DOWN : DIR.UP;
+    }
+  }, { passive: true });
+}
+
+// ── Resize ──
+window.addEventListener('resize', () => {
+  if (gameRunning) {
+    resizeCanvas();
+  }
+});
+</script>
+</body>
+</html>

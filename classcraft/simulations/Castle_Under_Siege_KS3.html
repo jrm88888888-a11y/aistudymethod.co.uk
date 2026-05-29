@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Castle Under Siege | KS3 History Simulation | Free | classcraft...</title>
+    <meta name="description" content="Play Castle Under Siege — a free interactive KS3 history simulation. No login required. Build decision-making skills with this classroom-ready game.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --navy:#451A03;--mid:#92400E;--gold:#D97706;--gold2:#B45309;
+  --white:#FFFFFF;--offwh:#F5F7FA;--grey:#8892A4;--dgrey:#2D3748;
+  --green:#1E8449;--red:#C0392B;--amber:#E67E22;--card:#FFFFFF;
+  --border:#E2E8F0;--shadow:0 4px 24px rgba(0,0,0,0.10);--r:10px;
+  --btn-a:#1A5276;--btn-b:#145A32;--btn-c:#922B21;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{font-family:'Nunito',sans-serif;background:var(--offwh);color:var(--dgrey);min-height:100vh;display:flex;overflow:hidden;}
+
+.sidebar{width:260px;min-width:260px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;height:100vh;position:relative;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.2rem 0.8rem;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h1{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);letter-spacing:2px;}
+.sidebar-logo p{font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:0.5rem 0;}
+.sidebar-nav button{display:flex;align-items:center;width:100%;padding:0.8rem 1.2rem;background:none;border:none;color:rgba(255,255,255,0.6);font-family:'Nunito',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.2s;text-align:left;gap:0.6rem;}
+.sidebar-nav button:hover{background:rgba(255,255,255,0.08);color:var(--white);}
+.sidebar-nav button.active{background:rgba(255,255,255,0.15);color:var(--gold);border-left:3px solid var(--gold);}
+.sidebar-nav button .check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0;}
+.sidebar-nav button.done .check{background:var(--green);border-color:var(--green);color:var(--white);}
+.sidebar-nav button .phase-dots{margin-left:auto;display:flex;gap:3px;}
+.sidebar-nav button .phase-dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.sidebar-nav button .phase-dots .dot.filled{background:var(--gold);}
+.sidebar-sep{height:1px;background:rgba(255,255,255,0.1);margin:0.3rem 1.2rem;}
+.sidebar-timer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,0.1);}
+.timer-display{font-family:'DM Mono',monospace;font-size:2.2rem;color:var(--gold);text-align:center;margin-bottom:0.5rem;}
+.timer-btns{display:flex;gap:0.5rem;}
+.timer-btns button{flex:1;padding:0.4rem;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:'Nunito',sans-serif;}
+.timer-btns button:hover{background:rgba(255,255,255,0.1);}
+
+.main{flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(0,0,0,0.15);}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+.topbar-phase{display:flex;gap:0.5rem;align-items:center;}
+.phase-step{padding:0.3rem 1rem;border-radius:20px;font-size:0.8rem;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.phase-step.active{background:var(--gold);color:var(--navy);font-weight:600;}
+.phase-step.completed{background:rgba(30,132,73,0.3);color:#6FCF97;}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.topbar-right button{padding:0.3rem 1rem;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.85rem;}
+.topbar-right button:hover{background:rgba(255,255,255,0.1);}
+.topbar-right button.primary{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+.topbar-right button.primary:hover{opacity:0.9;}
+
+.content{flex:1;padding:2rem;max-width:1400px;width:100%;margin:0 auto;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.2rem;}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--navy);letter-spacing:1px;margin-bottom:0.8rem;}
+.card h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:0.5rem;}
+
+.setup-hero{text-align:center;padding:3rem 0 2rem;}
+.setup-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--navy);letter-spacing:3px;}
+.setup-hero p{font-size:1.1rem;color:var(--grey);margin-top:0.5rem;}
+.setup-hero .subtitle{color:var(--gold);font-weight:600;font-size:1.2rem;margin-top:0.2rem;}
+.team-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;}
+.team-input{display:flex;align-items:center;gap:0.8rem;background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:0.8rem 1rem;transition:border-color 0.2s;}
+.team-input:focus-within{border-color:var(--gold);}
+.team-input .num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);width:30px;}
+.team-input input{flex:1;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:1rem;color:var(--dgrey);}
+.team-count-btns{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem;}
+.team-count-btns button{width:48px;height:48px;border-radius:50%;border:2px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.2rem;cursor:pointer;transition:all 0.2s;color:var(--dgrey);}
+.team-count-btns button.active{background:var(--navy);color:var(--gold);border-color:var(--navy);}
+.start-btn{display:block;margin:2rem auto 0;padding:1rem 3rem;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--r);cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+
+.report-card{background:#FFF8E7;border:3px solid #2D2D2D;border-radius:4px;padding:2rem;font-family:Georgia,'Times New Roman',serif;}
+.report-masthead{text-align:center;border-bottom:3px double #2D2D2D;padding-bottom:1rem;margin-bottom:1.5rem;}
+.report-masthead h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#1a1a1a;letter-spacing:4px;}
+.report-masthead .dateline{font-size:0.85rem;color:#666;margin-top:0.3rem;font-style:italic;}
+.report-items{display:grid;gap:0.8rem;}
+.report-item{display:flex;gap:0.8rem;padding:0.6rem 0;border-bottom:1px solid #ddd;align-items:baseline;}
+.report-item .bullet{color:var(--gold);font-weight:bold;font-size:1.2rem;flex-shrink:0;}
+.report-item .text{font-size:1rem;line-height:1.5;color:#333;}
+.event-box{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid var(--amber);border-radius:var(--r);padding:1.2rem 1.5rem;margin-top:1.5rem;}
+.event-box h3{font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:1.3rem;margin-bottom:0.5rem;}
+.event-box p{font-size:1rem;line-height:1.5;}
+.no-event{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:2px solid var(--green);border-radius:var(--r);padding:1rem 1.5rem;margin-top:1.5rem;text-align:center;color:var(--green);font-weight:600;}
+
+.decisions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+.decisions-grid .decision-card:nth-child(5){grid-column:1 / -1;}
+.decision-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:0.8rem 1rem;border-left:4px solid var(--navy);}
+.decision-card .d-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.15rem;}
+.decision-card .d-question{font-size:0.95rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
+.option{display:flex;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:6px;margin-bottom:0.25rem;background:var(--offwh);transition:background 0.15s;align-items:baseline;}
+.option .letter{font-family:'DM Mono',monospace;font-weight:700;font-size:0.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--white);}
+.option .letter.a{background:var(--btn-a);}
+.option .letter.b{background:var(--btn-b);}
+.option .letter.c{background:var(--btn-c);}
+.option .desc{font-size:0.85rem;line-height:1.3;color:var(--dgrey);}
+
+.entry-matrix{width:100%;border-collapse:separate;border-spacing:0;}
+.entry-matrix th{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--white);background:var(--navy);padding:0.8rem;text-align:center;position:sticky;top:0;z-index:5;}
+.entry-matrix th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.entry-matrix th:last-child{border-radius:0 var(--r) 0 0;}
+.entry-matrix td{padding:0.6rem;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+.entry-matrix td:first-child{text-align:left;font-weight:600;font-size:0.9rem;color:var(--navy);min-width:180px;max-width:300px;}
+.abc-group{display:flex;gap:6px;justify-content:center;}
+.abc-btn{width:56px;height:56px;border-radius:12px;border:3px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--dgrey);user-select:none;}
+.abc-btn:active{transform:scale(0.95);}
+.abc-btn.sel-a{background:var(--btn-a);color:var(--white);border-color:var(--btn-a);}
+.abc-btn.sel-b{background:var(--btn-b);color:var(--white);border-color:var(--btn-b);}
+.abc-btn.sel-c{background:var(--btn-c);color:var(--white);border-color:var(--btn-c);}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin:1rem 0;}
+.metric-card{background:var(--white);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);text-align:center;}
+.metric-card .m-name{font-size:0.8rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;}
+.metric-card .m-val{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--navy);}
+.metric-card .m-delta{font-size:0.85rem;font-weight:600;margin-top:0.2rem;}
+.metric-card .m-delta.pos{color:var(--green);}
+.metric-card .m-delta.neg{color:var(--red);}
+.metric-card .m-delta.zero{color:var(--grey);}
+.metric-bar{height:6px;background:var(--border);border-radius:3px;margin-top:0.5rem;overflow:hidden;}
+.metric-bar-fill{height:100%;border-radius:3px;background:var(--mid);transition:width 0.5s ease;}
+
+.results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:1rem;}
+.results-table th{font-family:'Bebas Neue',sans-serif;background:var(--navy);color:var(--white);padding:0.7rem;text-align:center;font-size:0.85rem;}
+.results-table th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.results-table th:last-child{border-radius:0 var(--r) 0 0;}
+.results-table td{padding:0.5rem;text-align:center;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.9rem;}
+.results-table td:first-child{text-align:left;font-family:'Nunito',sans-serif;font-weight:600;}
+
+.lb-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--white);border-radius:var(--r);margin-bottom:0.8rem;box-shadow:var(--shadow);}
+.lb-row:first-child{border:2px solid var(--gold);background:linear-gradient(135deg,#FFFDE7,#FFF8E1);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--navy);width:50px;text-align:center;}
+.lb-row:first-child .lb-rank{color:var(--gold);}
+.lb-name{flex:1;font-size:1.3rem;font-weight:600;color:var(--navy);}
+.lb-stats{display:flex;gap:2rem;}
+.lb-stat{text-align:center;}
+.lb-stat .val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--navy);}
+.lb-stat .lbl{font-size:0.7rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;}
+
+.final-hero{text-align:center;padding:2rem 0;}
+.final-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--gold);letter-spacing:3px;}
+.podium{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;align-items:flex-end;flex-wrap:wrap;}
+.podium-item{text-align:center;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;min-width:180px;}
+.podium-item.first{padding-bottom:2.5rem;border:3px solid var(--gold);transform:scale(1.1);}
+.podium-item .medal{font-size:3rem;}
+.podium-item .pname{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);margin:0.3rem 0;}
+.podium-item .pval{font-family:'DM Mono',monospace;font-size:1.2rem;color:var(--green);font-weight:700;}
+
+.debrief-q{background:var(--white);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:0.8rem;box-shadow:var(--shadow);border-left:4px solid var(--gold);}
+.debrief-q .qnum{font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:1rem;letter-spacing:1px;}
+.debrief-q p{font-size:1.05rem;color:var(--dgrey);line-height:1.5;margin-top:0.3rem;}
+.takeaway-card{background:linear-gradient(135deg,var(--navy),var(--mid));border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;color:var(--white);}
+.takeaway-card h3{font-family:'Bebas Neue',sans-serif;color:var(--gold);margin-bottom:0.5rem;font-size:1.2rem;}
+.takeaway-card p{font-size:0.95rem;line-height:1.5;opacity:0.9;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.overlay-box{background:var(--white);border-radius:var(--r);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+.overlay-box h2{font-family:'Bebas Neue',sans-serif;color:var(--navy);font-size:1.8rem;margin-bottom:1rem;}
+.overlay-box p,.overlay-box li{font-size:0.95rem;line-height:1.6;margin-bottom:0.5rem;color:var(--dgrey);}
+.overlay-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey);}
+
+.svg-container{text-align:center;margin:1rem 0;}
+.svg-container svg{max-width:100%;height:auto;border-radius:var(--r);box-shadow:var(--shadow);}
+
+.curriculum-card{background:var(--white);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:0.6rem;box-shadow:var(--shadow);border-left:4px solid var(--mid);}
+.curriculum-card .c-topic{font-weight:600;color:var(--navy);font-size:0.95rem;}
+.curriculum-card .c-spec{font-size:0.8rem;color:var(--grey);margin-top:0.15rem;}
+.curriculum-card .c-how{font-size:0.9rem;color:var(--dgrey);margin-top:0.3rem;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>CASTLE UNDER SIEGE</h1>
+    <p>History &bull; KS3</p>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-timer">
+    <div class="timer-display" id="timerDisplay">10:00</div>
+    <div class="timer-btns">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseTimer()">Pause</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">SETUP</div>
+    <div class="topbar-phase" id="topbarPhase"></div>
+    <div class="topbar-right" id="topbarRight"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="overlay-box">
+    <button class="overlay-close" onclick="closeHelp()">&times;</button>
+    <h2>How to Play</h2>
+    <p><strong>Castle Under Siege</strong> is a 7-round simulation where teams make strategic decisions across 6 key metrics.</p>
+    <p><strong>Each Round</strong> has 4 phases:</p>
+    <ul>
+      <li><strong>Briefing</strong> &mdash; Read the situation report and any random events aloud.</li>
+      <li><strong>Decision Cards</strong> &mdash; Show the 5 decisions. Teams discuss (~10 min, use the timer).</li>
+      <li><strong>Team Entry</strong> &mdash; Each team taps A, B, or C for each decision.</li>
+      <li><strong>Results</strong> &mdash; Scores update and metric changes are displayed.</li>
+    </ul>
+    <p><strong>Metrics:</strong> Garrison Morale, Food Stores, Wall Integrity, Civilian Survival, Loyalty, Treasury. Each decision shifts these metrics. The team with the best overall performance wins.</p>
+    <p><strong>Scoring:</strong> Final score is the sum of all metric values (normalised to their scales).</p>
+  </div>
+</div>
+
+<script>
+// ======================== EMBEDDED DATA ========================
+const SIM = {"title": "Castle Under Siege", "subject": "History", "level": "KS3", "duration": "90 minutes", "teamSize": "3-5 students", "numTeams": "4-6 teams", "overview": "Your castle is under siege by a powerful rival lord who claims your lands are rightfully his. You must survive seven rounds — each representing one week of the siege — by making critical decisions about military strategy, food management, diplomacy, fortifications, and the welfare of the civilians sheltering within your walls.\n\nEvery choice has consequences. Strengthening your defences may drain your treasury or anger your people. Hoarding food for soldiers may leave civilians starving. Negotiating with the enemy may save lives but cost you honour and loyalty. The team that best balances survival, morale, and ethical leadership will emerge victorious.\n\nThis simulation explores the realities of medieval warfare, the feudal power structure, and the difficult moral choices faced by those in authority. You will need to think like a medieval lord while reflecting on what those decisions meant for ordinary people.", "scenario": "It is the year 1294. A rival baron, Lord Mortimer, has arrived at your castle with an army of 800 men-at-arms, 200 archers, and siege equipment including a trebuchet and battering ram. Your castle shelters 150 soldiers, 300 civilians (peasants, craftspeople, clergy), and holds six weeks of basic food supplies. The nearest allied lord is three days' ride away, but sending a messenger means opening the gates.\n\nThe King is away on campaign in France and cannot intervene. You must hold out, negotiate, or find another way to survive. Every week brings new pressures — disease, dwindling supplies, crumbling walls, and the constant question: who do you protect, and at what cost?", "metrics": [{"name": "Garrison Morale", "start": 50, "unit": "/100", "description": "Fighting spirit and discipline of your soldiers. Below 20 risks mutiny or desertion."}, {"name": "Food Stores", "start": 80, "unit": "/100", "description": "Remaining food and water supplies. Drops each round by base 10. At 0, starvation begins."}, {"name": "Wall Integrity", "start": 90, "unit": "/100", "description": "Structural condition of castle walls and gates. Below 30, the enemy can breach."}, {"name": "Civilian Survival", "start": 100, "unit": "%", "description": "Percentage of civilians alive and healthy. Reflects your duty of care."}, {"name": "Loyalty", "start": 50, "unit": "/100", "description": "How much your people trust and support your leadership. Below 15 risks internal revolt."}, {"name": "Treasury", "start": 5000, "unit": "gold", "description": "Gold reserves for paying soldiers, buying supplies, and bribing enemies."}], "finalScoring": "Final Score = Garrison Morale + Food Stores + Wall Integrity + (Civilian Survival x 0.5) + Loyalty + (Treasury / 100). Bonus +20 if Civilian Survival is above 70%. Bonus +10 if Loyalty is above 60 at the end. Penalty -30 if any metric reached 0 during the simulation.", "curriculumLinks": [{"topic": "The Feudal System", "spec": "KS3 History", "how": "Students experience the obligations and tensions between lord, soldiers, clergy, and peasants first-hand through resource allocation decisions."}, {"topic": "Medieval Warfare and Castle Design", "spec": "KS3 History", "how": "Decisions about wall repair, murder holes, boiling oil, and siege counter-measures connect to real castle defence features."}, {"topic": "Power and Authority", "spec": "KS3 History", "how": "Students confront how authority is maintained through a mix of force, loyalty, and legitimacy — and how quickly it can collapse."}, {"topic": "The Role of the Church", "spec": "KS3 History", "how": "The castle chaplain features in decisions about morale, sanctuary, and moral authority."}, {"topic": "Peasant Life and Social Hierarchy", "spec": "KS3 History", "how": "Civilian welfare decisions force students to consider how medieval society valued — or devalued — ordinary people."}], "rounds": [{"num": 1, "name": "The Siege Begins", "report": ["Lord Mortimer's army has surrounded the castle. His herald delivers an ultimatum: surrender within three days or face total assault.", "Your garrison of 150 soldiers is ready but nervous. Many have never seen real combat.", "The castle chaplain urges you to protect the 300 civilians who fled here for safety.", "Scouts report the enemy has a trebuchet being assembled 400 yards from the south wall.", "Your food stores are adequate for now, but 450 mouths to feed will deplete them fast."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Military", "question": "How do you respond to Lord Mortimer's ultimatum?", "optA": "Defy him publicly — your archers shoot flaming arrows at his camp to show strength.", "optB": "Ignore the ultimatum quietly and focus on preparing defences.", "optC": "Send a diplomatic reply asking for terms and buying time.", "effects": "A: Garrison Morale +10, Loyalty +5, Wall Integrity -5 (provokes immediate trebuchet attack). B: Wall Integrity +5, Garrison Morale +0, Loyalty -5 (seen as weak). C: Garrison Morale -5, Loyalty +5, Treasury -200 (gifts sent with messenger)."}, {"id": "D2", "domain": "Supplies", "question": "How do you manage food distribution in the first week?", "optA": "Full rations for soldiers, half rations for civilians — the fighters come first.", "optB": "Equal rations for everyone — fairness matters.", "optC": "Reduced rations for all — stretch supplies as long as possible.", "effects": "A: Garrison Morale +5, Civilian Survival -5, Loyalty -10, Food Stores -12. B: Garrison Morale -5, Civilian Survival +0, Loyalty +5, Food Stores -15. C: Garrison Morale -8, Civilian Survival -3, Loyalty +0, Food Stores -8."}, {"id": "D3", "domain": "Defence", "question": "Where do you focus your initial fortification efforts?", "optA": "Reinforce the south wall where the trebuchet is aimed — spend gold on stone and timber.", "optB": "Strengthen the main gate with extra bracing and a second portcullis.", "optC": "Build murder holes and boiling-oil stations along all walls — spread resources thin but cover everywhere.", "effects": "A: Wall Integrity +10, Treasury -800. B: Wall Integrity +7, Treasury -500. C: Wall Integrity +4, Garrison Morale +5, Treasury -600."}, {"id": "D4", "domain": "Diplomacy", "question": "Do you try to send a messenger to your nearest ally, Lord Cranford, three days' ride away?", "optA": "Yes — send your best rider at night through a hidden postern gate.", "optB": "No — the risk of the gate being discovered is too great. Stay sealed.", "optC": "Send a civilian volunteer instead of risking a soldier.", "effects": "A: Garrison Morale -3 (lose one good soldier for now), Treasury -100 (bribe for safe passage), 60% chance of ally responding by Round 5. B: Wall Integrity +3 (gate stays sealed), Loyalty +3 (cautious leadership valued). C: Civilian Survival -2 (volunteer at risk), Treasury -50, 40% chance of ally responding by Round 6."}, {"id": "D5", "domain": "Ethics", "question": "A group of 30 peasants from the surrounding village arrives at the gate begging for shelter. The enemy hasn't noticed them yet.", "optA": "Open the gate quickly and let them in — you have a duty to protect your people.", "optB": "Refuse entry — more mouths to feed will doom everyone inside.", "optC": "Let in only the young and strong who can help with labour and defence.", "effects": "A: Civilian Survival +5 (more saved), Loyalty +10, Food Stores -5 (more mouths), Garrison Morale -3. B: Civilian Survival -3, Loyalty -15, Garrison Morale +3, Food Stores +0. C: Civilian Survival +2, Loyalty -5, Garrison Morale +5, Food Stores -3."}]}, {"num": 2, "name": "Plague in the Ranks", "report": ["The trebuchet has begun bombardment. Two sections of the south wall show cracks.", "Enemy archers are harassing anyone who moves along the battlements.", "The well water tastes strange — the chaplain fears it may be fouled.", "Soldiers are grumbling about night watch duties with no extra pay."], "randomEvent": "Disease outbreak: A fever sweeps through the garrison. 20 soldiers are too sick to fight. Garrison Morale -8, Civilian Survival -5 (disease spreads to civilians).", "decisions": [{"id": "D1", "domain": "Supplies", "question": "The well water may be contaminated. How do you handle the water crisis?", "optA": "Spend gold to dig a new well inside the castle courtyard.", "optB": "Ration the existing water strictly and boil everything before drinking.", "optC": "Send a night raid to the river outside the walls to fill barrels.", "effects": "A: Treasury -1000, Food Stores +5 (clean water helps preserve food), Civilian Survival +3. B: Food Stores -5 (boiling uses fuel), Civilian Survival +0, Garrison Morale -5. C: Garrison Morale +5 (bold action), Wall Integrity -3 (gate opened), Food Stores +8, risk: 30% chance of losing 5 soldiers."}, {"id": "D2", "domain": "Military", "question": "With 20 soldiers sick, how do you maintain the defence?", "optA": "Arm the healthiest civilians to fill gaps on the walls.", "optB": "Consolidate soldiers to defend only the most critical points.", "optC": "Pay double wages to healthy soldiers to work longer shifts.", "effects": "A: Civilian Survival -5 (civilians now in danger), Garrison Morale +3, Wall Integrity +0, Loyalty +5. B: Wall Integrity -8 (undefended sections), Garrison Morale +5, Civilian Survival +0. C: Treasury -600, Garrison Morale +10, Wall Integrity +3."}, {"id": "D3", "domain": "Defence", "question": "The trebuchet is causing real damage. How do you counter it?", "optA": "Launch a daring night sortie to destroy the trebuchet — high risk, high reward.", "optB": "Build wooden hoardings over the damaged wall sections for extra protection.", "optC": "Concentrate archers to pick off the trebuchet crew from the battlements.", "effects": "A: Wall Integrity +15 (if successful, 50% chance), Garrison Morale +10, but failure costs 15 soldiers and Morale -10. B: Wall Integrity +8, Treasury -400, Garrison Morale +0. C: Wall Integrity +5, Garrison Morale +5, Treasury -100 (extra arrows)."}, {"id": "D4", "domain": "Diplomacy", "question": "An enemy soldier deserts and comes to your gate claiming he has information. He says Mortimer's army is running low on supplies too.", "optA": "Welcome him in and debrief him thoroughly — valuable intelligence.", "optB": "Interrogate him at the gate but don't let him inside — could be a spy.", "optC": "Turn him away — the risk of treachery is too high.", "effects": "A: Garrison Morale +5 (hope), Loyalty -5 (suspicion of spy), intelligence gained: Mortimer's supply line is vulnerable. B: Garrison Morale +3, Loyalty +0, partial intelligence gained. C: Loyalty +5 (cautious leadership), Garrison Morale -3 (missed opportunity)."}, {"id": "D5", "domain": "Ethics", "question": "The sick soldiers are consuming medicine meant for civilians too. The castle herbalist says she can only treat one group properly.", "optA": "Prioritise the soldiers — you need them fighting fit to survive.", "optB": "Treat civilians first — soldiers are young and strong, they'll recover.", "optC": "Split medicine equally — it's the fair thing to do even if neither group recovers fully.", "effects": "A: Garrison Morale +8, Civilian Survival -8, Loyalty -8. B: Civilian Survival +5, Garrison Morale -10, Loyalty +8. C: Civilian Survival -3, Garrison Morale -3, Loyalty +5."}]}, {"num": 3, "name": "Cracks in the Wall", "report": ["The south wall has a visible crack running from base to battlement. Engineers estimate it could collapse within two weeks.", "Food stores are noticeably lower. Rats have been found in the grain store.", "The chaplain reports civilians are losing hope — some want to surrender.", "Enemy activity has increased near the east gate — scouts may be probing for weaknesses.", "A carrier pigeon arrives from Lord Cranford (if messenger was sent in Round 1) with a vague promise of support."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Defence", "question": "The south wall crack is critical. How do you address it?", "optA": "Full emergency repair — pull civilians and soldiers to work day and night.", "optB": "Patch it with timber bracing — cheaper and faster but less durable.", "optC": "Abandon the south wall section and build an inner barricade as a fallback position.", "effects": "A: Wall Integrity +15, Treasury -1200, Garrison Morale -5 (exhausting work), Civilian Survival -3 (forced labour). B: Wall Integrity +8, Treasury -400, Garrison Morale +0. C: Wall Integrity -5 (outer wall lost), Garrison Morale +5 (smart tactics), Treasury -300."}, {"id": "D2", "domain": "Supplies", "question": "Rats are eating your grain. Food stores are dropping faster than expected.", "optA": "Assign a team of civilians to hunt rats and guard the stores — intensive effort.", "optB": "Move all remaining grain to sealed barrels in the keep — expensive but secure.", "optC": "Start slaughtering the castle's horses for meat to supplement supplies.", "effects": "A: Food Stores +5, Civilian Survival -2 (disease risk from rats), Loyalty +3. B: Food Stores +8, Treasury -500. C: Food Stores +12, Garrison Morale -8 (soldiers attached to horses), no future cavalry sorties possible."}, {"id": "D3", "domain": "Military", "question": "Your soldiers want to launch a raid on the enemy supply wagons spotted approaching from the north road.", "optA": "Approve the raid — 30 soldiers sally out at dawn to intercept the wagons.", "optB": "Deny the raid — you can't afford to lose any soldiers outside the walls.", "optC": "Send a small sabotage team of 5 to burn the wagons at night instead.", "effects": "A: Food Stores +10 (captured supplies), Garrison Morale +12, risk: lose 10 soldiers (Wall Integrity -5 from fewer defenders). B: Garrison Morale -8 (soldiers feel trapped), Loyalty -5. C: Garrison Morale +5, Food Stores +5, Treasury -100, risk: lose 5 soldiers (30% chance)."}, {"id": "D4", "domain": "Diplomacy", "question": "Lord Mortimer sends a new offer: he will lift the siege if you pay 3000 gold and swear fealty to him.", "optA": "Accept — it ends the siege and saves lives, even at great cost to your honour.", "optB": "Refuse outright — you will never kneel to a usurper.", "optC": "Counter-offer: 1500 gold and a temporary truce while you await the King's return.", "effects": "A: SIEGE ENDS — score with remaining metrics but Loyalty -30 (seen as coward), Treasury -3000. B: Garrison Morale +10, Loyalty +10, Wall Integrity -5 (Mortimer attacks in anger). C: Treasury -1500, Garrison Morale +5, Loyalty +5, buys 1 round without attack (Round 4 bombardment paused)."}, {"id": "D5", "domain": "Ethics", "question": "The chaplain asks permission to hold a special mass and bless the defenders. Some soldiers say it's a waste of time; others desperately want it.", "optA": "Allow a full day of rest and prayer — no construction or military drills.", "optB": "Allow a brief ceremony at dawn but keep work schedules running.", "optC": "Refuse — there's no time for prayer. Every hour counts.", "effects": "A: Garrison Morale +12, Loyalty +10, Wall Integrity -5 (lost work day), Food Stores -5 (feast day). B: Garrison Morale +5, Loyalty +5. C: Garrison Morale -8, Loyalty -10, Wall Integrity +3 (extra work done)."}]}, {"num": 4, "name": "The Tunnel", "report": ["A guard on night watch hears digging sounds beneath the east tower.", "The enemy has been unusually quiet on the surface — suspiciously so.", "Food is running critically low. Civilians are visibly weakening.", "Two soldiers deserted last night, climbing down the north wall on ropes.", "Morale is fragile. Arguments break out between soldiers and civilians over scraps."], "randomEvent": "Tunnel detected: Enemy sappers are digging a tunnel under the east tower. If not addressed, the tower will collapse in Round 5. Wall Integrity -10 immediately from structural weakening.", "decisions": [{"id": "D1", "domain": "Defence", "question": "You've confirmed the tunnel. How do you counter it?", "optA": "Dig a counter-mine to intercept the tunnel and collapse it.", "optB": "Flood the tunnel by diverting water from the castle cistern.", "optC": "Reinforce the east tower foundation from above and prepare to fight if they break through.", "effects": "A: Wall Integrity +12, Treasury -800, Garrison Morale +5 (proactive defence). B: Wall Integrity +8, Food Stores -8 (water diverted from drinking supply), Garrison Morale +3. C: Wall Integrity +5, Treasury -400, Garrison Morale -5 (nervous waiting)."}, {"id": "D2", "domain": "Supplies", "question": "Food stores are critical. Starvation looms within two weeks.", "optA": "Expel the civilians from the castle to preserve food for the garrison.", "optB": "Cut everyone to survival rations — just enough to stay alive, not enough to fight well.", "optC": "Send a foraging party out through the postern gate at night.", "effects": "A: Food Stores +15, Civilian Survival -40, Loyalty -25, Garrison Morale -10. B: Food Stores -5 (minimal consumption), Garrison Morale -12, Civilian Survival -8, Wall Integrity -5 (soldiers too weak to repair). C: Food Stores +8, Garrison Morale +3, risk: gate discovered (Wall Integrity -8, 40% chance)."}, {"id": "D3", "domain": "Military", "question": "The two deserters may reveal your weaknesses to the enemy. How do you respond?", "optA": "Announce harsh penalties for desertion — anyone caught fleeing will be executed.", "optB": "Address the garrison honestly about the situation and appeal to their honour.", "optC": "Offer a gold bonus to every soldier who stays — buy their loyalty.", "effects": "A: Garrison Morale -5 (fear, not loyalty), Loyalty +8 (no more desertions for now), Civilian Survival -3 (harsh atmosphere). B: Garrison Morale +8, Loyalty +5. C: Treasury -800, Garrison Morale +10, Loyalty +3."}, {"id": "D4", "domain": "Diplomacy", "question": "A merchant from a neutral town offers to smuggle supplies into the castle — but at a huge markup and only if you grant his guild trading privileges after the siege.", "optA": "Accept the deal — food and supplies are worth any price right now.", "optB": "Negotiate hard — offer half the price and limited privileges.", "optC": "Refuse — you don't trust merchants and can't afford to be indebted.", "effects": "A: Food Stores +15, Treasury -1500, Loyalty -5 (giving away future rights). B: Food Stores +8, Treasury -800, Loyalty +0. C: Food Stores +0, Loyalty +5, Garrison Morale -5 (missed opportunity)."}, {"id": "D5", "domain": "Ethics", "question": "A captured enemy scout is brought before you. Your soldiers want to execute him publicly as a warning. The chaplain urges mercy.", "optA": "Execute him on the battlements where the enemy can see — send a message.", "optB": "Imprison him — he may have useful information and can be exchanged later.", "optC": "Release him with a message offering honourable terms for Mortimer's surrender.", "effects": "A: Garrison Morale +8, Loyalty -8, Civilian Survival -2 (culture of violence), enemy attacks with more ferocity: Wall Integrity -5. B: Garrison Morale +3, Loyalty +3, Food Stores -2 (feeding prisoner). C: Garrison Morale -5, Loyalty +8, Diplomacy advantage: 20% chance Mortimer considers terms."}]}, {"num": 5, "name": "Darkest Hour", "report": ["The siege is now in its fifth week. The castle looks battered and worn.", "Several civilians have died from starvation and disease.", "The garrison is at half strength between casualties, sickness, and desertion.", "Enemy siege towers are being constructed — an assault is clearly being prepared.", "Hope is fading. Even loyal soldiers whisper about surrender."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Military", "question": "Enemy siege towers will reach the walls within days. How do you prepare?", "optA": "Stockpile oil, pitch, and firewood to burn the towers as they approach.", "optB": "Position your best fighters at the likely assault points and drill intensively.", "optC": "Build wooden extensions (hoardings) on the walls to give archers better firing positions.", "effects": "A: Wall Integrity +5, Garrison Morale +8, Treasury -400, Food Stores -3 (fuel diverted from cooking). B: Garrison Morale +10, Wall Integrity +3, Food Stores -5 (extra rations for training soldiers). C: Wall Integrity +10, Treasury -600, Garrison Morale +3."}, {"id": "D2", "domain": "Supplies", "question": "You discover a hidden cellar beneath the chapel containing old wine and preserved meats — enough for one good meal for everyone.", "optA": "Hold a feast tonight — one night of celebration could restore hope.", "optB": "Distribute it as extra rations over the next three days — extend the benefit.", "optC": "Reserve it for the soldiers only — they need strength for the coming battle.", "effects": "A: Garrison Morale +15, Loyalty +10, Civilian Survival +3, Food Stores +0 (consumed immediately). B: Food Stores +5, Garrison Morale +5, Loyalty +5, Civilian Survival +3. C: Garrison Morale +10, Loyalty -10, Civilian Survival -3, Food Stores +3."}, {"id": "D3", "domain": "Defence", "question": "The castle's outer barbican is barely holding. Do you commit resources to it or fall back?", "optA": "Defend the barbican to the last — every yard of ground matters.", "optB": "Abandon the barbican and strengthen the inner gatehouse.", "optC": "Booby-trap the barbican with traps and caltrops, then abandon it.", "effects": "A: Wall Integrity +5, Garrison Morale -5 (casualties likely), Civilian Survival -3 (fighting close to civilian areas). B: Wall Integrity -8 (lost ground), Garrison Morale +5 (shorter line to defend), Treasury -300. C: Wall Integrity -3, Garrison Morale +8 (clever tactics), Treasury -200."}, {"id": "D4", "domain": "Diplomacy", "question": "A priest from a nearby monastery arrives under flag of truce, offering to mediate between you and Mortimer.", "optA": "Accept mediation — the Church carries authority even Mortimer must respect.", "optB": "Accept but use the truce period to secretly repair walls and rest soldiers.", "optC": "Decline — Mortimer will see negotiation as weakness at this stage.", "effects": "A: Garrison Morale +5, Loyalty +5, potential ceasefire: Wall Integrity +5 (no attacks during talks), Treasury -200 (gifts to Church). B: Wall Integrity +10, Garrison Morale +5, Loyalty -8 (dishonourable), Food Stores +3 (rest means less energy spent). C: Garrison Morale +3, Loyalty +5, Wall Integrity -5 (attacks intensify)."}, {"id": "D5", "domain": "Ethics", "question": "A group of civilians demands the right to leave the castle and surrender to Mortimer. They believe they'll be treated better as his subjects than starving inside your walls.", "optA": "Let them go — you cannot force people to stay and die.", "optB": "Forbid it — if they leave, Mortimer learns how weak you are, and they may be used as hostages.", "optC": "Allow the elderly and children to leave but keep able-bodied civilians for labour.", "effects": "A: Civilian Survival -15 (uncertain fate outside), Loyalty +8 (respect for freedom), Food Stores +8 (fewer mouths). B: Civilian Survival -5 (growing desperation), Loyalty -12, Garrison Morale -5 (unrest). C: Civilian Survival -8, Loyalty -3, Food Stores +5, Garrison Morale +3."}]}, {"num": 6, "name": "A Glimmer of Hope", "report": ["Week six. The castle still stands, but barely.", "Scouts on the highest tower report dust clouds to the north — could be an army, or could be nothing.", "Mortimer's forces seem restless. Some of his mercenaries may be unpaid.", "The garrison has bonded through shared suffering — those who remain are fiercely determined.", "Civilians who survived this far are gaunt but resilient."], "randomEvent": "Relief army rumoured: Scouts report a column of armed men approaching from the north. It could be Lord Cranford's relief force — or Mortimer's reinforcements. Garrison Morale +10 (hope), but uncertainty remains.", "decisions": [{"id": "D1", "domain": "Military", "question": "If the approaching army is friendly, you need to coordinate. If hostile, you need to prepare. What do you do?", "optA": "Send your last mounted soldier out to make contact with the approaching force.", "optB": "Prepare a signal fire system — green smoke for friendly, red for enemy.", "optC": "Assume the worst and prepare for a two-front siege.", "effects": "A: Garrison Morale +5, risk: lose soldier (20% chance), if ally confirmed: Morale +15 in Round 7. B: Treasury -100, Garrison Morale +5, information gained by Round 7. C: Garrison Morale -5, Wall Integrity +5 (extra preparations), Food Stores -5 (stress eating)."}, {"id": "D2", "domain": "Supplies", "question": "With the end possibly in sight, how do you manage the last food reserves?", "optA": "Increase rations slightly — people need strength for whatever comes next.", "optB": "Maintain strict rationing — you don't know how long this will last.", "optC": "Give soldiers full rations and civilians survival rations — prioritise combat readiness.", "effects": "A: Food Stores -12, Garrison Morale +8, Civilian Survival +3, Loyalty +5. B: Food Stores -8, Garrison Morale -3, Civilian Survival -3. C: Food Stores -10, Garrison Morale +10, Civilian Survival -5, Loyalty -8."}, {"id": "D3", "domain": "Diplomacy", "question": "Mortimer's mercenaries send a secret message: for 1000 gold, they'll switch sides or simply leave.", "optA": "Pay them — removing mercenaries from Mortimer's army is a huge advantage.", "optB": "Offer 500 gold for them to simply leave — you don't need more mouths to feed.", "optC": "Ignore the offer — mercenaries are untrustworthy and this could be a trap.", "effects": "A: Treasury -1000, Garrison Morale +10, Wall Integrity +5 (reduced enemy strength), risk: 20% chance it's a trap (Loyalty -10, Treasury lost). B: Treasury -500, Garrison Morale +5, Wall Integrity +3 (weaker enemy). C: Loyalty +5, Garrison Morale -3 (missed opportunity)."}, {"id": "D4", "domain": "Defence", "question": "You have enough material for one major defensive project. Which do you choose?", "optA": "Repair the main gate — if it falls, everything falls.", "optB": "Create a killing ground inside the inner courtyard — a last-stand position.", "optC": "Build a catapult from salvaged timber to return fire at the enemy.", "effects": "A: Wall Integrity +12, Treasury -500. B: Wall Integrity +3, Garrison Morale +10, Civilian Survival -5 (inner areas made dangerous). C: Wall Integrity +5, Garrison Morale +15, Treasury -400."}, {"id": "D5", "domain": "Ethics", "question": "The chaplain confesses that he has been secretly sharing food with the weakest civilians from his own stores. He is now too weak to perform his duties.", "optA": "Honour his sacrifice publicly and assign him extra rations — he's earned it.", "optB": "Quietly give him food but say nothing — you can't be seen giving special treatment.", "optC": "Do nothing — everyone is suffering equally. No exceptions.", "effects": "A: Loyalty +10, Civilian Survival +3, Food Stores -3, Garrison Morale +5. B: Loyalty +3, Food Stores -2. C: Loyalty -8, Garrison Morale -3, Civilian Survival -3."}]}, {"num": 7, "name": "The Final Assault", "report": ["Lord Mortimer launches his full assault at dawn. Siege towers advance, ladders are raised, and the battering ram strikes the gate.", "The approaching army is confirmed as Lord Cranford — but he is still a day's march away.", "You must survive one more day. Everything comes down to this.", "The garrison is battered but standing. Civilians huddle in the keep.", "This is the last stand. Every decision now determines who lives and who dies."], "randomEvent": "Final assault: Lord Mortimer commits all forces. Wall Integrity -15 from the sustained attack. All surviving soldiers must fight.", "decisions": [{"id": "D1", "domain": "Military", "question": "The assault has begun. Where do you concentrate your remaining forces?", "optA": "Spread evenly across all walls — don't let any section fall.", "optB": "Mass at the main gate — if the gate holds, you hold.", "optC": "Keep a mobile reserve to rush to wherever the enemy breaks through.", "effects": "A: Wall Integrity +5, Garrison Morale -5 (spread thin), Civilian Survival -5 (gaps in defence). B: Wall Integrity +10, Garrison Morale +5, risk: if Wall Integrity below 30 at another point, breach occurs (-15 Civilian Survival). C: Wall Integrity +7, Garrison Morale +8, Loyalty +5."}, {"id": "D2", "domain": "Defence", "question": "Enemy soldiers have scaled the east wall. Your last oil reserves could stop them — but using it risks setting the wall on fire.", "optA": "Pour the boiling oil — stop the assault at any cost.", "optB": "Send soldiers to fight hand-to-hand on the wall — save the oil for the gate.", "optC": "Pull back from the east wall and funnel enemies into a prepared kill zone.", "effects": "A: Wall Integrity -10 (fire damage), Garrison Morale +10, enemy repelled from east. B: Garrison Morale +5, Wall Integrity +0, risk: lose 15 soldiers (50% chance). C: Wall Integrity -5, Garrison Morale +8, Civilian Survival -3 (fighting moves inward)."}, {"id": "D3", "domain": "Supplies", "question": "It's the last day. How do you use your remaining food and resources?", "optA": "Give everything to the soldiers — they need to fight for hours yet.", "optB": "Distribute equally — even on the last day, everyone deserves dignity.", "optC": "Use food stores to create smoke screens and distractions — burn grain to make choking smoke on the walls.", "effects": "A: Garrison Morale +10, Civilian Survival -5, Loyalty -5, Food Stores -10. B: Garrison Morale +3, Civilian Survival +3, Loyalty +8, Food Stores -8. C: Food Stores -15, Wall Integrity +8 (enemy can't see), Garrison Morale +5."}, {"id": "D4", "domain": "Diplomacy", "question": "In the chaos of battle, Mortimer himself approaches under a white flag. He offers one final deal: your lands, your title, your gold — but everyone inside lives.", "optA": "Accept — saving every life is worth any personal sacrifice.", "optB": "Refuse — Cranford is one day away. Hold the line.", "optC": "Stall for time — pretend to negotiate while your soldiers rest and reposition.", "effects": "A: SIEGE ENDS — Civilian Survival +20, Loyalty +15, but Treasury to 0, all lands lost. Final score heavily penalised. B: Garrison Morale +15, Loyalty +15, Wall Integrity -10 (assault resumes with fury). C: Garrison Morale +5, Wall Integrity +5 (brief respite), Loyalty -5 (dishonourable tactic)."}, {"id": "D5", "domain": "Ethics", "question": "Enemy wounded are piling up below your walls, crying for help. Mortimer's men can't retrieve them under fire. Your civilians want to help them.", "optA": "Allow civilians to tend to the enemy wounded under white flag — show mercy even in battle.", "optB": "Ignore them — it's tragic but you can't spare anyone during the assault.", "optC": "Use the wounded as leverage — offer to treat them if Mortimer pulls back.", "effects": "A: Civilian Survival -3 (exposed to danger), Loyalty +15, Garrison Morale -5 (soldiers resent it), International reputation boost. B: Loyalty -5, Garrison Morale +5, Civilian Survival +0. C: Loyalty -10, Garrison Morale +8, Diplomacy: 30% chance Mortimer pauses assault for 1 hour (Wall Integrity +5)."}]}], "debriefQuestions": ["Which decision was the hardest to make as a group, and why did you disagree?", "How did your treatment of civilians change as the siege went on? What does that tell you about how power works under pressure?", "A real medieval lord would have faced these same dilemmas. What advantages or disadvantages did they have compared to you?", "How did the feudal system (loyalty, obligation, hierarchy) shape what options were available to you?", "If you could go back and change one decision, which would it be and why?", "What role did the Church (the chaplain) play in your castle? How does that compare to the real role of the Church in medieval life?", "Did the 'right' military decision and the 'right' ethical decision ever conflict? How did you resolve that?"], "keyTakeaways": ["Medieval lords faced genuine dilemmas between military necessity and the welfare of ordinary people — there were rarely easy answers.", "The feudal system created obligations in both directions: lords owed protection to their people, and people owed service and loyalty in return.", "Castle design was not just about military defence — it was about sustaining a community under siege, including food, water, sanitation, and morale.", "Power in the medieval world depended on a fragile balance of force, legitimacy, loyalty, and resources — and any of those could collapse.", "Studying history means understanding the choices people faced in their own context, not just judging them by modern standards."]};
+const SVGS = {"r1_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFF7ED\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#92400E\" stroke-width=\"1.5\"/>\n  <g><rect x=\"298\" y=\"146\" width=\"44\" height=\"24\" fill=\"#92400E\"/><rect x=\"298\" y=\"138\" width=\"10\" height=\"10\" fill=\"#92400E\"/><rect x=\"316\" y=\"134\" width=\"8\" height=\"14\" fill=\"#92400E\"/><rect x=\"332\" y=\"138\" width=\"10\" height=\"10\" fill=\"#92400E\"/><rect x=\"316\" y=\"158\" width=\"8\" height=\"12\" fill=\"#FFF7ED\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#92400E\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#D97706\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">The Siege Begins</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#92400E\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n</svg>", "r1_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFF7ED\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#92400E\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">The Siege Begins</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,142 110,152 110,178 102,178 102,152\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"94\" y=\"152\" width=\"24\" height=\"4\" rx=\"2\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Military</text>\n  <g opacity=\"0.85\"><rect x=\"200\" y=\"152\" width=\"24\" height=\"20\" rx=\"4\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"204\" y=\"146\" width=\"16\" height=\"8\" rx=\"2\" fill=\"#D97706\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Supplies</text>\n  <g opacity=\"0.85\"><path d=\"M318,140 L336,150 L336,166 Q336,180 318,180 Q300,180 300,166 L300,150 Z\" fill=\"#92400E\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Defence</text>\n  <g opacity=\"0.85\"><circle cx=\"418\" cy=\"160\" r=\"14\" fill=\"#92400E\" opacity=\"0.45\"/><circle cx=\"430\" cy=\"160\" r=\"14\" fill=\"#D97706\" opacity=\"0.45\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Diplomacy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#92400E\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r2_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFF7ED\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#92400E\" stroke-width=\"1.5\"/>\n  <g><path d=\"M320,126 L342,138 L342,158 Q342,174 320,176 Q298,174 298,158 L298,138 Z\" fill=\"#92400E\" opacity=\"0.9\"/><path d=\"M314,150 L318,156 L328,144\" stroke=\"#FFF7ED\" stroke-width=\"3\" fill=\"none\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#92400E\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#D97706\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Plague in the Ranks</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#92400E\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n</svg>", "r2_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFF7ED\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#92400E\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Plague in the Ranks</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"94\" y=\"152\" width=\"24\" height=\"20\" rx=\"4\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"98\" y=\"146\" width=\"16\" height=\"8\" rx=\"2\" fill=\"#D97706\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Supplies</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 216,152 216,178 208,178 208,152\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"200\" y=\"152\" width=\"24\" height=\"4\" rx=\"2\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Military</text>\n  <g opacity=\"0.85\"><path d=\"M318,140 L336,150 L336,166 Q336,180 318,180 Q300,180 300,166 L300,150 Z\" fill=\"#92400E\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Defence</text>\n  <g opacity=\"0.85\"><circle cx=\"418\" cy=\"160\" r=\"14\" fill=\"#92400E\" opacity=\"0.45\"/><circle cx=\"430\" cy=\"160\" r=\"14\" fill=\"#D97706\" opacity=\"0.45\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Diplomacy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#92400E\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r3_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFF7ED\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#92400E\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"322,126 310,150 320,150 318,174 330,150 320,150\" fill=\"#92400E\" opacity=\"0.9\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#92400E\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#D97706\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Cracks in the Wall</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#92400E\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n</svg>", "r3_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFF7ED\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#92400E\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Cracks in the Wall</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M106,140 L124,150 L124,166 Q124,180 106,180 Q88,180 88,166 L88,150 Z\" fill=\"#92400E\" opacity=\"0.85\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Defence</text>\n  <g opacity=\"0.85\"><rect x=\"200\" y=\"152\" width=\"24\" height=\"20\" rx=\"4\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"204\" y=\"146\" width=\"16\" height=\"8\" rx=\"2\" fill=\"#D97706\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Supplies</text>\n  <g opacity=\"0.85\"><polygon points=\"318,142 322,152 322,178 314,178 314,152\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"306\" y=\"152\" width=\"24\" height=\"4\" rx=\"2\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Military</text>\n  <g opacity=\"0.85\"><circle cx=\"418\" cy=\"160\" r=\"14\" fill=\"#92400E\" opacity=\"0.45\"/><circle cx=\"430\" cy=\"160\" r=\"14\" fill=\"#D97706\" opacity=\"0.45\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Diplomacy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#92400E\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r4_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFF7ED\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#92400E\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"292,168 316,128 324,142 334,134 348,168\" fill=\"#92400E\" opacity=\"0.8\"/><polygon points=\"316,128 310,138 322,138\" fill=\"#FFF7ED\" opacity=\"0.6\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#92400E\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#D97706\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">The Tunnel</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#92400E\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n</svg>", "r4_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFF7ED\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#92400E\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">The Tunnel</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M106,140 L124,150 L124,166 Q124,180 106,180 Q88,180 88,166 L88,150 Z\" fill=\"#92400E\" opacity=\"0.85\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Defence</text>\n  <g opacity=\"0.85\"><rect x=\"200\" y=\"152\" width=\"24\" height=\"20\" rx=\"4\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"204\" y=\"146\" width=\"16\" height=\"8\" rx=\"2\" fill=\"#D97706\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Supplies</text>\n  <g opacity=\"0.85\"><polygon points=\"318,142 322,152 322,178 314,178 314,152\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"306\" y=\"152\" width=\"24\" height=\"4\" rx=\"2\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Military</text>\n  <g opacity=\"0.85\"><circle cx=\"418\" cy=\"160\" r=\"14\" fill=\"#92400E\" opacity=\"0.45\"/><circle cx=\"430\" cy=\"160\" r=\"14\" fill=\"#D97706\" opacity=\"0.45\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Diplomacy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#92400E\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r5_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFF7ED\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#92400E\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"306,128 334,128 324,150 334,172 306,172 316,150\" fill=\"#92400E\" opacity=\"0.8\"/><rect x=\"304\" y=\"126\" width=\"32\" height=\"4\" rx=\"2\" fill=\"#92400E\"/><rect x=\"304\" y=\"170\" width=\"32\" height=\"4\" rx=\"2\" fill=\"#92400E\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#92400E\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#D97706\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Darkest Hour</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#92400E\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n</svg>", "r5_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFF7ED\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#92400E\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Darkest Hour</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,142 110,152 110,178 102,178 102,152\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"94\" y=\"152\" width=\"24\" height=\"4\" rx=\"2\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Military</text>\n  <g opacity=\"0.85\"><rect x=\"200\" y=\"152\" width=\"24\" height=\"20\" rx=\"4\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"204\" y=\"146\" width=\"16\" height=\"8\" rx=\"2\" fill=\"#D97706\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Supplies</text>\n  <g opacity=\"0.85\"><path d=\"M318,140 L336,150 L336,166 Q336,180 318,180 Q300,180 300,166 L300,150 Z\" fill=\"#92400E\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Defence</text>\n  <g opacity=\"0.85\"><circle cx=\"418\" cy=\"160\" r=\"14\" fill=\"#92400E\" opacity=\"0.45\"/><circle cx=\"430\" cy=\"160\" r=\"14\" fill=\"#D97706\" opacity=\"0.45\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Diplomacy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#92400E\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r6_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFF7ED\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#92400E\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"144\" r=\"16\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"312\" y=\"160\" width=\"16\" height=\"6\" rx=\"2\" fill=\"#D97706\"/><rect x=\"314\" y=\"166\" width=\"12\" height=\"4\" rx=\"2\" fill=\"#D97706\" opacity=\"0.7\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#92400E\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#D97706\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">A Glimmer of Hope</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#92400E\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n</svg>", "r6_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFF7ED\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#92400E\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">A Glimmer of Hope</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,142 110,152 110,178 102,178 102,152\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"94\" y=\"152\" width=\"24\" height=\"4\" rx=\"2\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Military</text>\n  <g opacity=\"0.85\"><rect x=\"200\" y=\"152\" width=\"24\" height=\"20\" rx=\"4\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"204\" y=\"146\" width=\"16\" height=\"8\" rx=\"2\" fill=\"#D97706\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Supplies</text>\n  <g opacity=\"0.85\"><circle cx=\"312\" cy=\"160\" r=\"14\" fill=\"#92400E\" opacity=\"0.45\"/><circle cx=\"324\" cy=\"160\" r=\"14\" fill=\"#D97706\" opacity=\"0.45\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Diplomacy</text>\n  <g opacity=\"0.85\"><path d=\"M424,140 L442,150 L442,166 Q442,180 424,180 Q406,180 406,166 L406,150 Z\" fill=\"#92400E\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Defence</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#92400E\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r7_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFF7ED\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#92400E\" stroke-width=\"1.5\"/>\n  <g><line x1=\"308\" y1=\"128\" x2=\"308\" y2=\"172\" stroke=\"#92400E\" stroke-width=\"3\"/><path d=\"M308,128 L336,136 L308,144\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#92400E\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#D97706\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">The Final Assault</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#92400E\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n</svg>", "r7_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFF7ED\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#92400E\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#92400E\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">The Final Assault</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,142 110,152 110,178 102,178 102,152\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"94\" y=\"152\" width=\"24\" height=\"4\" rx=\"2\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Military</text>\n  <g opacity=\"0.85\"><path d=\"M212,140 L230,150 L230,166 Q230,180 212,180 Q194,180 194,166 L194,150 Z\" fill=\"#92400E\" opacity=\"0.85\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Defence</text>\n  <g opacity=\"0.85\"><rect x=\"306\" y=\"152\" width=\"24\" height=\"20\" rx=\"4\" fill=\"#92400E\" opacity=\"0.85\"/><rect x=\"310\" y=\"146\" width=\"16\" height=\"8\" rx=\"2\" fill=\"#D97706\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Supplies</text>\n  <g opacity=\"0.85\"><circle cx=\"418\" cy=\"160\" r=\"14\" fill=\"#92400E\" opacity=\"0.45\"/><circle cx=\"430\" cy=\"160\" r=\"14\" fill=\"#D97706\" opacity=\"0.45\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Diplomacy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#92400E\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#92400E\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#78350F\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#92400E\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Castle Under Siege</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#92400E\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>"};
+
+// ======================== EFFECTS PARSER ========================
+// Build alias map: short names -> full metric name
+const METRIC_ALIASES = {};
+(function() {
+  for (const m of SIM.metrics) {
+    const name = m.name;
+    METRIC_ALIASES[name.toLowerCase()] = name;
+    // Add partial aliases: last word, last two words, etc.
+    const words = name.split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const partial = words.slice(i).join(' ').toLowerCase();
+      if (partial.length >= 3 && !METRIC_ALIASES[partial]) {
+        METRIC_ALIASES[partial] = name;
+      }
+    }
+    // Also add without common suffixes
+    const noLevel = name.replace(/\s+(Level|Score|Rating|Index|Remaining|Value)$/i, '').toLowerCase();
+    if (noLevel !== name.toLowerCase() && !METRIC_ALIASES[noLevel]) {
+      METRIC_ALIASES[noLevel] = name;
+    }
+  }
+})();
+
+function findMetric(text) {
+  // Try exact match first, then longest partial match
+  const lower = text.toLowerCase();
+  for (const m of SIM.metrics) {
+    if (lower.includes(m.name.toLowerCase())) return m.name;
+  }
+  // Try aliases (longest first)
+  const aliases = Object.keys(METRIC_ALIASES).sort((a,b) => b.length - a.length);
+  for (const alias of aliases) {
+    if (lower.includes(alias)) return METRIC_ALIASES[alias];
+  }
+  return null;
+}
+
+function parseEffects(effectsStr) {
+  if (!effectsStr) return {};
+  const results = {};
+  const clauses = effectsStr.split(/[.;,]/).map(s => s.trim()).filter(s => s.length > 0);
+
+  for (const clause of clauses) {
+    const metricName = findMetric(clause);
+    if (!metricName) continue;
+
+    // "set to X"
+    const setMatch = clause.match(/set\s+to\s+(-?[\d,.]+)/i);
+    if (setMatch) {
+      results[metricName] = { type: 'set', value: parseNum(setMatch[1]) };
+      continue;
+    }
+
+    // "+/-$X,XXX" or "+/-X" or "+/-X%"
+    const deltaMatch = clause.match(/([+-])\s*\$?([\d,.]+)[%]?/);
+    if (deltaMatch) {
+      const sign = deltaMatch[1] === '+' ? 1 : -1;
+      const val = parseNum(deltaMatch[2]) * sign;
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+      continue;
+    }
+
+    // "-$X,XXX" embedded
+    const negMatch = clause.match(/-\$([\d,.]+)/);
+    if (negMatch) {
+      const val = -parseNum(negMatch[1]);
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+    }
+  }
+  return results;
+}
+
+function parseNum(s) {
+  return parseFloat(s.replace(/,/g, '')) || 0;
+}
+
+function clampMetric(metricDef, value) {
+  const unit = metricDef.unit || '';
+  if (unit === '/100') return Math.max(0, Math.min(100, value));
+  if (unit === '%') return Math.max(-100, Math.min(100, value));
+  if (unit === '$') return Math.max(0, value); // no negative cash
+  return value;
+}
+
+// ======================== GAME STATE ========================
+let G = {
+  started: false,
+  teamCount: 3,
+  teams: [],
+  currentScreen: 'setup',
+  currentRound: 1,
+  currentPhase: 0,
+  roundsComplete: new Set(),
+  teamMetrics: {}, // teamIdx -> {metricName: value}
+  roundDecisions: {}, // round -> teamIdx -> {D1:'A', D2:'B', ...}
+  roundSnapshots: {}, // round -> teamIdx -> {metricName: {before, after, delta}}
+};
+
+function initMetrics() {
+  G.teamMetrics = {};
+  for (let t = 0; t < G.teams.length; t++) {
+    G.teamMetrics[t] = {};
+    for (const m of SIM.metrics) {
+      G.teamMetrics[t][m.name] = m.start;
+    }
+  }
+}
+
+// ======================== TIMER ========================
+let timerInterval = null, timerSeconds = 600;
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + s.toString().padStart(2,'0');
+  document.getElementById('timerDisplay').style.color = timerSeconds <= 60 ? '#EF5350' : 'var(--gold)';
+}
+function startTimer() { if (timerInterval) return; timerInterval = setInterval(() => { if (timerSeconds > 0) { timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; } }, 1000); }
+function pauseTimer() { clearInterval(timerInterval); timerInterval = null; }
+function resetTimer() { pauseTimer(); timerSeconds = 600; updateTimerDisplay(); }
+updateTimerDisplay();
+
+// ======================== NAVIGATION ========================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let h = '<button onclick="goTo(\'setup\')" class="' + (G.currentScreen==='setup'?'active':'') + '"><span class="check"></span> Setup</button>';
+  for (let r = 1; r <= 7; r++) {
+    const done = G.roundsComplete.has(r);
+    const isActive = G.currentScreen === 'round' && G.currentRound === r;
+    h += '<button onclick="goToRound('+r+')" class="' + (isActive?'active':'') + ' ' + (done?'done':'') + '">';
+    h += '<span class="check">' + (done?'&#10003;':'') + '</span> Round ' + r;
+    if (isActive) { h += '<span class="phase-dots">'; for (let p=0;p<4;p++) h += '<span class="dot '+(G.currentPhase>=p?'filled':'')+'"></span>'; h += '</span>'; }
+    h += '</button>';
+  }
+  h += '<div class="sidebar-sep"></div>';
+  h += '<button onclick="goTo(\'leaderboard\')" class="'+(G.currentScreen==='leaderboard'?'active':'')+'"><span class="check"></span> Leaderboard</button>';
+  h += '<button onclick="goTo(\'final\')" class="'+(G.currentScreen==='final'?'active':'')+'"><span class="check"></span> Final Results</button>';
+  h += '<button onclick="goTo(\'debrief\')" class="'+(G.currentScreen==='debrief'?'active':'')+'"><span class="check"></span> Debrief</button>';
+  nav.innerHTML = h;
+}
+
+function goTo(s) { G.currentScreen = s; render(); }
+function goToRound(r) { if (!G.started) return; G.currentScreen = 'round'; G.currentRound = r; G.currentPhase = G.roundsComplete.has(r) ? 3 : 0; render(); }
+function setPhase(p) { G.currentPhase = p; render(); }
+
+function render() {
+  buildSidebar();
+  const c = document.getElementById('content');
+  if (G.currentScreen === 'setup') renderSetup(c);
+  else if (G.currentScreen === 'round') renderRound(c);
+  else if (G.currentScreen === 'leaderboard') renderLeaderboard(c);
+  else if (G.currentScreen === 'final') renderFinal(c);
+  else if (G.currentScreen === 'debrief') renderDebrief(c);
+  updateTopbar();
+}
+
+function updateTopbar() {
+  const title = document.getElementById('topbarTitle');
+  const phase = document.getElementById('topbarPhase');
+  const right = document.getElementById('topbarRight');
+  if (G.currentScreen === 'setup') {
+    title.textContent = 'SETUP';
+    phase.innerHTML = '';
+    right.innerHTML = '<button onclick="showHelp()">How to Play</button>';
+  } else if (G.currentScreen === 'round') {
+    const rd = SIM.rounds[G.currentRound-1];
+    title.textContent = 'ROUND ' + rd.num + ': ' + rd.name.toUpperCase();
+    const phases = ['Briefing','Decisions','Team Entry','Results'];
+    phase.innerHTML = phases.map((p,i) => '<button class="phase-step '+(i===G.currentPhase?'active':i<G.currentPhase?'completed':'')+'" onclick="setPhase('+i+')">'+p+'</button>').join('');
+    let btns = '';
+    if (G.currentPhase > 0) btns += '<button onclick="setPhase('+(G.currentPhase-1)+')">&#8592; Back</button>';
+    if (G.currentPhase < 3) btns += '<button class="primary" onclick="nextPhase()">Next &#8594;</button>';
+    else if (G.currentRound < 7) btns += '<button class="primary" onclick="goToRound('+(G.currentRound+1)+')">Round '+(G.currentRound+1)+' &#8594;</button>';
+    else btns += '<button class="primary" onclick="goTo(\'final\')">Final Results &#8594;</button>';
+    right.innerHTML = btns;
+  } else {
+    title.textContent = G.currentScreen.toUpperCase().replace('LEADERBOARD','LEADERBOARD');
+    phase.innerHTML = '';
+    right.innerHTML = G.currentScreen === 'final' ? '<button class="primary" onclick="goTo(\'debrief\')">Debrief &#8594;</button>' : '';
+  }
+}
+
+function nextPhase() {
+  if (G.currentPhase === 2) {
+    const r = G.currentRound;
+    if (!validateEntries(r)) return;
+    calculateRound(r);
+  }
+  G.currentPhase = Math.min(3, G.currentPhase + 1);
+  render();
+}
+
+function validateEntries(r) {
+  if (!G.roundDecisions[r]) { alert('Please enter decisions for all teams first.'); return false; }
+  for (let t = 0; t < G.teams.length; t++) {
+    const td = G.roundDecisions[r][t];
+    if (!td) { alert(G.teams[t] + ' has not entered any decisions.'); return false; }
+    for (const dec of SIM.rounds[r-1].decisions) {
+      if (!td[dec.id]) { alert(G.teams[t] + ' is missing ' + dec.id + '.'); return false; }
+    }
+  }
+  return true;
+}
+
+function showHelp() { document.getElementById('helpOverlay').classList.add('show'); }
+function closeHelp() { document.getElementById('helpOverlay').classList.remove('show'); }
+
+// ======================== SETUP ========================
+function renderSetup(c) {
+  let h = '<div class="screen active"><div class="setup-hero"><h1>' + SIM.title.toUpperCase() + '</h1><p class="subtitle">' + SIM.subject + ' &bull; ' + SIM.level + '</p><p>Lead your team through 7 rounds of strategic decisions.</p></div>';
+  h += '<div class="card"><h2>Number of Teams</h2><div class="team-count-btns">';
+  for (let i = 2; i <= 6; i++) h += '<button class="'+(G.teamCount===i?'active':'')+'" onclick="setTeamCount('+i+')">'+i+'</button>';
+  h += '</div><h2>Team Names</h2><div class="team-inputs" id="teamInputs">';
+  for (let i = 0; i < G.teamCount; i++) {
+    const val = G.teams[i] || '';
+    h += '<div class="team-input"><span class="num">'+(i+1)+'</span><input type="text" placeholder="Team '+(i+1)+' name" value="'+val+'" onchange="setTeamName('+i+',this.value)" /></div>';
+  }
+  h += '</div></div><button class="start-btn" onclick="startGame()">START GAME</button>';
+  h += '<div style="text-align:center;margin-top:1rem;"><button onclick="showHelp()" style="background:none;border:none;color:var(--mid);text-decoration:underline;cursor:pointer;font-family:\'Nunito\',sans-serif;">How to Play</button></div></div>';
+  c.innerHTML = h;
+}
+
+function setTeamCount(n) { G.teamCount = n; render(); }
+function setTeamName(i, v) { G.teams[i] = v.trim(); }
+
+function startGame() {
+  const inputs = document.querySelectorAll('#teamInputs input');
+  G.teams = [];
+  inputs.forEach((inp, i) => G.teams.push(inp.value.trim() || 'Team '+(i+1)));
+  G.teams = G.teams.slice(0, G.teamCount);
+  initMetrics();
+  G.started = true;
+  G.currentScreen = 'round';
+  G.currentRound = 1;
+  G.currentPhase = 0;
+  render();
+}
+
+// ======================== ROUND RENDERING ========================
+function renderRound(c) {
+  const r = G.currentRound;
+  const rd = SIM.rounds[r-1];
+  let h = '<div class="screen active">';
+  if (G.currentPhase === 0) h += renderBriefing(rd, r);
+  else if (G.currentPhase === 1) h += renderDecisions(rd, r);
+  else if (G.currentPhase === 2) h += renderEntry(r, rd);
+  else if (G.currentPhase === 3) h += renderResults(r);
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+function renderBriefing(rd, r) {
+  let h = '';
+  // SVG illustration
+  const svgKey = 'r'+r+'_briefing';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="report-card"><div class="report-masthead"><h1>' + SIM.title.toUpperCase() + '</h1><div class="dateline">Round ' + rd.num + ' of 7 &bull; ' + rd.name + '</div></div>';
+  h += '<div class="report-items">';
+  for (const item of rd.report) {
+    h += '<div class="report-item"><span class="bullet">&#9679;</span><span class="text">' + item + '</span></div>';
+  }
+  h += '</div>';
+  if (rd.randomEvent) {
+    h += '<div class="event-box"><h3>&#9889; RANDOM EVENT</h3><p>' + rd.randomEvent + '</p></div>';
+  } else {
+    h += '<div class="no-event">&#9728;&#65039; No random event this round &mdash; steady conditions ahead.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderDecisions(rd, r) {
+  let h = '';
+  const svgKey = 'r'+r+'_decisions';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="decisions-grid">';
+  for (const dec of rd.decisions) {
+    h += '<div class="decision-card"><div class="d-label">' + dec.id + ' &mdash; ' + dec.domain.toUpperCase() + '</div>';
+    h += '<div class="d-question">' + dec.question + '</div>';
+    const opts = [['A', dec.optA], ['B', dec.optB], ['C', dec.optC]];
+    for (const [l, desc] of opts) {
+      h += '<div class="option"><span class="letter ' + l.toLowerCase() + '">' + l + '</span><span class="desc">' + desc + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderEntry(r, rd) {
+  if (!G.roundDecisions[r]) {
+    G.roundDecisions[r] = {};
+    for (let t = 0; t < G.teams.length; t++) G.roundDecisions[r][t] = {};
+  }
+  let h = '<div class="card" style="overflow-x:auto;"><h2>TEAM DECISIONS &mdash; ROUND ' + r + '</h2>';
+  h += '<table class="entry-matrix"><thead><tr><th>Decision</th>';
+  for (const tn of G.teams) h += '<th>' + tn + '</th>';
+  h += '</tr></thead><tbody>';
+  for (const dec of rd.decisions) {
+    h += '<tr><td><strong>' + dec.id + ' &mdash; ' + dec.domain + '</strong><br><span style="font-size:0.8rem;font-weight:400;color:var(--grey);">' + truncate(dec.question, 70) + '</span></td>';
+    for (let t = 0; t < G.teams.length; t++) {
+      const cur = (G.roundDecisions[r][t] || {})[dec.id] || '';
+      h += '<td><div class="abc-group">';
+      for (const ch of ['A','B','C']) {
+        const sel = cur === ch ? 'sel-'+ch.toLowerCase() : '';
+        h += '<button class="abc-btn '+sel+'" onclick="pickChoice('+r+','+t+',\''+dec.id+'\',\''+ch+'\')">'+ch+'</button>';
+      }
+      h += '</div></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+
+function pickChoice(r, t, did, ch) {
+  if (!G.roundDecisions[r]) G.roundDecisions[r] = {};
+  if (!G.roundDecisions[r][t]) G.roundDecisions[r][t] = {};
+  G.roundDecisions[r][t][did] = ch;
+  render();
+}
+
+// ======================== SCORING ENGINE ========================
+function calculateRound(r) {
+  const rd = SIM.rounds[r-1];
+  if (!G.roundSnapshots[r]) G.roundSnapshots[r] = {};
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const before = {};
+    for (const m of SIM.metrics) before[m.name] = G.teamMetrics[t][m.name];
+    
+    // Apply each decision's effects
+    for (const dec of rd.decisions) {
+      const choice = G.roundDecisions[r][t][dec.id];
+      const effectsStr = dec.effects;
+      // Parse the choice-specific effects from the combined string
+      const choiceEffects = extractChoiceEffects(effectsStr, choice);
+      const parsed = parseEffects(choiceEffects);
+      
+      for (const [metricName, effect] of Object.entries(parsed)) {
+        const mDef = SIM.metrics.find(m => m.name === metricName);
+        if (!mDef) continue;
+        if (effect.type === 'set') {
+          G.teamMetrics[t][metricName] = effect.value;
+        } else {
+          G.teamMetrics[t][metricName] += effect.value;
+        }
+        if (mDef) G.teamMetrics[t][metricName] = clampMetric(mDef, G.teamMetrics[t][metricName]);
+      }
+    }
+    
+    // Save snapshot
+    const after = {};
+    const deltas = {};
+    for (const m of SIM.metrics) {
+      after[m.name] = G.teamMetrics[t][m.name];
+      deltas[m.name] = after[m.name] - before[m.name];
+    }
+    G.roundSnapshots[r][t] = { before, after, deltas };
+  }
+  G.roundsComplete.add(r);
+}
+
+function extractChoiceEffects(effectsStr, choice) {
+  // Effects format: "A: effect1. effect2. B: effect1. effect2. C: effect1."
+  // Split by A:/B:/C: markers
+  const regex = /\b([ABC]):\s*/g;
+  const parts = {};
+  let lastKey = null, lastIdx = 0;
+  let match;
+  const matches = [];
+  while ((match = regex.exec(effectsStr)) !== null) {
+    matches.push({ key: match[1], idx: match.index, end: match.index + match[0].length });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].end;
+    const end = i + 1 < matches.length ? matches[i+1].idx : effectsStr.length;
+    parts[matches[i].key] = effectsStr.substring(start, end).trim();
+  }
+  return parts[choice] || '';
+}
+
+function fmtVal(value, unit) {
+  if (unit === '$' || unit === 'USD') return '$' + Math.round(value).toLocaleString();
+  if (unit === '%') return value.toFixed(1) + '%';
+  if (unit === '/100') return Math.round(value) + '/100';
+  return Math.round(value).toLocaleString() + (unit && unit !== '$' && unit !== '%' && unit !== '/100' ? ' ' + unit : '');
+}
+
+function fmtDelta(delta, unit) {
+  const sign = delta >= 0 ? '+' : '';
+  if (unit === '$' || unit === 'USD') return sign + '$' + Math.round(delta).toLocaleString();
+  if (unit === '%') return sign + delta.toFixed(1) + '%';
+  return sign + Math.round(delta).toLocaleString();
+}
+
+// ======================== RESULTS ========================
+function renderResults(r) {
+  if (!G.roundSnapshots[r]) return '<div class="card"><h2>No results yet</h2></div>';
+  
+  let h = '<div class="card"><h2>ROUND ' + r + ' RESULTS</h2>';
+  h += '<table class="results-table"><thead><tr><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '</tr></thead><tbody>';
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<tr><td>' + G.teams[t] + '</td>';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      h += '<td>' + fmtVal(val, m.unit) + '<br><span class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</span></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Per-team metric cards
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<div class="card"><h3>' + G.teams[t] + '</h3><div class="metrics-grid">';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      const barPct = m.unit === '/100' ? val : m.unit === '%' ? Math.max(0, val) : Math.min(100, (val / (m.start > 0 ? m.start * 3 : 100000)) * 100);
+      h += '<div class="metric-card"><div class="m-name">' + m.name + '</div>';
+      h += '<div class="m-val">' + fmtVal(val, m.unit) + '</div>';
+      h += '<div class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</div>';
+      if (m.unit === '/100') h += '<div class="metric-bar"><div class="metric-bar-fill" style="width:' + Math.max(0, Math.min(100, val)) + '%"></div></div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  }
+  
+  return h;
+}
+
+// ======================== LEADERBOARD ========================
+function getScore(t) {
+  // Composite score: each metric contributes up to 100 points (clamped)
+  let score = 0;
+  for (const m of SIM.metrics) {
+    const val = G.teamMetrics[t][m.name];
+    let c;
+    if (m.unit === '/100') {
+      c = val;
+    } else if (m.unit === '%') {
+      c = Math.min(val, 100);
+    } else {
+      // For $, people, users, coins, degrees, etc: normalise against start value
+      const base = Math.abs(m.start) > 0 ? Math.abs(m.start) : 100;
+      c = (val / base) * 50;
+    }
+    // Clamp each metric to [-100, 100] so no single metric dominates
+    score += Math.max(-100, Math.min(100, c));
+  }
+  return Math.round(score);
+}
+
+function renderLeaderboard(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Start the game first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  let h = '<div class="screen active"><div class="card"><h2>LEADERBOARD</h2></div>';
+  const medals = ['&#129351;','&#129352;','&#129353;'];
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<div class="lb-row"><div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>';
+    h += '<div class="lb-name">' + r.name + '</div><div class="lb-stats">';
+    for (const m of SIM.metrics.slice(0, 4)) {
+      h += '<div class="lb-stat"><div class="val">' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</div><div class="lbl">' + m.name + '</div></div>';
+    }
+    h += '<div class="lb-stat"><div class="val">' + Math.round(r.score) + '</div><div class="lbl">Score</div></div>';
+    h += '</div></div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== FINAL RESULTS ========================
+function renderFinal(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Complete all rounds first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  const medals = ['&#127942;','&#129352;','&#129353;'];
+  
+  let h = '<div class="screen active"><div class="final-hero"><h1>FINAL RESULTS</h1></div>';
+  h += '<div class="podium">';
+  const order = ranked.length >= 3 ? [1, 0, 2] : ranked.length >= 2 ? [1, 0] : [0];
+  for (const oi of order) {
+    if (oi >= ranked.length) continue;
+    const r = ranked[oi];
+    h += '<div class="podium-item ' + (oi === 0 ? 'first' : '') + '"><div class="medal">' + (medals[oi] || '') + '</div>';
+    h += '<div class="pname">' + r.name + '</div><div class="pval">Score: ' + Math.round(r.score) + '</div></div>';
+  }
+  h += '</div>';
+  
+  // Full results table
+  h += '<div class="card"><h2>FULL BREAKDOWN</h2><table class="results-table"><thead><tr><th>Rank</th><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '<th>Score</th></tr></thead><tbody>';
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<tr><td>#' + (i+1) + '</td><td>' + r.name + '</td>';
+    for (const m of SIM.metrics) h += '<td>' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</td>';
+    h += '<td><strong>' + Math.round(r.score) + '</strong></td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+  c.innerHTML = h;
+}
+
+// ======================== DEBRIEF ========================
+function renderDebrief(c) {
+  let h = '<div class="screen active"><div class="card"><h2>DEBRIEF DISCUSSION</h2><p>Use these questions to guide whole-class discussion.</p></div>';
+  
+  if (SIM.debriefQuestions) {
+    for (let i = 0; i < SIM.debriefQuestions.length; i++) {
+      h += '<div class="debrief-q"><div class="qnum">QUESTION ' + (i+1) + '</div><p>' + SIM.debriefQuestions[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.keyTakeaways) {
+    h += '<div class="card"><h2>KEY TAKEAWAYS</h2></div>';
+    for (let i = 0; i < SIM.keyTakeaways.length; i++) {
+      h += '<div class="takeaway-card"><h3>Takeaway ' + (i+1) + '</h3><p>' + SIM.keyTakeaways[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.curriculumLinks) {
+    h += '<div class="card"><h2>CURRICULUM LINKS</h2></div>';
+    for (const cl of SIM.curriculumLinks) {
+      h += '<div class="curriculum-card"><div class="c-topic">' + cl.topic + '</div><div class="c-spec">' + cl.spec + '</div><div class="c-how">' + cl.how + '</div></div>';
+    }
+  }
+  
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== INIT ========================
+render();
+</script>
+</body>
+</html>

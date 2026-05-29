@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mars Colony Survival | GCSE Science Simulation | Free | martin...</title>
+    <meta name="description" content="Play Mars Colony Survival — a free interactive GCSE science simulation. No login required. Build decision-making skills with this classroom-ready game.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --navy:#312E81;--mid:#4F46E5;--gold:#818CF8;--gold2:#6366F1;
+  --white:#FFFFFF;--offwh:#F5F7FA;--grey:#8892A4;--dgrey:#2D3748;
+  --green:#1E8449;--red:#C0392B;--amber:#E67E22;--card:#FFFFFF;
+  --border:#E2E8F0;--shadow:0 4px 24px rgba(0,0,0,0.10);--r:10px;
+  --btn-a:#1A5276;--btn-b:#145A32;--btn-c:#922B21;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{font-family:'Nunito',sans-serif;background:var(--offwh);color:var(--dgrey);min-height:100vh;display:flex;overflow:hidden;}
+
+.sidebar{width:260px;min-width:260px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;height:100vh;position:relative;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.2rem 0.8rem;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h1{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);letter-spacing:2px;}
+.sidebar-logo p{font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:0.5rem 0;}
+.sidebar-nav button{display:flex;align-items:center;width:100%;padding:0.8rem 1.2rem;background:none;border:none;color:rgba(255,255,255,0.6);font-family:'Nunito',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.2s;text-align:left;gap:0.6rem;}
+.sidebar-nav button:hover{background:rgba(255,255,255,0.08);color:var(--white);}
+.sidebar-nav button.active{background:rgba(255,255,255,0.15);color:var(--gold);border-left:3px solid var(--gold);}
+.sidebar-nav button .check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0;}
+.sidebar-nav button.done .check{background:var(--green);border-color:var(--green);color:var(--white);}
+.sidebar-nav button .phase-dots{margin-left:auto;display:flex;gap:3px;}
+.sidebar-nav button .phase-dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.sidebar-nav button .phase-dots .dot.filled{background:var(--gold);}
+.sidebar-sep{height:1px;background:rgba(255,255,255,0.1);margin:0.3rem 1.2rem;}
+.sidebar-timer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,0.1);}
+.timer-display{font-family:'DM Mono',monospace;font-size:2.2rem;color:var(--gold);text-align:center;margin-bottom:0.5rem;}
+.timer-btns{display:flex;gap:0.5rem;}
+.timer-btns button{flex:1;padding:0.4rem;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:'Nunito',sans-serif;}
+.timer-btns button:hover{background:rgba(255,255,255,0.1);}
+
+.main{flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(0,0,0,0.15);}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+.topbar-phase{display:flex;gap:0.5rem;align-items:center;}
+.phase-step{padding:0.3rem 1rem;border-radius:20px;font-size:0.8rem;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.phase-step.active{background:var(--gold);color:var(--navy);font-weight:600;}
+.phase-step.completed{background:rgba(30,132,73,0.3);color:#6FCF97;}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.topbar-right button{padding:0.3rem 1rem;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.85rem;}
+.topbar-right button:hover{background:rgba(255,255,255,0.1);}
+.topbar-right button.primary{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+.topbar-right button.primary:hover{opacity:0.9;}
+
+.content{flex:1;padding:2rem;max-width:1400px;width:100%;margin:0 auto;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.2rem;}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--navy);letter-spacing:1px;margin-bottom:0.8rem;}
+.card h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:0.5rem;}
+
+.setup-hero{text-align:center;padding:3rem 0 2rem;}
+.setup-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--navy);letter-spacing:3px;}
+.setup-hero p{font-size:1.1rem;color:var(--grey);margin-top:0.5rem;}
+.setup-hero .subtitle{color:var(--gold);font-weight:600;font-size:1.2rem;margin-top:0.2rem;}
+.team-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;}
+.team-input{display:flex;align-items:center;gap:0.8rem;background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:0.8rem 1rem;transition:border-color 0.2s;}
+.team-input:focus-within{border-color:var(--gold);}
+.team-input .num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);width:30px;}
+.team-input input{flex:1;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:1rem;color:var(--dgrey);}
+.team-count-btns{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem;}
+.team-count-btns button{width:48px;height:48px;border-radius:50%;border:2px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.2rem;cursor:pointer;transition:all 0.2s;color:var(--dgrey);}
+.team-count-btns button.active{background:var(--navy);color:var(--gold);border-color:var(--navy);}
+.start-btn{display:block;margin:2rem auto 0;padding:1rem 3rem;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--r);cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+
+.report-card{background:#FFF8E7;border:3px solid #2D2D2D;border-radius:4px;padding:2rem;font-family:Georgia,'Times New Roman',serif;}
+.report-masthead{text-align:center;border-bottom:3px double #2D2D2D;padding-bottom:1rem;margin-bottom:1.5rem;}
+.report-masthead h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#1a1a1a;letter-spacing:4px;}
+.report-masthead .dateline{font-size:0.85rem;color:#666;margin-top:0.3rem;font-style:italic;}
+.report-items{display:grid;gap:0.8rem;}
+.report-item{display:flex;gap:0.8rem;padding:0.6rem 0;border-bottom:1px solid #ddd;align-items:baseline;}
+.report-item .bullet{color:var(--gold);font-weight:bold;font-size:1.2rem;flex-shrink:0;}
+.report-item .text{font-size:1rem;line-height:1.5;color:#333;}
+.event-box{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid var(--amber);border-radius:var(--r);padding:1.2rem 1.5rem;margin-top:1.5rem;}
+.event-box h3{font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:1.3rem;margin-bottom:0.5rem;}
+.event-box p{font-size:1rem;line-height:1.5;}
+.no-event{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:2px solid var(--green);border-radius:var(--r);padding:1rem 1.5rem;margin-top:1.5rem;text-align:center;color:var(--green);font-weight:600;}
+
+.decisions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+.decisions-grid .decision-card:nth-child(5){grid-column:1 / -1;}
+.decision-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:0.8rem 1rem;border-left:4px solid var(--navy);}
+.decision-card .d-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.15rem;}
+.decision-card .d-question{font-size:0.95rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
+.option{display:flex;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:6px;margin-bottom:0.25rem;background:var(--offwh);transition:background 0.15s;align-items:baseline;}
+.option .letter{font-family:'DM Mono',monospace;font-weight:700;font-size:0.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--white);}
+.option .letter.a{background:var(--btn-a);}
+.option .letter.b{background:var(--btn-b);}
+.option .letter.c{background:var(--btn-c);}
+.option .desc{font-size:0.85rem;line-height:1.3;color:var(--dgrey);}
+
+.entry-matrix{width:100%;border-collapse:separate;border-spacing:0;}
+.entry-matrix th{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--white);background:var(--navy);padding:0.8rem;text-align:center;position:sticky;top:0;z-index:5;}
+.entry-matrix th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.entry-matrix th:last-child{border-radius:0 var(--r) 0 0;}
+.entry-matrix td{padding:0.6rem;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+.entry-matrix td:first-child{text-align:left;font-weight:600;font-size:0.9rem;color:var(--navy);min-width:180px;max-width:300px;}
+.abc-group{display:flex;gap:6px;justify-content:center;}
+.abc-btn{width:56px;height:56px;border-radius:12px;border:3px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--dgrey);user-select:none;}
+.abc-btn:active{transform:scale(0.95);}
+.abc-btn.sel-a{background:var(--btn-a);color:var(--white);border-color:var(--btn-a);}
+.abc-btn.sel-b{background:var(--btn-b);color:var(--white);border-color:var(--btn-b);}
+.abc-btn.sel-c{background:var(--btn-c);color:var(--white);border-color:var(--btn-c);}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin:1rem 0;}
+.metric-card{background:var(--white);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);text-align:center;}
+.metric-card .m-name{font-size:0.8rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;}
+.metric-card .m-val{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--navy);}
+.metric-card .m-delta{font-size:0.85rem;font-weight:600;margin-top:0.2rem;}
+.metric-card .m-delta.pos{color:var(--green);}
+.metric-card .m-delta.neg{color:var(--red);}
+.metric-card .m-delta.zero{color:var(--grey);}
+.metric-bar{height:6px;background:var(--border);border-radius:3px;margin-top:0.5rem;overflow:hidden;}
+.metric-bar-fill{height:100%;border-radius:3px;background:var(--mid);transition:width 0.5s ease;}
+
+.results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:1rem;}
+.results-table th{font-family:'Bebas Neue',sans-serif;background:var(--navy);color:var(--white);padding:0.7rem;text-align:center;font-size:0.85rem;}
+.results-table th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.results-table th:last-child{border-radius:0 var(--r) 0 0;}
+.results-table td{padding:0.5rem;text-align:center;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.9rem;}
+.results-table td:first-child{text-align:left;font-family:'Nunito',sans-serif;font-weight:600;}
+
+.lb-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--white);border-radius:var(--r);margin-bottom:0.8rem;box-shadow:var(--shadow);}
+.lb-row:first-child{border:2px solid var(--gold);background:linear-gradient(135deg,#FFFDE7,#FFF8E1);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--navy);width:50px;text-align:center;}
+.lb-row:first-child .lb-rank{color:var(--gold);}
+.lb-name{flex:1;font-size:1.3rem;font-weight:600;color:var(--navy);}
+.lb-stats{display:flex;gap:2rem;}
+.lb-stat{text-align:center;}
+.lb-stat .val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--navy);}
+.lb-stat .lbl{font-size:0.7rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;}
+
+.final-hero{text-align:center;padding:2rem 0;}
+.final-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--gold);letter-spacing:3px;}
+.podium{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;align-items:flex-end;flex-wrap:wrap;}
+.podium-item{text-align:center;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;min-width:180px;}
+.podium-item.first{padding-bottom:2.5rem;border:3px solid var(--gold);transform:scale(1.1);}
+.podium-item .medal{font-size:3rem;}
+.podium-item .pname{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);margin:0.3rem 0;}
+.podium-item .pval{font-family:'DM Mono',monospace;font-size:1.2rem;color:var(--green);font-weight:700;}
+
+.debrief-q{background:var(--white);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:0.8rem;box-shadow:var(--shadow);border-left:4px solid var(--gold);}
+.debrief-q .qnum{font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:1rem;letter-spacing:1px;}
+.debrief-q p{font-size:1.05rem;color:var(--dgrey);line-height:1.5;margin-top:0.3rem;}
+.takeaway-card{background:linear-gradient(135deg,var(--navy),var(--mid));border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;color:var(--white);}
+.takeaway-card h3{font-family:'Bebas Neue',sans-serif;color:var(--gold);margin-bottom:0.5rem;font-size:1.2rem;}
+.takeaway-card p{font-size:0.95rem;line-height:1.5;opacity:0.9;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.overlay-box{background:var(--white);border-radius:var(--r);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+.overlay-box h2{font-family:'Bebas Neue',sans-serif;color:var(--navy);font-size:1.8rem;margin-bottom:1rem;}
+.overlay-box p,.overlay-box li{font-size:0.95rem;line-height:1.6;margin-bottom:0.5rem;color:var(--dgrey);}
+.overlay-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey);}
+
+.svg-container{text-align:center;margin:1rem 0;}
+.svg-container svg{max-width:100%;height:auto;border-radius:var(--r);box-shadow:var(--shadow);}
+
+.curriculum-card{background:var(--white);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:0.6rem;box-shadow:var(--shadow);border-left:4px solid var(--mid);}
+.curriculum-card .c-topic{font-weight:600;color:var(--navy);font-size:0.95rem;}
+.curriculum-card .c-spec{font-size:0.8rem;color:var(--grey);margin-top:0.15rem;}
+.curriculum-card .c-how{font-size:0.9rem;color:var(--dgrey);margin-top:0.3rem;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>MARS COLONY SURVIVAL</h1>
+    <p>Science &bull; GCSE</p>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-timer">
+    <div class="timer-display" id="timerDisplay">10:00</div>
+    <div class="timer-btns">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseTimer()">Pause</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">SETUP</div>
+    <div class="topbar-phase" id="topbarPhase"></div>
+    <div class="topbar-right" id="topbarRight"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="overlay-box">
+    <button class="overlay-close" onclick="closeHelp()">&times;</button>
+    <h2>How to Play</h2>
+    <p><strong>Mars Colony Survival</strong> is a 7-round simulation where teams make strategic decisions across 7 key metrics.</p>
+    <p><strong>Each Round</strong> has 4 phases:</p>
+    <ul>
+      <li><strong>Briefing</strong> &mdash; Read the situation report and any random events aloud.</li>
+      <li><strong>Decision Cards</strong> &mdash; Show the 5 decisions. Teams discuss (~10 min, use the timer).</li>
+      <li><strong>Team Entry</strong> &mdash; Each team taps A, B, or C for each decision.</li>
+      <li><strong>Results</strong> &mdash; Scores update and metric changes are displayed.</li>
+    </ul>
+    <p><strong>Metrics:</strong> Colony Population, Energy Reserves, Food Security, Water Reserves, Crew Health, Research Points, Colony Budget. Each decision shifts these metrics. The team with the best overall performance wins.</p>
+    <p><strong>Scoring:</strong> Final score is the sum of all metric values (normalised to their scales).</p>
+  </div>
+</div>
+
+<script>
+// ======================== EMBEDDED DATA ========================
+const SIM = {"title": "Mars Colony Survival", "subject": "Science", "level": "GCSE", "duration": "90 minutes", "teamSize": "3-5 students", "numTeams": "4-6 teams", "overview": "Teams take on the role of Mars colony directors, making critical scientific and engineering decisions to keep their colony alive and thriving across seven quarters (Sol periods). Every choice involves real GCSE science — from energy transfer and electrical circuits to respiration, photosynthesis, and states of matter.\n\nThe colony starts with 50 brave souls, limited energy, and basic life support. Teams must balance immediate survival against long-term sustainability, choosing between competing energy sources, life support designs, and research priorities. Neglect any single system and cascading failures will follow — just as in real closed-loop environments.\n\nSuccess requires understanding how energy flows through systems, why radiation shielding matters, how plants convert CO2 to oxygen, and how water purification works in a sealed habitat. The winning team will be the one that best applies scientific principles to keep their colonists alive, healthy, and advancing human knowledge on the Red Planet.", "scenario": "The year is 2045. Your team has been appointed as the science directorate for Ares Base, humanity's first permanent Mars colony. You arrived with 50 colonists, a nuclear seed reactor, solar panel arrays, a basic hydroponic bay, and limited supplies from Earth. The next resupply mission is 18 months away — you must become self-sufficient before then.\n\nMars is unforgiving: average temperature -60 degrees C, atmospheric pressure less than 1% of Earth's, deadly UV radiation, and dust storms that can last months. Every decision you make will determine whether your colony thrives or becomes a cautionary tale in the history books.", "metrics": [{"name": "Colony Population", "start": 50, "unit": "people", "description": "Living colonists. Falls if health or life support fails critically. Can grow through births or new arrivals if conditions are good."}, {"name": "Energy Reserves", "start": 1000, "unit": "kWh", "description": "Stored electrical energy. Powers all colony systems. Depletes each round from life support, heating, and research. Must stay above 200 kWh or systems begin failing."}, {"name": "Food Security", "start": 60, "unit": "/100", "description": "Measures food production capacity vs colony needs. Below 40 triggers rationing and health decline. Depends on functioning hydroponics (light, water, CO2)."}, {"name": "Water Reserves", "start": 500, "unit": "litres", "description": "Purified water supply. Used for drinking, hydroponics, and cooling systems. Recycling efficiency determines long-term sustainability."}, {"name": "Crew Health", "start": 80, "unit": "/100", "description": "Overall physical and mental wellbeing. Affected by radiation exposure, nutrition, workload, and morale. Below 30 triggers medical emergencies."}, {"name": "Research Points", "start": 0, "unit": "points", "description": "Accumulated scientific progress. Unlocks better technologies at thresholds (25, 50, 75, 100). Higher totals yield bonuses in later rounds."}, {"name": "Colony Budget", "start": 2000000, "unit": "$", "description": "Remaining funds for equipment, materials, and emergency supplies. Some items can only be purchased, not built. Earth resupply costs are enormous."}], "finalScoring": "Final Score = (Colony Population x 100) + (Energy Reserves x 2) + (Food Security x 50) + (Water Reserves x 10) + (Crew Health x 80) + (Research Points x 30) + (Colony Budget / 100). Bonus: +2000 if Food Security >= 80 (self-sufficient food). Bonus: +2000 if Crew Health >= 70 (healthy colony). Bonus: +1500 if Research Points >= 75 (scientific legacy). Penalty: -5000 if Colony Population dropped below 30 at any point.", "curriculumLinks": [{"topic": "Energy transfer and conservation", "spec": "AQA 4.1 / Edexcel 1.1", "how": "Every round involves energy budgeting — electrical to thermal, light to chemical in photosynthesis, kinetic to electrical in turbines. Students see conservation of energy in a closed system where waste heat must be managed."}, {"topic": "Radiation types and shielding", "spec": "AQA 4.4 / Edexcel 6.6", "how": "Mars lacks a magnetic field and thick atmosphere, so alpha, beta, and gamma radiation from solar and cosmic sources threaten colonists. Decisions involve choosing shielding materials based on radiation type and penetrating power."}, {"topic": "Respiration and photosynthesis", "spec": "AQA 4.4 Biology / Edexcel 1.5", "how": "Hydroponics bays use photosynthesis (CO2 + H2O to glucose + O2) to produce food and oxygen. Colonists respire (glucose + O2 to CO2 + H2O), creating a closed carbon and oxygen cycle that must be balanced."}, {"topic": "Water purification and states of matter", "spec": "AQA 4.2 Chemistry / Edexcel 1.12", "how": "Water recycling uses distillation (evaporation and condensation), filtration, and reverse osmosis. Students consider energy costs of state changes and latent heat in a system where every drop counts."}, {"topic": "Atmospheric composition", "spec": "AQA 4.9 Chemistry / Edexcel 9.3", "how": "Mars atmosphere is 95% CO2 with negligible O2. Colony must maintain breathable air (21% O2, less than 0.5% CO2) using scrubbers and plants. Links to Earth's atmosphere evolution and greenhouse effect."}, {"topic": "Forces and pressure", "spec": "AQA 4.5 / Edexcel 3.7", "how": "Mars surface pressure is approximately 600 Pa vs Earth's 101325 Pa. Habitat must be pressurised. Decisions about expansion involve calculating pressure differentials and structural integrity of airlocks and domes."}, {"topic": "Electrical circuits", "spec": "AQA 4.2 / Edexcel 2.2", "how": "Power distribution uses series and parallel circuits. Solar panels in series increase voltage; in parallel increase current. Students decide circuit configurations affecting efficiency and redundancy."}], "rounds": [{"num": 1, "name": "Planetfall", "report": ["Ares Base has successfully landed all 50 colonists and cargo modules on Chryse Planitia. All personnel are alive and in good spirits.", "The nuclear seed reactor is online producing 200 kWh per Sol, but solar panel deployment is only 40% complete due to rocky terrain.", "Initial soil analysis shows high perchlorate content — toxic to humans but potentially useful as rocket fuel oxidiser. Water ice confirmed 2 metres below the surface.", "External temperature is -58 degrees C. Habitat heating consumes 80 kWh per Sol. Life support (air recycling, water purification) uses another 60 kWh per Sol.", "First priority briefing: establish reliable energy, begin food production, and set up radiation monitoring. You have 7 quarters before the colony must be self-sustaining."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Energy", "question": "Your nuclear seed reactor produces 200 kWh/Sol but solar panels are only 40% deployed. How do you prioritise energy infrastructure this quarter?", "optA": "Focus entirely on completing solar panel deployment — arrange panels in parallel arrays for maximum current output and redundancy", "optB": "Split effort: finish 70% solar deployment and invest in battery storage banks to store excess energy during daylight hours", "optC": "Prioritise upgrading the nuclear reactor's fuel rod configuration to boost output to 350 kWh/Sol, delay solar completion", "effects": "A: Energy Reserves +300, Colony Budget -150000. High solar dependency but good redundancy through parallel circuits. B: Energy Reserves +200, Colony Budget -200000. Balanced approach with energy storage reducing waste. C: Energy Reserves +400, Colony Budget -250000. High output but single point of failure; no solar backup."}, {"id": "D2", "domain": "Life Support", "question": "Your hydroponic bay needs light, CO2, water, and nutrients to grow food via photosynthesis. How do you configure the growing system?", "optA": "Full-spectrum LED arrays mimicking Earth sunlight — maximises photosynthesis rate but consumes 120 kWh/Sol", "optB": "Red and blue LED arrays only (peak absorption wavelengths for chlorophyll a and b) — 70% photosynthesis efficiency at only 60 kWh/Sol", "optC": "Use fibre-optic channels to pipe actual Martian sunlight into the bay, supplemented with LEDs only during dust storms — 30 kWh/Sol but variable output", "effects": "A: Food Security +15, Energy Reserves -150, Water Reserves -30. Maximum growth rate but huge energy drain. B: Food Security +12, Energy Reserves -60, Water Reserves -25. Efficient use of photosynthesis science — targets chlorophyll absorption peaks. C: Food Security +8, Energy Reserves -30, Water Reserves -20. Cheapest but unreliable; vulnerable to dust storms reducing light."}, {"id": "D3", "domain": "Engineering", "question": "Water ice lies 2 metres below the surface. How do you extract and purify it for colony use?", "optA": "Drill and heat extraction: melt subsurface ice using electrical heating elements, pump liquid water up, then distil to remove perchlorates (evaporate and condense)", "optB": "Excavate ice blocks and sublime them in a low-pressure chamber (solid to gas at Mars pressure), then condense the vapour in cooling traps", "optC": "Use microwave emitters to heat ice in situ, collect steam through bore pipes, condense and filter. Less energy than full distillation", "effects": "A: Water Reserves +200, Energy Reserves -120, Colony Budget -100000. Reliable but energy-intensive; full distillation removes all contaminants. B: Water Reserves +150, Energy Reserves -80, Colony Budget -80000. Clever use of Mars low pressure for sublimation; moderate purity. C: Water Reserves +170, Energy Reserves -60, Colony Budget -120000. Energy efficient but microwave equipment is expensive; good purity."}, {"id": "D4", "domain": "Research", "question": "Your science team wants to begin research. What should they prioritise studying first?", "optA": "Martian soil composition and perchlorate removal — could enable growing food directly in Martian regolith rather than pure hydroponics", "optB": "Radiation environment mapping — measure alpha, beta, and gamma radiation levels across the base to optimise shielding placement", "optC": "Atmospheric processing — investigate extracting oxygen from CO2 in Mars's 95% carbon dioxide atmosphere using electrolysis", "effects": "A: Research Points +15, Food Security +5, Colony Budget -80000. Long-term food production boost; understanding soil chemistry. B: Research Points +10, Crew Health +8, Colony Budget -50000. Immediate health benefit; understanding radiation types and penetrating power. C: Research Points +12, Energy Reserves -40, Colony Budget -60000. Reduces dependence on plant-based O2; links to atmospheric science."}, {"id": "D5", "domain": "Ethics", "question": "A colonist has developed symptoms consistent with high radiation exposure. Medical resources are limited. How do you respond?", "optA": "Dedicate significant medical resources and assign two colonists as full-time carers — prioritise the individual's health and demonstrate colony values", "optB": "Provide standard medical treatment but keep all other colonists on regular duties — balance care with colony productivity", "optC": "Use this as a research opportunity: carefully document the radiation exposure effects while treating the patient, contributing to understanding of radiation biology", "effects": "A: Crew Health +10, Colony Budget -60000, Food Security -3. High morale boost but resource-intensive; two workers reassigned. B: Crew Health +5, Colony Budget -30000. Adequate care, minimal disruption. Standard ethical approach. C: Crew Health +3, Research Points +8, Colony Budget -40000. Valuable data on radiation effects but may reduce trust if perceived as callous."}]}, {"num": 2, "name": "First Harvest", "report": ["The hydroponic bay has produced its first harvest of leafy greens and radishes. Photosynthesis rates are tracking as expected — CO2 levels in the bay have dropped measurably as plants convert it to glucose and oxygen.", "Water recycling systems are operational. Condensation recovery from habitat air captures approximately 40 litres per Sol — colonists exhale significant water vapour through respiration.", "Energy consumption has stabilised but is higher than projected. Heating the habitat against -60 degrees C external temperatures requires continuous thermal energy transfer.", "Soil analysis confirms Martian regolith contains iron oxide (giving Mars its red colour), silicon dioxide, and toxic perchlorates that must be removed before any soil-based agriculture.", "ALERT: Solar monitoring satellites detect increased solar activity. A coronal mass ejection may reach Mars within the next quarter."], "randomEvent": "SOLAR STORM WARNING: A massive solar flare has been detected. Within days, a wave of charged particles (mainly alpha and beta radiation) will bombard Mars. Teams relying primarily on solar panels lose an additional Energy Reserves -150 as panels must be retracted to avoid damage. All teams lose Crew Health -5 from increased radiation exposure unless they invested in radiation research last round (those teams lose only -2).", "decisions": [{"id": "D1", "domain": "Energy", "question": "The solar storm is incoming. How do you protect your energy systems and manage the radiation threat?", "optA": "Retract all solar panels into protective housings and run entirely on nuclear power — nuclear reactors are unaffected by solar radiation", "optB": "Keep solar panels deployed but angle them edge-on to minimise particle impact surface area — maintains some solar generation while reducing damage", "optC": "Deploy emergency radiation-absorbing blankets over solar arrays — aluminium and polyethylene layers block alpha and most beta particles while allowing some light through", "effects": "A: Energy Reserves -100 (nuclear only for this quarter), Colony Budget -0. Safe but costly in energy; zero solar production. B: Energy Reserves -50, Colony Budget -0. Risky — 30% chance of panel degradation (teacher rolls dice: 1-2 on d6 means additional Energy -80). C: Energy Reserves -30, Colony Budget -90000. Best energy outcome but expensive; demonstrates understanding of radiation shielding."}, {"id": "D2", "domain": "Life Support", "question": "Your first crop is harvested but CO2 and O2 levels need careful management. The habitat is a closed system — colonists respire O2 and exhale CO2, while plants photosynthesise CO2 into O2. How do you balance the cycle?", "optA": "Expand the hydroponic bay by 50% — more plants means more photosynthesis, absorbing excess CO2 and producing more O2 and food", "optB": "Install chemical CO2 scrubbers (lithium hydroxide canisters) alongside the plants — provides a reliable backup that does not depend on plant health", "optC": "Seal a separate greenhouse module and create a high-CO2 environment (5%) to turbocharge photosynthesis rates — plants grow faster with more CO2 up to a point", "effects": "A: Food Security +10, Energy Reserves -80, Water Reserves -40. More plants consume more light energy and water but boost food and O2. B: Food Security +4, Energy Reserves -20, Colony Budget -70000, Crew Health +5. Reliable air quality; LiOH + CO2 reaction produces Li2CO3 + H2O. C: Food Security +15, Energy Reserves -50, Water Reserves -30, Research Points +5. Accelerated growth; teaches rate of photosynthesis factors (CO2 concentration, light, temperature)."}, {"id": "D3", "domain": "Engineering", "question": "Habitat pressure must be maintained at approximately 101 kPa (Earth sea level) while Mars outside is only 0.6 kPa. Engineers report micro-fractures in Dome 2. How do you respond?", "optA": "Evacuate Dome 2, seal it, and increase pressure in remaining domes to compensate — accept crowding to ensure safety", "optB": "Apply internal pressure patches and inject expanding sealant foam into fractures — repair under pressure without evacuation", "optC": "Reduce pressure in Dome 2 to 80 kPa to decrease the pressure differential across the fractures, giving engineers time to do permanent repairs", "effects": "A: Crew Health -8 (overcrowding), Colony Budget -0, Food Security -5 (lost growing space). Safe but cramped; reduced capacity. B: Crew Health +0, Colony Budget -60000, Energy Reserves -20. Risky but maintains full capacity; sealant may not hold long-term. C: Crew Health -3 (mild altitude-sickness symptoms at lower pressure), Colony Budget -40000, Research Points +3. Scientific approach; demonstrates pressure-force relationship."}, {"id": "D4", "domain": "Research", "question": "Your science team has time for one major research push this quarter. The solar storm has highlighted knowledge gaps. What do they study?", "optA": "Develop improved radiation shielding: test combinations of lead (blocks gamma), aluminium (blocks beta), and paper/plastic (blocks alpha) for optimal multi-layer protection", "optB": "Research closed-loop water recycling: improve distillation efficiency by recovering latent heat released during condensation to power the next evaporation cycle", "optC": "Study Martian dust composition for construction materials: iron oxide content could be smelted into building steel using carbon from CO2 atmosphere as a reducing agent", "effects": "A: Research Points +12, Crew Health +6, Colony Budget -70000. Multi-layer shielding based on radiation penetrating power — alpha stopped by paper, beta by aluminium, gamma by lead. B: Research Points +10, Water Reserves +60, Energy Reserves +40, Colony Budget -50000. Heat recovery reduces energy cost; understanding latent heat and state changes. C: Research Points +15, Colony Budget -80000. Long-term construction potential; iron oxide reduction is key Mars chemistry."}, {"id": "D5", "domain": "Ethics", "question": "During the solar storm, radiation dosimeters show that engineers working on exterior repairs received 3x the recommended annual dose. Colony rules limit their further exposure. But they are your most skilled workers. What do you decide?", "optA": "Enforce the radiation limits strictly — reassign the engineers to indoor-only work for the rest of the year. Train replacement crews for exterior work", "optB": "Allow the engineers to volunteer for continued exterior work with enhanced shielding suits, accepting increased long-term cancer risk with informed consent", "optC": "Develop a rotation system: engineers do 2 days exterior, 5 days interior, spreading dose over time to stay within annual limits while maintaining some expertise outside", "effects": "A: Crew Health +5, Energy Reserves -40 (training cost), Colony Budget -30000. Ethical and safe but lose experienced exterior workers temporarily. B: Crew Health -8, Colony Budget -50000 (shielding suits). Dangerous precedent; radiation damage is cumulative with no safe threshold for ionising radiation. C: Crew Health +2, Energy Reserves -20, Research Points +3. Balanced approach; applies understanding of radiation dose vs dose rate."}]}, {"num": 3, "name": "Expansion Pressure", "report": ["Colony population holding at 50, but two colonists are pregnant — first Mars-born humans expected next quarter. Medical team reports this is both exciting and resource-intensive.", "Food production from hydroponics is steady. Plants are completing full photosynthesis cycles: 6CO2 + 6H2O produces C6H12O6 + 6O2. Oxygen levels in the habitat are well-maintained.", "Energy reserves are stabilising. The nuclear reactor continues to provide baseload power through nuclear fission of uranium-235, releasing thermal energy converted to electrical energy via steam turbines.", "Earth has sent a communication: a second wave of 20 colonists could arrive in 6 months if you can demonstrate capacity. This would bring new skills but strain all resources.", "Water recycling is recovering 85% of used water. The remaining 15% is lost to chemical reactions, absorption into food crops, and minor leaks."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Energy", "question": "To support potential expansion, you need more power. Your current system uses a nuclear reactor (reliable, high output) and solar panels (variable, no fuel needed). How do you expand?", "optA": "Build a second nuclear fission reactor: split uranium-235 atoms releasing approximately 200 MeV per fission event. Provides reliable 300 kWh/Sol regardless of weather", "optB": "Triple your solar array with panels wired in parallel (maintaining voltage, increasing total current) and add a massive battery bank for night-time and storm storage", "optC": "Build a hybrid system: small wind turbines (Mars has thin atmosphere but strong winds during storms) combined with additional solar and improved battery storage", "effects": "A: Energy Reserves +350, Colony Budget -400000. Reliable and powerful but uses limited uranium fuel; produces radioactive waste requiring shielding. B: Energy Reserves +250, Colony Budget -250000. Cheaper but vulnerable to dust storms; parallel wiring means one panel failure does not kill the array. C: Energy Reserves +200, Colony Budget -200000, Research Points +5. Innovative but Mars wind turbines are less efficient due to low atmospheric density (thin air = less kinetic energy)."}, {"id": "D2", "domain": "Life Support", "question": "Water reserves need boosting for expansion. Currently you distil waste water (evaporate then condense) to purify it. How do you improve the water system?", "optA": "Build a multi-stage distillation plant: heat water to 100 degrees C (providing latent heat of vaporisation = 2260 kJ/kg), condense vapour in cooling coils, repeat for maximum purity", "optB": "Add reverse osmosis membranes before distillation — force water through semi-permeable membranes at high pressure to remove dissolved salts and perchlorates, then a final distillation step", "optC": "Construct atmospheric water harvesting: cool habitat air below its dew point to condense water vapour exhaled by colonists through respiration, reducing load on main purification", "effects": "A: Water Reserves +100, Energy Reserves -100, Colony Budget -80000. Reliable high purity but extremely energy-intensive due to high latent heat of water. B: Water Reserves +120, Energy Reserves -60, Colony Budget -150000. Most efficient combination; membranes are expensive but save energy. C: Water Reserves +70, Energy Reserves -30, Colony Budget -50000, Crew Health +3. Supplements main system cheaply; demonstrates condensation and dew point concepts."}, {"id": "D3", "domain": "Engineering", "question": "You need to build new habitat space. Mars surface pressure is 0.6 kPa; inside must be 101 kPa. The pressure difference exerts enormous outward force on walls (Force = Pressure x Area). How do you expand?", "optA": "Inflate pressurised fabric domes reinforced with Kevlar — quick to deploy, large volume, but fabric degrades under UV radiation over time", "optB": "Excavate underground chambers in rock — natural radiation shielding from metres of rock above, and the surrounding rock helps contain pressure. Slow but permanent", "optC": "3D-print rigid dome structures using Martian regolith mixed with polymer binders — moderate speed, good structural strength, uses local materials", "effects": "A: Colony Population capacity +20, Energy Reserves -40, Colony Budget -120000, Crew Health -3 (UV degradation risk). Fast expansion; pressure = force/area means large domes need very strong materials. B: Colony Population capacity +15, Energy Reserves -80, Colony Budget -100000, Crew Health +8 (radiation shielding). Slow but excellent protection; rock absorbs gamma and cosmic radiation. C: Colony Population capacity +18, Energy Reserves -60, Colony Budget -90000, Research Points +5. Innovative use of local resources; tests material science."}, {"id": "D4", "domain": "Research", "question": "Research priorities for this quarter. Your team has been investigating energy efficiency and biological systems. What breakthrough do you pursue?", "optA": "Bioregenerative life support: engineer algae bioreactors that photosynthesise faster than plants, converting CO2 to O2 at 10x the rate per volume while producing edible protein", "optB": "Geothermal energy survey: Mars may have residual volcanic heat. Drill test bores to measure thermal gradient — if viable, provides unlimited baseline energy from thermal energy transfer", "optC": "Advanced electrical systems: develop superconducting power cables cooled by Mars's ambient -60 degrees C temperatures, eliminating resistance losses (P = I squared R, so if R approaches 0, losses vanish)", "effects": "A: Research Points +15, Food Security +8, Energy Reserves -30, Colony Budget -90000. Revolutionary if it works; combines biology and engineering. B: Research Points +12, Energy Reserves +80 (if viable — teacher rolls d6: 4+ means viable), Colony Budget -100000. High-risk high-reward; thermal energy transfer from Mars interior. C: Research Points +10, Energy Reserves +50 (reduced transmission losses), Colony Budget -70000. Applies understanding of P=I squared R and resistance; Mars cold helps superconductivity."}, {"id": "D5", "domain": "Ethics", "question": "Earth wants to send 20 more colonists. Your colony can probably support them, but it will strain every system. The new arrivals include a doctor, geologist, and engineer — but also a journalist who will broadcast colony life back to Earth. How do you respond?", "optA": "Accept all 20 colonists including the journalist — the skills are desperately needed and transparency with Earth builds long-term support and funding", "optB": "Accept the colonists but negotiate to replace the journalist with another scientist — every person must contribute directly to survival", "optC": "Delay the new arrivals by one quarter to build up reserves first — accept the risk that Earth may cancel the mission if you delay", "effects": "A: Colony Population +20, Food Security -12, Water Reserves -80, Energy Reserves -60, Colony Budget +300000 (Earth funding boost from positive coverage). Full expansion with PR benefit but severe resource strain. B: Colony Population +20, Food Security -12, Water Reserves -80, Energy Reserves -60, Research Points +8, Colony Budget +100000. More scientific capability but less Earth support without journalist. C: Colony Population +0 (this round), Food Security +5, Water Reserves +30, Colony Budget -50000 (mission delay costs). Safe but may lose the opportunity entirely."}]}, {"num": 4, "name": "The Storm", "report": ["A massive dust storm is developing in the Hellas Basin and tracking toward Chryse Planitia. Martian dust storms can become global events lasting months, blocking up to 99% of sunlight.", "Atmospheric sensors show wind speeds increasing to 100 km/h. While Mars's thin atmosphere (0.6 kPa pressure) means wind forces are much lower than equivalent Earth wind speeds (Force = Pressure x Area, and Mars air density is approximately 1% of Earth's), fine dust particles are extremely abrasive.", "Current food stores can sustain the colony for 30 Sols without new harvests. After that, rationing begins and health deteriorates.", "The nuclear reactor remains unaffected by the storm — fission reactions are independent of surface conditions. Solar panels, however, will produce minimal power if dust coverage exceeds 80%.", "Emergency protocols have been activated. All non-essential outdoor operations are suspended."], "randomEvent": "MASSIVE DUST STORM: The storm arrives with full force. ALL teams: Solar energy production drops to 10% for this round. Teams that chose primarily solar energy (Option A in Round 1) lose an additional Energy Reserves -200 and Food Security -8 as grow lights dim. Teams with strong nuclear capability lose only Energy Reserves -50. ALL teams lose Water Reserves -30 (dust contamination of external equipment).", "decisions": [{"id": "D1", "domain": "Energy", "question": "The dust storm has reduced solar output to near zero. Energy reserves are critical. How do you manage power during the crisis?", "optA": "Emergency power rationing: cut all non-essential systems. Reduce habitat heating to 10 degrees C (colonists wear thermal suits), dim lighting to 20%, shut down research labs. Minimise thermal energy transfer losses", "optB": "Overload the nuclear reactor by increasing the fission rate — withdraw control rods further to allow more neutron chain reactions. Risky but produces up to 50% more power", "optC": "Deploy emergency fuel cells (hydrogen + oxygen produces water + electrical energy). Clean and efficient but consumes your oxygen and hydrogen reserves", "effects": "A: Energy Reserves +80 (savings), Crew Health -12 (cold and dark), Food Security -8 (reduced grow lights slow photosynthesis). Safe but miserable; thermal energy loss continues even with insulation. B: Energy Reserves +180, Crew Health -5 (anxiety about reactor), Colony Budget -60000 (maintenance). More power but reactor stress risks meltdown; demonstrates nuclear chain reaction control. C: Energy Reserves +120, Water Reserves -60 (H2 and O2 from electrolysis of water), Colony Budget -40000. Efficient energy conversion but depletes water-derived fuel."}, {"id": "D2", "domain": "Life Support", "question": "With reduced light, photosynthesis rates in the hydroponic bay have plummeted. Plants need light energy to convert CO2 and water into glucose. CO2 is building up. How do you maintain breathable air?", "optA": "Redirect ALL remaining electrical power to grow lights — keep photosynthesis running at maximum rate even though it drains energy reserves rapidly", "optB": "Switch to chemical CO2 scrubbing using lithium hydroxide canisters: 2LiOH + CO2 produces Li2CO3 + H2O. Reliable but you have limited canisters", "optC": "Reduce colony activity levels — less physical exertion means slower respiration rate, less CO2 produced and less O2 consumed. Put non-essential crew in rest cycles", "effects": "A: Food Security +5, Energy Reserves -150, Crew Health +3 (good air quality). Keeps food growing and air clean but devastating energy cost during crisis. B: Food Security -5 (plants declining without priority), Energy Reserves -20, Colony Budget -80000, Crew Health +5. Chemical backup works but plants suffer; limited supply of LiOH. C: Food Security -3, Energy Reserves -10, Crew Health -6 (deconditioning from inactivity), Research Points -5 (labs shut). Cheapest option but crew deteriorate physically and mentally."}, {"id": "D3", "domain": "Engineering", "question": "Fine Martian dust (particles approximately 3 micrometres, similar to PM2.5 on Earth) is infiltrating the habitat through airlock seals. This dust contains toxic perchlorates and iron oxide particles that damage lungs. How do you respond?", "optA": "Install HEPA filtration on all air circulation systems — filters particles down to 0.3 micrometres, capturing all Martian dust. High energy cost for fan systems", "optB": "Create positive pressure zones: increase habitat pressure slightly above 101 kPa so air flows outward through any gaps, preventing dust ingress. Pressure differential pushes air out, not in", "optC": "Deploy electrostatic precipitators: charge dust particles and collect them on oppositely charged plates. Low energy but requires maintenance as collection plates fill", "effects": "A: Crew Health +8, Energy Reserves -60, Colony Budget -70000. Gold standard air filtration; completely removes harmful particles. B: Crew Health +6, Energy Reserves -40, Colony Budget -30000, Water Reserves -20 (increased air loss means water vapour loss). Clever physics — higher pressure inside creates outward airflow. C: Crew Health +5, Energy Reserves -20, Colony Budget -40000, Research Points +3. Efficient use of electrostatics; particles gain charge and attract to opposite plates."}, {"id": "D4", "domain": "Research", "question": "Despite the storm, your science team can work indoors. What do they focus on during this forced pause?", "optA": "Analyse dust storm data: model energy transfer patterns in Mars atmosphere, predict storm duration and intensity. Helps with future storm preparation", "optB": "Develop emergency food alternatives: study whether Martian ice (H2O) can be electrolysed into hydrogen fuel and oxygen for fuel cells, creating an emergency backup system", "optC": "Medical research: study the effects of perchlorate dust inhalation on respiratory systems and develop treatment protocols. Perchlorates disrupt thyroid function by mimicking iodide ions", "effects": "A: Research Points +12, Colony Budget -20000. Predictive modelling helps future planning; understanding energy transfer in atmospheric systems. B: Research Points +15, Energy Reserves +30 (prototype fuel cell), Colony Budget -60000. Electrolysis: 2H2O produces 2H2 + O2 using electrical energy; reversible fuel cell reaction. C: Research Points +10, Crew Health +8, Colony Budget -40000. Direct health benefit; understanding how toxic ions disrupt biological systems."}, {"id": "D5", "domain": "Ethics", "question": "Food rationing is necessary. The colony has enough for basic survival but not full nutrition for everyone. Pregnant colonists and children need more calories and nutrients for healthy development. How do you allocate food?", "optA": "Equal rations for all — fairness principle. Everyone gets the same calories regardless of role or condition", "optB": "Prioritise pregnant colonists, children, and medical staff — those with the greatest biological need and those who keep others alive get extra rations", "optC": "Allocate by work output: those performing physical labour (engineers, farmers) get more calories since they have higher metabolic rates and energy expenditure through respiration", "effects": "A: Crew Health -5, Food Security -3. Equal but not equitable — pregnant colonists and children develop nutritional deficiencies; workforce maintained evenly. B: Crew Health +3, Food Security -5, Colony Population +2 (healthy births). Biologically sound — developing bodies need more nutrients; morale mixed. C: Crew Health -2, Food Security -2, Energy Reserves +30 (productive workers). Pragmatic but ethically questionable; children and pregnant colonists suffer."}]}, {"num": 5, "name": "Breakthrough or Breakdown", "report": ["The dust storm is finally clearing after a brutal quarter. Solar panels are gradually being cleaned — dust coverage is down to 40% and falling. Solar output recovering.", "Colony morale is fragile. The storm tested every system and every person. Three colonists are requesting transfer back to Earth on the next available flight.", "Good news: the science team has made significant progress on several research fronts. Teams with Research Points above 50 can now access advanced technology options.", "Water recycling efficiency has been improved through experience — recovery rate now at 92%. The remaining 8% loss is mostly through chemical bonding in food production.", "A critical decision point: the colony must choose between consolidating what works or pushing toward ambitious new capabilities. Resources are stretched thin."], "randomEvent": "EQUIPMENT MALFUNCTION: The main water distillation unit has suffered a critical failure — heating element burnout from running continuously during the storm. All teams lose Water Reserves -60 until repairs are made. Teams with Research Points >= 50 have developed backup systems and lose only Water Reserves -30.", "decisions": [{"id": "D1", "domain": "Energy", "question": "Post-storm energy audit reveals significant efficiency losses. Dust has degraded solar panel surfaces, and the reactor needs maintenance. How do you restore and improve energy systems?", "optA": "Clean all solar panels using robotic wipers and apply anti-static coatings that repel dust particles (charged dust repelled by same-charge coating). Restore to 95% efficiency", "optB": "Shut down the reactor for 5 days of maintenance: replace worn control rods, clean cooling systems, and upgrade thermal-to-electrical conversion efficiency from 33% to 40%", "optC": "Install energy monitoring systems on every circuit: measure voltage, current, and power (P = VI) at each node to identify and eliminate waste. Data-driven efficiency", "effects": "A: Energy Reserves +100, Colony Budget -60000, Research Points +3. Electrostatics application; like charges repel dust particles. B: Energy Reserves -80 (5 days offline) then +150 (improved efficiency), Colony Budget -120000. Understanding thermal efficiency and energy conversion losses. C: Energy Reserves +60, Colony Budget -40000, Research Points +8. Applies P=VI and circuit monitoring; identifies where I squared R losses are highest."}, {"id": "D2", "domain": "Life Support", "question": "The failing water distillation unit needs replacement. This is a chance to upgrade the entire water purification system. What design do you choose?", "optA": "Triple-redundant distillation: three parallel units each capable of handling full colony water needs. If one fails, the other two maintain supply. Expensive but fault-tolerant", "optB": "Hybrid system: reverse osmosis (pressure-driven filtration through semi-permeable membranes) as primary, with UV sterilisation and single distillation backup. Lower energy per litre", "optC": "Biological water treatment: construct a living wetland system using reed beds and microorganisms to break down contaminants, followed by a final UV sterilisation pass. Self-maintaining", "effects": "A: Water Reserves +100, Energy Reserves -80, Colony Budget -200000. Maximum reliability through redundancy; high cost. Understanding parallel systems in engineering. B: Water Reserves +90, Energy Reserves -40, Colony Budget -130000, Crew Health +3. Efficient modern design; osmosis and membrane science. C: Water Reserves +70, Energy Reserves -15, Colony Budget -80000, Research Points +8, Food Security +3. Ecosystem approach; organisms decompose waste through natural biological processes."}, {"id": "D3", "domain": "Engineering", "question": "With the storm over, exterior systems need repair. The main communications dish, two external airlocks, and a solar panel junction box all need work. You have limited EVA (extravehicular activity) time due to radiation exposure limits. What do you prioritise?", "optA": "Fix the solar panel junction box first: it connects all panel arrays in parallel to the main power bus. Without it, only panels directly wired to the habitat produce power", "optB": "Repair the communications dish: maintaining contact with Earth provides weather warnings, technical support, and keeps morale high. Uses parabolic reflector to focus radio waves", "optC": "Fix the airlocks: safe EVA access is essential for all future exterior work. Airlock pressure cycling (101 kPa to 0.6 kPa and back) must be reliable to prevent decompression accidents", "effects": "A: Energy Reserves +120, Colony Budget -40000. Critical infrastructure; parallel circuits mean total current = sum of branch currents, so losing the junction box loses most solar power. B: Energy Reserves -20, Crew Health +8, Colony Budget -50000, Research Points +5. Communication crucial for safety and morale; parabolic reflector geometry focuses signals. C: Energy Reserves -30, Crew Health +5, Colony Budget -60000. Essential safety; understanding pressure differentials and gas behaviour during cycling."}, {"id": "D4", "domain": "Research", "question": "Your accumulated research enables a breakthrough project. What major advancement do you pursue?", "optA": "Closed-loop carbon cycle: engineer a system where CO2 from respiration feeds plants for photosynthesis, plant waste is composted releasing CO2, creating a perfect cycle with zero waste", "optB": "In-situ resource utilisation (ISRU): develop processes to extract iron from Mars regolith (Fe2O3 + 3CO produces 2Fe + 3CO2), manufacturing tools and construction materials from local rock", "optC": "Medical advancement: synthesise essential medicines from colony-grown plants using biochemistry. Extract compounds, understand enzyme-catalysed reactions for drug production", "effects": "A: Research Points +15, Food Security +10, Energy Reserves -30, Colony Budget -60000. Perfect closed loop eliminates waste; demonstrates carbon cycle and conservation of matter. B: Research Points +18, Colony Budget +100000 (reduced Earth supply needs), Energy Reserves -50. Reduction reaction extracts iron; transforms colony self-sufficiency. C: Research Points +12, Crew Health +10, Colony Budget -70000. Enzyme kinetics and biochemistry; colony becomes medically independent."}, {"id": "D5", "domain": "Ethics", "question": "Three colonists want to return to Earth. The next ship could take them, but departure uses fuel reserves earmarked for emergency evacuation, and losing three trained people weakens the colony. Earth says it is your call. What do you decide?", "optA": "Allow all three to leave — forcing people to stay against their will is unethical regardless of the cost. Mental health matters as much as physical health", "optB": "Negotiate: offer improved conditions, reduced workload, and counselling. Ask them to commit to one more quarter and reassess. Invest in crew wellbeing", "optC": "Allow one to leave as a goodwill gesture, but explain that losing all three would endanger the colony. Ask the other two to stay with enhanced roles and responsibilities", "effects": "A: Colony Population -3, Crew Health +8 (those who stay feel respected), Colony Budget -150000 (return flight costs). Ethical but costly; demonstrates respect for autonomy. B: Colony Population +0, Crew Health +5, Colony Budget -40000 (wellbeing investment), Energy Reserves -20 (reduced workload). Compromise; invests in mental health. C: Colony Population -1, Crew Health +3, Colony Budget -80000. Middle ground; some feel respected, others may resent the unequal treatment."}]}, {"num": 6, "name": "Self-Sufficiency", "report": ["The colony is entering a critical phase: Earth has announced budget cuts. Future resupply missions will be smaller and less frequent. You must achieve 80% self-sufficiency within two quarters.", "Hydroponic output is strong. The photosynthesis-respiration cycle is well-balanced: plants produce O2 and glucose during light periods, while colonists consume O2 and produce CO2 continuously. The system naturally buffers atmospheric composition.", "Energy infrastructure is mature but maintenance costs are rising. The nuclear reactor's fuel rods have a finite lifespan — current rods will last approximately 5 more years before needing replacement from Earth.", "Water recycling has reached 94% efficiency. Theoretical maximum is about 98% — the remaining 2% is chemically bound in food and waste products that cannot be economically recovered.", "Colonist morale is improving. The first Mars-born baby is now 3 months old and healthy. The colony feels like a real community rather than a research outpost."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Energy", "question": "With Earth budget cuts looming, long-term energy independence is critical. The nuclear reactor has 5 years of fuel left. How do you plan for energy self-sufficiency?", "optA": "Invest heavily in solar expansion: Mars receives about 590 W per square metre of solar radiation (vs Earth's 1361 W per square metre). Calculate and build enough panel area to fully power the colony from solar alone", "optB": "Research nuclear fuel breeding: use the reactor to convert non-fissile uranium-238 into fissile plutonium-239 through neutron capture and beta decay. Extends fuel supply indefinitely", "optC": "Develop a mixed renewable system: solar panels for daytime, thermal batteries (heated rocks storing thermal energy) for night, and methane fuel cells (CH4 produced from CO2 + H2)", "effects": "A: Energy Reserves +150, Colony Budget -300000, Research Points +5. Requires 2.3x more panel area than Earth equivalent; demonstrates inverse square law for solar radiation. B: Energy Reserves +100, Colony Budget -200000, Research Points +15. Advanced nuclear physics: neutron capture, beta decay (neutron becomes proton + electron). Long-term game changer. C: Energy Reserves +180, Colony Budget -250000, Research Points +10. Multiple energy transfers: solar to electrical, thermal to stored heat to thermal, chemical to electrical."}, {"id": "D2", "domain": "Life Support", "question": "To reach food self-sufficiency, you need to dramatically increase crop yields. The limiting factors for photosynthesis are light intensity, CO2 concentration, and temperature. How do you optimise growing conditions?", "optA": "Install high-intensity LED banks and increase growing chamber temperature to 28 degrees C — the optimum for most crop species. Accept the high energy cost for maximum yield", "optB": "Increase CO2 concentration in growing chambers to 1200 ppm (3x Earth normal). At this level, CO2 is no longer the limiting factor and photosynthesis rate increases by approximately 40%", "optC": "Genetic selection: breed crop varieties over successive generations that are adapted to Mars conditions — lower light, higher CO2, reduced gravity. Slower but permanent improvement", "effects": "A: Food Security +15, Energy Reserves -120, Colony Budget -60000. Removes temperature and light as limiting factors; high energy cost for heating and lighting. B: Food Security +12, Energy Reserves -40, Colony Budget -40000, Research Points +5. Directly applies limiting factor concept; CO2 enrichment is standard greenhouse technique. C: Food Security +8, Energy Reserves -20, Colony Budget -30000, Research Points +12. Evolutionary biology application; natural selection for Mars-adapted traits over generations."}, {"id": "D3", "domain": "Engineering", "question": "The colony needs a reliable manufacturing capability to produce replacement parts without Earth. 3D printing using local materials is the most promising approach. What manufacturing system do you develop?", "optA": "Metal sintering printer: heat Martian iron oxide (Fe2O3) with hydrogen to extract iron (Fe2O3 + 3H2 produces 2Fe + 3H2O), then laser-sinter iron powder into parts layer by layer", "optB": "Polymer printer using bioplastics: grow bacteria that convert CO2 into polyhydroxybutyrate (PHB), a biodegradable plastic suitable for non-structural parts, tools, and containers", "optC": "Multi-material printer: combine metal sintering for structural parts with polymer printing for fittings. More complex but covers all manufacturing needs", "effects": "A: Colony Budget +80000 (reduced Earth orders), Energy Reserves -60, Research Points +10. Reduction reaction extracts iron; demonstrates chemical equations and conservation of mass. B: Colony Budget +50000, Energy Reserves -30, Research Points +8, Food Security +3 (plastic containers for food storage). Biotechnology application; bacteria as microscopic factories. C: Colony Budget +120000, Energy Reserves -80, Research Points +15, Colony Budget -150000 (initial cost). Expensive to build but maximum long-term value; applies multiple material science concepts."}, {"id": "D4", "domain": "Research", "question": "A fundamental research question: can the colony become truly self-sustaining as a closed ecosystem? Earth's biosphere recycles all materials through biogeochemical cycles. What cycles do you try to close?", "optA": "Close the nitrogen cycle: develop nitrogen-fixing bacteria that convert N2 from Mars atmosphere traces into ammonia (NH3) for fertiliser, then composting returns nitrogen to soil", "optB": "Close the phosphorus cycle: extract phosphorus from human waste and crop residue, refine it back into plant-available phosphate fertiliser. Every atom of P must be recycled", "optC": "Close the carbon cycle completely: track every carbon atom from CO2 through photosynthesis to glucose through respiration back to CO2. Ensure zero carbon loss from the closed system", "effects": "A: Research Points +15, Food Security +8, Colony Budget -60000. Nitrogen cycle is critical for agriculture; N2 fixation by bacteria is biological catalyst action. B: Research Points +12, Food Security +10, Colony Budget -50000. Phosphorus is a finite, non-substitutable nutrient; recycling is essential. Conservation of matter in action. C: Research Points +10, Food Security +6, Energy Reserves -20, Colony Budget -40000. Carbon cycle tracking demonstrates conservation of mass; no atoms created or destroyed."}, {"id": "D5", "domain": "Ethics", "question": "Earth budget cuts mean your colony can either receive medical supplies OR scientific equipment on the next (smaller) resupply ship — not both. Medical supplies would treat chronic conditions developing from Mars gravity and radiation. Scientific equipment would accelerate self-sufficiency research. What do you request?", "optA": "Medical supplies — you have a duty of care to current colonists. Their chronic conditions (bone density loss in 0.38g gravity, accumulated radiation damage) need treatment now", "optB": "Scientific equipment — faster research means faster self-sufficiency, which means the colony can eventually manufacture its own medical supplies. Short-term pain for long-term gain", "optC": "Split the shipment 60/40 medical/science — treat the most urgent conditions while still advancing research. Neither fully addressed but neither neglected", "effects": "A: Crew Health +12, Colony Budget -80000 (shipping costs), Research Points -5 (no new equipment). Immediate health improvement; ethical duty of care fulfilled. B: Crew Health -8, Colony Budget -80000, Research Points +18. Colonists suffer now but colony becomes independent faster; utilitarian argument. C: Crew Health +5, Colony Budget -80000, Research Points +8. Compromise; moderate improvement on both fronts but optimal on neither."}]}, {"num": 7, "name": "The Future", "report": ["Final quarter of the simulation. Your colony has survived storms, equipment failures, resource shortages, and difficult ethical choices. Now it is time to secure the colony's long-term future.", "A transmission from Earth brings mixed news: your colony has inspired humanity, but political support for Mars funding is wavering. The colony's legacy depends on what you achieve this quarter.", "Current systems assessment: energy infrastructure is robust but aging. Food production meets daily needs with a small surplus. Water recycling is excellent. The question now is not survival but legacy.", "The first generation of Mars-born children will grow up knowing only this world. What kind of colony — what kind of society — are you building for them?", "Final decisions will determine whether Ares Base becomes a self-sustaining civilisation or remains a fragile outpost dependent on Earth."], "randomEvent": "EARTH COMMUNICATION RESTORED: After weeks of solar conjunction blocking signals, full communication with Earth is re-established. Teams with Research Points >= 75 receive a bonus: Earth scientists are so impressed by your research that they secure emergency funding — Colony Budget +200000 and Research Points +10. Teams with Research Points < 50 receive only a brief message of encouragement.", "decisions": [{"id": "D1", "domain": "Energy", "question": "For long-term energy independence, you must make a final strategic decision about the colony's energy future. Energy cannot be created or destroyed, only transferred — but your choice of transfer pathways matters enormously.", "optA": "Build a thorium molten salt reactor: thorium is 3x more abundant than uranium on Mars, produces less long-lived waste, and the molten salt design is inherently safe (overheating drains the salt, stopping the reaction)", "optB": "Complete a full solar-battery grid: calculate that Mars receives 43% of Earth's solar energy, build panels covering 12000 square metres with advanced batteries storing 5000 kWh for night and storms", "optC": "Develop a hydrogen economy: use solar power to electrolyse water (2H2O produces 2H2 + O2), store hydrogen as fuel, burn in fuel cells (2H2 + O2 produces 2H2O + energy) when needed. Fully renewable cycle", "effects": "A: Energy Reserves +300, Colony Budget -350000, Research Points +10. Advanced nuclear physics; thorium fuel cycle is safer and more sustainable than uranium. B: Energy Reserves +250, Colony Budget -280000. Reliable and proven; demonstrates solar energy calculations (power = intensity x area x efficiency). C: Energy Reserves +200, Colony Budget -200000, Research Points +12, Water Reserves -40. Elegant closed cycle; demonstrates electrolysis, fuel cells, and conservation of energy."}, {"id": "D2", "domain": "Life Support", "question": "To feed a growing colony indefinitely, you need to move beyond hydroponics to a complete agricultural ecosystem. How do you build Mars's first farm?", "optA": "Pressurised greenhouse domes using transparent regolith-glass: allow direct (filtered) sunlight for photosynthesis, grow a diverse range of crops including fruit trees and grain cereals", "optB": "Vertical farming towers: stack growing trays 10 levels high with LED lighting. Maximum food per square metre. Controlled environment means predictable yields regardless of external conditions", "optC": "Integrated aquaponics: combine fish farming with plant growing. Fish waste provides nitrogen-rich fertiliser for plants; plants filter water for fish. A self-sustaining mini-ecosystem", "effects": "A: Food Security +18, Energy Reserves -40, Colony Budget -180000, Crew Health +5 (natural light and green space boost mental health). Diverse diet; real sunlight drives photosynthesis directly. B: Food Security +20, Energy Reserves -100, Colony Budget -150000. Maximum yield; LED wavelengths optimised for chlorophyll absorption peaks (red 680nm, blue 450nm). C: Food Security +15, Energy Reserves -50, Colony Budget -120000, Research Points +8. Demonstrates nutrient cycling, symbiotic relationships, and ecosystem balance."}, {"id": "D3", "domain": "Engineering", "question": "Final major construction project: the colony needs a landmark structure that serves both practical and inspirational purposes. What do you build?", "optA": "A massive underground vault storing genetic material, seeds, and digital records of human knowledge — Mars's backup of Earth civilisation. Climate-controlled using geothermal energy", "optB": "An observatory and science centre with a 2-metre telescope: Mars's thin atmosphere and lack of light pollution make it ideal for astronomy. Also serves as a school for colony children", "optC": "A fully enclosed public garden and recreation centre with Earth plants, running water features, and a simulated day-night cycle. Mental health infrastructure for long-term colonist wellbeing", "effects": "A: Research Points +15, Colony Budget -200000, Energy Reserves -30. Practical insurance for humanity; demonstrates data storage and preservation science. B: Research Points +20, Colony Budget -150000, Energy Reserves -40, Crew Health +5. Science education and discovery; light travels through thin Mars atmosphere with less scattering. C: Crew Health +15, Colony Budget -180000, Energy Reserves -60, Food Security +3. Psychology of enclosed environments; water features demonstrate water cycle in miniature."}, {"id": "D4", "domain": "Research", "question": "Your final research priority will define the colony's scientific legacy. What grand challenge do you pursue?", "optA": "Terraforming feasibility study: model whether releasing CO2 from polar ice caps could trigger a greenhouse effect, raising Mars temperature and pressure over centuries", "optB": "Search for Martian life: investigate subsurface water deposits for microbial life. Discovery of extraterrestrial life would be the greatest scientific find in history", "optC": "Fusion power research: Mars has abundant deuterium (heavy hydrogen) in its water ice. If fusion can be achieved (2H + 3H produces 4He + neutron + 17.6 MeV), it provides virtually unlimited energy", "effects": "A: Research Points +18, Colony Budget -100000. Greenhouse effect science; CO2 absorbs infrared radiation, trapping thermal energy. Links to Earth climate science. B: Research Points +20, Colony Budget -80000, Crew Health +3 (hope and purpose). Astrobiology; understanding conditions for life — water, energy source, organic molecules. C: Research Points +22, Colony Budget -150000, Energy Reserves -40. Nuclear fusion: combining light nuclei releases energy (mass-energy equivalence E=mc squared). Ultimate energy source."}, {"id": "D5", "domain": "Ethics", "question": "Earth asks your colony to accept 100 new colonists next year — refugees from climate disasters on Earth. Your colony can sustain about 70 additional people without strain. Accepting all 100 would push every system to its limits. What do you decide?", "optA": "Accept all 100 — your colony was built on the principle that Mars is humanity's backup plan. You cannot turn away people in need, even if it means hardship", "optB": "Accept 70 and help Earth establish a second colony site for the remaining 30 — share your research and blueprints freely so they can build their own sustainable base", "optC": "Accept 50 this year and 50 next year — stagger the arrivals to give your systems time to scale up. Petition Earth for additional resources to support the expanded population", "effects": "A: Colony Population +100, Food Security -20, Water Reserves -120, Energy Reserves -100, Crew Health -10, Colony Budget -200000. Heroic but dangerous; massive strain on all systems. B: Colony Population +70, Food Security -10, Water Reserves -60, Energy Reserves -50, Research Points +10, Colony Budget -100000. Strategic and generous; shares knowledge for humanity's benefit. C: Colony Population +50, Food Security -8, Water Reserves -40, Energy Reserves -30, Colony Budget -80000. Pragmatic; sustainable growth with managed risk."}]}], "debriefQuestions": ["How did your energy choices affect every other system in the colony? Map the energy transfer pathways from source (nuclear/solar) through to the services they powered (heating, lighting, water purification, food growing).", "Explain how the photosynthesis-respiration cycle works as a closed loop in the colony. What would happen if either the plants or the colonists were removed from this system?", "Compare the advantages and disadvantages of nuclear fission vs solar power on Mars. Consider reliability, fuel supply, waste products, weather vulnerability, and long-term sustainability.", "How did pressure differentials affect engineering decisions? Explain why a habitat at 101 kPa on a planet with 0.6 kPa atmospheric pressure creates such extreme engineering challenges.", "Describe the water cycle in your colony. How does distillation work at the molecular level? Why is the latent heat of vaporisation such a significant energy cost?", "What ethical dilemmas did you face, and how did scientific understanding inform your decisions? Give an example where knowing the science changed what you thought was the right ethical choice.", "If you could replay the simulation, which single decision would you change and why? Calculate the impact that change would have had on your final metrics."], "keyTakeaways": ["Energy is the master resource in any closed system: every life support function depends on energy transfer, and the law of conservation of energy means you cannot create it — only convert it from one form to another with inevitable efficiency losses.", "Closed-loop life support mirrors Earth's natural biogeochemical cycles: carbon, nitrogen, water, and phosphorus must all be recycled because in a sealed colony (like planet Earth), there is no 'away' to throw waste to.", "Radiation is an invisible but constant threat without atmospheric or magnetic shielding: understanding the different types (alpha, beta, gamma) and their penetrating power is essential for designing effective protection.", "Scientific research is an investment, not a luxury: every breakthrough technology that saved the colony — from better water recycling to radiation shielding to food production — required sustained research investment that cost resources in the short term.", "Engineering decisions always involve trade-offs between competing scientific principles: parallel vs series circuits, nuclear vs solar energy, distillation vs osmosis for purification. Understanding the science behind each option is essential for making informed decisions."]};
+const SVGS = {"r1_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"150\" r=\"18\" fill=\"#4F46E5\" opacity=\"0.8\"/><ellipse cx=\"320\" cy=\"150\" rx=\"28\" ry=\"8\" fill=\"none\" stroke=\"#818CF8\" stroke-width=\"2\" transform=\"rotate(-20,320,150)\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Planetfall</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n</svg>", "r1_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Planetfall</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><circle cx=\"106\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><line x1=\"106\" y1=\"160\" x2=\"118\" y2=\"148\" stroke=\"#818CF8\" stroke-width=\"2\"/><line x1=\"106\" y1=\"160\" x2=\"106\" y2=\"146\" stroke=\"#818CF8\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Energy</text>\n  <g opacity=\"0.85\"><path d=\"M198,160 L204,160 L208,150 L212,168 L216,150 L220,160 L226,160\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Life Support</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"318\" cy=\"160\" r=\"5\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"146\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"168\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Engineering</text>\n  <g opacity=\"0.85\"><circle cx=\"428\" cy=\"164\" r=\"14\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"438\" y1=\"174\" x2=\"446\" y2=\"182\" stroke=\"#4F46E5\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Research</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r2_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><line x1=\"320\" y1=\"168\" x2=\"320\" y2=\"144\" stroke=\"#4F46E5\" stroke-width=\"3\"/><path d=\"M320,144 Q338,128 326,124\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"3\"/><path d=\"M320,152 Q304,140 316,134\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">First Harvest</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n</svg>", "r2_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">First Harvest</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><circle cx=\"106\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><line x1=\"106\" y1=\"160\" x2=\"118\" y2=\"148\" stroke=\"#818CF8\" stroke-width=\"2\"/><line x1=\"106\" y1=\"160\" x2=\"106\" y2=\"146\" stroke=\"#818CF8\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Energy</text>\n  <g opacity=\"0.85\"><path d=\"M198,160 L204,160 L208,150 L212,168 L216,150 L220,160 L226,160\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Life Support</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"318\" cy=\"160\" r=\"5\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"146\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"168\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Engineering</text>\n  <g opacity=\"0.85\"><circle cx=\"428\" cy=\"164\" r=\"14\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"438\" y1=\"174\" x2=\"446\" y2=\"182\" stroke=\"#4F46E5\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Research</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r3_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"322,126 310,150 320,150 318,174 330,150 320,150\" fill=\"#4F46E5\" opacity=\"0.9\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Expansion Pressure</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n</svg>", "r3_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Expansion Pressure</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><circle cx=\"106\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><line x1=\"106\" y1=\"160\" x2=\"118\" y2=\"148\" stroke=\"#818CF8\" stroke-width=\"2\"/><line x1=\"106\" y1=\"160\" x2=\"106\" y2=\"146\" stroke=\"#818CF8\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Energy</text>\n  <g opacity=\"0.85\"><path d=\"M198,160 L204,160 L208,150 L212,168 L216,150 L220,160 L226,160\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Life Support</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"318\" cy=\"160\" r=\"5\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"146\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"168\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Engineering</text>\n  <g opacity=\"0.85\"><circle cx=\"428\" cy=\"164\" r=\"14\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"438\" y1=\"174\" x2=\"446\" y2=\"182\" stroke=\"#4F46E5\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Research</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r4_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"322,126 310,150 320,150 318,174 330,150 320,150\" fill=\"#4F46E5\" opacity=\"0.9\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">The Storm</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n</svg>", "r4_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">The Storm</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><circle cx=\"106\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><line x1=\"106\" y1=\"160\" x2=\"118\" y2=\"148\" stroke=\"#818CF8\" stroke-width=\"2\"/><line x1=\"106\" y1=\"160\" x2=\"106\" y2=\"146\" stroke=\"#818CF8\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Energy</text>\n  <g opacity=\"0.85\"><path d=\"M198,160 L204,160 L208,150 L212,168 L216,150 L220,160 L226,160\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Life Support</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"318\" cy=\"160\" r=\"5\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"146\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"168\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Engineering</text>\n  <g opacity=\"0.85\"><circle cx=\"428\" cy=\"164\" r=\"14\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"438\" y1=\"174\" x2=\"446\" y2=\"182\" stroke=\"#4F46E5\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Research</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r5_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"144\" r=\"16\" fill=\"#4F46E5\" opacity=\"0.85\"/><rect x=\"312\" y=\"160\" width=\"16\" height=\"6\" rx=\"2\" fill=\"#818CF8\"/><rect x=\"314\" y=\"166\" width=\"12\" height=\"4\" rx=\"2\" fill=\"#818CF8\" opacity=\"0.7\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Breakthrough or Breakdown</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n</svg>", "r5_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Breakthrough or Breakdown</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><circle cx=\"106\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><line x1=\"106\" y1=\"160\" x2=\"118\" y2=\"148\" stroke=\"#818CF8\" stroke-width=\"2\"/><line x1=\"106\" y1=\"160\" x2=\"106\" y2=\"146\" stroke=\"#818CF8\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Energy</text>\n  <g opacity=\"0.85\"><path d=\"M198,160 L204,160 L208,150 L212,168 L216,150 L220,160 L226,160\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Life Support</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"318\" cy=\"160\" r=\"5\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"146\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"168\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Engineering</text>\n  <g opacity=\"0.85\"><circle cx=\"428\" cy=\"164\" r=\"14\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"438\" y1=\"174\" x2=\"446\" y2=\"182\" stroke=\"#4F46E5\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Research</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r6_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><line x1=\"320\" y1=\"168\" x2=\"320\" y2=\"144\" stroke=\"#4F46E5\" stroke-width=\"3\"/><path d=\"M320,144 Q338,128 326,124\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"3\"/><path d=\"M320,152 Q304,140 316,134\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Self-Sufficiency</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n</svg>", "r6_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Self-Sufficiency</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><circle cx=\"106\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><line x1=\"106\" y1=\"160\" x2=\"118\" y2=\"148\" stroke=\"#818CF8\" stroke-width=\"2\"/><line x1=\"106\" y1=\"160\" x2=\"106\" y2=\"146\" stroke=\"#818CF8\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Energy</text>\n  <g opacity=\"0.85\"><path d=\"M198,160 L204,160 L208,150 L212,168 L216,150 L220,160 L226,160\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Life Support</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"318\" cy=\"160\" r=\"5\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"146\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"168\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Engineering</text>\n  <g opacity=\"0.85\"><circle cx=\"428\" cy=\"164\" r=\"14\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"438\" y1=\"174\" x2=\"446\" y2=\"182\" stroke=\"#4F46E5\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Research</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r7_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"150\" r=\"22\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><ellipse cx=\"320\" cy=\"150\" rx=\"10\" ry=\"22\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/><line x1=\"298\" y1=\"150\" x2=\"342\" y2=\"150\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">The Future</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n</svg>", "r7_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">The Future</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><circle cx=\"106\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><line x1=\"106\" y1=\"160\" x2=\"118\" y2=\"148\" stroke=\"#818CF8\" stroke-width=\"2\"/><line x1=\"106\" y1=\"160\" x2=\"106\" y2=\"146\" stroke=\"#818CF8\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Energy</text>\n  <g opacity=\"0.85\"><path d=\"M198,160 L204,160 L208,150 L212,168 L216,150 L220,160 L226,160\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Life Support</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"14\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"318\" cy=\"160\" r=\"5\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"146\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/><rect x=\"316\" y=\"168\" width=\"4\" height=\"6\" fill=\"#EEF2FF\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Engineering</text>\n  <g opacity=\"0.85\"><circle cx=\"428\" cy=\"164\" r=\"14\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"438\" y1=\"174\" x2=\"446\" y2=\"182\" stroke=\"#4F46E5\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Research</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Mars Colony Survival</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>"};
+
+// ======================== EFFECTS PARSER ========================
+// Build alias map: short names -> full metric name
+const METRIC_ALIASES = {};
+(function() {
+  for (const m of SIM.metrics) {
+    const name = m.name;
+    METRIC_ALIASES[name.toLowerCase()] = name;
+    // Add partial aliases: last word, last two words, etc.
+    const words = name.split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const partial = words.slice(i).join(' ').toLowerCase();
+      if (partial.length >= 3 && !METRIC_ALIASES[partial]) {
+        METRIC_ALIASES[partial] = name;
+      }
+    }
+    // Also add without common suffixes
+    const noLevel = name.replace(/\s+(Level|Score|Rating|Index|Remaining|Value)$/i, '').toLowerCase();
+    if (noLevel !== name.toLowerCase() && !METRIC_ALIASES[noLevel]) {
+      METRIC_ALIASES[noLevel] = name;
+    }
+  }
+})();
+
+function findMetric(text) {
+  // Try exact match first, then longest partial match
+  const lower = text.toLowerCase();
+  for (const m of SIM.metrics) {
+    if (lower.includes(m.name.toLowerCase())) return m.name;
+  }
+  // Try aliases (longest first)
+  const aliases = Object.keys(METRIC_ALIASES).sort((a,b) => b.length - a.length);
+  for (const alias of aliases) {
+    if (lower.includes(alias)) return METRIC_ALIASES[alias];
+  }
+  return null;
+}
+
+function parseEffects(effectsStr) {
+  if (!effectsStr) return {};
+  const results = {};
+  const clauses = effectsStr.split(/[.;,]/).map(s => s.trim()).filter(s => s.length > 0);
+
+  for (const clause of clauses) {
+    const metricName = findMetric(clause);
+    if (!metricName) continue;
+
+    // "set to X"
+    const setMatch = clause.match(/set\s+to\s+(-?[\d,.]+)/i);
+    if (setMatch) {
+      results[metricName] = { type: 'set', value: parseNum(setMatch[1]) };
+      continue;
+    }
+
+    // "+/-$X,XXX" or "+/-X" or "+/-X%"
+    const deltaMatch = clause.match(/([+-])\s*\$?([\d,.]+)[%]?/);
+    if (deltaMatch) {
+      const sign = deltaMatch[1] === '+' ? 1 : -1;
+      const val = parseNum(deltaMatch[2]) * sign;
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+      continue;
+    }
+
+    // "-$X,XXX" embedded
+    const negMatch = clause.match(/-\$([\d,.]+)/);
+    if (negMatch) {
+      const val = -parseNum(negMatch[1]);
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+    }
+  }
+  return results;
+}
+
+function parseNum(s) {
+  return parseFloat(s.replace(/,/g, '')) || 0;
+}
+
+function clampMetric(metricDef, value) {
+  const unit = metricDef.unit || '';
+  if (unit === '/100') return Math.max(0, Math.min(100, value));
+  if (unit === '%') return Math.max(-100, Math.min(100, value));
+  if (unit === '$') return Math.max(0, value); // no negative cash
+  return value;
+}
+
+// ======================== GAME STATE ========================
+let G = {
+  started: false,
+  teamCount: 3,
+  teams: [],
+  currentScreen: 'setup',
+  currentRound: 1,
+  currentPhase: 0,
+  roundsComplete: new Set(),
+  teamMetrics: {}, // teamIdx -> {metricName: value}
+  roundDecisions: {}, // round -> teamIdx -> {D1:'A', D2:'B', ...}
+  roundSnapshots: {}, // round -> teamIdx -> {metricName: {before, after, delta}}
+};
+
+function initMetrics() {
+  G.teamMetrics = {};
+  for (let t = 0; t < G.teams.length; t++) {
+    G.teamMetrics[t] = {};
+    for (const m of SIM.metrics) {
+      G.teamMetrics[t][m.name] = m.start;
+    }
+  }
+}
+
+// ======================== TIMER ========================
+let timerInterval = null, timerSeconds = 600;
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + s.toString().padStart(2,'0');
+  document.getElementById('timerDisplay').style.color = timerSeconds <= 60 ? '#EF5350' : 'var(--gold)';
+}
+function startTimer() { if (timerInterval) return; timerInterval = setInterval(() => { if (timerSeconds > 0) { timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; } }, 1000); }
+function pauseTimer() { clearInterval(timerInterval); timerInterval = null; }
+function resetTimer() { pauseTimer(); timerSeconds = 600; updateTimerDisplay(); }
+updateTimerDisplay();
+
+// ======================== NAVIGATION ========================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let h = '<button onclick="goTo(\'setup\')" class="' + (G.currentScreen==='setup'?'active':'') + '"><span class="check"></span> Setup</button>';
+  for (let r = 1; r <= 7; r++) {
+    const done = G.roundsComplete.has(r);
+    const isActive = G.currentScreen === 'round' && G.currentRound === r;
+    h += '<button onclick="goToRound('+r+')" class="' + (isActive?'active':'') + ' ' + (done?'done':'') + '">';
+    h += '<span class="check">' + (done?'&#10003;':'') + '</span> Round ' + r;
+    if (isActive) { h += '<span class="phase-dots">'; for (let p=0;p<4;p++) h += '<span class="dot '+(G.currentPhase>=p?'filled':'')+'"></span>'; h += '</span>'; }
+    h += '</button>';
+  }
+  h += '<div class="sidebar-sep"></div>';
+  h += '<button onclick="goTo(\'leaderboard\')" class="'+(G.currentScreen==='leaderboard'?'active':'')+'"><span class="check"></span> Leaderboard</button>';
+  h += '<button onclick="goTo(\'final\')" class="'+(G.currentScreen==='final'?'active':'')+'"><span class="check"></span> Final Results</button>';
+  h += '<button onclick="goTo(\'debrief\')" class="'+(G.currentScreen==='debrief'?'active':'')+'"><span class="check"></span> Debrief</button>';
+  nav.innerHTML = h;
+}
+
+function goTo(s) { G.currentScreen = s; render(); }
+function goToRound(r) { if (!G.started) return; G.currentScreen = 'round'; G.currentRound = r; G.currentPhase = G.roundsComplete.has(r) ? 3 : 0; render(); }
+function setPhase(p) { G.currentPhase = p; render(); }
+
+function render() {
+  buildSidebar();
+  const c = document.getElementById('content');
+  if (G.currentScreen === 'setup') renderSetup(c);
+  else if (G.currentScreen === 'round') renderRound(c);
+  else if (G.currentScreen === 'leaderboard') renderLeaderboard(c);
+  else if (G.currentScreen === 'final') renderFinal(c);
+  else if (G.currentScreen === 'debrief') renderDebrief(c);
+  updateTopbar();
+}
+
+function updateTopbar() {
+  const title = document.getElementById('topbarTitle');
+  const phase = document.getElementById('topbarPhase');
+  const right = document.getElementById('topbarRight');
+  if (G.currentScreen === 'setup') {
+    title.textContent = 'SETUP';
+    phase.innerHTML = '';
+    right.innerHTML = '<button onclick="showHelp()">How to Play</button>';
+  } else if (G.currentScreen === 'round') {
+    const rd = SIM.rounds[G.currentRound-1];
+    title.textContent = 'ROUND ' + rd.num + ': ' + rd.name.toUpperCase();
+    const phases = ['Briefing','Decisions','Team Entry','Results'];
+    phase.innerHTML = phases.map((p,i) => '<button class="phase-step '+(i===G.currentPhase?'active':i<G.currentPhase?'completed':'')+'" onclick="setPhase('+i+')">'+p+'</button>').join('');
+    let btns = '';
+    if (G.currentPhase > 0) btns += '<button onclick="setPhase('+(G.currentPhase-1)+')">&#8592; Back</button>';
+    if (G.currentPhase < 3) btns += '<button class="primary" onclick="nextPhase()">Next &#8594;</button>';
+    else if (G.currentRound < 7) btns += '<button class="primary" onclick="goToRound('+(G.currentRound+1)+')">Round '+(G.currentRound+1)+' &#8594;</button>';
+    else btns += '<button class="primary" onclick="goTo(\'final\')">Final Results &#8594;</button>';
+    right.innerHTML = btns;
+  } else {
+    title.textContent = G.currentScreen.toUpperCase().replace('LEADERBOARD','LEADERBOARD');
+    phase.innerHTML = '';
+    right.innerHTML = G.currentScreen === 'final' ? '<button class="primary" onclick="goTo(\'debrief\')">Debrief &#8594;</button>' : '';
+  }
+}
+
+function nextPhase() {
+  if (G.currentPhase === 2) {
+    const r = G.currentRound;
+    if (!validateEntries(r)) return;
+    calculateRound(r);
+  }
+  G.currentPhase = Math.min(3, G.currentPhase + 1);
+  render();
+}
+
+function validateEntries(r) {
+  if (!G.roundDecisions[r]) { alert('Please enter decisions for all teams first.'); return false; }
+  for (let t = 0; t < G.teams.length; t++) {
+    const td = G.roundDecisions[r][t];
+    if (!td) { alert(G.teams[t] + ' has not entered any decisions.'); return false; }
+    for (const dec of SIM.rounds[r-1].decisions) {
+      if (!td[dec.id]) { alert(G.teams[t] + ' is missing ' + dec.id + '.'); return false; }
+    }
+  }
+  return true;
+}
+
+function showHelp() { document.getElementById('helpOverlay').classList.add('show'); }
+function closeHelp() { document.getElementById('helpOverlay').classList.remove('show'); }
+
+// ======================== SETUP ========================
+function renderSetup(c) {
+  let h = '<div class="screen active"><div class="setup-hero"><h1>' + SIM.title.toUpperCase() + '</h1><p class="subtitle">' + SIM.subject + ' &bull; ' + SIM.level + '</p><p>Lead your team through 7 rounds of strategic decisions.</p></div>';
+  h += '<div class="card"><h2>Number of Teams</h2><div class="team-count-btns">';
+  for (let i = 2; i <= 6; i++) h += '<button class="'+(G.teamCount===i?'active':'')+'" onclick="setTeamCount('+i+')">'+i+'</button>';
+  h += '</div><h2>Team Names</h2><div class="team-inputs" id="teamInputs">';
+  for (let i = 0; i < G.teamCount; i++) {
+    const val = G.teams[i] || '';
+    h += '<div class="team-input"><span class="num">'+(i+1)+'</span><input type="text" placeholder="Team '+(i+1)+' name" value="'+val+'" onchange="setTeamName('+i+',this.value)" /></div>';
+  }
+  h += '</div></div><button class="start-btn" onclick="startGame()">START GAME</button>';
+  h += '<div style="text-align:center;margin-top:1rem;"><button onclick="showHelp()" style="background:none;border:none;color:var(--mid);text-decoration:underline;cursor:pointer;font-family:\'Nunito\',sans-serif;">How to Play</button></div></div>';
+  c.innerHTML = h;
+}
+
+function setTeamCount(n) { G.teamCount = n; render(); }
+function setTeamName(i, v) { G.teams[i] = v.trim(); }
+
+function startGame() {
+  const inputs = document.querySelectorAll('#teamInputs input');
+  G.teams = [];
+  inputs.forEach((inp, i) => G.teams.push(inp.value.trim() || 'Team '+(i+1)));
+  G.teams = G.teams.slice(0, G.teamCount);
+  initMetrics();
+  G.started = true;
+  G.currentScreen = 'round';
+  G.currentRound = 1;
+  G.currentPhase = 0;
+  render();
+}
+
+// ======================== ROUND RENDERING ========================
+function renderRound(c) {
+  const r = G.currentRound;
+  const rd = SIM.rounds[r-1];
+  let h = '<div class="screen active">';
+  if (G.currentPhase === 0) h += renderBriefing(rd, r);
+  else if (G.currentPhase === 1) h += renderDecisions(rd, r);
+  else if (G.currentPhase === 2) h += renderEntry(r, rd);
+  else if (G.currentPhase === 3) h += renderResults(r);
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+function renderBriefing(rd, r) {
+  let h = '';
+  // SVG illustration
+  const svgKey = 'r'+r+'_briefing';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="report-card"><div class="report-masthead"><h1>' + SIM.title.toUpperCase() + '</h1><div class="dateline">Round ' + rd.num + ' of 7 &bull; ' + rd.name + '</div></div>';
+  h += '<div class="report-items">';
+  for (const item of rd.report) {
+    h += '<div class="report-item"><span class="bullet">&#9679;</span><span class="text">' + item + '</span></div>';
+  }
+  h += '</div>';
+  if (rd.randomEvent) {
+    h += '<div class="event-box"><h3>&#9889; RANDOM EVENT</h3><p>' + rd.randomEvent + '</p></div>';
+  } else {
+    h += '<div class="no-event">&#9728;&#65039; No random event this round &mdash; steady conditions ahead.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderDecisions(rd, r) {
+  let h = '';
+  const svgKey = 'r'+r+'_decisions';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="decisions-grid">';
+  for (const dec of rd.decisions) {
+    h += '<div class="decision-card"><div class="d-label">' + dec.id + ' &mdash; ' + dec.domain.toUpperCase() + '</div>';
+    h += '<div class="d-question">' + dec.question + '</div>';
+    const opts = [['A', dec.optA], ['B', dec.optB], ['C', dec.optC]];
+    for (const [l, desc] of opts) {
+      h += '<div class="option"><span class="letter ' + l.toLowerCase() + '">' + l + '</span><span class="desc">' + desc + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderEntry(r, rd) {
+  if (!G.roundDecisions[r]) {
+    G.roundDecisions[r] = {};
+    for (let t = 0; t < G.teams.length; t++) G.roundDecisions[r][t] = {};
+  }
+  let h = '<div class="card" style="overflow-x:auto;"><h2>TEAM DECISIONS &mdash; ROUND ' + r + '</h2>';
+  h += '<table class="entry-matrix"><thead><tr><th>Decision</th>';
+  for (const tn of G.teams) h += '<th>' + tn + '</th>';
+  h += '</tr></thead><tbody>';
+  for (const dec of rd.decisions) {
+    h += '<tr><td><strong>' + dec.id + ' &mdash; ' + dec.domain + '</strong><br><span style="font-size:0.8rem;font-weight:400;color:var(--grey);">' + truncate(dec.question, 70) + '</span></td>';
+    for (let t = 0; t < G.teams.length; t++) {
+      const cur = (G.roundDecisions[r][t] || {})[dec.id] || '';
+      h += '<td><div class="abc-group">';
+      for (const ch of ['A','B','C']) {
+        const sel = cur === ch ? 'sel-'+ch.toLowerCase() : '';
+        h += '<button class="abc-btn '+sel+'" onclick="pickChoice('+r+','+t+',\''+dec.id+'\',\''+ch+'\')">'+ch+'</button>';
+      }
+      h += '</div></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+
+function pickChoice(r, t, did, ch) {
+  if (!G.roundDecisions[r]) G.roundDecisions[r] = {};
+  if (!G.roundDecisions[r][t]) G.roundDecisions[r][t] = {};
+  G.roundDecisions[r][t][did] = ch;
+  render();
+}
+
+// ======================== SCORING ENGINE ========================
+function calculateRound(r) {
+  const rd = SIM.rounds[r-1];
+  if (!G.roundSnapshots[r]) G.roundSnapshots[r] = {};
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const before = {};
+    for (const m of SIM.metrics) before[m.name] = G.teamMetrics[t][m.name];
+    
+    // Apply each decision's effects
+    for (const dec of rd.decisions) {
+      const choice = G.roundDecisions[r][t][dec.id];
+      const effectsStr = dec.effects;
+      // Parse the choice-specific effects from the combined string
+      const choiceEffects = extractChoiceEffects(effectsStr, choice);
+      const parsed = parseEffects(choiceEffects);
+      
+      for (const [metricName, effect] of Object.entries(parsed)) {
+        const mDef = SIM.metrics.find(m => m.name === metricName);
+        if (!mDef) continue;
+        if (effect.type === 'set') {
+          G.teamMetrics[t][metricName] = effect.value;
+        } else {
+          G.teamMetrics[t][metricName] += effect.value;
+        }
+        if (mDef) G.teamMetrics[t][metricName] = clampMetric(mDef, G.teamMetrics[t][metricName]);
+      }
+    }
+    
+    // Save snapshot
+    const after = {};
+    const deltas = {};
+    for (const m of SIM.metrics) {
+      after[m.name] = G.teamMetrics[t][m.name];
+      deltas[m.name] = after[m.name] - before[m.name];
+    }
+    G.roundSnapshots[r][t] = { before, after, deltas };
+  }
+  G.roundsComplete.add(r);
+}
+
+function extractChoiceEffects(effectsStr, choice) {
+  // Effects format: "A: effect1. effect2. B: effect1. effect2. C: effect1."
+  // Split by A:/B:/C: markers
+  const regex = /\b([ABC]):\s*/g;
+  const parts = {};
+  let lastKey = null, lastIdx = 0;
+  let match;
+  const matches = [];
+  while ((match = regex.exec(effectsStr)) !== null) {
+    matches.push({ key: match[1], idx: match.index, end: match.index + match[0].length });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].end;
+    const end = i + 1 < matches.length ? matches[i+1].idx : effectsStr.length;
+    parts[matches[i].key] = effectsStr.substring(start, end).trim();
+  }
+  return parts[choice] || '';
+}
+
+function fmtVal(value, unit) {
+  if (unit === '$' || unit === 'USD') return '$' + Math.round(value).toLocaleString();
+  if (unit === '%') return value.toFixed(1) + '%';
+  if (unit === '/100') return Math.round(value) + '/100';
+  return Math.round(value).toLocaleString() + (unit && unit !== '$' && unit !== '%' && unit !== '/100' ? ' ' + unit : '');
+}
+
+function fmtDelta(delta, unit) {
+  const sign = delta >= 0 ? '+' : '';
+  if (unit === '$' || unit === 'USD') return sign + '$' + Math.round(delta).toLocaleString();
+  if (unit === '%') return sign + delta.toFixed(1) + '%';
+  return sign + Math.round(delta).toLocaleString();
+}
+
+// ======================== RESULTS ========================
+function renderResults(r) {
+  if (!G.roundSnapshots[r]) return '<div class="card"><h2>No results yet</h2></div>';
+  
+  let h = '<div class="card"><h2>ROUND ' + r + ' RESULTS</h2>';
+  h += '<table class="results-table"><thead><tr><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '</tr></thead><tbody>';
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<tr><td>' + G.teams[t] + '</td>';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      h += '<td>' + fmtVal(val, m.unit) + '<br><span class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</span></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Per-team metric cards
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<div class="card"><h3>' + G.teams[t] + '</h3><div class="metrics-grid">';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      const barPct = m.unit === '/100' ? val : m.unit === '%' ? Math.max(0, val) : Math.min(100, (val / (m.start > 0 ? m.start * 3 : 100000)) * 100);
+      h += '<div class="metric-card"><div class="m-name">' + m.name + '</div>';
+      h += '<div class="m-val">' + fmtVal(val, m.unit) + '</div>';
+      h += '<div class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</div>';
+      if (m.unit === '/100') h += '<div class="metric-bar"><div class="metric-bar-fill" style="width:' + Math.max(0, Math.min(100, val)) + '%"></div></div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  }
+  
+  return h;
+}
+
+// ======================== LEADERBOARD ========================
+function getScore(t) {
+  // Composite score: each metric contributes up to 100 points (clamped)
+  let score = 0;
+  for (const m of SIM.metrics) {
+    const val = G.teamMetrics[t][m.name];
+    let c;
+    if (m.unit === '/100') {
+      c = val;
+    } else if (m.unit === '%') {
+      c = Math.min(val, 100);
+    } else {
+      // For $, people, users, coins, degrees, etc: normalise against start value
+      const base = Math.abs(m.start) > 0 ? Math.abs(m.start) : 100;
+      c = (val / base) * 50;
+    }
+    // Clamp each metric to [-100, 100] so no single metric dominates
+    score += Math.max(-100, Math.min(100, c));
+  }
+  return Math.round(score);
+}
+
+function renderLeaderboard(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Start the game first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  let h = '<div class="screen active"><div class="card"><h2>LEADERBOARD</h2></div>';
+  const medals = ['&#129351;','&#129352;','&#129353;'];
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<div class="lb-row"><div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>';
+    h += '<div class="lb-name">' + r.name + '</div><div class="lb-stats">';
+    for (const m of SIM.metrics.slice(0, 4)) {
+      h += '<div class="lb-stat"><div class="val">' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</div><div class="lbl">' + m.name + '</div></div>';
+    }
+    h += '<div class="lb-stat"><div class="val">' + Math.round(r.score) + '</div><div class="lbl">Score</div></div>';
+    h += '</div></div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== FINAL RESULTS ========================
+function renderFinal(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Complete all rounds first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  const medals = ['&#127942;','&#129352;','&#129353;'];
+  
+  let h = '<div class="screen active"><div class="final-hero"><h1>FINAL RESULTS</h1></div>';
+  h += '<div class="podium">';
+  const order = ranked.length >= 3 ? [1, 0, 2] : ranked.length >= 2 ? [1, 0] : [0];
+  for (const oi of order) {
+    if (oi >= ranked.length) continue;
+    const r = ranked[oi];
+    h += '<div class="podium-item ' + (oi === 0 ? 'first' : '') + '"><div class="medal">' + (medals[oi] || '') + '</div>';
+    h += '<div class="pname">' + r.name + '</div><div class="pval">Score: ' + Math.round(r.score) + '</div></div>';
+  }
+  h += '</div>';
+  
+  // Full results table
+  h += '<div class="card"><h2>FULL BREAKDOWN</h2><table class="results-table"><thead><tr><th>Rank</th><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '<th>Score</th></tr></thead><tbody>';
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<tr><td>#' + (i+1) + '</td><td>' + r.name + '</td>';
+    for (const m of SIM.metrics) h += '<td>' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</td>';
+    h += '<td><strong>' + Math.round(r.score) + '</strong></td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+  c.innerHTML = h;
+}
+
+// ======================== DEBRIEF ========================
+function renderDebrief(c) {
+  let h = '<div class="screen active"><div class="card"><h2>DEBRIEF DISCUSSION</h2><p>Use these questions to guide whole-class discussion.</p></div>';
+  
+  if (SIM.debriefQuestions) {
+    for (let i = 0; i < SIM.debriefQuestions.length; i++) {
+      h += '<div class="debrief-q"><div class="qnum">QUESTION ' + (i+1) + '</div><p>' + SIM.debriefQuestions[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.keyTakeaways) {
+    h += '<div class="card"><h2>KEY TAKEAWAYS</h2></div>';
+    for (let i = 0; i < SIM.keyTakeaways.length; i++) {
+      h += '<div class="takeaway-card"><h3>Takeaway ' + (i+1) + '</h3><p>' + SIM.keyTakeaways[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.curriculumLinks) {
+    h += '<div class="card"><h2>CURRICULUM LINKS</h2></div>';
+    for (const cl of SIM.curriculumLinks) {
+      h += '<div class="curriculum-card"><div class="c-topic">' + cl.topic + '</div><div class="c-spec">' + cl.spec + '</div><div class="c-how">' + cl.how + '</div></div>';
+    }
+  }
+  
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== INIT ========================
+render();
+</script>
+</body>
+</html>

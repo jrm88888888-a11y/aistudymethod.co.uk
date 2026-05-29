@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subject Jokes — ClassCraft</title>
+  <meta name="description" content="Curriculum-linked jokes for 20 subjects — use in class to engage students and spark discussion." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Archivo:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+
+    /* ── Subject filter bar ──────────────── */
+    .subject-bar {
+      background: var(--parchment-mid);
+      border-bottom: 1px solid var(--rule);
+      padding: 0;
+      position: sticky;
+      top: 57px;
+      z-index: 100;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .subject-bar::-webkit-scrollbar { display: none; }
+
+    .subject-tabs {
+      display: flex;
+      list-style: none;
+      padding: 0 1.25rem;
+      gap: 0;
+      min-width: max-content;
+    }
+
+    @media (min-width: 768px) {
+      .subject-tabs { padding: 0 2rem; }
+    }
+
+    .subject-tabs button {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mid);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color var(--transition), border-color var(--transition);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .subject-tabs button:hover { color: var(--ink); }
+    .subject-tabs button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Joke grid ───────────────────────── */
+    .joke-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 560px) {
+      .joke-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (min-width: 900px) {
+      .joke-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (min-width: 1100px) {
+      .joke-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    /* ── Joke card ───────────────────────── */
+    .joke-card {
+      background: var(--parchment-mid);
+      border: 1px solid var(--parchment-deep);
+      overflow: hidden;
+      transition: border-color var(--transition), transform var(--transition);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .joke-card:hover {
+      border-color: var(--accent-light);
+      transform: translateY(-3px);
+    }
+
+    .joke-img {
+      width: 100%;
+      aspect-ratio: 1/1;
+      object-fit: cover;
+      display: block;
+      background: var(--parchment-deep);
+    }
+
+    .joke-body {
+      padding: 1rem 1.1rem 1.25rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .joke-num {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .joke-q {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    .joke-a {
+      font-size: 0.875rem;
+      color: var(--ink-mid);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .joke-link {
+      margin-top: auto;
+      padding-top: 0.75rem;
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      border-top: 1px solid var(--rule);
+    }
+
+    /* ── Subject panel ───────────────────── */
+    .subject-panel { display: none; }
+    .subject-panel.active { display: block; }
+
+    /* ── Random joke modal ───────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(28,23,18,0.5);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--parchment);
+      max-width: 480px;
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .modal-img {
+      width: 100%;
+      aspect-ratio: 1/1;
+      object-fit: cover;
+      display: block;
+    }
+
+    .modal-body { padding: 1.5rem; }
+
+    .modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: var(--ink);
+      color: var(--parchment);
+      border: none;
+      width: 28px;
+      height: 28px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ───────────────────────────── -->
+  <div id="nav-slot"></div>
+
+  <main>
+  <!-- ── Page header ───────────────────── -->
+  <section style="padding: 3.5rem 0 2.5rem;">
+    <div class="container">
+      <p class="section-label fade-up fade-up-1">Curriculum-Linked</p>
+      <h1 class="fade-up fade-up-2" style="max-width: 16ch; margin-bottom: 1rem;">Subject Jokes</h1>
+      <p class="fade-up fade-up-3" style="color: var(--ink-mid); font-size: 1rem; max-width: 58ch; margin-bottom: 1.5rem;">
+        20 jokes per subject, each linked to a curriculum topic and a discussion prompt.
+        Use them to open a lesson, spark conversation, or just raise a smile.
+      </p>
+      <button class="btn btn-accent fade-up fade-up-4" id="random-btn">Random Joke</button>
+    </div>
+  </section>
+
+  <!-- ── Subject filter bar ────────────── -->
+  <div class="subject-bar">
+    <ul class="subject-tabs" id="subject-tabs">
+      <li><button class="active" data-subject="art">Art</button></li>
+      <li><button data-subject="astronomy">Astronomy</button></li>
+      <li><button data-subject="biology">Biology</button></li>
+      <li><button data-subject="business-studies">Business</button></li>
+      <li><button data-subject="chemistry">Chemistry</button></li>
+      <li><button data-subject="computing">Computing</button></li>
+      <li><button data-subject="design-technology">Design &amp; Tech</button></li>
+      <li><button data-subject="drama">Drama</button></li>
+      <li><button data-subject="english">English</button></li>
+      <li><button data-subject="food-technology">Food Tech</button></li>
+      <li><button data-subject="french">French</button></li>
+      <li><button data-subject="geography">Geography</button></li>
+      <li><button data-subject="german">German</button></li>
+      <li><button data-subject="history">History</button></li>
+      <li><button data-subject="maths">Maths</button></li>
+      <li><button data-subject="music">Music</button></li>
+      <li><button data-subject="pe">PE</button></li>
+      <li><button data-subject="physics">Physics</button></li>
+      <li><button data-subject="religious-education">RE</button></li>
+      <li><button data-subject="spanish">Spanish</button></li>
+    </ul>
+  </div>
+
+  <!-- ── Joke panels ────────────────────── -->
+  <section style="padding: 3rem 0 5rem;">
+    <div class="container" id="jokes-container">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- ── Random joke modal ─────────────── -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <button class="modal-close" id="modal-close">✕</button>
+      <img class="modal-img" id="modal-img" src="" alt="" />
+      <div class="modal-body">
+        <p class="joke-num" id="modal-subject"></p>
+        <p class="joke-q" id="modal-q" style="font-size: 1.2rem; margin-bottom: 0.75rem;"></p>
+        <p class="joke-a" id="modal-a" style="font-size: 1rem; margin-bottom: 0.75rem;"></p>
+        <p class="joke-link" id="modal-link"></p>
+        <button class="btn btn-accent" id="modal-next" style="margin-top: 1.25rem; width: 100%;">Another one</button>
+      </div>
+    </div>
+  </div>
+
+  </main>
+
+  <!-- ── Footer ─────────────────────────── -->
+  <div id="footer-slot"></div>
+
+  <script>
+  // ── Joke data ───────────────────────────────────────────────────────
+  const jokes = {
+    art: [
+      { q: "Why did the artist go to jail?", a: "They were framed!", link: "Framing and presenting artwork" },
+      { q: "Why was the painting always cold?", a: "Because it was in a draught! (draft/drawing)", link: "Drawing techniques and drafts" },
+      { q: "What did the artist say to the wall?", a: "One more crack and I'll plaster you!", link: "Mixed media and plaster casting" },
+      { q: "How does Salvador Dalí start his mornings?", a: "With a surreal breakfast!", link: "Surrealism as an art movement" },
+      { q: "Why did the crayon feel sad?", a: "Because its life was colourless without warm tones!", link: "Warm and cool colour theory" },
+      { q: "Why did Van Gogh become a painter?", a: "Because he didn't have an ear for music!", link: "Van Gogh: Post-Impressionist artist" },
+      { q: "What do you call a painting done by a cat?", a: "A paw-trait!", link: "Portraiture: painting people and faces" },
+      { q: "Why was the art student always calm?", a: "Because they knew how to draw a deep breath and use perspective!", link: "Perspective drawing techniques" },
+      { q: "What did the circle say to the square?", a: "You're so edgy! Let's talk about shape and form.", link: "Elements of art: shape and form" },
+      { q: "What's an artist's favourite swimming stroke?", a: "The brushstroke!", link: "Brushwork and painting techniques" },
+      { q: "Why did the sculpture break up with the painting?", a: "It wanted a more three-dimensional relationship!", link: "2D vs 3D art: painting vs sculpture" },
+      { q: "What's red and bad for your teeth?", a: "A brick — but in art, it's a study in tone and texture!", link: "Tone and texture in artwork" },
+      { q: "Why did the art teacher love autumn?", a: "Because of all the complementary colours — orange and blue!", link: "Complementary colours on the colour wheel" },
+      { q: "What do you call art drawn on a fish?", a: "A scale drawing!", link: "Scale drawings and proportions" },
+      { q: "Why did the pencil feel superior?", a: "Because everything drawn in ink was permanent and it could still erase mistakes!", link: "Pencil vs ink: revision in art" },
+      { q: "What did Monet say to his garden?", a: "I'm going to make an impression of you!", link: "Impressionism: Monet and light studies" },
+      { q: "Why did the colour wheel go to the party?", a: "To bring some hue-mour!", link: "The colour wheel: primary, secondary, tertiary" },
+      { q: "What do you call an artistic ghost?", a: "A sketchy character!", link: "Character sketching and illustration" },
+      { q: "Why was the abstract painting so confusing?", a: "Nobody could figure out its point — that's the point!", link: "Abstract art: non-representational" },
+      { q: "What's a vampire's favourite art medium?", a: "Blood red watercolour! (or any wet medium)", link: "Watercolour as a painting medium" }
+    ],
+    astronomy: [
+      { q: "How do you organise a space party?", a: "You planet!", link: "Planets in our solar system" },
+      { q: "Why did the sun go to school?", a: "To get a little brighter — it's a main sequence star!", link: "Stellar classification: main sequence" },
+      { q: "What kind of music do planets listen to?", a: "Neptunes! (And they orbit in ellipses)", link: "Orbital mechanics and Kepler's laws" },
+      { q: "Why did the astronaut break up with the moon?", a: "Because they needed more space!", link: "The Moon: Earth's natural satellite" },
+      { q: "What do you call a tick on the moon?", a: "A luna-tick! And the moon has no atmosphere.", link: "Lunar surface conditions: no air" },
+      { q: "Why is Venus so hot?", a: "Not just because it's close to the Sun — it's the greenhouse effect!", link: "Greenhouse effect on Venus" },
+      { q: "What did Mars say to Saturn?", a: "Give me a ring sometime!", link: "Saturn's ring system of ice and rock" },
+      { q: "Why can't you trust the gravity on Jupiter?", a: "Because it's massive — 318 times Earth's mass!", link: "Gravity and planetary mass" },
+      { q: "How do astronauts serve dinner?", a: "On satellite dishes!", link: "Satellites: natural and artificial" },
+      { q: "What's an astronaut's favourite key on the keyboard?", a: "The space bar!", link: "Space exploration and technology" },
+      { q: "Why did the comet go to the hairdresser?", a: "To get its tail styled — comets have dust and gas tails!", link: "Comet structure: nucleus, coma, tail" },
+      { q: "What do you call a star that's really rude?", a: "A red giant — they're bloated and temperamental!", link: "Stellar evolution: red giant stage" },
+      { q: "Why don't aliens eat clowns?", a: "Because they taste funny — but do aliens exist? That's the Fermi Paradox!", link: "Fermi Paradox: where is everybody?" },
+      { q: "What happens when a star dies dramatically?", a: "It goes out with a bang — a supernova!", link: "Supernovae: explosive stellar death" },
+      { q: "Why was Pluto kicked out of the planet club?", a: "Because it didn't clear its orbit — IAU 2006!", link: "Dwarf planets and the 2006 reclassification" },
+      { q: "What's at the centre of our galaxy?", a: "A supermassive black hole — Sagittarius A*!", link: "Black holes at galactic centres" },
+      { q: "Why do astronomers love the dark?", a: "Because light pollution hides the stars!", link: "Light pollution and observational astronomy" },
+      { q: "What travels at 300,000 km/s?", a: "Light — and it takes 8 minutes from the Sun to Earth!", link: "Speed of light and light-years" },
+      { q: "Why was the nebula so colourful?", a: "Because it's a stellar nursery full of glowing gas!", link: "Nebulae: birthplaces of stars" },
+      { q: "What did the Big Bang say?", a: "Let me expand on that — the universe is still growing!", link: "Big Bang theory and expanding universe" }
+    ],
+    biology: [
+      { q: "Why did the biology student break up with the physics student?", a: "There was no chemistry!", link: "Biochemistry links biology and chemistry" },
+      { q: "What did the cell say when its sister stepped on its foot?", a: "Mitosis! (My toe, sis!)", link: "Mitosis — cell division" },
+      { q: "Why was the mushroom invited to every party?", a: "Because he's a fun-gi!", link: "Fungi as a kingdom of life" },
+      { q: "How did the biologist impress their date?", a: "They whispered sweet nothings in their ear canal!", link: "Ear structure and hearing" },
+      { q: "Why do biologists look forward to casual Fridays?", a: "They're allowed to wear genes to work!", link: "Genes carry hereditary information" },
+      { q: "What's a biologist's favourite type of music?", a: "Cell-o music!", link: "Cell structure and biology" },
+      { q: "Why wouldn't the bacteria cross the microscope?", a: "It wanted to stay out of the field of vision!", link: "Using microscopes and field of view" },
+      { q: "What's the fastest thing in your body?", a: "A nerve impulse — it really gets on your nerves!", link: "Nervous system and nerve impulses" },
+      { q: "Why did the leaf go to the doctor?", a: "It was feeling green.", link: "Chlorophyll makes leaves green" },
+      { q: "What do you call the leader of a biology gang?", a: "The nucleus!", link: "The nucleus controls the cell" },
+      { q: "Why did the biologist install a knocker on their door?", a: "To win the No-bell prize!", link: "Nobel Prize and scientific discovery" },
+      { q: "What did one chromosome say to the other?", a: "You're so x-tra!", link: "X and Y chromosomes determine sex" },
+      { q: "Why is it hard to play cards in the jungle?", a: "Too many cheetahs!", link: "Animal adaptations and predation" },
+      { q: "What do you get if you cross a sheep and a kangaroo?", a: "A woolly jumper!", link: "Selective breeding and genetics" },
+      { q: "Why do enzymes make good workers?", a: "They catalyse everything they do!", link: "Enzymes as biological catalysts" },
+      { q: "How do you identify a dogwood tree?", a: "By its bark!", link: "Plant identification and structures" },
+      { q: "Why is blood red?", a: "Because the iron in haemoglobin absorbs blue-green light!", link: "Haemoglobin carries oxygen in red blood cells" },
+      { q: "What kind of cell wears a mask?", a: "A B cell — it's part of your immune system!", link: "Immune response: B cells and antibodies" },
+      { q: "Why did the gene go to therapy?", a: "It had too many dominant traits!", link: "Dominant and recessive alleles" },
+      { q: "Where do organisms with one cell go swimming?", a: "In a micro-pool!", link: "Unicellular organisms like amoeba" }
+    ],
+    "business-studies": [
+      { q: "Why did the entrepreneur cross the road?", a: "To reach the other market!", link: "Market research and target markets" },
+      { q: "Why was the balance sheet so calm?", a: "Because its assets equalled its liabilities plus equity!", link: "Balance sheets: assets = liabilities + equity" },
+      { q: "What do you call a rich elf?", a: "Welfy! And they probably have good cash flow.", link: "Cash flow: money in vs money out" },
+      { q: "Why did the marketing team go camping?", a: "To work on their brand awareness in the field!", link: "Marketing mix and brand awareness" },
+      { q: "What's a businessperson's favourite game?", a: "Monopoly — but in real life, it's illegal!", link: "Competition law and monopolies" },
+      { q: "Why did the supply curve go up?", a: "Because as price rises, producers want to supply more!", link: "Supply and demand curves" },
+      { q: "What do you call a meeting that never ends?", a: "A stakeholder consultation!", link: "Stakeholders: owners, employees, customers" },
+      { q: "Why was the sole trader lonely?", a: "Because they had unlimited liability — and no partners!", link: "Sole traders: unlimited liability" },
+      { q: "Why did the product fail?", a: "Because it was in the decline stage of its product life cycle!", link: "Product life cycle: launch to decline" },
+      { q: "What's the difference between revenue and profit?", a: "Revenue is the cake, costs are the ingredients, profit is what's left!", link: "Revenue - Costs = Profit" },
+      { q: "Why did the PLC hire more accountants?", a: "Because shareholders wanted to see the annual report!", link: "PLCs: shareholders and annual reports" },
+      { q: "What did the bar chart say to the pie chart?", a: "You're going round in circles — I show clear comparisons!", link: "Data presentation in business" },
+      { q: "Why did the business plan fail?", a: "Because it had no SMART objectives!", link: "SMART targets: Specific, Measurable, etc." },
+      { q: "What's the best way to predict the future in business?", a: "PESTLE analysis — Politics, Economy, Social, Tech, Legal, Environment!", link: "PESTLE analysis for external factors" },
+      { q: "Why did the employee get promoted?", a: "Because they showed excellent human resources... skills!", link: "Human resources and recruitment" },
+      { q: "What do you call a business that sells boats?", a: "A float-ation! Like when a company goes public.", link: "Flotation: going public on the stock market" },
+      { q: "Why was the franchise so popular?", a: "Because it was a tried-and-tested business model!", link: "Franchises: licensing a business model" },
+      { q: "What did the entrepreneur say to the bank?", a: "I need a loan for my break-even point!", link: "Break-even analysis: costs = revenue" },
+      { q: "Why did the advertisement go viral?", a: "Because it hit the right target audience at the right time!", link: "Advertising: targeting and reach" },
+      { q: "What's the most important thing in customer service?", a: "The customer! (That's why it's called customer service)", link: "Customer satisfaction and retention" }
+    ],
+    chemistry: [
+      { q: "What do you do with a sick chemist?", a: "If you can't helium and you can't curium, you barium!", link: "Elements: Helium, Curium, Barium" },
+      { q: "Why do chemists like nitrates?", a: "Because they're cheaper than day rates!", link: "Nitrate compounds (NO₃⁻)" },
+      { q: "What element is a girl's best friend?", a: "Carbon — it makes diamonds!", link: "Carbon allotropes: diamond, graphite" },
+      { q: "Why did the noble gas cry?", a: "Because all its friends argon!", link: "Noble gases are unreactive (Group 0)" },
+      { q: "What did the scientist say when they discovered oxygen and potassium?", a: "OK!", link: "Chemical symbols: O and K" },
+      { q: "Why did carbon and hydrogen break up?", a: "They just had no chemistry!", link: "Chemical bonding between elements" },
+      { q: "Why is the periodic table always ready?", a: "Because it's full of elements of surprise!", link: "The periodic table organises elements" },
+      { q: "Old chemists never die...", a: "They just stop reacting!", link: "Chemical reactions" },
+      { q: "What do you call iron blowing in the wind?", a: "FeBreeze! (Fe = Iron)", link: "Iron's chemical symbol is Fe" },
+      { q: "Why are chemists great at solving problems?", a: "Because they have all the solutions!", link: "Solutions — solute dissolved in solvent" },
+      { q: "What did one ion say to another?", a: "I've got my ion you!", link: "Ions are charged atoms" },
+      { q: "What's the most important chemistry rule?", a: "Never lick the spoon!", link: "Lab safety procedures" },
+      { q: "Why did the acid go to the gym?", a: "To become a buffer solution!", link: "Buffer solutions resist pH changes" },
+      { q: "What kind of fish is made of only two sodium atoms?", a: "2 Na! (Tuna)", link: "Sodium's chemical symbol is Na" },
+      { q: "How did the chemist survive the famine?", a: "By subsisting on titrations!", link: "Titration measures concentration" },
+      { q: "Why do white bears dissolve in water?", a: "Because they're polar!", link: "Polar molecules dissolve in water" },
+      { q: "What do you call a tooth in a glass of water?", a: "A one molar solution!", link: "Molarity — concentration measure" },
+      { q: "Why was the mole of oxygen molecules excited?", a: "It was going to a party at Avogadro's!", link: "Avogadro's number: 6.022×10²³" },
+      { q: "What's the chemical formula for a banana?", a: "BaNa₂!", link: "Chemical formulae and subscripts" },
+      { q: "Why can't you trust an atom?", a: "Because they make up literally everything!", link: "Atoms compose all matter" }
+    ],
+    computing: [
+      { q: "Why do programmers prefer dark mode?", a: "Because light attracts bugs!", link: "Debugging: finding and fixing errors" },
+      { q: "What's a computer's favourite snack?", a: "Microchips!", link: "Hardware: microprocessors and chips" },
+      { q: "Why was the computer cold?", a: "It left its Windows open!", link: "Operating systems: Windows, Mac, Linux" },
+      { q: "What do you call a computer that sings?", a: "A-Dell!", link: "Computer hardware brands and components" },
+      { q: "How do trees access the internet?", a: "They log in!", link: "Authentication: logging into systems" },
+      { q: "Why did the computer go to the doctor?", a: "Because it had a virus!", link: "Malware: viruses, trojans, worms" },
+      { q: "What's a computer's least favourite food?", a: "Spam!", link: "Email spam and cybersecurity" },
+      { q: "Why did the programmer quit their job?", a: "Because they didn't get arrays! (a raise)", link: "Arrays: ordered data structures" },
+      { q: "What do you call 8 bits?", a: "A byte — and 1024 bytes make a kilobyte!", link: "Binary units: bits, bytes, kilobytes" },
+      { q: "Why do Java developers wear glasses?", a: "Because they can't C#!", link: "Programming languages: Java, C#, C" },
+      { q: "What's a robot's favourite type of music?", a: "Heavy metal... and algorithms!", link: "Algorithms: step-by-step instructions" },
+      { q: "Why was the JavaScript developer sad?", a: "Because they didn't Node how to Express themselves!", link: "Web development: Node.js, Express" },
+      { q: "Why did the computer go to art class?", a: "To improve its graphic design — output devices matter!", link: "Screen capture and output devices" },
+      { q: "What do you call a computer that can sing?", a: "A sound card!", link: "Hardware: sound cards and output devices" },
+      { q: "Why did the function break up with the variable?", a: "It returned nothing!", link: "Functions and return values in code" },
+      { q: "What do you call a really fast internet connection?", a: "A bandwidth wagon!", link: "Bandwidth: data transfer rate" },
+      { q: "Why did the for loop go to therapy?", a: "It had too many iterations!", link: "Loops: for, while, do-while" },
+      { q: "How do hackers say goodbye?", a: "They phish you farewell!", link: "Phishing: social engineering attacks" },
+      { q: "What did the spider do on the computer?", a: "Made a website!", link: "The World Wide Web and HTML" },
+      { q: "Why is binary so simple?", a: "Because it's as easy as 01, 10, 11!", link: "Binary number system: base 2" }
+    ],
+    "design-technology": [
+      { q: "Why did the screwdriver feel important?", a: "Because it had a point — and torque!", link: "Tools and their mechanical advantages" },
+      { q: "Why did the CAD drawing go to therapy?", a: "It had too many layers of issues!", link: "CAD: Computer-Aided Design layers" },
+      { q: "What's a woodworker's favourite day?", a: "Chews-day! (Tuesday)", link: "Working with timber: hardwoods, softwoods" },
+      { q: "Why was the 3D printer always busy?", a: "Because it was making layer after layer of progress!", link: "3D printing: additive manufacturing" },
+      { q: "What did the designer say about their prototype?", a: "It's a work in progress — iteration is key!", link: "Iterative design and prototyping" },
+      { q: "Why did the soldering iron go on holiday?", a: "It needed to cool down!", link: "Soldering: joining electronic components" },
+      { q: "What's the strongest shape in construction?", a: "A triangle — it doesn't collapse under pressure!", link: "Structural strength: triangulation" },
+      { q: "Why was the design brief so short?", a: "Because good briefs are clear and concise!", link: "Writing design briefs and specifications" },
+      { q: "What do you call a belt made of watches?", a: "A waist of time — but great for learning about mechanisms!", link: "Mechanisms: gears, cams, levers" },
+      { q: "Why did the student vacuum their workshop?", a: "Because safety means keeping a clean workspace!", link: "Workshop safety and risk assessment" },
+      { q: "What material bounces back after being bent?", a: "A thermoplastic — it can be reshaped with heat!", link: "Thermoplastics vs thermosets" },
+      { q: "Why did the circuit board blush?", a: "Because it saw the resistor's true colours!", link: "Resistor colour codes in electronics" },
+      { q: "What did the plywood say to the MDF?", a: "We're both engineered, but I've got more layers!", link: "Manufactured boards: plywood, MDF" },
+      { q: "Why is ergonomics so comfortable?", a: "Because it designs things to fit people, not the other way round!", link: "Ergonomics: human-centred design" },
+      { q: "What do you call a lazy saw?", a: "A hack... saw!", link: "Hand tools: hacksaw, coping saw, tenon saw" },
+      { q: "Why was the exploded diagram so dramatic?", a: "Because it showed everything falling apart — on purpose!", link: "Exploded diagrams in technical drawing" },
+      { q: "What did the dowel joint say to the butt joint?", a: "I'm stronger because I go deeper!", link: "Wood joints: dowel, mortise, tenon" },
+      { q: "Why did the smart material change colour?", a: "Because it was a thermochromic — reacting to heat!", link: "Smart materials: thermochromic, shape memory" },
+      { q: "What's a designer's favourite question?", a: "Who is this for? — always consider the user!", link: "User-centred design and target markets" },
+      { q: "Why did the student test their product?", a: "To make sure it met the specification — quality control!", link: "Testing and evaluation in DT" }
+    ],
+    drama: [
+      { q: "Why did the actor break up with the stage?", a: "They needed some space — the fourth wall kind!", link: "The fourth wall in theatre" },
+      { q: "What do you call a play about puns?", a: "A play on words!", link: "Wordplay and script writing" },
+      { q: "Why did the light go to drama school?", a: "To learn about spotlight and staging!", link: "Stage lighting: spotlights, floods, gels" },
+      { q: "Why was the understudy always nervous?", a: "Because they were always in someone else's shadow!", link: "Understudies and rehearsal process" },
+      { q: "What did the director say to the set?", a: "You're setting the scene perfectly!", link: "Set design and staging" },
+      { q: "Why did the mime go to school?", a: "To learn the art of silence — and physical theatre!", link: "Mime and physical theatre techniques" },
+      { q: "Why did the play get arrested?", a: "For having too many acts of violence — Acts 1, 2, and 3!", link: "Play structure: acts and scenes" },
+      { q: "What's an actor's favourite breakfast?", a: "Ham and eggs — extra ham!", link: "Over-acting and character restraint" },
+      { q: "Why did the curtain blush?", a: "Because it saw the audience and stage fright kicked in!", link: "Stage fright and performance confidence" },
+      { q: "What do you get when you cross a vampire and a drama student?", a: "A show that really bites — and explores Gothic drama!", link: "Gothic theatre and genre" },
+      { q: "Why did the costume designer bring a ladder?", a: "To reach new heights in wardrobe!", link: "Costume design in theatre production" },
+      { q: "What did the stagehand say at the end of the show?", a: "That's a wrap — or rather, strike the set!", link: "Striking the set after a production" },
+      { q: "Why is improvisation so unpredictable?", a: "Because nobody knows what's going to happen — that's the point!", link: "Improvisation skills in drama" },
+      { q: "What did the audience say to the monologue?", a: "You really know how to hold a room!", link: "Monologues: solo character speeches" },
+      { q: "Why are drama students bad at hiding?", a: "Because they always make a scene!", link: "Creating dramatic scenes" },
+      { q: "What do actors drink on set?", a: "Stage whiskers... I mean, water from the wings!", link: "Stage wings and backstage areas" },
+      { q: "Why was the playwright always tired?", a: "Because they were always working on their plot!", link: "Plot development and story arcs" },
+      { q: "What's a ghost's favourite stage direction?", a: "Exit, stage fright!", link: "Stage directions: exit, enter, aside" },
+      { q: "Why did the audience throw vegetables at the Shakespearean actor?", a: "Because the bard had set a bad precedent!", link: "Shakespeare and Elizabethan theatre" },
+      { q: "What do you call a play with no conflict?", a: "Boring — every good drama needs tension!", link: "Dramatic tension and conflict" }
+    ],
+    english: [
+      { q: "What's the longest word in the dictionary?", a: "Smiles — there's a mile between the first and last letter!", link: "Vocabulary and word structure" },
+      { q: "Why did the comma break up with the full stop?", a: "It needed more space.", link: "Punctuation: commas and full stops" },
+      { q: "What do you call Santa's elves?", a: "Subordinate clauses!", link: "Subordinate clauses in grammar" },
+      { q: "Why did the run-on sentence go to court?", a: "It wanted a longer sentence!", link: "Identifying and correcting run-on sentences" },
+      { q: "What do you call a dinosaur that knows a lot of words?", a: "A thesaurus!", link: "Using a thesaurus to find synonyms" },
+      { q: "Why should you never write with a broken pencil?", a: "Because it's pointless!", link: "The importance of writing tools and clarity" },
+      { q: "Past, present, and future walked into a bar.", a: "It was tense.", link: "Verb tenses: past, present, future" },
+      { q: "What happened when the semicolon broke grammar laws?", a: "It was given two consecutive sentences!", link: "Using semicolons to join clauses" },
+      { q: "Why did the pronoun get detention?", a: "For being too possessive!", link: "Possessive pronouns (my, your, his, her)" },
+      { q: "Double negatives are a no-no.", a: "But in some dialects they ain't not wrong!", link: "Double negatives in Standard English" },
+      { q: "What do you call a group of unfinished figures of speech?", a: "A simile waiting to happen!", link: "Similes compare using 'like' or 'as'" },
+      { q: "What did the adjective say to the noun?", a: "I'm here to describe you — you can count on me!", link: "Adjectives modify nouns" },
+      { q: "Why did the word 'dictionary' go to the doctor?", a: "It had a bad definition.", link: "Using dictionaries and definitions" },
+      { q: "Why is the exclamation mark always invited to parties?", a: "Because it's so exciting!", link: "Exclamation marks show strong emotion" },
+      { q: "I before E except after C...", a: "Weird, right?", link: "Spelling rules and exceptions" },
+      { q: "What's a writer's favourite organ?", a: "The colon!", link: "Using colons to introduce lists or ideas" },
+      { q: "What do you call a sleeping dinosaur?", a: "A dino-snore... that's an example of a portmanteau!", link: "Portmanteau words blend two words" },
+      { q: "Why are poets bad at sport?", a: "Because they always go for the metaphor!", link: "Metaphors make direct comparisons" },
+      { q: "An Oxford comma walks into a bar, orders a drink, and leaves.", a: "Clarity, precision, and consistency.", link: "The Oxford comma prevents ambiguity" },
+      { q: "Why are apostrophes such troublemakers?", a: "They're always causing contractions!", link: "Apostrophes for contractions and possession" }
+    ],
+    "food-technology": [
+      { q: "Why did the chef get an award?", a: "Because they were outstanding in their field... of nutrition!", link: "Nutrition: balanced diet and food groups" },
+      { q: "What did the bread say to the knife?", a: "You're on a roll — let's talk about raising agents!", link: "Raising agents: yeast, baking powder" },
+      { q: "Why did the egg go to school?", a: "To get egg-ucated about protein denaturation!", link: "Protein denaturation when cooking eggs" },
+      { q: "What's the most religious cheese?", a: "Swiss — it's the holiest! And it's aged using bacteria.", link: "Food science: fermentation and bacteria" },
+      { q: "Why did the tomato turn red?", a: "Because it saw the salad dressing — and ripening!", link: "Food ripening and enzymic browning" },
+      { q: "What do you call cheese that isn't yours?", a: "Nacho cheese — but let's talk dairy allergens!", link: "Food allergies and intolerances" },
+      { q: "Why was the mushroom the life of the party?", a: "Because it was a fungi! And a good source of vitamin D.", link: "Micronutrients: vitamins and minerals" },
+      { q: "What did the microwave say to the oven?", a: "You're so conventional!", link: "Cooking methods: conventional vs microwave" },
+      { q: "Why did the banana go to the doctor?", a: "It wasn't peeling well — and needed potassium!", link: "Potassium in bananas: mineral function" },
+      { q: "What's a pepper's favourite song?", a: "Spice Up Your Life — and your macronutrients!", link: "Macronutrients: carbs, protein, fat" },
+      { q: "Why don't scientists trust food labels?", a: "Because they check the traffic light system first!", link: "Food labelling and traffic light system" },
+      { q: "What did the fridge say to the bacteria?", a: "Stay cool — below 5°C keeps you from multiplying!", link: "Food safety: danger zone 5-63°C" },
+      { q: "Why did the pastry chef go to school?", a: "To learn about shortcrust, flaky, and choux!", link: "Types of pastry and their uses" },
+      { q: "What do you call a vegetable that's always on time?", a: "A punctual pea — and part of the Eatwell Guide!", link: "Eatwell Guide: recommended food groups" },
+      { q: "Why was the onion sad?", a: "Because it made everyone cry — due to sulphur compounds!", link: "Chemical reactions in food preparation" },
+      { q: "What did the blender say?", a: "Let's mix things up — emulsification!", link: "Emulsification: oil and water mixtures" },
+      { q: "Why is food hygiene so important?", a: "Because bacteria double every 20 minutes in the danger zone!", link: "Bacterial growth and food hygiene" },
+      { q: "What do you call a lazy chicken dish?", a: "Free-range — because it just roams around!", link: "Food provenance and animal welfare" },
+      { q: "Why did the recipe fail?", a: "Because the student didn't follow the method — mise en place!", link: "Mise en place: preparation before cooking" },
+      { q: "What's smarter: butter or margarine?", a: "Butter — it's cultured! And it's a saturated fat.", link: "Saturated vs unsaturated fats" }
+    ],
+    french: [
+      { q: "What do you call a French man in sandals?", a: "Philippe Philoppe!", link: "French names and pronunciation" },
+      { q: "Why did the baguette go to the doctor?", a: "Because it was feeling crumby!", link: "French food vocabulary: baguette, pain" },
+      { q: "How do French cats say 'thank you'?", a: "Merci beau-paw!", link: "Merci = thank you; beaucoup = very much" },
+      { q: "What do you call a lazy kangaroo in French?", a: "Un kangourou paresseux!", link: "Adjectives agree with nouns in French" },
+      { q: "Why did the French student eat their homework?", a: "The teacher said it was un morceau de gâteau!", link: "Idiomatic expressions: piece of cake" },
+      { q: "What's a French skeleton called?", a: "Un squelette — same word, different accent!", link: "Cognates: words similar in both languages" },
+      { q: "Why did the croissant go to school?", a: "Pour apprendre les bonnes manières!", link: "Pour + infinitive = 'in order to'" },
+      { q: "How does a French dog say goodbye?", a: "Au re-voir-f!", link: "Au revoir = goodbye" },
+      { q: "What's a French ghost's favourite meal?", a: "Crêpes — they love anything wrapped in a sheet!", link: "French food vocabulary: crêpes" },
+      { q: "Why did the Eiffel Tower fail the exam?", a: "It was too high up to concentrate!", link: "Famous French landmarks" },
+      { q: "What do you say to a French person on their birthday?", a: "Bon anniversaire — and watch the spelling!", link: "Birthday greetings in French" },
+      { q: "Why did the verb go to prison?", a: "Because it broke the conjugation rules!", link: "Verb conjugation in French" },
+      { q: "What do French ducks say?", a: "Coin coin — not quack!", link: "Animal sounds differ across languages" },
+      { q: "What time is it when a French clock strikes 13?", a: "Il est treize heures — they use 24-hour time!", link: "Telling the time in French (24hr)" },
+      { q: "Why is French so romantic?", a: "Because every noun has a gender — le and la!", link: "Gendered nouns: masculine and feminine" },
+      { q: "What did the French student say about reflexive verbs?", a: "Je me confused!", link: "Reflexive verbs: se laver, s'appeler" },
+      { q: "Why was the passé composé stressed?", a: "It couldn't agree with the past participle!", link: "Past participle agreement rules" },
+      { q: "What do French people eat for breakfast in space?", a: "Des croissants de lune!", link: "Lune = moon; petit déjeuner vocabulary" },
+      { q: "How do you make a French omelette laugh?", a: "Tell it an oeuf joke! (Oeuf = egg)", link: "Food vocabulary: oeuf (egg)" },
+      { q: "Why did the student bring a ladder to French class?", a: "To reach the higher level of accents: é, è, ê, ë!", link: "French accent marks and pronunciation" }
+    ],
+    geography: [
+      { q: "What's the smartest mountain?", a: "Mount Cleverest! (Everest)", link: "World's highest peak: Mount Everest" },
+      { q: "Why did the tectonic plate break up with the other?", a: "There was too much friction between them!", link: "Tectonic plates and plate boundaries" },
+      { q: "What do you call a sleeping volcano?", a: "A nap-olcano! But really — it's dormant.", link: "Volcano states: active, dormant, extinct" },
+      { q: "Why do rivers never get lost?", a: "Because they always find their course!", link: "River courses: upper, middle, lower" },
+      { q: "What did the ocean say to the shore?", a: "Nothing — it just waved!", link: "Coastal processes: waves and erosion" },
+      { q: "Why is the desert so bad at telling jokes?", a: "Because it's too dry!", link: "Arid climates and desert biomes" },
+      { q: "What rock can float on water?", a: "Pumice — it's full of air holes from volcanic gas!", link: "Volcanic rocks and their properties" },
+      { q: "Why did the map go to school?", a: "To improve its scale!", link: "Map scales and their uses" },
+      { q: "What did the compass say to the map?", a: "Without me, you'd be lost!", link: "Using compass bearings for navigation" },
+      { q: "Why is the North Pole so cold?", a: "Because it gets very little direct sunlight!", link: "Latitude and solar energy distribution" },
+      { q: "What do you call a map's autobiography?", a: "A legend!", link: "Map keys/legends explain symbols" },
+      { q: "Why was the glacier so slow?", a: "Because it was taking its ice time!", link: "Glacial movement and erosion" },
+      { q: "What did the earthquake say to the city?", a: "Sorry, my fault!", link: "Earthquake faults: normal, reverse, strike-slip" },
+      { q: "Why are meanders so indecisive?", a: "They keep going back and forth!", link: "River meanders and lateral erosion" },
+      { q: "What holds the sea up?", a: "Spring tides and neap tides!", link: "Tides caused by gravitational pull" },
+      { q: "Why did the geographer bring a ruler to the beach?", a: "To measure the longshore drift!", link: "Longshore drift moves sediment along coast" },
+      { q: "What's a tornado's favourite game?", a: "Twister!", link: "Extreme weather: tornados and storms" },
+      { q: "Why did the oxbow lake feel left out?", a: "Because it was cut off from the river!", link: "Oxbow lake formation from meanders" },
+      { q: "What sits in the middle of the world?", a: "The letter R — but also the Equator!", link: "The Equator divides N and S hemispheres" },
+      { q: "Why did the climate scientist go broke?", a: "Because their studies had zero net worth... I mean net zero!", link: "Climate change and net zero targets" }
+    ],
+    german: [
+      { q: "Why is German food so filling?", a: "Because the wurst is yet to come!", link: "Food vocabulary: Wurst = sausage" },
+      { q: "What do you call a German barber?", a: "Ein Herr Cutter!", link: "Herr = Mr; formal address in German" },
+      { q: "Why did the German student struggle with articles?", a: "Because there are three: der, die, das!", link: "Three genders: masculine, feminine, neuter" },
+      { q: "What's a German ghost's favourite greeting?", a: "Guten Abend! (Good evening!)", link: "Time-based greetings in German" },
+      { q: "Why did the Dachshund sit in the shade?", a: "Because it was a hot dog!", link: "Animal vocabulary: Hund = dog" },
+      { q: "What did the accusative case say to the dative?", a: "I object! No, wait — I'm the object!", link: "Accusative = direct object; dative = indirect" },
+      { q: "Why are German compound words so long?", a: "Donaudampfschifffahrt — they just keep adding!", link: "Compound nouns in German" },
+      { q: "What do you call a German VW that's also a professor?", a: "A Herr Doktor Beetle!", link: "Formal titles and car culture" },
+      { q: "Why is the German verb always at the end?", a: "Weil es so sein muss! (Because it must be so!)", link: "Word order in subordinate clauses" },
+      { q: "How does a German cow greet you?", a: "Moo-in Tag! (Guten Tag!)", link: "Greetings: Guten Tag = Good day" },
+      { q: "Why was the umlaut so important?", a: "Without it, schon (already) becomes schön (beautiful)!", link: "Umlauts change meaning: ä, ö, ü" },
+      { q: "What did the separable verb say?", a: "I'll meet you at the end of the sentence!", link: "Separable prefix verbs split in main clauses" },
+      { q: "Why did the German student love Christmas?", a: "Because Weihnachtsmarkt is one word for everything!", link: "Cultural vocabulary: Christmas markets" },
+      { q: "What's a German's favourite element?", a: "Ein-steinium!", link: "German for 'one' is 'ein'" },
+      { q: "Why was the modal verb so bossy?", a: "Because it always tells the infinitive what to do!", link: "Modal verbs: können, müssen, dürfen" },
+      { q: "How do you fix a broken German sentence?", a: "Check the word order: Time, Manner, Place!", link: "TMP rule for adverb order" },
+      { q: "What's the German word for constipation?", a: "Farfrompoopin! (Just a joke — it's Verstopfung!)", link: "Medical vocabulary and pronunciation" },
+      { q: "Why did the student confuse the German classroom?", a: "They mixed up Klasse (class) and Klasse (great)!", link: "Homonyms: same word, different meanings" },
+      { q: "Why don't German jokes work in English?", a: "Because the verb is always at the end coming!", link: "V2 word order and verb-final in subclauses" },
+      { q: "What did the German say at the bakery?", a: "Ich möchte ein Brötchen, bitte! Now that's polite!", link: "Ordering food: ich möchte = I would like" }
+    ],
+    history: [
+      { q: "Why were the early days of history called the Dark Ages?", a: "Because there were so many knights!", link: "The medieval period and knighthood" },
+      { q: "How was the Roman Empire cut in half?", a: "With a pair of Caesars!", link: "Julius Caesar and the Roman Empire" },
+      { q: "Why did Henry VIII have so many wives?", a: "He liked to chop and change!", link: "Henry VIII and the English Reformation" },
+      { q: "What was the most popular kids' movie in Ancient Greece?", a: "Troy Story!", link: "The Trojan War and Ancient Greece" },
+      { q: "Why did the archaeologist go bankrupt?", a: "Because their career was in ruins!", link: "Archaeology and historical evidence" },
+      { q: "What did they call pastries in the Stone Age?", a: "Scone Age treats!", link: "The Stone Age: Neolithic, Mesolithic" },
+      { q: "Why was the Egyptian boy confused?", a: "Because his daddy was a mummy!", link: "Ancient Egyptian mummification" },
+      { q: "How did the Vikings send secret messages?", a: "By Norse code!", link: "Vikings: Norse culture and exploration" },
+      { q: "Why did the pharaoh visit the dentist?", a: "Egypt his tooth!", link: "Ancient Egyptian civilisation" },
+      { q: "Why did the Civil War soldier stay up all night?", a: "He was on the wrong side of history!", link: "Causes and sides in civil wars" },
+      { q: "Where was the Declaration of Independence signed?", a: "At the bottom!", link: "Key historical documents and events" },
+      { q: "Why was World War I so quick?", a: "It wasn't — that's propaganda!", link: "WWI lasted 4 years; role of propaganda" },
+      { q: "What did the old cannon say to the new cannon?", a: "You're a blast from the future!", link: "Military technology through history" },
+      { q: "Why did the knight always succeed?", a: "Because they had a strong suit!", link: "Medieval armour and feudal system" },
+      { q: "What was the biggest problem with the Industrial Revolution?", a: "Child labour — there was nothing revolutionary about that.", link: "Child labour in Victorian factories" },
+      { q: "Why don't mummies take holidays?", a: "They're afraid they'll relax and unwind!", link: "Preservation in Ancient Egypt" },
+      { q: "What's a historian's favourite fruit?", a: "Dates!", link: "Historical dating and chronology" },
+      { q: "Why was the Magna Carta so important?", a: "It sealed the deal on limiting royal power!", link: "Magna Carta 1215: foundation of rule of law" },
+      { q: "What did the ancient Roman say in the candle shop?", a: "I'd like a Roman candle, please — no, wait, that's a firework!", link: "Daily life in Ancient Rome" },
+      { q: "Why did the suffragettes carry umbrellas?", a: "For the reign of equality!", link: "Women's suffrage movement" }
+    ],
+    maths: [
+      { q: "Why was the equal sign so humble?", a: "Because it knew it wasn't greater than or less than anyone else.", link: "Inequality symbols: >, < and =" },
+      { q: "Why did the student do multiplication on the floor?", a: "The teacher told them not to use tables!", link: "Times tables and multiplication" },
+      { q: "Why is 6 afraid of 7?", a: "Because 7 8 9!", link: "Number operations and sequences" },
+      { q: "What do you call friends who love maths?", a: "Algebros!", link: "Introduction to algebra" },
+      { q: "Why did the two 4s skip dinner?", a: "Because they already 8!", link: "Multiplication facts: 4×2=8" },
+      { q: "What's a mathematician's favourite season?", a: "Sum-mer!", link: "Addition and summation" },
+      { q: "Why was the fraction worried about marrying the decimal?", a: "Because they'd have to convert!", link: "Converting fractions to decimals" },
+      { q: "What do you call a number that can't keep still?", a: "A roamin' numeral!", link: "Roman numerals (I, V, X, L, C)" },
+      { q: "Why did the angle go to the beach?", a: "Because it was 90 degrees!", link: "Right angles and degrees" },
+      { q: "What did the triangle say to the circle?", a: "You're pointless!", link: "Properties of 2D shapes" },
+      { q: "Why is the obtuse angle always upset?", a: "Because it's never right!", link: "Types of angles: acute, right, obtuse" },
+      { q: "Why did the student wear glasses in maths?", a: "To improve di-vision!", link: "Division as a core operation" },
+      { q: "How do you stay warm in a cold room?", a: "Go to the corner — it's always 90 degrees!", link: "Right angles in shapes" },
+      { q: "Why was the maths book sad?", a: "It had too many problems.", link: "Mathematical problem-solving" },
+      { q: "What did zero say to eight?", a: "Nice belt!", link: "Digit recognition and number shapes" },
+      { q: "Why did Pi get its driver's licence revoked?", a: "Because it didn't know when to stop!", link: "Pi (π) as an irrational number" },
+      { q: "What's the king of the pencil case?", a: "The ruler!", link: "Measurement with rulers" },
+      { q: "Parallel lines have so much in common...", a: "It's a shame they'll never meet.", link: "Parallel lines never intersect" },
+      { q: "Why did the circle go to the gym?", a: "To get 360° of fitness!", link: "Degrees in a full turn = 360°" },
+      { q: "What did the acorn say when it grew up?", a: "Ge-om-e-try! (Gee, I'm a tree!)", link: "Introduction to geometry" }
+    ],
+    music: [
+      { q: "Why couldn't the string quartet find their composer?", a: "He was Haydn!", link: "Joseph Haydn: Classical era composer" },
+      { q: "What do you call a cow that plays music?", a: "A moo-sician!", link: "Musical roles and terminology" },
+      { q: "Why did the music teacher need a ladder?", a: "To reach the high notes!", link: "Pitch: high and low notes" },
+      { q: "What type of music are balloons scared of?", a: "Pop music!", link: "Musical genres and styles" },
+      { q: "Why is a piano so hard to open?", a: "Because the keys are inside!", link: "Piano: keyboard instruments and keys" },
+      { q: "What makes music on your head?", a: "A headband!", link: "Musical bands and ensembles" },
+      { q: "What do you get when you drop a piano down a mine shaft?", a: "A flat miner! (minor)", link: "Flat notes and minor keys" },
+      { q: "Why did the singer climb a ladder?", a: "To reach the high C!", link: "Vocal range and musical notes" },
+      { q: "What's a skeleton's favourite instrument?", a: "The trom-bone!", link: "Brass instruments: trombone" },
+      { q: "Why did the musician throw away their calendar?", a: "Because their days were numbered — like their bars!", link: "Musical bars and time signatures" },
+      { q: "What do you call a musical insect?", a: "A hum-bug — and it hums in B flat!", link: "Musical notes: A, B, C, D, E, F, G" },
+      { q: "Why did the guitar teacher get a standing ovation?", a: "Because they nailed every chord — finger placement is everything!", link: "Guitar chords and finger placement" },
+      { q: "What key do cows sing in?", a: "Beef flat! (B flat)", link: "Musical keys and notation" },
+      { q: "How do you fix a broken tuba?", a: "With a tuba glue!", link: "Brass instruments and orchestra sections" },
+      { q: "Why did the quarter note fail the test?", a: "It only got a crotchet! (Same thing!)", link: "Note values: crotchet = quarter note" },
+      { q: "What's Beethoven's favourite fruit?", a: "Ba-na-na-naaa! (5th Symphony opening)", link: "Beethoven's Symphony No. 5 motif" },
+      { q: "Why did the rest get detention?", a: "For doing nothing during the performance!", link: "Rests in music: silence has value" },
+      { q: "What tempo does a tortoise play at?", a: "Largo — very slow!", link: "Tempo markings: largo, adagio, allegro" },
+      { q: "How do you make a bandstand?", a: "Take away their chairs!", link: "Musical ensembles and performance" },
+      { q: "What do you call a fish that plays piano?", a: "A piano tuna!", link: "Tuning instruments to correct pitch" }
+    ],
+    pe: [
+      { q: "Why did the football pitch get wet?", a: "Because the players dribbled all over it!", link: "Football: dribbling techniques" },
+      { q: "Why did the gymnast bring a pencil?", a: "To draw a perfect circle... on the beam!", link: "Gymnastics: balance and form" },
+      { q: "Why don't sprinters eat before a race?", a: "Because they fast!", link: "Athletics: sprinting and nutrition" },
+      { q: "What's the hardest part about doing the long jump?", a: "The landing — and measuring the distance!", link: "Athletics: long jump and measurement" },
+      { q: "Why was the netball player excellent at exams?", a: "Because they were good at goal setting!", link: "Netball: goal setting and positions" },
+      { q: "What do you call a boomerang that doesn't come back?", a: "A stick — but it teaches projectile motion!", link: "Projectile motion in sport science" },
+      { q: "Why did the cricket player go to the bank?", a: "To check their balance at the crease!", link: "Cricket: batting stance and balance" },
+      { q: "Why do basketball players love cookies?", a: "Because they can dunk them!", link: "Basketball: shooting and dunking" },
+      { q: "What's a runner's favourite subject?", a: "Jog-raphy! But really, cross-country navigation.", link: "Cross-country running and orienteering" },
+      { q: "Why was the swimming pool so smart?", a: "Because it was full of brainstrokes!", link: "Swimming strokes: front crawl, backstroke" },
+      { q: "Why don't tennis players ever get married?", a: "Love means nothing to them!", link: "Tennis scoring: love = zero" },
+      { q: "Why did the PE teacher go to art class?", a: "To learn about body composition!", link: "Body composition: muscle, fat, bone" },
+      { q: "What exercise do lazy people do best?", a: "Diddly squats!", link: "Squats: lower body exercises" },
+      { q: "Why was the relay team so good?", a: "Because they never dropped the baton... or the ball!", link: "Relay races: baton technique" },
+      { q: "Why did the yoga teacher go to the beach?", a: "To work on their flexibility and sun salutations!", link: "Flexibility and stretching in PE" },
+      { q: "What do you call a fake noodle?", a: "An im-pasta — nothing to do with PE, but carb-loading is real!", link: "Nutrition: carbohydrate loading for athletes" },
+      { q: "Why is badminton so loud?", a: "Because each player raises a racquet!", link: "Badminton: racquet sports techniques" },
+      { q: "Why did the hockey player bring string?", a: "To tie the score!", link: "Hockey: scoring and game rules" },
+      { q: "What's a PE teacher's favourite type of music?", a: "Hip-hop — great for warm-ups!", link: "Warm-up routines before exercise" },
+      { q: "Why was the gym so noisy?", a: "Because everyone was working on their reps!", link: "Repetitions and sets in fitness training" }
+    ],
+    physics: [
+      { q: "Why can't you trust atoms?", a: "They make up everything!", link: "Atoms are the building blocks of matter" },
+      { q: "What did the thermometer say to the graduated cylinder?", a: "You may have graduated, but I've got many degrees!", link: "Temperature measurement in degrees" },
+      { q: "Why does a burger have less energy than a steak?", a: "Because it's in its ground state!", link: "Energy levels and ground state" },
+      { q: "What is a physicist's favourite food?", a: "Fission chips!", link: "Nuclear fission — splitting atoms" },
+      { q: "Why is electricity the ideal student?", a: "It conducts itself well!", link: "Electrical conductivity" },
+      { q: "What did one magnet say to the other?", a: "I find you very attractive!", link: "Magnetic attraction and repulsion" },
+      { q: "What did the photon say when asked about luggage?", a: "No thanks, I'm travelling light!", link: "Photons and the speed of light" },
+      { q: "Why can you never trust stairs?", a: "They're always up to something!", link: "Potential and kinetic energy" },
+      { q: "How does the moon cut its hair?", a: "Eclipse it!", link: "Solar and lunar eclipses" },
+      { q: "Why did the sun go to school?", a: "To get a bit brighter!", link: "Luminosity and brightness of stars" },
+      { q: "What did the nuclear physicist have for lunch?", a: "Fission and chips!", link: "Nuclear fission reactions" },
+      { q: "Why did the light wave go to the doctor?", a: "It was feeling out of phase!", link: "Wave phase and interference" },
+      { q: "A neutron walks into a bar and asks the price.", a: "The bartender says: 'For you, no charge!'", link: "Neutrons carry no electric charge" },
+      { q: "What do you do with a dead battery?", a: "You barium! (Bury 'em)", link: "Circuit components and batteries" },
+      { q: "Why do physicists love airports?", a: "Because of all the terminals!", link: "Electrical terminals in circuits" },
+      { q: "What's a nuclear physicist's favourite meal?", a: "Fission and chips!", link: "Nuclear fission releases energy" },
+      { q: "Why was the physics teacher always calm?", a: "Because they had a lot of potential!", link: "Potential energy (stored energy)" },
+      { q: "What did the scientist say when they found two isotopes of helium?", a: "HeHe!", link: "Isotopes — atoms with different neutrons" },
+      { q: "Why does a photon never go to church?", a: "Because it's already enlightened!", link: "Light as electromagnetic radiation" },
+      { q: "How can you tell Saturn was married more than once?", a: "It has a lot of rings!", link: "Saturn's ring system" }
+    ],
+    "religious-education": [
+      { q: "Why did Noah never go fishing?", a: "He only had two worms!", link: "Noah's Ark: pairs of animals" },
+      { q: "Why didn't Jonah trust the ocean?", a: "Because he knew there was something fishy about it!", link: "Jonah and the whale: faith and obedience" },
+      { q: "What do you call a sleepwalking nun?", a: "A roamin' Catholic!", link: "Roman Catholicism as a Christian denomination" },
+      { q: "Why did Moses cross the Red Sea?", a: "To avoid Egyptian traffic!", link: "Exodus: Moses leading Israelites to freedom" },
+      { q: "What do you call a prayer before a meal?", a: "Grace — and it's practised across many faiths!", link: "Prayer rituals across religions" },
+      { q: "Why are churches so cold?", a: "Because they're full of fans — and worship spaces matter!", link: "Places of worship and their design" },
+      { q: "What do you call a philosophical sheep?", a: "Baaa-ddhist!", link: "Buddhism: a non-theistic religion" },
+      { q: "Why did the meditating monk refuse painkillers?", a: "He wanted to transcend-dental medication!", link: "Meditation in Buddhist practice" },
+      { q: "What lights a menorah best?", a: "The shamash — the helper candle lights the rest!", link: "Hanukkah: Jewish festival of lights" },
+      { q: "Why do pilgrims pack light?", a: "Because the journey matters more than the luggage!", link: "Pilgrimage: Hajj, Lourdes, Varanasi" },
+      { q: "What did the Sikh say at the langar?", a: "Everyone is welcome to eat — no exceptions!", link: "Langar: Sikh communal kitchen for all" },
+      { q: "Why did the philosopher cross the road?", a: "To question why the road was there in the first place!", link: "Philosophical questions about existence" },
+      { q: "What do you call a friendly mosque?", a: "A welcoming ummah!", link: "Ummah: the global Muslim community" },
+      { q: "Why is the Golden Rule so popular?", a: "Treat others as you want to be treated — every religion agrees!", link: "The Golden Rule across world religions" },
+      { q: "What do sacred texts have in common?", a: "They're all best-sellers with lasting impact!", link: "Sacred texts: Bible, Quran, Torah, Guru Granth Sahib" },
+      { q: "Why did the student study ethics?", a: "Because right and wrong aren't always black and white!", link: "Ethics and moral decision-making" },
+      { q: "What festival celebrates light over darkness?", a: "Diwali! But also Hanukkah and Christmas in their own way.", link: "Festivals of light across religions" },
+      { q: "Why is charity important in Islam?", a: "Because Zakat isn't optional — it's a pillar!", link: "Five Pillars of Islam: Zakat (charity)" },
+      { q: "What did the Dharma wheel say?", a: "Keep turning — life is a cycle of learning!", link: "Dharma: teachings in Buddhism and Hinduism" },
+      { q: "Why did the RE student smile during the exam?", a: "Because they found the meaning of life... in the mark scheme!", link: "Ultimate questions: meaning and purpose" }
+    ],
+    spanish: [
+      { q: "Why did the Spanish student bring a ladder?", a: "To get to the ñ on the keyboard!", link: "The letter ñ is unique to Spanish" },
+      { q: "What do you call a Spanish footballer who can't stop scoring?", a: "Goooooal-ez!", link: "Spanish pronunciation and culture" },
+      { q: "How do you say 'bless you' in Spanish?", a: "Salud! (It also means health!)", link: "Greetings and common expressions" },
+      { q: "Why did the taco go to school?", a: "To become a little más educado!", link: "Más = more; common comparatives" },
+      { q: "What's a Spanish cat's favourite colour?", a: "Purr-púra! (Púrpura = purple)", link: "Colours in Spanish" },
+      { q: "Why does the imperfect tense never finish anything?", a: "Because it describes ongoing past actions!", link: "Imperfect tense vs preterite" },
+      { q: "What did the ser say to estar?", a: "You're so temporary — I'm permanent!", link: "Ser vs estar: permanent vs temporary" },
+      { q: "How do you organise a Spanish space party?", a: "You planet! (Planeta!)", link: "Cognates and false friends" },
+      { q: "Why did the Spanish teacher go to jail?", a: "For verb abuse — too many irregulars!", link: "Irregular verbs in Spanish" },
+      { q: "What do Spanish bees say?", a: "Bzz-uenos días!", link: "Greetings: Buenos días = Good morning" },
+      { q: "Why is learning Spanish like going to the gym?", a: "You have to work on your tenses!", link: "Practising verb tenses" },
+      { q: "What did the Spanish number say at the party?", a: "¡Uno, dos, tres... let's dance!", link: "Numbers in Spanish" },
+      { q: "Why don't Spanish speakers ever get lost?", a: "Because they always know their directions: norte, sur, este, oeste!", link: "Direction vocabulary" },
+      { q: "What's a skeleton's favourite Spanish instrument?", a: "The trom-bone!", link: "Musical vocabulary and cognates" },
+      { q: "Why did the letter H feel left out in Spanish?", a: "Because it's always silent!", link: "The silent H in Spanish pronunciation" },
+      { q: "How do you describe a really cold day in Spanish?", a: "¡Hace mucho frío! — now that's a weather phrase!", link: "Weather expressions: hace frío/calor" },
+      { q: "What did the Spanish teacher bring to the barbecue?", a: "Carne — it means meat!", link: "Food vocabulary: carne, pollo, pescado" },
+      { q: "Why was the question mark upside down?", a: "Because in Spanish, ¿you start questions differently!", link: "Inverted question/exclamation marks" },
+      { q: "What's a pirate's favourite Spanish letter?", a: "Arrr! But in Spanish it's the double R: rr!", link: "The rolled rr sound in Spanish" },
+      { q: "Why is the subjunctive mood so moody?", a: "Because it only shows up when you're unsure!", link: "The subjunctive expresses doubt or wish" }
+    ]
+  };
+
+  const subjectLabels = {
+    art: "Art", astronomy: "Astronomy", biology: "Biology",
+    "business-studies": "Business Studies", chemistry: "Chemistry",
+    computing: "Computing", "design-technology": "Design & Technology",
+    drama: "Drama", english: "English", "food-technology": "Food Technology",
+    french: "French", geography: "Geography", german: "German",
+    history: "History", maths: "Maths", music: "Music", pe: "PE",
+    physics: "Physics", "religious-education": "Religious Education",
+    spanish: "Spanish"
+  };
+
+  // ── Render jokes ─────────────────────────────────────────────────────
+  let currentSubject = 'art';
+  const container = document.getElementById('jokes-container');
+
+  function renderSubject(subject) {
+    container.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'joke-grid';
+    jokes[subject].forEach((joke, i) => {
+      const num = String(i + 1).padStart(2, '0');
+      const imgPath = `jokes/${subject}/joke_${num}.jpg`;
+      const card = document.createElement('div');
+      card.className = 'joke-card';
+      card.innerHTML = `
+        <img class="joke-img" src="${imgPath}" alt="Joke ${num}" loading="lazy" onerror="this.style.display='none'" />
+        <div class="joke-body">
+          <p class="joke-num">${subjectLabels[subject]} · #${num}</p>
+          <p class="joke-q">${joke.q}</p>
+          <p class="joke-a">${joke.a}</p>
+          <p class="joke-link">📌 ${joke.link}</p>
+        </div>`;
+      grid.appendChild(card);
+    });
+    container.appendChild(grid);
+  }
+
+  // ── Subject tabs ─────────────────────────────────────────────────────
+  document.querySelectorAll('.subject-tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.subject-tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSubject = btn.dataset.subject;
+      renderSubject(currentSubject);
+    });
+  });
+
+  // ── Random joke modal ─────────────────────────────────────────────────
+  const modal = document.getElementById('modal-overlay');
+  const modalClose = document.getElementById('modal-close');
+  const modalNext = document.getElementById('modal-next');
+
+  function showRandom() {
+    const subjects = Object.keys(jokes);
+    const subject = subjects[Math.floor(Math.random() * subjects.length)];
+    const idx = Math.floor(Math.random() * 20);
+    const joke = jokes[subject][idx];
+    const num = String(idx + 1).padStart(2, '0');
+    document.getElementById('modal-subject').textContent = `${subjectLabels[subject]} · #${num}`;
+    document.getElementById('modal-q').textContent = joke.q;
+    document.getElementById('modal-a').textContent = joke.a;
+    document.getElementById('modal-link').textContent = `📌 ${joke.link}`;
+    document.getElementById('modal-img').src = `jokes/${subject}/joke_${num}.jpg`;
+    modal.classList.add('open');
+  }
+
+  document.getElementById('random-btn').addEventListener('click', showRandom);
+  modalClose.addEventListener('click', () => modal.classList.remove('open'));
+  modalNext.addEventListener('click', showRandom);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+  // ── Init ──────────────────────────────────────────────────────────────
+  renderSubject('art');
+  </script>
+
+<script src="nav.js"></script>
+
+</body>
+</html>

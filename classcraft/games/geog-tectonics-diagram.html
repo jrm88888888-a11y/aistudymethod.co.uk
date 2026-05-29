@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Label the Tectonic Plate Margins Diagram | Free GCSE Geography...</title>
+    <meta name="description" content="Label the Tectonic Plate Margins diagram — a free interactive GCSE geography revision game. No login required. Test yourself and learn key structures now.">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --surface2: #222636;
+      --border:   rgba(255,255,255,0.08);
+      --accent:   #4ade9a;
+      --accent2:  #7b6fff;
+      --warn:     #ff6b6b;
+      --text:     #e8eaf0;
+      --text-mid: #8b90a8;
+      --text-dim: #4a4f68;
+      --correct:  #4ade9a;
+      --wrong:    #ff6b6b;
+      --font-d:   'Nunito', sans-serif;
+      --font-b:   'Nunito', sans-serif;
+      --r:        8px;
+      --trans:    0.2s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-b);
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .hd { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.6rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 1rem; }
+    .hd-left { display: flex; align-items: center; gap: 1rem; }
+    .hd-logo { font-family: var(--font-d); font-size: 1rem; font-weight: 800; color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
+    .hd-logo span { color: var(--accent); }
+    .hd-title { font-family: var(--font-d); font-size: 0.95rem; font-weight: 600; color: var(--text-mid); }
+    .hd-sep { color: var(--text-dim); }
+    .hd-crumb{font-family:var(--font-d);font-size:0.72rem;font-weight:600;color:var(--accent);text-decoration:none;flex-shrink:0;letter-spacing:0.02em;}.hd-crumb:hover{text-decoration:underline;}
+    .hd-right { display: flex; align-items: center; gap: 0.75rem; }
+
+    .timer-wrap { display: flex; align-items: center; gap: 0.5rem; }
+    .timer-label { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-mid); }
+    .toggle { position: relative; width: 36px; height: 20px; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track { position: absolute; inset: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; transition: background var(--trans); }
+    .toggle input:checked + .toggle-track { background: var(--accent2); border-color: var(--accent2); }
+    .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; background: var(--text-mid); border-radius: 50%; transition: transform var(--trans), background var(--trans); }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); background: #fff; }
+
+    .hd-timer { font-family: var(--font-d); font-size: 0.85rem; font-weight: 700; color: var(--accent2); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 0.3rem 0.75rem; min-width: 52px; text-align: center; display: none; }
+    .hd-timer.active { display: block; }
+    .hd-timer.urgent { color: var(--warn); animation: pulse 0.5s ease infinite alternate; }
+    @keyframes pulse { from{opacity:1} to{opacity:0.4} }
+
+    .hd-score { font-family: var(--font-d); font-size: 0.85rem; font-weight: 700; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 0.3rem 0.75rem; min-width: 60px; text-align: center; }
+    .btn-restart { font-family: var(--font-d); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: transparent; border: 1px solid var(--border); color: var(--text-mid); padding: 0.3rem 0.9rem; border-radius: var(--r); cursor: pointer; transition: all var(--trans); }
+    .btn-restart:hover { border-color: var(--accent); color: var(--accent); }
+
+    .progress-bar { height: 2px; background: var(--surface2); flex-shrink: 0; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); width: 0%; transition: width 0.4s ease; }
+
+    /* ── Layout ── */
+    .main { flex: 1; display: grid; grid-template-columns: 1fr 190px; min-height: 0; overflow: hidden; }
+
+    /* ── Diagram ── */
+    .diagram-wrap { position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--bg); padding: 0.75rem; }
+
+    .diagram-inner { position: relative; height: calc(100vh - 80px); max-height: 640px; aspect-ratio: 420/580; }
+    .diagram-inner svg { width: 100%; height: 100%; display: block; }
+
+    /* Label slots */
+    .label-slot {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 108px;
+      height: 26px;
+      border: 1.5px dashed rgba(255,255,255,0.18);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--trans);
+      background: rgba(255,255,255,0.02);
+      cursor: default;
+    }
+    .label-slot:hover, .label-slot.drag-over { border-color: var(--accent2); background: rgba(123,111,255,0.14); }
+    .label-slot .slot-text { font-family: var(--font-d); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; color: rgba(255,255,255,0.18); pointer-events: none; text-align: center; }
+    .label-slot.filled { border-style: solid; border-color: var(--accent2); background: rgba(123,111,255,0.1); }
+    .label-slot.filled .slot-text { color: var(--accent2); font-size: 0.68rem; }
+    .label-slot.correct { border-color: var(--correct); background: rgba(74,222,154,0.1); animation: correctPop 0.4s ease; }
+    .label-slot.correct .slot-text { color: var(--correct); }
+    .label-slot.wrong { border-color: var(--wrong); background: rgba(255,107,107,0.1); animation: wrongShake 0.4s ease; }
+    .label-slot.wrong .slot-text { color: var(--wrong); }
+
+    @keyframes correctPop { 0%{transform:translate(-50%,-50%) scale(1)} 45%{transform:translate(-50%,-50%) scale(1.1)} 100%{transform:translate(-50%,-50%) scale(1)} }
+    @keyframes wrongShake { 0%,100%{transform:translate(-50%,-50%)} 25%{transform:translate(calc(-50% - 5px),-50%)} 75%{transform:translate(calc(-50% + 5px),-50%)} }
+
+    /* Organ dot */
+    .organ-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); border: 1.5px solid rgba(255,255,255,0.55); transform: translate(-50%,-50%); pointer-events: none; transition: all 0.3s; }
+    .organ-dot.correct { background: var(--correct); border-color: var(--correct); box-shadow: 0 0 7px var(--correct); }
+    .organ-dot.wrong   { background: var(--wrong); border-color: var(--wrong); }
+
+    .connectors { position: absolute; inset: 0; pointer-events: none; }
+
+    /* ── Label bank ── */
+    .bank { background: var(--surface); border-left: 1px solid var(--border); padding: 0.9rem 0.7rem; display: flex; flex-direction: column; gap: 0.35rem; overflow-y: auto; }
+    .bank-title { font-family: var(--font-d); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.35rem; flex-shrink: 0; text-align: center; }
+
+    .label-chip { background: var(--surface2); border: 1.5px solid var(--border); border-radius: 6px; padding: 0.4rem 0.5rem; font-family: var(--font-d); font-size: 0.75rem; font-weight: 600; color: var(--text); cursor: grab; user-select: none; transition: all var(--trans); text-align: center; }
+    .label-chip:active { cursor: grabbing; }
+    .label-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+    .label-chip.dragging { opacity: 0.25; }
+    .label-chip.used { opacity: 0.15; pointer-events: none; border-style: dashed; }
+
+    /* Ghost */
+    .drag-ghost { position: fixed; pointer-events: none; z-index: 9999; background: var(--accent2); color: #fff; font-family: var(--font-d); font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 6px; opacity: 0; white-space: nowrap; box-shadow: 0 6px 20px rgba(0,0,0,0.45); transition: opacity 0.08s; }
+    .drag-ghost.visible { opacity: 1; }
+
+    /* ── Results ── */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(10,12,20,0.88); backdrop-filter: blur(8px); z-index: 500; align-items: center; justify-content: center; padding: 1.5rem; }
+    .overlay.open { display: flex; }
+    .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem 2.5rem; max-width: 460px; width: 100%; text-align: center; animation: slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes slideUp { from{opacity:0;transform:translateY(28px) scale(0.95)} to{opacity:1;transform:none} }
+    .result-emoji { font-size: 3rem; margin-bottom: 0.6rem; display: block; }
+    .result-heading { font-family: var(--font-d); font-size: 1.8rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.35rem; }
+    .result-sub { color: var(--text-mid); font-size: 0.88rem; margin-bottom: 1.1rem; }
+    .result-score { font-family: var(--font-d); font-size: 3.2rem; font-weight: 800; color: var(--accent); letter-spacing: -0.04em; line-height: 1; margin-bottom: 0.25rem; }
+    .result-score-label { font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.4rem; }
+    .result-breakdown { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.6rem; text-align: left; max-height: 240px; overflow-y: auto; }
+    .breakdown-row { display: flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0.65rem; border-radius: 6px; font-size: 0.8rem; }
+    .breakdown-row.ok  { background: rgba(74,222,154,0.08); }
+    .breakdown-row.bad { background: rgba(255,107,107,0.08); }
+    .breakdown-icon { font-size: 0.85rem; flex-shrink: 0; }
+    .breakdown-zone { font-weight: 600; color: var(--text); flex: 1; }
+    .breakdown-answer { color: var(--wrong); font-size: 0.76rem; }
+    .breakdown-correct { color: var(--correct); font-size: 0.76rem; }
+    .breakdown-arrow { color: var(--text-dim); font-size: 0.72rem; }
+    .btn-retry { font-family: var(--font-d); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--accent); color: #0f1117; border: none; padding: 0.85rem 2.5rem; border-radius: var(--r); cursor: pointer; transition: all var(--trans); width: 100%; }
+    .btn-retry:hover { background: #6ef0b0; transform: translateY(-1px); }
+      @media(max-width:400px){.hd-sep,.hd-crumb,.hd-title{display:none;}}
+  </style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="hd-left">
+    <a href="../index.html" class="hd-logo">Class<span>Craft</span></a>
+    <span class="hd-sep">·</span>
+    <a href="../games.html" class="hd-crumb">Games</a>
+    <span class="hd-sep">·</span>
+    <span class="hd-title">Label the Organs</span>
+  </div>
+  <div class="hd-right">
+    <div class="timer-wrap">
+      <span class="timer-label">Timer</span>
+      <label class="toggle">
+        <input type="checkbox" id="timer-toggle" />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="hd-timer" id="hd-timer">2:00</div>
+    <div class="hd-score" id="hd-score">0 / 12</div>
+    <button class="btn-restart" id="btn-restart">↺ Restart</button>
+  </div>
+</header>
+
+<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+<main class="main">
+
+  <div class="diagram-wrap">
+    <div class="diagram-inner" id="diagram-inner">
+
+      <svg viewBox="0 0 420 580" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="420" height="580" fill="#3a1808" opacity="0.6"/>
+  <path d="M0 300 Q60 285 120 300 Q180 315 240 300 Q300 285 360 300 Q400 310 420 300 L420 580 L0 580 Z" fill="#6a2808" opacity="0.6"/>
+  <path d="M0 50 L155 50 L155 285 Q90 295 0 285 Z" fill="#5a6a7a" opacity="0.85" stroke="#7a8a9a" stroke-width="1.5"/>
+  <path d="M175 50 L330 50 L330 285 Q240 295 175 285 Z" fill="#5a6a7a" opacity="0.85" stroke="#7a8a9a" stroke-width="1.5"/>
+  <path d="M165 580 Q165 400 165 290" stroke="#e05020" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>
+  <path d="M140 60 Q165 50 190 60" stroke="#c08040" stroke-width="3" fill="none" opacity="0.8"/>
+  <rect x="0" y="30" width="330" height="22" rx="3" fill="#1a3a6a" opacity="0.5"/>
+  <text x="165" y="22" font-family="sans-serif" font-size="8" fill="#60a0e0" opacity="0.8" text-anchor="middle">constructive margin</text>
+  <path d="M120 130 L70 130 M70 130 L76 124 M70 130 L76 136" stroke="#4ade9a" stroke-width="2.5" fill="none" opacity="0.8"/>
+  <path d="M210 130 L260 130 M260 130 L254 124 M260 130 L254 136" stroke="#4ade9a" stroke-width="2.5" fill="none" opacity="0.8"/>
+  <path d="M330 80 L420 80 L420 280 Q375 290 330 280 Z" fill="#4a5a6a" opacity="0.85" stroke="#6a7a8a" stroke-width="1.5"/>
+  <path d="M280 30 L420 30 L420 85 L330 85 L330 280 Q310 285 280 275 Z" fill="#7a6a5a" opacity="0.85" stroke="#9a8a7a" stroke-width="1.5"/>
+  <path d="M330 80 Q340 180 360 320 Q370 420 375 540" stroke="#e04020" stroke-width="4" fill="none" opacity="0.7" stroke-linecap="round" stroke-dasharray="8,4"/>
+  <path d="M322 82 Q330 95 338 82" stroke="#2a4a7a" stroke-width="2" fill="#1a3a6a" opacity="0.8"/>
+  <path d="M310 30 Q320 10 330 30" fill="#6a3a20" opacity="0.9" stroke="#8a5030" stroke-width="1.5"/>
+  <path d="M318 14 Q320 8 322 14" stroke="#e05020" stroke-width="2" fill="none" opacity="0.8"/>
+  <text x="165" y="320" font-family="sans-serif" font-size="7.5" fill="#e05020" opacity="0.5" text-anchor="middle">magma rising</text>
+  <text x="375" y="220" font-family="sans-serif" font-size="7" fill="#4a7aaa" opacity="0.6" text-anchor="middle" transform="rotate(75,375,220)">subduction</text>
+  <text x="165" y="500" font-family="sans-serif" font-size="7.5" fill="#c8a060" opacity="0.5" text-anchor="middle">mantle</text>
+</svg>
+
+      <!-- Connector overlay -->
+      <svg class="connectors" viewBox="0 0 420 580" id="connectors-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+
+      <!-- Slots and dots injected by JS -->
+      <div id="slots-container"></div>
+      <div id="dots-container"></div>
+
+    </div>
+  </div>
+
+  <!-- Label bank -->
+  <aside class="bank">
+    <p class="bank-title">Labels</p>
+    <div id="label-bank"></div>
+  </aside>
+
+</main>
+
+<div class="drag-ghost" id="drag-ghost"></div>
+
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <span class="result-emoji" id="res-emoji">🎉</span>
+    <h2 class="result-heading" id="res-heading">Well done!</h2>
+    <p class="result-sub" id="res-sub"></p>
+    <div class="result-score" id="res-score">0/12</div>
+    <p class="result-score-label">correct labels</p>
+    <div class="result-breakdown" id="res-breakdown"></div>
+    <button class="btn-retry" id="btn-retry">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA
+// dot: [left%, top%] on diagram — centre of the organ
+// slot: [left%, top%] — where the label drop box sits
+// Lines are drawn between dot and slot automatically
+// ═══════════════════════════════════════════════════
+const ORGANS = [
+  { id:"constructive", name:"Constructive margin", dot:[39,8], slot:[14,8] },
+  { id:"destructive", name:"Destructive margin", dot:[82,12], slot:[78,8] },
+  { id:"ridge", name:"Mid-ocean ridge", dot:[39,12], slot:[14,20] },
+  { id:"trench", name:"Ocean trench", dot:[77,15], slot:[78,22] },
+  { id:"subduction", name:"Subduction zone", dot:[82,42], slot:[78,38] },
+  { id:"volcano", name:"Volcano", dot:[76,8], slot:[78,52] },
+  { id:"magma-rise", name:"Rising magma", dot:[39,57], slot:[14,38] },
+  { id:"new-crust", name:"New oceanic crust", dot:[39,12], slot:[14,52] },
+  { id:"mantle", name:"Mantle", dot:[20,80], slot:[14,68] },
+  { id:"convection", name:"Convection current", dot:[19,72], slot:[14,80] },
+];
+
+// ── STATE ──
+let placements = {};
+let score = 0;
+let timerOn = false, timerSecs = 120, timerInterval = null;
+let dragItem = null, touchItem = null;
+let gameOver = false;  // prevents double-submit
+
+// ── BUILD ──
+function build() {
+  gameOver = false;
+  buildDots();
+  buildSlots();
+  buildBank();
+  drawConnectors();
+}
+
+function buildDots() {
+  const c = document.getElementById('dots-container');
+  c.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+  c.innerHTML = '';
+  ORGANS.forEach(o => {
+    const d = document.createElement('div');
+    d.className = 'organ-dot';
+    d.id = 'dot-' + o.id;
+    d.style.left = o.dot[0] + '%';
+    d.style.top  = o.dot[1] + '%';
+    c.appendChild(d);
+  });
+}
+
+function buildSlots() {
+  const c = document.getElementById('slots-container');
+  c.style.cssText = 'position:absolute;inset:0;';
+  c.innerHTML = '';
+  ORGANS.forEach(o => {
+    const s = document.createElement('div');
+    s.className = 'label-slot';
+    s.dataset.organ = o.id;
+    s.style.left = o.slot[0] + '%';
+    s.style.top  = o.slot[1] + '%';
+    s.innerHTML = `<span class="slot-text">?</span>`;
+    s.addEventListener('dragover', e => { e.preventDefault(); s.classList.add('drag-over'); });
+    s.addEventListener('dragleave', () => s.classList.remove('drag-over'));
+    s.addEventListener('drop', e => { e.preventDefault(); s.classList.remove('drag-over'); handleDrop(o.id); });
+    c.appendChild(s);
+  });
+}
+
+function clearSlot(id) {
+  const old = document.querySelector(`.label-slot[data-organ="${id}"]`);
+  if (old) {
+    old.classList.remove('filled', 'correct', 'wrong');
+    const txt = old.querySelector('.slot-text');
+    txt.textContent = '?';
+    txt.style.fontSize = '';
+  }
+}
+function buildBank() {
+  const b = document.getElementById('label-bank');
+  b.innerHTML = '';
+  [...ORGANS].sort(() => Math.random() - 0.5).forEach(o => {
+    const chip = document.createElement('div');
+    chip.className = 'label-chip';
+    chip.dataset.label = o.name;
+    chip.dataset.id = o.id;
+    chip.textContent = o.name;
+    chip.draggable = true;
+    chip.addEventListener('dragstart', onDragStart);
+    chip.addEventListener('dragend', onDragEnd);
+    chip.addEventListener('touchstart', onTouchStart, { passive: true });
+    b.appendChild(chip);
+  });
+}
+
+// viewBox is 420×580
+function drawConnectors() {
+  const svg = document.getElementById('connectors-svg');
+  svg.innerHTML = '';
+  ORGANS.forEach(o => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    const dx = o.dot[0]  / 100 * 420;
+    const dy = o.dot[1]  / 100 * 580;
+    // slot centre: left slots anchor right edge (+54px≈+13%), right slots anchor left edge
+    const slotCentreOffsetX = o.slot[0] < 50 ? 13 : -13;
+    const sx = (o.slot[0] / 100 * 420) + slotCentreOffsetX;
+    const sy = o.slot[1]  / 100 * 580;
+    line.setAttribute('x1', dx); line.setAttribute('y1', dy);
+    line.setAttribute('x2', sx); line.setAttribute('y2', sy);
+    line.setAttribute('stroke', 'rgba(255,255,255,0.35)');
+    line.setAttribute('stroke-width', '1.2');
+    line.setAttribute('stroke-dasharray', '3,4');
+    line.id = 'line-' + o.id;
+    svg.appendChild(line);
+  });
+}
+
+// ── DRAG DESKTOP ──
+function onDragStart(e) {
+  dragItem = { name: e.currentTarget.dataset.label, id: e.currentTarget.dataset.id };
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  const b = document.createElement('div');
+  b.style.cssText = 'position:absolute;top:-999px;';
+  document.body.appendChild(b);
+  e.dataTransfer.setDragImage(b, 0, 0);
+  setTimeout(() => document.body.removeChild(b), 0);
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  dragItem = null;
+  hideGhost();
+}
+
+// Hide ghost if drag ends over a non-droppable area
+document.addEventListener('dragend', hideGhost);
+
+document.addEventListener('dragover', e => {
+  if (!dragItem) return;
+  showGhost(dragItem.name, e.clientX, e.clientY);
+});
+
+// ── TOUCH ──
+function onTouchStart(e) {
+  touchItem = { name: e.currentTarget.dataset.label, id: e.currentTarget.dataset.id };
+  const t = e.touches[0];
+  showGhost(touchItem.name, t.clientX, t.clientY);
+}
+document.addEventListener('touchmove', e => {
+  if (!touchItem) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  showGhost(touchItem.name, t.clientX, t.clientY);
+  document.querySelectorAll('.label-slot').forEach(s => s.classList.remove('drag-over'));
+  document.elementFromPoint(t.clientX, t.clientY)?.closest('.label-slot')?.classList.add('drag-over');
+}, { passive: false });
+document.addEventListener('touchend', e => {
+  if (!touchItem) return;
+  hideGhost();
+  document.querySelectorAll('.label-slot').forEach(s => s.classList.remove('drag-over'));
+  const t = e.changedTouches[0];
+  const slot = document.elementFromPoint(t.clientX, t.clientY)?.closest('.label-slot');
+  if (slot) { dragItem = touchItem; handleDrop(slot.dataset.organ); dragItem = null; }
+  touchItem = null;
+});
+
+function showGhost(name, x, y) {
+  const g = document.getElementById('drag-ghost');
+  g.textContent = name; g.classList.add('visible');
+  g.style.left = (x + 14) + 'px'; g.style.top = (y - 16) + 'px';
+}
+function hideGhost() { document.getElementById('drag-ghost').classList.remove('visible'); }
+
+// ── DROP ──
+function handleDrop(targetId) {
+  if (!dragItem || gameOver) return;
+
+  // Un-place this label if it was already somewhere else
+  Object.keys(placements).forEach(id => {
+    if (placements[id] === dragItem.name) {
+      delete placements[id];
+      clearSlot(id);
+    }
+  });
+
+  // Return whatever was in the target slot to the bank
+  if (placements[targetId]) setChipUsed(placements[targetId], false);
+
+  placements[targetId] = dragItem.name;
+  setChipUsed(dragItem.name, true);
+
+  const slot = document.querySelector(`.label-slot[data-organ="${targetId}"]`);
+  slot.classList.add('filled'); slot.classList.remove('correct','wrong');
+  slot.querySelector('.slot-text').textContent = dragItem.name;
+
+  updateProgress();
+  if (Object.keys(placements).length === ORGANS.length) setTimeout(submitAnswers, 600);
+}
+
+function setChipUsed(name, used) {
+  document.querySelectorAll('.label-chip').forEach(c => {
+    if (c.dataset.label === name) c.classList.toggle('used', used);
+  });
+}
+
+function updateProgress() {
+  const n = Object.keys(placements).length;
+  document.getElementById('progress-fill').style.width = (n / ORGANS.length * 100) + '%';
+  document.getElementById('hd-score').textContent = `${n} / ${ORGANS.length}`;
+}
+
+// ── SCORE ──
+function submitAnswers() {
+  if (gameOver) return;  // prevent double-submit
+  gameOver = true;
+  stopTimer(); score = 0;
+  const breakdown = [];
+  ORGANS.forEach(o => {
+    const placed = placements[o.id] || null;
+    const ok = placed === o.name;
+    if (ok) score++;
+    const slot = document.querySelector(`.label-slot[data-organ="${o.id}"]`);
+    const dot  = document.getElementById('dot-' + o.id);
+    const line = document.getElementById('line-' + o.id);
+    slot?.classList.remove('filled'); slot?.classList.add(ok ? 'correct' : 'wrong');
+    dot?.classList.add(ok ? 'correct' : 'wrong');
+    if (line) line.setAttribute('stroke', ok ? 'rgba(74,222,154,0.6)' : 'rgba(255,107,107,0.6)');
+    breakdown.push({ name: o.name, placed: placed || '—', ok });
+  });
+  document.getElementById('hd-score').textContent = `${score} / ${ORGANS.length}`;
+  showResults(breakdown);
+}
+
+function showResults(bd) {
+  const pct = score / ORGANS.length * 100;
+  const [emoji, h, s] = pct===100 ? ['🏆','Perfect!','You labelled every organ correctly.']
+    : pct>=75 ? ['🎉','Excellent!','Strong work — just a few to review.']
+    : pct>=50 ? ['👍','Good effort!','Keep practising — you\'re getting there.']
+    : ['📚','Keep studying!','Review the diagram and try again.'];
+  document.getElementById('res-emoji').textContent = emoji;
+  document.getElementById('res-heading').textContent = h;
+  document.getElementById('res-sub').textContent = s;
+  document.getElementById('res-score').textContent = `${score}/${ORGANS.length}`;
+  const cont = document.getElementById('res-breakdown');
+  cont.innerHTML = '';
+  bd.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'breakdown-row ' + (r.ok ? 'ok' : 'bad');
+    row.innerHTML = r.ok
+      ? `<span class="breakdown-icon">✓</span><span class="breakdown-zone">${r.name}</span><span class="breakdown-correct">Correct</span>`
+      : `<span class="breakdown-icon">✗</span><span class="breakdown-zone">${r.name}</span><span class="breakdown-answer">${r.placed}</span><span class="breakdown-arrow">→</span><span class="breakdown-correct">${r.name}</span>`;
+    cont.appendChild(row);
+  });
+  document.getElementById('overlay').classList.add('open');
+}
+
+// ── TIMER ──
+function startTimer() {
+  timerSecs = 120;
+  updateTimerDisplay();  // show 2:00 immediately before interval fires
+  timerInterval = setInterval(() => {
+    timerSecs--;
+    updateTimerDisplay();
+    if (timerSecs <= 0) { stopTimer(); submitAnswers(); }
+  }, 1000);
+}
+function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+function updateTimerDisplay() {
+  const m = Math.floor(timerSecs/60), s = timerSecs%60;
+  const el = document.getElementById('hd-timer');
+  el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  el.classList.toggle('urgent', timerSecs<=20);
+}
+document.getElementById('timer-toggle').addEventListener('change', function() {
+  timerOn = this.checked;
+  document.getElementById('hd-timer').classList.toggle('active', timerOn);
+  stopTimer();
+  if (timerOn && !gameOver) startTimer();
+});
+
+// ── RESTART ──
+function restart() {
+  placements={}; score=0; stopTimer();
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('hd-score').textContent = `0 / ${ORGANS.length}`;
+  build(); if (timerOn) startTimer();
+}
+document.getElementById('btn-restart').addEventListener('click', restart);
+document.getElementById('btn-retry').addEventListener('click', restart);
+
+// ── INIT ──
+build();
+document.getElementById('hd-score').textContent = `0 / ${ORGANS.length}`;
+</script>
+</body>
+</html>

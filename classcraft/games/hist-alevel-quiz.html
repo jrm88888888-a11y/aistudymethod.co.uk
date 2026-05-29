@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>A-Level History — Quiz — ClassCraft</title>
+    <meta name="description" content="Test your GCSE geography knowledge with this free quiz. No login required. Instant feedback to sharpen your revision — try it now.">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#0f1117; --surface:#1a1d27; --surface2:#22253a;
+      --border:rgba(255,255,255,0.08); --border-hi:rgba(255,255,255,0.14);
+      --accent:#4ade9a; --accent2:#7b6fff; --warn:#ff6b6b;
+      --text:#e8eaf0; --text-mid:#8b90a8; --text-dim:#4a4f68;
+      --correct:#4ade9a; --wrong:#ff6b6b;
+      --font-d:'Nunito',sans-serif; --font-b:'Nunito',sans-serif;
+      --r:10px; --trans:0.18s cubic-bezier(0.25,0.46,0.45,0.94);
+      --hd-h:52px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{height:100%;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:15px;line-height:1.5;display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
+
+    /* ── Header ── */
+    .hd{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.25rem;height:var(--hd-h);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:0.75rem;position:relative;z-index:10;}
+    .hd-left{display:flex;align-items:center;gap:0.85rem;min-width:0;}
+    .hd-logo{font-family:var(--font-d);font-size:1.05rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-0.02em;flex-shrink:0;}
+    .hd-logo span{color:var(--accent);}
+    .hd-title{font-family:var(--font-d);font-size:0.8rem;font-weight:600;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+    .hd-sep{color:var(--text-dim);flex-shrink:0;}
+    .hd-crumb{font-family:var(--font-d);font-size:0.72rem;font-weight:600;color:var(--accent);text-decoration:none;flex-shrink:0;letter-spacing:0.02em;}.hd-crumb:hover{text-decoration:underline;}
+    .hd-right{display:flex;align-items:center;gap:0.5rem;flex-shrink:0;}
+    .timer-wrap{display:flex;align-items:center;gap:0.4rem;}
+    .timer-label{font-size:0.65rem;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-mid);}
+    .toggle{position:relative;width:34px;height:19px;cursor:pointer;flex-shrink:0;}
+    .toggle input{opacity:0;width:0;height:0;position:absolute;}
+    .toggle-track{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border-hi);border-radius:20px;transition:background var(--trans),border-color var(--trans);}
+    .toggle input:checked+.toggle-track{background:var(--accent2);border-color:var(--accent2);}
+    .toggle-thumb{position:absolute;top:3px;left:3px;width:11px;height:11px;background:var(--text-mid);border-radius:50%;transition:transform var(--trans),background var(--trans);}
+    .toggle input:checked~.toggle-thumb{transform:translateX(15px);background:#fff;}
+    .hd-timer{font-family:var(--font-d);font-size:0.82rem;font-weight:700;color:var(--accent2);background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:0.22rem 0.6rem;min-width:46px;text-align:center;display:none;}
+    .hd-timer.active{display:block;}
+    .hd-timer.urgent{color:var(--warn);animation:pulse 0.5s ease infinite alternate;}
+    @keyframes pulse{from{opacity:1}to{opacity:0.35}}
+    .stat-pill{font-family:var(--font-d);font-size:0.75rem;font-weight:700;color:var(--text);background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:0.22rem 0.6rem;white-space:nowrap;}
+    .stat-pill span{color:var(--accent);}
+    .btn-hd{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.22rem 0.75rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);white-space:nowrap;}
+    .btn-hd:hover{border-color:var(--accent);color:var(--accent);}
+    .progress-bar{height:3px;background:var(--surface2);flex-shrink:0;}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));width:0%;transition:width 0.35s ease;box-shadow:0 0 6px rgba(74,222,154,0.5);}
+
+    /* ── Screens ── */
+    .screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;min-height:0;}
+    .screen.active{display:flex;}
+
+    /* ── Start screen ── */
+    .start-badge{display:inline-flex;align-items:center;gap:0.4rem;font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);background:rgba(74,222,154,0.1);border:1px solid rgba(74,222,154,0.25);border-radius:20px;padding:0.25rem 0.75rem;margin-bottom:0.9rem;}
+    .start-title{font-family:var(--font-d);font-size:clamp(1.6rem,4vw,2.1rem);font-weight:800;letter-spacing:-0.03em;margin-bottom:0.4rem;text-align:center;}
+    .start-sub{color:var(--text-mid);font-size:0.875rem;margin-bottom:1.5rem;text-align:center;max-width:48ch;}
+    .section-label{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.6rem;align-self:flex-start;}
+    .start-options{width:100%;max-width:480px;display:flex;flex-direction:column;gap:1.5rem;margin-bottom:1.5rem;}
+    .count-row{display:flex;gap:0.5rem;flex-wrap:wrap;}
+    .count-btn{font-family:var(--font-d);font-size:0.82rem;font-weight:700;background:var(--surface);border:2px solid var(--border-hi);border-radius:var(--r);padding:0.5rem 1rem;cursor:pointer;color:var(--text-mid);transition:all var(--trans);}
+    .count-btn:hover{border-color:var(--accent2);color:var(--text);}
+    .count-btn.selected{border-color:var(--accent);color:var(--accent);background:rgba(74,222,154,0.06);}
+    .btn-start{font-family:var(--font-d);font-size:0.85rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.85rem 2.75rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);opacity:0.3;pointer-events:none;}
+    .btn-start.ready{opacity:1;pointer-events:all;}
+    .btn-start.ready:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 20px rgba(74,222,154,0.35);}
+    .btn-start.ready:active{transform:translateY(0);box-shadow:none;}
+
+    /* ── Quiz screen ── */
+    #screen-quiz{padding:1.5rem;justify-content:center;gap:1.5rem;}
+
+    /* Question card */
+    .q-wrap{width:100%;max-width:640px;display:flex;flex-direction:column;gap:1.25rem;flex-shrink:0;}
+
+    .q-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+    .q-num{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);}
+    .q-type-badge{font-family:var(--font-d);font-size:0.55rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.15rem 0.5rem;border-radius:20px;}
+    .q-type-badge.tf{background:rgba(123,111,255,0.15);color:var(--accent2);}
+    .q-type-badge.mc{background:rgba(74,222,154,0.12);color:var(--accent);}
+
+    .q-card{
+      background:var(--surface);
+      border:1.5px solid var(--border-hi);
+      border-radius:14px;
+      padding:1.5rem 1.75rem;
+      position:relative;
+      overflow:hidden;
+    }
+    .q-card::before{
+      content:'';
+      position:absolute;
+      top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg,var(--accent2),var(--accent));
+    }
+    .q-text{
+      font-family:var(--font-d);
+      font-size:clamp(1rem,2vw,1.3rem);
+      font-weight:700;
+      line-height:1.35;
+      color:var(--text);
+    }
+
+    /* Answer options */
+    .options{display:flex;flex-direction:column;gap:0.5rem;}
+    .option{
+      background:var(--surface2);
+      border:1.5px solid var(--border-hi);
+      border-radius:var(--r);
+      padding:0.75rem 1rem;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:0.75rem;
+      transition:all var(--trans);
+      user-select:none;
+    }
+    .option:hover{border-color:var(--accent2);background:rgba(123,111,255,0.08);}
+    .option:active{transform:scale(0.99);}
+    .option.selected{border-color:var(--accent2);background:rgba(123,111,255,0.12);}
+    .option.selected .opt-key{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+
+    /* True/False — side by side */
+    .options.tf-layout{flex-direction:row;}
+    .options.tf-layout .option{flex:1;justify-content:center;padding:1rem;}
+
+    .opt-key{
+      font-family:var(--font-d);
+      font-size:0.7rem;
+      font-weight:800;
+      min-width:22px;height:22px;
+      border-radius:50%;
+      border:1.5px solid var(--border-hi);
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;
+      color:var(--text-dim);
+      transition:all var(--trans);
+    }
+    .opt-text{font-family:var(--font-d);font-size:0.85rem;font-weight:600;color:var(--text);}
+
+    .q-nav{display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+    .btn-prev{font-family:var(--font-d);font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.6rem 1.25rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);}
+    .btn-prev:hover:not(:disabled){border-color:var(--accent2);color:var(--accent2);}
+    .btn-prev:disabled{opacity:0.3;cursor:default;}
+    .btn-next{font-family:var(--font-d);font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent2);color:#fff;border:none;padding:0.6rem 1.5rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);}
+    .btn-next:hover{background:#9a8fff;transform:translateY(-1px);box-shadow:0 4px 16px rgba(123,111,255,0.3);}
+    .btn-next:active{transform:translateY(0);box-shadow:none;}
+    .btn-submit{font-family:var(--font-d);font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.6rem 1.5rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);display:none;}
+    .btn-submit:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 16px rgba(74,222,154,0.3);}
+    .btn-submit:active{transform:translateY(0);box-shadow:none;}
+    .q-dots{display:flex;gap:0.3rem;flex-wrap:wrap;justify-content:center;flex:1;}
+    .q-dot{width:8px;height:8px;border-radius:50%;background:var(--surface2);border:1px solid var(--border-hi);transition:all var(--trans);flex-shrink:0;}
+    .q-dot.answered{background:var(--accent2);border-color:var(--accent2);}
+    .q-dot.current{background:var(--accent);border-color:var(--accent);transform:scale(1.3);}
+
+    .overlay{display:none;position:fixed;inset:0;background:rgba(8,10,18,0.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:500;align-items:center;justify-content:center;padding:1rem;}
+    .overlay.open{display:flex;}
+    .result-card{background:var(--surface);border:1px solid var(--border-hi);border-radius:18px;padding:1.75rem 2rem;max-width:640px;width:100%;animation:slideUp 0.38s cubic-bezier(0.34,1.56,0.64,1);display:flex;flex-direction:column;gap:1.25rem;max-height:90vh;overflow-y:auto;position:relative;}
+    .result-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:18px 18px 0 0;}
+    @keyframes slideUp{from{opacity:0;transform:translateY(28px) scale(0.95)}to{opacity:1;transform:none}}
+
+    .result-top{text-align:center;}
+    .result-emoji{font-size:3rem;display:block;margin-bottom:0.5rem;}
+    .result-heading{font-family:var(--font-d);font-size:1.8rem;font-weight:800;letter-spacing:-0.03em;margin-bottom:0.25rem;}
+    .result-sub{color:var(--text-mid);font-size:0.875rem;}
+
+    .score-ring-wrap{display:flex;justify-content:center;align-items:center;gap:2rem;flex-wrap:wrap;}
+    .score-ring{position:relative;width:100px;height:100px;flex-shrink:0;}
+    .score-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+    .score-ring-bg{fill:none;stroke:var(--surface2);stroke-width:8;}
+    .score-ring-fill{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;stroke-dasharray:283;stroke-dashoffset:283;transition:stroke-dashoffset 1s ease;}
+    .score-ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .score-ring-pct{font-family:var(--font-d);font-size:1.4rem;font-weight:800;color:var(--accent);line-height:1;}
+    .score-ring-label{font-size:0.6rem;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;}
+    .score-stats{display:flex;flex-direction:column;gap:0.5rem;}
+    .score-stat{display:flex;align-items:center;gap:0.6rem;font-size:0.85rem;}
+    .score-stat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .score-stat-dot.good{background:var(--correct);}
+    .score-stat-dot.bad{background:var(--wrong);}
+    .score-stat-dot.skip{background:var(--text-dim);}
+
+    .review-label{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);}
+    .review-list{display:flex;flex-direction:column;gap:0.5rem;max-height:260px;overflow-y:auto;}
+    .review-item{border-radius:var(--r);padding:0.65rem 0.85rem;font-size:0.8rem;}
+    .review-item.ok{background:rgba(74,222,154,0.07);border:1px solid rgba(74,222,154,0.18);}
+    .review-item.bad{background:rgba(255,107,107,0.07);border:1px solid rgba(255,107,107,0.18);}
+    .review-item.skipped{background:rgba(255,255,255,0.03);border:1px solid var(--border-hi);}
+    .review-q{font-family:var(--font-d);font-weight:600;color:var(--text);margin-bottom:0.25rem;line-height:1.3;}
+    .review-row{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:0.75rem;}
+    .review-yours{color:var(--wrong);}
+    .review-correct{color:var(--correct);}
+    .review-skipped-label{color:var(--text-dim);}
+
+    .result-btns{display:flex;gap:0.75rem;}
+    .btn-retry{font-family:var(--font-d);font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.75rem 1.75rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);flex:1;}
+    .btn-retry:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 18px rgba(74,222,154,0.3);}
+    .btn-retry:active{transform:translateY(0);box-shadow:none;}
+    .btn-change{font-family:var(--font-d);font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.65rem 1.25rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);flex:1;}
+    .btn-change:hover{border-color:var(--accent2);color:var(--accent2);}
+
+    /* Responsive */
+    @media(max-width:400px){
+      .hd{padding:0 0.85rem;}
+      .hd-sep,.hd-crumb,.hd-title{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="hd-left">
+    <a href="../index.html" class="hd-logo">Class<span>Craft</span></a>
+    <span class="hd-sep">·</span>
+    <a href="../games.html" class="hd-crumb">Games</a>
+    <span class="hd-sep">·</span>
+    <span class="hd-title" id="hd-title">A-Level History — Quiz</span>
+  </div>
+  <div class="hd-right" id="hd-right" style="display:none;">
+    <div class="timer-wrap">
+      <span class="timer-label">Timer</span>
+      <label class="toggle">
+        <input type="checkbox" id="timer-toggle"/>
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="hd-timer" id="hd-timer">5:00</div>
+    <div class="stat-pill">Q<span id="q-current">1</span>/<span id="q-total">10</span></div>
+    <button class="btn-hd" id="btn-restart">↺ Change level</button>
+  </div>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+<!-- Start screen -->
+<div class="screen active" id="screen-start">
+  <span class="start-badge">Quiz</span>
+  <h1 class="start-title">A-Level History</h1>
+  <p class="start-sub">Answer each question, then review all your results at the end. Questions and answer options are shuffled every time.</p>
+  <div class="start-options">
+    <div>
+      <p class="section-label">Number of questions</p>
+      <div class="count-row">
+        <button class="count-btn" data-count="5"  onclick="selectCount(this)">5</button>
+        <button class="count-btn" data-count="10" onclick="selectCount(this)">10</button>
+        <button class="count-btn" data-count="15" onclick="selectCount(this)">15</button>
+        <button class="count-btn" data-count="20" onclick="selectCount(this)">20</button>
+        <button class="count-btn" data-count="999" onclick="selectCount(this)">All</button>
+      </div>
+    </div>
+  </div>
+  <button class="btn-start" id="btn-start" onclick="startGame()">Start Quiz →</button>
+</div>
+
+<!-- Quiz screen -->
+<div class="screen" id="screen-quiz">
+  <div class="q-wrap">
+    <div class="q-header">
+      <span class="q-num" id="q-num">Question 1 of 10</span>
+      <span class="q-type-badge" id="q-type-badge">Multiple Choice</span>
+    </div>
+    <div class="q-card">
+      <div class="q-text" id="q-text">Question text here</div>
+    </div>
+    <div class="options" id="options"></div>
+    <div class="q-nav">
+      <button class="btn-prev" id="btn-prev" onclick="prevQ()" disabled>← Back</button>
+      <div class="q-dots" id="q-dots"></div>
+      <button class="btn-next" id="btn-next" onclick="nextQ()">Next →</button>
+      <button class="btn-submit" id="btn-submit" onclick="submitQuiz()">Submit →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Results -->
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <div class="result-top">
+      <span class="result-emoji" id="res-emoji">🎉</span>
+      <div class="result-heading" id="res-heading">Great work!</div>
+      <div class="result-sub" id="res-sub"></div>
+    </div>
+    <div class="score-ring-wrap">
+      <div class="score-ring">
+        <svg viewBox="0 0 100 100"><circle class="score-ring-bg" cx="50" cy="50" r="45"/><circle class="score-ring-fill" id="ring-fill" cx="50" cy="50" r="45"/></svg>
+        <div class="score-ring-text"><div class="score-ring-pct" id="ring-pct">80%</div><div class="score-ring-label">score</div></div>
+      </div>
+      <div class="score-stats">
+        <div class="score-stat"><div class="score-stat-dot good"></div><span id="stat-correct">8 correct</span></div>
+        <div class="score-stat"><div class="score-stat-dot bad"></div><span id="stat-wrong">2 wrong</span></div>
+        <div class="score-stat"><div class="score-stat-dot skip"></div><span id="stat-skipped">0 skipped</span></div>
+      </div>
+    </div>
+    <div class="review-label">Question review</div>
+    <div class="review-list" id="review-list"></div>
+    <div class="result-btns">
+      <button class="btn-retry" id="btn-retry">Play Again</button>
+      <button class="btn-change" id="btn-change">Change settings</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// GAME DATA
+// Each question:
+//   type: 'mc' (4 options) or 'tf' (True/False)
+//   q: question text
+//   options: array of answer strings (mc: 4 items, tf: omit — auto True/False)
+//   answer: the correct answer string
+// ═══════════════════════════════════════════════════════
+const ALL_QUESTIONS = [
+  { type:'mc', q:"What was the main cause of the 1905 Russian Revolution?",
+    options:["The death of Alexander III", "Defeat in the Russo-Japanese War and Bloody Sunday", "Lenin's return from exile", "German invasion"], answer:"Defeat in the Russo-Japanese War and Bloody Sunday" },
+  { type:'mc', q:"Which historian argued Hitler had no long-term plan — opportunist rather than systematic?",
+    options:["Alan Bullock", "Hugh Trevor-Roper", "A.J.P. Taylor", "Richard Evans"], answer:"A.J.P. Taylor" },
+  { type:'mc', q:"What was the Truman Doctrine (1947)?",
+    options:["A plan for Marshall Aid", "US commitment to support nations resisting communist takeover", "A proposal for NATO", "A nuclear deterrence policy"], answer:"US commitment to support nations resisting communist takeover" },
+  { type:'mc', q:"Which event directly triggered the Cuban Missile Crisis?",
+    options:["The Bay of Pigs invasion", "US spy planes discovering Soviet missiles in Cuba", "Castro declaring Cuba communist", "Soviet submarines entering Caribbean waters"], answer:"US spy planes discovering Soviet missiles in Cuba" },
+  { type:'mc', q:"What policy did Khrushchev announce in 1956 that criticised Stalin?",
+    options:["Glasnost", "The Secret Speech", "Perestroika", "De-Nazification"], answer:"The Secret Speech" },
+  { type:'mc', q:"What was the significance of the Balfour Declaration (1917)?",
+    options:["End of WWI", "British support for a Jewish homeland in Palestine", "Creation of League of Nations", "Treaty ending Ottoman Empire"], answer:"British support for a Jewish homeland in Palestine" },
+  { type:'mc', q:"Which battle is considered the turning point on the Eastern Front in WWII?",
+    options:["Battle of Moscow", "Battle of Kursk", "Battle of Stalingrad", "Operation Barbarossa"], answer:"Battle of Stalingrad" },
+  { type:'mc', q:"What was 'appeasement' primarily a response to?",
+    options:["Economic depression", "Fear of another world war and belief Hitler's demands were reasonable", "Soviet expansion", "American isolationism"], answer:"Fear of another world war and belief Hitler's demands were reasonable" },
+  { type:'tf', q:"The League of Nations included the USA as a member.", answer:"False" },
+  { type:'tf', q:"Stalin's collectivisation caused a famine in Ukraine in the early 1930s.", answer:"True" },
+  { type:'tf', q:"The Berlin Wall was built in 1961.", answer:"True" },
+  { type:'tf', q:"Mao's Great Leap Forward was considered an economic success.", answer:"False" },
+  { type:'tf', q:"The Munich Agreement gave Hitler the Sudetenland.", answer:"True" },
+  { type:'tf', q:"The Marshall Plan provided economic aid to Eastern Europe.", answer:"False" },
+  { type:'tf', q:"Martin Luther King Jr was awarded the Nobel Peace Prize in 1964.", answer:"True" },
+  { type:'tf', q:"The Prague Spring occurred in 1968.", answer:"True" },
+];
+
+const TIMER_SECS = { 5:150, 10:300, 15:450, 20:600 };
+const TF_OPTIONS = ["True","False"];
+
+// ── STATE ──
+let selectedCount = 0;
+let activeQs      = [];   // shuffled subset, each with shuffled options
+let currentQ      = 0;
+let answers       = [];   // answers[i] = chosen string or null
+let gameOver      = false;
+let timerOn       = false, timerSecs = 300, timerInterval = null;
+
+// Fisher-Yates
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+// ── COUNT SELECT ──
+function selectCount(el) {
+  document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCount = parseInt(el.dataset.count);
+  document.getElementById('btn-start').classList.add('ready');
+}
+
+// ── START ──
+function startGame() {
+  if (!selectedCount) return;
+  const pool = shuffle([...ALL_QUESTIONS]);
+  const n = Math.min(selectedCount, pool.length);
+
+  // Build active questions with shuffled options
+  activeQs = pool.slice(0, n).map(q => {
+    const opts = q.type === 'tf'
+      ? shuffle([...TF_OPTIONS])
+      : shuffle([...q.options]);
+    return { ...q, shuffledOptions: opts };
+  });
+
+  answers  = new Array(activeQs.length).fill(null);
+  currentQ = 0;
+  gameOver = false;
+
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-quiz').classList.add('active');
+  document.getElementById('hd-right').style.display = 'flex';
+  document.getElementById('q-total').textContent = activeQs.length;
+
+  stopTimer();
+  timerSecs = TIMER_SECS[n] || n * 30;
+  updateTimerDisplay();
+
+  buildDots();
+  renderQuestion(0);
+  if (timerOn) startTimer();
+}
+
+// ── DOTS ──
+function buildDots() {
+  const cont = document.getElementById('q-dots');
+  cont.innerHTML = '';
+  activeQs.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'q-dot' + (i===0?' current':'');
+    dot.id = `dot-${i}`;
+    cont.appendChild(dot);
+  });
+}
+
+function updateDots() {
+  activeQs.forEach((_, i) => {
+    const dot = document.getElementById(`dot-${i}`);
+    if (!dot) return;
+    dot.className = 'q-dot'
+      + (i === currentQ ? ' current' : '')
+      + (answers[i] !== null && i !== currentQ ? ' answered' : '');
+  });
+}
+
+// ── RENDER QUESTION ──
+function renderQuestion(index) {
+  const q = activeQs[index];
+  document.getElementById('q-num').textContent = `Question ${index+1} of ${activeQs.length}`;
+  document.getElementById('q-current').textContent = index + 1;
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('progress-fill').style.width = ((index + 1) / activeQs.length * 100) + '%';
+
+  // Badge
+  const badge = document.getElementById('q-type-badge');
+  badge.textContent = q.type === 'tf' ? 'True / False' : 'Multiple Choice';
+  badge.className = 'q-type-badge ' + (q.type === 'tf' ? 'tf' : 'mc');
+
+  // Options
+  const optCont = document.getElementById('options');
+  optCont.innerHTML = '';
+  optCont.className = 'options' + (q.type === 'tf' ? ' tf-layout' : '');
+
+  const keys = ['A','B','C','D'];
+  q.shuffledOptions.forEach((opt, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'option' + (answers[index] === opt ? ' selected' : '');
+    btn.dataset.value = opt;
+    if (q.type !== 'tf') {
+      btn.innerHTML = `<span class="opt-key">${keys[i]}</span><span class="opt-text">${opt}</span>`;
+    } else {
+      btn.innerHTML = `<span class="opt-text">${opt}</span>`;
+    }
+    btn.addEventListener('click', () => selectAnswer(index, opt));
+    optCont.appendChild(btn);
+  });
+
+  // Nav buttons
+  document.getElementById('btn-prev').disabled = index === 0;
+  const isLast = index === activeQs.length - 1;
+  document.getElementById('btn-next').style.display   = isLast ? 'none' : 'inline-block';
+  document.getElementById('btn-submit').style.display  = isLast ? 'inline-block' : 'none';
+
+  updateDots();
+}
+
+// ── SELECT ANSWER ──
+function selectAnswer(qIndex, value) {
+  if (gameOver) return;
+  if (qIndex !== currentQ) return; // ignore stale closures from old renders
+  answers[qIndex] = value;
+  // Only update options currently on screen
+  document.querySelectorAll('.option').forEach(o => {
+    o.classList.toggle('selected', o.dataset.value === value);
+  });
+  updateDots();
+}
+
+// ── NAVIGATION ──
+function nextQ() {
+  if (currentQ < activeQs.length - 1) {
+    currentQ++;
+    renderQuestion(currentQ);
+  }
+}
+function prevQ() {
+  if (currentQ > 0) {
+    currentQ--;
+    renderQuestion(currentQ);
+  }
+}
+
+// ── SUBMIT ──
+function submitQuiz() {
+  if (gameOver) return;
+  gameOver = true; stopTimer();
+
+  // Final progress fill
+  document.getElementById('progress-fill').style.width = '100%';
+
+  let correct=0, wrong=0, skipped=0;
+  const reviewItems = [];
+
+  activeQs.forEach((q, i) => {
+    const chosen = answers[i];
+    if (chosen === null) {
+      skipped++;
+      reviewItems.push({ q: q.q, chosen: null, correct: q.answer, ok: false, skipped: true });
+    } else if (chosen === q.answer) {
+      correct++;
+      reviewItems.push({ q: q.q, chosen, correct: q.answer, ok: true, skipped: false });
+    } else {
+      wrong++;
+      reviewItems.push({ q: q.q, chosen, correct: q.answer, ok: false, skipped: false });
+    }
+  });
+
+  showResults(correct, wrong, skipped, reviewItems);
+}
+
+function showResults(correct, wrong, skipped, reviewItems) {
+  const total = activeQs.length;
+  const pct   = Math.round(correct / total * 100);
+
+  const [emoji,heading,sub] = pct===100
+    ? ['🏆','Perfect score!','Every answer correct — outstanding!']
+    : pct>=80 ? ['🎉','Excellent!','Really strong performance.']
+    : pct>=60 ? ['👍','Good work!','A solid effort — review the ones you missed.']
+    : pct>=40 ? ['📖','Keep going!','Some good answers — study the review below.']
+    : ['📚','More revision needed','Read through the review carefully and try again.'];
+
+  document.getElementById('res-emoji').textContent = emoji;
+  document.getElementById('res-heading').textContent = heading;
+  document.getElementById('res-sub').textContent = sub;
+
+  // Score ring — reset before animating so transition fires even at same value
+  const circumference = 2 * Math.PI * 45;
+  const offset = circumference - (pct / 100) * circumference;
+  document.getElementById('ring-pct').textContent = pct + '%';
+  const ring = document.getElementById('ring-fill');
+  ring.style.transition = 'none';
+  ring.style.strokeDashoffset = '283';
+  void ring.getBoundingClientRect();
+  ring.style.transition = '';
+  setTimeout(() => { ring.style.strokeDashoffset = offset; }, 50);
+
+  // Stats
+  document.getElementById('stat-correct').textContent = `${correct} correct`;
+  document.getElementById('stat-wrong').textContent   = `${wrong} wrong`;
+  document.getElementById('stat-skipped').textContent = `${skipped} skipped`;
+
+  // Review list
+  const list = document.getElementById('review-list');
+  list.innerHTML = '';
+  reviewItems.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'review-item ' + (r.skipped ? 'skipped' : r.ok ? 'ok' : 'bad');
+    if (r.skipped) {
+      item.innerHTML = `
+        <div class="review-q">${r.q}</div>
+        <div class="review-row"><span class="review-skipped-label">Not answered</span><span class="review-correct">✓ ${r.correct}</span></div>`;
+    } else if (r.ok) {
+      item.innerHTML = `
+        <div class="review-q">${r.q}</div>
+        <div class="review-row"><span class="review-correct">✓ ${r.correct}</span></div>`;
+    } else {
+      item.innerHTML = `
+        <div class="review-q">${r.q}</div>
+        <div class="review-row">
+          <span class="review-yours">✗ ${r.chosen}</span>
+          <span style="color:var(--text-dim);margin:0 0.3rem;">→</span>
+          <span class="review-correct">✓ ${r.correct}</span>
+        </div>`;
+    }
+    list.appendChild(item);
+  });
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+// ── TIMER ──
+function startTimer() {
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timerSecs--; updateTimerDisplay();
+    if (timerSecs <= 0) { stopTimer(); submitQuiz(); }
+  }, 1000);
+}
+function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+function updateTimerDisplay() {
+  const m=Math.floor(timerSecs/60), s=timerSecs%60;
+  const el=document.getElementById('hd-timer');
+  if (!el) return;
+  el.textContent=`${m}:${s.toString().padStart(2,'0')}`;
+  el.classList.toggle('urgent', timerSecs<=30);
+}
+document.getElementById('timer-toggle').addEventListener('change', function() {
+  timerOn = this.checked;
+  document.getElementById('hd-timer').classList.toggle('active', timerOn);
+  stopTimer();
+  if (timerOn && !gameOver && activeQs.length > 0) startTimer();
+});
+
+// ── RESTART / CHANGE ──
+function goToStart() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('screen-quiz').classList.remove('active');
+  document.getElementById('screen-start').classList.add('active');
+  document.getElementById('hd-right').style.display = 'none';
+  stopTimer();
+}
+function restart() {
+  document.getElementById('overlay').classList.remove('open');
+  startGame();
+}
+document.getElementById('btn-restart').addEventListener('click', goToStart);
+document.getElementById('btn-retry').addEventListener('click', restart);
+document.getElementById('btn-change').addEventListener('click', goToStart);
+</script>
+</body>
+</html>

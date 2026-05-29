@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hedge Fund Challenge | A-Level Economics Simulation | Free | m...</title>
+    <meta name="description" content="Play Hedge Fund Challenge — a free interactive A-Level economics simulation. No login required. Build decision-making skills with this classroom-ready game.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --navy:#164E63;--mid:#0891B2;--gold:#22D3EE;--gold2:#06B6D4;
+  --white:#FFFFFF;--offwh:#F5F7FA;--grey:#8892A4;--dgrey:#2D3748;
+  --green:#1E8449;--red:#C0392B;--amber:#E67E22;--card:#FFFFFF;
+  --border:#E2E8F0;--shadow:0 4px 24px rgba(0,0,0,0.10);--r:10px;
+  --btn-a:#1A5276;--btn-b:#145A32;--btn-c:#922B21;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{font-family:'Nunito',sans-serif;background:var(--offwh);color:var(--dgrey);min-height:100vh;display:flex;overflow:hidden;}
+
+.sidebar{width:260px;min-width:260px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;height:100vh;position:relative;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.2rem 0.8rem;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h1{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);letter-spacing:2px;}
+.sidebar-logo p{font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:0.5rem 0;}
+.sidebar-nav button{display:flex;align-items:center;width:100%;padding:0.8rem 1.2rem;background:none;border:none;color:rgba(255,255,255,0.6);font-family:'Nunito',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.2s;text-align:left;gap:0.6rem;}
+.sidebar-nav button:hover{background:rgba(255,255,255,0.08);color:var(--white);}
+.sidebar-nav button.active{background:rgba(255,255,255,0.15);color:var(--gold);border-left:3px solid var(--gold);}
+.sidebar-nav button .check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0;}
+.sidebar-nav button.done .check{background:var(--green);border-color:var(--green);color:var(--white);}
+.sidebar-nav button .phase-dots{margin-left:auto;display:flex;gap:3px;}
+.sidebar-nav button .phase-dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.sidebar-nav button .phase-dots .dot.filled{background:var(--gold);}
+.sidebar-sep{height:1px;background:rgba(255,255,255,0.1);margin:0.3rem 1.2rem;}
+.sidebar-timer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,0.1);}
+.timer-display{font-family:'DM Mono',monospace;font-size:2.2rem;color:var(--gold);text-align:center;margin-bottom:0.5rem;}
+.timer-btns{display:flex;gap:0.5rem;}
+.timer-btns button{flex:1;padding:0.4rem;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:'Nunito',sans-serif;}
+.timer-btns button:hover{background:rgba(255,255,255,0.1);}
+
+.main{flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(0,0,0,0.15);}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+.topbar-phase{display:flex;gap:0.5rem;align-items:center;}
+.phase-step{padding:0.3rem 1rem;border-radius:20px;font-size:0.8rem;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.phase-step.active{background:var(--gold);color:var(--navy);font-weight:600;}
+.phase-step.completed{background:rgba(30,132,73,0.3);color:#6FCF97;}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.topbar-right button{padding:0.3rem 1rem;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.85rem;}
+.topbar-right button:hover{background:rgba(255,255,255,0.1);}
+.topbar-right button.primary{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+.topbar-right button.primary:hover{opacity:0.9;}
+
+.content{flex:1;padding:2rem;max-width:1400px;width:100%;margin:0 auto;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.2rem;}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--navy);letter-spacing:1px;margin-bottom:0.8rem;}
+.card h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:0.5rem;}
+
+.setup-hero{text-align:center;padding:3rem 0 2rem;}
+.setup-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--navy);letter-spacing:3px;}
+.setup-hero p{font-size:1.1rem;color:var(--grey);margin-top:0.5rem;}
+.setup-hero .subtitle{color:var(--gold);font-weight:600;font-size:1.2rem;margin-top:0.2rem;}
+.team-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;}
+.team-input{display:flex;align-items:center;gap:0.8rem;background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:0.8rem 1rem;transition:border-color 0.2s;}
+.team-input:focus-within{border-color:var(--gold);}
+.team-input .num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);width:30px;}
+.team-input input{flex:1;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:1rem;color:var(--dgrey);}
+.team-count-btns{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem;}
+.team-count-btns button{width:48px;height:48px;border-radius:50%;border:2px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.2rem;cursor:pointer;transition:all 0.2s;color:var(--dgrey);}
+.team-count-btns button.active{background:var(--navy);color:var(--gold);border-color:var(--navy);}
+.start-btn{display:block;margin:2rem auto 0;padding:1rem 3rem;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--r);cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+
+.report-card{background:#FFF8E7;border:3px solid #2D2D2D;border-radius:4px;padding:2rem;font-family:Georgia,'Times New Roman',serif;}
+.report-masthead{text-align:center;border-bottom:3px double #2D2D2D;padding-bottom:1rem;margin-bottom:1.5rem;}
+.report-masthead h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#1a1a1a;letter-spacing:4px;}
+.report-masthead .dateline{font-size:0.85rem;color:#666;margin-top:0.3rem;font-style:italic;}
+.report-items{display:grid;gap:0.8rem;}
+.report-item{display:flex;gap:0.8rem;padding:0.6rem 0;border-bottom:1px solid #ddd;align-items:baseline;}
+.report-item .bullet{color:var(--gold);font-weight:bold;font-size:1.2rem;flex-shrink:0;}
+.report-item .text{font-size:1rem;line-height:1.5;color:#333;}
+.event-box{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid var(--amber);border-radius:var(--r);padding:1.2rem 1.5rem;margin-top:1.5rem;}
+.event-box h3{font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:1.3rem;margin-bottom:0.5rem;}
+.event-box p{font-size:1rem;line-height:1.5;}
+.no-event{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:2px solid var(--green);border-radius:var(--r);padding:1rem 1.5rem;margin-top:1.5rem;text-align:center;color:var(--green);font-weight:600;}
+
+.decisions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+.decisions-grid .decision-card:nth-child(5){grid-column:1 / -1;}
+.decision-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:0.8rem 1rem;border-left:4px solid var(--navy);}
+.decision-card .d-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.15rem;}
+.decision-card .d-question{font-size:0.95rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
+.option{display:flex;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:6px;margin-bottom:0.25rem;background:var(--offwh);transition:background 0.15s;align-items:baseline;}
+.option .letter{font-family:'DM Mono',monospace;font-weight:700;font-size:0.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--white);}
+.option .letter.a{background:var(--btn-a);}
+.option .letter.b{background:var(--btn-b);}
+.option .letter.c{background:var(--btn-c);}
+.option .desc{font-size:0.85rem;line-height:1.3;color:var(--dgrey);}
+
+.entry-matrix{width:100%;border-collapse:separate;border-spacing:0;}
+.entry-matrix th{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--white);background:var(--navy);padding:0.8rem;text-align:center;position:sticky;top:0;z-index:5;}
+.entry-matrix th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.entry-matrix th:last-child{border-radius:0 var(--r) 0 0;}
+.entry-matrix td{padding:0.6rem;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+.entry-matrix td:first-child{text-align:left;font-weight:600;font-size:0.9rem;color:var(--navy);min-width:180px;max-width:300px;}
+.abc-group{display:flex;gap:6px;justify-content:center;}
+.abc-btn{width:56px;height:56px;border-radius:12px;border:3px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--dgrey);user-select:none;}
+.abc-btn:active{transform:scale(0.95);}
+.abc-btn.sel-a{background:var(--btn-a);color:var(--white);border-color:var(--btn-a);}
+.abc-btn.sel-b{background:var(--btn-b);color:var(--white);border-color:var(--btn-b);}
+.abc-btn.sel-c{background:var(--btn-c);color:var(--white);border-color:var(--btn-c);}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin:1rem 0;}
+.metric-card{background:var(--white);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);text-align:center;}
+.metric-card .m-name{font-size:0.8rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;}
+.metric-card .m-val{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--navy);}
+.metric-card .m-delta{font-size:0.85rem;font-weight:600;margin-top:0.2rem;}
+.metric-card .m-delta.pos{color:var(--green);}
+.metric-card .m-delta.neg{color:var(--red);}
+.metric-card .m-delta.zero{color:var(--grey);}
+.metric-bar{height:6px;background:var(--border);border-radius:3px;margin-top:0.5rem;overflow:hidden;}
+.metric-bar-fill{height:100%;border-radius:3px;background:var(--mid);transition:width 0.5s ease;}
+
+.results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:1rem;}
+.results-table th{font-family:'Bebas Neue',sans-serif;background:var(--navy);color:var(--white);padding:0.7rem;text-align:center;font-size:0.85rem;}
+.results-table th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.results-table th:last-child{border-radius:0 var(--r) 0 0;}
+.results-table td{padding:0.5rem;text-align:center;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.9rem;}
+.results-table td:first-child{text-align:left;font-family:'Nunito',sans-serif;font-weight:600;}
+
+.lb-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--white);border-radius:var(--r);margin-bottom:0.8rem;box-shadow:var(--shadow);}
+.lb-row:first-child{border:2px solid var(--gold);background:linear-gradient(135deg,#FFFDE7,#FFF8E1);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--navy);width:50px;text-align:center;}
+.lb-row:first-child .lb-rank{color:var(--gold);}
+.lb-name{flex:1;font-size:1.3rem;font-weight:600;color:var(--navy);}
+.lb-stats{display:flex;gap:2rem;}
+.lb-stat{text-align:center;}
+.lb-stat .val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--navy);}
+.lb-stat .lbl{font-size:0.7rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;}
+
+.final-hero{text-align:center;padding:2rem 0;}
+.final-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--gold);letter-spacing:3px;}
+.podium{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;align-items:flex-end;flex-wrap:wrap;}
+.podium-item{text-align:center;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;min-width:180px;}
+.podium-item.first{padding-bottom:2.5rem;border:3px solid var(--gold);transform:scale(1.1);}
+.podium-item .medal{font-size:3rem;}
+.podium-item .pname{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);margin:0.3rem 0;}
+.podium-item .pval{font-family:'DM Mono',monospace;font-size:1.2rem;color:var(--green);font-weight:700;}
+
+.debrief-q{background:var(--white);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:0.8rem;box-shadow:var(--shadow);border-left:4px solid var(--gold);}
+.debrief-q .qnum{font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:1rem;letter-spacing:1px;}
+.debrief-q p{font-size:1.05rem;color:var(--dgrey);line-height:1.5;margin-top:0.3rem;}
+.takeaway-card{background:linear-gradient(135deg,var(--navy),var(--mid));border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;color:var(--white);}
+.takeaway-card h3{font-family:'Bebas Neue',sans-serif;color:var(--gold);margin-bottom:0.5rem;font-size:1.2rem;}
+.takeaway-card p{font-size:0.95rem;line-height:1.5;opacity:0.9;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.overlay-box{background:var(--white);border-radius:var(--r);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+.overlay-box h2{font-family:'Bebas Neue',sans-serif;color:var(--navy);font-size:1.8rem;margin-bottom:1rem;}
+.overlay-box p,.overlay-box li{font-size:0.95rem;line-height:1.6;margin-bottom:0.5rem;color:var(--dgrey);}
+.overlay-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey);}
+
+.svg-container{text-align:center;margin:1rem 0;}
+.svg-container svg{max-width:100%;height:auto;border-radius:var(--r);box-shadow:var(--shadow);}
+
+.curriculum-card{background:var(--white);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:0.6rem;box-shadow:var(--shadow);border-left:4px solid var(--mid);}
+.curriculum-card .c-topic{font-weight:600;color:var(--navy);font-size:0.95rem;}
+.curriculum-card .c-spec{font-size:0.8rem;color:var(--grey);margin-top:0.15rem;}
+.curriculum-card .c-how{font-size:0.9rem;color:var(--dgrey);margin-top:0.3rem;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>HEDGE FUND CHALLENGE</h1>
+    <p>Mathematics &bull; A-level</p>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-timer">
+    <div class="timer-display" id="timerDisplay">10:00</div>
+    <div class="timer-btns">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseTimer()">Pause</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">SETUP</div>
+    <div class="topbar-phase" id="topbarPhase"></div>
+    <div class="topbar-right" id="topbarRight"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="overlay-box">
+    <button class="overlay-close" onclick="closeHelp()">&times;</button>
+    <h2>How to Play</h2>
+    <p><strong>Hedge Fund Challenge</strong> is a 7-round simulation where teams make strategic decisions across 7 key metrics.</p>
+    <p><strong>Each Round</strong> has 4 phases:</p>
+    <ul>
+      <li><strong>Briefing</strong> &mdash; Read the situation report and any random events aloud.</li>
+      <li><strong>Decision Cards</strong> &mdash; Show the 5 decisions. Teams discuss (~10 min, use the timer).</li>
+      <li><strong>Team Entry</strong> &mdash; Each team taps A, B, or C for each decision.</li>
+      <li><strong>Results</strong> &mdash; Scores update and metric changes are displayed.</li>
+    </ul>
+    <p><strong>Metrics:</strong> Portfolio Value, Sharpe Ratio, Max Drawdown, Risk Score, Client Satisfaction, Market Position, Regulatory Compliance. Each decision shifts these metrics. The team with the best overall performance wins.</p>
+    <p><strong>Scoring:</strong> Final score is the sum of all metric values (normalised to their scales).</p>
+  </div>
+</div>
+
+<script>
+// ======================== EMBEDDED DATA ========================
+const SIM = {"title": "Hedge Fund Challenge", "subject": "Mathematics", "level": "A-level", "duration": "90 minutes", "teamSize": "3-5 students", "numTeams": "4-6 teams", "overview": "Teams manage a $10 million hedge fund over seven quarters, making investment decisions that require genuine statistical reasoning. Every choice demands A-level mathematical tools: standard deviation to measure risk, correlation to diversify portfolios, normal distribution to model returns, calculus-based optimisation to maximise Sharpe ratios, hypothesis testing to evaluate strategies, and logarithmic models to understand compound growth.\n\nThe simulation moves through seven rounds representing market quarters. Each round delivers market data that teams must analyse before making five decisions across analysis, risk management, trading, compliance, and strategy. Random events — market crashes, regulatory changes, black swan events — force teams to stress-test their assumptions and recalculate under pressure.\n\nThe winning team achieves the best risk-adjusted returns, measured primarily by the Sharpe Ratio. Raw profit alone does not win — a team that earns high returns with reckless risk will lose to a team with moderate returns and disciplined risk management. This mirrors real-world finance where the maths of risk is as important as the maths of return.", "scenario": "You have been appointed as the quantitative analysis team for Meridian Capital, a newly established hedge fund. Your investors have entrusted you with $10 million and expect you to deliver strong risk-adjusted returns over seven quarters. You have access to market data, statistical tools, and a trading desk.\n\nYour performance is judged not by raw returns but by your Sharpe Ratio — the return per unit of risk. Every decision must be backed by statistical reasoning. Your clients are sophisticated: they understand standard deviation, they read your correlation matrices, and they will fire you if your maximum drawdown exceeds 25%. The maths is not optional — it is the entire job.", "metrics": [{"name": "Portfolio Value", "start": 10000000, "unit": "$", "description": "Current total value of all investments"}, {"name": "Sharpe Ratio", "start": 0.5, "unit": "ratio", "description": "Risk-adjusted return: (portfolio return - risk-free rate) / standard deviation of returns. Higher is better."}, {"name": "Max Drawdown", "start": 0, "unit": "%", "description": "Largest peak-to-trough decline. Must stay below 25% or clients withdraw funds."}, {"name": "Risk Score", "start": 50, "unit": "/100", "description": "Internal risk rating. Higher means more risk. Target: 30-60."}, {"name": "Client Satisfaction", "start": 60, "unit": "/100", "description": "Client confidence in your management"}, {"name": "Market Position", "start": 50, "unit": "/100", "description": "Your fund's reputation and market standing relative to competitors"}, {"name": "Regulatory Compliance", "start": 80, "unit": "/100", "description": "Compliance with financial regulations. Below 50 triggers an audit."}], "finalScoring": "Final Score = (Portfolio Value / 100000) + (Sharpe Ratio x 200) + (100 - Max Drawdown) x 3 + (100 - Risk Score) x 2 + Client Satisfaction x 2 + Market Position + Regulatory Compliance. Bonus of 150 points if Sharpe Ratio exceeds 1.5. Bonus of 100 points if Max Drawdown never exceeded 15%. Penalty of 300 points if Regulatory Compliance ever dropped below 50. Highest score wins.", "curriculumLinks": [{"topic": "Standard deviation and variance", "spec": "A-level Statistics — measures of spread, calculating and interpreting standard deviation", "how": "Students calculate portfolio volatility using standard deviation, compare the spread of different asset returns, and use variance to quantify risk in every decision"}, {"topic": "Correlation and regression", "spec": "A-level Statistics — product moment correlation coefficient, regression lines, interpretation", "how": "Students build correlation matrices between assets, use low or negative correlation for diversification, and interpret regression lines for trend prediction"}, {"topic": "Normal distribution", "spec": "A-level Statistics — properties of normal distribution, Z-scores, probability calculations", "how": "Students model asset returns as normally distributed, calculate probabilities of losses exceeding thresholds using Z-scores, and determine confidence intervals for portfolio performance"}, {"topic": "Probability distributions", "spec": "A-level Statistics — binomial distribution, expected value, conditional probability", "how": "Students use binomial distribution for success/failure scenarios, calculate expected values for investment outcomes, and apply conditional probability to update risk assessments"}, {"topic": "Calculus-based optimisation", "spec": "A-level Pure — differentiation to find maxima/minima, second derivative test", "how": "Students differentiate return functions to find optimal allocation percentages, use the second derivative to confirm maxima, and optimise the Sharpe Ratio as a function of asset weights"}, {"topic": "Hypothesis testing", "spec": "A-level Statistics — one-tailed and two-tailed tests, significance levels, p-values", "how": "Students test whether a trading strategy produces returns significantly different from the market, evaluate whether a new analyst adds value, and determine if market conditions have changed"}, {"topic": "Logarithmic and exponential models", "spec": "A-level Pure — exponential growth/decay, logarithmic scales, compound interest", "how": "Students model compound growth using A = Pe^(rt), convert between discrete and continuous compounding, and use logarithms to solve for time-to-target and required growth rates"}, {"topic": "Sequences and series", "spec": "A-level Pure — geometric sequences, sum to infinity, compound interest as geometric series", "how": "Students model compound interest as geometric sequences, calculate the present value of future cash flows using geometric series, and evaluate whether recurring fee structures are profitable"}], "rounds": [{"num": 1, "name": "Market Entry — Building Your Portfolio", "report": ["Welcome to the market. The risk-free rate is 4% per annum (1% per quarter). Your benchmark is the market index returning an average of 8% per annum with a standard deviation of 15%.", "Five asset classes available: Equities (mean return 10% p.a., SD 20%), Bonds (mean 5%, SD 5%), Commodities (mean 7%, SD 25%), Real Estate (mean 8%, SD 12%), Cash (mean 4%, SD 0%).", "Correlation matrix: Equities-Bonds: -0.3, Equities-Commodities: 0.4, Equities-Real Estate: 0.6, Bonds-Commodities: -0.1, Bonds-Real Estate: 0.2, Commodities-Real Estate: 0.3.", "Your clients expect a quarterly return of at least 2% (8% annualised) with a maximum drawdown below 25%. They will review performance every quarter.", "Hiring: you can employ up to 3 analysts. A quantitative analyst costs $150,000/quarter, a fundamental analyst costs $100,000/quarter, and a risk analyst costs $120,000/quarter."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Analysis", "question": "Asset allocation: using the mean returns and standard deviations, calculate the expected return and portfolio standard deviation for different allocations. For a portfolio of 60% Equities (mean 10%, SD 20%) and 40% Bonds (mean 5%, SD 5%) with correlation -0.3: E(R) = 0.6(10) + 0.4(5) = 8%. Portfolio SD = sqrt(0.6^2 x 20^2 + 0.4^2 x 5^2 + 2 x 0.6 x 0.4 x (-0.3) x 20 x 5) = sqrt(144 + 4 - 7.2) = sqrt(140.8) = 11.87%. Sharpe = (8-4)/11.87 = 0.337.", "optA": "Conservative: 30% Equities, 50% Bonds, 20% Cash. E(R) = 3+2.5+0.8 = 6.3%. Calculate the portfolio SD using the full correlation matrix. Expected Sharpe Ratio: approximately 0.35.", "optB": "Balanced: 40% Equities, 25% Bonds, 20% Real Estate, 15% Cash. E(R) = 4+1.25+1.6+0.6 = 7.45%. Moderate risk, diversified. Calculate portfolio SD. Expected Sharpe: approximately 0.45.", "optC": "Aggressive: 50% Equities, 10% Bonds, 25% Commodities, 15% Real Estate. E(R) = 5+0.5+1.75+1.2 = 8.45%. Higher return but higher volatility. Calculate portfolio SD. Expected Sharpe: approximately 0.30.", "effects": "A: Portfolio Value +$157,500 (6.3% annualised = 1.575% quarterly), Sharpe Ratio set to 0.35, Risk Score 30 (low risk), Client Satisfaction +3 (safe but boring). B: Portfolio Value +$186,250 (7.45% = 1.86% quarterly), Sharpe Ratio set to 0.45, Risk Score 45, Client Satisfaction +5 (good balance). C: Portfolio Value +$211,250 (8.45% = 2.11% quarterly), Sharpe Ratio set to 0.30 (high return but high SD), Risk Score 65, Client Satisfaction +2 (high risk worries clients)."}, {"id": "D2", "domain": "Risk", "question": "Using the normal distribution, calculate the probability of a quarterly loss exceeding 5% for each portfolio option. If quarterly returns are normally distributed with mean mu and standard deviation sigma (quarterly = annual/2), find P(R < -5%). For the Balanced portfolio: quarterly mean = 1.86%, quarterly SD approximately 6%. Z = (-5 - 1.86)/6 = -1.14. P(Z < -1.14) = 0.127 (12.7% chance of losing more than 5% in a quarter).", "optA": "Set a strict stop-loss: if any position drops 3%, automatically sell. This caps losses but may trigger during normal volatility. Calculate: with SD of 6%, a 3% drop is within 1 SD (happens frequently).", "optB": "Set a portfolio-level stop-loss at 8% drawdown. Less likely to trigger on normal volatility. Calculate: P(loss > 8%) = P(Z < (-8-1.86)/6) = P(Z < -1.64) = 5.0%.", "optC": "No stop-loss. Rely on diversification to limit losses. Use the correlation matrix to argue that diversified losses are unlikely to be extreme. Calculate the joint probability of all assets falling simultaneously.", "effects": "A: Max Drawdown capped at 3-5% (but frequent selling costs 0.5% in transaction fees per trigger), Risk Score -10, Client Satisfaction +3, Market Position -2 (seen as timid). B: Max Drawdown capped at 8%, Risk Score -5, Client Satisfaction +5 (prudent risk management), Market Position +2. C: Max Drawdown uncapped (depends on market), Risk Score unchanged, Client Satisfaction -2 (no risk controls), Market Position +3 (bold fund)."}, {"id": "D3", "domain": "Trading", "question": "Transaction costs: each trade costs 0.1% of the trade value. If you rebalance your full $10M portfolio, cost = 0.1% x $10M = $10,000. If you trade 50% of the portfolio, cost = $5,000. How often should you rebalance? More frequent = closer to target allocation but higher costs. Model this as an optimisation problem.", "optA": "Monthly rebalancing. 3 rebalances per quarter at approximately $8,000 each = $24,000/quarter. Portfolio stays very close to target allocation (drift < 2%).", "optB": "Quarterly rebalancing. 1 rebalance per quarter at $10,000. Portfolio can drift up to 5% from target between rebalances.", "optC": "Threshold rebalancing: only rebalance when any allocation drifts more than 5% from target. Expected: 1-2 trades per quarter at $6,000 each = $6,000-$12,000. Smart but requires monitoring.", "effects": "A: Portfolio Value -$24,000 (costs), Sharpe Ratio +0.05 (tight allocation = predictable risk), Risk Score -3, Regulatory Compliance +3. B: Portfolio Value -$10,000, Sharpe Ratio +0.02, Risk Score -1, Regulatory Compliance +1. C: Portfolio Value -$9,000 (average), Sharpe Ratio +0.04 (good balance of cost and control), Risk Score -2."}, {"id": "D4", "domain": "Compliance", "question": "Regulatory reporting requires detailed risk metrics. You must calculate and report: Value at Risk (VaR) at 95% confidence, portfolio beta relative to the market, and a stress test showing performance in a 2008-style crash (-40% equities, +15% bonds, -30% commodities, -25% real estate). Calculate your stress test loss based on your allocation.", "optA": "Hire a dedicated compliance officer ($120,000/quarter). All reporting is handled professionally. Full stress testing including Monte Carlo simulation with 10,000 scenarios.", "optB": "Handle compliance in-house using your analysts ($50,000/quarter in time allocation). Basic stress testing with 3 scenarios (base, bull, bear). May miss edge cases.", "optC": "Outsource compliance to a firm ($80,000/quarter). Professional reporting but you lose direct control and understanding of your own risk metrics.", "effects": "A: Portfolio Value -$120,000, Regulatory Compliance +10, Client Satisfaction +5 (professional), Risk Score -5 (better risk awareness). B: Portfolio Value -$50,000, Regulatory Compliance +3, Client Satisfaction +1, Risk Score -1. C: Portfolio Value -$80,000, Regulatory Compliance +7, Client Satisfaction +3, Risk Score -3, Market Position -1 (seen as outsourcing core competency)."}, {"id": "D5", "domain": "Strategy", "question": "Hiring decision: each analyst type improves different metrics. A quant analyst improves Sharpe Ratio by 0.1 per quarter (builds better models). A fundamental analyst improves raw returns by 0.5% per quarter (finds undervalued assets). A risk analyst reduces Max Drawdown by 2% per quarter (catches risks earlier). You can hire up to 3. Calculate the cost-benefit for each.", "optA": "Hire 1 quant analyst + 1 risk analyst ($150,000 + $120,000 = $270,000/quarter). Focus on risk-adjusted returns — directly targeting Sharpe Ratio and drawdown control.", "optB": "Hire 2 fundamental analysts + 1 quant ($100,000 x 2 + $150,000 = $350,000/quarter). Focus on generating returns with quantitative backing.", "optC": "Hire 1 of each type ($150,000 + $100,000 + $120,000 = $370,000/quarter). Maximum coverage but highest cost. Is the diversification of skills worth the premium?", "effects": "A: Portfolio Value -$270,000, Sharpe Ratio +0.1, Max Drawdown -2%, Risk Score -5, Client Satisfaction +4. B: Portfolio Value -$350,000, Sharpe Ratio +0.1, Portfolio Return +1.0% per quarter, Risk Score unchanged, Market Position +3. C: Portfolio Value -$370,000, Sharpe Ratio +0.1, Portfolio Return +0.5%, Max Drawdown -2%, Risk Score -5, Client Satisfaction +5, Market Position +2."}]}, {"num": 2, "name": "First Earnings Season — Interpreting Data", "report": ["Q1 results are in. The market returned 3.2% this quarter (annualised: 12.8%). Your portfolio return depends on your allocation decisions.", "Earnings data for your equity holdings: 8 out of 12 companies beat expectations. Using binomial distribution B(12, 0.5), calculate the probability of 8 or more beating expectations if the true probability is 50%. Is your analyst adding value?", "Volatility data: the market's quarterly standard deviation was 7.5%. Your portfolio's realised SD depends on your positions. Compare your predicted SD with the actual outcome.", "A new investment opportunity: a biotech startup pre-IPO. Expected return: 40% if drug approved (probability 0.3), -80% if rejected (probability 0.7). E(R) = 0.3(40) + 0.7(-80) = 12 - 56 = -44%. Negative expected value. But the upside is huge.", "Interest rates are expected to rise by 0.5% next quarter. Bond prices typically move inversely: a 0.5% rate rise causes approximately 3% loss on a 6-year duration bond portfolio."], "randomEvent": "Flash crash! A trading algorithm malfunction causes a 6% market drop in 15 minutes, then a 4% recovery within the hour. Net effect: -2% for the day. Teams with stop-losses may have been triggered during the -6% dip. Calculate: did your stop-loss fire? If your stop-loss was set at 3%, it triggered at the -6% point, selling your position before the recovery. You locked in a 6% loss instead of a 2% loss.", "decisions": [{"id": "D1", "domain": "Analysis", "question": "Hypothesis test: did your analyst add value? 8 out of 12 stock picks beat expectations. H0: p = 0.5 (analyst is guessing). H1: p > 0.5 (analyst has skill). Using B(12, 0.5), P(X >= 8) = P(8) + P(9) + P(10) + P(11) + P(12). Calculate using binomial probabilities. C(12,8)(0.5)^12 = 495/4096 = 0.1208. Sum P(8 to 12) = 0.194. At 5% significance level, p-value = 0.194 > 0.05. Do not reject H0.", "optA": "Accept the hypothesis test result: insufficient evidence that your analyst has skill. Reduce reliance on stock picking, increase passive index allocation. Rational but demoralising for the analyst.", "optB": "Continue with the analyst — 8/12 is a good track record even if not statistically significant at 5%. Need more data (more quarters) to reach significance. Keep the strategy.", "optC": "Use the data to refine the strategy: analyse which sectors the analyst got right (all 8 were in tech/healthcare). Narrow the focus to those sectors. This introduces selection bias but may improve hit rate.", "effects": "A: Sharpe Ratio +0.05 (more efficient allocation), Portfolio Return -0.3% (less alpha), Client Satisfaction +2 (data-driven), Risk Score -3. B: Sharpe Ratio unchanged, Portfolio Return unchanged, Client Satisfaction -1, Risk Score unchanged. Research Level maintained. C: Sharpe Ratio -0.05 (concentrated risk), Portfolio Return +0.5% (if sectors continue outperforming), Risk Score +5 (sector concentration risk), Market Position +2."}, {"id": "D2", "domain": "Risk", "question": "Interest rates rising 0.5%: your bond portfolio (duration 6 years) will lose approximately 6 x 0.5% = 3%. If bonds are 25% of your $10M portfolio, that is a $75,000 loss. Options: (1) reduce bond duration, (2) hedge with interest rate derivatives, (3) sell bonds entirely. Calculate the cost-benefit of each.", "optA": "Reduce bond duration to 2 years ($15,000 transaction cost). New rate sensitivity: 2 x 0.5% = 1% loss on bonds = $25,000. Saving vs doing nothing: $50,000 - $15,000 = $35,000 net benefit. But lower duration = lower yield (4.5% instead of 5%).", "optB": "Buy interest rate swaps to hedge ($20,000 premium). If rates rise as expected, the swap pays $75,000, exactly offsetting your bond loss. If rates don't rise, you lose the $20,000 premium.", "optC": "Sell all bonds and move to short-term treasuries ($10,000 transaction cost). Near-zero interest rate risk. Yield drops from 5% to 4.2% on that allocation. You avoid the $75,000 loss entirely.", "effects": "A: Portfolio Value -$15,000 (costs) then -$25,000 (reduced loss), net saving +$35,000 vs doing nothing, Sharpe Ratio +0.03, Risk Score -3. B: Portfolio Value -$20,000 (premium), if rates rise: +$75,000 from swap (net +$55,000), Sharpe Ratio +0.05 (smart hedging), Risk Score -5, Regulatory Compliance +2. C: Portfolio Value -$10,000 (costs), avoids $75,000 loss, but lower ongoing yield, Sharpe Ratio +0.02, Risk Score -8 (very safe)."}, {"id": "D3", "domain": "Trading", "question": "The flash crash triggered some stop-losses. If your stop-loss was at 3%, you sold during the -6% dip and missed the 4% recovery. Net: you lost 6% on affected positions instead of 2%. For a $4M equity position: locked-in loss = $240,000 instead of $80,000. Extra loss from stop-loss: $160,000. Should you re-enter the position?", "optA": "Re-enter immediately ($4,000 transaction cost). You have locked in the $240,000 loss but can participate in any further recovery. Effectively you paid $164,000 for the stop-loss protection (the extra loss + re-entry cost).", "optB": "Wait for the market to stabilise (1 week). If the flash crash was a precursor to a larger correction, staying out saves further losses. Calculate: P(further decline of 5%+) historically after flash crashes = 25%.", "optC": "Re-enter partially (50% position, $2M). Cost: $2,000. Limits further exposure while maintaining some market participation. If market recovers: gain on $2M. If it drops: limited loss.", "effects": "A: Portfolio Value -$4,000 (re-entry cost), full market participation restored, Risk Score unchanged, Market Position +2 (decisive action). B: Portfolio Value stays reduced, 75% chance of missing +3% recovery ($120,000), 25% chance of avoiding -5% loss ($200,000). Expected value of waiting: 0.75 x (-$120,000) + 0.25 x $200,000 = -$40,000. Statistically better to re-enter. C: Portfolio Value -$2,000, half market exposure, Risk Score -3, moderate participation in any move."}, {"id": "D4", "domain": "Compliance", "question": "The flash crash may have violated your fund's risk limits. Your Value at Risk (VaR) at 95% confidence was set at $500,000 quarterly loss. The flash crash caused a temporary mark-to-market loss of $600,000 (exceeding VaR). Regulators require an explanation. Calculate: if your quarterly SD is $400,000, a $600,000 loss is (600,000-E(R))/400,000 standard deviations from the mean. How many SDs? Is this a tail event?", "optA": "File a detailed VaR breach report ($30,000 for consultants). Explain that the flash crash was an algorithmic anomaly, not a systematic risk. Show that normal market conditions would not produce this loss. Full transparency.", "optB": "Update your VaR model to include flash crash scenarios ($50,000). This increases your reported VaR to $750,000 (more honest but looks riskier to clients). Regulatory compliance improves.", "optC": "Argue that the flash crash reversed within minutes and the end-of-day loss was within VaR limits. Technically true but may not satisfy regulators. No additional cost.", "effects": "A: Portfolio Value -$30,000, Regulatory Compliance +5, Client Satisfaction +3 (transparent), Risk Score -2. B: Portfolio Value -$50,000, Regulatory Compliance +8, Client Satisfaction -2 (higher reported risk), Risk Score set accurately, Market Position +3 (seen as rigorous). C: No cost, Regulatory Compliance -3 (regulators may investigate), Client Satisfaction -1, 15% chance of audit costing $100,000."}, {"id": "D5", "domain": "Strategy", "question": "The biotech opportunity: E(R) = -44% (negative expected value). However, consider the utility function: if this is 2% of your portfolio ($200,000), the maximum loss is $160,000 (0.8 x $200,000) while the maximum gain is $80,000 (0.4 x $200,000). The Kelly Criterion for position sizing: f* = (bp - q) / b where b = potential gain/potential loss = 0.5, p = 0.3, q = 0.7. f* = (0.5 x 0.3 - 0.7) / 0.5 = (0.15 - 0.7) / 0.5 = -1.1. Negative Kelly means don't bet.", "optA": "Reject the biotech investment. The Kelly Criterion is clear: negative expected value and negative Kelly fraction mean this is a mathematically bad bet regardless of the potential upside.", "optB": "Invest a tiny position (0.5% of portfolio = $50,000) as a 'lottery ticket.' Maximum loss: $40,000. Maximum gain: $20,000. The expected loss is small: $50,000 x (-44%) = -$22,000. Asymmetric upside if drug is approved could lead to follow-on opportunities.", "optC": "Instead of investing directly, buy call options on the biotech ($10,000 premium). Maximum loss: $10,000 (the premium). If the drug is approved, the options could be worth $100,000+ (10x return). This changes the risk/reward profile dramatically.", "effects": "A: No portfolio change, Risk Score -2 (disciplined), Client Satisfaction +2 (avoids speculative bets), Regulatory Compliance +2. B: Portfolio Value expected -$22,000, Risk Score +2, 30% chance of +$20,000, 70% chance of -$40,000. Market Position +1 (shows willingness to take calculated risks). C: Portfolio Value -$10,000 (premium), Risk Score +1, 30% chance of +$100,000 (options exercise), 70% chance of -$10,000 (premium lost). Sharpe Ratio +0.02 if it pays off."}]}, {"num": 3, "name": "Volatility Storm — Managing Uncertainty", "report": ["Market volatility has doubled. The VIX (volatility index) has risen from 15 to 30. Historically, VIX above 25 is associated with bear markets.", "Your portfolio's rolling 30-day standard deviation has increased from 1.2% daily to 2.1% daily. Annualised: 2.1% x sqrt(252) = 33.3%. This is much higher than your target volatility of 15%.", "Correlation regime change: in high-volatility environments, correlations between assets tend to increase (move toward 1.0). Your diversification benefit is shrinking. Equities-Bonds correlation has moved from -0.3 to +0.1. Equities-Real Estate from 0.6 to 0.8.", "A 'risk parity' approach weights assets inversely to their volatility: if equities have 2x the volatility of bonds, allocate 2x more to bonds. Calculate the risk parity weights for current volatilities.", "Your fund is down 4% from its peak. Max drawdown is now 4%. Clients are watching nervously."], "randomEvent": "A major bank announces unexpected losses of $2 billion, causing a contagion fear. All financial stocks drop 8% in one day. If you hold financial sector equities, calculate your exposure. The probability of this contagion spreading to other sectors is estimated at 30% by analysts.", "decisions": [{"id": "D1", "domain": "Analysis", "question": "Recalculate your portfolio standard deviation using the new correlations. With Equities-Bonds at +0.1 instead of -0.3, the diversification benefit drops significantly. For 40% Equities (SD 33%), 25% Bonds (SD 8%): Portfolio Var = (0.4)^2(33)^2 + (0.25)^2(8)^2 + 2(0.4)(0.25)(0.1)(33)(8) = 174.24 + 4 + 5.28 = 183.52. SD = 13.55% quarterly. This is much higher than before.", "optA": "Shift to risk parity allocation. If Equities SD = 33% and Bonds SD = 8%, risk parity weight for equities = (1/33) / (1/33 + 1/8) = 0.0303 / 0.1553 = 19.5%. Bonds get 80.5%. Very defensive.", "optB": "Reduce equity allocation to 25% and increase bonds to 40%. Keep other allocations similar. Moderate de-risking. Recalculate the new portfolio SD.", "optC": "Maintain current allocation but buy put options (portfolio insurance). Cost: 2% of portfolio value ($200,000) for 3-month protection. Options pay out if portfolio drops more than 10%. Calculate the effective cost of insurance as an annualised drag on returns.", "effects": "A: Portfolio Value -$15,000 (rebalancing costs), Risk Score -20 (very defensive), Sharpe Ratio +0.15 (lower SD improves ratio if returns hold), Client Satisfaction +5 (safe), Portfolio Return -1.5% this quarter (lower expected return). B: Portfolio Value -$10,000 (costs), Risk Score -10, Sharpe Ratio +0.08, Client Satisfaction +3, Portfolio Return -0.8%. C: Portfolio Value -$200,000 (insurance premium), Risk Score -8, Sharpe Ratio -0.05 (cost drags returns), Client Satisfaction +4, Max Drawdown capped at 10% this quarter."}, {"id": "D2", "domain": "Risk", "question": "Stress test your portfolio against three scenarios using the changed correlations. Scenario 1: Market drops 15% (probability 20%). Scenario 2: Market flat (probability 50%). Scenario 3: Market recovers 8% (probability 30%). For your portfolio, calculate the expected loss/gain in each scenario and the overall expected value: E(V) = 0.2 x scenario1 + 0.5 x scenario2 + 0.3 x scenario3.", "optA": "Hedge aggressively: buy VIX futures ($150,000 cost). If market drops 15%, VIX futures pay approximately $400,000. If market is flat, lose the $150,000 premium. If market recovers, lose $200,000 (VIX drops). E(V) of hedge: 0.2(400) + 0.5(-150) + 0.3(-200) = 80 - 75 - 60 = -$55,000 expected. But it caps your downside.", "optB": "Partial hedge: sell 20% of equity position and buy short-term bonds ($20,000 costs). Reduces exposure to Scenario 1 but limits upside in Scenario 3. Calculate new expected portfolio value.", "optC": "No hedge. Accept the risk. Expected value: if portfolio has 40% equities, Scenario 1 loss: 0.4 x 15% x $10M = $600,000. Scenario 3 gain: 0.4 x 8% x $10M = $320,000. E(V) = 0.2(-600) + 0.5(0) + 0.3(320) = -120 + 0 + 96 = -$24,000. Negative expected value in current conditions.", "effects": "A: Portfolio Value -$150,000 (hedge cost), Risk Score -12, Max Drawdown protected (cap at current + 5%), Sharpe Ratio +0.08 (lower tail risk), Client Satisfaction +3. B: Portfolio Value -$20,000, Risk Score -6, Max Drawdown partially protected, Sharpe Ratio +0.04, Market Position -1 (seen as cautious). C: Portfolio Value expected -$24,000, Risk Score +5, 20% chance of Max Drawdown reaching 10%+, Sharpe Ratio -0.05, Client Satisfaction -3."}, {"id": "D3", "domain": "Trading", "question": "A pairs trade opportunity: two correlated tech stocks (correlation 0.92) have diverged. Stock A is up 15%, Stock B is down 5%. Historically, their spread has a mean of 2% with SD of 8%. Current spread: 20%. This is (20-2)/8 = 2.25 standard deviations from the mean. If spreads revert to mean, profit = approximately 18% x position size. Calculate the probability the spread is this extreme by chance: P(Z > 2.25) = 1.2%.", "optA": "Execute the pairs trade: short Stock A, long Stock B with $500,000 per side ($1M total position). If spread reverts to mean: profit = 18% x $500,000 = $90,000. Probability of reversion: approximately 98.8% (since being 2.25 SD away is rare). But reversion timing is uncertain.", "optB": "Smaller pairs trade: $250,000 per side. Potential profit: $45,000. Less risk if the spread widens further. More conservative.", "optC": "Don't trade — the high-volatility environment could mean the correlation has broken down. A spread at 2.25 SD might be the start of a regime change, not an anomaly. Wait for more data.", "effects": "A: Portfolio Value expected +$85,000 (after costs), Sharpe Ratio +0.08 (market-neutral trade adds return without market risk), Risk Score +3 (concentrated position), Market Position +3 (sophisticated strategy). B: Portfolio Value expected +$42,000, Sharpe Ratio +0.04, Risk Score +1, Market Position +1. C: No change, Risk Score -2, Client Satisfaction -1 (missed opportunity)."}, {"id": "D4", "domain": "Compliance", "question": "The banking contagion event may require you to report concentrated sector exposures. Calculate your exposure to financial sector equities as a percentage of your portfolio. If financials are 20% of your equity allocation, and equities are 40% of your portfolio: financial exposure = 0.2 x 0.4 = 8% of total portfolio. An 8% drop in financials costs: 0.08 x 0.08 x $10M = $64,000.", "optA": "Proactively report your financial sector exposure to clients and regulators ($20,000 for the report). Show your risk mitigation steps. Full transparency builds trust.", "optB": "Reduce financial sector exposure by 50% ($15,000 transaction costs). New exposure: 4% of portfolio. Loss from the banking event: $32,000 instead of $64,000. Then report the reduced exposure.", "optC": "Increase financial sector exposure — buy the dip. If the 8% drop is an overreaction (probability 60%), financial stocks will recover 5-10%. Expected gain: 0.6 x 7.5% x added position. Contrarian but risky.", "effects": "A: Portfolio Value -$20,000 (report costs), Regulatory Compliance +8, Client Satisfaction +5, Risk Score unchanged. B: Portfolio Value -$15,000 - $32,000 (loss limited), Regulatory Compliance +5, Client Satisfaction +4, Risk Score -5. C: Portfolio Value +$30,000 expected (if recovery) or -$80,000 (if contagion spreads), Risk Score +8, Regulatory Compliance -3 (increasing exposure during a crisis), Market Position +4 if right, -6 if wrong."}, {"id": "D5", "domain": "Strategy", "question": "Your fund is down 4% from peak (Max Drawdown = 4%). Compound returns mean losses require larger gains to recover. To recover a 4% loss, you need: 1/(1-0.04) - 1 = 1/0.96 - 1 = 4.17% gain. For a 10% loss: 1/0.90 - 1 = 11.1% gain. For a 25% loss (your limit): 1/0.75 - 1 = 33.3% gain needed. This asymmetry means protecting against losses is mathematically more important than chasing gains.", "optA": "Implement a 'drawdown budget' strategy: you can tolerate 21% more drawdown before hitting 25%. Allocate risk accordingly — use 70% of your risk budget for return-seeking positions and keep 30% as a safety buffer.", "optB": "De-risk immediately to protect the 25% limit. Reduce equity to 20%, increase cash to 30%. Accept lower returns for safety. Your remaining drawdown tolerance: 21%. With a heavily defensive portfolio, the probability of hitting 25% drops below 1%.", "optC": "Use the drawdown recovery formula to set a target: you need 4.17% to get back to the high-water mark. Use leverage: borrow $2M at 5% and invest it. If your portfolio returns 8% on the leveraged portion, extra return = $2M x (8% - 5%)/4 = $15,000/quarter. But leverage amplifies losses too.", "effects": "A: Risk Score set to 45 (balanced), Max Drawdown managed carefully, Sharpe Ratio +0.05, Client Satisfaction +4 (disciplined approach). B: Risk Score -15, Portfolio Return reduced to approximately 1%/quarter, Max Drawdown protected, Client Satisfaction +3, Market Position -3 (too cautious). C: Risk Score +12, Portfolio Return +0.6%/quarter from leverage, Max Drawdown could increase faster (leverage = 1.2x), Client Satisfaction -3 (leverage during volatility is alarming), Regulatory Compliance -2."}]}, {"num": 4, "name": "Opportunity Knocks — Finding Alpha", "report": ["Volatility is subsiding. VIX has dropped from 30 to 20. Correlations are returning to normal levels. The worst may be over.", "Your fund's performance relative to peers: you are ranked based on Sharpe Ratio. Market average Sharpe: 0.4. Top quartile: above 0.8. Calculate where you stand.", "A quantitative model identifies a potential market anomaly: small-cap stocks have underperformed large-caps by 12% over the past year. Historical mean difference: 2% per year with SD of 8%. Current deviation: (12-2)/8 = 1.25 SD. Is this a mean-reversion opportunity?", "Your compound growth rate over 3 quarters: if your portfolio went from $10M to current value V, then quarterly compound rate r satisfies V = 10M x (1+r)^3. Solve for r. Then annualise: annual rate = (1+r)^4 - 1.", "New regulation: all funds must now hold a minimum 5% in government bonds as a liquidity buffer. This may require portfolio adjustment."], "randomEvent": "A central bank unexpectedly cuts interest rates by 0.75%. Bond prices jump 4.5%. Equity markets rally 3%. Commodities rise 2%. Your portfolio gains depend on your allocation. Calculate the windfall for each asset class and your total gain.", "decisions": [{"id": "D1", "domain": "Analysis", "question": "Small-cap mean reversion opportunity: current underperformance is 1.25 SD from the mean. Using normal distribution, P(being at least 1.25 SD below mean) = P(Z < -1.25) = 10.6%. So this happens about 10.6% of the time — not extremely rare but unusual. If mean reversion occurs, expected gain = 10% (reverting from 12% to 2% difference). What position size is optimal?", "optA": "Large allocation: 15% of portfolio ($1.5M) to small-cap overweight. If mean reversion occurs (probability approximately 70% within 2 quarters), gain = $150,000. If it continues diverging (30%): loss could be $120,000. E(V) = 0.7(150) - 0.3(120) = $69,000.", "optB": "Moderate allocation: 8% ($800,000). E(V) = 0.7(80) - 0.3(64) = $36,800. Lower risk, lower expected reward.", "optC": "Use options to gain small-cap exposure: buy call options on small-cap index ($40,000 premium). If mean reversion: options worth $200,000+. If not: lose $40,000. Asymmetric payoff with defined risk.", "effects": "A: Portfolio Value expected +$69,000, Risk Score +6 (concentrated bet), Sharpe Ratio +0.06 if it works, -0.04 if not. Client Satisfaction depends on outcome. B: Portfolio Value expected +$36,800, Risk Score +3, Sharpe Ratio +0.03 expected. C: Portfolio Value -$40,000 (premium) with 70% chance of +$200,000 net gain, Risk Score +2 (defined risk), Sharpe Ratio +0.08 if it works."}, {"id": "D2", "domain": "Risk", "question": "The rate cut windfall: calculate your gains from the surprise rate cut. If you hold 25% bonds, 40% equities, 15% commodities, 20% real estate: Bond gain = 0.25 x 4.5% x portfolio = significant. Equity gain = 0.40 x 3%. Commodity gain = 0.15 x 2%. Real estate gain = 0.20 x 2%. Total gain = sum. Now: should you take profits or ride the momentum?", "optA": "Take profits on the bond rally: sell 10% of bonds (locking in the 4.5% gain on that portion). Reinvest in equities which typically outperform in low-rate environments. Transaction cost: $12,000.", "optB": "Hold all positions. The rate cut may be the first of several, meaning bonds could rally further and equities could continue climbing. Don't incur transaction costs.", "optC": "Rebalance to take advantage of the new rate environment: increase equities to 50% (rate cuts help growth), reduce bonds to 20%. Model the expected returns in a low-rate environment using your historical data.", "effects": "A: Portfolio Value -$12,000 (costs) + locked-in bond gains, Risk Score +3 (more equities), Sharpe Ratio depends on subsequent market moves. B: Portfolio Value unchanged from current gains, Risk Score unchanged, no costs, possibility of further gains. C: Portfolio Value -$18,000 (costs), Risk Score +5, higher equity exposure means higher expected return but higher SD, Market Position +2 (proactive management)."}, {"id": "D3", "domain": "Trading", "question": "Calculate your compound annual growth rate (CAGR). If your portfolio started at $10M and is now at value V after 3 quarters: CAGR = (V/10M)^(4/3) - 1 (annualised from 3 quarters). For example, if V = $10.3M: CAGR = (1.03)^(4/3) - 1 = 1.0401 - 1 = 4.01%. Compare this to your target of 8% annualised. Are you on track?", "optA": "If underperforming target: increase exposure to higher-returning assets. Calculate how much extra quarterly return you need to hit 8% annual by year-end. Solve: 10M x (1+r)^4 = 10M x 1.08. So r = (1.08)^(1/4) - 1 = 1.94% per quarter. Compare to your current quarterly rate.", "optB": "If on track or outperforming: maintain current strategy. Don't fix what isn't broken. Focus on risk management rather than return chasing.", "optC": "Regardless of performance, implement a momentum strategy: buy assets that have risen in the past quarter and sell those that have fallen. Historical backtests show this generates 2-3% extra annual return with moderate additional risk.", "effects": "A: Depends on current performance. If behind target: Risk Score +5, Portfolio Return target +0.5%/quarter, Market Position +1. If already on track: unnecessary risk-taking, Risk Score +8, Client Satisfaction -2. B: Risk Score unchanged, Portfolio Return unchanged, Client Satisfaction +2, Regulatory Compliance +2 (steady approach). C: Portfolio Return +0.5-0.75%/quarter expected, Risk Score +4, Sharpe Ratio +0.05 (momentum is a known factor), transaction costs $25,000/quarter."}, {"id": "D4", "domain": "Compliance", "question": "New regulation: minimum 5% in government bonds. If you currently hold less than 5% in government bonds, you must buy them. Government bonds yield 3.8% (below the 4% risk-free rate due to the rate cut). Calculate: if you move 5% of portfolio ($500,000) into government bonds yielding 3.8%, the opportunity cost versus your average portfolio return is (average return - 3.8%) x $500,000.", "optA": "Comply immediately: buy $500,000 in government bonds ($5,000 transaction cost). Accept the lower yield on this portion. Regulatory compliance maintained.", "optB": "Comply but use bond futures to maintain some upside exposure ($10,000 cost). Buy $500,000 in government bonds but also buy equity futures equivalent to $500,000. This keeps your effective equity exposure while satisfying the regulation. Complex but clever.", "optC": "Request a compliance waiver ($15,000 in legal fees). Argue that your existing bond allocation provides equivalent liquidity. 60% chance of approval. If denied, must comply immediately plus a $20,000 late compliance fine.", "effects": "A: Portfolio Value -$5,000, Regulatory Compliance +5, Portfolio Return -0.1%/quarter (opportunity cost), Client Satisfaction +2. B: Portfolio Value -$10,000, Regulatory Compliance +5, Portfolio Return maintained (futures offset), Risk Score +2 (leverage from futures), Market Position +3 (sophisticated compliance). C: 60% chance: Portfolio Value -$15,000, Regulatory Compliance +3. 40% chance: Portfolio Value -$40,000 (legal + fine + forced purchase), Regulatory Compliance -5."}, {"id": "D5", "domain": "Strategy", "question": "Long-term compounding: model your portfolio growth over the remaining quarters. Use the formula V = P x e^(rt) for continuous compounding. If your current quarterly return is r%, then by end of Quarter 7 (3 more quarters), V = current_value x e^(3r). Calculate the portfolio value for different quarterly return scenarios: r = 1%, 2%, 3%.", "optA": "Target 2% quarterly return (8.24% annualised using continuous compounding). Conservative but achievable. Focus on Sharpe Ratio over raw returns. e^(3 x 0.02) = e^0.06 = 1.0618. Portfolio grows 6.18% over 3 quarters.", "optB": "Target 3% quarterly return (12.75% annualised). Aggressive — requires concentrated bets and some leverage. e^(0.09) = 1.0942. Portfolio grows 9.42% over 3 quarters. Higher risk.", "optC": "Variable target: 1% in volatile quarters, 3% in calm quarters. Adaptive strategy. If the next 3 quarters are mixed (1 volatile, 2 calm): total growth = e^(0.01 + 0.03 + 0.03) = e^0.07 = 1.0725 (7.25%). Requires accurate volatility forecasting.", "effects": "A: Portfolio Return target 2%/quarter, Risk Score 40-50, Sharpe Ratio target 0.8+, Client Satisfaction +4 (steady growth). B: Portfolio Return target 3%/quarter, Risk Score 60-70, Sharpe Ratio may drop (higher SD), Client Satisfaction depends on outcome. C: Portfolio Return target variable, Risk Score 45-55, Sharpe Ratio +0.1 if forecasting is accurate, Client Satisfaction +3 (adaptive management)."}]}, {"num": 5, "name": "Black Swan — The Unexpected", "report": ["A geopolitical crisis has erupted. Oil prices spike 40% overnight. Equity markets fall 8% in a week. Bond yields drop 0.3% (flight to safety, bond prices rise).", "Your portfolio's reaction depends on your asset allocation. Calculate the immediate impact: equity losses, commodity gains (oil-heavy commodities up 25%), bond gains (prices up 1.8%), real estate (down 3%).", "The crisis has a 40% probability of escalating further (causing an additional 10% equity drop) and 60% probability of de-escalating within a month (partial recovery of 5%).", "Client calls are flooding in. Three clients representing 30% of your AUM (Assets Under Management = $3M) are threatening to withdraw if you lose more than 5% this quarter.", "Your current Max Drawdown from peak: calculate based on the crisis impact added to any previous drawdown."], "randomEvent": "Credit rating agency downgrades the sovereign debt of a major economy. Bond spreads widen by 1.5%. If you hold corporate bonds, their value drops 3%. Government bonds are unaffected. Calculate the impact on your bond allocation — what percentage is corporate vs government?", "decisions": [{"id": "D1", "domain": "Analysis", "question": "Model the two scenarios using probability-weighted expected values. Escalation (40%): additional equity -10%, commodities +15%, bonds +1%. De-escalation (60%): equity +5%, commodities -10%, bonds -0.5%. For your current portfolio, calculate E(V) for each asset class and the total. E(equity) = 0.4(-10%) + 0.6(5%) = -1%. E(commodities) = 0.4(15%) + 0.6(-10%) = 0%. E(bonds) = 0.4(1%) + 0.6(-0.5%) = 0.1%.", "optA": "Position for escalation: increase commodities allocation by 10%, decrease equities by 10%. If escalation: you gain more from commodities and lose less on equities. If de-escalation: you miss the equity recovery.", "optB": "Position for de-escalation: hold or increase equity position. Buy the dip. If de-escalation: strong recovery. If escalation: further losses.", "optC": "Maintain current allocation (neutral position). The expected values suggest both scenarios roughly cancel out. Save on transaction costs and wait for more information.", "effects": "A: Portfolio Value -$15,000 (costs). If escalation (40%): +$120,000 net. If de-escalation (60%): -$80,000 net. E(V) = 0.4(120) + 0.6(-80) = +$0. Risk-neutral in expectation but protects downside. B: Portfolio Value -$10,000 (costs). If escalation: -$150,000 more losses. If de-escalation: +$100,000 recovery. E(V) = 0.4(-150) + 0.6(100) = $0. Same expected value, bigger swings. C: No costs, no change, E(V) = approximately -$10,000 (slight negative from expected equity losses). Risk Score unchanged."}, {"id": "D2", "domain": "Risk", "question": "Three clients (30% of AUM) threaten withdrawal if losses exceed 5% this quarter. You are currently down 3% from the quarter start. You can afford only 2 more percentage points of loss. Calculate: with your current portfolio SD of approximately 2% weekly, the probability of losing 2% more over the remaining 8 weeks. Model as: P(cumulative return < -2%) over 8 weeks where weekly returns are N(mu, 2%).", "optA": "De-risk immediately to lock in the -3% loss. Move 50% to cash. Client loss this quarter: -3% (within their 5% limit). Sacrifice remaining upside.", "optB": "Partially de-risk: move 25% to cash. This reduces your weekly SD to approximately 1.5%. Calculate new probability of breaching -5% total.", "optC": "Negotiate with clients: show them your risk models and the probability analysis of further losses. If you can demonstrate P(total loss > 5%) < 15%, they may agree to stay. This costs $30,000 in client meeting time but preserves your flexibility.", "effects": "A: Portfolio Value locked (no further loss or gain from moved funds), Risk Score -15, Client Satisfaction +5 (clients feel protected), Max Drawdown capped, Market Position -4 (panic selling). B: Risk Score -8, Client Satisfaction +3, Portfolio still has 75% market exposure, balanced approach. C: Portfolio Value -$30,000, Risk Score unchanged, Client Satisfaction +6 if analysis is convincing (requires good maths presentation), Market Position +2 (confident fund manager)."}, {"id": "D3", "domain": "Trading", "question": "Oil spike creates a trading opportunity. Oil is up 40% but the futures curve shows backwardation: current month $100/barrel, 3-month future $85/barrel, 6-month future $75/barrel. This suggests the market expects prices to fall. If you short oil futures at $85 and oil falls to $75, profit = $10/barrel. Contract size: 1,000 barrels. How many contracts for a meaningful but controlled position?", "optA": "Short 50 oil futures contracts at $85 ($4.25M notional). If oil goes to $75: profit = 50 x 1,000 x $10 = $500,000. If oil goes to $100: loss = 50 x 1,000 x $15 = $750,000. Risk/reward: 1:1.5 (unfavourable). But the futures curve supports your thesis.", "optB": "Short 20 contracts ($1.7M notional). If oil to $75: profit $200,000. If oil to $100: loss $300,000. Smaller position, manageable risk.", "optC": "Buy put options on oil futures instead ($30,000 premium for 20 contracts). Maximum loss: $30,000 (the premium). If oil drops to $75: profit approximately $150,000 - $30,000 = $120,000 net. Defined risk with asymmetric payoff.", "effects": "A: Risk Score +10 (large commodity bet), 60% chance of +$500,000, 40% chance of -$750,000. E(V) = +$0. High variance. B: Risk Score +4, 60% chance of +$200,000, 40% chance of -$300,000. E(V) = $0. Moderate. C: Portfolio Value -$30,000, Risk Score +2, 60% chance of +$120,000, 40% chance of -$30,000. E(V) = +$60,000. Positive expected value due to defined risk."}, {"id": "D4", "domain": "Compliance", "question": "The sovereign debt downgrade affects your bond holdings. If 40% of your bonds are corporate and 60% government: corporate bonds lose 3%, government bonds unaffected. If bonds are 25% of your $10M portfolio: corporate bond loss = 0.25 x 0.40 x 3% x $10M = $30,000. Update your VaR calculations and stress tests.", "optA": "Swap corporate bonds for government bonds ($15,000 transaction cost). Eliminates corporate credit risk. Lower yield (government bonds yield 0.5% less) but safer. Regulatory Compliance improves.", "optB": "Diversify corporate bond holdings across 10+ issuers ($10,000 costs). Reduces single-issuer risk while maintaining higher yield. Credit diversification is a sound risk management principle.", "optC": "Buy credit default swaps (CDS) on your corporate bond holdings ($25,000/quarter). If any corporate bond defaults, the CDS pays out. Insurance against the worst case without selling the bonds.", "effects": "A: Portfolio Value -$15,000, Regulatory Compliance +5, Risk Score -5, Portfolio Return -0.125%/quarter (lower yield), Client Satisfaction +3. B: Portfolio Value -$10,000, Regulatory Compliance +3, Risk Score -3, Portfolio Return unchanged (diversified yield). C: Portfolio Value -$25,000, Regulatory Compliance +4, Risk Score -7 (insured risk), Sharpe Ratio +0.03 (lower tail risk)."}, {"id": "D5", "domain": "Strategy", "question": "Crisis alpha: some hedge funds profit during crises. Your fund can implement a 'tail risk' strategy: buy deep out-of-the-money put options (cost: $80,000/quarter). These options have a 5% chance of paying out $2M+ in a crash, and 95% chance of expiring worthless. Expected value: 0.05 x $2,000,000 + 0.95 x (-$80,000) = $100,000 - $76,000 = +$24,000. Positive expected value, but you lose $80,000 in 19 out of 20 quarters.", "optA": "Implement the tail risk strategy ($80,000 this quarter). Positive expected value and provides catastrophic protection. Clients may not understand the frequent small losses, though.", "optB": "Implement a cheaper version: $40,000 in put options with a 10% chance of paying $500,000. E(V) = 0.1 x $500,000 + 0.9 x (-$40,000) = $50,000 - $36,000 = +$14,000. Less extreme payoff but more frequent small wins.", "optC": "No tail risk strategy. Rely on diversification and active management. Save the premium cost. Accept that a true black swan could cause significant losses but it is unlikely.", "effects": "A: Portfolio Value -$80,000 (premium), Risk Score -8, Max Drawdown protected in extreme scenarios, Sharpe Ratio -0.03 (premium drag), Client Satisfaction -2 (paying for insurance that usually doesn't pay out), Market Position +5 (sophisticated strategy). B: Portfolio Value -$40,000, Risk Score -4, Max Drawdown partially protected, Sharpe Ratio -0.01, Client Satisfaction +1 (smaller premiums less noticeable). C: No cost, Risk Score +3 (unprotected), Max Drawdown vulnerable, Client Satisfaction +1 (no drag on returns)."}]}, {"num": 6, "name": "Recovery and Growth — Riding the Upturn", "report": ["The geopolitical crisis has de-escalated. Markets are recovering. Equities are up 5% from the crisis low. Volatility is dropping.", "Your fund's track record now spans 5 quarters. Calculate your annualised return and annualised standard deviation. Sharpe Ratio = (annualised return - 4%) / annualised SD.", "A competitor fund has collapsed due to excessive leverage. Their assets ($50M in quality stocks) are being liquidated at a 15% discount. You could buy $2M worth at a significant discount.", "Geometric series application: a client wants to invest $100,000 per quarter for 5 years in your fund. If your fund returns r% per quarter, the future value is a geometric series: S = 100,000 x [(1+r)^20 - 1] / r. Calculate for r = 2%: S = 100,000 x [(1.02)^20 - 1] / 0.02 = 100,000 x 24.30 = $2,430,000.", "Your current Max Drawdown from peak determines your risk capacity going forward. If drawdown is below 10%, you have room for moderate risk-taking."], "randomEvent": "A technology company you hold announces a surprise breakthrough, and its stock jumps 25% in one day. It is now 8% of your portfolio (up from 5% due to the jump). Concentration risk: should you trim back to 5%? Selling locks in profit ($250,000 gain on a $500,000 position) but you may miss further upside. Holding means 8% of your portfolio is in one stock.", "decisions": [{"id": "D1", "domain": "Analysis", "question": "The discounted assets from the collapsed fund: $2M of quality stocks at a 15% discount means you pay $1.7M for $2M of assets. Immediate paper profit: $300,000 (17.6% return). But why are they discounted? Liquidation selling pushes prices down temporarily. If these stocks return to fair value within 2 quarters, your annualised return on this investment = (2/1.7)^2 - 1 = (1.176)^2 - 1 = 38.3%. Is this too good to be true?", "optA": "Buy the full $2M allocation (pay $1.7M). Immediate paper gain of $300,000. Risk: these stocks were held by a leveraged fund — if other leveraged funds hold the same stocks, there may be more selling pressure. Probability of further 5% decline: 25%.", "optB": "Buy $1M (pay $850,000). Half the exposure, half the risk, half the potential gain. Diversified approach to the opportunity.", "optC": "Buy $500,000 (pay $425,000) and set limit orders to buy more if prices drop further. Staged entry reduces timing risk. If prices drop 5% more, you buy another $500,000 at 20% discount.", "effects": "A: Portfolio Value +$300,000 paper gain (may reduce by 25% x 5% x $2M = $25,000 if further selling), Risk Score +5 (concentrated purchase), Sharpe Ratio +0.08 (high return trade), Market Position +5 (opportunistic buying). B: Portfolio Value +$150,000, Risk Score +2, Sharpe Ratio +0.04, Market Position +3. C: Portfolio Value +$75,000 initially, Risk Score +1, potentially more gains if prices drop further, Market Position +2."}, {"id": "D2", "domain": "Risk", "question": "The tech stock concentration: it is now 8% of your portfolio. Calculate the impact of this stock dropping 20% on your portfolio: 0.08 x 20% = 1.6% portfolio loss. Compare to the impact when it was 5%: 0.05 x 20% = 1.0%. The extra concentration adds 0.6% of drawdown risk. How does this affect your Sharpe Ratio?", "optA": "Trim the position back to 5% (sell $300,000 worth). Lock in $250,000 profit. Portfolio returns to balanced allocation. Transaction cost: $300.", "optB": "Trim to 6% (sell $200,000). Lock in $167,000 profit. Keep slight overweight because the fundamental story is strong.", "optC": "Hold the full 8% position. The stock jumped on real news (a breakthrough). Momentum often continues after genuine catalysts. Ride the winner. But set a mental stop-loss at 5% below current price.", "effects": "A: Portfolio Value +$250,000 locked profit, Risk Score -3 (reduced concentration), Sharpe Ratio +0.03 (more diversified), Client Satisfaction +2. B: Portfolio Value +$167,000 locked, Risk Score -1, Sharpe Ratio +0.02, Market Position +1. C: No locked profit, Risk Score +4 (concentration), 60% chance of +$100,000 more (momentum), 40% chance of -$80,000 (mean reversion). Market Position +2 (conviction investing)."}, {"id": "D3", "domain": "Trading", "question": "The new client wants to invest $100,000/quarter for 5 years. Calculate the future value at different return rates using the geometric series formula: FV = PMT x [(1+r)^n - 1]/r. At r=2%/quarter (n=20): FV = $100,000 x 24.30 = $2,430,000. At r=2.5%: FV = $100,000 x 25.54 = $2,554,000. The difference in quarterly return of 0.5% creates $124,000 more over 5 years. Should you take this client?", "optA": "Accept the client with a 1.5% management fee (charged on AUM). By year 5, AUM from this client = approximately $2.4M. Fee revenue: approximately $36,000/year growing as AUM grows. Total fee revenue over 5 years: approximately $130,000.", "optB": "Accept with a 1% management fee + 10% performance fee (charged on returns above 4% risk-free rate). Lower base fee encourages the client to invest, performance fee aligns incentives. If you return 8%: performance fee = 10% x (8%-4%) x AUM = significant over time.", "optC": "Decline the client — $100,000/quarter is too small for your fund to manage efficiently. The admin costs ($5,000/quarter) eat into margins. Focus on larger clients.", "effects": "A: Portfolio Value +$100,000/quarter from new inflows, Revenue from fees, Client Satisfaction +3 (growing client base), Regulatory Compliance +1 (good practices). B: Portfolio Value +$100,000/quarter, higher potential fee revenue if you outperform, Client Satisfaction +5 (aligned incentives), Market Position +3. C: No change to AUM, saves $20,000/year in admin, Client Satisfaction -1 (turning away clients), Market Position -2."}, {"id": "D4", "domain": "Compliance", "question": "End-of-quarter reporting: you must present your portfolio's risk-adjusted performance. Calculate: (1) Annualised return from inception, (2) Annualised standard deviation, (3) Sharpe Ratio, (4) Max Drawdown, (5) Beta vs market. Each calculation requires the full dataset of quarterly returns. How do you present ambiguous results?", "optA": "Full transparent reporting with all five metrics prominently displayed ($20,000 for professional report). Include both good and bad metrics. Clients see everything.", "optB": "Emphasise Sharpe Ratio and Max Drawdown (your strengths if you managed risk well). De-emphasise raw return if it is below benchmark. Selective but not misleading.", "optC": "Present performance relative to peers rather than absolute. If you are in the top quartile on risk-adjusted basis, this looks better than showing raw numbers. Cost: $15,000 for peer analysis.", "effects": "A: Portfolio Value -$20,000, Regulatory Compliance +8, Client Satisfaction +5 (trust through transparency), Market Position +3. B: Portfolio Value -$10,000, Regulatory Compliance +3 (no false claims), Client Satisfaction +3, Market Position +2. C: Portfolio Value -$15,000, Regulatory Compliance +5, Client Satisfaction +4 (look good relative to peers), Market Position +4."}, {"id": "D5", "domain": "Strategy", "question": "With 1 full quarter remaining, optimise your final strategy. Model the trade-off between risk and return using calculus: if return R(x) = 4 + 6x - 2x^2 (where x is risk level, 0 to 3) and SD(x) = 5x, then Sharpe(x) = (R(x) - 4) / SD(x) = (6x - 2x^2) / 5x = (6 - 2x) / 5. To maximise Sharpe: dS/dx = -2/5 = -0.4. Since derivative is always negative, Sharpe is maximised at x = 0 (no risk, but also no return above risk-free). In practice, find the x where marginal return equals marginal risk.", "optA": "Set x = 1 (low risk). Sharpe = (6-2)/5 = 0.8. R = 4+6-2 = 8%. SD = 5%. Very good Sharpe but modest return.", "optB": "Set x = 1.5 (moderate risk). Sharpe = (6-3)/5 = 0.6. R = 4+9-4.5 = 8.5%. SD = 7.5%. Slightly lower Sharpe but higher return.", "optC": "Set x = 2 (higher risk). Sharpe = (6-4)/5 = 0.4. R = 4+12-8 = 8%. SD = 10%. Note: return has peaked and started to decline while SD keeps rising. Clearly suboptimal from a Sharpe perspective.", "effects": "A: Portfolio positioned for Sharpe Ratio = 0.8, low risk, steady final quarter, Client Satisfaction +6, Market Position +2, Risk Score 35. B: Sharpe = 0.6, moderate risk, slightly higher return, Client Satisfaction +4, Market Position +3, Risk Score 50. C: Sharpe = 0.4, return declining while risk rises (inefficient frontier), Client Satisfaction -1, Risk Score 65."}]}, {"num": 7, "name": "Final Quarter — Legacy", "report": ["Last quarter. Your final performance will determine your reputation, client retention, and career trajectory.", "Calculate your cumulative performance: starting value $10M, current value based on all decisions. Use ln(V/10M) for the continuously compounded total return.", "Your Sharpe Ratio over 6 quarters is your headline number. Peers average 0.5. Top quartile: 0.8+. Top decile: 1.2+.", "Regulatory environment is tightening: a new 'fund stress test' will be published ranking all funds. Your ranking depends on Max Drawdown (40% weight), Sharpe Ratio (30%), and Compliance Score (30%).", "End-of-year client review: clients will decide whether to increase investment, maintain, or withdraw based on your full-year risk-adjusted performance."], "randomEvent": "End-of-year tax-loss selling creates a market dip of 3% in the final two weeks of the quarter. This is a predictable seasonal pattern. Historically, markets recover 4% in the first two weeks of January. If you buy during the December dip and sell in January, expected gain: 7% on the dip-bought position over 4 weeks. But your fund reports on December 31 — the dip hurts your reported performance.", "decisions": [{"id": "D1", "domain": "Analysis", "question": "The tax-loss selling dip: you could buy $1M of dip stocks, expecting a 7% gain over 4 weeks. But the December 31 reporting date means the 3% dip appears in your quarterly numbers and the 4% recovery does not. Reported quarterly performance worsens by approximately 0.3% (from $1M x 3% / total portfolio). The January gain appears in next quarter's numbers. Is short-term reporting optics worth sacrificing for real returns?", "optA": "Buy the dip ($1M position, $1,000 costs). Accept the 0.3% hit to this quarter's reported performance. Real return over the trade: 7% on $1M = $70,000 profit. Sharpe this quarter looks worse; Sharpe next quarter (outside this simulation) looks better.", "optB": "Don't buy the dip. Preserve this quarter's reported performance. Miss the $70,000 opportunity. Your final Sharpe Ratio is protected for the year-end report.", "optC": "Buy $500,000 (half position). Limits the reporting hit to 0.15% while capturing $35,000 of the opportunity. Balanced approach.", "effects": "A: Portfolio Value +$70,000 (realised in January, but real value is created), Sharpe Ratio -0.03 this quarter (reporting hit), Risk Score +2, Market Position +3 (smart long-term thinking). B: No change, Sharpe Ratio protected for reporting, Client Satisfaction +2 (clean quarter-end numbers), Market Position -1 (missed known opportunity). C: Portfolio Value +$35,000, Sharpe Ratio -0.015 this quarter, Risk Score +1, balanced outcome."}, {"id": "D2", "domain": "Risk", "question": "Final risk assessment: calculate your Value at Risk (VaR) at 99% confidence for the final quarter. If portfolio quarterly SD = $300,000, then 99% VaR = 2.326 x $300,000 = $697,800. This means there is a 1% chance of losing more than $697,800 this quarter. Is this acceptable given your Max Drawdown limit?", "optA": "Reduce portfolio risk so that VaR at 99% = $500,000 (acceptable). Required SD: $500,000 / 2.326 = $214,880. You need to reduce volatility by approximately 28%. Move more into bonds and cash.", "optB": "Accept current VaR. The 1% probability is low, and reducing risk would lower expected returns in your final quarter. Risk-neutral approach.", "optC": "Buy tail risk insurance ($50,000 premium). If losses exceed VaR, the insurance pays out. Caps your maximum loss at VaR + premium. Smart if you are close to the 25% Max Drawdown limit.", "effects": "A: Risk Score -12, Sharpe Ratio +0.08 (lower SD), Portfolio Return -0.5% (less equity exposure), Client Satisfaction +4, Max Drawdown protected. B: Risk Score unchanged, Sharpe Ratio unchanged, Portfolio Return unchanged, Client Satisfaction -1, Max Drawdown at risk. C: Portfolio Value -$50,000, Risk Score -6, Max Drawdown capped, Sharpe Ratio +0.03, Client Satisfaction +3."}, {"id": "D3", "domain": "Trading", "question": "Final portfolio rebalancing. Transaction costs for a full rebalance: approximately 0.1% x value traded. If you trade $3M of a $10M portfolio: cost = $3,000. But rebalancing improves your portfolio's alignment with your target allocation. Calculate: if current allocation has drifted 8% from target, rebalancing reduces tracking error by approximately 8%. The expected benefit of being on-target: 0.2% better risk-adjusted return.", "optA": "Full rebalance to target allocation ($3,000 cost). Drift reduced to 0%. Clean final allocation for reporting. Expected benefit: 0.2% x $10M = $20,000 in better returns vs $3,000 cost.", "optB": "Partial rebalance — fix the largest drift positions only ($1,500 cost). Drift reduced from 8% to 3%. Good enough for most purposes.", "optC": "No rebalancing. Accept the drift. Save $3,000 in costs. The drift may actually benefit you if your overweight positions continue performing well.", "effects": "A: Portfolio Value -$3,000 but +$20,000 expected benefit, Sharpe Ratio +0.04 (better alignment), Regulatory Compliance +3, Client Satisfaction +2. B: Portfolio Value -$1,500, Sharpe Ratio +0.02, Regulatory Compliance +1. C: Portfolio Value unchanged, Sharpe Ratio may drift, Regulatory Compliance -1 (not maintaining target allocation), Client Satisfaction -1."}, {"id": "D4", "domain": "Compliance", "question": "The new fund stress test ranks funds on: Max Drawdown (40%), Sharpe Ratio (30%), Compliance Score (30%). Calculate your weighted score. If Max Drawdown = 8%, Sharpe = 0.8, Compliance = 85/100: Score = (100-8) x 0.4 + (0.8 x 100) x 0.3 + 85 x 0.3 = 36.8 + 24 + 25.5 = 86.3/100. Top 10% of funds score above 85. Are you there?", "optA": "Focus final efforts on maximising this score. Spend $30,000 on compliance improvements (+5 to compliance score). New score: 36.8 + 24 + 27 = 87.8. Worth $30,000 for the ranking improvement.", "optB": "Focus on Sharpe Ratio improvement through the final quarter (the 30% weight). If you can push Sharpe from 0.8 to 1.0: new score = 36.8 + 30 + 25.5 = 92.3. A 6-point improvement from a 0.2 Sharpe increase.", "optC": "Focus on Max Drawdown protection (40% weight, the largest). If you can prevent any further drawdown: score = (100 - current drawdown) x 0.4 + current Sharpe x 30 + current compliance x 0.3. Calculate your specific score.", "effects": "A: Portfolio Value -$30,000, Regulatory Compliance +5, stress test rank improves, Client Satisfaction +4, Market Position +5. B: No direct cost, requires good trading this quarter, risk of Sharpe declining if trades go wrong, Market Position +7 if achieved. C: Requires defensive positioning, Portfolio Return likely lower, Risk Score -10, Client Satisfaction +3 (safe approach), Market Position +3."}, {"id": "D5", "domain": "Strategy", "question": "Final strategic decision: looking beyond this simulation. Your fund's franchise value depends on its track record. Using the present value of a perpetuity: if your fund earns $500,000/year in management fees and the discount rate is 8%, the franchise value = $500,000 / 0.08 = $6,250,000. If better performance increases fees to $750,000: value = $750,000 / 0.08 = $9,375,000. A $3.125M increase in franchise value from better performance.", "optA": "Play it safe this final quarter to protect your track record. A steady quarter with a Sharpe above 0.8 cements your reputation. Franchise value protected. Conservative final-quarter portfolio.", "optB": "Take calculated risks to push for exceptional performance. If you can end with a Sharpe above 1.2, you enter the top decile. This dramatically increases franchise value and future AUM. But a bad quarter could undo the good work.", "optC": "Focus on client communication and relationship building ($40,000 in client events). Even with average performance, strong relationships retain clients. Franchise value is about retention as much as returns.", "effects": "A: Portfolio Value preserved, Sharpe Ratio protected, Risk Score -5, Client Satisfaction +5, Market Position +3, franchise value maintained. B: Risk Score +8, Sharpe Ratio could reach 1.2+ (bonus triggered) or could drop below 0.8 (reputation damaged), Market Position depends on outcome, high variance. C: Portfolio Value -$40,000, Client Satisfaction +8, Market Position +5 (strong relationships), Regulatory Compliance +2 (good governance), stable franchise value regardless of performance."}]}], "debriefQuestions": ["Calculate your fund's final Sharpe Ratio. Show your working: annualised return (use your cumulative return and convert), annualised standard deviation (from your quarterly SDs), and the formula (return - 4%) / SD. How does this compare to the market Sharpe of 0.4?", "Draw the probability tree for the fuel line sensor decision in Round 5 of the Rocket simulation — wait, wrong simulation. Draw the probability tree for the flash crash stop-loss decision. What was the expected value of having a stop-loss versus not? Was the stop-loss a good idea ex ante even though it may have hurt you ex post?", "Explain how the normal distribution was used in at least three decisions. For each, state the mean, standard deviation, and the Z-score calculation you performed. Were the normality assumptions reasonable?", "How did correlation affect your diversification? Give a specific example where changing correlations (during the volatility storm) affected your portfolio risk. Calculate the portfolio variance before and after the correlation change.", "The Kelly Criterion said not to invest in the biotech. Explain why. Then explain why some teams might have invested anyway. Is expected value the only thing that matters in investment decisions?", "Describe the calculus-based optimisation in Round 6. What was the function being optimised? Why was the Sharpe-maximising level of risk different from the return-maximising level? What is the significance of the derivative being always negative?", "Reflect on the difference between managing for short-term reporting (quarterly numbers) versus long-term value creation. The tax-loss selling decision in Round 7 illustrates this tension. What would a mathematician recommend? What would a business manager recommend? Why might they disagree?"], "keyTakeaways": ["Standard deviation quantifies uncertainty: knowing that your portfolio has a 15% annual SD means you can calculate the probability of any given loss, turning gut feelings about risk into precise mathematical statements.", "Correlation is the mathematics of diversification: assets with low or negative correlation reduce portfolio volatility below the weighted average of individual volatilities — this is the only free lunch in finance, and it comes directly from the maths of covariance.", "The normal distribution enables probability-based decision making: Z-scores transform any normal variable into a standard scale where probabilities can be looked up, allowing you to answer questions like 'what is the probability of losing more than 10%?'", "Calculus reveals optimal solutions that intuition misses: differentiating the Sharpe Ratio as a function of risk level reveals that the maximum risk-adjusted return occurs at a lower risk level than the maximum raw return — a crucial insight invisible without calculus.", "Expected value is necessary but not sufficient: the Kelly Criterion, hypothesis testing, and probability-weighted scenarios all provide mathematical frameworks for decisions, but real-world factors like drawdown limits, client behaviour, and career risk add dimensions that pure expected value calculations miss."]};
+const SVGS = {"r1_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><path d=\"M296,166 L296,130 M296,166 L344,166\" stroke=\"#0891B2\" stroke-width=\"2.5\" fill=\"none\"/><path d=\"M302,158 L312,146 L322,156 L336,136\" stroke=\"#22D3EE\" stroke-width=\"3\" fill=\"none\"/><circle cx=\"336\" cy=\"136\" r=\"3\" fill=\"#0891B2\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Market Entry — Building Your Portfolio</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n</svg>", "r1_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Market Entry — Building Your Portfolio</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M92,170 L92,150 L120,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><path d=\"M96,166 L102,160 L108,164 L116,154\" fill=\"none\" stroke=\"#22D3EE\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Analysis</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 232,170 192,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"212\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Risk</text>\n  <g opacity=\"0.85\"><path d=\"M304,170 L304,150 L332,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><rect x=\"308\" y=\"156\" width=\"5\" height=\"12\" fill=\"#0891B2\" opacity=\"0.7\"/><rect x=\"315\" y=\"152\" width=\"5\" height=\"16\" fill=\"#0891B2\" opacity=\"0.85\"/><rect x=\"322\" y=\"160\" width=\"5\" height=\"8\" fill=\"#22D3EE\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Trading</text>\n  <g opacity=\"0.85\"><path d=\"M424,140 L442,150 L442,166 Q442,180 424,180 Q406,180 406,166 L406,150 Z\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M420,160 L424,164 L430,156\" stroke=\"#ECFEFF\" stroke-width=\"2\" fill=\"none\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Compliance</text>\n  <g opacity=\"0.85\"><rect x=\"514\" y=\"150\" width=\"32\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M522,162 L528,156 L534,162 L540,156\" stroke=\"#ECFEFF\" stroke-width=\"1.5\" fill=\"none\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Strategy</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r2_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><path d=\"M296,166 L296,130 M296,166 L344,166\" stroke=\"#0891B2\" stroke-width=\"2.5\" fill=\"none\"/><path d=\"M302,158 L312,146 L322,156 L336,136\" stroke=\"#22D3EE\" stroke-width=\"3\" fill=\"none\"/><circle cx=\"336\" cy=\"136\" r=\"3\" fill=\"#0891B2\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">First Earnings Season — Interpreting Data</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n</svg>", "r2_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">First Earnings Season — Interpreting Data</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M92,170 L92,150 L120,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><path d=\"M96,166 L102,160 L108,164 L116,154\" fill=\"none\" stroke=\"#22D3EE\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Analysis</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 232,170 192,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"212\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Risk</text>\n  <g opacity=\"0.85\"><path d=\"M304,170 L304,150 L332,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><rect x=\"308\" y=\"156\" width=\"5\" height=\"12\" fill=\"#0891B2\" opacity=\"0.7\"/><rect x=\"315\" y=\"152\" width=\"5\" height=\"16\" fill=\"#0891B2\" opacity=\"0.85\"/><rect x=\"322\" y=\"160\" width=\"5\" height=\"8\" fill=\"#22D3EE\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Trading</text>\n  <g opacity=\"0.85\"><path d=\"M424,140 L442,150 L442,166 Q442,180 424,180 Q406,180 406,166 L406,150 Z\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M420,160 L424,164 L430,156\" stroke=\"#ECFEFF\" stroke-width=\"2\" fill=\"none\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Compliance</text>\n  <g opacity=\"0.85\"><rect x=\"514\" y=\"150\" width=\"32\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M522,162 L528,156 L534,162 L540,156\" stroke=\"#ECFEFF\" stroke-width=\"1.5\" fill=\"none\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Strategy</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r3_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"322,126 310,150 320,150 318,174 330,150 320,150\" fill=\"#0891B2\" opacity=\"0.9\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Volatility Storm — Managing Uncertainty</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n</svg>", "r3_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Volatility Storm — Managing Uncertainty</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M92,170 L92,150 L120,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><path d=\"M96,166 L102,160 L108,164 L116,154\" fill=\"none\" stroke=\"#22D3EE\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Analysis</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 232,170 192,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"212\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Risk</text>\n  <g opacity=\"0.85\"><path d=\"M304,170 L304,150 L332,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><rect x=\"308\" y=\"156\" width=\"5\" height=\"12\" fill=\"#0891B2\" opacity=\"0.7\"/><rect x=\"315\" y=\"152\" width=\"5\" height=\"16\" fill=\"#0891B2\" opacity=\"0.85\"/><rect x=\"322\" y=\"160\" width=\"5\" height=\"8\" fill=\"#22D3EE\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Trading</text>\n  <g opacity=\"0.85\"><path d=\"M424,140 L442,150 L442,166 Q442,180 424,180 Q406,180 406,166 L406,150 Z\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M420,160 L424,164 L430,156\" stroke=\"#ECFEFF\" stroke-width=\"2\" fill=\"none\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Compliance</text>\n  <g opacity=\"0.85\"><rect x=\"514\" y=\"150\" width=\"32\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M522,162 L528,156 L534,162 L540,156\" stroke=\"#ECFEFF\" stroke-width=\"1.5\" fill=\"none\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Strategy</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r4_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"144\" r=\"16\" fill=\"#0891B2\" opacity=\"0.85\"/><rect x=\"312\" y=\"160\" width=\"16\" height=\"6\" rx=\"2\" fill=\"#22D3EE\"/><rect x=\"314\" y=\"166\" width=\"12\" height=\"4\" rx=\"2\" fill=\"#22D3EE\" opacity=\"0.7\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Opportunity Knocks — Finding Alpha</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n</svg>", "r4_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Opportunity Knocks — Finding Alpha</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M92,170 L92,150 L120,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><path d=\"M96,166 L102,160 L108,164 L116,154\" fill=\"none\" stroke=\"#22D3EE\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Analysis</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 232,170 192,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"212\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Risk</text>\n  <g opacity=\"0.85\"><path d=\"M304,170 L304,150 L332,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><rect x=\"308\" y=\"156\" width=\"5\" height=\"12\" fill=\"#0891B2\" opacity=\"0.7\"/><rect x=\"315\" y=\"152\" width=\"5\" height=\"16\" fill=\"#0891B2\" opacity=\"0.85\"/><rect x=\"322\" y=\"160\" width=\"5\" height=\"8\" fill=\"#22D3EE\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Trading</text>\n  <g opacity=\"0.85\"><path d=\"M424,140 L442,150 L442,166 Q442,180 424,180 Q406,180 406,166 L406,150 Z\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M420,160 L424,164 L430,156\" stroke=\"#ECFEFF\" stroke-width=\"2\" fill=\"none\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Compliance</text>\n  <g opacity=\"0.85\"><rect x=\"514\" y=\"150\" width=\"32\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M522,162 L528,156 L534,162 L540,156\" stroke=\"#ECFEFF\" stroke-width=\"1.5\" fill=\"none\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Strategy</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r5_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"322,126 310,150 320,150 318,174 330,150 320,150\" fill=\"#0891B2\" opacity=\"0.9\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Black Swan — The Unexpected</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n</svg>", "r5_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Black Swan — The Unexpected</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M92,170 L92,150 L120,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><path d=\"M96,166 L102,160 L108,164 L116,154\" fill=\"none\" stroke=\"#22D3EE\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Analysis</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 232,170 192,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"212\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Risk</text>\n  <g opacity=\"0.85\"><path d=\"M304,170 L304,150 L332,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><rect x=\"308\" y=\"156\" width=\"5\" height=\"12\" fill=\"#0891B2\" opacity=\"0.7\"/><rect x=\"315\" y=\"152\" width=\"5\" height=\"16\" fill=\"#0891B2\" opacity=\"0.85\"/><rect x=\"322\" y=\"160\" width=\"5\" height=\"8\" fill=\"#22D3EE\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Trading</text>\n  <g opacity=\"0.85\"><path d=\"M424,140 L442,150 L442,166 Q442,180 424,180 Q406,180 406,166 L406,150 Z\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M420,160 L424,164 L430,156\" stroke=\"#ECFEFF\" stroke-width=\"2\" fill=\"none\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Compliance</text>\n  <g opacity=\"0.85\"><rect x=\"514\" y=\"150\" width=\"32\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M522,162 L528,156 L534,162 L540,156\" stroke=\"#ECFEFF\" stroke-width=\"1.5\" fill=\"none\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Strategy</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r6_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><line x1=\"320\" y1=\"168\" x2=\"320\" y2=\"144\" stroke=\"#0891B2\" stroke-width=\"3\"/><path d=\"M320,144 Q338,128 326,124\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"3\"/><path d=\"M320,152 Q304,140 316,134\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Recovery and Growth — Riding the Upturn</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n</svg>", "r6_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Recovery and Growth — Riding the Upturn</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M92,170 L92,150 L120,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><path d=\"M96,166 L102,160 L108,164 L116,154\" fill=\"none\" stroke=\"#22D3EE\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Analysis</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 232,170 192,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"212\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Risk</text>\n  <g opacity=\"0.85\"><path d=\"M304,170 L304,150 L332,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><rect x=\"308\" y=\"156\" width=\"5\" height=\"12\" fill=\"#0891B2\" opacity=\"0.7\"/><rect x=\"315\" y=\"152\" width=\"5\" height=\"16\" fill=\"#0891B2\" opacity=\"0.85\"/><rect x=\"322\" y=\"160\" width=\"5\" height=\"8\" fill=\"#22D3EE\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Trading</text>\n  <g opacity=\"0.85\"><path d=\"M424,140 L442,150 L442,166 Q442,180 424,180 Q406,180 406,166 L406,150 Z\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M420,160 L424,164 L430,156\" stroke=\"#ECFEFF\" stroke-width=\"2\" fill=\"none\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Compliance</text>\n  <g opacity=\"0.85\"><rect x=\"514\" y=\"150\" width=\"32\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M522,162 L528,156 L534,162 L540,156\" stroke=\"#ECFEFF\" stroke-width=\"1.5\" fill=\"none\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Strategy</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r7_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"306,128 334,128 324,150 334,172 306,172 316,150\" fill=\"#0891B2\" opacity=\"0.8\"/><rect x=\"304\" y=\"126\" width=\"32\" height=\"4\" rx=\"2\" fill=\"#0891B2\"/><rect x=\"304\" y=\"170\" width=\"32\" height=\"4\" rx=\"2\" fill=\"#0891B2\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Final Quarter — Legacy</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n</svg>", "r7_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Final Quarter — Legacy</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M92,170 L92,150 L120,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><path d=\"M96,166 L102,160 L108,164 L116,154\" fill=\"none\" stroke=\"#22D3EE\" stroke-width=\"2\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Analysis</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 232,170 192,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"212\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Risk</text>\n  <g opacity=\"0.85\"><path d=\"M304,170 L304,150 L332,150\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><rect x=\"308\" y=\"156\" width=\"5\" height=\"12\" fill=\"#0891B2\" opacity=\"0.7\"/><rect x=\"315\" y=\"152\" width=\"5\" height=\"16\" fill=\"#0891B2\" opacity=\"0.85\"/><rect x=\"322\" y=\"160\" width=\"5\" height=\"8\" fill=\"#22D3EE\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Trading</text>\n  <g opacity=\"0.85\"><path d=\"M424,140 L442,150 L442,166 Q442,180 424,180 Q406,180 406,166 L406,150 Z\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M420,160 L424,164 L430,156\" stroke=\"#ECFEFF\" stroke-width=\"2\" fill=\"none\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Compliance</text>\n  <g opacity=\"0.85\"><rect x=\"514\" y=\"150\" width=\"32\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><path d=\"M522,162 L528,156 L534,162 L540,156\" stroke=\"#ECFEFF\" stroke-width=\"1.5\" fill=\"none\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Strategy</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Hedge Fund Challenge</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>"};
+
+// ======================== EFFECTS PARSER ========================
+// Build alias map: short names -> full metric name
+const METRIC_ALIASES = {};
+(function() {
+  for (const m of SIM.metrics) {
+    const name = m.name;
+    METRIC_ALIASES[name.toLowerCase()] = name;
+    // Add partial aliases: last word, last two words, etc.
+    const words = name.split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const partial = words.slice(i).join(' ').toLowerCase();
+      if (partial.length >= 3 && !METRIC_ALIASES[partial]) {
+        METRIC_ALIASES[partial] = name;
+      }
+    }
+    // Also add without common suffixes
+    const noLevel = name.replace(/\s+(Level|Score|Rating|Index|Remaining|Value)$/i, '').toLowerCase();
+    if (noLevel !== name.toLowerCase() && !METRIC_ALIASES[noLevel]) {
+      METRIC_ALIASES[noLevel] = name;
+    }
+  }
+})();
+
+function findMetric(text) {
+  // Try exact match first, then longest partial match
+  const lower = text.toLowerCase();
+  for (const m of SIM.metrics) {
+    if (lower.includes(m.name.toLowerCase())) return m.name;
+  }
+  // Try aliases (longest first)
+  const aliases = Object.keys(METRIC_ALIASES).sort((a,b) => b.length - a.length);
+  for (const alias of aliases) {
+    if (lower.includes(alias)) return METRIC_ALIASES[alias];
+  }
+  return null;
+}
+
+function parseEffects(effectsStr) {
+  if (!effectsStr) return {};
+  const results = {};
+  const clauses = effectsStr.split(/[.;,]/).map(s => s.trim()).filter(s => s.length > 0);
+
+  for (const clause of clauses) {
+    const metricName = findMetric(clause);
+    if (!metricName) continue;
+
+    // "set to X"
+    const setMatch = clause.match(/set\s+to\s+(-?[\d,.]+)/i);
+    if (setMatch) {
+      results[metricName] = { type: 'set', value: parseNum(setMatch[1]) };
+      continue;
+    }
+
+    // "+/-$X,XXX" or "+/-X" or "+/-X%"
+    const deltaMatch = clause.match(/([+-])\s*\$?([\d,.]+)[%]?/);
+    if (deltaMatch) {
+      const sign = deltaMatch[1] === '+' ? 1 : -1;
+      const val = parseNum(deltaMatch[2]) * sign;
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+      continue;
+    }
+
+    // "-$X,XXX" embedded
+    const negMatch = clause.match(/-\$([\d,.]+)/);
+    if (negMatch) {
+      const val = -parseNum(negMatch[1]);
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+    }
+  }
+  return results;
+}
+
+function parseNum(s) {
+  return parseFloat(s.replace(/,/g, '')) || 0;
+}
+
+function clampMetric(metricDef, value) {
+  const unit = metricDef.unit || '';
+  if (unit === '/100') return Math.max(0, Math.min(100, value));
+  if (unit === '%') return Math.max(-100, Math.min(100, value));
+  if (unit === '$') return Math.max(0, value); // no negative cash
+  return value;
+}
+
+// ======================== GAME STATE ========================
+let G = {
+  started: false,
+  teamCount: 3,
+  teams: [],
+  currentScreen: 'setup',
+  currentRound: 1,
+  currentPhase: 0,
+  roundsComplete: new Set(),
+  teamMetrics: {}, // teamIdx -> {metricName: value}
+  roundDecisions: {}, // round -> teamIdx -> {D1:'A', D2:'B', ...}
+  roundSnapshots: {}, // round -> teamIdx -> {metricName: {before, after, delta}}
+};
+
+function initMetrics() {
+  G.teamMetrics = {};
+  for (let t = 0; t < G.teams.length; t++) {
+    G.teamMetrics[t] = {};
+    for (const m of SIM.metrics) {
+      G.teamMetrics[t][m.name] = m.start;
+    }
+  }
+}
+
+// ======================== TIMER ========================
+let timerInterval = null, timerSeconds = 600;
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + s.toString().padStart(2,'0');
+  document.getElementById('timerDisplay').style.color = timerSeconds <= 60 ? '#EF5350' : 'var(--gold)';
+}
+function startTimer() { if (timerInterval) return; timerInterval = setInterval(() => { if (timerSeconds > 0) { timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; } }, 1000); }
+function pauseTimer() { clearInterval(timerInterval); timerInterval = null; }
+function resetTimer() { pauseTimer(); timerSeconds = 600; updateTimerDisplay(); }
+updateTimerDisplay();
+
+// ======================== NAVIGATION ========================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let h = '<button onclick="goTo(\'setup\')" class="' + (G.currentScreen==='setup'?'active':'') + '"><span class="check"></span> Setup</button>';
+  for (let r = 1; r <= 7; r++) {
+    const done = G.roundsComplete.has(r);
+    const isActive = G.currentScreen === 'round' && G.currentRound === r;
+    h += '<button onclick="goToRound('+r+')" class="' + (isActive?'active':'') + ' ' + (done?'done':'') + '">';
+    h += '<span class="check">' + (done?'&#10003;':'') + '</span> Round ' + r;
+    if (isActive) { h += '<span class="phase-dots">'; for (let p=0;p<4;p++) h += '<span class="dot '+(G.currentPhase>=p?'filled':'')+'"></span>'; h += '</span>'; }
+    h += '</button>';
+  }
+  h += '<div class="sidebar-sep"></div>';
+  h += '<button onclick="goTo(\'leaderboard\')" class="'+(G.currentScreen==='leaderboard'?'active':'')+'"><span class="check"></span> Leaderboard</button>';
+  h += '<button onclick="goTo(\'final\')" class="'+(G.currentScreen==='final'?'active':'')+'"><span class="check"></span> Final Results</button>';
+  h += '<button onclick="goTo(\'debrief\')" class="'+(G.currentScreen==='debrief'?'active':'')+'"><span class="check"></span> Debrief</button>';
+  nav.innerHTML = h;
+}
+
+function goTo(s) { G.currentScreen = s; render(); }
+function goToRound(r) { if (!G.started) return; G.currentScreen = 'round'; G.currentRound = r; G.currentPhase = G.roundsComplete.has(r) ? 3 : 0; render(); }
+function setPhase(p) { G.currentPhase = p; render(); }
+
+function render() {
+  buildSidebar();
+  const c = document.getElementById('content');
+  if (G.currentScreen === 'setup') renderSetup(c);
+  else if (G.currentScreen === 'round') renderRound(c);
+  else if (G.currentScreen === 'leaderboard') renderLeaderboard(c);
+  else if (G.currentScreen === 'final') renderFinal(c);
+  else if (G.currentScreen === 'debrief') renderDebrief(c);
+  updateTopbar();
+}
+
+function updateTopbar() {
+  const title = document.getElementById('topbarTitle');
+  const phase = document.getElementById('topbarPhase');
+  const right = document.getElementById('topbarRight');
+  if (G.currentScreen === 'setup') {
+    title.textContent = 'SETUP';
+    phase.innerHTML = '';
+    right.innerHTML = '<button onclick="showHelp()">How to Play</button>';
+  } else if (G.currentScreen === 'round') {
+    const rd = SIM.rounds[G.currentRound-1];
+    title.textContent = 'ROUND ' + rd.num + ': ' + rd.name.toUpperCase();
+    const phases = ['Briefing','Decisions','Team Entry','Results'];
+    phase.innerHTML = phases.map((p,i) => '<button class="phase-step '+(i===G.currentPhase?'active':i<G.currentPhase?'completed':'')+'" onclick="setPhase('+i+')">'+p+'</button>').join('');
+    let btns = '';
+    if (G.currentPhase > 0) btns += '<button onclick="setPhase('+(G.currentPhase-1)+')">&#8592; Back</button>';
+    if (G.currentPhase < 3) btns += '<button class="primary" onclick="nextPhase()">Next &#8594;</button>';
+    else if (G.currentRound < 7) btns += '<button class="primary" onclick="goToRound('+(G.currentRound+1)+')">Round '+(G.currentRound+1)+' &#8594;</button>';
+    else btns += '<button class="primary" onclick="goTo(\'final\')">Final Results &#8594;</button>';
+    right.innerHTML = btns;
+  } else {
+    title.textContent = G.currentScreen.toUpperCase().replace('LEADERBOARD','LEADERBOARD');
+    phase.innerHTML = '';
+    right.innerHTML = G.currentScreen === 'final' ? '<button class="primary" onclick="goTo(\'debrief\')">Debrief &#8594;</button>' : '';
+  }
+}
+
+function nextPhase() {
+  if (G.currentPhase === 2) {
+    const r = G.currentRound;
+    if (!validateEntries(r)) return;
+    calculateRound(r);
+  }
+  G.currentPhase = Math.min(3, G.currentPhase + 1);
+  render();
+}
+
+function validateEntries(r) {
+  if (!G.roundDecisions[r]) { alert('Please enter decisions for all teams first.'); return false; }
+  for (let t = 0; t < G.teams.length; t++) {
+    const td = G.roundDecisions[r][t];
+    if (!td) { alert(G.teams[t] + ' has not entered any decisions.'); return false; }
+    for (const dec of SIM.rounds[r-1].decisions) {
+      if (!td[dec.id]) { alert(G.teams[t] + ' is missing ' + dec.id + '.'); return false; }
+    }
+  }
+  return true;
+}
+
+function showHelp() { document.getElementById('helpOverlay').classList.add('show'); }
+function closeHelp() { document.getElementById('helpOverlay').classList.remove('show'); }
+
+// ======================== SETUP ========================
+function renderSetup(c) {
+  let h = '<div class="screen active"><div class="setup-hero"><h1>' + SIM.title.toUpperCase() + '</h1><p class="subtitle">' + SIM.subject + ' &bull; ' + SIM.level + '</p><p>Lead your team through 7 rounds of strategic decisions.</p></div>';
+  h += '<div class="card"><h2>Number of Teams</h2><div class="team-count-btns">';
+  for (let i = 2; i <= 6; i++) h += '<button class="'+(G.teamCount===i?'active':'')+'" onclick="setTeamCount('+i+')">'+i+'</button>';
+  h += '</div><h2>Team Names</h2><div class="team-inputs" id="teamInputs">';
+  for (let i = 0; i < G.teamCount; i++) {
+    const val = G.teams[i] || '';
+    h += '<div class="team-input"><span class="num">'+(i+1)+'</span><input type="text" placeholder="Team '+(i+1)+' name" value="'+val+'" onchange="setTeamName('+i+',this.value)" /></div>';
+  }
+  h += '</div></div><button class="start-btn" onclick="startGame()">START GAME</button>';
+  h += '<div style="text-align:center;margin-top:1rem;"><button onclick="showHelp()" style="background:none;border:none;color:var(--mid);text-decoration:underline;cursor:pointer;font-family:\'Nunito\',sans-serif;">How to Play</button></div></div>';
+  c.innerHTML = h;
+}
+
+function setTeamCount(n) { G.teamCount = n; render(); }
+function setTeamName(i, v) { G.teams[i] = v.trim(); }
+
+function startGame() {
+  const inputs = document.querySelectorAll('#teamInputs input');
+  G.teams = [];
+  inputs.forEach((inp, i) => G.teams.push(inp.value.trim() || 'Team '+(i+1)));
+  G.teams = G.teams.slice(0, G.teamCount);
+  initMetrics();
+  G.started = true;
+  G.currentScreen = 'round';
+  G.currentRound = 1;
+  G.currentPhase = 0;
+  render();
+}
+
+// ======================== ROUND RENDERING ========================
+function renderRound(c) {
+  const r = G.currentRound;
+  const rd = SIM.rounds[r-1];
+  let h = '<div class="screen active">';
+  if (G.currentPhase === 0) h += renderBriefing(rd, r);
+  else if (G.currentPhase === 1) h += renderDecisions(rd, r);
+  else if (G.currentPhase === 2) h += renderEntry(r, rd);
+  else if (G.currentPhase === 3) h += renderResults(r);
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+function renderBriefing(rd, r) {
+  let h = '';
+  // SVG illustration
+  const svgKey = 'r'+r+'_briefing';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="report-card"><div class="report-masthead"><h1>' + SIM.title.toUpperCase() + '</h1><div class="dateline">Round ' + rd.num + ' of 7 &bull; ' + rd.name + '</div></div>';
+  h += '<div class="report-items">';
+  for (const item of rd.report) {
+    h += '<div class="report-item"><span class="bullet">&#9679;</span><span class="text">' + item + '</span></div>';
+  }
+  h += '</div>';
+  if (rd.randomEvent) {
+    h += '<div class="event-box"><h3>&#9889; RANDOM EVENT</h3><p>' + rd.randomEvent + '</p></div>';
+  } else {
+    h += '<div class="no-event">&#9728;&#65039; No random event this round &mdash; steady conditions ahead.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderDecisions(rd, r) {
+  let h = '';
+  const svgKey = 'r'+r+'_decisions';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="decisions-grid">';
+  for (const dec of rd.decisions) {
+    h += '<div class="decision-card"><div class="d-label">' + dec.id + ' &mdash; ' + dec.domain.toUpperCase() + '</div>';
+    h += '<div class="d-question">' + dec.question + '</div>';
+    const opts = [['A', dec.optA], ['B', dec.optB], ['C', dec.optC]];
+    for (const [l, desc] of opts) {
+      h += '<div class="option"><span class="letter ' + l.toLowerCase() + '">' + l + '</span><span class="desc">' + desc + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderEntry(r, rd) {
+  if (!G.roundDecisions[r]) {
+    G.roundDecisions[r] = {};
+    for (let t = 0; t < G.teams.length; t++) G.roundDecisions[r][t] = {};
+  }
+  let h = '<div class="card" style="overflow-x:auto;"><h2>TEAM DECISIONS &mdash; ROUND ' + r + '</h2>';
+  h += '<table class="entry-matrix"><thead><tr><th>Decision</th>';
+  for (const tn of G.teams) h += '<th>' + tn + '</th>';
+  h += '</tr></thead><tbody>';
+  for (const dec of rd.decisions) {
+    h += '<tr><td><strong>' + dec.id + ' &mdash; ' + dec.domain + '</strong><br><span style="font-size:0.8rem;font-weight:400;color:var(--grey);">' + truncate(dec.question, 70) + '</span></td>';
+    for (let t = 0; t < G.teams.length; t++) {
+      const cur = (G.roundDecisions[r][t] || {})[dec.id] || '';
+      h += '<td><div class="abc-group">';
+      for (const ch of ['A','B','C']) {
+        const sel = cur === ch ? 'sel-'+ch.toLowerCase() : '';
+        h += '<button class="abc-btn '+sel+'" onclick="pickChoice('+r+','+t+',\''+dec.id+'\',\''+ch+'\')">'+ch+'</button>';
+      }
+      h += '</div></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+
+function pickChoice(r, t, did, ch) {
+  if (!G.roundDecisions[r]) G.roundDecisions[r] = {};
+  if (!G.roundDecisions[r][t]) G.roundDecisions[r][t] = {};
+  G.roundDecisions[r][t][did] = ch;
+  render();
+}
+
+// ======================== SCORING ENGINE ========================
+function calculateRound(r) {
+  const rd = SIM.rounds[r-1];
+  if (!G.roundSnapshots[r]) G.roundSnapshots[r] = {};
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const before = {};
+    for (const m of SIM.metrics) before[m.name] = G.teamMetrics[t][m.name];
+    
+    // Apply each decision's effects
+    for (const dec of rd.decisions) {
+      const choice = G.roundDecisions[r][t][dec.id];
+      const effectsStr = dec.effects;
+      // Parse the choice-specific effects from the combined string
+      const choiceEffects = extractChoiceEffects(effectsStr, choice);
+      const parsed = parseEffects(choiceEffects);
+      
+      for (const [metricName, effect] of Object.entries(parsed)) {
+        const mDef = SIM.metrics.find(m => m.name === metricName);
+        if (!mDef) continue;
+        if (effect.type === 'set') {
+          G.teamMetrics[t][metricName] = effect.value;
+        } else {
+          G.teamMetrics[t][metricName] += effect.value;
+        }
+        if (mDef) G.teamMetrics[t][metricName] = clampMetric(mDef, G.teamMetrics[t][metricName]);
+      }
+    }
+    
+    // Save snapshot
+    const after = {};
+    const deltas = {};
+    for (const m of SIM.metrics) {
+      after[m.name] = G.teamMetrics[t][m.name];
+      deltas[m.name] = after[m.name] - before[m.name];
+    }
+    G.roundSnapshots[r][t] = { before, after, deltas };
+  }
+  G.roundsComplete.add(r);
+}
+
+function extractChoiceEffects(effectsStr, choice) {
+  // Effects format: "A: effect1. effect2. B: effect1. effect2. C: effect1."
+  // Split by A:/B:/C: markers
+  const regex = /\b([ABC]):\s*/g;
+  const parts = {};
+  let lastKey = null, lastIdx = 0;
+  let match;
+  const matches = [];
+  while ((match = regex.exec(effectsStr)) !== null) {
+    matches.push({ key: match[1], idx: match.index, end: match.index + match[0].length });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].end;
+    const end = i + 1 < matches.length ? matches[i+1].idx : effectsStr.length;
+    parts[matches[i].key] = effectsStr.substring(start, end).trim();
+  }
+  return parts[choice] || '';
+}
+
+function fmtVal(value, unit) {
+  if (unit === '$' || unit === 'USD') return '$' + Math.round(value).toLocaleString();
+  if (unit === '%') return value.toFixed(1) + '%';
+  if (unit === '/100') return Math.round(value) + '/100';
+  return Math.round(value).toLocaleString() + (unit && unit !== '$' && unit !== '%' && unit !== '/100' ? ' ' + unit : '');
+}
+
+function fmtDelta(delta, unit) {
+  const sign = delta >= 0 ? '+' : '';
+  if (unit === '$' || unit === 'USD') return sign + '$' + Math.round(delta).toLocaleString();
+  if (unit === '%') return sign + delta.toFixed(1) + '%';
+  return sign + Math.round(delta).toLocaleString();
+}
+
+// ======================== RESULTS ========================
+function renderResults(r) {
+  if (!G.roundSnapshots[r]) return '<div class="card"><h2>No results yet</h2></div>';
+  
+  let h = '<div class="card"><h2>ROUND ' + r + ' RESULTS</h2>';
+  h += '<table class="results-table"><thead><tr><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '</tr></thead><tbody>';
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<tr><td>' + G.teams[t] + '</td>';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      h += '<td>' + fmtVal(val, m.unit) + '<br><span class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</span></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Per-team metric cards
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<div class="card"><h3>' + G.teams[t] + '</h3><div class="metrics-grid">';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      const barPct = m.unit === '/100' ? val : m.unit === '%' ? Math.max(0, val) : Math.min(100, (val / (m.start > 0 ? m.start * 3 : 100000)) * 100);
+      h += '<div class="metric-card"><div class="m-name">' + m.name + '</div>';
+      h += '<div class="m-val">' + fmtVal(val, m.unit) + '</div>';
+      h += '<div class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</div>';
+      if (m.unit === '/100') h += '<div class="metric-bar"><div class="metric-bar-fill" style="width:' + Math.max(0, Math.min(100, val)) + '%"></div></div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  }
+  
+  return h;
+}
+
+// ======================== LEADERBOARD ========================
+function getScore(t) {
+  // Composite score: each metric contributes up to 100 points (clamped)
+  let score = 0;
+  for (const m of SIM.metrics) {
+    const val = G.teamMetrics[t][m.name];
+    let c;
+    if (m.unit === '/100') {
+      c = val;
+    } else if (m.unit === '%') {
+      c = Math.min(val, 100);
+    } else {
+      // For $, people, users, coins, degrees, etc: normalise against start value
+      const base = Math.abs(m.start) > 0 ? Math.abs(m.start) : 100;
+      c = (val / base) * 50;
+    }
+    // Clamp each metric to [-100, 100] so no single metric dominates
+    score += Math.max(-100, Math.min(100, c));
+  }
+  return Math.round(score);
+}
+
+function renderLeaderboard(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Start the game first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  let h = '<div class="screen active"><div class="card"><h2>LEADERBOARD</h2></div>';
+  const medals = ['&#129351;','&#129352;','&#129353;'];
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<div class="lb-row"><div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>';
+    h += '<div class="lb-name">' + r.name + '</div><div class="lb-stats">';
+    for (const m of SIM.metrics.slice(0, 4)) {
+      h += '<div class="lb-stat"><div class="val">' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</div><div class="lbl">' + m.name + '</div></div>';
+    }
+    h += '<div class="lb-stat"><div class="val">' + Math.round(r.score) + '</div><div class="lbl">Score</div></div>';
+    h += '</div></div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== FINAL RESULTS ========================
+function renderFinal(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Complete all rounds first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  const medals = ['&#127942;','&#129352;','&#129353;'];
+  
+  let h = '<div class="screen active"><div class="final-hero"><h1>FINAL RESULTS</h1></div>';
+  h += '<div class="podium">';
+  const order = ranked.length >= 3 ? [1, 0, 2] : ranked.length >= 2 ? [1, 0] : [0];
+  for (const oi of order) {
+    if (oi >= ranked.length) continue;
+    const r = ranked[oi];
+    h += '<div class="podium-item ' + (oi === 0 ? 'first' : '') + '"><div class="medal">' + (medals[oi] || '') + '</div>';
+    h += '<div class="pname">' + r.name + '</div><div class="pval">Score: ' + Math.round(r.score) + '</div></div>';
+  }
+  h += '</div>';
+  
+  // Full results table
+  h += '<div class="card"><h2>FULL BREAKDOWN</h2><table class="results-table"><thead><tr><th>Rank</th><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '<th>Score</th></tr></thead><tbody>';
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<tr><td>#' + (i+1) + '</td><td>' + r.name + '</td>';
+    for (const m of SIM.metrics) h += '<td>' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</td>';
+    h += '<td><strong>' + Math.round(r.score) + '</strong></td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+  c.innerHTML = h;
+}
+
+// ======================== DEBRIEF ========================
+function renderDebrief(c) {
+  let h = '<div class="screen active"><div class="card"><h2>DEBRIEF DISCUSSION</h2><p>Use these questions to guide whole-class discussion.</p></div>';
+  
+  if (SIM.debriefQuestions) {
+    for (let i = 0; i < SIM.debriefQuestions.length; i++) {
+      h += '<div class="debrief-q"><div class="qnum">QUESTION ' + (i+1) + '</div><p>' + SIM.debriefQuestions[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.keyTakeaways) {
+    h += '<div class="card"><h2>KEY TAKEAWAYS</h2></div>';
+    for (let i = 0; i < SIM.keyTakeaways.length; i++) {
+      h += '<div class="takeaway-card"><h3>Takeaway ' + (i+1) + '</h3><p>' + SIM.keyTakeaways[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.curriculumLinks) {
+    h += '<div class="card"><h2>CURRICULUM LINKS</h2></div>';
+    for (const cl of SIM.curriculumLinks) {
+      h += '<div class="curriculum-card"><div class="c-topic">' + cl.topic + '</div><div class="c-spec">' + cl.spec + '</div><div class="c-how">' + cl.how + '</div></div>';
+    }
+  }
+  
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== INIT ========================
+render();
+</script>
+</body>
+</html>

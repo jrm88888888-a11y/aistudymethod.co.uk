@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Theme Park Tycoon | KS3 Maths Simulation | Free | classcraft.co.uk</title>
+    <meta name="description" content="Play Theme Park Tycoon — a free interactive KS3 maths simulation. No login required. Build decision-making skills with this classroom-ready game.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --navy:#164E63;--mid:#0891B2;--gold:#22D3EE;--gold2:#06B6D4;
+  --white:#FFFFFF;--offwh:#F5F7FA;--grey:#8892A4;--dgrey:#2D3748;
+  --green:#1E8449;--red:#C0392B;--amber:#E67E22;--card:#FFFFFF;
+  --border:#E2E8F0;--shadow:0 4px 24px rgba(0,0,0,0.10);--r:10px;
+  --btn-a:#1A5276;--btn-b:#145A32;--btn-c:#922B21;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{font-family:'Nunito',sans-serif;background:var(--offwh);color:var(--dgrey);min-height:100vh;display:flex;overflow:hidden;}
+
+.sidebar{width:260px;min-width:260px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;height:100vh;position:relative;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.2rem 0.8rem;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h1{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);letter-spacing:2px;}
+.sidebar-logo p{font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:0.5rem 0;}
+.sidebar-nav button{display:flex;align-items:center;width:100%;padding:0.8rem 1.2rem;background:none;border:none;color:rgba(255,255,255,0.6);font-family:'Nunito',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.2s;text-align:left;gap:0.6rem;}
+.sidebar-nav button:hover{background:rgba(255,255,255,0.08);color:var(--white);}
+.sidebar-nav button.active{background:rgba(255,255,255,0.15);color:var(--gold);border-left:3px solid var(--gold);}
+.sidebar-nav button .check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0;}
+.sidebar-nav button.done .check{background:var(--green);border-color:var(--green);color:var(--white);}
+.sidebar-nav button .phase-dots{margin-left:auto;display:flex;gap:3px;}
+.sidebar-nav button .phase-dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.sidebar-nav button .phase-dots .dot.filled{background:var(--gold);}
+.sidebar-sep{height:1px;background:rgba(255,255,255,0.1);margin:0.3rem 1.2rem;}
+.sidebar-timer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,0.1);}
+.timer-display{font-family:'DM Mono',monospace;font-size:2.2rem;color:var(--gold);text-align:center;margin-bottom:0.5rem;}
+.timer-btns{display:flex;gap:0.5rem;}
+.timer-btns button{flex:1;padding:0.4rem;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:'Nunito',sans-serif;}
+.timer-btns button:hover{background:rgba(255,255,255,0.1);}
+
+.main{flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(0,0,0,0.15);}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+.topbar-phase{display:flex;gap:0.5rem;align-items:center;}
+.phase-step{padding:0.3rem 1rem;border-radius:20px;font-size:0.8rem;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.phase-step.active{background:var(--gold);color:var(--navy);font-weight:600;}
+.phase-step.completed{background:rgba(30,132,73,0.3);color:#6FCF97;}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.topbar-right button{padding:0.3rem 1rem;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.85rem;}
+.topbar-right button:hover{background:rgba(255,255,255,0.1);}
+.topbar-right button.primary{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+.topbar-right button.primary:hover{opacity:0.9;}
+
+.content{flex:1;padding:2rem;max-width:1400px;width:100%;margin:0 auto;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.2rem;}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--navy);letter-spacing:1px;margin-bottom:0.8rem;}
+.card h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:0.5rem;}
+
+.setup-hero{text-align:center;padding:3rem 0 2rem;}
+.setup-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--navy);letter-spacing:3px;}
+.setup-hero p{font-size:1.1rem;color:var(--grey);margin-top:0.5rem;}
+.setup-hero .subtitle{color:var(--gold);font-weight:600;font-size:1.2rem;margin-top:0.2rem;}
+.team-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;}
+.team-input{display:flex;align-items:center;gap:0.8rem;background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:0.8rem 1rem;transition:border-color 0.2s;}
+.team-input:focus-within{border-color:var(--gold);}
+.team-input .num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);width:30px;}
+.team-input input{flex:1;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:1rem;color:var(--dgrey);}
+.team-count-btns{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem;}
+.team-count-btns button{width:48px;height:48px;border-radius:50%;border:2px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.2rem;cursor:pointer;transition:all 0.2s;color:var(--dgrey);}
+.team-count-btns button.active{background:var(--navy);color:var(--gold);border-color:var(--navy);}
+.start-btn{display:block;margin:2rem auto 0;padding:1rem 3rem;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--r);cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+
+.report-card{background:#FFF8E7;border:3px solid #2D2D2D;border-radius:4px;padding:2rem;font-family:Georgia,'Times New Roman',serif;}
+.report-masthead{text-align:center;border-bottom:3px double #2D2D2D;padding-bottom:1rem;margin-bottom:1.5rem;}
+.report-masthead h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#1a1a1a;letter-spacing:4px;}
+.report-masthead .dateline{font-size:0.85rem;color:#666;margin-top:0.3rem;font-style:italic;}
+.report-items{display:grid;gap:0.8rem;}
+.report-item{display:flex;gap:0.8rem;padding:0.6rem 0;border-bottom:1px solid #ddd;align-items:baseline;}
+.report-item .bullet{color:var(--gold);font-weight:bold;font-size:1.2rem;flex-shrink:0;}
+.report-item .text{font-size:1rem;line-height:1.5;color:#333;}
+.event-box{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid var(--amber);border-radius:var(--r);padding:1.2rem 1.5rem;margin-top:1.5rem;}
+.event-box h3{font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:1.3rem;margin-bottom:0.5rem;}
+.event-box p{font-size:1rem;line-height:1.5;}
+.no-event{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:2px solid var(--green);border-radius:var(--r);padding:1rem 1.5rem;margin-top:1.5rem;text-align:center;color:var(--green);font-weight:600;}
+
+.decisions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+.decisions-grid .decision-card:nth-child(5){grid-column:1 / -1;}
+.decision-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:0.8rem 1rem;border-left:4px solid var(--navy);}
+.decision-card .d-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.15rem;}
+.decision-card .d-question{font-size:0.95rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
+.option{display:flex;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:6px;margin-bottom:0.25rem;background:var(--offwh);transition:background 0.15s;align-items:baseline;}
+.option .letter{font-family:'DM Mono',monospace;font-weight:700;font-size:0.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--white);}
+.option .letter.a{background:var(--btn-a);}
+.option .letter.b{background:var(--btn-b);}
+.option .letter.c{background:var(--btn-c);}
+.option .desc{font-size:0.85rem;line-height:1.3;color:var(--dgrey);}
+
+.entry-matrix{width:100%;border-collapse:separate;border-spacing:0;}
+.entry-matrix th{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--white);background:var(--navy);padding:0.8rem;text-align:center;position:sticky;top:0;z-index:5;}
+.entry-matrix th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.entry-matrix th:last-child{border-radius:0 var(--r) 0 0;}
+.entry-matrix td{padding:0.6rem;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+.entry-matrix td:first-child{text-align:left;font-weight:600;font-size:0.9rem;color:var(--navy);min-width:180px;max-width:300px;}
+.abc-group{display:flex;gap:6px;justify-content:center;}
+.abc-btn{width:56px;height:56px;border-radius:12px;border:3px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--dgrey);user-select:none;}
+.abc-btn:active{transform:scale(0.95);}
+.abc-btn.sel-a{background:var(--btn-a);color:var(--white);border-color:var(--btn-a);}
+.abc-btn.sel-b{background:var(--btn-b);color:var(--white);border-color:var(--btn-b);}
+.abc-btn.sel-c{background:var(--btn-c);color:var(--white);border-color:var(--btn-c);}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin:1rem 0;}
+.metric-card{background:var(--white);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);text-align:center;}
+.metric-card .m-name{font-size:0.8rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;}
+.metric-card .m-val{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--navy);}
+.metric-card .m-delta{font-size:0.85rem;font-weight:600;margin-top:0.2rem;}
+.metric-card .m-delta.pos{color:var(--green);}
+.metric-card .m-delta.neg{color:var(--red);}
+.metric-card .m-delta.zero{color:var(--grey);}
+.metric-bar{height:6px;background:var(--border);border-radius:3px;margin-top:0.5rem;overflow:hidden;}
+.metric-bar-fill{height:100%;border-radius:3px;background:var(--mid);transition:width 0.5s ease;}
+
+.results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:1rem;}
+.results-table th{font-family:'Bebas Neue',sans-serif;background:var(--navy);color:var(--white);padding:0.7rem;text-align:center;font-size:0.85rem;}
+.results-table th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.results-table th:last-child{border-radius:0 var(--r) 0 0;}
+.results-table td{padding:0.5rem;text-align:center;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.9rem;}
+.results-table td:first-child{text-align:left;font-family:'Nunito',sans-serif;font-weight:600;}
+
+.lb-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--white);border-radius:var(--r);margin-bottom:0.8rem;box-shadow:var(--shadow);}
+.lb-row:first-child{border:2px solid var(--gold);background:linear-gradient(135deg,#FFFDE7,#FFF8E1);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--navy);width:50px;text-align:center;}
+.lb-row:first-child .lb-rank{color:var(--gold);}
+.lb-name{flex:1;font-size:1.3rem;font-weight:600;color:var(--navy);}
+.lb-stats{display:flex;gap:2rem;}
+.lb-stat{text-align:center;}
+.lb-stat .val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--navy);}
+.lb-stat .lbl{font-size:0.7rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;}
+
+.final-hero{text-align:center;padding:2rem 0;}
+.final-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--gold);letter-spacing:3px;}
+.podium{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;align-items:flex-end;flex-wrap:wrap;}
+.podium-item{text-align:center;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;min-width:180px;}
+.podium-item.first{padding-bottom:2.5rem;border:3px solid var(--gold);transform:scale(1.1);}
+.podium-item .medal{font-size:3rem;}
+.podium-item .pname{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);margin:0.3rem 0;}
+.podium-item .pval{font-family:'DM Mono',monospace;font-size:1.2rem;color:var(--green);font-weight:700;}
+
+.debrief-q{background:var(--white);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:0.8rem;box-shadow:var(--shadow);border-left:4px solid var(--gold);}
+.debrief-q .qnum{font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:1rem;letter-spacing:1px;}
+.debrief-q p{font-size:1.05rem;color:var(--dgrey);line-height:1.5;margin-top:0.3rem;}
+.takeaway-card{background:linear-gradient(135deg,var(--navy),var(--mid));border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;color:var(--white);}
+.takeaway-card h3{font-family:'Bebas Neue',sans-serif;color:var(--gold);margin-bottom:0.5rem;font-size:1.2rem;}
+.takeaway-card p{font-size:0.95rem;line-height:1.5;opacity:0.9;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.overlay-box{background:var(--white);border-radius:var(--r);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+.overlay-box h2{font-family:'Bebas Neue',sans-serif;color:var(--navy);font-size:1.8rem;margin-bottom:1rem;}
+.overlay-box p,.overlay-box li{font-size:0.95rem;line-height:1.6;margin-bottom:0.5rem;color:var(--dgrey);}
+.overlay-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey);}
+
+.svg-container{text-align:center;margin:1rem 0;}
+.svg-container svg{max-width:100%;height:auto;border-radius:var(--r);box-shadow:var(--shadow);}
+
+.curriculum-card{background:var(--white);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:0.6rem;box-shadow:var(--shadow);border-left:4px solid var(--mid);}
+.curriculum-card .c-topic{font-weight:600;color:var(--navy);font-size:0.95rem;}
+.curriculum-card .c-spec{font-size:0.8rem;color:var(--grey);margin-top:0.15rem;}
+.curriculum-card .c-how{font-size:0.9rem;color:var(--dgrey);margin-top:0.3rem;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>THEME PARK TYCOON</h1>
+    <p>Mathematics &bull; KS3</p>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-timer">
+    <div class="timer-display" id="timerDisplay">10:00</div>
+    <div class="timer-btns">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseTimer()">Pause</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">SETUP</div>
+    <div class="topbar-phase" id="topbarPhase"></div>
+    <div class="topbar-right" id="topbarRight"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="overlay-box">
+    <button class="overlay-close" onclick="closeHelp()">&times;</button>
+    <h2>How to Play</h2>
+    <p><strong>Theme Park Tycoon</strong> is a 7-round simulation where teams make strategic decisions across 6 key metrics.</p>
+    <p><strong>Each Round</strong> has 4 phases:</p>
+    <ul>
+      <li><strong>Briefing</strong> &mdash; Read the situation report and any random events aloud.</li>
+      <li><strong>Decision Cards</strong> &mdash; Show the 5 decisions. Teams discuss (~10 min, use the timer).</li>
+      <li><strong>Team Entry</strong> &mdash; Each team taps A, B, or C for each decision.</li>
+      <li><strong>Results</strong> &mdash; Scores update and metric changes are displayed.</li>
+    </ul>
+    <p><strong>Metrics:</strong> Visitor Count, Revenue, Satisfaction, Safety Rating, Park Area Used, Operating Budget. Each decision shifts these metrics. The team with the best overall performance wins.</p>
+    <p><strong>Scoring:</strong> Final score is the sum of all metric values (normalised to their scales).</p>
+  </div>
+</div>
+
+<script>
+// ======================== EMBEDDED DATA ========================
+const SIM = {"title": "Theme Park Tycoon", "subject": "Mathematics", "level": "KS3", "duration": "90 minutes", "teamSize": "3-5 students", "numTeams": "4-6 teams", "overview": "Teams take on the role of theme park managers, making mathematical decisions every round to grow their park from a mid-sized attraction into a world-class destination. Every choice requires real calculation: setting ticket prices using percentages, allocating park area using fractions and ratios, staffing rides proportionally, estimating weather probabilities, and interpreting visitor data.\n\nThe simulation runs over seven rounds, each representing one month of park operations. Teams receive a briefing report with data they must interpret before making five decisions. Random events such as heatwaves, equipment failures, and viral social media moments force teams to recalculate on the fly.\n\nThe winning team is the one that achieves the best overall score across all six metrics. Students will discover that mathematical reasoning is not an abstract exercise but the essential tool for making good business decisions.", "scenario": "You have just been appointed as the management team for Apex Adventure Park, a mid-sized theme park that has been underperforming. The board has given you seven months to turn it around. You have data on visitor numbers, revenue, satisfaction surveys, safety inspections, a site map showing area usage, and a limited operating budget.\n\nEvery month you will receive a report on how the park is performing and must make five key decisions. Choose wisely — every percentage point, every ratio, every area calculation matters. The board will judge you on your final numbers across all six metrics.", "metrics": [{"name": "Visitor Count", "start": 5000, "unit": "visitors/day", "description": "Average daily visitors to the park"}, {"name": "Revenue", "start": 100000, "unit": "$", "description": "Monthly revenue from tickets, food, and merchandise"}, {"name": "Satisfaction", "start": 60, "unit": "/100", "description": "Visitor satisfaction score from surveys"}, {"name": "Safety Rating", "start": 80, "unit": "/100", "description": "Health and safety inspection score"}, {"name": "Park Area Used", "start": 40, "unit": "%", "description": "Percentage of total 50-acre site currently in use"}, {"name": "Operating Budget", "start": 500000, "unit": "$", "description": "Remaining funds available for improvements and operations"}], "finalScoring": "Final Score = (Visitor Count / 100) + (Revenue / 10000) + (Satisfaction x 2) + (Safety Rating x 2) + Park Area Used + (Operating Budget / 10000). Highest total score wins. Bonus of 50 points if no metric ever dropped below its critical threshold (Satisfaction below 30, Safety below 50, Budget below 0).", "curriculumLinks": [{"topic": "Percentages", "spec": "KS3 Number — percentage increase/decrease, percentage of an amount", "how": "Students calculate percentage discounts on tickets, percentage changes in visitor numbers, and percentage budget allocations"}, {"topic": "Ratio and proportion", "spec": "KS3 Ratio — simplifying ratios, dividing in a given ratio, proportion problems", "how": "Students use ratios to determine staffing levels per ride, divide budgets proportionally, and calculate food-to-visitor ratios"}, {"topic": "Area and perimeter", "spec": "KS3 Geometry — area of compound shapes, converting units", "how": "Students calculate the area needed for new rides, work out how much park space remains, and design layouts using compound shapes"}, {"topic": "Probability", "spec": "KS3 Probability — calculating probability, expected outcomes, sample space diagrams", "how": "Students estimate the probability of weather events and ride breakdowns, then calculate expected impact on visitor numbers"}, {"topic": "Data handling", "spec": "KS3 Statistics — interpreting bar charts, pie charts, averages, range", "how": "Students interpret visitor survey data, calculate mean satisfaction scores, and read revenue graphs in their briefing reports"}, {"topic": "Money and financial maths", "spec": "KS3 Number — four operations with money, profit and loss, best value", "how": "Students calculate profit margins on food, compare costs of different ride suppliers, and track running totals of their budget"}], "rounds": [{"num": 1, "name": "Opening Month — Setting the Foundation", "report": ["Current daily visitors average 5,000 with a peak of 6,200 on Saturdays and a low of 3,100 on Tuesdays.", "Adult tickets are $25 and child tickets are $15. Last month 60% of visitors were adults and 40% were children.", "Satisfaction surveys show the top complaint (45% of responses) is long queue times averaging 40 minutes per ride.", "The park covers 50 acres total, with 20 acres currently developed. The remaining 30 acres include a 5-acre lake and 25 acres of open land.", "Your operating budget of $500,000 must last all seven months. Average monthly running costs are $60,000."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Pricing", "question": "You want to boost weekday visitors. By what percentage should you discount Tuesday-Thursday tickets? Calculate the revenue impact assuming current weekday average is 3,500 visitors and the price elasticity means every 5% discount increases visitors by 8%.", "optA": "10% discount on weekday tickets (calculate new prices and projected visitor increase)", "optB": "20% discount on weekday tickets (calculate new prices and projected visitor increase)", "optC": "No discount, but introduce a family bundle: 2 adults + 2 children for $65 instead of $80 (calculate the percentage saving for families)", "effects": "A: Revenue +$8,000 (more visitors offset small discount), Visitors +560/day on weekdays. B: Revenue -$3,000 (deep discount not fully offset), Visitors +1,120/day on weekdays, Satisfaction +3. C: Revenue +$5,000 (bundles attract families), Visitors +400/day, Satisfaction +5 (families happier)."}, {"id": "D2", "domain": "Rides", "question": "You have space to build one new attraction. Each option requires different park area. Calculate the area as a percentage of your total 50-acre site and consider the impact on remaining usable land.", "optA": "Water splash ride: requires 2.5 acres (rectangular plot 250m x 100m). Cost: $80,000. Capacity: 600 riders/hour.", "optB": "Roller coaster: requires 4 acres (L-shaped plot of two rectangles: 200m x 120m and 100m x 80m). Cost: $150,000. Capacity: 900 riders/hour.", "optC": "Interactive adventure trail: requires 6 acres (irregular compound shape). Cost: $50,000. Capacity: 1,200 visitors/hour but lower thrill factor.", "effects": "A: Park Area Used +5%, Budget -$80,000, Satisfaction +4, Visitors +300/day. B: Park Area Used +8%, Budget -$150,000, Satisfaction +8, Visitors +600/day, Safety -2 (higher risk ride). C: Park Area Used +12%, Budget -$50,000, Satisfaction +3, Visitors +200/day, Safety +2 (very safe attraction)."}, {"id": "D3", "domain": "Operations", "question": "Queue times are 40 minutes on average. You need to reduce them. Calculate the staffing ratios needed: currently you have 120 staff for 12 rides (what is the ratio?). How does each option change the ratio and expected queue times?", "optA": "Hire 30 extra staff ($45,000/month) to increase ride operators, improving the staff-to-ride ratio to 12.5:1. Expected queue reduction: 25%.", "optB": "Install a virtual queue app ($30,000 one-off plus $5,000/month). Doesn't reduce actual waits but spreads visitors across rides more evenly. Expected queue reduction: 15%.", "optC": "Redesign queue layouts to use switchback patterns, increasing perceived capacity. Cost: $20,000 one-off. Expected queue reduction: 10%, but satisfaction improves more because queues feel shorter.", "effects": "A: Budget -$45,000, Satisfaction +8, Visitors +200/day (word of mouth). B: Budget -$35,000 first month then -$5,000/month ongoing, Satisfaction +5, Visitors +150/day. C: Budget -$20,000, Satisfaction +6, Visitors +100/day."}, {"id": "D4", "domain": "Marketing", "question": "You have data showing visitor numbers by age group: Under 12 (25%), 12-17 (20%), 18-30 (30%), 31-50 (15%), Over 50 (10%). Which demographic should you target with a $25,000 marketing campaign? Calculate what percentage increase you need in your target group to add 500 daily visitors.", "optA": "Target families with under-12s. You need a percentage increase in the Under 12 + 31-50 groups (parents). Currently that is 40% of 5,000 = 2,000 visitors. To gain 500, you need a 25% increase in this segment.", "optB": "Target teenagers and young adults (12-30). Currently 50% of visitors = 2,500. To gain 500, you need a 20% increase. This group is most active on social media.", "optC": "Target the over-50s with a 'silver day' campaign. Currently 10% = 500 visitors. To gain 500, you need a 100% increase — much harder but this group spends 40% more per head on food and merchandise.", "effects": "A: Budget -$25,000, Visitors +450/day, Revenue +$6,000 (families spend moderately), Satisfaction +2. B: Budget -$25,000, Visitors +550/day, Revenue +$4,000 (young people spend less per head), Satisfaction +1. C: Budget -$25,000, Visitors +200/day, Revenue +$9,000 (high per-head spend), Satisfaction +4 (quieter park on silver days)."}, {"id": "D5", "domain": "Safety", "question": "Your safety inspection is due. You currently score 80/100. The inspector checks three areas equally weighted: ride maintenance (currently 75/100), first aid provision (currently 90/100), and crowd management (currently 75/100). Calculate your average. Which area do you invest in to maximise your overall score?", "optA": "Invest $35,000 in ride maintenance overhaul. This raises ride maintenance from 75 to 90, making your new average (90+90+75)/3 = 85.", "optB": "Invest $20,000 in crowd management training and barriers. This raises crowd management from 75 to 88, making your new average (75+90+88)/3 = 84.3.", "optC": "Spread $25,000 evenly across all three areas. Each gains approximately 5 points: (80+95+80)/3 = 85, but the improvement is less targeted.", "effects": "A: Budget -$35,000, Safety Rating +5 (to 85), Operating costs reduced by $3,000/month (fewer breakdowns). B: Budget -$20,000, Safety Rating +4 (to 84), Satisfaction +3 (better crowd flow). C: Budget -$25,000, Safety Rating +5 (to 85), Satisfaction +1."}]}, {"num": 2, "name": "Summer Surge — Handling the Heat", "report": ["A heatwave is forecast for the next two weeks with temperatures above 35°C on 10 of 14 days. Probability of rain: 5%.", "Visitor numbers have risen 12% since last month's changes. Calculate your new daily average based on your Round 1 decisions.", "Food and drink sales data: average spend per visitor is $8.50 on food and $3.20 on drinks. In hot weather, drink sales typically increase by 60%.", "Three rides have reported minor mechanical issues. Each has a 15% chance of a breakdown in the next month if not serviced. Servicing costs $8,000 per ride.", "A competitor park 30 miles away has just announced a 25% ticket price cut."], "randomEvent": "Heatwave! Water-based attractions see double the queue times. Visitors without shade options report 15% lower satisfaction. Any team that built the water splash ride in Round 1 gains an extra +300 visitors/day this round.", "decisions": [{"id": "D1", "domain": "Pricing", "question": "Your competitor has cut prices by 25%. Your adult ticket is $25. If you match their cut, what is your new price? Calculate the revenue impact if matching the cut keeps visitors stable but not matching it loses 10% of visitors to the competitor.", "optA": "Match the 25% cut: adult tickets drop to $18.75, child tickets to $11.25. Revenue drops but visitors stay stable.", "optB": "Offer a smaller 10% cut ($22.50 adult, $13.50 child) plus a free drink voucher worth $3.20. Calculate total cost per visitor.", "optC": "Keep prices the same but add a 'heatwave guarantee' — free return ticket if temperature exceeds 38°C. Probability of triggering: 3 days out of 14 = approximately 21%.", "effects": "A: Revenue -$18,000 (25% price drop across all visitors), Visitors stable, Satisfaction +2. B: Revenue -$8,000 (smaller price cut), Budget -$4,000 (drink vouchers), Visitors -3% (some leave for competitor), Satisfaction +4. C: Revenue -$2,000 (expected cost of guarantee), Visitors -8% initially but +5% later as word spreads, Satisfaction +6."}, {"id": "D2", "domain": "Rides", "question": "Three rides each have a 15% chance of breaking down this month. If a ride breaks down, it costs $25,000 emergency repair plus $5,000/day lost revenue for 3 days downtime. Calculate the expected cost of NOT servicing versus the $8,000 per ride servicing cost. Is it worth servicing all three?", "optA": "Service all three rides now. Cost: 3 x $8,000 = $24,000. Breakdown probability drops to 2% each.", "optB": "Service only the most popular ride ($8,000) and accept the risk on the other two. Expected cost of two breakdowns: 2 x 0.15 x ($25,000 + $15,000) = $12,000.", "optC": "Don't service any rides. Save $24,000 now but accept the expected cost: 3 x 0.15 x $40,000 = $18,000 expected loss, plus potential safety rating drop.", "effects": "A: Budget -$24,000, Safety Rating +3, Satisfaction +2 (reliable rides). B: Budget -$8,000, Safety Rating +1, 30% chance of one breakdown causing Safety -5 and Satisfaction -4 and Budget -$40,000. C: Budget unchanged now, 45% chance of at least one breakdown causing Safety -8, Satisfaction -6, Budget -$40,000 to -$120,000."}, {"id": "D3", "domain": "Operations", "question": "Hot weather means drink sales will jump 60%. You currently stock 4,000 drinks/day and sell 3,200 (80% sell-through rate). With a 60% increase, you expect to sell 5,120 drinks/day. Calculate how many extra drinks to order and at what cost ($1.50 each, sold at $3.20 each).", "optA": "Order 6,000 drinks/day (surplus of 880). Cost increase: 2,000 extra x $1.50 = $3,000/day. Revenue increase: 1,920 extra sales x $3.20 = $6,144/day. Profit per day from extra drinks: $3,144.", "optB": "Order 5,500 drinks/day (modest surplus of 380). Cost increase: 1,500 x $1.50 = $2,250/day. You may run out on peak days, losing some sales but less waste.", "optC": "Install three water fountains ($15,000 total) to reduce drink demand by 20%. Then order 5,000 drinks/day. Lower revenue from drinks but higher satisfaction.", "effects": "A: Revenue +$12,000 (monthly net from drinks), Budget -$5,000 (upfront stock costs), Satisfaction +2. B: Revenue +$9,000, Budget -$3,000, Satisfaction +1 (occasional stockouts annoy visitors). C: Revenue +$5,000, Budget -$18,000 (fountains + stock), Satisfaction +6 (visitors love free water in heat)."}, {"id": "D4", "domain": "Marketing", "question": "Social media data shows your park was mentioned 2,400 times last month. The ratio of positive to negative mentions is 3:1 (1,800 positive, 600 negative). Most negative mentions are about heat and queues. Calculate what ratio you need to reach 4:1 positive-to-negative, and plan accordingly.", "optA": "Launch a social media contest: 'Best park photo wins season tickets.' Cost: $5,000. Expected to generate 800 positive mentions, changing ratio to (1800+800):(600) = 2600:600 = 13:3 or about 4.3:1.", "optB": "Hire two social media staff ($8,000/month) to respond to every negative comment. Expected to convert 200 negative mentions to neutral/positive, changing ratio to 2000:400 = 5:1.", "optC": "Create shaded rest areas and photograph them for social media ($12,000). Addresses the root cause. Expected to reduce negative mentions by 300 and add 400 positive, giving (2200):(300) = 7.3:1.", "effects": "A: Budget -$5,000, Visitors +300/day (social media exposure), Satisfaction +1. B: Budget -$8,000, Visitors +150/day, Satisfaction +3 (people feel heard). C: Budget -$12,000, Visitors +200/day, Satisfaction +7 (addresses real problem), Safety +1."}, {"id": "D5", "domain": "Safety", "question": "In 35°C+ heat, the risk of visitor heat-related illness increases. Data shows: at 30°C, 2 incidents per 10,000 visitors; at 35°C, 5 incidents per 10,000; at 40°C, 12 incidents per 10,000. With 5,000+ visitors daily and 10 hot days expected, calculate the expected number of incidents and decide how to respond.", "optA": "Set up 5 medical cooling stations across the park ($30,000). Reduces incident rate by 60%. Expected incidents without action: approximately 25-30 over the month. With stations: approximately 10-12.", "optB": "Distribute free sunscreen and water at entry ($10,000). Reduces incident rate by 30%. Expected incidents: approximately 17-21.", "optC": "Implement a 'heat protocol' — close outdoor rides when temperature exceeds 38°C and offer indoor alternatives. Cost: $5,000 (signage and retraining). Reduces incidents by 80% on closure days but loses ride revenue on those days.", "effects": "A: Budget -$30,000, Safety Rating +5, Satisfaction +3, Visitors +200/day (park known as safe). B: Budget -$10,000, Safety Rating +2, Satisfaction +2. C: Budget -$5,000, Safety Rating +7, Revenue -$8,000 (lost ride revenue on hot days), Satisfaction +4 (visitors feel cared for)."}]}, {"num": 3, "name": "Expansion Plans — Thinking Bigger", "report": ["Your park now uses between 40-60% of its 50-acre site depending on earlier decisions. The board wants to see expansion plans.", "A neighbouring 10-acre plot is available for purchase at $200,000. This would increase your total site to 60 acres.", "Visitor data shows average dwell time is 4.5 hours. Parks with dwell times above 6 hours earn 80% more revenue per visitor.", "Your staff-to-visitor ratio is currently 1:40. Industry best practice is 1:25. Calculate how many more staff you need for your current visitor numbers.", "A school group booking programme could guarantee 500 visitors every weekday at a 40% group discount."], "randomEvent": "A famous YouTuber with 2 million subscribers visits your park and posts a positive review. Visitor numbers spike by 20% for the next two weeks. Can your current capacity handle the surge?", "decisions": [{"id": "D1", "domain": "Pricing", "question": "The school group programme offers 500 guaranteed weekday visitors at a 40% discount. Regular adult price is $25, regular child price is $15. School groups are 90% children, 10% adults (teachers). Calculate the daily revenue from school groups and compare to the revenue from 500 regular visitors at normal prices.", "optA": "Accept school groups at 40% discount. Daily school revenue: (50 adults x $15) + (450 children x $9) = $750 + $4,050 = $4,800. Compare to 500 regular visitors: approximately $10,000. You lose $5,200/day but guarantee the bookings.", "optB": "Negotiate to 25% discount instead. Daily revenue: (50 x $18.75) + (450 x $11.25) = $937.50 + $5,062.50 = $6,000. Schools may choose a competitor — 60% chance of acceptance.", "optC": "Offer free entry for school groups but charge $8 per student for an 'educational workshop' package. Revenue: 450 x $8 = $3,600/day. Lower revenue but excellent PR and curriculum links.", "effects": "A: Revenue +$4,800/day on weekdays, Visitors +500/day weekdays, Satisfaction +2, Budget -$2,000 (admin costs). B: 60% chance of Revenue +$6,000/day and Visitors +500/day; 40% chance of no change. Budget -$1,000 (admin). C: Revenue +$3,600/day weekdays, Visitors +500/day, Satisfaction +5, Safety -1 (managing school children is harder)."}, {"id": "D2", "domain": "Rides", "question": "To increase dwell time from 4.5 to 6 hours, you need attractions that keep visitors engaged longer. Calculate how many additional 'attraction-hours' you need: 5,000 visitors x 1.5 extra hours = 7,500 attraction-hours per day. Which option provides this?", "optA": "Build an indoor entertainment complex (3 acres, $120,000). Capacity: 800 visitors/hour x 8 hours = 6,400 attraction-hours/day. Gets you 85% of the way to target.", "optB": "Create a themed dining experience (1.5 acres, $60,000). Capacity: 400 visitors/hour x 6 hours = 2,400 attraction-hours/day. Plus add a show arena (1 acre, $40,000) for 500/hour x 4 shows = 2,000 attraction-hours/day. Total: 4,400.", "optC": "Build a large maze and adventure playground (4 acres, $45,000). Capacity: 1,500 visitors/hour x 8 hours = 12,000 attraction-hours/day. Exceeds target but lower revenue per visitor.", "effects": "A: Park Area Used +6%, Budget -$120,000, Revenue +$15,000/month (extra spending from longer stays), Satisfaction +5. B: Park Area Used +5%, Budget -$100,000, Revenue +$20,000/month (dining revenue is high), Satisfaction +7. C: Park Area Used +8%, Budget -$45,000, Revenue +$8,000/month, Satisfaction +4, Visitors +400/day (families love playgrounds)."}, {"id": "D3", "domain": "Operations", "question": "The YouTuber spike brings 20% more visitors for two weeks. Your current capacity is designed for 6,000/day maximum before queues become unacceptable (over 60 minutes). Calculate your expected daily visitors during the spike and determine if you need temporary measures.", "optA": "Hire 20 temporary staff for two weeks ($15,000). This increases your capacity threshold to 7,000/day. Calculate if this is enough for a 20% spike on your current numbers.", "optB": "Implement timed entry slots to cap daily visitors at 6,000 ($3,000 for the booking system). Turn away excess visitors but maintain quality.", "optC": "Extend opening hours by 2 hours (8am-10pm instead of 10am-8pm). Cost: $8,000 in overtime. This effectively increases daily capacity by 20% by spreading visitors across more hours.", "effects": "A: Budget -$15,000, Visitors +20% for two weeks, Satisfaction +2 (managed well), Revenue +$25,000 (two-week spike). B: Budget -$3,000, Visitors capped at 6,000/day, Satisfaction +5 (great experience for those who get in), Revenue +$10,000 (limited visitors). C: Budget -$8,000, Visitors +20%, Revenue +$20,000, Satisfaction +3, Safety -2 (tired staff make mistakes)."}, {"id": "D4", "domain": "Marketing", "question": "The neighbouring 10-acre plot costs $200,000. Your current budget may or may not stretch. Calculate what percentage of your remaining budget this represents. The land could increase your total area from 50 to 60 acres. What percentage increase in total park area is this?", "optA": "Buy the land outright for $200,000. This is a 20% increase in total park area (10/50). You gain 10 acres of expansion space but severely reduce your operating budget.", "optB": "Negotiate a lease-to-buy: $10,000/month for 24 months (total $240,000, which is 20% more expensive). Preserves your budget now but costs more long-term.", "optC": "Don't buy the land. Instead, invest $50,000 in maximising your existing space — redesign paths and unused corners. Reclaim an estimated 3 acres of wasted space (6% of total area).", "effects": "A: Budget -$200,000, Park Area Used changes (denominator becomes 60 acres — recalculate your percentage), long-term expansion capacity gained. B: Budget -$10,000/month ongoing, same land benefits as A but delayed, no immediate budget shock. C: Budget -$50,000, Park Area Used +6%, Satisfaction +2 (better-designed spaces), no new land."}, {"id": "D5", "domain": "Safety", "question": "Your staff-to-visitor ratio is 1:40 and best practice is 1:25. With approximately 5,500 daily visitors, you have about 138 staff. Calculate how many staff you need for a 1:25 ratio (5,500/25 = 220 staff). That means hiring 82 more staff. Each costs $2,000/month. Can you afford it?", "optA": "Hire all 82 staff needed ($164,000/month). Achieves best practice immediately. This may not be affordable.", "optB": "Hire 40 additional staff ($80,000/month) to reach a ratio of approximately 1:31 (178 staff for 5,500 visitors). A compromise.", "optC": "Hire 20 staff ($40,000/month) and invest $25,000 in training existing staff to be more efficient. Target an effective ratio equivalent to 1:30 through better performance rather than pure numbers.", "effects": "A: Budget -$164,000, Safety Rating +8, Satisfaction +6, but may bankrupt the park if budget is low. B: Budget -$80,000, Safety Rating +4, Satisfaction +3. C: Budget -$65,000 (first month), then -$40,000/month ongoing, Safety Rating +5, Satisfaction +4 (better-trained staff give better service)."}]}, {"num": 4, "name": "Data Deep Dive — Reading the Numbers", "report": ["Pie chart data: Revenue sources — Tickets 55%, Food 25%, Merchandise 12%, Games 8%. Which is your most underdeveloped revenue stream?", "Bar chart data: Visitor satisfaction by area — Rides 72/100, Food 58/100, Cleanliness 81/100, Staff 65/100, Value for Money 54/100.", "The mean daily visitor count over the last 30 days is 5,800, median is 5,500, mode is 5,200. What does the difference between mean and median tell you about the distribution?", "Operating costs have risen 8% due to new staff. Your revenue needs to grow by the same percentage to maintain profit margins. Calculate the revenue target.", "Weather forecast: 40% chance of a rainy week (7 days) which historically reduces visitors by 35%."], "randomEvent": "A food safety inspection finds one food outlet has a hygiene score of 2/5. You must close it immediately, losing 15% of your food revenue until it is fixed. Repair and deep clean costs $12,000 and takes 5 days.", "decisions": [{"id": "D1", "domain": "Pricing", "question": "The 'Value for Money' satisfaction score is only 54/100 — the lowest of all categories. Your average visitor spends $35 total ($25 ticket + $8.50 food + $1.50 games). To improve perceived value, you can either lower prices or increase what visitors get. Calculate the cost-per-hour of entertainment for a 4.5-hour visit ($35/4.5 = $7.78/hour).", "optA": "Introduce a '$30 all-inclusive wristband' covering entry + 3 food vouchers + 2 game tokens. Normal cost would be $25 + $12 + $3 = $40. The discount is 25%. But your cost per visitor rises by $5.", "optB": "Keep current pricing but add free entertainment throughout the park (buskers, characters). Cost: $15,000/month. No price change but perceived value increases.", "optC": "Create a tiered pricing system: Basic ($20, rides only), Standard ($30, rides + food deal), Premium ($45, everything included + fast-track queues). Calculate the expected revenue if 30% choose Basic, 50% Standard, 20% Premium.", "effects": "A: Revenue -$5 per visitor but Satisfaction +8 (Value for Money jumps to 70+), net Revenue -$10,000/month. B: Budget -$15,000, Satisfaction +5, Visitors +200/day (atmosphere improves). C: Revenue +$8,000/month (Premium visitors pay more), Satisfaction +6 (choice feels fair), some Satisfaction -2 from Basic visitors (feel excluded from some areas)."}, {"id": "D2", "domain": "Rides", "question": "Data shows the mean daily visitors (5,800) is higher than the median (5,500), indicating right-skew from peak days. You need to decide whether to build capacity for mean, median, or peak demand. Peak days hit 7,200 visitors. Building for peak costs 40% more than building for median. Calculate the costs.", "optA": "Build capacity for median demand (5,500). Cost: $50,000 for queue management upgrades. Most days are comfortable but peak days will still have long queues.", "optB": "Build capacity for mean demand (5,800). Cost: $65,000. Good for most days, slightly stretched on peaks.", "optC": "Build capacity for peak demand (7,200). Cost: $70,000 ($50,000 x 1.4). Excellent on peak days, some wasted capacity on quiet days.", "effects": "A: Budget -$50,000, Satisfaction +3 (better on average days), Visitors +100/day. B: Budget -$65,000, Satisfaction +5 (good most days), Visitors +200/day. C: Budget -$70,000, Satisfaction +7 (great even on busy days), Visitors +400/day (word spreads that queues are short)."}, {"id": "D3", "domain": "Operations", "question": "The food outlet closure loses 15% of food revenue. Food is 25% of total revenue. Calculate the daily loss: if total monthly revenue is approximately $130,000, daily revenue is about $4,333. Food revenue is $1,083/day. Loss: 15% x $1,083 = $162.50/day for 5 days = $812.50. Plus $12,000 repair. How do you respond?", "optA": "Fast-track repair ($18,000 instead of $12,000) to reopen in 2 days instead of 5. Save 3 days of lost revenue ($487.50) but spend $6,000 more. Is it worth it?", "optB": "Standard repair ($12,000, 5 days). Redirect visitors to other food outlets. Some overcrowding at remaining outlets — satisfaction drops slightly.", "optC": "Standard repair ($12,000, 5 days) plus bring in 3 temporary food trucks ($4,500 for the week). Food trucks actually generate excitement and may increase food revenue by 10% while they are there.", "effects": "A: Budget -$18,000, Revenue -$325 (2 days lost revenue), Satisfaction -1 (minimal disruption), Safety Rating +3 (fast response impresses inspectors). B: Budget -$12,000, Revenue -$812.50, Satisfaction -4 (crowded food areas), Safety Rating +1. C: Budget -$16,500, Revenue +$500 (food trucks are popular), Satisfaction +2 (food trucks are exciting), Safety Rating +2."}, {"id": "D4", "domain": "Marketing", "question": "Rain forecast: 40% chance of a rainy week reducing visitors by 35%. Calculate expected visitor loss: 0.40 x 0.35 x 5,800 = 812 expected daily visitor reduction (on average, accounting for probability). Should you prepare for rain or hope for the best?", "optA": "Invest $20,000 in covered walkways and rain shelters. If it rains, visitor drop is only 15% instead of 35%. Expected benefit: 0.40 x (0.35-0.15) x 5,800 x 7 days x $35/visitor = $11,368 saved revenue.", "optB": "Create a 'Rainy Day Special' — 50% off if it rains. Cost: reduced ticket price. But visitor numbers only drop 10% instead of 35% because of the deal.", "optC": "Do nothing and accept the risk. 60% chance it doesn't rain and you save the investment.", "effects": "A: Budget -$20,000, if rain: Visitors -15% not -35%, Revenue protected, Satisfaction +4 (visitors appreciate covered areas). Permanent improvement. B: Budget -$0 upfront, if rain: Revenue -30% (half-price tickets) but Visitors only -10%, Satisfaction +3. C: Budget unchanged, 40% chance of Visitors -35% for a week, Revenue -$20,000, Satisfaction -5."}, {"id": "D5", "domain": "Safety", "question": "The food hygiene incident lowered your Safety Rating. You need to conduct a full park audit. The auditor quotes: basic audit (covers 60% of park areas) for $8,000, standard audit (covers 85%) for $15,000, or comprehensive audit (100% plus recommendations report) for $25,000. Calculate the cost per percentage point of coverage.", "optA": "Comprehensive audit: $25,000 / 100 = $250 per percentage point of coverage. Guarantees everything is checked and gives you an improvement roadmap.", "optB": "Standard audit: $15,000 / 85 = $176 per percentage point. Better value per point but misses 15% of areas.", "optC": "Basic audit: $8,000 / 60 = $133 per percentage point. Best value per point but leaves 40% unchecked — risky given the recent food incident.", "effects": "A: Budget -$25,000, Safety Rating +8, Satisfaction +2 (visitors see thorough checks), reduces future incident risk by 90%. B: Budget -$15,000, Safety Rating +5, reduces future incident risk by 70%. C: Budget -$8,000, Safety Rating +2, reduces future incident risk by 40%, 15% chance of another incident next round."}]}, {"num": 5, "name": "Halloween Special — Seasonal Strategy", "report": ["Halloween is the second biggest event of the year. Last year, parks that ran Halloween events saw visitor numbers increase by an average of 45%.", "You have 4 weeks to prepare. A Halloween overlay on existing rides costs $5,000 per ride. You have 12-15 rides depending on earlier decisions.", "Evening opening (6pm-11pm) for a 'Fright Night' event could attract a different audience: 18-30 year olds willing to pay premium prices.", "Costume data from last year: 35% of visitors wore costumes. Parks that offered costume discounts saw 60% of visitors in costume, which improves atmosphere ratings.", "Pumpkin suppliers quote: 2,000 pumpkins at $3 each, or 5,000 at $2.20 each (bulk discount). You plan to sell carved pumpkins at $8 each."], "randomEvent": "A local newspaper runs a story about 'the best Halloween parks in the region.' If your Satisfaction is above 70, you are featured — gaining 1,000 extra visitors/day for the Halloween period. If below 70, you are not mentioned.", "decisions": [{"id": "D1", "domain": "Pricing", "question": "Fright Night evening sessions (6pm-11pm, 5 hours). Standard day entry is $25. What should you charge for Fright Night? Consider: it is 5 hours vs 10 hours daytime (50% of the time), but the experience is premium and unique. If 2,000 people attend at $X each, calculate revenue for different price points.", "optA": "Charge $20 (80% of day price for 50% of the time — premium pricing). 2,000 visitors x $20 = $40,000 per night. Running 8 Fright Nights = $320,000 total.", "optB": "Charge $15 (60% of day price — competitive). Higher attendance expected: 3,000 visitors x $15 = $45,000 per night x 8 = $360,000 total.", "optC": "Charge $30 (premium exclusive event). Lower attendance: 1,200 visitors x $30 = $36,000 per night x 8 = $288,000. But includes a free drink and photo, costing $5/person.", "effects": "A: Revenue +$320,000 over Halloween month, Visitors +2,000/evening on Fright Nights, Satisfaction +3. B: Revenue +$360,000, Visitors +3,000/evening, Satisfaction +2, Safety -2 (more people to manage at night). C: Revenue +$240,000 (after deducting $5/person costs), Visitors +1,200/evening, Satisfaction +7 (exclusive premium feel)."}, {"id": "D2", "domain": "Rides", "question": "You can overlay Halloween theming on existing rides. Each ride costs $5,000 to theme. You have a limited budget — calculate how many rides you can afford to theme and which gives the best return. Themed rides see a 30% visitor preference increase.", "optA": "Theme all rides (assume 14 rides x $5,000 = $70,000). Every ride gets the Halloween treatment. Maximum atmosphere.", "optB": "Theme your top 6 most popular rides ($30,000). These rides account for 70% of total ride visits (Pareto principle — roughly 40% of rides deliver 70% of the value).", "optC": "Theme 4 rides ($20,000) and build one completely new scare maze ($35,000, total $55,000). The maze becomes a standalone attraction charging $5 extra per visitor.", "effects": "A: Budget -$70,000, Satisfaction +8, Visitors +500/day during Halloween, Revenue +$5,000/day. B: Budget -$30,000, Satisfaction +6, Visitors +350/day, Revenue +$3,500/day. C: Budget -$55,000, Satisfaction +9 (scare maze is the highlight), Visitors +600/day, Revenue +$8,000/day (maze charges extra)."}, {"id": "D3", "domain": "Operations", "question": "Pumpkin business case: Buy 2,000 at $3 each ($6,000) or 5,000 at $2.20 each ($11,000). Sell carved pumpkins at $8 each. Calculate profit for each scenario. If you sell 80% of stock: 2,000 option sells 1,600 x $8 = $12,800 revenue, profit $6,800. 5,000 option sells 4,000 x $8 = $32,000 revenue, profit $21,000. But can you actually sell 4,000 pumpkins?", "optA": "Buy 5,000 pumpkins ($11,000). If you sell 80% at $8 each, profit is $21,000. Risk: if you only sell 50%, profit drops to $9,000 with $5,500 of wasted pumpkins.", "optB": "Buy 2,000 pumpkins ($6,000). Safer bet: 80% sell rate gives $6,800 profit. Lower risk, lower reward.", "optC": "Buy 3,000 pumpkins at $2.60 each (interpolated bulk price, $7,800). A middle ground. At 80% sell rate: 2,400 x $8 = $19,200 revenue, profit $11,400.", "effects": "A: Budget -$11,000 then Revenue +$21,000 to +$32,000 (depending on sell-through), Satisfaction +3 (pumpkins everywhere). B: Budget -$6,000 then Revenue +$6,800, Satisfaction +1 (some pumpkins). C: Budget -$7,800 then Revenue +$11,400 to +$16,200, Satisfaction +2."}, {"id": "D4", "domain": "Marketing", "question": "Costume discount strategy: offering 10% off for visitors in costume. Last year 35% wore costumes; with the discount, expect 60%. Calculate the revenue impact: if 60% of 6,000 visitors get 10% off a $25 ticket, that is 3,600 x $2.50 = $9,000 in discounts per day. Over 14 Halloween days = $126,000 lost. Is the atmosphere boost worth it?", "optA": "Offer the 10% costume discount. Revenue loss: $126,000 over 14 days. But higher atmosphere means Satisfaction jumps significantly, and costumed visitors spend 20% more on merchandise.", "optB": "Instead of a discount, run a 'best costume' competition with prizes totalling $2,000. Only costs $2,000 total, still encourages costumes (estimate 50% participation), less revenue impact.", "optC": "Offer free face painting instead of a discount ($8,000 for face painters over 14 days). No ticket discount but adds value. Costume rate reaches about 45%.", "effects": "A: Revenue -$126,000 from tickets but +$40,000 from extra merchandise (net -$86,000), Satisfaction +10, Visitors +800/day. B: Budget -$2,000, Satisfaction +5, Visitors +300/day, Revenue +$5,000 (no discounts given). C: Budget -$8,000, Satisfaction +6, Visitors +400/day, Revenue +$3,000."}, {"id": "D5", "domain": "Safety", "question": "Night-time events require additional safety measures. Calculate the ratio of staff to visitors needed for evening events vs daytime. Daytime ratio: 1:25 (best practice). Night-time with scare elements, dark areas, and younger-skewing crowd: recommended 1:15. If Fright Night attracts 2,000 visitors, you need 2,000/15 = 134 staff for the evening shift.", "optA": "Hire 134 temporary evening staff ($3,000 per night x 8 nights = $24,000). Full safety coverage at 1:15 ratio.", "optB": "Use 80 existing staff on overtime ($1,500 per night x 8 = $12,000) plus 30 temps ($900 per night x 8 = $7,200). Total: $19,200. Ratio: 1:18 (slightly under recommended).", "optC": "Use 60 existing staff on overtime ($1,000 per night x 8 = $8,000) and rely on extra lighting and CCTV ($5,000). Total: $13,000. Ratio: 1:33 — well below recommended.", "effects": "A: Budget -$24,000, Safety Rating +5, Satisfaction +3 (visitors feel safe in the dark). B: Budget -$19,200, Safety Rating +2, Satisfaction +1, 10% chance of a minor incident causing Safety -3. C: Budget -$13,000, Safety Rating -2, Satisfaction -1, 30% chance of a safety incident causing Safety -8 and Revenue -$20,000 (negative press)."}]}, {"num": 6, "name": "Winter Challenge — Beating the Cold", "report": ["Winter is traditionally the weakest quarter. Average visitor numbers drop 40% from October to December. Your current daily average is the result of all prior decisions.", "Heating the park's indoor areas costs $3,500/day. Currently 30% of your attractions are indoors. The ratio of indoor to outdoor attractions matters.", "An ice rink concession company offers to install a rink for free and pay you 15% of their revenue. They project $8,000/day revenue in winter (your cut: $1,200/day).", "Christmas market data from other parks: average spend per visitor at Christmas markets is $22 on top of regular spending, but setup costs $45,000.", "Your annual accounts show that the park needs to end the year with at least $100,000 in the budget to cover January-March operating costs."], "randomEvent": "A cold snap drops temperatures to -5°C for a week. Outdoor ride mechanisms freeze, requiring $15,000 in de-icing and maintenance. Any team with more than 60% of attractions outdoors loses an additional $5,000 in emergency repairs.", "decisions": [{"id": "D1", "domain": "Pricing", "question": "Winter pricing strategy: visitors drop 40%. Your current ticket prices yield lower total revenue. Calculate: if daily visitors drop from 6,000 to 3,600 (40% reduction), and your operating costs stay at $60,000/month, what ticket price increase would maintain the same revenue? Revenue needed: 6,000 x $25 = $150,000/day... actually monthly. Work out the percentage increase needed.", "optA": "Raise prices by 15% ($28.75 adult, $17.25 child). Higher per-visitor revenue but may further reduce visitors by 8% (price elasticity).", "optB": "Keep prices the same but introduce a 'Winter Season Pass' — $80 for unlimited visits November-February. If 500 people buy it, that is $40,000 guaranteed upfront revenue. Calculate how many visits each pass holder averages (typically 8 visits, meaning $10/visit — well below normal price).", "optC": "Drop prices 20% ($20 adult, $12 child) to attract more winter visitors. If the lower price brings back 25% of lost visitors (900 more per day), calculate new revenue vs old.", "effects": "A: Revenue per visitor +15% but Visitors -8% on top of -40%, net Revenue approximately -35%, Satisfaction -3. B: Budget +$40,000 upfront, Visitors +300/day (pass holders return often), Satisfaction +5 (great value), Revenue -10% long term (cheap per visit). C: Revenue per visitor -20% but Visitors -25% instead of -40%, net Revenue approximately -40%, Satisfaction +4, Visitors +900/day vs without the discount."}, {"id": "D2", "domain": "Rides", "question": "Only 30% of your attractions are indoors. To maintain winter visits, you should increase this. Calculate: if you convert 3 outdoor rides to indoor (enclosed) versions at $25,000 each, what percentage of attractions become indoor? (Assume 15 total rides, currently 4.5 indoor. Adding 3 makes 7.5/15 = 50% indoor.)", "optA": "Convert 3 rides to enclosed versions ($75,000). Indoor ratio rises to 50%. Winter visitor drop improves from -40% to -25%.", "optB": "Build one large indoor attraction ($60,000) and convert 1 ride ($25,000). Total $85,000. Indoor count goes to about 43%. Winter drop improves to -30%.", "optC": "Don't convert rides. Instead, add heated covered viewing areas to 5 outdoor rides ($6,000 each = $30,000). Rides stay outdoor but visitors are sheltered. Winter drop improves to -33%.", "effects": "A: Budget -$75,000, Visitors improve (winter drop -25% instead of -40%), Satisfaction +5, Revenue +$15,000/month in winter. B: Budget -$85,000, Visitors improve (drop -30%), Satisfaction +6 (new attraction is a draw), Revenue +$12,000/month. C: Budget -$30,000, Visitors improve slightly (drop -33%), Satisfaction +3, Revenue +$7,000/month."}, {"id": "D3", "domain": "Operations", "question": "The ice rink deal: they install for free, project $8,000/day revenue, you get 15%. That is $1,200/day x 90 winter days = $108,000 total. But you must provide the space (2 acres) and staff the entrance (2 staff = $4,000/month for 3 months = $12,000). Net profit: $108,000 - $12,000 = $96,000. Or do you build your own rink?", "optA": "Accept the concession deal. Net profit: $96,000. Zero upfront cost. You lose some control over quality.", "optB": "Build your own rink ($50,000 setup, $3,000/month running). You keep 100% of revenue. If you match their $8,000/day projection, revenue: $720,000 over 90 days. Profit: $720,000 - $50,000 - $9,000 = $661,000. But can you actually achieve $8,000/day? Realistically maybe $4,000/day as you are not specialists. Profit then: $360,000 - $59,000 = $301,000.", "optC": "Decline both options. Use the 2 acres for a winter garden with heated market stalls instead ($20,000 setup). Revenue: approximately $2,000/day x 90 = $180,000. Profit: $160,000.", "effects": "A: Budget -$12,000, Revenue +$96,000 over winter, Park Area Used +4%, Satisfaction +4 (ice rink is a draw). B: Budget -$59,000, Revenue +$301,000 (realistic estimate), Park Area Used +4%, Satisfaction +5, Safety -2 (running a rink is new to you). C: Budget -$20,000, Revenue +$160,000, Park Area Used +4%, Satisfaction +6 (winter garden is charming)."}, {"id": "D4", "domain": "Marketing", "question": "Christmas market analysis: setup costs $45,000, average extra spend per visitor is $22. If your winter daily visitors average 3,600, the market runs for 30 days. Total extra revenue: 3,600 x $22 x 30 = $2,376,000. That cannot be right — check the calculation. Actually, not every visitor goes to the market. If 60% visit the market: 2,160 x $22 x 30 = $1,425,600. Still huge. Revenue share: you keep 40% as the market rents stalls to vendors. Your cut: $570,240.", "optA": "Run a full Christmas market ($45,000 setup). Your 40% revenue share on $22/visitor market spending could net over $500,000. High upfront cost but massive return. Uses 3 acres of space.", "optB": "Run a smaller Christmas market ($20,000 setup, 1.5 acres). Fewer stalls, average spend drops to $12/visitor. Your cut at 40%: approximately $155,000 over the month.", "optC": "Skip the Christmas market. Instead, invest $15,000 in Christmas theming (lights, decorations, Santa's grotto). Modest visitor boost of +500/day but no market revenue.", "effects": "A: Budget -$45,000, Revenue +$500,000+, Park Area Used +6%, Visitors +800/day (market attracts non-park visitors), Satisfaction +7. B: Budget -$20,000, Revenue +$155,000, Park Area Used +3%, Visitors +400/day, Satisfaction +4. C: Budget -$15,000, Visitors +500/day, Satisfaction +5, Revenue +$20,000 (extra ticket sales only)."}, {"id": "D5", "domain": "Safety", "question": "Winter brings ice, frost, and slip hazards. Last winter, parks reported an average of 1 slip injury per 2,000 visitors. With 3,600 daily visitors, that is 1.8 injuries per day. Each injury costs an average of $2,500 in first aid and paperwork and risks a Safety Rating drop. Calculate the cost of prevention vs the expected cost of injuries over 90 days.", "optA": "Full winter safety package ($40,000): gritting, non-slip surfaces, handrails, boot grips for visitors. Reduces slip rate by 85%. Expected injuries: 0.27/day x 90 = 24 injuries (vs 162 without action). Savings: 138 x $2,500 = $345,000 saved.", "optB": "Basic gritting programme ($15,000). Reduces slip rate by 50%. Expected injuries: 0.9/day x 90 = 81 (vs 162). Savings: 81 x $2,500 = $202,500.", "optC": "Warning signs and visitor advisories only ($2,000). Reduces slip rate by 15%. Expected injuries: 1.53/day x 90 = 138 (vs 162). Savings: 24 x $2,500 = $60,000. But visitors may blame the park despite warnings.", "effects": "A: Budget -$40,000, Safety Rating +8, Satisfaction +4, saves approximately $345,000 in injury costs over winter. B: Budget -$15,000, Safety Rating +4, Satisfaction +2, saves approximately $202,500. C: Budget -$2,000, Safety Rating -2, Satisfaction -3, saves only $60,000 and risk of lawsuit (5% chance of -$100,000 legal cost)."}]}, {"num": 7, "name": "Final Quarter — Going for Gold", "report": ["The board meeting is in 4 weeks. They will review all six metrics and determine if you keep your jobs.", "Year-end data: calculate your total revenue, total visitors served, and how your operating budget has changed over the year.", "Your park's national ranking is based on a weighted formula: 30% Satisfaction, 25% Safety, 20% Visitors, 15% Revenue, 10% Innovation (based on number of new attractions added).", "A rival park has declared bankruptcy. Their 15 rides are being auctioned — some at 60% below market value. You could expand rapidly if you have the budget.", "End-of-year staff bonuses are due: industry standard is $500 per staff member. Calculate the total cost based on your current staff numbers."], "randomEvent": "The local council announces a 'Best Family Attraction' award. Parks are judged on: Safety (40%), Satisfaction (30%), Community Impact (20%), Value for Money (10%). Calculate your weighted score to see if you can win. The winner gets $50,000 prize money and a year of free advertising worth approximately $200,000 in extra visitors.", "decisions": [{"id": "D1", "domain": "Pricing", "question": "Year-end ticket strategy: you can lock in next year's prices now. Inflation is 3%. Do you raise prices by inflation, above inflation, or offer an early-bird deal? Calculate the impact: if 10,000 annual pass holders buy at current prices, that is $80 x 10,000 = $800,000. At inflation-adjusted $82.40, that is $824,000. At a 10% early-bird discount on next year's inflated price: $74.16 x 10,000 = $741,600.", "optA": "Raise prices by 5% (above inflation). Annual pass: $84. Revenue: $840,000 from 10,000 holders. Risk: 8% of pass holders do not renew.", "optB": "Raise prices by 3% (match inflation). Annual pass: $82.40. Revenue: $824,000. Most pass holders renew.", "optC": "Offer early-bird 10% discount on next year's inflated price ($74.16). Revenue: $741,600 now but guarantees 10,000 visitors committed for next year. Satisfaction +5.", "effects": "A: Revenue +$840,000 from passes, Visitors -8% of pass holders next year (800 fewer committed), Satisfaction -2 (price grumbles). B: Revenue +$824,000, Visitors stable, Satisfaction +1 (fair pricing). C: Revenue +$741,600 (less now), Visitors guaranteed for next year, Satisfaction +5 (great deal)."}, {"id": "D2", "domain": "Rides", "question": "The bankrupt rival park's ride auction: 15 rides available. A mega-coaster valued at $500,000 is going for $200,000 (60% off). A family spinner valued at $120,000 goes for $48,000. A water rapids ride valued at $300,000 goes for $120,000. Calculate the total savings and which combination fits your remaining budget and park space.", "optA": "Buy the mega-coaster ($200,000, needs 5 acres). A headline attraction that could become your park's icon. Huge visitor draw but expensive to maintain ($10,000/month).", "optB": "Buy the family spinner ($48,000, 1 acre) and the water rapids ($120,000, 3 acres). Total: $168,000, 4 acres. Two solid rides that appeal to different age groups.", "optC": "Buy just the family spinner ($48,000, 1 acre). Invest the savings in upgrading existing rides ($30,000 for upgrades across 5 rides). Total: $78,000.", "effects": "A: Budget -$200,000, Park Area Used +10%, Visitors +1,200/day (mega-coaster is a huge draw), Satisfaction +8, ongoing cost -$10,000/month. B: Budget -$168,000, Park Area Used +8%, Visitors +700/day, Satisfaction +6. C: Budget -$78,000, Park Area Used +2%, Visitors +300/day, Satisfaction +5 (upgraded rides across the board)."}, {"id": "D3", "domain": "Operations", "question": "Staff bonuses: industry standard is $500 per staff member. Calculate total cost based on your current estimated staff (140-220 depending on decisions). If you have 180 staff: 180 x $500 = $90,000. Can you afford this? What are the consequences of not paying bonuses?", "optA": "Pay full bonuses ($500/person). If 180 staff: $90,000. Staff morale and retention improve significantly.", "optB": "Pay reduced bonuses ($300/person = $54,000 for 180 staff). Below industry standard but acknowledges staff effort.", "optC": "No cash bonuses. Instead, offer 2 extra paid holiday days per staff member (cost: $200/person = $36,000). Different form of reward.", "effects": "A: Budget -$90,000, Satisfaction +4 (happy staff = happy visitors), Safety +2 (motivated staff are more careful), -15% staff turnover next year. B: Budget -$54,000, Satisfaction +2, Safety +1, -5% staff turnover. C: Budget -$36,000, Satisfaction +1, Safety +1, 10% staff turnover (some feel undervalued but others prefer holidays)."}, {"id": "D4", "domain": "Marketing", "question": "Final marketing push: you want to maximise visitors in the last month. Your social media has grown from 2,400 mentions to approximately 8,000/month. The positive-to-negative ratio is now the result of your earlier decisions. Calculate your marketing ROI: if $1 of marketing spend generates $3.50 in revenue on average, how much should you invest for maximum return without overspending?", "optA": "Big push: $40,000 marketing campaign across TV, social media, and billboards. Expected return: $40,000 x 3.5 = $140,000 in additional revenue. Net profit: $100,000.", "optB": "Targeted digital campaign: $20,000 focused on social media and influencers. Expected return: $20,000 x 4.2 = $84,000 (digital has higher ROI). Net profit: $64,000.", "optC": "Grassroots campaign: $8,000 on local partnerships, school flyers, and community events. Expected return: $8,000 x 5.0 = $40,000 (local has the highest ROI per dollar). Net profit: $32,000.", "effects": "A: Budget -$40,000, Revenue +$140,000, Visitors +1,500/day for last month, Satisfaction +2. B: Budget -$20,000, Revenue +$84,000, Visitors +900/day, Satisfaction +3 (influencer content is engaging). C: Budget -$8,000, Revenue +$40,000, Visitors +400/day, Satisfaction +5 (strong community goodwill)."}, {"id": "D5", "domain": "Safety", "question": "Final safety investment: the council award weighs Safety at 40%. Your current Safety Rating determines a huge portion of your score. The award formula: (Safety x 0.4) + (Satisfaction x 0.3) + (Community x 0.2) + (Value x 0.1). If your Safety is 85 and Satisfaction is 75: (85x0.4)+(75x0.3)+(60x0.2)+(70x0.1) = 34+22.5+12+7 = 75.5. Can you push Safety higher?", "optA": "Major safety overhaul ($50,000). Safety Rating +10. This could push you to 90+ Safety, giving you a strong shot at the award.", "optB": "Targeted safety improvements ($25,000). Safety Rating +5. Moderate improvement, balanced spend.", "optC": "Community safety programme ($15,000): fund local first aid training, donate defibrillators to the community. Safety Rating +3 but Community Impact score +15 (this affects the award formula).", "effects": "A: Budget -$50,000, Safety Rating +10, strong chance at council award ($50,000 prize + $200,000 advertising value). B: Budget -$25,000, Safety Rating +5, moderate chance at award. C: Budget -$15,000, Safety Rating +3, Community Impact +15, good chance at award via different route, Satisfaction +3 (positive PR)."}]}], "debriefQuestions": ["Calculate your final score using the formula. Which metric had the biggest impact on your total? Could you have improved it with different decisions?", "Look at your budget over the seven rounds. Plot the values on a line graph. When did you spend the most? Was it worth it? What was your return on investment for the biggest spend?", "Which percentage calculations were most important in your decision-making? Give three examples where getting the percentage wrong would have led to a bad decision.", "How did you use probability to make decisions? Think about the weather events, breakdown risks, and the council award. Did you calculate expected values or just guess?", "The mean vs median visitor data in Round 4 — what did the difference tell you? How did this affect your capacity planning?", "If you could go back to Round 1 and change one decision, which would it be? Use the numbers to justify your answer.", "How is running a theme park similar to real-world mathematical problem-solving? What skills from this simulation would you use in other contexts?"], "keyTakeaways": ["Percentages are everywhere in business: pricing, discounts, growth rates, and budget allocation all require confident percentage calculations to make good decisions.", "Ratio and proportion determine how resources are shared: staff-to-visitor ratios, food-to-customer ratios, and indoor-to-outdoor ratios all affect the quality of outcomes.", "Probability helps you plan for uncertainty: calculating expected costs and benefits of risky events (breakdowns, weather, competitor actions) allows you to make informed rather than lucky decisions.", "Data interpretation drives strategy: understanding mean, median, mode, and reading charts correctly is the difference between reacting to noise and responding to real trends.", "Area and spatial reasoning have practical applications: calculating how much space attractions need, what percentage of land is used, and how to optimise layouts are real geometric problems with real consequences."]};
+const SVGS = {"r1_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><rect x=\"302\" y=\"152\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#0891B2\" opacity=\"0.9\"/><rect x=\"322\" y=\"152\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#22D3EE\" opacity=\"0.7\"/><rect x=\"312\" y=\"136\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#0891B2\" opacity=\"0.75\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Opening Month — Setting the Foundation</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n</svg>", "r1_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Opening Month — Setting the Foundation</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"106\" y=\"165\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"bold\" fill=\"#ECFEFF\">&#163;</text></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Pricing</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"212\" cy=\"144\" r=\"3\" fill=\"#0891B2\"/><circle cx=\"212\" cy=\"176\" r=\"3\" fill=\"#0891B2\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Rides</text>\n  <g opacity=\"0.85\"><circle cx=\"312\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"324\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Operations</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"160\" r=\"18\" fill=\"#0891B2\" opacity=\"0.15\"/><circle cx=\"424\" cy=\"160\" r=\"12\" fill=\"#0891B2\" opacity=\"0.3\"/><circle cx=\"424\" cy=\"160\" r=\"6\" fill=\"#0891B2\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Marketing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 550,170 510,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"530\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r2_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"150\" r=\"14\" fill=\"#0891B2\"/><line x1=\"320\" y1=\"128\" x2=\"320\" y2=\"122\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><line x1=\"320\" y1=\"172\" x2=\"320\" y2=\"178\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><line x1=\"298\" y1=\"150\" x2=\"292\" y2=\"150\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><line x1=\"342\" y1=\"150\" x2=\"348\" y2=\"150\" stroke=\"#0891B2\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Summer Surge — Handling the Heat</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n</svg>", "r2_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Summer Surge — Handling the Heat</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"106\" y=\"165\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"bold\" fill=\"#ECFEFF\">&#163;</text></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Pricing</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"212\" cy=\"144\" r=\"3\" fill=\"#0891B2\"/><circle cx=\"212\" cy=\"176\" r=\"3\" fill=\"#0891B2\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Rides</text>\n  <g opacity=\"0.85\"><circle cx=\"312\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"324\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Operations</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"160\" r=\"18\" fill=\"#0891B2\" opacity=\"0.15\"/><circle cx=\"424\" cy=\"160\" r=\"12\" fill=\"#0891B2\" opacity=\"0.3\"/><circle cx=\"424\" cy=\"160\" r=\"6\" fill=\"#0891B2\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Marketing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 550,170 510,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"530\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r3_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><rect x=\"298\" y=\"146\" width=\"44\" height=\"24\" fill=\"#0891B2\"/><rect x=\"298\" y=\"138\" width=\"10\" height=\"10\" fill=\"#0891B2\"/><rect x=\"316\" y=\"134\" width=\"8\" height=\"14\" fill=\"#0891B2\"/><rect x=\"332\" y=\"138\" width=\"10\" height=\"10\" fill=\"#0891B2\"/><rect x=\"316\" y=\"158\" width=\"8\" height=\"12\" fill=\"#ECFEFF\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Expansion Plans — Thinking Bigger</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n</svg>", "r3_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Expansion Plans — Thinking Bigger</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"106\" y=\"165\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"bold\" fill=\"#ECFEFF\">&#163;</text></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Pricing</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"212\" cy=\"144\" r=\"3\" fill=\"#0891B2\"/><circle cx=\"212\" cy=\"176\" r=\"3\" fill=\"#0891B2\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Rides</text>\n  <g opacity=\"0.85\"><circle cx=\"312\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"324\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Operations</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"160\" r=\"18\" fill=\"#0891B2\" opacity=\"0.15\"/><circle cx=\"424\" cy=\"160\" r=\"12\" fill=\"#0891B2\" opacity=\"0.3\"/><circle cx=\"424\" cy=\"160\" r=\"6\" fill=\"#0891B2\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Marketing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 550,170 510,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"530\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r4_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"150\" r=\"20\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><polygon points=\"320,134 324,150 320,152 316,150\" fill=\"#0891B2\"/><polygon points=\"320,166 324,150 320,148 316,150\" fill=\"#22D3EE\" opacity=\"0.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Data Deep Dive — Reading the Numbers</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n</svg>", "r4_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Data Deep Dive — Reading the Numbers</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"106\" y=\"165\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"bold\" fill=\"#ECFEFF\">&#163;</text></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Pricing</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"212\" cy=\"144\" r=\"3\" fill=\"#0891B2\"/><circle cx=\"212\" cy=\"176\" r=\"3\" fill=\"#0891B2\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Rides</text>\n  <g opacity=\"0.85\"><circle cx=\"312\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"324\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Operations</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"160\" r=\"18\" fill=\"#0891B2\" opacity=\"0.15\"/><circle cx=\"424\" cy=\"160\" r=\"12\" fill=\"#0891B2\" opacity=\"0.3\"/><circle cx=\"424\" cy=\"160\" r=\"6\" fill=\"#0891B2\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Marketing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 550,170 510,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"530\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r5_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><rect x=\"298\" y=\"146\" width=\"44\" height=\"24\" fill=\"#0891B2\"/><rect x=\"298\" y=\"138\" width=\"10\" height=\"10\" fill=\"#0891B2\"/><rect x=\"316\" y=\"134\" width=\"8\" height=\"14\" fill=\"#0891B2\"/><rect x=\"332\" y=\"138\" width=\"10\" height=\"10\" fill=\"#0891B2\"/><rect x=\"316\" y=\"158\" width=\"8\" height=\"12\" fill=\"#ECFEFF\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Halloween Special — Seasonal Strategy</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n</svg>", "r5_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Halloween Special — Seasonal Strategy</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"106\" y=\"165\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"bold\" fill=\"#ECFEFF\">&#163;</text></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Pricing</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"212\" cy=\"144\" r=\"3\" fill=\"#0891B2\"/><circle cx=\"212\" cy=\"176\" r=\"3\" fill=\"#0891B2\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Rides</text>\n  <g opacity=\"0.85\"><circle cx=\"312\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"324\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Operations</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"160\" r=\"18\" fill=\"#0891B2\" opacity=\"0.15\"/><circle cx=\"424\" cy=\"160\" r=\"12\" fill=\"#0891B2\" opacity=\"0.3\"/><circle cx=\"424\" cy=\"160\" r=\"6\" fill=\"#0891B2\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Marketing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 550,170 510,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"530\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r6_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"292,168 316,128 324,142 334,134 348,168\" fill=\"#0891B2\" opacity=\"0.8\"/><polygon points=\"316,128 310,138 322,138\" fill=\"#ECFEFF\" opacity=\"0.6\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Winter Challenge — Beating the Cold</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n</svg>", "r6_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Winter Challenge — Beating the Cold</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"106\" y=\"165\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"bold\" fill=\"#ECFEFF\">&#163;</text></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Pricing</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"212\" cy=\"144\" r=\"3\" fill=\"#0891B2\"/><circle cx=\"212\" cy=\"176\" r=\"3\" fill=\"#0891B2\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Rides</text>\n  <g opacity=\"0.85\"><circle cx=\"312\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"324\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Operations</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"160\" r=\"18\" fill=\"#0891B2\" opacity=\"0.15\"/><circle cx=\"424\" cy=\"160\" r=\"12\" fill=\"#0891B2\" opacity=\"0.3\"/><circle cx=\"424\" cy=\"160\" r=\"6\" fill=\"#0891B2\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Marketing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 550,170 510,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"530\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r7_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#ECFEFF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0891B2\" stroke-width=\"1.5\"/>\n  <g><rect x=\"310\" y=\"136\" width=\"20\" height=\"18\" rx=\"4\" fill=\"#0891B2\"/><rect x=\"316\" y=\"154\" width=\"8\" height=\"8\" fill=\"#0891B2\"/><rect x=\"310\" y=\"162\" width=\"20\" height=\"4\" rx=\"2\" fill=\"#22D3EE\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0891B2\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#22D3EE\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Final Quarter — Going for Gold</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0891B2\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n</svg>", "r7_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#ECFEFF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0891B2\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0891B2\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Final Quarter — Going for Gold</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"20\" rx=\"4\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"106\" y=\"165\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"bold\" fill=\"#ECFEFF\">&#163;</text></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Pricing</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"212\" cy=\"144\" r=\"3\" fill=\"#0891B2\"/><circle cx=\"212\" cy=\"176\" r=\"3\" fill=\"#0891B2\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Rides</text>\n  <g opacity=\"0.85\"><circle cx=\"312\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/><circle cx=\"324\" cy=\"160\" r=\"12\" fill=\"none\" stroke=\"#0891B2\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Operations</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"160\" r=\"18\" fill=\"#0891B2\" opacity=\"0.15\"/><circle cx=\"424\" cy=\"160\" r=\"12\" fill=\"#0891B2\" opacity=\"0.3\"/><circle cx=\"424\" cy=\"160\" r=\"6\" fill=\"#0891B2\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Marketing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 550,170 510,170\" fill=\"#0891B2\" opacity=\"0.85\"/><text x=\"530\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#ECFEFF\">!</text></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0891B2\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0E7490\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0891B2\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Theme Park Tycoon</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0891B2\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>"};
+
+// ======================== EFFECTS PARSER ========================
+// Build alias map: short names -> full metric name
+const METRIC_ALIASES = {};
+(function() {
+  for (const m of SIM.metrics) {
+    const name = m.name;
+    METRIC_ALIASES[name.toLowerCase()] = name;
+    // Add partial aliases: last word, last two words, etc.
+    const words = name.split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const partial = words.slice(i).join(' ').toLowerCase();
+      if (partial.length >= 3 && !METRIC_ALIASES[partial]) {
+        METRIC_ALIASES[partial] = name;
+      }
+    }
+    // Also add without common suffixes
+    const noLevel = name.replace(/\s+(Level|Score|Rating|Index|Remaining|Value)$/i, '').toLowerCase();
+    if (noLevel !== name.toLowerCase() && !METRIC_ALIASES[noLevel]) {
+      METRIC_ALIASES[noLevel] = name;
+    }
+  }
+})();
+
+function findMetric(text) {
+  // Try exact match first, then longest partial match
+  const lower = text.toLowerCase();
+  for (const m of SIM.metrics) {
+    if (lower.includes(m.name.toLowerCase())) return m.name;
+  }
+  // Try aliases (longest first)
+  const aliases = Object.keys(METRIC_ALIASES).sort((a,b) => b.length - a.length);
+  for (const alias of aliases) {
+    if (lower.includes(alias)) return METRIC_ALIASES[alias];
+  }
+  return null;
+}
+
+function parseEffects(effectsStr) {
+  if (!effectsStr) return {};
+  const results = {};
+  const clauses = effectsStr.split(/[.;,]/).map(s => s.trim()).filter(s => s.length > 0);
+
+  for (const clause of clauses) {
+    const metricName = findMetric(clause);
+    if (!metricName) continue;
+
+    // "set to X"
+    const setMatch = clause.match(/set\s+to\s+(-?[\d,.]+)/i);
+    if (setMatch) {
+      results[metricName] = { type: 'set', value: parseNum(setMatch[1]) };
+      continue;
+    }
+
+    // "+/-$X,XXX" or "+/-X" or "+/-X%"
+    const deltaMatch = clause.match(/([+-])\s*\$?([\d,.]+)[%]?/);
+    if (deltaMatch) {
+      const sign = deltaMatch[1] === '+' ? 1 : -1;
+      const val = parseNum(deltaMatch[2]) * sign;
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+      continue;
+    }
+
+    // "-$X,XXX" embedded
+    const negMatch = clause.match(/-\$([\d,.]+)/);
+    if (negMatch) {
+      const val = -parseNum(negMatch[1]);
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+    }
+  }
+  return results;
+}
+
+function parseNum(s) {
+  return parseFloat(s.replace(/,/g, '')) || 0;
+}
+
+function clampMetric(metricDef, value) {
+  const unit = metricDef.unit || '';
+  if (unit === '/100') return Math.max(0, Math.min(100, value));
+  if (unit === '%') return Math.max(-100, Math.min(100, value));
+  if (unit === '$') return Math.max(0, value); // no negative cash
+  return value;
+}
+
+// ======================== GAME STATE ========================
+let G = {
+  started: false,
+  teamCount: 3,
+  teams: [],
+  currentScreen: 'setup',
+  currentRound: 1,
+  currentPhase: 0,
+  roundsComplete: new Set(),
+  teamMetrics: {}, // teamIdx -> {metricName: value}
+  roundDecisions: {}, // round -> teamIdx -> {D1:'A', D2:'B', ...}
+  roundSnapshots: {}, // round -> teamIdx -> {metricName: {before, after, delta}}
+};
+
+function initMetrics() {
+  G.teamMetrics = {};
+  for (let t = 0; t < G.teams.length; t++) {
+    G.teamMetrics[t] = {};
+    for (const m of SIM.metrics) {
+      G.teamMetrics[t][m.name] = m.start;
+    }
+  }
+}
+
+// ======================== TIMER ========================
+let timerInterval = null, timerSeconds = 600;
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + s.toString().padStart(2,'0');
+  document.getElementById('timerDisplay').style.color = timerSeconds <= 60 ? '#EF5350' : 'var(--gold)';
+}
+function startTimer() { if (timerInterval) return; timerInterval = setInterval(() => { if (timerSeconds > 0) { timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; } }, 1000); }
+function pauseTimer() { clearInterval(timerInterval); timerInterval = null; }
+function resetTimer() { pauseTimer(); timerSeconds = 600; updateTimerDisplay(); }
+updateTimerDisplay();
+
+// ======================== NAVIGATION ========================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let h = '<button onclick="goTo(\'setup\')" class="' + (G.currentScreen==='setup'?'active':'') + '"><span class="check"></span> Setup</button>';
+  for (let r = 1; r <= 7; r++) {
+    const done = G.roundsComplete.has(r);
+    const isActive = G.currentScreen === 'round' && G.currentRound === r;
+    h += '<button onclick="goToRound('+r+')" class="' + (isActive?'active':'') + ' ' + (done?'done':'') + '">';
+    h += '<span class="check">' + (done?'&#10003;':'') + '</span> Round ' + r;
+    if (isActive) { h += '<span class="phase-dots">'; for (let p=0;p<4;p++) h += '<span class="dot '+(G.currentPhase>=p?'filled':'')+'"></span>'; h += '</span>'; }
+    h += '</button>';
+  }
+  h += '<div class="sidebar-sep"></div>';
+  h += '<button onclick="goTo(\'leaderboard\')" class="'+(G.currentScreen==='leaderboard'?'active':'')+'"><span class="check"></span> Leaderboard</button>';
+  h += '<button onclick="goTo(\'final\')" class="'+(G.currentScreen==='final'?'active':'')+'"><span class="check"></span> Final Results</button>';
+  h += '<button onclick="goTo(\'debrief\')" class="'+(G.currentScreen==='debrief'?'active':'')+'"><span class="check"></span> Debrief</button>';
+  nav.innerHTML = h;
+}
+
+function goTo(s) { G.currentScreen = s; render(); }
+function goToRound(r) { if (!G.started) return; G.currentScreen = 'round'; G.currentRound = r; G.currentPhase = G.roundsComplete.has(r) ? 3 : 0; render(); }
+function setPhase(p) { G.currentPhase = p; render(); }
+
+function render() {
+  buildSidebar();
+  const c = document.getElementById('content');
+  if (G.currentScreen === 'setup') renderSetup(c);
+  else if (G.currentScreen === 'round') renderRound(c);
+  else if (G.currentScreen === 'leaderboard') renderLeaderboard(c);
+  else if (G.currentScreen === 'final') renderFinal(c);
+  else if (G.currentScreen === 'debrief') renderDebrief(c);
+  updateTopbar();
+}
+
+function updateTopbar() {
+  const title = document.getElementById('topbarTitle');
+  const phase = document.getElementById('topbarPhase');
+  const right = document.getElementById('topbarRight');
+  if (G.currentScreen === 'setup') {
+    title.textContent = 'SETUP';
+    phase.innerHTML = '';
+    right.innerHTML = '<button onclick="showHelp()">How to Play</button>';
+  } else if (G.currentScreen === 'round') {
+    const rd = SIM.rounds[G.currentRound-1];
+    title.textContent = 'ROUND ' + rd.num + ': ' + rd.name.toUpperCase();
+    const phases = ['Briefing','Decisions','Team Entry','Results'];
+    phase.innerHTML = phases.map((p,i) => '<button class="phase-step '+(i===G.currentPhase?'active':i<G.currentPhase?'completed':'')+'" onclick="setPhase('+i+')">'+p+'</button>').join('');
+    let btns = '';
+    if (G.currentPhase > 0) btns += '<button onclick="setPhase('+(G.currentPhase-1)+')">&#8592; Back</button>';
+    if (G.currentPhase < 3) btns += '<button class="primary" onclick="nextPhase()">Next &#8594;</button>';
+    else if (G.currentRound < 7) btns += '<button class="primary" onclick="goToRound('+(G.currentRound+1)+')">Round '+(G.currentRound+1)+' &#8594;</button>';
+    else btns += '<button class="primary" onclick="goTo(\'final\')">Final Results &#8594;</button>';
+    right.innerHTML = btns;
+  } else {
+    title.textContent = G.currentScreen.toUpperCase().replace('LEADERBOARD','LEADERBOARD');
+    phase.innerHTML = '';
+    right.innerHTML = G.currentScreen === 'final' ? '<button class="primary" onclick="goTo(\'debrief\')">Debrief &#8594;</button>' : '';
+  }
+}
+
+function nextPhase() {
+  if (G.currentPhase === 2) {
+    const r = G.currentRound;
+    if (!validateEntries(r)) return;
+    calculateRound(r);
+  }
+  G.currentPhase = Math.min(3, G.currentPhase + 1);
+  render();
+}
+
+function validateEntries(r) {
+  if (!G.roundDecisions[r]) { alert('Please enter decisions for all teams first.'); return false; }
+  for (let t = 0; t < G.teams.length; t++) {
+    const td = G.roundDecisions[r][t];
+    if (!td) { alert(G.teams[t] + ' has not entered any decisions.'); return false; }
+    for (const dec of SIM.rounds[r-1].decisions) {
+      if (!td[dec.id]) { alert(G.teams[t] + ' is missing ' + dec.id + '.'); return false; }
+    }
+  }
+  return true;
+}
+
+function showHelp() { document.getElementById('helpOverlay').classList.add('show'); }
+function closeHelp() { document.getElementById('helpOverlay').classList.remove('show'); }
+
+// ======================== SETUP ========================
+function renderSetup(c) {
+  let h = '<div class="screen active"><div class="setup-hero"><h1>' + SIM.title.toUpperCase() + '</h1><p class="subtitle">' + SIM.subject + ' &bull; ' + SIM.level + '</p><p>Lead your team through 7 rounds of strategic decisions.</p></div>';
+  h += '<div class="card"><h2>Number of Teams</h2><div class="team-count-btns">';
+  for (let i = 2; i <= 6; i++) h += '<button class="'+(G.teamCount===i?'active':'')+'" onclick="setTeamCount('+i+')">'+i+'</button>';
+  h += '</div><h2>Team Names</h2><div class="team-inputs" id="teamInputs">';
+  for (let i = 0; i < G.teamCount; i++) {
+    const val = G.teams[i] || '';
+    h += '<div class="team-input"><span class="num">'+(i+1)+'</span><input type="text" placeholder="Team '+(i+1)+' name" value="'+val+'" onchange="setTeamName('+i+',this.value)" /></div>';
+  }
+  h += '</div></div><button class="start-btn" onclick="startGame()">START GAME</button>';
+  h += '<div style="text-align:center;margin-top:1rem;"><button onclick="showHelp()" style="background:none;border:none;color:var(--mid);text-decoration:underline;cursor:pointer;font-family:\'Nunito\',sans-serif;">How to Play</button></div></div>';
+  c.innerHTML = h;
+}
+
+function setTeamCount(n) { G.teamCount = n; render(); }
+function setTeamName(i, v) { G.teams[i] = v.trim(); }
+
+function startGame() {
+  const inputs = document.querySelectorAll('#teamInputs input');
+  G.teams = [];
+  inputs.forEach((inp, i) => G.teams.push(inp.value.trim() || 'Team '+(i+1)));
+  G.teams = G.teams.slice(0, G.teamCount);
+  initMetrics();
+  G.started = true;
+  G.currentScreen = 'round';
+  G.currentRound = 1;
+  G.currentPhase = 0;
+  render();
+}
+
+// ======================== ROUND RENDERING ========================
+function renderRound(c) {
+  const r = G.currentRound;
+  const rd = SIM.rounds[r-1];
+  let h = '<div class="screen active">';
+  if (G.currentPhase === 0) h += renderBriefing(rd, r);
+  else if (G.currentPhase === 1) h += renderDecisions(rd, r);
+  else if (G.currentPhase === 2) h += renderEntry(r, rd);
+  else if (G.currentPhase === 3) h += renderResults(r);
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+function renderBriefing(rd, r) {
+  let h = '';
+  // SVG illustration
+  const svgKey = 'r'+r+'_briefing';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="report-card"><div class="report-masthead"><h1>' + SIM.title.toUpperCase() + '</h1><div class="dateline">Round ' + rd.num + ' of 7 &bull; ' + rd.name + '</div></div>';
+  h += '<div class="report-items">';
+  for (const item of rd.report) {
+    h += '<div class="report-item"><span class="bullet">&#9679;</span><span class="text">' + item + '</span></div>';
+  }
+  h += '</div>';
+  if (rd.randomEvent) {
+    h += '<div class="event-box"><h3>&#9889; RANDOM EVENT</h3><p>' + rd.randomEvent + '</p></div>';
+  } else {
+    h += '<div class="no-event">&#9728;&#65039; No random event this round &mdash; steady conditions ahead.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderDecisions(rd, r) {
+  let h = '';
+  const svgKey = 'r'+r+'_decisions';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="decisions-grid">';
+  for (const dec of rd.decisions) {
+    h += '<div class="decision-card"><div class="d-label">' + dec.id + ' &mdash; ' + dec.domain.toUpperCase() + '</div>';
+    h += '<div class="d-question">' + dec.question + '</div>';
+    const opts = [['A', dec.optA], ['B', dec.optB], ['C', dec.optC]];
+    for (const [l, desc] of opts) {
+      h += '<div class="option"><span class="letter ' + l.toLowerCase() + '">' + l + '</span><span class="desc">' + desc + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderEntry(r, rd) {
+  if (!G.roundDecisions[r]) {
+    G.roundDecisions[r] = {};
+    for (let t = 0; t < G.teams.length; t++) G.roundDecisions[r][t] = {};
+  }
+  let h = '<div class="card" style="overflow-x:auto;"><h2>TEAM DECISIONS &mdash; ROUND ' + r + '</h2>';
+  h += '<table class="entry-matrix"><thead><tr><th>Decision</th>';
+  for (const tn of G.teams) h += '<th>' + tn + '</th>';
+  h += '</tr></thead><tbody>';
+  for (const dec of rd.decisions) {
+    h += '<tr><td><strong>' + dec.id + ' &mdash; ' + dec.domain + '</strong><br><span style="font-size:0.8rem;font-weight:400;color:var(--grey);">' + truncate(dec.question, 70) + '</span></td>';
+    for (let t = 0; t < G.teams.length; t++) {
+      const cur = (G.roundDecisions[r][t] || {})[dec.id] || '';
+      h += '<td><div class="abc-group">';
+      for (const ch of ['A','B','C']) {
+        const sel = cur === ch ? 'sel-'+ch.toLowerCase() : '';
+        h += '<button class="abc-btn '+sel+'" onclick="pickChoice('+r+','+t+',\''+dec.id+'\',\''+ch+'\')">'+ch+'</button>';
+      }
+      h += '</div></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+
+function pickChoice(r, t, did, ch) {
+  if (!G.roundDecisions[r]) G.roundDecisions[r] = {};
+  if (!G.roundDecisions[r][t]) G.roundDecisions[r][t] = {};
+  G.roundDecisions[r][t][did] = ch;
+  render();
+}
+
+// ======================== SCORING ENGINE ========================
+function calculateRound(r) {
+  const rd = SIM.rounds[r-1];
+  if (!G.roundSnapshots[r]) G.roundSnapshots[r] = {};
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const before = {};
+    for (const m of SIM.metrics) before[m.name] = G.teamMetrics[t][m.name];
+    
+    // Apply each decision's effects
+    for (const dec of rd.decisions) {
+      const choice = G.roundDecisions[r][t][dec.id];
+      const effectsStr = dec.effects;
+      // Parse the choice-specific effects from the combined string
+      const choiceEffects = extractChoiceEffects(effectsStr, choice);
+      const parsed = parseEffects(choiceEffects);
+      
+      for (const [metricName, effect] of Object.entries(parsed)) {
+        const mDef = SIM.metrics.find(m => m.name === metricName);
+        if (!mDef) continue;
+        if (effect.type === 'set') {
+          G.teamMetrics[t][metricName] = effect.value;
+        } else {
+          G.teamMetrics[t][metricName] += effect.value;
+        }
+        if (mDef) G.teamMetrics[t][metricName] = clampMetric(mDef, G.teamMetrics[t][metricName]);
+      }
+    }
+    
+    // Save snapshot
+    const after = {};
+    const deltas = {};
+    for (const m of SIM.metrics) {
+      after[m.name] = G.teamMetrics[t][m.name];
+      deltas[m.name] = after[m.name] - before[m.name];
+    }
+    G.roundSnapshots[r][t] = { before, after, deltas };
+  }
+  G.roundsComplete.add(r);
+}
+
+function extractChoiceEffects(effectsStr, choice) {
+  // Effects format: "A: effect1. effect2. B: effect1. effect2. C: effect1."
+  // Split by A:/B:/C: markers
+  const regex = /\b([ABC]):\s*/g;
+  const parts = {};
+  let lastKey = null, lastIdx = 0;
+  let match;
+  const matches = [];
+  while ((match = regex.exec(effectsStr)) !== null) {
+    matches.push({ key: match[1], idx: match.index, end: match.index + match[0].length });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].end;
+    const end = i + 1 < matches.length ? matches[i+1].idx : effectsStr.length;
+    parts[matches[i].key] = effectsStr.substring(start, end).trim();
+  }
+  return parts[choice] || '';
+}
+
+function fmtVal(value, unit) {
+  if (unit === '$' || unit === 'USD') return '$' + Math.round(value).toLocaleString();
+  if (unit === '%') return value.toFixed(1) + '%';
+  if (unit === '/100') return Math.round(value) + '/100';
+  return Math.round(value).toLocaleString() + (unit && unit !== '$' && unit !== '%' && unit !== '/100' ? ' ' + unit : '');
+}
+
+function fmtDelta(delta, unit) {
+  const sign = delta >= 0 ? '+' : '';
+  if (unit === '$' || unit === 'USD') return sign + '$' + Math.round(delta).toLocaleString();
+  if (unit === '%') return sign + delta.toFixed(1) + '%';
+  return sign + Math.round(delta).toLocaleString();
+}
+
+// ======================== RESULTS ========================
+function renderResults(r) {
+  if (!G.roundSnapshots[r]) return '<div class="card"><h2>No results yet</h2></div>';
+  
+  let h = '<div class="card"><h2>ROUND ' + r + ' RESULTS</h2>';
+  h += '<table class="results-table"><thead><tr><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '</tr></thead><tbody>';
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<tr><td>' + G.teams[t] + '</td>';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      h += '<td>' + fmtVal(val, m.unit) + '<br><span class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</span></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Per-team metric cards
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<div class="card"><h3>' + G.teams[t] + '</h3><div class="metrics-grid">';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      const barPct = m.unit === '/100' ? val : m.unit === '%' ? Math.max(0, val) : Math.min(100, (val / (m.start > 0 ? m.start * 3 : 100000)) * 100);
+      h += '<div class="metric-card"><div class="m-name">' + m.name + '</div>';
+      h += '<div class="m-val">' + fmtVal(val, m.unit) + '</div>';
+      h += '<div class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</div>';
+      if (m.unit === '/100') h += '<div class="metric-bar"><div class="metric-bar-fill" style="width:' + Math.max(0, Math.min(100, val)) + '%"></div></div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  }
+  
+  return h;
+}
+
+// ======================== LEADERBOARD ========================
+function getScore(t) {
+  // Composite score: each metric contributes up to 100 points (clamped)
+  let score = 0;
+  for (const m of SIM.metrics) {
+    const val = G.teamMetrics[t][m.name];
+    let c;
+    if (m.unit === '/100') {
+      c = val;
+    } else if (m.unit === '%') {
+      c = Math.min(val, 100);
+    } else {
+      // For $, people, users, coins, degrees, etc: normalise against start value
+      const base = Math.abs(m.start) > 0 ? Math.abs(m.start) : 100;
+      c = (val / base) * 50;
+    }
+    // Clamp each metric to [-100, 100] so no single metric dominates
+    score += Math.max(-100, Math.min(100, c));
+  }
+  return Math.round(score);
+}
+
+function renderLeaderboard(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Start the game first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  let h = '<div class="screen active"><div class="card"><h2>LEADERBOARD</h2></div>';
+  const medals = ['&#129351;','&#129352;','&#129353;'];
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<div class="lb-row"><div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>';
+    h += '<div class="lb-name">' + r.name + '</div><div class="lb-stats">';
+    for (const m of SIM.metrics.slice(0, 4)) {
+      h += '<div class="lb-stat"><div class="val">' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</div><div class="lbl">' + m.name + '</div></div>';
+    }
+    h += '<div class="lb-stat"><div class="val">' + Math.round(r.score) + '</div><div class="lbl">Score</div></div>';
+    h += '</div></div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== FINAL RESULTS ========================
+function renderFinal(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Complete all rounds first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  const medals = ['&#127942;','&#129352;','&#129353;'];
+  
+  let h = '<div class="screen active"><div class="final-hero"><h1>FINAL RESULTS</h1></div>';
+  h += '<div class="podium">';
+  const order = ranked.length >= 3 ? [1, 0, 2] : ranked.length >= 2 ? [1, 0] : [0];
+  for (const oi of order) {
+    if (oi >= ranked.length) continue;
+    const r = ranked[oi];
+    h += '<div class="podium-item ' + (oi === 0 ? 'first' : '') + '"><div class="medal">' + (medals[oi] || '') + '</div>';
+    h += '<div class="pname">' + r.name + '</div><div class="pval">Score: ' + Math.round(r.score) + '</div></div>';
+  }
+  h += '</div>';
+  
+  // Full results table
+  h += '<div class="card"><h2>FULL BREAKDOWN</h2><table class="results-table"><thead><tr><th>Rank</th><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '<th>Score</th></tr></thead><tbody>';
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<tr><td>#' + (i+1) + '</td><td>' + r.name + '</td>';
+    for (const m of SIM.metrics) h += '<td>' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</td>';
+    h += '<td><strong>' + Math.round(r.score) + '</strong></td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+  c.innerHTML = h;
+}
+
+// ======================== DEBRIEF ========================
+function renderDebrief(c) {
+  let h = '<div class="screen active"><div class="card"><h2>DEBRIEF DISCUSSION</h2><p>Use these questions to guide whole-class discussion.</p></div>';
+  
+  if (SIM.debriefQuestions) {
+    for (let i = 0; i < SIM.debriefQuestions.length; i++) {
+      h += '<div class="debrief-q"><div class="qnum">QUESTION ' + (i+1) + '</div><p>' + SIM.debriefQuestions[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.keyTakeaways) {
+    h += '<div class="card"><h2>KEY TAKEAWAYS</h2></div>';
+    for (let i = 0; i < SIM.keyTakeaways.length; i++) {
+      h += '<div class="takeaway-card"><h3>Takeaway ' + (i+1) + '</h3><p>' + SIM.keyTakeaways[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.curriculumLinks) {
+    h += '<div class="card"><h2>CURRICULUM LINKS</h2></div>';
+    for (const cl of SIM.curriculumLinks) {
+      h += '<div class="curriculum-card"><div class="c-topic">' + cl.topic + '</div><div class="c-spec">' + cl.spec + '</div><div class="c-how">' + cl.how + '</div></div>';
+    }
+  }
+  
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== INIT ========================
+render();
+</script>
+</body>
+</html>

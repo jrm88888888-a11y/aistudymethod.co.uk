@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vocabulary Games Hub | Free Revision Flashcards & Quizzes | ma...</title>
+  <meta name="description" content="Choose from 8 vocabulary games across every subject — anagram, crossword, hangman, memory match, quiz, TermGuess, Space Invaders and Pac-Man. Free, no login required.">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="vocab-data.js"></script>
+  <style>
+    :root {
+      --bg:#0f1117; --surface:#1a1d27; --surface2:#222636;
+      --border:rgba(255,255,255,0.08);
+      --accent:#4ade9a; --accent2:#7b6fff; --warn:#ff6b6b;
+      --text:#e8eaf0; --text-mid:#8b90a8; --text-dim:#4a4f68;
+      --font-d:'Nunito',sans-serif; --font-b:'Nunito',sans-serif;
+      --r:10px; --trans:0.2s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:15px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column;}
+
+    /* ── Header ── */
+    .hd{background:var(--surface);border-bottom:1px solid var(--border);padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .hd-logo{font-family:var(--font-d);font-size:1.1rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-0.02em;}
+    .hd-logo span{color:var(--accent);}
+    .hd-back{font-family:var(--font-d);font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-mid);text-decoration:none;transition:color var(--trans);}
+    .hd-back:hover{color:var(--accent);}
+
+    /* ── Main ── */
+    .main{flex:1;padding:2rem 1.5rem;max-width:900px;margin:0 auto;width:100%;}
+
+    /* ── Steps ── */
+    .steps{display:flex;align-items:center;gap:0.5rem;margin-bottom:2.5rem;flex-wrap:wrap;}
+    .step{display:flex;align-items:center;gap:0.4rem;font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);cursor:default;}
+    .step.active{color:var(--accent);}
+    .step.done{color:var(--text-mid);cursor:pointer;}
+    .step.done:hover{color:var(--accent2);}
+    .step-num{width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:0.6rem;flex-shrink:0;}
+    .step-arrow{color:var(--text-dim);font-size:0.7rem;}
+
+    /* ── Section heading ── */
+    .section-heading{font-family:var(--font-d);font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:0.35rem;}
+    .section-sub{color:var(--text-mid);font-size:0.85rem;margin-bottom:1.5rem;}
+
+    /* ── Picker grids ── */
+    .picker-grid{display:grid;gap:0.6rem;margin-bottom:2rem;}
+    .picker-grid.cols-4{grid-template-columns:repeat(4,1fr);}
+    .picker-grid.cols-3{grid-template-columns:repeat(3,1fr);}
+    .picker-grid.cols-2{grid-template-columns:repeat(2,1fr);}
+
+    @media(max-width:600px){
+      .picker-grid.cols-4{grid-template-columns:repeat(2,1fr);}
+      .picker-grid.cols-3{grid-template-columns:repeat(2,1fr);}
+    }
+
+    .pick-btn{
+      background:var(--surface);
+      border:1.5px solid var(--border);
+      border-radius:var(--r);
+      padding:0.85rem 1rem;
+      cursor:pointer;
+      transition:all var(--trans);
+      text-align:left;
+      display:flex;flex-direction:column;gap:0.2rem;
+    }
+    .pick-btn:hover{border-color:var(--accent2);background:rgba(123,111,255,0.06);}
+    .pick-btn.selected{border-color:var(--accent);background:rgba(74,222,154,0.06);}
+    .pick-btn.disabled{opacity:0.25;pointer-events:none;}
+    .pick-label{font-family:var(--font-d);font-size:0.85rem;font-weight:700;color:var(--text);}
+    .pick-sub{font-size:0.68rem;color:var(--text-mid);}
+    .pick-badge{font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.1rem 0.4rem;border-radius:3px;display:inline-block;margin-top:0.2rem;width:fit-content;}
+    .pick-badge.gcse{background:rgba(74,222,154,0.12);color:var(--accent);}
+    .pick-badge.alevel{background:rgba(123,111,255,0.15);color:var(--accent2);}
+    .pick-badge.igcse{background:rgba(181,74,74,0.15);color:#e07070;}
+    .pick-badge.ib{background:rgba(181,147,74,0.15);color:#c0983a;}
+    .pick-badge.ks3{background:rgba(74,122,181,0.15);color:#6090d0;}
+
+    /* ── Game type cards ── */
+    .game-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:2rem;}
+    @media(max-width:700px){.game-grid{grid-template-columns:repeat(2,1fr);}}
+
+    .game-card{
+      background:var(--surface);
+      border:1.5px solid var(--border);
+      border-radius:12px;
+      padding:1.25rem 1rem;
+      cursor:pointer;
+      transition:all var(--trans);
+      text-align:center;
+      display:flex;flex-direction:column;align-items:center;gap:0.5rem;
+    }
+    .game-card:hover{border-color:var(--accent2);background:rgba(123,111,255,0.06);transform:translateY(-2px);}
+    .game-card.disabled{opacity:0.3;pointer-events:none;cursor:default;}
+    .game-icon{font-size:2rem;}
+    .game-name{font-family:var(--font-d);font-size:0.85rem;font-weight:700;color:var(--text);}
+    .game-desc{font-size:0.68rem;color:var(--text-mid);line-height:1.3;}
+    .game-coming{font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);border:1px solid var(--border);padding:0.1rem 0.4rem;border-radius:3px;}
+
+    /* ── Selection summary bar ── */
+    .summary{
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--r);
+      padding:0.85rem 1.25rem;
+      display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+      margin-bottom:1.5rem;
+    }
+    .summary-item{display:flex;flex-direction:column;gap:0.1rem;}
+    .summary-key{font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);}
+    .summary-val{font-family:var(--font-d);font-size:0.82rem;font-weight:700;color:var(--text);}
+    .summary-sep{color:var(--border);font-size:1.2rem;}
+
+    /* ── Panels ── */
+    .panel{display:none;}
+    .panel.active{display:block;}
+
+    /* ── Back button ── */
+    .btn-back{font-family:var(--font-d);font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:1px solid var(--border);color:var(--text-mid);padding:0.5rem 1rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);margin-bottom:1.5rem;display:inline-flex;align-items:center;gap:0.4rem;}
+    .btn-back:hover{border-color:var(--accent2);color:var(--accent2);}
+
+    /* ── Vocab count badge ── */
+    .vocab-count{font-size:0.72rem;color:var(--text-mid);margin-top:0.25rem;}
+    .vocab-count span{color:var(--accent);font-weight:600;}
+  </style>
+</head>
+<body>
+
+<header class="hd">
+  <a href="../index.html" class="hd-logo">Class<span>Craft</span></a>
+  <a href="../index.html" class="hd-back">← Back to site</a>
+</header>
+
+<main class="main">
+
+  <!-- Progress steps -->
+  <div class="steps" id="steps">
+    <div class="step active" id="step-1"><span class="step-num">1</span>Subject</div>
+    <span class="step-arrow">›</span>
+    <div class="step" id="step-2"><span class="step-num">2</span>Exam Board</div>
+    <span class="step-arrow">›</span>
+    <div class="step" id="step-3"><span class="step-num">3</span>Topic</div>
+    <span class="step-arrow">›</span>
+    <div class="step" id="step-4"><span class="step-num">4</span>Game</div>
+  </div>
+
+  <!-- Summary bar (hidden until step 2+) -->
+  <div class="summary" id="summary" style="display:none;"></div>
+
+  <!-- ── Panel 1: Subject ── -->
+  <div class="panel active" id="panel-subject">
+    <h1 class="section-heading">Choose a subject</h1>
+    <p class="section-sub">Select the subject you want to practise vocabulary for.</p>
+    <div class="picker-grid cols-4" id="subject-grid"></div>
+  </div>
+
+  <!-- ── Panel 2: Board ── -->
+  <div class="panel" id="panel-board">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <h2 class="section-heading">Choose your exam board</h2>
+    <p class="section-sub">Select the board and level that matches your course.</p>
+    <div class="picker-grid cols-3" id="board-grid"></div>
+  </div>
+
+  <!-- ── Panel 3: Topic ── -->
+  <div class="panel" id="panel-topic">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <h2 class="section-heading">Choose a topic</h2>
+    <p class="section-sub">Select the topic whose vocabulary you want to practise.</p>
+    <div class="picker-grid cols-3" id="topic-grid"></div>
+  </div>
+
+  <!-- ── Panel 4: Game ── -->
+  <div class="panel" id="panel-game">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <h2 class="section-heading">Choose a game</h2>
+    <p class="section-sub" id="game-sub">Pick how you want to practise.</p>
+    <div class="vocab-count" id="vocab-count"></div>
+    <br/>
+    <div class="game-grid" id="game-grid"></div>
+  </div>
+
+</main>
+
+<script>
+// ── STATE ──
+let sel = { subject: null, board: null, topic: null };
+
+// ── GAME TYPES ──
+const GAMES = [
+  { id:'pairs',         icon:'🃏', name:'Memory Match',    desc:'Flip cards to match terms with definitions.',        file:'game-pairs.html',          ready:true  },
+  { id:'quiz',          icon:'❓', name:'Multiple Choice',  desc:'Answer questions about key terms.',                  file:'game-quiz.html',           ready:true  },
+  { id:'hangman',       icon:'🪢', name:'Hangman',          desc:'Guess the term letter by letter.',                   file:'game-hangman.html',        ready:true  },
+  { id:'termguess',     icon:'🟩', name:'TermGuess',        desc:'Guess the vocabulary word in 6 attempts.',           file:'game-termguess.html',      ready:true  },
+  { id:'anagram',       icon:'🔀', name:'Anagram',          desc:'Unscramble the letters to reveal the term.',         file:'game-anagram.html',        ready:true  },
+  { id:'crossword',     icon:'✏️', name:'Crossword',        desc:'Fill in the crossword using definitions as clues.',  file:'game-crossword.html',      ready:true  },
+  { id:'spaceinvaders', icon:'👾', name:'Space Invaders',   desc:'Shoot vocab enemies for bonus points and questions.',file:'game-spaceinvaders.html',  ready:true  },
+  { id:'pacman',        icon:'🟡', name:'Pac-Man',           desc:'Eat red dots to trigger vocabulary questions.',      file:'game-pacman.html',         ready:true  },
+];
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded', () => {
+  buildSubjectGrid();
+});
+
+// ── STEP NAVIGATION ──
+function goTo(step) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + ['','subject','board','topic','game'][step]).classList.add('active');
+  updateSteps(step);
+  updateSummary();
+  if (step === 2) buildBoardGrid();
+  if (step === 3) buildTopicGrid();
+  if (step === 4) buildGameGrid();
+}
+
+function updateSteps(current) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    el.className = 'step' + (i === current ? ' active' : i < current ? ' done' : '');
+    if (i < current) el.onclick = () => goTo(i);
+    else el.onclick = null;
+  });
+}
+
+function updateSummary() {
+  const bar = document.getElementById('summary');
+  const items = [];
+  if (sel.subject) items.push({ key:'Subject', val: cap(sel.subject) });
+  if (sel.board)   items.push({ key:'Board',   val: BOARDS[sel.board]?.label || sel.board });
+  if (sel.topic)   items.push({ key:'Topic',   val: sel.topic });
+  if (items.length === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = items.map((it, i) =>
+    (i > 0 ? '<span class="summary-sep">|</span>' : '') +
+    `<div class="summary-item"><span class="summary-key">${it.key}</span><span class="summary-val">${it.val}</span></div>`
+  ).join('');
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ── PANEL 1: SUBJECTS ──
+function buildSubjectGrid() {
+  const grid = document.getElementById('subject-grid');
+  grid.innerHTML = '';
+  SUBJECTS.forEach(subj => {
+    const hasData = VOCAB[subj.toLowerCase()] && Object.keys(VOCAB[subj.toLowerCase()]).length > 0;
+    const btn = document.createElement('div');
+    btn.className = 'pick-btn' + (hasData ? '' : ' disabled');
+    btn.innerHTML = `
+      <span class="pick-label">${subj}</span>
+      <span class="pick-sub">${hasData ? 'Vocabulary available' : 'Coming soon'}</span>`;
+    if (hasData) btn.addEventListener('click', () => {
+      sel.subject = subj.toLowerCase();
+      sel.board = null; sel.topic = null;
+      goTo(2);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+// ── PANEL 2: BOARDS ──
+function buildBoardGrid() {
+  const grid = document.getElementById('board-grid');
+  grid.innerHTML = '';
+  if (!sel.subject) return;
+  const available = getBoardsForSubject(sel.subject);
+  Object.entries(BOARDS).forEach(([key, meta]) => {
+    const hasData = available.includes(key);
+    const levelClass = meta.level.toLowerCase().replace(' ','').replace('-','');
+    const btn = document.createElement('div');
+    btn.className = 'pick-btn' + (hasData ? '' : ' disabled');
+    btn.innerHTML = `
+      <span class="pick-label">${meta.label}</span>
+      <span class="pick-badge ${meta.level.toLowerCase().replace(' dp','').replace('-','')}">${meta.level}</span>
+      <span class="pick-sub" style="margin-top:0.2rem">${hasData ? 'Vocabulary available' : 'Coming soon'}</span>`;
+    if (hasData) btn.addEventListener('click', () => {
+      sel.board = key; sel.topic = null;
+      goTo(3);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+// ── PANEL 3: TOPICS ──
+function buildTopicGrid() {
+  const grid = document.getElementById('topic-grid');
+  grid.innerHTML = '';
+  if (!sel.subject || !sel.board) return;
+  const topics = getTopics(sel.subject, sel.board);
+  topics.forEach(topic => {
+    const count = getVocab(sel.subject, sel.board, topic).length;
+    const btn = document.createElement('div');
+    btn.className = 'pick-btn';
+    btn.innerHTML = `
+      <span class="pick-label">${topic}</span>
+      <span class="pick-sub">${count} terms</span>`;
+    btn.addEventListener('click', () => {
+      sel.topic = topic;
+      goTo(4);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+// ── PANEL 4: GAMES ──
+function buildGameGrid() {
+  const grid = document.getElementById('game-grid');
+  grid.innerHTML = '';
+  const vocab = getVocab(sel.subject, sel.board, sel.topic);
+
+  document.getElementById('game-sub').textContent =
+    `Pick how you want to practise "${sel.topic}" vocabulary.`;
+  document.getElementById('vocab-count').innerHTML =
+    `<span>${vocab.length}</span> terms available in this topic.`;
+
+  GAMES.forEach(game => {
+    const card = document.createElement('div');
+    card.className = 'game-card' + (game.ready ? '' : ' disabled');
+    card.innerHTML = `
+      <span class="game-icon">${game.icon}</span>
+      <span class="game-name">${game.name}</span>
+      <span class="game-desc">${game.desc}</span>
+      ${!game.ready ? '<span class="game-coming">Coming soon</span>' : ''}`;
+    if (game.ready) {
+      card.addEventListener('click', () => launchGame(game.file, vocab));
+    }
+    grid.appendChild(card);
+  });
+}
+
+function launchGame(file, vocab) {
+  // Store vocab in sessionStorage so the game can pick it up
+  sessionStorage.setItem('vocab', JSON.stringify(vocab));
+  sessionStorage.setItem('vocabMeta', JSON.stringify({
+    subject: cap(sel.subject),
+    board:   BOARDS[sel.board]?.label || sel.board,
+    topic:   sel.topic,
+  }));
+  window.location.href = file;
+}
+</script>
+</body>
+</html>

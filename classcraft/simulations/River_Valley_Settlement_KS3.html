@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>River Valley Settlement | KS3 Geography Simulation | Free | ma...</title>
+    <meta name="description" content="Play River Valley Settlement — a free interactive KS3 geography simulation. No login required. Build decision-making skills with this classroom-ready game.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --navy:#78350F;--mid:#D97706;--gold:#FBBF24;--gold2:#F59E0B;
+  --white:#FFFFFF;--offwh:#F5F7FA;--grey:#8892A4;--dgrey:#2D3748;
+  --green:#1E8449;--red:#C0392B;--amber:#E67E22;--card:#FFFFFF;
+  --border:#E2E8F0;--shadow:0 4px 24px rgba(0,0,0,0.10);--r:10px;
+  --btn-a:#1A5276;--btn-b:#145A32;--btn-c:#922B21;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{font-family:'Nunito',sans-serif;background:var(--offwh);color:var(--dgrey);min-height:100vh;display:flex;overflow:hidden;}
+
+.sidebar{width:260px;min-width:260px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;height:100vh;position:relative;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.2rem 0.8rem;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h1{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);letter-spacing:2px;}
+.sidebar-logo p{font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:0.5rem 0;}
+.sidebar-nav button{display:flex;align-items:center;width:100%;padding:0.8rem 1.2rem;background:none;border:none;color:rgba(255,255,255,0.6);font-family:'Nunito',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.2s;text-align:left;gap:0.6rem;}
+.sidebar-nav button:hover{background:rgba(255,255,255,0.08);color:var(--white);}
+.sidebar-nav button.active{background:rgba(255,255,255,0.15);color:var(--gold);border-left:3px solid var(--gold);}
+.sidebar-nav button .check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0;}
+.sidebar-nav button.done .check{background:var(--green);border-color:var(--green);color:var(--white);}
+.sidebar-nav button .phase-dots{margin-left:auto;display:flex;gap:3px;}
+.sidebar-nav button .phase-dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.sidebar-nav button .phase-dots .dot.filled{background:var(--gold);}
+.sidebar-sep{height:1px;background:rgba(255,255,255,0.1);margin:0.3rem 1.2rem;}
+.sidebar-timer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,0.1);}
+.timer-display{font-family:'DM Mono',monospace;font-size:2.2rem;color:var(--gold);text-align:center;margin-bottom:0.5rem;}
+.timer-btns{display:flex;gap:0.5rem;}
+.timer-btns button{flex:1;padding:0.4rem;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:'Nunito',sans-serif;}
+.timer-btns button:hover{background:rgba(255,255,255,0.1);}
+
+.main{flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(0,0,0,0.15);}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+.topbar-phase{display:flex;gap:0.5rem;align-items:center;}
+.phase-step{padding:0.3rem 1rem;border-radius:20px;font-size:0.8rem;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.phase-step.active{background:var(--gold);color:var(--navy);font-weight:600;}
+.phase-step.completed{background:rgba(30,132,73,0.3);color:#6FCF97;}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.topbar-right button{padding:0.3rem 1rem;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.85rem;}
+.topbar-right button:hover{background:rgba(255,255,255,0.1);}
+.topbar-right button.primary{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+.topbar-right button.primary:hover{opacity:0.9;}
+
+.content{flex:1;padding:2rem;max-width:1400px;width:100%;margin:0 auto;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.2rem;}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--navy);letter-spacing:1px;margin-bottom:0.8rem;}
+.card h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:0.5rem;}
+
+.setup-hero{text-align:center;padding:3rem 0 2rem;}
+.setup-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--navy);letter-spacing:3px;}
+.setup-hero p{font-size:1.1rem;color:var(--grey);margin-top:0.5rem;}
+.setup-hero .subtitle{color:var(--gold);font-weight:600;font-size:1.2rem;margin-top:0.2rem;}
+.team-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;}
+.team-input{display:flex;align-items:center;gap:0.8rem;background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:0.8rem 1rem;transition:border-color 0.2s;}
+.team-input:focus-within{border-color:var(--gold);}
+.team-input .num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);width:30px;}
+.team-input input{flex:1;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:1rem;color:var(--dgrey);}
+.team-count-btns{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem;}
+.team-count-btns button{width:48px;height:48px;border-radius:50%;border:2px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.2rem;cursor:pointer;transition:all 0.2s;color:var(--dgrey);}
+.team-count-btns button.active{background:var(--navy);color:var(--gold);border-color:var(--navy);}
+.start-btn{display:block;margin:2rem auto 0;padding:1rem 3rem;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--r);cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+
+.report-card{background:#FFF8E7;border:3px solid #2D2D2D;border-radius:4px;padding:2rem;font-family:Georgia,'Times New Roman',serif;}
+.report-masthead{text-align:center;border-bottom:3px double #2D2D2D;padding-bottom:1rem;margin-bottom:1.5rem;}
+.report-masthead h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#1a1a1a;letter-spacing:4px;}
+.report-masthead .dateline{font-size:0.85rem;color:#666;margin-top:0.3rem;font-style:italic;}
+.report-items{display:grid;gap:0.8rem;}
+.report-item{display:flex;gap:0.8rem;padding:0.6rem 0;border-bottom:1px solid #ddd;align-items:baseline;}
+.report-item .bullet{color:var(--gold);font-weight:bold;font-size:1.2rem;flex-shrink:0;}
+.report-item .text{font-size:1rem;line-height:1.5;color:#333;}
+.event-box{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid var(--amber);border-radius:var(--r);padding:1.2rem 1.5rem;margin-top:1.5rem;}
+.event-box h3{font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:1.3rem;margin-bottom:0.5rem;}
+.event-box p{font-size:1rem;line-height:1.5;}
+.no-event{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:2px solid var(--green);border-radius:var(--r);padding:1rem 1.5rem;margin-top:1.5rem;text-align:center;color:var(--green);font-weight:600;}
+
+.decisions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+.decisions-grid .decision-card:nth-child(5){grid-column:1 / -1;}
+.decision-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:0.8rem 1rem;border-left:4px solid var(--navy);}
+.decision-card .d-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.15rem;}
+.decision-card .d-question{font-size:0.95rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
+.option{display:flex;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:6px;margin-bottom:0.25rem;background:var(--offwh);transition:background 0.15s;align-items:baseline;}
+.option .letter{font-family:'DM Mono',monospace;font-weight:700;font-size:0.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--white);}
+.option .letter.a{background:var(--btn-a);}
+.option .letter.b{background:var(--btn-b);}
+.option .letter.c{background:var(--btn-c);}
+.option .desc{font-size:0.85rem;line-height:1.3;color:var(--dgrey);}
+
+.entry-matrix{width:100%;border-collapse:separate;border-spacing:0;}
+.entry-matrix th{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--white);background:var(--navy);padding:0.8rem;text-align:center;position:sticky;top:0;z-index:5;}
+.entry-matrix th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.entry-matrix th:last-child{border-radius:0 var(--r) 0 0;}
+.entry-matrix td{padding:0.6rem;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+.entry-matrix td:first-child{text-align:left;font-weight:600;font-size:0.9rem;color:var(--navy);min-width:180px;max-width:300px;}
+.abc-group{display:flex;gap:6px;justify-content:center;}
+.abc-btn{width:56px;height:56px;border-radius:12px;border:3px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--dgrey);user-select:none;}
+.abc-btn:active{transform:scale(0.95);}
+.abc-btn.sel-a{background:var(--btn-a);color:var(--white);border-color:var(--btn-a);}
+.abc-btn.sel-b{background:var(--btn-b);color:var(--white);border-color:var(--btn-b);}
+.abc-btn.sel-c{background:var(--btn-c);color:var(--white);border-color:var(--btn-c);}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin:1rem 0;}
+.metric-card{background:var(--white);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);text-align:center;}
+.metric-card .m-name{font-size:0.8rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;}
+.metric-card .m-val{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--navy);}
+.metric-card .m-delta{font-size:0.85rem;font-weight:600;margin-top:0.2rem;}
+.metric-card .m-delta.pos{color:var(--green);}
+.metric-card .m-delta.neg{color:var(--red);}
+.metric-card .m-delta.zero{color:var(--grey);}
+.metric-bar{height:6px;background:var(--border);border-radius:3px;margin-top:0.5rem;overflow:hidden;}
+.metric-bar-fill{height:100%;border-radius:3px;background:var(--mid);transition:width 0.5s ease;}
+
+.results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:1rem;}
+.results-table th{font-family:'Bebas Neue',sans-serif;background:var(--navy);color:var(--white);padding:0.7rem;text-align:center;font-size:0.85rem;}
+.results-table th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.results-table th:last-child{border-radius:0 var(--r) 0 0;}
+.results-table td{padding:0.5rem;text-align:center;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.9rem;}
+.results-table td:first-child{text-align:left;font-family:'Nunito',sans-serif;font-weight:600;}
+
+.lb-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--white);border-radius:var(--r);margin-bottom:0.8rem;box-shadow:var(--shadow);}
+.lb-row:first-child{border:2px solid var(--gold);background:linear-gradient(135deg,#FFFDE7,#FFF8E1);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--navy);width:50px;text-align:center;}
+.lb-row:first-child .lb-rank{color:var(--gold);}
+.lb-name{flex:1;font-size:1.3rem;font-weight:600;color:var(--navy);}
+.lb-stats{display:flex;gap:2rem;}
+.lb-stat{text-align:center;}
+.lb-stat .val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--navy);}
+.lb-stat .lbl{font-size:0.7rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;}
+
+.final-hero{text-align:center;padding:2rem 0;}
+.final-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--gold);letter-spacing:3px;}
+.podium{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;align-items:flex-end;flex-wrap:wrap;}
+.podium-item{text-align:center;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;min-width:180px;}
+.podium-item.first{padding-bottom:2.5rem;border:3px solid var(--gold);transform:scale(1.1);}
+.podium-item .medal{font-size:3rem;}
+.podium-item .pname{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);margin:0.3rem 0;}
+.podium-item .pval{font-family:'DM Mono',monospace;font-size:1.2rem;color:var(--green);font-weight:700;}
+
+.debrief-q{background:var(--white);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:0.8rem;box-shadow:var(--shadow);border-left:4px solid var(--gold);}
+.debrief-q .qnum{font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:1rem;letter-spacing:1px;}
+.debrief-q p{font-size:1.05rem;color:var(--dgrey);line-height:1.5;margin-top:0.3rem;}
+.takeaway-card{background:linear-gradient(135deg,var(--navy),var(--mid));border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;color:var(--white);}
+.takeaway-card h3{font-family:'Bebas Neue',sans-serif;color:var(--gold);margin-bottom:0.5rem;font-size:1.2rem;}
+.takeaway-card p{font-size:0.95rem;line-height:1.5;opacity:0.9;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.overlay-box{background:var(--white);border-radius:var(--r);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+.overlay-box h2{font-family:'Bebas Neue',sans-serif;color:var(--navy);font-size:1.8rem;margin-bottom:1rem;}
+.overlay-box p,.overlay-box li{font-size:0.95rem;line-height:1.6;margin-bottom:0.5rem;color:var(--dgrey);}
+.overlay-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey);}
+
+.svg-container{text-align:center;margin:1rem 0;}
+.svg-container svg{max-width:100%;height:auto;border-radius:var(--r);box-shadow:var(--shadow);}
+
+.curriculum-card{background:var(--white);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:0.6rem;box-shadow:var(--shadow);border-left:4px solid var(--mid);}
+.curriculum-card .c-topic{font-weight:600;color:var(--navy);font-size:0.95rem;}
+.curriculum-card .c-spec{font-size:0.8rem;color:var(--grey);margin-top:0.15rem;}
+.curriculum-card .c-how{font-size:0.9rem;color:var(--dgrey);margin-top:0.3rem;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>RIVER VALLEY SETTLEMENT</h1>
+    <p>Geography &bull; KS3</p>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-timer">
+    <div class="timer-display" id="timerDisplay">10:00</div>
+    <div class="timer-btns">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseTimer()">Pause</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">SETUP</div>
+    <div class="topbar-phase" id="topbarPhase"></div>
+    <div class="topbar-right" id="topbarRight"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="overlay-box">
+    <button class="overlay-close" onclick="closeHelp()">&times;</button>
+    <h2>How to Play</h2>
+    <p><strong>River Valley Settlement</strong> is a 7-round simulation where teams make strategic decisions across 6 key metrics.</p>
+    <p><strong>Each Round</strong> has 4 phases:</p>
+    <ul>
+      <li><strong>Briefing</strong> &mdash; Read the situation report and any random events aloud.</li>
+      <li><strong>Decision Cards</strong> &mdash; Show the 5 decisions. Teams discuss (~10 min, use the timer).</li>
+      <li><strong>Team Entry</strong> &mdash; Each team taps A, B, or C for each decision.</li>
+      <li><strong>Results</strong> &mdash; Scores update and metric changes are displayed.</li>
+    </ul>
+    <p><strong>Metrics:</strong> Population, Flood Damage, Food Output, Pollution Level, Quality of Life, Town Treasury. Each decision shifts these metrics. The team with the best overall performance wins.</p>
+    <p><strong>Scoring:</strong> Final score is the sum of all metric values (normalised to their scales).</p>
+  </div>
+</div>
+
+<script>
+// ======================== EMBEDDED DATA ========================
+const SIM = {"title": "River Valley Settlement", "subject": "Geography", "level": "KS3", "duration": "90 minutes", "teamSize": "3-5 students", "numTeams": "4-6 teams", "overview": "In River Valley Settlement, teams take on the role of town planners building a new community along the Avondale River system. Over seven seasonal rounds, teams must balance the needs of a growing population against the natural hazards and environmental limits of a river valley landscape.\n\nEach round presents new challenges drawn from real river geography: flooding on the floodplain, erosion undercutting riverbanks, drought reducing water supply, and pollution threatening ecosystems. Teams must decide where to build, how to manage water, what crops to grow, and how to invest limited treasury funds.\n\nSuccess is measured across six metrics. The winning team achieves the highest combined score from population growth, food security, quality of life, and treasury reserves, while keeping flood damage and pollution as low as possible. Poor choices lead to costly disasters, environmental degradation, and unhappy residents.", "scenario": "The year is 2025 and the county council has granted your team permission to establish a new town in the Avondale River Valley. The valley features a main river channel with meanders, a wide floodplain, river terraces, and surrounding higher ground. Your starting settlement of 200 people sits on a river terrace with basic farmland on the floodplain.\n\nYou have a treasury of 50,000 coins, modest food production, and low pollution. Each season brings new decisions about land use, water management, agriculture, infrastructure, and ethical dilemmas. The river is both your greatest resource and your greatest threat.", "metrics": [{"name": "Population", "start": 200, "unit": "people", "description": "Total residents in your town. Grows naturally if food and quality of life are adequate. Declines if conditions deteriorate."}, {"name": "Flood Damage", "start": 0, "unit": "coins cumulative", "description": "Total accumulated cost of flood damage to buildings and farmland. Lower is better."}, {"name": "Food Output", "start": 60, "unit": "/100", "description": "How well your town feeds itself. Below 40 causes population decline. Above 80 attracts new settlers."}, {"name": "Pollution Level", "start": 10, "unit": "/100", "description": "Contamination of river water and surrounding land. Lower is better. Above 60 triggers health problems and population loss."}, {"name": "Quality of Life", "start": 50, "unit": "/100", "description": "Overall happiness and wellbeing of residents including housing, services, and environment."}, {"name": "Town Treasury", "start": 50000, "unit": "coins", "description": "Available funds for building, repairs, and services. Negative treasury causes emergency cuts."}], "finalScoring": "Final Score = Population + (Food Output x 50) + (Quality of Life x 50) + (Treasury / 100) - (Flood Damage / 50) - (Pollution Level x 100). Highest total score wins.", "curriculumLinks": [{"topic": "River processes", "spec": "KS3 Geography", "how": "Decisions about building on floodplains, meanders, and terraces require understanding erosion, transportation, and deposition."}, {"topic": "Flooding causes and management", "spec": "KS3 Geography", "how": "Spring flood events and water management decisions directly link to hard and soft flood defences."}, {"topic": "Settlement site factors", "spec": "KS3 Geography", "how": "Choosing where to place buildings teaches wet point, dry point, defensive, and route centre site factors."}, {"topic": "Land use patterns", "spec": "KS3 Geography", "how": "Allocating zones for farming, housing, and industry mirrors real land use planning in river valleys."}, {"topic": "Human-physical interaction", "spec": "KS3 Geography", "how": "Every round demonstrates how human choices affect and are affected by physical geography."}, {"topic": "Sustainability", "spec": "KS3 Geography", "how": "Pollution, resource management, and ethical dilemmas embed sustainability thinking throughout."}], "rounds": [{"num": 1, "name": "Autumn — Foundations", "report": ["Your 200 settlers have arrived at the Avondale River Valley with 50,000 coins in the treasury.", "A surveyor's map shows: the wide floodplain (flat, fertile, flood-risk), river terraces (raised, safe, limited space), higher ground (steep, safe, poor soil), and a meander bend with a slip-off slope and river cliff.", "Local farmers say the floodplain soil is the richest in the region due to alluvium deposits.", "The river is currently low after a dry summer, but old flood markers on trees show water can rise 2 metres in spring.", "A neighbouring village upstream uses the river for waste disposal."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Land Use", "question": "Where do you build the main housing area for your 200 settlers?", "optA": "On the floodplain — flat, easy to build, close to water and farmland", "optB": "On the river terrace — raised above flood level but limited space for expansion", "optC": "On the higher ground — completely safe from flooding but steep, expensive to build, far from water", "effects": "A: Quality of Life +10, Treasury -5000 (cheap build), but Flood Damage risk increases permanently by 8000 per flood event. B: Quality of Life +5, Treasury -10000 (moderate build), Flood Damage +2000 per flood event. C: Quality of Life -5 (steep walk to water), Treasury -18000 (expensive build), Flood Damage +0 per flood event."}, {"id": "D2", "domain": "Water Management", "question": "How do you secure your town's water supply from the river?", "optA": "Simple intake pipes directly from the river — cheap and fast", "optB": "Filtered well system drawing groundwater near the river — moderate cost, cleaner water", "optC": "Full water treatment plant with filtration and storage tanks — expensive but high quality", "effects": "A: Treasury -2000, Quality of Life +0, Pollution impact on health is x2 (unfiltered water). B: Treasury -8000, Quality of Life +5, Pollution impact on health is x1 (some filtering). C: Treasury -15000, Quality of Life +10, Pollution impact on health is x0.5 (treated water)."}, {"id": "D3", "domain": "Agriculture", "question": "What farming strategy do you adopt for your first season?", "optA": "Intensive floodplain farming — maximum food from the fertile alluvium soil", "optB": "Mixed farming on terraces and floodplain — moderate yield, diversified risk", "optC": "Terraced hillside farming with irrigation channels — lower yield but flood-proof", "effects": "A: Food Output +25, Pollution +8 (fertiliser runoff), Treasury -3000. Crops destroyed if floodplain floods. B: Food Output +15, Pollution +4, Treasury -6000. Only half crops at risk from flooding. C: Food Output +8, Pollution +2, Treasury -12000. No flood risk to crops."}, {"id": "D4", "domain": "Infrastructure", "question": "What type of bridge do you build to connect both sides of the river?", "optA": "Simple wooden footbridge — cheap, but blocks debris during floods and can be destroyed", "optB": "Stone arch bridge with high clearance — moderate cost, withstands most floods", "optC": "No bridge yet — use a ferry service and save funds for other priorities", "effects": "A: Treasury -3000, Quality of Life +8, but bridge destroyed in major floods (costs 3000 to rebuild each time). B: Treasury -12000, Quality of Life +10, bridge survives all but catastrophic floods. C: Treasury -500 (ferry), Quality of Life +2, no flood risk to crossing infrastructure."}, {"id": "D5", "domain": "Ethics", "question": "The upstream village is dumping waste into the river. Do you address this?", "optA": "Ignore it — not your problem and confrontation might create enemies", "optB": "Send a diplomatic delegation to negotiate shared river management rules", "optC": "Report them to the county council and demand enforcement of pollution laws", "effects": "A: Pollution +5 (waste continues flowing downstream), Treasury +0, Quality of Life -3. B: Pollution +2 (partial improvement), Treasury -2000 (delegation costs), Quality of Life +3 (community feels proactive). C: Pollution -2 (dumping stops after enforcement), Treasury -1000 (legal fees), Quality of Life +5, but upstream village becomes hostile (trade costs +2000 in future rounds)."}]}, {"num": 2, "name": "Winter — Spring Floods", "report": ["Population has grown to approximately 220 as word spreads about the new settlement.", "Heavy winter rainfall in the upper catchment has saturated the ground. River levels are rising fast.", "The Met Office issues a flood warning: river levels predicted to rise 1.8 metres above normal.", "Your farmers report the floodplain soil is waterlogged and crops planted there are at risk.", "Treasury balance and food stocks are being consumed by the growing population."], "randomEvent": "SPRING FLOODS: The river bursts its banks. All buildings and crops on the floodplain suffer damage. Floodplain housing teams lose coins equal to their flood damage risk rating. Floodplain crops are reduced by 50%. Teams with no floodplain assets are unaffected.", "decisions": [{"id": "D1", "domain": "Water Management", "question": "The flood is coming. What emergency flood defence do you deploy?", "optA": "Sandbag walls along the riverbank — cheap, fast, partially effective", "optB": "Evacuate the floodplain and let the water spread naturally across it", "optC": "Build an emergency earth embankment (levee) to contain the river", "effects": "A: Treasury -3000, reduces flood damage by 30%, Pollution +3 (sandbag waste). B: Treasury -1000 (evacuation costs), flood damage to buildings is full but no lives lost, Quality of Life -5 (disruption), Food Output -10 (crops lost). C: Treasury -10000, reduces flood damage by 70%, but Pollution +5 (soil disruption) and downstream flooding risk increases for future rounds."}, {"id": "D2", "domain": "Land Use", "question": "After the flood recedes, how do you use the muddy floodplain land?", "optA": "Rebuild and replant immediately — the alluvium deposit has refreshed the soil", "optB": "Designate the worst-hit areas as flood storage zones (no building allowed)", "optC": "Create a wetland nature reserve that absorbs future floodwater naturally", "effects": "A: Food Output +12 (enriched soil), Treasury -5000 (rebuilding), Flood Damage risk unchanged for next flood. B: Food Output -5 (less farmland), Treasury -2000 (zoning), Flood Damage -4000 per future flood event. C: Food Output -8, Treasury -6000, Flood Damage -6000 per future flood event, Pollution -5 (natural filtering), Quality of Life +5."}, {"id": "D3", "domain": "Agriculture", "question": "Food stocks are low after crop losses. How do you address the food crisis?", "optA": "Buy emergency food supplies from neighbouring towns", "optB": "Introduce rationing and plant fast-growing crops on higher ground", "optC": "Allow residents to fish the river intensively to supplement diet", "effects": "A: Treasury -8000, Food Output +20 (immediate relief), no other changes. B: Food Output +8 (slow recovery), Quality of Life -8 (rationing is unpopular), Treasury -1000. C: Food Output +12, Pollution +6 (overfishing and riverbank damage), Quality of Life +2 (fresh fish), Treasury -500."}, {"id": "D4", "domain": "Infrastructure", "question": "The flood revealed erosion is undercutting the river cliff on the outside of the meander. A footpath and two houses are at risk. What do you do?", "optA": "Install rock armour (rip-rap) along the eroding bank to stop lateral erosion", "optB": "Relocate the houses and path away from the river cliff edge", "optC": "Do nothing — erosion is natural and the houses aren't in immediate danger", "effects": "A: Treasury -8000, Quality of Life +5 (residents feel safe), Pollution +3 (construction runoff). Erosion halted at this location. B: Treasury -6000, Quality of Life +3 (safe but disruptive), Pollution +0. Erosion continues but no assets at risk. C: Treasury +0, Quality of Life -5 (anxiety). 40% chance houses collapse next round (costing 10000 and Quality of Life -10)."}, {"id": "D5", "domain": "Ethics", "question": "Flood refugees from a downstream village (50 people) arrive asking for shelter. Your resources are already stretched.", "optA": "Welcome them all — more people means more workers", "optB": "Accept 25 and provide temporary shelters, directing others to the county centre", "optC": "Turn them away — your town cannot support more people right now", "effects": "A: Population +50, Food Output -8 (more mouths), Treasury -4000 (housing), Quality of Life -3 (overcrowding), but future workforce boosts income +2000/round. B: Population +25, Food Output -4, Treasury -2000, Quality of Life +3 (compassionate but managed). C: Population +0, Quality of Life -8 (guilt and reputation damage), but no resource strain. Future migration to your town reduced."}]}, {"num": 3, "name": "Spring — Growth", "report": ["The town is recovering from winter floods. New settlers are arriving, attracted by farmland opportunities.", "Population is now approximately 280-320 depending on your refugee decision.", "A merchant offers to set up a weekly market if you provide a suitable site.", "River levels have returned to normal. The slip-off slope on the inside of the meander has grown larger from deposited sediment.", "County council announces a grant of 10000 coins available for sustainable development projects."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Land Use", "question": "Where do you locate the new weekly market?", "optA": "On the floodplain near the river crossing — central, accessible, but flood-risk", "optB": "On the slip-off slope — flat deposited land, scenic riverside location", "optC": "On the river terrace in the town centre — safe but takes space from housing", "effects": "A: Treasury +4000/round (trade income), Quality of Life +8, but market destroyed in floods (loss of 6000). B: Treasury +3000/round, Quality of Life +10 (scenic), but slip-off slope is unstable sediment — 30% chance of subsidence causing 5000 damage. C: Treasury +2500/round, Quality of Life +6, Population growth slowed by -10 (housing pressure)."}, {"id": "D2", "domain": "Water Management", "question": "The county council grant is available. Which sustainable water project do you apply for?", "optA": "Upstream tree planting to slow rainwater runoff and reduce flood peaks", "optB": "Sustainable drainage systems (SuDS) — permeable surfaces and rain gardens in town", "optC": "A concrete flood wall along the most vulnerable 500m of riverbank", "effects": "A: Treasury +10000 (grant), Flood Damage -3000 per future flood, Pollution -4 (natural filtering), takes 2 rounds to mature. B: Treasury +10000 (grant), Flood Damage -2000 per future flood, Pollution -3, Quality of Life +5 (green spaces), immediate effect. C: Treasury +10000 (grant), Flood Damage -5000 per future flood, Pollution +2 (concrete runoff), Quality of Life -3 (ugly wall), immediate effect."}, {"id": "D3", "domain": "Agriculture", "question": "A farming cooperative wants to expand production. Which approach do you support?", "optA": "Large-scale arable farming across the entire floodplain using modern machinery", "optB": "Organic mixed farming with crop rotation and livestock on varied terrain", "optC": "Greenhouse and polytunnel complex on higher ground — year-round growing", "effects": "A: Food Output +20, Pollution +10 (pesticides and fuel), Treasury +3000 (surplus sales), Quality of Life -3 (noise, smell). B: Food Output +12, Pollution -3 (organic methods), Treasury +1000, Quality of Life +5 (local produce, landscape). C: Food Output +15, Pollution +2 (plastic waste), Treasury -8000 (construction), Quality of Life +3, immune to flooding and drought."}, {"id": "D4", "domain": "Infrastructure", "question": "The town needs a school. Where do you build it?", "optA": "Next to the market for easy access — on the floodplain or slip-off slope", "optB": "On the river terrace near the main housing area", "optC": "On higher ground with views of the valley — educational field site potential", "effects": "A: Treasury -6000, Quality of Life +10, Population +20 (families attracted), but school floods if floodplain floods (repair cost 4000). B: Treasury -8000, Quality of Life +8, Population +15. Safe from flooding. C: Treasury -12000, Quality of Life +12 (excellent facility), Population +25 (families attracted), Pollution -2 (environmental education programs)."}, {"id": "D5", "domain": "Ethics", "question": "A developer wants to buy land on the floodplain to build 50 houses. They'll pay the town 15000 coins but the houses would be at flood risk. Do you allow it?", "optA": "Allow it — the money is needed and buyers accept the risk", "optB": "Allow it only if the developer funds raised foundations and flood-proofing (+5000 cost to developer, they'll only pay you 10000)", "optC": "Refuse — it's irresponsible to let people build on a known floodplain", "effects": "A: Treasury +15000, Population +100, Flood Damage +12000 per flood event, Quality of Life +3. B: Treasury +10000, Population +100, Flood Damage +5000 per flood event, Quality of Life +5. C: Treasury +0, Population +0, Quality of Life +8 (trust in planning), Flood Damage risk unchanged."}]}, {"num": 4, "name": "Summer — Drought", "report": ["Population has grown to approximately 350-450. The town is becoming established.", "Summer has been unusually hot and dry. No significant rainfall for 8 weeks.", "River flow has dropped to 20% of normal. Exposed riverbed sediments are visible.", "Crops are wilting and livestock need watering. The water table is falling.", "A local business wants to open a gravel extraction quarry on the exposed riverbed."], "randomEvent": "DROUGHT SUMMER: River flow drops critically. All teams lose Food Output -10. Teams relying on river-intake water systems lose an additional Quality of Life -8 (water restrictions). Teams with greenhouses or hillside farms lose only Food Output -5.", "decisions": [{"id": "D1", "domain": "Water Management", "question": "Water supply is critically low. How do you manage the shortage?", "optA": "Impose strict water rationing — residents get 50 litres per day", "optB": "Drill a deep borehole to access underground aquifer water", "optC": "Build a small reservoir dam upstream to store remaining river water", "effects": "A: Treasury -500, Quality of Life -12 (hardship), Food Output -5 (can't irrigate fully), Pollution +0. B: Treasury -10000, Quality of Life +2 (reliable water), Food Output +5 (irrigation restored), but aquifer could deplete in future droughts. C: Treasury -15000, Quality of Life +5, Food Output +8 (stored water for irrigation), but downstream river flow reduced further — Pollution +4 (stagnant water downstream)."}, {"id": "D2", "domain": "Agriculture", "question": "Crops are failing. How do you respond to the food crisis?", "optA": "Switch to drought-resistant crops (millet, sorghum) — less popular but survivable", "optB": "Set up emergency irrigation channels from the river to priority fields", "optC": "Import food from outside the valley and wait for rain", "effects": "A: Food Output +10, Quality of Life -3 (unfamiliar food), Treasury -2000, Pollution +0. Long-term drought resilience improved. B: Food Output +15, Treasury -5000, Pollution +3 (soil erosion from channels), river flow further reduced. C: Food Output +18 (immediate relief), Treasury -10000, no long-term resilience gained."}, {"id": "D3", "domain": "Land Use", "question": "The gravel extraction company wants to quarry the exposed riverbed. Do you permit it?", "optA": "Allow full extraction — the income will help offset drought costs", "optB": "Allow limited extraction with environmental conditions", "optC": "Refuse — the riverbed ecosystem and river processes must be protected", "effects": "A: Treasury +12000, Pollution +12 (dust, silt, habitat destruction), Quality of Life -5 (noise, trucks), river channel altered permanently. B: Treasury +6000, Pollution +5, Quality of Life -2, minor channel changes. C: Treasury +0, Pollution +0, Quality of Life +5 (residents value environment), river processes continue naturally."}, {"id": "D4", "domain": "Infrastructure", "question": "The drought has cracked the ground and several buildings have subsidence damage. How do you respond?", "optA": "Emergency repairs only — patch the worst cracks and monitor", "optB": "Comprehensive foundation reinforcement for all affected buildings", "optC": "Demolish damaged buildings and rebuild with deeper foundations in safer locations", "effects": "A: Treasury -3000, Quality of Life -5 (residents anxious), 50% chance of further damage next round costing 6000. B: Treasury -12000, Quality of Life +3 (residents reassured), buildings secure long-term. C: Treasury -18000, Quality of Life +0 (disruption offsets safety), Population -15 (displaced families leave), but buildings future-proof."}, {"id": "D5", "domain": "Ethics", "question": "A neighbouring town offers to sell you water from their reservoir at a high price (8000 coins). Meanwhile, a local farmer suggests illegally diverting a tributary stream that feeds the downstream village.", "optA": "Buy the water legally — expensive but ethical", "optB": "Divert the tributary — free water but harms the downstream village", "optC": "Refuse both and enforce stricter rationing — your town will endure", "effects": "A: Treasury -8000, Food Output +8, Quality of Life +5 (water security), good reputation maintained. B: Treasury +0, Food Output +10, Pollution +3, Quality of Life +2, but downstream village retaliates — future trade income reduced by 2000/round and legal fine of 5000. C: Treasury +0, Food Output -3, Quality of Life -8 (hardship), but community resilience builds — Quality of Life +5 in future rounds."}]}, {"num": 5, "name": "Autumn — Expansion", "report": ["The drought has broken. Autumn rains have restored river levels to normal.", "Population stands at approximately 400-550. The town is now well-established.", "A transport company offers to build a road connecting your town to the nearest city.", "The meander has shifted noticeably — the river cliff has retreated 2 metres since the town was founded.", "A government housing inspector visits and notes overcrowding in some areas."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Infrastructure", "question": "The transport company will build a road, but which route?", "optA": "Along the floodplain following the river valley — flat, cheap, scenic but flood-risk", "optB": "Over the river terrace and through a hill cutting — moderate cost, mostly safe", "optC": "Elevated road on stilts across the floodplain — expensive but flood-proof and preserves farmland beneath", "effects": "A: Treasury -5000, Quality of Life +10, Population +30 (accessibility), but road floods and costs 4000 to repair each flood event. B: Treasury -12000, Quality of Life +8, Population +25, Pollution +4 (hill cutting scar). C: Treasury -20000, Quality of Life +12, Population +35, Food Output +3 (farmland preserved), Pollution +2 (concrete)."}, {"id": "D2", "domain": "Land Use", "question": "The housing inspector requires 80 new homes. Where do you build the housing estate?", "optA": "On remaining floodplain land — cheap and quick to build", "optB": "On the river terrace, converting some farmland to housing", "optC": "Build upwards — a 4-storey apartment block on higher ground", "effects": "A: Treasury -8000, Population +80, Quality of Life +3, Flood Damage +8000 per flood event, Food Output +0. B: Treasury -12000, Population +80, Quality of Life +5, Food Output -8 (lost farmland), Flood Damage +1000. C: Treasury -20000, Population +80, Quality of Life +8, Food Output +0, Flood Damage +0, Pollution +3 (construction)."}, {"id": "D3", "domain": "Water Management", "question": "The meander migration threatens more properties. How do you manage the shifting river channel?", "optA": "Straighten the river channel through the danger zone to stop meander migration", "optB": "Install gabion baskets along the outer bank to slow erosion", "optC": "Accept natural river processes and create a buffer zone — no building within 30m of the river cliff", "effects": "A: Treasury -15000, Flood Damage -2000 (faster flow), but downstream flooding increases — Pollution +6 (habitat loss), Quality of Life -3 (unnatural). B: Treasury -7000, erosion slowed by 80%, Quality of Life +3, Pollution +2. C: Treasury -2000 (land purchase), erosion continues naturally, Quality of Life +5 (green buffer zone), Pollution -3 (riparian habitat), some buildings still need relocating (-3000)."}, {"id": "D4", "domain": "Agriculture", "question": "With better road access, you can now trade surplus food. How do you scale farming?", "optA": "Industrial dairy farm on the floodplain — high income but high pollution", "optB": "Farm shop and pick-your-own fruit operation — tourism and local sales", "optC": "Community allotments and food cooperative — residents grow their own food", "effects": "A: Food Output +20, Treasury +6000/round (dairy sales), Pollution +15 (slurry, methane), Quality of Life -5 (smell). B: Food Output +10, Treasury +4000/round (tourism), Pollution +2, Quality of Life +8 (community activity). C: Food Output +12, Treasury +1000/round, Pollution -2 (composting), Quality of Life +10 (community spirit)."}, {"id": "D5", "domain": "Ethics", "question": "A historical site (Iron Age settlement remains) is discovered on the proposed building land. An archaeologist begs you to preserve it.", "optA": "Ignore it and build over it — housing need is urgent", "optB": "Conduct a 3-month rescue excavation, then build — delays and costs more", "optC": "Preserve the site permanently as a heritage park and educational resource", "effects": "A: Treasury +0, Population +20 (faster housing), Quality of Life -8 (cultural loss, bad publicity). B: Treasury -5000 (excavation costs), Population +15 (delayed housing), Quality of Life +5 (responsible approach). C: Treasury -8000, Population +0 (no housing on site), Quality of Life +12 (heritage pride), Treasury +2000/round (tourism income)."}]}, {"num": 6, "name": "Winter — Industrial Pressure", "report": ["Population is now approximately 500-700. Your town is thriving.", "Winter river levels are high but not yet at flood stage.", "A large chemical company proposes building a factory upstream of your town on the river.", "They promise 100 jobs and 8000 coins annual tax revenue to your treasury.", "Environmental groups warn the factory will discharge treated wastewater into the river, raising pollution."], "randomEvent": "UPSTREAM FACTORY PROPOSED: The chemical company begins its planning application. Your town is formally consulted. The factory would discharge treated effluent increasing river pollution by +15. However, it also brings economic benefits. Your decision in D1 this round determines the outcome.", "decisions": [{"id": "D1", "domain": "Ethics", "question": "The chemical factory planning application: what is your town's official response?", "optA": "Support the application — jobs and tax revenue are essential for growth", "optB": "Support with strict conditions — they must install advanced water treatment and fund a river monitoring station", "optC": "Object to the application — the pollution risk to your town's water supply is too great", "effects": "A: Treasury +8000/round (tax), Population +60 (workers), Pollution +15, Quality of Life -5 (worry about pollution), Food Output -5 (contaminated irrigation water). B: Treasury +5000/round (reduced tax, conditions cost them), Population +40, Pollution +5 (controlled discharge), Quality of Life +3 (jobs with safeguards), Treasury -3000 (monitoring station). C: Treasury +0, Population +0, Pollution +0, Quality of Life +10 (community pride in environmental stance)."}, {"id": "D2", "domain": "Water Management", "question": "Winter storms are forecast. How do you prepare for potential flooding?", "optA": "Rely on existing defences — they've worked so far", "optB": "Deploy temporary flood barriers and clear all drainage channels", "optC": "Activate a full flood plan: barriers, evacuation routes, emergency supplies, and a warning siren system", "effects": "A: Treasury +0, no change to flood defence ratings. If floods come, full damage applies. B: Treasury -4000, Flood Damage risk reduced by 20% for this round only. C: Treasury -10000, Flood Damage risk reduced by 50% for this round and 25% for all future rounds, Quality of Life +5 (residents feel safe)."}, {"id": "D3", "domain": "Land Use", "question": "Your town needs a waste management solution. Rubbish is piling up.", "optA": "Landfill site on the edge of the floodplain — cheap and easy", "optB": "Recycling centre and composting facility on higher ground", "optC": "Waste-to-energy incinerator — generates electricity but produces emissions", "effects": "A: Treasury -2000, Pollution +12 (leachate into river, visual blight), Quality of Life -8 (smell, vermin). Flood risk: landfill breaches in flood spreading waste (+10 Pollution per flood). B: Treasury -8000, Pollution -5 (reduced waste), Quality of Life +5 (clean town), Food Output +3 (compost for farms). C: Treasury -12000, Pollution +4 (air emissions), Quality of Life +2 (electricity), Treasury +2000/round (energy sales)."}, {"id": "D4", "domain": "Infrastructure", "question": "The town has grown enough to need a medical centre. Where and what type?", "optA": "Basic GP surgery in a converted house — cheap, quick, limited capacity", "optB": "Purpose-built health centre on the river terrace — good access, modern facilities", "optC": "Health and wellbeing centre with pharmacy, physiotherapy, and mental health services on higher ground", "effects": "A: Treasury -3000, Quality of Life +5, Population +10. B: Treasury -10000, Quality of Life +10, Population +25. C: Treasury -18000, Quality of Life +15, Population +40, reduces negative Quality of Life impacts from future disasters by 30%."}, {"id": "D5", "domain": "Agriculture", "question": "Winter is a good time to plan next year's farming strategy. The factory decision affects this.", "optA": "Expand intensive farming to supply food to factory workers — maximise output", "optB": "Shift to organic certification — higher prices per unit, lower pollution", "optC": "Diversify into fish farming using river water — new income stream", "effects": "A: Food Output +15, Pollution +8, Treasury +3000, Quality of Life -3. B: Food Output +5, Pollution -8, Treasury +5000 (premium prices), Quality of Life +5. C: Food Output +10, Pollution +3 (if river clean) or +10 (if factory polluting river), Treasury +4000, Quality of Life +3."}]}, {"num": 7, "name": "Spring — Reckoning", "report": ["Population has reached approximately 600-900 depending on decisions. Your town is now a significant settlement.", "The county council announces a government inspection of all river valley towns. Pollution levels, flood preparedness, and sustainability will be assessed.", "Towns with Pollution above 50 will face fines. Towns with strong sustainability records will receive grants.", "A final spring flood is forecast — moderate severity. This will test your flood defences one last time.", "Local elections are coming. Residents will judge your overall performance."], "randomEvent": "GOVERNMENT INSPECTION: Pollution penalties apply. If Pollution > 50: fine of 15000 coins. If Pollution > 35: fine of 8000 coins. If Pollution < 20: sustainability grant of 10000 coins. If Pollution < 10: bonus grant of 20000 coins. MODERATE SPRING FLOOD also occurs — teams take flood damage based on their cumulative flood risk rating at 60% severity.", "decisions": [{"id": "D1", "domain": "Water Management", "question": "The inspection is coming and flood is forecast. Last chance to address water quality and flood defences.", "optA": "Emergency pollution cleanup — dredge contaminated sediment from the riverbed", "optB": "Install a constructed wetland system to naturally filter pollutants before the inspection", "optC": "Focus all resources on flood defence upgrades — pollution can wait", "effects": "A: Pollution -10, Treasury -8000, Quality of Life +3. River habitat temporarily disturbed. B: Pollution -8, Treasury -6000, Quality of Life +5, Flood Damage -1000 (wetland absorbs some floodwater). Long-term pollution reduction of -3/round. C: Pollution +0, Treasury -10000, Flood Damage -40% for the incoming flood, Quality of Life +3."}, {"id": "D2", "domain": "Land Use", "question": "A legacy plan for the town's future: how do you zone the remaining undeveloped land?", "optA": "All for housing — maximise population and tax revenue", "optB": "Mixed use: 40% housing, 30% green space, 30% community facilities", "optC": "Predominantly green infrastructure: parks, allotments, wildlife corridors, and a flood meadow", "effects": "A: Population +60, Treasury +5000 (development fees), Quality of Life +2, Pollution +5, Flood Damage +5000. B: Population +30, Treasury +2000, Quality of Life +10, Pollution -2, Flood Damage +1000. C: Population +10, Treasury -3000, Quality of Life +15, Pollution -8, Flood Damage -5000."}, {"id": "D3", "domain": "Agriculture", "question": "Final farming decisions before the inspection assesses your sustainability record.", "optA": "Maintain current farming — don't disrupt food production before the assessment", "optB": "Implement buffer strips along all watercourses — 6-metre grass margins to filter runoff", "optC": "Convert 20% of farmland to wildflower meadows for biodiversity and natural flood management", "effects": "A: Food Output +0, Pollution +0, Treasury +0. No change. B: Food Output -5, Pollution -6, Treasury -3000, Quality of Life +3. Reduces future pollution from farming permanently. C: Food Output -10, Pollution -8, Treasury -2000, Quality of Life +8, Flood Damage -3000 (natural absorption)."}, {"id": "D4", "domain": "Infrastructure", "question": "Your final infrastructure investment. What do you build for the town's long-term future?", "optA": "A leisure centre with swimming pool — boosts quality of life and attracts families", "optB": "Renewable energy installation (solar panels and a small hydro turbine on the river weir)", "optC": "A river education centre and outdoor classroom — teaches future generations about river geography", "effects": "A: Treasury -15000, Quality of Life +12, Population +30. B: Treasury -12000, Quality of Life +5, Pollution -5 (reduces fossil fuel use), Treasury +3000/round (energy revenue). C: Treasury -8000, Quality of Life +8, Pollution -3 (environmental awareness), Population +15 (families attracted to education)."}, {"id": "D5", "domain": "Ethics", "question": "Election time. You must make a public commitment about the town's future direction. What do you promise?", "optA": "Economic growth first — more jobs, more houses, more trade. The river is a resource to exploit.", "optB": "Balanced development — grow the economy while protecting the river environment for everyone.", "optC": "Environment first — the river valley's natural systems must be preserved. Growth must be sustainable or not happen at all.", "effects": "A: Treasury +5000 (business confidence), Population +40, Pollution +5, Quality of Life +3 (optimism), but Flood Damage +3000 (development pressure). B: Treasury +2000, Population +20, Pollution -2, Quality of Life +8 (trust in leadership). C: Treasury -2000 (business caution), Population +5, Pollution -8, Quality of Life +12 (community values), Flood Damage -3000."}]}], "debriefQuestions": ["Which metric was hardest to manage and why? What does this tell us about the challenges of building settlements in river valleys?", "How did the spring floods in Round 2 affect teams differently based on their Round 1 building location decisions? What does this teach about flood risk?", "Compare the hard engineering defences (levees, rock armour, flood walls) with soft engineering approaches (tree planting, wetlands, buffer zones). Which proved more effective and why?", "How did the drought in Round 4 reveal vulnerabilities in your water management strategy? What would you do differently?", "What trade-offs did you face between economic growth and environmental protection? Give specific examples from your decisions.", "How did the upstream factory proposal in Round 6 test your town's values? Would real communities face similar dilemmas?", "If you played again, which single decision would you change and why? How does this connect to real-world river valley planning?"], "keyTakeaways": ["River valleys offer both opportunities (fertile soil, water supply, transport routes) and hazards (flooding, erosion, pollution) that settlement planners must balance.", "Flood management requires long-term planning. Hard engineering provides immediate protection but can worsen problems elsewhere, while soft engineering works with natural processes for sustainable solutions.", "Human activities upstream always affect communities downstream, making river management a shared responsibility that requires cooperation.", "There is no perfect solution — every land use decision involves trade-offs between economic benefit, environmental impact, flood risk, and quality of life.", "Sustainable development means meeting present needs without compromising the ability of future generations to meet theirs — a principle tested in every round of this simulation."]};
+const SVGS = {"r1_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><rect x=\"302\" y=\"152\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#D97706\" opacity=\"0.9\"/><rect x=\"322\" y=\"152\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#FBBF24\" opacity=\"0.7\"/><rect x=\"312\" y=\"136\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Autumn — Foundations</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n</svg>", "r1_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Autumn — Foundations</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"90\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"108\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#FBBF24\" opacity=\"0.65\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Land Use</text>\n  <g opacity=\"0.85\"><path d=\"M200,156 Q206,148 212,156 Q218,164 224,156\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M200,166 Q206,158 212,166 Q218,174 224,166\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Water Management</text>\n  <g opacity=\"0.85\"><line x1=\"318\" y1=\"172\" x2=\"318\" y2=\"156\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M318,156 Q330,146 320,144\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Agriculture</text>\n  <g opacity=\"0.85\"><rect x=\"406\" y=\"164\" width=\"36\" height=\"6\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"412\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/><rect x=\"432\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Infrastructure</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r2_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"292,168 316,128 324,142 334,134 348,168\" fill=\"#D97706\" opacity=\"0.8\"/><polygon points=\"316,128 310,138 322,138\" fill=\"#FFFBEB\" opacity=\"0.6\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Winter — Spring Floods</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n</svg>", "r2_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Winter — Spring Floods</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M94,156 Q100,148 106,156 Q112,164 118,156\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M94,166 Q100,158 106,166 Q112,174 118,166\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Water Management</text>\n  <g opacity=\"0.85\"><rect x=\"196\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"214\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#FBBF24\" opacity=\"0.65\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Land Use</text>\n  <g opacity=\"0.85\"><line x1=\"318\" y1=\"172\" x2=\"318\" y2=\"156\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M318,156 Q330,146 320,144\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Agriculture</text>\n  <g opacity=\"0.85\"><rect x=\"406\" y=\"164\" width=\"36\" height=\"6\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"412\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/><rect x=\"432\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Infrastructure</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r3_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><line x1=\"320\" y1=\"168\" x2=\"320\" y2=\"144\" stroke=\"#D97706\" stroke-width=\"3\"/><path d=\"M320,144 Q338,128 326,124\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"3\"/><path d=\"M320,152 Q304,140 316,134\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Spring — Growth</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n</svg>", "r3_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Spring — Growth</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"90\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"108\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#FBBF24\" opacity=\"0.65\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Land Use</text>\n  <g opacity=\"0.85\"><path d=\"M200,156 Q206,148 212,156 Q218,164 224,156\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M200,166 Q206,158 212,166 Q218,174 224,166\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Water Management</text>\n  <g opacity=\"0.85\"><line x1=\"318\" y1=\"172\" x2=\"318\" y2=\"156\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M318,156 Q330,146 320,144\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Agriculture</text>\n  <g opacity=\"0.85\"><rect x=\"406\" y=\"164\" width=\"36\" height=\"6\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"412\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/><rect x=\"432\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Infrastructure</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r4_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"150\" r=\"14\" fill=\"#D97706\"/><line x1=\"320\" y1=\"128\" x2=\"320\" y2=\"122\" stroke=\"#D97706\" stroke-width=\"2.5\"/><line x1=\"320\" y1=\"172\" x2=\"320\" y2=\"178\" stroke=\"#D97706\" stroke-width=\"2.5\"/><line x1=\"298\" y1=\"150\" x2=\"292\" y2=\"150\" stroke=\"#D97706\" stroke-width=\"2.5\"/><line x1=\"342\" y1=\"150\" x2=\"348\" y2=\"150\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Summer — Drought</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n</svg>", "r4_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Summer — Drought</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M94,156 Q100,148 106,156 Q112,164 118,156\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M94,166 Q100,158 106,166 Q112,174 118,166\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Water Management</text>\n  <g opacity=\"0.85\"><line x1=\"212\" y1=\"172\" x2=\"212\" y2=\"156\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M212,156 Q224,146 214,144\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Agriculture</text>\n  <g opacity=\"0.85\"><rect x=\"302\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"320\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#FBBF24\" opacity=\"0.65\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Land Use</text>\n  <g opacity=\"0.85\"><rect x=\"406\" y=\"164\" width=\"36\" height=\"6\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"412\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/><rect x=\"432\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Infrastructure</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r5_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"320,134 344,146 320,158 296,146\" fill=\"#D97706\" opacity=\"0.9\"/><polygon points=\"320,142 344,154 320,166 296,154\" fill=\"#D97706\" opacity=\"0.6\"/><polygon points=\"320,150 344,162 320,174 296,162\" fill=\"#D97706\" opacity=\"0.35\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Autumn — Expansion</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n</svg>", "r5_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Autumn — Expansion</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"88\" y=\"164\" width=\"36\" height=\"6\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"94\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/><rect x=\"114\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Infrastructure</text>\n  <g opacity=\"0.85\"><rect x=\"196\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"214\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#FBBF24\" opacity=\"0.65\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Land Use</text>\n  <g opacity=\"0.85\"><path d=\"M306,156 Q312,148 318,156 Q324,164 330,156\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M306,166 Q312,158 318,166 Q324,174 330,166\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Water Management</text>\n  <g opacity=\"0.85\"><line x1=\"424\" y1=\"172\" x2=\"424\" y2=\"156\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M424,156 Q436,146 426,144\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Agriculture</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r6_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"292,168 316,128 324,142 334,134 348,168\" fill=\"#D97706\" opacity=\"0.8\"/><polygon points=\"316,128 310,138 322,138\" fill=\"#FFFBEB\" opacity=\"0.6\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Winter — Industrial Pressure</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n</svg>", "r6_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Winter — Industrial Pressure</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,142 124,160 116,160 116,178 96,178 96,160 88,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <g opacity=\"0.85\"><path d=\"M200,156 Q206,148 212,156 Q218,164 224,156\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M200,166 Q206,158 212,166 Q218,174 224,166\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Water Management</text>\n  <g opacity=\"0.85\"><rect x=\"302\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"320\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#FBBF24\" opacity=\"0.65\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Land Use</text>\n  <g opacity=\"0.85\"><rect x=\"406\" y=\"164\" width=\"36\" height=\"6\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"412\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/><rect x=\"432\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Infrastructure</text>\n  <g opacity=\"0.85\"><line x1=\"530\" y1=\"172\" x2=\"530\" y2=\"156\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M530,156 Q542,146 532,144\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Agriculture</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r7_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><line x1=\"320\" y1=\"130\" x2=\"320\" y2=\"170\" stroke=\"#D97706\" stroke-width=\"3\"/><line x1=\"300\" y1=\"136\" x2=\"340\" y2=\"136\" stroke=\"#D97706\" stroke-width=\"3\"/><path d=\"M296,150 L300,136 L304,150\" fill=\"none\" stroke=\"#FBBF24\" stroke-width=\"2\"/><path d=\"M336,150 L340,136 L344,150\" fill=\"none\" stroke=\"#FBBF24\" stroke-width=\"2\"/><rect x=\"314\" y=\"166\" width=\"12\" height=\"6\" rx=\"2\" fill=\"#D97706\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Spring — Reckoning</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n</svg>", "r7_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Spring — Reckoning</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><path d=\"M94,156 Q100,148 106,156 Q112,164 118,156\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M94,166 Q100,158 106,166 Q112,174 118,166\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Water Management</text>\n  <g opacity=\"0.85\"><rect x=\"196\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"214\" y=\"150\" width=\"14\" height=\"20\" rx=\"2\" fill=\"#FBBF24\" opacity=\"0.65\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Land Use</text>\n  <g opacity=\"0.85\"><line x1=\"318\" y1=\"172\" x2=\"318\" y2=\"156\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M318,156 Q330,146 320,144\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Agriculture</text>\n  <g opacity=\"0.85\"><rect x=\"406\" y=\"164\" width=\"36\" height=\"6\" rx=\"2\" fill=\"#D97706\" opacity=\"0.85\"/><rect x=\"412\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/><rect x=\"432\" y=\"150\" width=\"4\" height=\"14\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Infrastructure</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">River Valley Settlement</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>"};
+
+// ======================== EFFECTS PARSER ========================
+// Build alias map: short names -> full metric name
+const METRIC_ALIASES = {};
+(function() {
+  for (const m of SIM.metrics) {
+    const name = m.name;
+    METRIC_ALIASES[name.toLowerCase()] = name;
+    // Add partial aliases: last word, last two words, etc.
+    const words = name.split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const partial = words.slice(i).join(' ').toLowerCase();
+      if (partial.length >= 3 && !METRIC_ALIASES[partial]) {
+        METRIC_ALIASES[partial] = name;
+      }
+    }
+    // Also add without common suffixes
+    const noLevel = name.replace(/\s+(Level|Score|Rating|Index|Remaining|Value)$/i, '').toLowerCase();
+    if (noLevel !== name.toLowerCase() && !METRIC_ALIASES[noLevel]) {
+      METRIC_ALIASES[noLevel] = name;
+    }
+  }
+})();
+
+function findMetric(text) {
+  // Try exact match first, then longest partial match
+  const lower = text.toLowerCase();
+  for (const m of SIM.metrics) {
+    if (lower.includes(m.name.toLowerCase())) return m.name;
+  }
+  // Try aliases (longest first)
+  const aliases = Object.keys(METRIC_ALIASES).sort((a,b) => b.length - a.length);
+  for (const alias of aliases) {
+    if (lower.includes(alias)) return METRIC_ALIASES[alias];
+  }
+  return null;
+}
+
+function parseEffects(effectsStr) {
+  if (!effectsStr) return {};
+  const results = {};
+  const clauses = effectsStr.split(/[.;,]/).map(s => s.trim()).filter(s => s.length > 0);
+
+  for (const clause of clauses) {
+    const metricName = findMetric(clause);
+    if (!metricName) continue;
+
+    // "set to X"
+    const setMatch = clause.match(/set\s+to\s+(-?[\d,.]+)/i);
+    if (setMatch) {
+      results[metricName] = { type: 'set', value: parseNum(setMatch[1]) };
+      continue;
+    }
+
+    // "+/-$X,XXX" or "+/-X" or "+/-X%"
+    const deltaMatch = clause.match(/([+-])\s*\$?([\d,.]+)[%]?/);
+    if (deltaMatch) {
+      const sign = deltaMatch[1] === '+' ? 1 : -1;
+      const val = parseNum(deltaMatch[2]) * sign;
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+      continue;
+    }
+
+    // "-$X,XXX" embedded
+    const negMatch = clause.match(/-\$([\d,.]+)/);
+    if (negMatch) {
+      const val = -parseNum(negMatch[1]);
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+    }
+  }
+  return results;
+}
+
+function parseNum(s) {
+  return parseFloat(s.replace(/,/g, '')) || 0;
+}
+
+function clampMetric(metricDef, value) {
+  const unit = metricDef.unit || '';
+  if (unit === '/100') return Math.max(0, Math.min(100, value));
+  if (unit === '%') return Math.max(-100, Math.min(100, value));
+  if (unit === '$') return Math.max(0, value); // no negative cash
+  return value;
+}
+
+// ======================== GAME STATE ========================
+let G = {
+  started: false,
+  teamCount: 3,
+  teams: [],
+  currentScreen: 'setup',
+  currentRound: 1,
+  currentPhase: 0,
+  roundsComplete: new Set(),
+  teamMetrics: {}, // teamIdx -> {metricName: value}
+  roundDecisions: {}, // round -> teamIdx -> {D1:'A', D2:'B', ...}
+  roundSnapshots: {}, // round -> teamIdx -> {metricName: {before, after, delta}}
+};
+
+function initMetrics() {
+  G.teamMetrics = {};
+  for (let t = 0; t < G.teams.length; t++) {
+    G.teamMetrics[t] = {};
+    for (const m of SIM.metrics) {
+      G.teamMetrics[t][m.name] = m.start;
+    }
+  }
+}
+
+// ======================== TIMER ========================
+let timerInterval = null, timerSeconds = 600;
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + s.toString().padStart(2,'0');
+  document.getElementById('timerDisplay').style.color = timerSeconds <= 60 ? '#EF5350' : 'var(--gold)';
+}
+function startTimer() { if (timerInterval) return; timerInterval = setInterval(() => { if (timerSeconds > 0) { timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; } }, 1000); }
+function pauseTimer() { clearInterval(timerInterval); timerInterval = null; }
+function resetTimer() { pauseTimer(); timerSeconds = 600; updateTimerDisplay(); }
+updateTimerDisplay();
+
+// ======================== NAVIGATION ========================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let h = '<button onclick="goTo(\'setup\')" class="' + (G.currentScreen==='setup'?'active':'') + '"><span class="check"></span> Setup</button>';
+  for (let r = 1; r <= 7; r++) {
+    const done = G.roundsComplete.has(r);
+    const isActive = G.currentScreen === 'round' && G.currentRound === r;
+    h += '<button onclick="goToRound('+r+')" class="' + (isActive?'active':'') + ' ' + (done?'done':'') + '">';
+    h += '<span class="check">' + (done?'&#10003;':'') + '</span> Round ' + r;
+    if (isActive) { h += '<span class="phase-dots">'; for (let p=0;p<4;p++) h += '<span class="dot '+(G.currentPhase>=p?'filled':'')+'"></span>'; h += '</span>'; }
+    h += '</button>';
+  }
+  h += '<div class="sidebar-sep"></div>';
+  h += '<button onclick="goTo(\'leaderboard\')" class="'+(G.currentScreen==='leaderboard'?'active':'')+'"><span class="check"></span> Leaderboard</button>';
+  h += '<button onclick="goTo(\'final\')" class="'+(G.currentScreen==='final'?'active':'')+'"><span class="check"></span> Final Results</button>';
+  h += '<button onclick="goTo(\'debrief\')" class="'+(G.currentScreen==='debrief'?'active':'')+'"><span class="check"></span> Debrief</button>';
+  nav.innerHTML = h;
+}
+
+function goTo(s) { G.currentScreen = s; render(); }
+function goToRound(r) { if (!G.started) return; G.currentScreen = 'round'; G.currentRound = r; G.currentPhase = G.roundsComplete.has(r) ? 3 : 0; render(); }
+function setPhase(p) { G.currentPhase = p; render(); }
+
+function render() {
+  buildSidebar();
+  const c = document.getElementById('content');
+  if (G.currentScreen === 'setup') renderSetup(c);
+  else if (G.currentScreen === 'round') renderRound(c);
+  else if (G.currentScreen === 'leaderboard') renderLeaderboard(c);
+  else if (G.currentScreen === 'final') renderFinal(c);
+  else if (G.currentScreen === 'debrief') renderDebrief(c);
+  updateTopbar();
+}
+
+function updateTopbar() {
+  const title = document.getElementById('topbarTitle');
+  const phase = document.getElementById('topbarPhase');
+  const right = document.getElementById('topbarRight');
+  if (G.currentScreen === 'setup') {
+    title.textContent = 'SETUP';
+    phase.innerHTML = '';
+    right.innerHTML = '<button onclick="showHelp()">How to Play</button>';
+  } else if (G.currentScreen === 'round') {
+    const rd = SIM.rounds[G.currentRound-1];
+    title.textContent = 'ROUND ' + rd.num + ': ' + rd.name.toUpperCase();
+    const phases = ['Briefing','Decisions','Team Entry','Results'];
+    phase.innerHTML = phases.map((p,i) => '<button class="phase-step '+(i===G.currentPhase?'active':i<G.currentPhase?'completed':'')+'" onclick="setPhase('+i+')">'+p+'</button>').join('');
+    let btns = '';
+    if (G.currentPhase > 0) btns += '<button onclick="setPhase('+(G.currentPhase-1)+')">&#8592; Back</button>';
+    if (G.currentPhase < 3) btns += '<button class="primary" onclick="nextPhase()">Next &#8594;</button>';
+    else if (G.currentRound < 7) btns += '<button class="primary" onclick="goToRound('+(G.currentRound+1)+')">Round '+(G.currentRound+1)+' &#8594;</button>';
+    else btns += '<button class="primary" onclick="goTo(\'final\')">Final Results &#8594;</button>';
+    right.innerHTML = btns;
+  } else {
+    title.textContent = G.currentScreen.toUpperCase().replace('LEADERBOARD','LEADERBOARD');
+    phase.innerHTML = '';
+    right.innerHTML = G.currentScreen === 'final' ? '<button class="primary" onclick="goTo(\'debrief\')">Debrief &#8594;</button>' : '';
+  }
+}
+
+function nextPhase() {
+  if (G.currentPhase === 2) {
+    const r = G.currentRound;
+    if (!validateEntries(r)) return;
+    calculateRound(r);
+  }
+  G.currentPhase = Math.min(3, G.currentPhase + 1);
+  render();
+}
+
+function validateEntries(r) {
+  if (!G.roundDecisions[r]) { alert('Please enter decisions for all teams first.'); return false; }
+  for (let t = 0; t < G.teams.length; t++) {
+    const td = G.roundDecisions[r][t];
+    if (!td) { alert(G.teams[t] + ' has not entered any decisions.'); return false; }
+    for (const dec of SIM.rounds[r-1].decisions) {
+      if (!td[dec.id]) { alert(G.teams[t] + ' is missing ' + dec.id + '.'); return false; }
+    }
+  }
+  return true;
+}
+
+function showHelp() { document.getElementById('helpOverlay').classList.add('show'); }
+function closeHelp() { document.getElementById('helpOverlay').classList.remove('show'); }
+
+// ======================== SETUP ========================
+function renderSetup(c) {
+  let h = '<div class="screen active"><div class="setup-hero"><h1>' + SIM.title.toUpperCase() + '</h1><p class="subtitle">' + SIM.subject + ' &bull; ' + SIM.level + '</p><p>Lead your team through 7 rounds of strategic decisions.</p></div>';
+  h += '<div class="card"><h2>Number of Teams</h2><div class="team-count-btns">';
+  for (let i = 2; i <= 6; i++) h += '<button class="'+(G.teamCount===i?'active':'')+'" onclick="setTeamCount('+i+')">'+i+'</button>';
+  h += '</div><h2>Team Names</h2><div class="team-inputs" id="teamInputs">';
+  for (let i = 0; i < G.teamCount; i++) {
+    const val = G.teams[i] || '';
+    h += '<div class="team-input"><span class="num">'+(i+1)+'</span><input type="text" placeholder="Team '+(i+1)+' name" value="'+val+'" onchange="setTeamName('+i+',this.value)" /></div>';
+  }
+  h += '</div></div><button class="start-btn" onclick="startGame()">START GAME</button>';
+  h += '<div style="text-align:center;margin-top:1rem;"><button onclick="showHelp()" style="background:none;border:none;color:var(--mid);text-decoration:underline;cursor:pointer;font-family:\'Nunito\',sans-serif;">How to Play</button></div></div>';
+  c.innerHTML = h;
+}
+
+function setTeamCount(n) { G.teamCount = n; render(); }
+function setTeamName(i, v) { G.teams[i] = v.trim(); }
+
+function startGame() {
+  const inputs = document.querySelectorAll('#teamInputs input');
+  G.teams = [];
+  inputs.forEach((inp, i) => G.teams.push(inp.value.trim() || 'Team '+(i+1)));
+  G.teams = G.teams.slice(0, G.teamCount);
+  initMetrics();
+  G.started = true;
+  G.currentScreen = 'round';
+  G.currentRound = 1;
+  G.currentPhase = 0;
+  render();
+}
+
+// ======================== ROUND RENDERING ========================
+function renderRound(c) {
+  const r = G.currentRound;
+  const rd = SIM.rounds[r-1];
+  let h = '<div class="screen active">';
+  if (G.currentPhase === 0) h += renderBriefing(rd, r);
+  else if (G.currentPhase === 1) h += renderDecisions(rd, r);
+  else if (G.currentPhase === 2) h += renderEntry(r, rd);
+  else if (G.currentPhase === 3) h += renderResults(r);
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+function renderBriefing(rd, r) {
+  let h = '';
+  // SVG illustration
+  const svgKey = 'r'+r+'_briefing';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="report-card"><div class="report-masthead"><h1>' + SIM.title.toUpperCase() + '</h1><div class="dateline">Round ' + rd.num + ' of 7 &bull; ' + rd.name + '</div></div>';
+  h += '<div class="report-items">';
+  for (const item of rd.report) {
+    h += '<div class="report-item"><span class="bullet">&#9679;</span><span class="text">' + item + '</span></div>';
+  }
+  h += '</div>';
+  if (rd.randomEvent) {
+    h += '<div class="event-box"><h3>&#9889; RANDOM EVENT</h3><p>' + rd.randomEvent + '</p></div>';
+  } else {
+    h += '<div class="no-event">&#9728;&#65039; No random event this round &mdash; steady conditions ahead.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderDecisions(rd, r) {
+  let h = '';
+  const svgKey = 'r'+r+'_decisions';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="decisions-grid">';
+  for (const dec of rd.decisions) {
+    h += '<div class="decision-card"><div class="d-label">' + dec.id + ' &mdash; ' + dec.domain.toUpperCase() + '</div>';
+    h += '<div class="d-question">' + dec.question + '</div>';
+    const opts = [['A', dec.optA], ['B', dec.optB], ['C', dec.optC]];
+    for (const [l, desc] of opts) {
+      h += '<div class="option"><span class="letter ' + l.toLowerCase() + '">' + l + '</span><span class="desc">' + desc + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderEntry(r, rd) {
+  if (!G.roundDecisions[r]) {
+    G.roundDecisions[r] = {};
+    for (let t = 0; t < G.teams.length; t++) G.roundDecisions[r][t] = {};
+  }
+  let h = '<div class="card" style="overflow-x:auto;"><h2>TEAM DECISIONS &mdash; ROUND ' + r + '</h2>';
+  h += '<table class="entry-matrix"><thead><tr><th>Decision</th>';
+  for (const tn of G.teams) h += '<th>' + tn + '</th>';
+  h += '</tr></thead><tbody>';
+  for (const dec of rd.decisions) {
+    h += '<tr><td><strong>' + dec.id + ' &mdash; ' + dec.domain + '</strong><br><span style="font-size:0.8rem;font-weight:400;color:var(--grey);">' + truncate(dec.question, 70) + '</span></td>';
+    for (let t = 0; t < G.teams.length; t++) {
+      const cur = (G.roundDecisions[r][t] || {})[dec.id] || '';
+      h += '<td><div class="abc-group">';
+      for (const ch of ['A','B','C']) {
+        const sel = cur === ch ? 'sel-'+ch.toLowerCase() : '';
+        h += '<button class="abc-btn '+sel+'" onclick="pickChoice('+r+','+t+',\''+dec.id+'\',\''+ch+'\')">'+ch+'</button>';
+      }
+      h += '</div></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+
+function pickChoice(r, t, did, ch) {
+  if (!G.roundDecisions[r]) G.roundDecisions[r] = {};
+  if (!G.roundDecisions[r][t]) G.roundDecisions[r][t] = {};
+  G.roundDecisions[r][t][did] = ch;
+  render();
+}
+
+// ======================== SCORING ENGINE ========================
+function calculateRound(r) {
+  const rd = SIM.rounds[r-1];
+  if (!G.roundSnapshots[r]) G.roundSnapshots[r] = {};
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const before = {};
+    for (const m of SIM.metrics) before[m.name] = G.teamMetrics[t][m.name];
+    
+    // Apply each decision's effects
+    for (const dec of rd.decisions) {
+      const choice = G.roundDecisions[r][t][dec.id];
+      const effectsStr = dec.effects;
+      // Parse the choice-specific effects from the combined string
+      const choiceEffects = extractChoiceEffects(effectsStr, choice);
+      const parsed = parseEffects(choiceEffects);
+      
+      for (const [metricName, effect] of Object.entries(parsed)) {
+        const mDef = SIM.metrics.find(m => m.name === metricName);
+        if (!mDef) continue;
+        if (effect.type === 'set') {
+          G.teamMetrics[t][metricName] = effect.value;
+        } else {
+          G.teamMetrics[t][metricName] += effect.value;
+        }
+        if (mDef) G.teamMetrics[t][metricName] = clampMetric(mDef, G.teamMetrics[t][metricName]);
+      }
+    }
+    
+    // Save snapshot
+    const after = {};
+    const deltas = {};
+    for (const m of SIM.metrics) {
+      after[m.name] = G.teamMetrics[t][m.name];
+      deltas[m.name] = after[m.name] - before[m.name];
+    }
+    G.roundSnapshots[r][t] = { before, after, deltas };
+  }
+  G.roundsComplete.add(r);
+}
+
+function extractChoiceEffects(effectsStr, choice) {
+  // Effects format: "A: effect1. effect2. B: effect1. effect2. C: effect1."
+  // Split by A:/B:/C: markers
+  const regex = /\b([ABC]):\s*/g;
+  const parts = {};
+  let lastKey = null, lastIdx = 0;
+  let match;
+  const matches = [];
+  while ((match = regex.exec(effectsStr)) !== null) {
+    matches.push({ key: match[1], idx: match.index, end: match.index + match[0].length });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].end;
+    const end = i + 1 < matches.length ? matches[i+1].idx : effectsStr.length;
+    parts[matches[i].key] = effectsStr.substring(start, end).trim();
+  }
+  return parts[choice] || '';
+}
+
+function fmtVal(value, unit) {
+  if (unit === '$' || unit === 'USD') return '$' + Math.round(value).toLocaleString();
+  if (unit === '%') return value.toFixed(1) + '%';
+  if (unit === '/100') return Math.round(value) + '/100';
+  return Math.round(value).toLocaleString() + (unit && unit !== '$' && unit !== '%' && unit !== '/100' ? ' ' + unit : '');
+}
+
+function fmtDelta(delta, unit) {
+  const sign = delta >= 0 ? '+' : '';
+  if (unit === '$' || unit === 'USD') return sign + '$' + Math.round(delta).toLocaleString();
+  if (unit === '%') return sign + delta.toFixed(1) + '%';
+  return sign + Math.round(delta).toLocaleString();
+}
+
+// ======================== RESULTS ========================
+function renderResults(r) {
+  if (!G.roundSnapshots[r]) return '<div class="card"><h2>No results yet</h2></div>';
+  
+  let h = '<div class="card"><h2>ROUND ' + r + ' RESULTS</h2>';
+  h += '<table class="results-table"><thead><tr><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '</tr></thead><tbody>';
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<tr><td>' + G.teams[t] + '</td>';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      h += '<td>' + fmtVal(val, m.unit) + '<br><span class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</span></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Per-team metric cards
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<div class="card"><h3>' + G.teams[t] + '</h3><div class="metrics-grid">';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      const barPct = m.unit === '/100' ? val : m.unit === '%' ? Math.max(0, val) : Math.min(100, (val / (m.start > 0 ? m.start * 3 : 100000)) * 100);
+      h += '<div class="metric-card"><div class="m-name">' + m.name + '</div>';
+      h += '<div class="m-val">' + fmtVal(val, m.unit) + '</div>';
+      h += '<div class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</div>';
+      if (m.unit === '/100') h += '<div class="metric-bar"><div class="metric-bar-fill" style="width:' + Math.max(0, Math.min(100, val)) + '%"></div></div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  }
+  
+  return h;
+}
+
+// ======================== LEADERBOARD ========================
+function getScore(t) {
+  // Composite score: each metric contributes up to 100 points (clamped)
+  let score = 0;
+  for (const m of SIM.metrics) {
+    const val = G.teamMetrics[t][m.name];
+    let c;
+    if (m.unit === '/100') {
+      c = val;
+    } else if (m.unit === '%') {
+      c = Math.min(val, 100);
+    } else {
+      // For $, people, users, coins, degrees, etc: normalise against start value
+      const base = Math.abs(m.start) > 0 ? Math.abs(m.start) : 100;
+      c = (val / base) * 50;
+    }
+    // Clamp each metric to [-100, 100] so no single metric dominates
+    score += Math.max(-100, Math.min(100, c));
+  }
+  return Math.round(score);
+}
+
+function renderLeaderboard(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Start the game first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  let h = '<div class="screen active"><div class="card"><h2>LEADERBOARD</h2></div>';
+  const medals = ['&#129351;','&#129352;','&#129353;'];
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<div class="lb-row"><div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>';
+    h += '<div class="lb-name">' + r.name + '</div><div class="lb-stats">';
+    for (const m of SIM.metrics.slice(0, 4)) {
+      h += '<div class="lb-stat"><div class="val">' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</div><div class="lbl">' + m.name + '</div></div>';
+    }
+    h += '<div class="lb-stat"><div class="val">' + Math.round(r.score) + '</div><div class="lbl">Score</div></div>';
+    h += '</div></div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== FINAL RESULTS ========================
+function renderFinal(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Complete all rounds first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  const medals = ['&#127942;','&#129352;','&#129353;'];
+  
+  let h = '<div class="screen active"><div class="final-hero"><h1>FINAL RESULTS</h1></div>';
+  h += '<div class="podium">';
+  const order = ranked.length >= 3 ? [1, 0, 2] : ranked.length >= 2 ? [1, 0] : [0];
+  for (const oi of order) {
+    if (oi >= ranked.length) continue;
+    const r = ranked[oi];
+    h += '<div class="podium-item ' + (oi === 0 ? 'first' : '') + '"><div class="medal">' + (medals[oi] || '') + '</div>';
+    h += '<div class="pname">' + r.name + '</div><div class="pval">Score: ' + Math.round(r.score) + '</div></div>';
+  }
+  h += '</div>';
+  
+  // Full results table
+  h += '<div class="card"><h2>FULL BREAKDOWN</h2><table class="results-table"><thead><tr><th>Rank</th><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '<th>Score</th></tr></thead><tbody>';
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<tr><td>#' + (i+1) + '</td><td>' + r.name + '</td>';
+    for (const m of SIM.metrics) h += '<td>' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</td>';
+    h += '<td><strong>' + Math.round(r.score) + '</strong></td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+  c.innerHTML = h;
+}
+
+// ======================== DEBRIEF ========================
+function renderDebrief(c) {
+  let h = '<div class="screen active"><div class="card"><h2>DEBRIEF DISCUSSION</h2><p>Use these questions to guide whole-class discussion.</p></div>';
+  
+  if (SIM.debriefQuestions) {
+    for (let i = 0; i < SIM.debriefQuestions.length; i++) {
+      h += '<div class="debrief-q"><div class="qnum">QUESTION ' + (i+1) + '</div><p>' + SIM.debriefQuestions[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.keyTakeaways) {
+    h += '<div class="card"><h2>KEY TAKEAWAYS</h2></div>';
+    for (let i = 0; i < SIM.keyTakeaways.length; i++) {
+      h += '<div class="takeaway-card"><h3>Takeaway ' + (i+1) + '</h3><p>' + SIM.keyTakeaways[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.curriculumLinks) {
+    h += '<div class="card"><h2>CURRICULUM LINKS</h2></div>';
+    for (const cl of SIM.curriculumLinks) {
+      h += '<div class="curriculum-card"><div class="c-topic">' + cl.topic + '</div><div class="c-spec">' + cl.spec + '</div><div class="c-how">' + cl.how + '</div></div>';
+    }
+  }
+  
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== INIT ========================
+render();
+</script>
+</body>
+</html>

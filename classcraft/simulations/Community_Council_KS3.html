@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Community Council | KS3 Citizenship Simulation | Free | martin...</title>
+    <meta name="description" content="Play Community Council — a free interactive KS3 citizenship simulation. No login required. Build decision-making skills with this classroom-ready game.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --navy:#134E4A;--mid:#0D9488;--gold:#2DD4BF;--gold2:#14B8A6;
+  --white:#FFFFFF;--offwh:#F5F7FA;--grey:#8892A4;--dgrey:#2D3748;
+  --green:#1E8449;--red:#C0392B;--amber:#E67E22;--card:#FFFFFF;
+  --border:#E2E8F0;--shadow:0 4px 24px rgba(0,0,0,0.10);--r:10px;
+  --btn-a:#1A5276;--btn-b:#145A32;--btn-c:#922B21;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{font-family:'Nunito',sans-serif;background:var(--offwh);color:var(--dgrey);min-height:100vh;display:flex;overflow:hidden;}
+
+.sidebar{width:260px;min-width:260px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;height:100vh;position:relative;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.2rem 0.8rem;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h1{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);letter-spacing:2px;}
+.sidebar-logo p{font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:0.5rem 0;}
+.sidebar-nav button{display:flex;align-items:center;width:100%;padding:0.8rem 1.2rem;background:none;border:none;color:rgba(255,255,255,0.6);font-family:'Nunito',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.2s;text-align:left;gap:0.6rem;}
+.sidebar-nav button:hover{background:rgba(255,255,255,0.08);color:var(--white);}
+.sidebar-nav button.active{background:rgba(255,255,255,0.15);color:var(--gold);border-left:3px solid var(--gold);}
+.sidebar-nav button .check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0;}
+.sidebar-nav button.done .check{background:var(--green);border-color:var(--green);color:var(--white);}
+.sidebar-nav button .phase-dots{margin-left:auto;display:flex;gap:3px;}
+.sidebar-nav button .phase-dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.sidebar-nav button .phase-dots .dot.filled{background:var(--gold);}
+.sidebar-sep{height:1px;background:rgba(255,255,255,0.1);margin:0.3rem 1.2rem;}
+.sidebar-timer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,0.1);}
+.timer-display{font-family:'DM Mono',monospace;font-size:2.2rem;color:var(--gold);text-align:center;margin-bottom:0.5rem;}
+.timer-btns{display:flex;gap:0.5rem;}
+.timer-btns button{flex:1;padding:0.4rem;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:'Nunito',sans-serif;}
+.timer-btns button:hover{background:rgba(255,255,255,0.1);}
+
+.main{flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(0,0,0,0.15);}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+.topbar-phase{display:flex;gap:0.5rem;align-items:center;}
+.phase-step{padding:0.3rem 1rem;border-radius:20px;font-size:0.8rem;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.phase-step.active{background:var(--gold);color:var(--navy);font-weight:600;}
+.phase-step.completed{background:rgba(30,132,73,0.3);color:#6FCF97;}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.topbar-right button{padding:0.3rem 1rem;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.85rem;}
+.topbar-right button:hover{background:rgba(255,255,255,0.1);}
+.topbar-right button.primary{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+.topbar-right button.primary:hover{opacity:0.9;}
+
+.content{flex:1;padding:2rem;max-width:1400px;width:100%;margin:0 auto;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.2rem;}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--navy);letter-spacing:1px;margin-bottom:0.8rem;}
+.card h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:0.5rem;}
+
+.setup-hero{text-align:center;padding:3rem 0 2rem;}
+.setup-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--navy);letter-spacing:3px;}
+.setup-hero p{font-size:1.1rem;color:var(--grey);margin-top:0.5rem;}
+.setup-hero .subtitle{color:var(--gold);font-weight:600;font-size:1.2rem;margin-top:0.2rem;}
+.team-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;}
+.team-input{display:flex;align-items:center;gap:0.8rem;background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:0.8rem 1rem;transition:border-color 0.2s;}
+.team-input:focus-within{border-color:var(--gold);}
+.team-input .num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);width:30px;}
+.team-input input{flex:1;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:1rem;color:var(--dgrey);}
+.team-count-btns{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem;}
+.team-count-btns button{width:48px;height:48px;border-radius:50%;border:2px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.2rem;cursor:pointer;transition:all 0.2s;color:var(--dgrey);}
+.team-count-btns button.active{background:var(--navy);color:var(--gold);border-color:var(--navy);}
+.start-btn{display:block;margin:2rem auto 0;padding:1rem 3rem;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--r);cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+
+.report-card{background:#FFF8E7;border:3px solid #2D2D2D;border-radius:4px;padding:2rem;font-family:Georgia,'Times New Roman',serif;}
+.report-masthead{text-align:center;border-bottom:3px double #2D2D2D;padding-bottom:1rem;margin-bottom:1.5rem;}
+.report-masthead h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#1a1a1a;letter-spacing:4px;}
+.report-masthead .dateline{font-size:0.85rem;color:#666;margin-top:0.3rem;font-style:italic;}
+.report-items{display:grid;gap:0.8rem;}
+.report-item{display:flex;gap:0.8rem;padding:0.6rem 0;border-bottom:1px solid #ddd;align-items:baseline;}
+.report-item .bullet{color:var(--gold);font-weight:bold;font-size:1.2rem;flex-shrink:0;}
+.report-item .text{font-size:1rem;line-height:1.5;color:#333;}
+.event-box{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid var(--amber);border-radius:var(--r);padding:1.2rem 1.5rem;margin-top:1.5rem;}
+.event-box h3{font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:1.3rem;margin-bottom:0.5rem;}
+.event-box p{font-size:1rem;line-height:1.5;}
+.no-event{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:2px solid var(--green);border-radius:var(--r);padding:1rem 1.5rem;margin-top:1.5rem;text-align:center;color:var(--green);font-weight:600;}
+
+.decisions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+.decisions-grid .decision-card:nth-child(5){grid-column:1 / -1;}
+.decision-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:0.8rem 1rem;border-left:4px solid var(--navy);}
+.decision-card .d-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.15rem;}
+.decision-card .d-question{font-size:0.95rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
+.option{display:flex;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:6px;margin-bottom:0.25rem;background:var(--offwh);transition:background 0.15s;align-items:baseline;}
+.option .letter{font-family:'DM Mono',monospace;font-weight:700;font-size:0.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--white);}
+.option .letter.a{background:var(--btn-a);}
+.option .letter.b{background:var(--btn-b);}
+.option .letter.c{background:var(--btn-c);}
+.option .desc{font-size:0.85rem;line-height:1.3;color:var(--dgrey);}
+
+.entry-matrix{width:100%;border-collapse:separate;border-spacing:0;}
+.entry-matrix th{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--white);background:var(--navy);padding:0.8rem;text-align:center;position:sticky;top:0;z-index:5;}
+.entry-matrix th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.entry-matrix th:last-child{border-radius:0 var(--r) 0 0;}
+.entry-matrix td{padding:0.6rem;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+.entry-matrix td:first-child{text-align:left;font-weight:600;font-size:0.9rem;color:var(--navy);min-width:180px;max-width:300px;}
+.abc-group{display:flex;gap:6px;justify-content:center;}
+.abc-btn{width:56px;height:56px;border-radius:12px;border:3px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--dgrey);user-select:none;}
+.abc-btn:active{transform:scale(0.95);}
+.abc-btn.sel-a{background:var(--btn-a);color:var(--white);border-color:var(--btn-a);}
+.abc-btn.sel-b{background:var(--btn-b);color:var(--white);border-color:var(--btn-b);}
+.abc-btn.sel-c{background:var(--btn-c);color:var(--white);border-color:var(--btn-c);}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin:1rem 0;}
+.metric-card{background:var(--white);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);text-align:center;}
+.metric-card .m-name{font-size:0.8rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;}
+.metric-card .m-val{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--navy);}
+.metric-card .m-delta{font-size:0.85rem;font-weight:600;margin-top:0.2rem;}
+.metric-card .m-delta.pos{color:var(--green);}
+.metric-card .m-delta.neg{color:var(--red);}
+.metric-card .m-delta.zero{color:var(--grey);}
+.metric-bar{height:6px;background:var(--border);border-radius:3px;margin-top:0.5rem;overflow:hidden;}
+.metric-bar-fill{height:100%;border-radius:3px;background:var(--mid);transition:width 0.5s ease;}
+
+.results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:1rem;}
+.results-table th{font-family:'Bebas Neue',sans-serif;background:var(--navy);color:var(--white);padding:0.7rem;text-align:center;font-size:0.85rem;}
+.results-table th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.results-table th:last-child{border-radius:0 var(--r) 0 0;}
+.results-table td{padding:0.5rem;text-align:center;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.9rem;}
+.results-table td:first-child{text-align:left;font-family:'Nunito',sans-serif;font-weight:600;}
+
+.lb-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--white);border-radius:var(--r);margin-bottom:0.8rem;box-shadow:var(--shadow);}
+.lb-row:first-child{border:2px solid var(--gold);background:linear-gradient(135deg,#FFFDE7,#FFF8E1);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--navy);width:50px;text-align:center;}
+.lb-row:first-child .lb-rank{color:var(--gold);}
+.lb-name{flex:1;font-size:1.3rem;font-weight:600;color:var(--navy);}
+.lb-stats{display:flex;gap:2rem;}
+.lb-stat{text-align:center;}
+.lb-stat .val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--navy);}
+.lb-stat .lbl{font-size:0.7rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;}
+
+.final-hero{text-align:center;padding:2rem 0;}
+.final-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--gold);letter-spacing:3px;}
+.podium{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;align-items:flex-end;flex-wrap:wrap;}
+.podium-item{text-align:center;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;min-width:180px;}
+.podium-item.first{padding-bottom:2.5rem;border:3px solid var(--gold);transform:scale(1.1);}
+.podium-item .medal{font-size:3rem;}
+.podium-item .pname{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);margin:0.3rem 0;}
+.podium-item .pval{font-family:'DM Mono',monospace;font-size:1.2rem;color:var(--green);font-weight:700;}
+
+.debrief-q{background:var(--white);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:0.8rem;box-shadow:var(--shadow);border-left:4px solid var(--gold);}
+.debrief-q .qnum{font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:1rem;letter-spacing:1px;}
+.debrief-q p{font-size:1.05rem;color:var(--dgrey);line-height:1.5;margin-top:0.3rem;}
+.takeaway-card{background:linear-gradient(135deg,var(--navy),var(--mid));border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;color:var(--white);}
+.takeaway-card h3{font-family:'Bebas Neue',sans-serif;color:var(--gold);margin-bottom:0.5rem;font-size:1.2rem;}
+.takeaway-card p{font-size:0.95rem;line-height:1.5;opacity:0.9;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.overlay-box{background:var(--white);border-radius:var(--r);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+.overlay-box h2{font-family:'Bebas Neue',sans-serif;color:var(--navy);font-size:1.8rem;margin-bottom:1rem;}
+.overlay-box p,.overlay-box li{font-size:0.95rem;line-height:1.6;margin-bottom:0.5rem;color:var(--dgrey);}
+.overlay-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey);}
+
+.svg-container{text-align:center;margin:1rem 0;}
+.svg-container svg{max-width:100%;height:auto;border-radius:var(--r);box-shadow:var(--shadow);}
+
+.curriculum-card{background:var(--white);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:0.6rem;box-shadow:var(--shadow);border-left:4px solid var(--mid);}
+.curriculum-card .c-topic{font-weight:600;color:var(--navy);font-size:0.95rem;}
+.curriculum-card .c-spec{font-size:0.8rem;color:var(--grey);margin-top:0.15rem;}
+.curriculum-card .c-how{font-size:0.9rem;color:var(--dgrey);margin-top:0.3rem;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>COMMUNITY COUNCIL</h1>
+    <p>PSHE &bull; KS3</p>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-timer">
+    <div class="timer-display" id="timerDisplay">10:00</div>
+    <div class="timer-btns">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseTimer()">Pause</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">SETUP</div>
+    <div class="topbar-phase" id="topbarPhase"></div>
+    <div class="topbar-right" id="topbarRight"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="overlay-box">
+    <button class="overlay-close" onclick="closeHelp()">&times;</button>
+    <h2>How to Play</h2>
+    <p><strong>Community Council</strong> is a 7-round simulation where teams make strategic decisions across 6 key metrics.</p>
+    <p><strong>Each Round</strong> has 4 phases:</p>
+    <ul>
+      <li><strong>Briefing</strong> &mdash; Read the situation report and any random events aloud.</li>
+      <li><strong>Decision Cards</strong> &mdash; Show the 5 decisions. Teams discuss (~10 min, use the timer).</li>
+      <li><strong>Team Entry</strong> &mdash; Each team taps A, B, or C for each decision.</li>
+      <li><strong>Results</strong> &mdash; Scores update and metric changes are displayed.</li>
+    </ul>
+    <p><strong>Metrics:</strong> Wellbeing Index, Crime Rate, Community Cohesion, Budget Balance, Youth Engagement, Public Health. Each decision shifts these metrics. The team with the best overall performance wins.</p>
+    <p><strong>Scoring:</strong> Final score is the sum of all metric values (normalised to their scales).</p>
+  </div>
+</div>
+
+<script>
+// ======================== EMBEDDED DATA ========================
+const SIM = {"title": "Community Council", "subject": "PSHE", "level": "KS3", "duration": "90 minutes", "teamSize": "3-5 students", "numTeams": "4-6 teams", "overview": "Students take on the role of a newly elected community council governing the fictional town of Millbrook (population 25,000). The town faces challenges common to many UK communities: limited budgets, rising anti-social behaviour, housing pressures, and an ageing population alongside disengaged youth.\n\nOver seven rounds, each representing a council term of six months, teams must allocate resources, set priorities, and navigate ethical dilemmas. Every decision involves trade-offs — spending on youth clubs means less for policing; building affordable housing may upset existing residents. The simulation teaches that governing responsibly means balancing competing needs, listening to diverse voices, and accepting that perfection is impossible.\n\nTeams are scored on a composite index reflecting overall community health. The winning team is not necessarily the one with the highest single metric, but the one that achieves the most balanced and sustainable outcomes for all residents.", "scenario": "Millbrook is a small town with a mixed economy of retail, light industry, and public services. Recent years have seen youth unemployment creep up, a few high-profile anti-social behaviour incidents, and growing tension between long-term residents and newer arrivals. The previous council resigned amid budget mismanagement, and your team has been elected on a promise of fresh leadership.\n\nYou inherit a budget of $500,000 per term, six key metrics to monitor, and a community that expects results. Local media will scrutinise your choices, and random events will test your resilience. Good luck, councillors.", "metrics": [{"name": "Wellbeing Index", "start": 50, "unit": "/100", "description": "Overall mental and physical wellbeing of Millbrook residents, measured by survey data."}, {"name": "Crime Rate", "start": 30, "unit": "/100 (lower is better)", "description": "Reported crime incidents per quarter. Lower scores indicate a safer community."}, {"name": "Community Cohesion", "start": 50, "unit": "/100", "description": "How connected and unified residents feel across age, ethnic, and economic lines."}, {"name": "Budget Balance", "start": 500000, "unit": "$", "description": "Remaining council funds. Overspending leads to service cuts; underspending wastes opportunity."}, {"name": "Youth Engagement", "start": 40, "unit": "/100", "description": "Proportion of under-18s actively involved in positive community activities."}, {"name": "Public Health", "start": 55, "unit": "/100", "description": "General health indicators including GP access, obesity rates, and mental health referrals."}], "finalScoring": "Composite Score = (Wellbeing Index + Community Cohesion + Youth Engagement + Public Health) - (Crime Rate) + (Budget Balance / 50000). Teams with Budget Balance below $0 receive a -20 penalty. The team with the highest Composite Score wins. Ties are broken by the single highest Youth Engagement score.", "curriculumLinks": [{"topic": "Democratic participation", "spec": "KS3 Citizenship", "how": "Students experience council decision-making, voting within teams, and balancing majority rule with minority rights."}, {"topic": "Community responsibility", "spec": "KS3 PSHE", "how": "Every round forces teams to consider their duty of care to vulnerable groups including youth, elderly, and low-income residents."}, {"topic": "Rights and responsibilities", "spec": "KS3 Citizenship", "how": "Decisions around policing, housing, and services explore the tension between individual freedoms and collective safety."}, {"topic": "Diversity and inclusion", "spec": "KS3 PSHE", "how": "Several decisions involve cultural events, integration programmes, and responding to prejudice."}, {"topic": "Health and wellbeing", "spec": "KS3 PSHE", "how": "Public Health metric and related decisions cover physical activity, mental health support, and substance awareness."}, {"topic": "Personal finance", "spec": "KS3 PSHE", "how": "Budget Balance forces students to weigh costs, understand opportunity cost, and plan ahead financially."}, {"topic": "Conflict resolution", "spec": "KS3 PSHE", "how": "Random events and ethical dilemmas require mediation, compromise, and de-escalation strategies."}], "rounds": [{"num": 1, "name": "First Impressions", "report": ["Welcome to Millbrook Council. Your term begins today with $500,000 in the budget.", "Local newspaper headline: 'New Council — New Hope? Residents demand action on youth boredom and petty crime.'", "GP surgeries report a 15% increase in anxiety referrals among young people over the past year.", "The community centre on Park Lane has been vandalised twice this month and needs repair.", "A local charity is offering to match-fund any council investment in youth services up to $30,000."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Services", "question": "The vandalised community centre needs attention. How do you respond?", "optA": "Full renovation with new youth facilities ($80,000)", "optB": "Basic repairs and add CCTV ($35,000)", "optC": "Demolish and sell the land to a private developer ($0 cost, generates $40,000 income)", "effects": "A: Budget -$80,000. Youth Engagement +8. Community Cohesion +5. Crime Rate -3. B: Budget -$35,000. Youth Engagement +3. Crime Rate -5. C: Budget +$40,000. Youth Engagement -5. Community Cohesion -8. Wellbeing -3."}, {"id": "D2", "domain": "Safety", "question": "Residents want action on petty crime in the town centre. What is your approach?", "optA": "Fund a new community policing team with local officers ($60,000)", "optB": "Install town-centre CCTV network and improve street lighting ($40,000)", "optC": "Launch a restorative justice programme pairing offenders with community mentors ($25,000)", "effects": "A: Budget -$60,000. Crime Rate -8. Wellbeing +3. Community Cohesion -2 (some feel over-policed). B: Budget -$40,000. Crime Rate -5. Public Health +2 (safer streets). C: Budget -$25,000. Crime Rate -3. Community Cohesion +5. Youth Engagement +4."}, {"id": "D3", "domain": "Community", "question": "The charity has offered match-funding for youth services. How do you use this opportunity?", "optA": "Invest $30,000 (matched to $60,000 total) in a new youth club with evening programmes", "optB": "Invest $15,000 (matched to $30,000 total) in sports equipment and outdoor activities", "optC": "Decline the offer and allocate youth funding internally later", "effects": "A: Budget -$30,000. Youth Engagement +10. Wellbeing +4. Public Health +3. B: Budget -$15,000. Youth Engagement +6. Public Health +5. C: Budget unchanged. Youth Engagement +0. Community Cohesion -3 (charity feels snubbed)."}, {"id": "D4", "domain": "Housing", "question": "A developer wants to build 50 new homes on green belt land at the edge of town. Do you grant permission?", "optA": "Approve the development with a requirement that 40% are affordable housing", "optB": "Reject the proposal and protect the green space for community use", "optC": "Approve a smaller development of 20 homes, all affordable, on brownfield land instead ($30,000 council contribution)", "effects": "A: Community Cohesion -4 (residents divided). Wellbeing +3 (housing need met). Public Health -3 (green space lost). Budget +$20,000 (developer levy). B: Community Cohesion +3. Public Health +4 (green space preserved). Wellbeing -2 (housing need unmet). C: Budget -$30,000. Wellbeing +5. Community Cohesion +4. Public Health +2."}, {"id": "D5", "domain": "Ethics", "question": "A council member proposes banning a controversial local protest group from using the community hall. The group's views are unpopular but legal.", "optA": "Ban the group to maintain community harmony", "optB": "Allow the group to use the hall but require them to host an open Q&A session", "optC": "Allow unrestricted access — free speech is a fundamental right", "effects": "A: Community Cohesion +4 (short-term calm). Wellbeing -3 (free speech concern). Youth Engagement -2 (young people see censorship). B: Community Cohesion +2. Wellbeing +3. Youth Engagement +3 (civic engagement modelled). C: Community Cohesion -5 (tensions rise). Wellbeing +2 (rights upheld). Youth Engagement +1."}]}, {"num": 2, "name": "Trouble Brewing", "report": ["Anti-social behaviour has spiked across Millbrook — graffiti, noise complaints, and a shoplifting surge in the high street.", "Local shopkeepers have signed a petition demanding 'zero tolerance' enforcement.", "School attendance rates have dropped by 3% this term, particularly among Year 9 boys.", "A mental health charity reports that their waiting list for teen counselling has doubled.", "Budget update: your current balance reflects last round's decisions."], "randomEvent": "Anti-social behaviour spike: Crime Rate +8 immediately. If Youth Engagement is below 45, add a further +4 to Crime Rate.", "decisions": [{"id": "D1", "domain": "Safety", "question": "The shopkeepers demand a crackdown. How do you respond to the ASB spike?", "optA": "Introduce a youth curfew (under-16s off streets after 9pm) and increase police patrols ($45,000)", "optB": "Deploy street outreach workers to engage young people causing trouble ($35,000)", "optC": "Open the community centre for late-night drop-in sessions with free food and activities ($25,000)", "effects": "A: Budget -$45,000. Crime Rate -10. Youth Engagement -6. Community Cohesion -4 (civil liberties debate). B: Budget -$35,000. Crime Rate -6. Youth Engagement +5. Wellbeing +3. C: Budget -$25,000. Crime Rate -4. Youth Engagement +8. Public Health +3. Community Cohesion +2."}, {"id": "D2", "domain": "Services", "question": "School attendance is falling. How should the council support education?", "optA": "Fund a truancy intervention team working with families ($40,000)", "optB": "Create an alternative education programme with vocational tasters for disengaged pupils ($50,000)", "optC": "Issue fines to parents of persistent truants and publicise the penalties ($10,000)", "effects": "A: Budget -$40,000. Youth Engagement +5. Wellbeing +4. Public Health +2. B: Budget -$50,000. Youth Engagement +8. Wellbeing +5. Community Cohesion +2. C: Budget -$10,000. Youth Engagement -2. Crime Rate -2. Community Cohesion -4 (punitive approach divides opinion)."}, {"id": "D3", "domain": "Community", "question": "A local mosque has received threatening graffiti. Community tensions are rising.", "optA": "Organise a high-profile inter-faith community event and publicly condemn the attack ($20,000)", "optB": "Quietly increase security around religious buildings and launch a hate crime hotline ($30,000)", "optC": "Issue a public statement but take no further action ($0)", "effects": "A: Budget -$20,000. Community Cohesion +8. Wellbeing +4. Youth Engagement +3 (young people see leadership). B: Budget -$30,000. Crime Rate -4. Community Cohesion +4. Wellbeing +2. C: Community Cohesion -5. Wellbeing -3. Crime Rate +2 (emboldened offenders)."}, {"id": "D4", "domain": "Housing", "question": "Three families have been made homeless after a landlord eviction. Emergency accommodation is needed.", "optA": "Rent temporary hotel rooms and fast-track social housing applications ($35,000)", "optB": "Open a section of the community centre as emergency shelter and recruit volunteer support ($15,000)", "optC": "Refer families to the county council — it is technically their responsibility ($0)", "effects": "A: Budget -$35,000. Wellbeing +6. Public Health +4. Community Cohesion +2. B: Budget -$15,000. Wellbeing +4. Community Cohesion +5. Youth Engagement +2 (youth volunteers). Public Health +2. C: Wellbeing -5. Community Cohesion -6. Public Health -3."}, {"id": "D5", "domain": "Ethics", "question": "A tabloid newspaper wants to publish the names and photos of young people involved in the ASB incidents. They ask for council comment.", "optA": "Cooperate with the newspaper — naming and shaming may deter future offenders", "optB": "Refuse to cooperate and publicly defend the young people's right to privacy", "optC": "Offer the newspaper an alternative story about your positive youth programmes instead", "effects": "A: Crime Rate -3 (short-term deterrent). Youth Engagement -8. Wellbeing -5. Community Cohesion -4. B: Youth Engagement +4. Wellbeing +3. Crime Rate +2 (no deterrent). Community Cohesion +2. C: Youth Engagement +6. Community Cohesion +4. Wellbeing +3. Crime Rate +0."}]}, {"num": 3, "name": "Building Bridges", "report": ["Millbrook's annual community survey shows mixed results — some residents feel safer, others feel ignored.", "A local GP reports that childhood obesity rates are 5% above the national average.", "The high street has two empty shop units. A social enterprise and a betting shop have both applied for the leases.", "Year 8 students at the secondary school have started a 'Youth Voice' campaign asking for a seat on the council.", "Regional government announces a $50,000 grant available for towns with strong community cohesion scores (Cohesion must be 55+ to qualify)."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Community", "question": "The Youth Voice campaign wants a formal seat on the council. How do you respond?", "optA": "Create a Youth Council with advisory powers and a small budget ($15,000)", "optB": "Invite two youth representatives to attend council meetings as observers ($5,000)", "optC": "Politely decline — council decisions are too complex for young people", "effects": "A: Budget -$15,000. Youth Engagement +10. Community Cohesion +5. Wellbeing +3. B: Budget -$5,000. Youth Engagement +5. Community Cohesion +3. C: Youth Engagement -8. Community Cohesion -3. Wellbeing -2."}, {"id": "D2", "domain": "Services", "question": "Childhood obesity is above average. What health intervention do you prioritise?", "optA": "Build a free outdoor gym and running trail in the park ($45,000)", "optB": "Fund a school cooking and nutrition programme for all Year 7-9 students ($30,000)", "optC": "Launch a 'Healthy Millbrook' social media campaign with local influencers ($10,000)", "effects": "A: Budget -$45,000. Public Health +8. Wellbeing +4. Youth Engagement +3. B: Budget -$30,000. Public Health +6. Youth Engagement +5. Wellbeing +3. C: Budget -$10,000. Public Health +2. Youth Engagement +2. Wellbeing +1."}, {"id": "D3", "domain": "Housing", "question": "Two applicants want the empty shop leases. Who do you support?", "optA": "The social enterprise (community cafe and job training hub) — waive their rent for 6 months ($20,000 cost)", "optB": "The betting shop — they pay full rent and generate $15,000 in business rates", "optC": "Split the units — one for each applicant ($10,000 cost for partial rent waiver)", "effects": "A: Budget -$20,000. Community Cohesion +6. Youth Engagement +4. Wellbeing +4. Public Health +2. B: Budget +$15,000. Community Cohesion -5. Public Health -4 (gambling harm). Wellbeing -3. C: Budget -$10,000. Community Cohesion +2. Wellbeing +1. Public Health -1."}, {"id": "D4", "domain": "Safety", "question": "Residents near the park report drug dealing after dark. What is your approach?", "optA": "Install floodlighting and CCTV in the park ($25,000)", "optB": "Fund a drugs education and awareness programme in schools ($20,000)", "optC": "Work with police to conduct undercover operations targeting dealers ($35,000)", "effects": "A: Budget -$25,000. Crime Rate -5. Public Health +2. Wellbeing +2. B: Budget -$20,000. Crime Rate -2. Public Health +5. Youth Engagement +4. Wellbeing +3. C: Budget -$35,000. Crime Rate -8. Community Cohesion -3 (heavy-handed concerns). Wellbeing +1."}, {"id": "D5", "domain": "Ethics", "question": "The regional grant ($50,000) is available but requires you to display government branding on all council buildings and events. Some residents see this as political propaganda.", "optA": "Accept the grant and the branding requirement — the money is needed", "optB": "Reject the grant on principle — the council should remain politically neutral", "optC": "Negotiate — accept the grant but limit branding to council offices only", "effects": "A: Budget +$50,000 (only if Community Cohesion is 55+, otherwise +$0). Community Cohesion -4. Wellbeing -2. B: Community Cohesion +5. Wellbeing +3. Budget +$0. C: Budget +$30,000 (only if Community Cohesion is 55+, otherwise +$0). Community Cohesion +1. Wellbeing +1."}]}, {"num": 4, "name": "The Squeeze", "report": ["BREAKING: Central government announces a 20% funding cut to local councils effective immediately.", "Your budget takes an immediate hit. Difficult choices are unavoidable this round.", "Millbrook's food bank reports a 40% increase in users over the past six months.", "The local secondary school has been rated 'Requires Improvement' by Ofsted.", "Three council workers have submitted a petition requesting a living wage increase."], "randomEvent": "Government funding cut: Budget Balance reduced by 20% of its current value immediately at the start of this round.", "decisions": [{"id": "D1", "domain": "Services", "question": "With the budget cut, you must find savings. What do you cut first?", "optA": "Reduce library opening hours by 50% (saves $30,000)", "optB": "Close the council-run nursery and outsource to a private provider (saves $45,000)", "optC": "Freeze all discretionary spending and cut councillor expenses (saves $20,000)", "effects": "A: Budget +$30,000. Youth Engagement -4. Wellbeing -5. Community Cohesion -3. B: Budget +$45,000. Youth Engagement -6. Wellbeing -7. Public Health -3. Community Cohesion -5. C: Budget +$20,000. Wellbeing -1. Community Cohesion +3 (residents see shared sacrifice)."}, {"id": "D2", "domain": "Community", "question": "The food bank is overwhelmed. How do you respond?", "optA": "Direct $40,000 in emergency funding to the food bank and local hardship grants", "optB": "Organise a community food drive and volunteer recruitment campaign ($10,000)", "optC": "Partner with supermarkets to redirect surplus food — no direct cost but requires staff time ($5,000)", "effects": "A: Budget -$40,000. Wellbeing +7. Public Health +5. Community Cohesion +3. B: Budget -$10,000. Wellbeing +4. Community Cohesion +6. Youth Engagement +3 (youth volunteers). C: Budget -$5,000. Wellbeing +3. Public Health +4. Community Cohesion +2."}, {"id": "D3", "domain": "Safety", "question": "Budget pressure means policing is stretched. Shoplifting and burglary are rising. What do you prioritise?", "optA": "Maintain current policing levels by cutting arts and culture funding ($30,000 reallocation)", "optB": "Launch a neighbourhood watch scheme with council coordination ($15,000)", "optC": "Accept higher crime temporarily and invest in root-cause prevention programmes ($25,000)", "effects": "A: Budget net $0 (reallocation). Crime Rate -6. Wellbeing -4 (arts cut). Youth Engagement -3. Community Cohesion -2. B: Budget -$15,000. Crime Rate -4. Community Cohesion +5. Wellbeing +2. C: Budget -$25,000. Crime Rate +2 (short-term). Youth Engagement +5. Wellbeing +4. Public Health +3."}, {"id": "D4", "domain": "Housing", "question": "Council workers are requesting a living wage increase. The cost would be $35,000 per term.", "optA": "Grant the full living wage increase ($35,000)", "optB": "Offer a smaller increase and improved working conditions ($15,000)", "optC": "Freeze wages and explain the budget situation — ask staff to wait until next year", "effects": "A: Budget -$35,000. Wellbeing +5. Community Cohesion +4. Public Health +2 (staff deliver better services). B: Budget -$15,000. Wellbeing +3. Community Cohesion +2. C: Wellbeing -4. Community Cohesion -3. Public Health -2 (demoralised staff)."}, {"id": "D5", "domain": "Ethics", "question": "A wealthy local business owner offers to donate $60,000 but wants naming rights to the community centre and a council endorsement for their chain of fast-food restaurants.", "optA": "Accept the full donation and all conditions", "optB": "Accept the donation but refuse the fast-food endorsement (donor agrees to $40,000 instead)", "optC": "Decline the donation entirely — council independence is not for sale", "effects": "A: Budget +$60,000. Public Health -6 (fast-food promotion). Community Cohesion -3. Youth Engagement -2. B: Budget +$40,000. Public Health -1. Community Cohesion +1. C: Budget +$0. Community Cohesion +4. Public Health +2. Wellbeing +2."}]}, {"num": 5, "name": "Shock to the System", "report": ["Millbrook's largest employer, a packaging factory, has announced closure. 200 jobs will be lost within 3 months.", "Unemployment is expected to rise from 6% to 14% in the affected ward.", "Local mental health services report a surge in calls from affected workers and their families.", "The closed factory site is available for redevelopment — several parties are interested.", "Youth crime referrals have increased by 25% in the ward closest to the factory."], "randomEvent": "Local business closure: Wellbeing -5. Public Health -3. Crime Rate +5. Youth Engagement -3 immediately.", "decisions": [{"id": "D1", "domain": "Services", "question": "200 people are about to lose their jobs. What is your immediate response?", "optA": "Establish a job retraining centre with CV workshops and interview coaching ($50,000)", "optB": "Create a council-funded temporary employment scheme for affected workers ($60,000)", "optC": "Signpost affected workers to national job centres and benefits — no local cost ($0)", "effects": "A: Budget -$50,000. Wellbeing +6. Public Health +3. Community Cohesion +4. B: Budget -$60,000. Wellbeing +8. Crime Rate -4. Public Health +4. C: Wellbeing -3. Community Cohesion -5. Crime Rate +3."}, {"id": "D2", "domain": "Housing", "question": "The empty factory site could be redeveloped. Three proposals are on the table.", "optA": "A tech startup incubator offering 50 skilled jobs but requiring $40,000 council investment", "optB": "A discount supermarket offering 80 jobs immediately at no council cost", "optC": "Mixed-use community space with affordable housing, a health centre, and small business units ($55,000)", "effects": "A: Budget -$40,000. Wellbeing +4. Youth Engagement +5. Community Cohesion +3. B: Budget +$0. Wellbeing +3. Public Health -2 (another supermarket, less diverse economy). Crime Rate -3. C: Budget -$55,000. Wellbeing +7. Public Health +6. Community Cohesion +6. Youth Engagement +3."}, {"id": "D3", "domain": "Community", "question": "Mental health referrals are surging. How do you support struggling residents?", "optA": "Fund a dedicated mental health drop-in clinic open 5 days a week ($40,000)", "optB": "Train community volunteers as mental health first aiders ($15,000)", "optC": "Create peer support groups facilitated by trained counsellors ($25,000)", "effects": "A: Budget -$40,000. Public Health +8. Wellbeing +7. Community Cohesion +2. B: Budget -$15,000. Public Health +4. Wellbeing +3. Community Cohesion +5. Youth Engagement +3. C: Budget -$25,000. Public Health +6. Wellbeing +5. Community Cohesion +4."}, {"id": "D4", "domain": "Safety", "question": "Youth crime has spiked in the affected ward. How do you respond?", "optA": "Increase police presence in the ward with targeted stop-and-search powers ($35,000)", "optB": "Open an emergency youth centre in the ward with evening and weekend programmes ($30,000)", "optC": "Deploy youth mentors — adults from the community paired with at-risk young people ($20,000)", "effects": "A: Budget -$35,000. Crime Rate -7. Youth Engagement -4. Community Cohesion -5 (stop-and-search controversy). B: Budget -$30,000. Crime Rate -4. Youth Engagement +7. Wellbeing +3. C: Budget -$20,000. Crime Rate -3. Youth Engagement +6. Community Cohesion +4. Wellbeing +4."}, {"id": "D5", "domain": "Ethics", "question": "A national chain offers to sponsor youth services in exchange for exclusive advertising in schools and community centres. The contract is worth $50,000 per year.", "optA": "Accept the sponsorship — the money will fund vital services", "optB": "Accept but limit advertising to community centres only, not schools (reduced to $30,000)", "optC": "Reject the sponsorship — young people should not be targeted by corporate advertising", "effects": "A: Budget +$50,000. Youth Engagement +4 (funded programmes). Public Health -3 (commercial influence). Wellbeing -2. Community Cohesion -2. B: Budget +$30,000. Youth Engagement +3. Public Health -1. Community Cohesion +1. C: Budget +$0. Community Cohesion +4. Public Health +2. Wellbeing +3."}]}, {"num": 6, "name": "Legacy Planning", "report": ["Millbrook is entering a more stable period. Residents are cautiously optimistic.", "A regional 'Town of the Year' competition has been announced — strong metrics could win $75,000.", "The local newspaper publishes a mid-term report card on your council, highlighting both achievements and failures.", "An elderly residents' association complains they have been overlooked in favour of youth programmes.", "Climate activists have staged a protest demanding the council declare a climate emergency."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Community", "question": "Elderly residents feel neglected. How do you address their concerns?", "optA": "Launch a befriending scheme pairing young volunteers with isolated elderly residents ($20,000)", "optB": "Fund a weekly social club and free transport service for over-65s ($30,000)", "optC": "Acknowledge the concern publicly but explain that limited budgets require prioritisation", "effects": "A: Budget -$20,000. Community Cohesion +7. Wellbeing +5. Youth Engagement +4 (intergenerational). Public Health +3. B: Budget -$30,000. Community Cohesion +5. Wellbeing +6. Public Health +5. C: Community Cohesion -4. Wellbeing -3. Public Health -2."}, {"id": "D2", "domain": "Services", "question": "Climate activists demand a climate emergency declaration. What is your position?", "optA": "Declare a climate emergency and commit $45,000 to a green action plan (solar panels, tree planting, cycling infrastructure)", "optB": "Form a climate working group with community input before making commitments ($10,000)", "optC": "Acknowledge climate concerns but argue the council's priority must be jobs and services right now ($0)", "effects": "A: Budget -$45,000. Public Health +5. Community Cohesion +3. Wellbeing +4. Youth Engagement +5 (young climate activists engaged). B: Budget -$10,000. Community Cohesion +4. Youth Engagement +3. Public Health +2. C: Community Cohesion -3. Youth Engagement -5. Wellbeing -2. Public Health -1."}, {"id": "D3", "domain": "Safety", "question": "A report reveals that domestic abuse reports in Millbrook have risen 20% in the past year. How do you respond?", "optA": "Fund a specialist domestic abuse support service with refuge spaces ($50,000)", "optB": "Train frontline council staff (GPs, teachers, housing officers) to recognise and refer abuse cases ($20,000)", "optC": "Run a public awareness campaign to reduce stigma and encourage reporting ($15,000)", "effects": "A: Budget -$50,000. Wellbeing +8. Public Health +6. Crime Rate -5. B: Budget -$20,000. Wellbeing +5. Public Health +4. Crime Rate -3. Community Cohesion +2. C: Budget -$15,000. Wellbeing +3. Crime Rate -2. Community Cohesion +3. Public Health +2."}, {"id": "D4", "domain": "Housing", "question": "A neighbouring council proposes merging some services to save costs. This would mean shared libraries, refuse collection, and planning departments.", "optA": "Agree to full merger of services (saves $40,000 but reduces local control)", "optB": "Agree to share only back-office functions like IT and HR (saves $20,000)", "optC": "Reject the proposal — Millbrook should maintain full independence", "effects": "A: Budget +$40,000. Community Cohesion -6. Wellbeing -3. Youth Engagement -2 (library impact). B: Budget +$20,000. Community Cohesion -1. Wellbeing +1. C: Budget +$0. Community Cohesion +4. Wellbeing +2."}, {"id": "D5", "domain": "Ethics", "question": "A whistleblower reveals that a council contractor has been using exploitative labour practices. Ending the contract would cost $25,000 in penalties.", "optA": "Immediately terminate the contract and pay the penalty — ethics over economics", "optB": "Give the contractor 30 days to reform practices or face termination ($0 immediate cost but risk of continued exploitation)", "optC": "Quietly let the contract expire at its natural end in 3 months to avoid penalties ($0 cost)", "effects": "A: Budget -$25,000. Community Cohesion +6. Wellbeing +4. Youth Engagement +3 (young people see integrity). B: Community Cohesion +2. Wellbeing +1. Crime Rate +1 (exploitation continues short-term). C: Community Cohesion -5. Wellbeing -4. Crime Rate +2 (exploitation continues)."}]}, {"num": 7, "name": "Judgement Day", "report": ["This is your final round as Millbrook Council. A regional inspection team is visiting to assess your performance.", "The inspection will evaluate all six metrics and produce a tiered rating: Outstanding, Good, Requires Improvement, or Inadequate.", "Local elections are approaching — your legacy depends on the decisions you make now.", "Millbrook residents have submitted a 'People's Priorities' list: safety, youth services, health, and community spirit.", "Your budget must end the simulation above $0 or you face an automatic penalty."], "randomEvent": "Ofsted-style community inspection: If average of Wellbeing, Community Cohesion, Youth Engagement, and Public Health is 70+, award 'Outstanding' (+15 bonus to Composite Score). If 55-69, 'Good' (+8 bonus). If 40-54, 'Requires Improvement' (+0). Below 40, 'Inadequate' (-10 penalty).", "decisions": [{"id": "D1", "domain": "Services", "question": "For your final budget allocation, where do you invest your remaining funds?", "optA": "A flagship youth centre with sports, arts, and career advice — a lasting legacy ($55,000)", "optB": "A community health hub combining GP, mental health, and wellbeing services ($50,000)", "optC": "Spread funding equally across all existing services to maintain current levels ($35,000)", "effects": "A: Budget -$55,000. Youth Engagement +10. Wellbeing +5. Public Health +3. Community Cohesion +3. B: Budget -$50,000. Public Health +10. Wellbeing +7. Community Cohesion +3. C: Budget -$35,000. Wellbeing +3. Public Health +3. Youth Engagement +3. Community Cohesion +3."}, {"id": "D2", "domain": "Safety", "question": "Crime statistics will be part of the inspection. What is your final safety initiative?", "optA": "A comprehensive community safety plan combining CCTV, lighting, and neighbourhood watch ($40,000)", "optB": "A restorative justice showcase — publicise successes and expand the programme ($25,000)", "optC": "Focus on perception — run a 'Safer Millbrook' media campaign to improve confidence ($15,000)", "effects": "A: Budget -$40,000. Crime Rate -8. Wellbeing +3. Public Health +2. B: Budget -$25,000. Crime Rate -5. Community Cohesion +5. Youth Engagement +4. Wellbeing +3. C: Budget -$15,000. Crime Rate -2. Wellbeing +2. Community Cohesion +1."}, {"id": "D3", "domain": "Community", "question": "The inspection team wants evidence of community voice. How do you demonstrate democratic participation?", "optA": "Host a town hall meeting with live voting on next year's priorities ($15,000)", "optB": "Publish a detailed transparency report showing every decision and its outcomes ($10,000)", "optC": "Launch an online citizens' panel for ongoing consultation ($20,000)", "effects": "A: Budget -$15,000. Community Cohesion +6. Youth Engagement +4. Wellbeing +3. B: Budget -$10,000. Community Cohesion +5. Wellbeing +4. C: Budget -$20,000. Community Cohesion +5. Youth Engagement +5. Wellbeing +2."}, {"id": "D4", "domain": "Housing", "question": "A final housing decision: there is one remaining council-owned plot. What do you build?", "optA": "A small park with playground, benches, and community garden ($25,000)", "optB": "Six affordable housing units for families on the waiting list ($45,000)", "optC": "Sell the plot to a developer for maximum revenue", "effects": "A: Budget -$25,000. Public Health +5. Community Cohesion +5. Wellbeing +4. Youth Engagement +3. B: Budget -$45,000. Wellbeing +7. Community Cohesion +4. Public Health +2. C: Budget +$35,000. Community Cohesion -4. Wellbeing -2. Public Health -1."}, {"id": "D5", "domain": "Ethics", "question": "The inspection team asks about your proudest ethical decision this simulation. But first, a final dilemma: a developer offers to donate a large sum anonymously to boost your metrics — but you suspect the money is linked to a controversial overseas mining company.", "optA": "Accept the anonymous donation of $50,000 — ignorance is bliss and the money helps Millbrook", "optB": "Investigate the source before deciding — this delays any benefit but maintains integrity ($5,000 investigation cost)", "optC": "Refuse the donation outright — the risk to the council's reputation is not worth it", "effects": "A: Budget +$50,000. Community Cohesion -5 (if discovered). Wellbeing -3. Crime Rate +1 (ethical standards lowered). B: Budget -$5,000. Community Cohesion +3. Wellbeing +3. (50% chance investigation reveals bad source and donation is refused; 50% chance it is clean and you receive $30,000). C: Budget +$0. Community Cohesion +5. Wellbeing +4. Youth Engagement +2."}]}], "debriefQuestions": ["Which decision was the hardest for your team to agree on? What values were in conflict?", "Did your team prioritise any one metric over others? What were the consequences of that choice?", "How did the budget cuts in Round 4 change your decision-making? Did you compromise on ethics to save money?", "Which random event had the biggest impact on your strategy? How did you adapt?", "If you could go back and change one decision, which would it be and why?", "What did you learn about the trade-offs involved in governing a community?", "How did your team make decisions — by vote, by consensus, or did one person lead? What are the strengths and weaknesses of each approach?"], "keyTakeaways": ["Governing a community involves constant trade-offs — there is rarely a perfect answer, only a least-bad option that balances competing needs.", "Short-term fixes (curfews, fines, cuts) often create long-term problems, while investments in people (education, health, youth services) pay off over time.", "Ethical decisions have real consequences — cutting corners on integrity damages community trust, which is hard to rebuild.", "Democratic participation means listening to all voices, including those who disagree with you, and being transparent about your reasoning.", "Budgets are moral documents — where you choose to spend (and not spend) reveals your true priorities."]};
+const SVGS = {"r1_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#F0FDFA\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0D9488\" stroke-width=\"1.5\"/>\n  <g><line x1=\"308\" y1=\"128\" x2=\"308\" y2=\"172\" stroke=\"#0D9488\" stroke-width=\"3\"/><path d=\"M308,128 L336,136 L308,144\" fill=\"#0D9488\" opacity=\"0.8\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0D9488\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#2DD4BF\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">First Impressions</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0D9488\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n</svg>", "r1_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#F0FDFA\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0D9488\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">First Impressions</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"24\" rx=\"4\" fill=\"#0D9488\" opacity=\"0.85\"/><polygon points=\"88,150 106,138 124,150\" fill=\"#0D9488\" opacity=\"0.8\"/><rect x=\"102\" y=\"162\" width=\"8\" height=\"12\" fill=\"#F0FDFA\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Services</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 232,170 192,170\" fill=\"#0D9488\" opacity=\"0.85\"/><text x=\"212\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#F0FDFA\">!</text></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <g opacity=\"0.85\"><circle cx=\"310\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.85\"/><circle cx=\"326\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.65\"/><circle cx=\"318\" cy=\"168\" r=\"6\" fill=\"#0D9488\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Community</text>\n  <g opacity=\"0.85\"><polygon points=\"424,144 442,160 436,160 436,176 412,176 412,160 406,160\" fill=\"#0D9488\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#0D9488\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0D9488\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r2_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#F0FDFA\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0D9488\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"322,126 310,150 320,150 318,174 330,150 320,150\" fill=\"#0D9488\" opacity=\"0.9\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0D9488\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#2DD4BF\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Trouble Brewing</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0D9488\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n</svg>", "r2_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#F0FDFA\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0D9488\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Trouble Brewing</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,142 126,170 86,170\" fill=\"#0D9488\" opacity=\"0.85\"/><text x=\"106\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#F0FDFA\">!</text></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <g opacity=\"0.85\"><rect x=\"198\" y=\"150\" width=\"28\" height=\"24\" rx=\"4\" fill=\"#0D9488\" opacity=\"0.85\"/><polygon points=\"194,150 212,138 230,150\" fill=\"#0D9488\" opacity=\"0.8\"/><rect x=\"208\" y=\"162\" width=\"8\" height=\"12\" fill=\"#F0FDFA\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Services</text>\n  <g opacity=\"0.85\"><circle cx=\"310\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.85\"/><circle cx=\"326\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.65\"/><circle cx=\"318\" cy=\"168\" r=\"6\" fill=\"#0D9488\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Community</text>\n  <g opacity=\"0.85\"><polygon points=\"424,144 442,160 436,160 436,176 412,176 412,160 406,160\" fill=\"#0D9488\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#0D9488\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0D9488\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r3_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#F0FDFA\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0D9488\" stroke-width=\"1.5\"/>\n  <g><rect x=\"302\" y=\"152\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#0D9488\" opacity=\"0.9\"/><rect x=\"322\" y=\"152\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#2DD4BF\" opacity=\"0.7\"/><rect x=\"312\" y=\"136\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#0D9488\" opacity=\"0.75\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0D9488\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#2DD4BF\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Building Bridges</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0D9488\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n</svg>", "r3_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#F0FDFA\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0D9488\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Building Bridges</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><circle cx=\"98\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.85\"/><circle cx=\"114\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.65\"/><circle cx=\"106\" cy=\"168\" r=\"6\" fill=\"#0D9488\" opacity=\"0.75\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Community</text>\n  <g opacity=\"0.85\"><rect x=\"198\" y=\"150\" width=\"28\" height=\"24\" rx=\"4\" fill=\"#0D9488\" opacity=\"0.85\"/><polygon points=\"194,150 212,138 230,150\" fill=\"#0D9488\" opacity=\"0.8\"/><rect x=\"208\" y=\"162\" width=\"8\" height=\"12\" fill=\"#F0FDFA\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Services</text>\n  <g opacity=\"0.85\"><polygon points=\"318,144 336,160 330,160 330,176 306,176 306,160 300,160\" fill=\"#0D9488\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><polygon points=\"424,142 444,170 404,170\" fill=\"#0D9488\" opacity=\"0.85\"/><text x=\"424\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#F0FDFA\">!</text></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#0D9488\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0D9488\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r4_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#F0FDFA\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0D9488\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"322,126 310,150 320,150 318,174 330,150 320,150\" fill=\"#0D9488\" opacity=\"0.9\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0D9488\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#2DD4BF\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">The Squeeze</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0D9488\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n</svg>", "r4_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#F0FDFA\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0D9488\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">The Squeeze</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"24\" rx=\"4\" fill=\"#0D9488\" opacity=\"0.85\"/><polygon points=\"88,150 106,138 124,150\" fill=\"#0D9488\" opacity=\"0.8\"/><rect x=\"102\" y=\"162\" width=\"8\" height=\"12\" fill=\"#F0FDFA\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Services</text>\n  <g opacity=\"0.85\"><circle cx=\"204\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.85\"/><circle cx=\"220\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.65\"/><circle cx=\"212\" cy=\"168\" r=\"6\" fill=\"#0D9488\" opacity=\"0.75\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Community</text>\n  <g opacity=\"0.85\"><polygon points=\"318,142 338,170 298,170\" fill=\"#0D9488\" opacity=\"0.85\"/><text x=\"318\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#F0FDFA\">!</text></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <g opacity=\"0.85\"><polygon points=\"424,144 442,160 436,160 436,176 412,176 412,160 406,160\" fill=\"#0D9488\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#0D9488\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0D9488\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r5_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#F0FDFA\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0D9488\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"322,126 310,150 320,150 318,174 330,150 320,150\" fill=\"#0D9488\" opacity=\"0.9\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0D9488\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#2DD4BF\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Shock to the System</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0D9488\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n</svg>", "r5_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#F0FDFA\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0D9488\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Shock to the System</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"24\" rx=\"4\" fill=\"#0D9488\" opacity=\"0.85\"/><polygon points=\"88,150 106,138 124,150\" fill=\"#0D9488\" opacity=\"0.8\"/><rect x=\"102\" y=\"162\" width=\"8\" height=\"12\" fill=\"#F0FDFA\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Services</text>\n  <g opacity=\"0.85\"><polygon points=\"212,144 230,160 224,160 224,176 200,176 200,160 194,160\" fill=\"#0D9488\" opacity=\"0.85\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><circle cx=\"310\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.85\"/><circle cx=\"326\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.65\"/><circle cx=\"318\" cy=\"168\" r=\"6\" fill=\"#0D9488\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Community</text>\n  <g opacity=\"0.85\"><polygon points=\"424,142 444,170 404,170\" fill=\"#0D9488\" opacity=\"0.85\"/><text x=\"424\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#F0FDFA\">!</text></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#0D9488\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0D9488\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r6_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#F0FDFA\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0D9488\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"306,128 334,128 324,150 334,172 306,172 316,150\" fill=\"#0D9488\" opacity=\"0.8\"/><rect x=\"304\" y=\"126\" width=\"32\" height=\"4\" rx=\"2\" fill=\"#0D9488\"/><rect x=\"304\" y=\"170\" width=\"32\" height=\"4\" rx=\"2\" fill=\"#0D9488\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0D9488\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#2DD4BF\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Legacy Planning</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0D9488\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n</svg>", "r6_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#F0FDFA\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0D9488\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Legacy Planning</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><circle cx=\"98\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.85\"/><circle cx=\"114\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.65\"/><circle cx=\"106\" cy=\"168\" r=\"6\" fill=\"#0D9488\" opacity=\"0.75\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Community</text>\n  <g opacity=\"0.85\"><rect x=\"198\" y=\"150\" width=\"28\" height=\"24\" rx=\"4\" fill=\"#0D9488\" opacity=\"0.85\"/><polygon points=\"194,150 212,138 230,150\" fill=\"#0D9488\" opacity=\"0.8\"/><rect x=\"208\" y=\"162\" width=\"8\" height=\"12\" fill=\"#F0FDFA\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Services</text>\n  <g opacity=\"0.85\"><polygon points=\"318,142 338,170 298,170\" fill=\"#0D9488\" opacity=\"0.85\"/><text x=\"318\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#F0FDFA\">!</text></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <g opacity=\"0.85\"><polygon points=\"424,144 442,160 436,160 436,176 412,176 412,160 406,160\" fill=\"#0D9488\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#0D9488\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0D9488\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r7_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#F0FDFA\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#0D9488\" stroke-width=\"1.5\"/>\n  <g><rect x=\"306\" y=\"144\" width=\"28\" height=\"10\" rx=\"4\" fill=\"#0D9488\" transform=\"rotate(-30,320,150)\"/><line x1=\"324\" y1=\"156\" x2=\"336\" y2=\"172\" stroke=\"#0D9488\" stroke-width=\"4\" stroke-linecap=\"round\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#0D9488\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#2DD4BF\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Judgement Day</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#0D9488\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n</svg>", "r7_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#F0FDFA\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#0D9488\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#0D9488\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Judgement Day</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><rect x=\"92\" y=\"150\" width=\"28\" height=\"24\" rx=\"4\" fill=\"#0D9488\" opacity=\"0.85\"/><polygon points=\"88,150 106,138 124,150\" fill=\"#0D9488\" opacity=\"0.8\"/><rect x=\"102\" y=\"162\" width=\"8\" height=\"12\" fill=\"#F0FDFA\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Services</text>\n  <g opacity=\"0.85\"><polygon points=\"212,142 232,170 192,170\" fill=\"#0D9488\" opacity=\"0.85\"/><text x=\"212\" y=\"166\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#F0FDFA\">!</text></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Safety</text>\n  <g opacity=\"0.85\"><circle cx=\"310\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.85\"/><circle cx=\"326\" cy=\"156\" r=\"6\" fill=\"#0D9488\" opacity=\"0.65\"/><circle cx=\"318\" cy=\"168\" r=\"6\" fill=\"#0D9488\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Community</text>\n  <g opacity=\"0.85\"><polygon points=\"424,144 442,160 436,160 436,176 412,176 412,160 406,160\" fill=\"#0D9488\" opacity=\"0.85\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#0D9488\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#0D9488\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#0F766E\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#0D9488\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Community Council</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#0D9488\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>"};
+
+// ======================== EFFECTS PARSER ========================
+// Build alias map: short names -> full metric name
+const METRIC_ALIASES = {};
+(function() {
+  for (const m of SIM.metrics) {
+    const name = m.name;
+    METRIC_ALIASES[name.toLowerCase()] = name;
+    // Add partial aliases: last word, last two words, etc.
+    const words = name.split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const partial = words.slice(i).join(' ').toLowerCase();
+      if (partial.length >= 3 && !METRIC_ALIASES[partial]) {
+        METRIC_ALIASES[partial] = name;
+      }
+    }
+    // Also add without common suffixes
+    const noLevel = name.replace(/\s+(Level|Score|Rating|Index|Remaining|Value)$/i, '').toLowerCase();
+    if (noLevel !== name.toLowerCase() && !METRIC_ALIASES[noLevel]) {
+      METRIC_ALIASES[noLevel] = name;
+    }
+  }
+})();
+
+function findMetric(text) {
+  // Try exact match first, then longest partial match
+  const lower = text.toLowerCase();
+  for (const m of SIM.metrics) {
+    if (lower.includes(m.name.toLowerCase())) return m.name;
+  }
+  // Try aliases (longest first)
+  const aliases = Object.keys(METRIC_ALIASES).sort((a,b) => b.length - a.length);
+  for (const alias of aliases) {
+    if (lower.includes(alias)) return METRIC_ALIASES[alias];
+  }
+  return null;
+}
+
+function parseEffects(effectsStr) {
+  if (!effectsStr) return {};
+  const results = {};
+  const clauses = effectsStr.split(/[.;,]/).map(s => s.trim()).filter(s => s.length > 0);
+
+  for (const clause of clauses) {
+    const metricName = findMetric(clause);
+    if (!metricName) continue;
+
+    // "set to X"
+    const setMatch = clause.match(/set\s+to\s+(-?[\d,.]+)/i);
+    if (setMatch) {
+      results[metricName] = { type: 'set', value: parseNum(setMatch[1]) };
+      continue;
+    }
+
+    // "+/-$X,XXX" or "+/-X" or "+/-X%"
+    const deltaMatch = clause.match(/([+-])\s*\$?([\d,.]+)[%]?/);
+    if (deltaMatch) {
+      const sign = deltaMatch[1] === '+' ? 1 : -1;
+      const val = parseNum(deltaMatch[2]) * sign;
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+      continue;
+    }
+
+    // "-$X,XXX" embedded
+    const negMatch = clause.match(/-\$([\d,.]+)/);
+    if (negMatch) {
+      const val = -parseNum(negMatch[1]);
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+    }
+  }
+  return results;
+}
+
+function parseNum(s) {
+  return parseFloat(s.replace(/,/g, '')) || 0;
+}
+
+function clampMetric(metricDef, value) {
+  const unit = metricDef.unit || '';
+  if (unit === '/100') return Math.max(0, Math.min(100, value));
+  if (unit === '%') return Math.max(-100, Math.min(100, value));
+  if (unit === '$') return Math.max(0, value); // no negative cash
+  return value;
+}
+
+// ======================== GAME STATE ========================
+let G = {
+  started: false,
+  teamCount: 3,
+  teams: [],
+  currentScreen: 'setup',
+  currentRound: 1,
+  currentPhase: 0,
+  roundsComplete: new Set(),
+  teamMetrics: {}, // teamIdx -> {metricName: value}
+  roundDecisions: {}, // round -> teamIdx -> {D1:'A', D2:'B', ...}
+  roundSnapshots: {}, // round -> teamIdx -> {metricName: {before, after, delta}}
+};
+
+function initMetrics() {
+  G.teamMetrics = {};
+  for (let t = 0; t < G.teams.length; t++) {
+    G.teamMetrics[t] = {};
+    for (const m of SIM.metrics) {
+      G.teamMetrics[t][m.name] = m.start;
+    }
+  }
+}
+
+// ======================== TIMER ========================
+let timerInterval = null, timerSeconds = 600;
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + s.toString().padStart(2,'0');
+  document.getElementById('timerDisplay').style.color = timerSeconds <= 60 ? '#EF5350' : 'var(--gold)';
+}
+function startTimer() { if (timerInterval) return; timerInterval = setInterval(() => { if (timerSeconds > 0) { timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; } }, 1000); }
+function pauseTimer() { clearInterval(timerInterval); timerInterval = null; }
+function resetTimer() { pauseTimer(); timerSeconds = 600; updateTimerDisplay(); }
+updateTimerDisplay();
+
+// ======================== NAVIGATION ========================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let h = '<button onclick="goTo(\'setup\')" class="' + (G.currentScreen==='setup'?'active':'') + '"><span class="check"></span> Setup</button>';
+  for (let r = 1; r <= 7; r++) {
+    const done = G.roundsComplete.has(r);
+    const isActive = G.currentScreen === 'round' && G.currentRound === r;
+    h += '<button onclick="goToRound('+r+')" class="' + (isActive?'active':'') + ' ' + (done?'done':'') + '">';
+    h += '<span class="check">' + (done?'&#10003;':'') + '</span> Round ' + r;
+    if (isActive) { h += '<span class="phase-dots">'; for (let p=0;p<4;p++) h += '<span class="dot '+(G.currentPhase>=p?'filled':'')+'"></span>'; h += '</span>'; }
+    h += '</button>';
+  }
+  h += '<div class="sidebar-sep"></div>';
+  h += '<button onclick="goTo(\'leaderboard\')" class="'+(G.currentScreen==='leaderboard'?'active':'')+'"><span class="check"></span> Leaderboard</button>';
+  h += '<button onclick="goTo(\'final\')" class="'+(G.currentScreen==='final'?'active':'')+'"><span class="check"></span> Final Results</button>';
+  h += '<button onclick="goTo(\'debrief\')" class="'+(G.currentScreen==='debrief'?'active':'')+'"><span class="check"></span> Debrief</button>';
+  nav.innerHTML = h;
+}
+
+function goTo(s) { G.currentScreen = s; render(); }
+function goToRound(r) { if (!G.started) return; G.currentScreen = 'round'; G.currentRound = r; G.currentPhase = G.roundsComplete.has(r) ? 3 : 0; render(); }
+function setPhase(p) { G.currentPhase = p; render(); }
+
+function render() {
+  buildSidebar();
+  const c = document.getElementById('content');
+  if (G.currentScreen === 'setup') renderSetup(c);
+  else if (G.currentScreen === 'round') renderRound(c);
+  else if (G.currentScreen === 'leaderboard') renderLeaderboard(c);
+  else if (G.currentScreen === 'final') renderFinal(c);
+  else if (G.currentScreen === 'debrief') renderDebrief(c);
+  updateTopbar();
+}
+
+function updateTopbar() {
+  const title = document.getElementById('topbarTitle');
+  const phase = document.getElementById('topbarPhase');
+  const right = document.getElementById('topbarRight');
+  if (G.currentScreen === 'setup') {
+    title.textContent = 'SETUP';
+    phase.innerHTML = '';
+    right.innerHTML = '<button onclick="showHelp()">How to Play</button>';
+  } else if (G.currentScreen === 'round') {
+    const rd = SIM.rounds[G.currentRound-1];
+    title.textContent = 'ROUND ' + rd.num + ': ' + rd.name.toUpperCase();
+    const phases = ['Briefing','Decisions','Team Entry','Results'];
+    phase.innerHTML = phases.map((p,i) => '<button class="phase-step '+(i===G.currentPhase?'active':i<G.currentPhase?'completed':'')+'" onclick="setPhase('+i+')">'+p+'</button>').join('');
+    let btns = '';
+    if (G.currentPhase > 0) btns += '<button onclick="setPhase('+(G.currentPhase-1)+')">&#8592; Back</button>';
+    if (G.currentPhase < 3) btns += '<button class="primary" onclick="nextPhase()">Next &#8594;</button>';
+    else if (G.currentRound < 7) btns += '<button class="primary" onclick="goToRound('+(G.currentRound+1)+')">Round '+(G.currentRound+1)+' &#8594;</button>';
+    else btns += '<button class="primary" onclick="goTo(\'final\')">Final Results &#8594;</button>';
+    right.innerHTML = btns;
+  } else {
+    title.textContent = G.currentScreen.toUpperCase().replace('LEADERBOARD','LEADERBOARD');
+    phase.innerHTML = '';
+    right.innerHTML = G.currentScreen === 'final' ? '<button class="primary" onclick="goTo(\'debrief\')">Debrief &#8594;</button>' : '';
+  }
+}
+
+function nextPhase() {
+  if (G.currentPhase === 2) {
+    const r = G.currentRound;
+    if (!validateEntries(r)) return;
+    calculateRound(r);
+  }
+  G.currentPhase = Math.min(3, G.currentPhase + 1);
+  render();
+}
+
+function validateEntries(r) {
+  if (!G.roundDecisions[r]) { alert('Please enter decisions for all teams first.'); return false; }
+  for (let t = 0; t < G.teams.length; t++) {
+    const td = G.roundDecisions[r][t];
+    if (!td) { alert(G.teams[t] + ' has not entered any decisions.'); return false; }
+    for (const dec of SIM.rounds[r-1].decisions) {
+      if (!td[dec.id]) { alert(G.teams[t] + ' is missing ' + dec.id + '.'); return false; }
+    }
+  }
+  return true;
+}
+
+function showHelp() { document.getElementById('helpOverlay').classList.add('show'); }
+function closeHelp() { document.getElementById('helpOverlay').classList.remove('show'); }
+
+// ======================== SETUP ========================
+function renderSetup(c) {
+  let h = '<div class="screen active"><div class="setup-hero"><h1>' + SIM.title.toUpperCase() + '</h1><p class="subtitle">' + SIM.subject + ' &bull; ' + SIM.level + '</p><p>Lead your team through 7 rounds of strategic decisions.</p></div>';
+  h += '<div class="card"><h2>Number of Teams</h2><div class="team-count-btns">';
+  for (let i = 2; i <= 6; i++) h += '<button class="'+(G.teamCount===i?'active':'')+'" onclick="setTeamCount('+i+')">'+i+'</button>';
+  h += '</div><h2>Team Names</h2><div class="team-inputs" id="teamInputs">';
+  for (let i = 0; i < G.teamCount; i++) {
+    const val = G.teams[i] || '';
+    h += '<div class="team-input"><span class="num">'+(i+1)+'</span><input type="text" placeholder="Team '+(i+1)+' name" value="'+val+'" onchange="setTeamName('+i+',this.value)" /></div>';
+  }
+  h += '</div></div><button class="start-btn" onclick="startGame()">START GAME</button>';
+  h += '<div style="text-align:center;margin-top:1rem;"><button onclick="showHelp()" style="background:none;border:none;color:var(--mid);text-decoration:underline;cursor:pointer;font-family:\'Nunito\',sans-serif;">How to Play</button></div></div>';
+  c.innerHTML = h;
+}
+
+function setTeamCount(n) { G.teamCount = n; render(); }
+function setTeamName(i, v) { G.teams[i] = v.trim(); }
+
+function startGame() {
+  const inputs = document.querySelectorAll('#teamInputs input');
+  G.teams = [];
+  inputs.forEach((inp, i) => G.teams.push(inp.value.trim() || 'Team '+(i+1)));
+  G.teams = G.teams.slice(0, G.teamCount);
+  initMetrics();
+  G.started = true;
+  G.currentScreen = 'round';
+  G.currentRound = 1;
+  G.currentPhase = 0;
+  render();
+}
+
+// ======================== ROUND RENDERING ========================
+function renderRound(c) {
+  const r = G.currentRound;
+  const rd = SIM.rounds[r-1];
+  let h = '<div class="screen active">';
+  if (G.currentPhase === 0) h += renderBriefing(rd, r);
+  else if (G.currentPhase === 1) h += renderDecisions(rd, r);
+  else if (G.currentPhase === 2) h += renderEntry(r, rd);
+  else if (G.currentPhase === 3) h += renderResults(r);
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+function renderBriefing(rd, r) {
+  let h = '';
+  // SVG illustration
+  const svgKey = 'r'+r+'_briefing';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="report-card"><div class="report-masthead"><h1>' + SIM.title.toUpperCase() + '</h1><div class="dateline">Round ' + rd.num + ' of 7 &bull; ' + rd.name + '</div></div>';
+  h += '<div class="report-items">';
+  for (const item of rd.report) {
+    h += '<div class="report-item"><span class="bullet">&#9679;</span><span class="text">' + item + '</span></div>';
+  }
+  h += '</div>';
+  if (rd.randomEvent) {
+    h += '<div class="event-box"><h3>&#9889; RANDOM EVENT</h3><p>' + rd.randomEvent + '</p></div>';
+  } else {
+    h += '<div class="no-event">&#9728;&#65039; No random event this round &mdash; steady conditions ahead.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderDecisions(rd, r) {
+  let h = '';
+  const svgKey = 'r'+r+'_decisions';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="decisions-grid">';
+  for (const dec of rd.decisions) {
+    h += '<div class="decision-card"><div class="d-label">' + dec.id + ' &mdash; ' + dec.domain.toUpperCase() + '</div>';
+    h += '<div class="d-question">' + dec.question + '</div>';
+    const opts = [['A', dec.optA], ['B', dec.optB], ['C', dec.optC]];
+    for (const [l, desc] of opts) {
+      h += '<div class="option"><span class="letter ' + l.toLowerCase() + '">' + l + '</span><span class="desc">' + desc + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderEntry(r, rd) {
+  if (!G.roundDecisions[r]) {
+    G.roundDecisions[r] = {};
+    for (let t = 0; t < G.teams.length; t++) G.roundDecisions[r][t] = {};
+  }
+  let h = '<div class="card" style="overflow-x:auto;"><h2>TEAM DECISIONS &mdash; ROUND ' + r + '</h2>';
+  h += '<table class="entry-matrix"><thead><tr><th>Decision</th>';
+  for (const tn of G.teams) h += '<th>' + tn + '</th>';
+  h += '</tr></thead><tbody>';
+  for (const dec of rd.decisions) {
+    h += '<tr><td><strong>' + dec.id + ' &mdash; ' + dec.domain + '</strong><br><span style="font-size:0.8rem;font-weight:400;color:var(--grey);">' + truncate(dec.question, 70) + '</span></td>';
+    for (let t = 0; t < G.teams.length; t++) {
+      const cur = (G.roundDecisions[r][t] || {})[dec.id] || '';
+      h += '<td><div class="abc-group">';
+      for (const ch of ['A','B','C']) {
+        const sel = cur === ch ? 'sel-'+ch.toLowerCase() : '';
+        h += '<button class="abc-btn '+sel+'" onclick="pickChoice('+r+','+t+',\''+dec.id+'\',\''+ch+'\')">'+ch+'</button>';
+      }
+      h += '</div></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+
+function pickChoice(r, t, did, ch) {
+  if (!G.roundDecisions[r]) G.roundDecisions[r] = {};
+  if (!G.roundDecisions[r][t]) G.roundDecisions[r][t] = {};
+  G.roundDecisions[r][t][did] = ch;
+  render();
+}
+
+// ======================== SCORING ENGINE ========================
+function calculateRound(r) {
+  const rd = SIM.rounds[r-1];
+  if (!G.roundSnapshots[r]) G.roundSnapshots[r] = {};
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const before = {};
+    for (const m of SIM.metrics) before[m.name] = G.teamMetrics[t][m.name];
+    
+    // Apply each decision's effects
+    for (const dec of rd.decisions) {
+      const choice = G.roundDecisions[r][t][dec.id];
+      const effectsStr = dec.effects;
+      // Parse the choice-specific effects from the combined string
+      const choiceEffects = extractChoiceEffects(effectsStr, choice);
+      const parsed = parseEffects(choiceEffects);
+      
+      for (const [metricName, effect] of Object.entries(parsed)) {
+        const mDef = SIM.metrics.find(m => m.name === metricName);
+        if (!mDef) continue;
+        if (effect.type === 'set') {
+          G.teamMetrics[t][metricName] = effect.value;
+        } else {
+          G.teamMetrics[t][metricName] += effect.value;
+        }
+        if (mDef) G.teamMetrics[t][metricName] = clampMetric(mDef, G.teamMetrics[t][metricName]);
+      }
+    }
+    
+    // Save snapshot
+    const after = {};
+    const deltas = {};
+    for (const m of SIM.metrics) {
+      after[m.name] = G.teamMetrics[t][m.name];
+      deltas[m.name] = after[m.name] - before[m.name];
+    }
+    G.roundSnapshots[r][t] = { before, after, deltas };
+  }
+  G.roundsComplete.add(r);
+}
+
+function extractChoiceEffects(effectsStr, choice) {
+  // Effects format: "A: effect1. effect2. B: effect1. effect2. C: effect1."
+  // Split by A:/B:/C: markers
+  const regex = /\b([ABC]):\s*/g;
+  const parts = {};
+  let lastKey = null, lastIdx = 0;
+  let match;
+  const matches = [];
+  while ((match = regex.exec(effectsStr)) !== null) {
+    matches.push({ key: match[1], idx: match.index, end: match.index + match[0].length });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].end;
+    const end = i + 1 < matches.length ? matches[i+1].idx : effectsStr.length;
+    parts[matches[i].key] = effectsStr.substring(start, end).trim();
+  }
+  return parts[choice] || '';
+}
+
+function fmtVal(value, unit) {
+  if (unit === '$' || unit === 'USD') return '$' + Math.round(value).toLocaleString();
+  if (unit === '%') return value.toFixed(1) + '%';
+  if (unit === '/100') return Math.round(value) + '/100';
+  return Math.round(value).toLocaleString() + (unit && unit !== '$' && unit !== '%' && unit !== '/100' ? ' ' + unit : '');
+}
+
+function fmtDelta(delta, unit) {
+  const sign = delta >= 0 ? '+' : '';
+  if (unit === '$' || unit === 'USD') return sign + '$' + Math.round(delta).toLocaleString();
+  if (unit === '%') return sign + delta.toFixed(1) + '%';
+  return sign + Math.round(delta).toLocaleString();
+}
+
+// ======================== RESULTS ========================
+function renderResults(r) {
+  if (!G.roundSnapshots[r]) return '<div class="card"><h2>No results yet</h2></div>';
+  
+  let h = '<div class="card"><h2>ROUND ' + r + ' RESULTS</h2>';
+  h += '<table class="results-table"><thead><tr><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '</tr></thead><tbody>';
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<tr><td>' + G.teams[t] + '</td>';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      h += '<td>' + fmtVal(val, m.unit) + '<br><span class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</span></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Per-team metric cards
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<div class="card"><h3>' + G.teams[t] + '</h3><div class="metrics-grid">';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      const barPct = m.unit === '/100' ? val : m.unit === '%' ? Math.max(0, val) : Math.min(100, (val / (m.start > 0 ? m.start * 3 : 100000)) * 100);
+      h += '<div class="metric-card"><div class="m-name">' + m.name + '</div>';
+      h += '<div class="m-val">' + fmtVal(val, m.unit) + '</div>';
+      h += '<div class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</div>';
+      if (m.unit === '/100') h += '<div class="metric-bar"><div class="metric-bar-fill" style="width:' + Math.max(0, Math.min(100, val)) + '%"></div></div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  }
+  
+  return h;
+}
+
+// ======================== LEADERBOARD ========================
+function getScore(t) {
+  // Composite score: each metric contributes up to 100 points (clamped)
+  let score = 0;
+  for (const m of SIM.metrics) {
+    const val = G.teamMetrics[t][m.name];
+    let c;
+    if (m.unit === '/100') {
+      c = val;
+    } else if (m.unit === '%') {
+      c = Math.min(val, 100);
+    } else {
+      // For $, people, users, coins, degrees, etc: normalise against start value
+      const base = Math.abs(m.start) > 0 ? Math.abs(m.start) : 100;
+      c = (val / base) * 50;
+    }
+    // Clamp each metric to [-100, 100] so no single metric dominates
+    score += Math.max(-100, Math.min(100, c));
+  }
+  return Math.round(score);
+}
+
+function renderLeaderboard(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Start the game first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  let h = '<div class="screen active"><div class="card"><h2>LEADERBOARD</h2></div>';
+  const medals = ['&#129351;','&#129352;','&#129353;'];
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<div class="lb-row"><div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>';
+    h += '<div class="lb-name">' + r.name + '</div><div class="lb-stats">';
+    for (const m of SIM.metrics.slice(0, 4)) {
+      h += '<div class="lb-stat"><div class="val">' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</div><div class="lbl">' + m.name + '</div></div>';
+    }
+    h += '<div class="lb-stat"><div class="val">' + Math.round(r.score) + '</div><div class="lbl">Score</div></div>';
+    h += '</div></div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== FINAL RESULTS ========================
+function renderFinal(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Complete all rounds first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  const medals = ['&#127942;','&#129352;','&#129353;'];
+  
+  let h = '<div class="screen active"><div class="final-hero"><h1>FINAL RESULTS</h1></div>';
+  h += '<div class="podium">';
+  const order = ranked.length >= 3 ? [1, 0, 2] : ranked.length >= 2 ? [1, 0] : [0];
+  for (const oi of order) {
+    if (oi >= ranked.length) continue;
+    const r = ranked[oi];
+    h += '<div class="podium-item ' + (oi === 0 ? 'first' : '') + '"><div class="medal">' + (medals[oi] || '') + '</div>';
+    h += '<div class="pname">' + r.name + '</div><div class="pval">Score: ' + Math.round(r.score) + '</div></div>';
+  }
+  h += '</div>';
+  
+  // Full results table
+  h += '<div class="card"><h2>FULL BREAKDOWN</h2><table class="results-table"><thead><tr><th>Rank</th><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '<th>Score</th></tr></thead><tbody>';
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<tr><td>#' + (i+1) + '</td><td>' + r.name + '</td>';
+    for (const m of SIM.metrics) h += '<td>' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</td>';
+    h += '<td><strong>' + Math.round(r.score) + '</strong></td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+  c.innerHTML = h;
+}
+
+// ======================== DEBRIEF ========================
+function renderDebrief(c) {
+  let h = '<div class="screen active"><div class="card"><h2>DEBRIEF DISCUSSION</h2><p>Use these questions to guide whole-class discussion.</p></div>';
+  
+  if (SIM.debriefQuestions) {
+    for (let i = 0; i < SIM.debriefQuestions.length; i++) {
+      h += '<div class="debrief-q"><div class="qnum">QUESTION ' + (i+1) + '</div><p>' + SIM.debriefQuestions[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.keyTakeaways) {
+    h += '<div class="card"><h2>KEY TAKEAWAYS</h2></div>';
+    for (let i = 0; i < SIM.keyTakeaways.length; i++) {
+      h += '<div class="takeaway-card"><h3>Takeaway ' + (i+1) + '</h3><p>' + SIM.keyTakeaways[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.curriculumLinks) {
+    h += '<div class="card"><h2>CURRICULUM LINKS</h2></div>';
+    for (const cl of SIM.curriculumLinks) {
+      h += '<div class="curriculum-card"><div class="c-topic">' + cl.topic + '</div><div class="c-spec">' + cl.spec + '</div><div class="c-how">' + cl.how + '</div></div>';
+    }
+  }
+  
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== INIT ========================
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Historical Evidence — Sort It — ClassCraft</title>
+    <meta name="description" content="Sort and categorise rock types with this free GCSE chemistry revision game. No login required. Build your understanding for exam success.">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#0f1117; --surface:#1a1d27; --surface2:#22253a;
+      --border:rgba(255,255,255,0.08); --border-hi:rgba(255,255,255,0.14);
+      --accent:#4ade9a; --accent2:#7b6fff; --warn:#ff6b6b;
+      --text:#e8eaf0; --text-mid:#8b90a8; --text-dim:#4a4f68;
+      --correct:#4ade9a; --wrong:#ff6b6b;
+      --font-d:'Nunito',sans-serif; --font-b:'Nunito',sans-serif;
+      --r:10px; --trans:0.18s cubic-bezier(0.25,0.46,0.45,0.94);
+      --hd-h:52px;
+      /* Category colours — up to 4 */
+      --cat0:#4a7ab5; --cat0-bg:rgba(74,122,181,0.1); --cat0-border:rgba(74,122,181,0.4);
+      --cat1:#b54a7a; --cat1-bg:rgba(181,74,122,0.1); --cat1-border:rgba(181,74,122,0.4);
+      --cat2:#7ab54a; --cat2-bg:rgba(122,181,74,0.1);  --cat2-border:rgba(122,181,74,0.4);
+      --cat3:#b5934a; --cat3-bg:rgba(181,147,74,0.1);  --cat3-border:rgba(181,147,74,0.4);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{height:100%;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:15px;line-height:1.5;display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
+
+    /* ── Header ── */
+    .hd{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.25rem;height:var(--hd-h);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:0.75rem;position:relative;z-index:10;}
+    .hd-left{display:flex;align-items:center;gap:0.85rem;min-width:0;}
+    .hd-logo{font-family:var(--font-d);font-size:1.05rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-0.02em;flex-shrink:0;}
+    .hd-logo span{color:var(--accent);}
+    .hd-title{font-family:var(--font-d);font-size:0.8rem;font-weight:600;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+    .hd-sep{color:var(--text-dim);flex-shrink:0;}
+    .hd-crumb{font-family:var(--font-d);font-size:0.72rem;font-weight:600;color:var(--accent);text-decoration:none;flex-shrink:0;letter-spacing:0.02em;}.hd-crumb:hover{text-decoration:underline;}
+    .hd-right{display:flex;align-items:center;gap:0.5rem;flex-shrink:0;}
+    .timer-wrap{display:flex;align-items:center;gap:0.4rem;}
+    .timer-label{font-size:0.65rem;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-mid);}
+    .toggle{position:relative;width:34px;height:19px;cursor:pointer;flex-shrink:0;}
+    .toggle input{opacity:0;width:0;height:0;position:absolute;}
+    .toggle-track{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border-hi);border-radius:20px;transition:background var(--trans),border-color var(--trans);}
+    .toggle input:checked+.toggle-track{background:var(--accent2);border-color:var(--accent2);}
+    .toggle-thumb{position:absolute;top:3px;left:3px;width:11px;height:11px;background:var(--text-mid);border-radius:50%;transition:transform var(--trans),background var(--trans);}
+    .toggle input:checked~.toggle-thumb{transform:translateX(15px);background:#fff;}
+    .hd-timer{font-family:var(--font-d);font-size:0.82rem;font-weight:700;color:var(--accent2);background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:0.22rem 0.6rem;min-width:46px;text-align:center;display:none;}
+    .hd-timer.active{display:block;}
+    .hd-timer.urgent{color:var(--warn);animation:pulse 0.5s ease infinite alternate;}
+    @keyframes pulse{from{opacity:1}to{opacity:0.35}}
+    .stat-pill{font-family:var(--font-d);font-size:0.75rem;font-weight:700;color:var(--text);background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:0.22rem 0.6rem;white-space:nowrap;}
+    .stat-pill span{color:var(--accent);}
+    .btn-hd{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.22rem 0.75rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);white-space:nowrap;}
+    .btn-hd:hover{border-color:var(--accent);color:var(--accent);}
+    .progress-bar{height:3px;background:var(--surface2);flex-shrink:0;}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));width:0%;transition:width 0.4s ease;box-shadow:0 0 6px rgba(74,222,154,0.5);}
+
+    /* ── Screens ── */
+    .screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;min-height:0;}
+    .screen.active{display:flex;}
+
+    /* ── Start screen ── */
+    .start-badge{display:inline-flex;align-items:center;gap:0.4rem;font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);background:rgba(74,222,154,0.1);border:1px solid rgba(74,222,154,0.25);border-radius:20px;padding:0.25rem 0.75rem;margin-bottom:0.9rem;}
+    .start-title{font-family:var(--font-d);font-size:clamp(1.6rem,4vw,2.1rem);font-weight:800;letter-spacing:-0.03em;margin-bottom:0.4rem;text-align:center;}
+    .start-sub{color:var(--text-mid);font-size:0.875rem;margin-bottom:1.5rem;text-align:center;max-width:48ch;}
+    .section-label{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.6rem;align-self:flex-start;}
+    .start-options{width:100%;max-width:520px;display:flex;flex-direction:column;gap:1.5rem;margin-bottom:1.5rem;}
+
+    .cat-count-row{display:flex;gap:0.5rem;}
+    .cat-btn{font-family:var(--font-d);font-size:0.85rem;font-weight:700;background:var(--surface);border:2px solid var(--border-hi);border-radius:var(--r);padding:0.55rem 1.1rem;cursor:pointer;color:var(--text-mid);transition:all var(--trans);}
+    .cat-btn:hover{border-color:var(--accent2);color:var(--text);}
+    .cat-btn.selected{border-color:var(--accent);color:var(--accent);background:rgba(74,222,154,0.06);}
+
+    .item-count-row{display:flex;gap:0.5rem;flex-wrap:wrap;}
+    .item-btn{font-family:var(--font-d);font-size:0.78rem;font-weight:700;background:var(--surface);border:2px solid var(--border-hi);border-radius:var(--r);padding:0.45rem 0.85rem;cursor:pointer;color:var(--text-mid);transition:all var(--trans);}
+    .item-btn:hover{border-color:var(--accent2);color:var(--text);}
+    .item-btn.selected{border-color:var(--accent);color:var(--accent);background:rgba(74,222,154,0.06);}
+
+    .btn-start{font-family:var(--font-d);font-size:0.85rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.85rem 2.75rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);opacity:0.3;pointer-events:none;}
+    .btn-start.ready{opacity:1;pointer-events:all;}
+    .btn-start.ready:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 20px rgba(74,222,154,0.35);}
+    .btn-start.ready:active{transform:translateY(0);box-shadow:none;}
+
+    /* ── Game screen ── */
+    #screen-game{padding:1rem 1.5rem;gap:1rem;justify-content:space-between;}
+
+    /* Current card display */
+    .card-stage{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:0.75rem;
+      flex-shrink:0;
+    }
+    .card-counter{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);}
+
+    .current-card{
+      background:var(--surface);
+      border:2px solid var(--border);
+      border-radius:14px;
+      padding:1.5rem 2rem;
+      text-align:center;
+      min-width:280px;
+      max-width:480px;
+      width:100%;
+      transition:all 0.3s;
+      position:relative;
+      overflow:hidden;
+    }
+    .current-card::before{
+      content:'';
+      position:absolute;
+      top:0;left:0;right:0;
+      height:3px;
+      background:linear-gradient(90deg,var(--accent2),var(--accent));
+    }
+    .current-card-text{
+      font-family:var(--font-d);
+      font-size:clamp(1rem,2.5vw,1.5rem);
+      font-weight:700;
+      line-height:1.3;
+      color:var(--text);
+    }
+    .current-card-hint{
+      font-size:0.78rem;
+      color:var(--text-mid);
+      margin-top:0.4rem;
+    }
+
+    /* Card fly animation */
+    @keyframes flyUp    { to { transform:translateY(-80vh)  scale(0.8);     opacity:0; } }
+    @keyframes slideIn  { from { transform:translateY(40px); opacity:0; } to { transform:none; opacity:1; } }
+    .current-card.fly-off { animation:flyUp 0.35s ease forwards; }
+    .current-card.slide-in { animation:slideIn 0.3s ease; }
+
+    /* ── Category buckets ── */
+    .buckets{
+      display:flex;
+      gap:0.75rem;
+      width:100%;
+      flex:1;
+      min-height:0;
+    }
+    .bucket{
+      flex:1;
+      border-radius:12px;
+      border:2px solid;
+      padding:0.75rem;
+      display:flex;
+      flex-direction:column;
+      gap:0.4rem;
+      cursor:pointer;
+      transition:all var(--trans);
+      min-height:0;
+      overflow-y:auto;
+      position:relative;
+    }
+    .bucket:hover{ filter:brightness(1.15); transform:translateY(-2px); }
+    .bucket:active{ transform:translateY(0) scale(0.98); }
+
+    /* Per-category colours applied by JS */
+    .bucket[data-cat="0"]{ background:var(--cat0-bg); border-color:var(--cat0-border); }
+    .bucket[data-cat="1"]{ background:var(--cat1-bg); border-color:var(--cat1-border); }
+    .bucket[data-cat="2"]{ background:var(--cat2-bg); border-color:var(--cat2-border); }
+    .bucket[data-cat="3"]{ background:var(--cat3-bg); border-color:var(--cat3-border); }
+
+    .bucket-title{
+      font-family:var(--font-d);
+      font-size:0.8rem;
+      font-weight:800;
+      letter-spacing:0.04em;
+      text-align:center;
+      flex-shrink:0;
+      padding-bottom:0.4rem;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+    .bucket[data-cat="0"] .bucket-title{ color:var(--cat0); }
+    .bucket[data-cat="1"] .bucket-title{ color:var(--cat1); }
+    .bucket[data-cat="2"] .bucket-title{ color:var(--cat2); }
+    .bucket[data-cat="3"] .bucket-title{ color:var(--cat3); }
+
+    .bucket-count{
+      font-family:var(--font-d);
+      font-size:0.6rem;
+      font-weight:700;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:rgba(255,255,255,0.25);
+      text-align:center;
+      flex-shrink:0;
+    }
+
+    /* Placed items inside bucket */
+    .placed-item{
+      font-family:var(--font-d);
+      font-size:0.68rem;
+      font-weight:600;
+      color:var(--text);
+      background:rgba(255,255,255,0.05);
+      border-radius:5px;
+      padding:0.3rem 0.5rem;
+      line-height:1.3;
+      flex-shrink:0;
+      animation:popIn 0.2s ease;
+    }
+    @keyframes popIn{from{transform:scale(0.8);opacity:0}to{transform:none;opacity:1}}
+
+    /* After submit — correct/wrong tint */
+    .placed-item.correct{ background:rgba(74,222,154,0.12); color:var(--correct); }
+    .placed-item.wrong{   background:rgba(255,107,107,0.12); color:var(--wrong); }
+
+    /* Submit */
+    .btn-submit{font-family:var(--font-d);font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.65rem 2rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);flex-shrink:0;opacity:0.35;pointer-events:none;}
+    .btn-submit.ready{opacity:1;pointer-events:all;}
+    .btn-submit.ready:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 20px rgba(74,222,154,0.35);}
+    .btn-submit.ready:active{transform:translateY(0);box-shadow:none;}
+
+    /* Responsive */
+    @media(max-width:400px){
+      .hd{padding:0 0.85rem;}
+      .hd-sep,.hd-crumb,.hd-title{display:none;}
+    }
+
+    /* ── Results overlay ── */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(8,10,18,0.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:500;align-items:center;justify-content:center;padding:1rem;}
+    .overlay.open{display:flex;}
+    .result-card{background:var(--surface);border:1px solid var(--border-hi);border-radius:18px;padding:1.75rem 2rem;max-width:680px;width:100%;animation:slideUp 0.38s cubic-bezier(0.34,1.56,0.64,1);display:flex;flex-direction:column;gap:1.25rem;max-height:90vh;overflow-y:auto;position:relative;}
+    .result-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:18px 18px 0 0;}
+    @keyframes slideUp{from{opacity:0;transform:translateY(28px) scale(0.95)}to{opacity:1;transform:none}}
+    .result-top{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+    .result-emoji{font-size:2.5rem;flex-shrink:0;}
+    .result-heading{font-family:var(--font-d);font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;}
+    .result-score-pill{font-family:var(--font-d);font-size:1rem;font-weight:700;color:var(--accent);background:rgba(74,222,154,0.1);border:1px solid rgba(74,222,154,0.25);border-radius:20px;padding:0.25rem 0.9rem;margin-left:auto;}
+
+    .result-cats{display:flex;flex-direction:column;gap:0.6rem;}
+    .result-cat-block{border-radius:var(--r);padding:0.75rem 1rem;}
+    .result-cat-title{font-family:var(--font-d);font-size:0.75rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.5rem;}
+    .result-items{display:flex;flex-wrap:wrap;gap:0.35rem;}
+    .result-item{font-size:0.75rem;font-family:var(--font-d);font-weight:600;padding:0.2rem 0.55rem;border-radius:4px;}
+    .result-item.correct{background:rgba(74,222,154,0.15);color:var(--correct);}
+    .result-item.wrong{background:rgba(255,107,107,0.15);color:var(--wrong);}
+    .result-item .correct-cat{font-size:0.65rem;opacity:0.7;margin-left:0.3rem;}
+
+    .result-btns{display:flex;gap:0.75rem;}
+    .btn-retry{font-family:var(--font-d);font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.75rem 1.75rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);flex:1;}
+    .btn-retry:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 18px rgba(74,222,154,0.3);}
+    .btn-retry:active{transform:translateY(0);box-shadow:none;}
+    .btn-change{font-family:var(--font-d);font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.65rem 1.25rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);flex:1;}
+    .btn-change:hover{border-color:var(--accent2);color:var(--accent2);}
+  </style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="hd-left">
+    <a href="../index.html" class="hd-logo">Class<span>Craft</span></a>
+    <span class="hd-sep">·</span>
+    <a href="../games.html" class="hd-crumb">Games</a>
+    <span class="hd-sep">·</span>
+    <span class="hd-title" id="hd-title">Historical Evidence — Sort It</span>
+  </div>
+  <div class="hd-right" id="hd-right" style="display:none;">
+    <div class="timer-wrap">
+      <span class="timer-label">Timer</span>
+      <label class="toggle">
+        <input type="checkbox" id="timer-toggle"/>
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="hd-timer" id="hd-timer">2:00</div>
+    <div class="stat-pill"><span id="done-count">0</span>/<span id="done-total">12</span> sorted</div>
+    <button class="btn-hd" id="btn-restart">↺ Change level</button>
+  </div>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+<!-- Start screen -->
+<div class="screen active" id="screen-start">
+  <span class="start-badge">Sort It</span>
+  <h1 class="start-title">Historical Evidence</h1>
+  <p class="start-sub">Each item will appear one at a time. Click the correct category to sort it. Choose your settings below.</p>
+  <div class="start-options">
+    <div>
+      <p class="section-label">Number of categories</p>
+      <div class="cat-count-row">
+        <button class="cat-btn" data-cats="2" onclick="selectCats(this)">2</button>
+        <button class="cat-btn" data-cats="3" onclick="selectCats(this)">3</button>
+        <button class="cat-btn" data-cats="4" onclick="selectCats(this)">4</button>
+      </div>
+    </div>
+    <div>
+      <p class="section-label">Number of items</p>
+      <div class="item-count-row" id="item-count-row">
+        <button class="item-btn" data-items="6"  onclick="selectItems(this)">6</button>
+        <button class="item-btn" data-items="9"  onclick="selectItems(this)">9</button>
+        <button class="item-btn" data-items="12" onclick="selectItems(this)">12</button>
+        <button class="item-btn" data-items="15" onclick="selectItems(this)">15</button>
+        <button class="item-btn" data-items="18" onclick="selectItems(this)">All (18)</button>
+      </div>
+    </div>
+  </div>
+  <button class="btn-start" id="btn-start" onclick="startGame()">Start Game →</button>
+</div>
+
+<!-- Game screen -->
+<div class="screen" id="screen-game">
+  <div class="card-stage">
+    <div class="card-counter" id="card-counter">Card 1 of 12</div>
+    <div class="current-card" id="current-card">
+      <div class="current-card-text" id="current-card-text">Loading…</div>
+      <div class="current-card-hint">Click a category below</div>
+    </div>
+  </div>
+  <div class="buckets" id="buckets"></div>
+  <button class="btn-submit" id="btn-submit" onclick="submitAnswers()">Check answers →</button>
+</div>
+
+<!-- Results -->
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <div class="result-top">
+      <span class="result-emoji" id="res-emoji">🎉</span>
+      <div><div class="result-heading" id="res-heading">Well sorted!</div></div>
+      <div class="result-score-pill" id="res-score">12/12</div>
+    </div>
+    <div class="result-cats" id="result-cats"></div>
+    <div class="result-btns">
+      <button class="btn-retry" id="btn-retry">Play Again</button>
+      <button class="btn-change" id="btn-change">Change settings</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// GAME DATA
+// Each item: { text, category }
+// category must match one of the names in CATEGORIES
+// Add as many items as you like — game picks N at random
+// ═══════════════════════════════════════════════════════
+const CATEGORIES = [
+  "Primary source",
+  "Secondary source",
+  "Reliable",
+  "Unreliable / Needs caution",
+];
+
+const ALL_ITEMS = [
+  { text:"A soldier's diary from the trenches", cat:0 },
+  { text:"A photograph taken during a protest", cat:0 },
+  { text:"A government census from 1901", cat:0 },
+  { text:"A speech by Hitler in 1933", cat:0 },
+  { text:"A historian's book written 50 years later", cat:1 },
+  { text:"A documentary film about WWII", cat:1 },
+  { text:"A textbook account of the Cold War", cat:1 },
+  { text:"An academic journal article", cat:1 },
+  { text:"A corroborated eyewitness account", cat:2 },
+  { text:"Official government records", cat:2 },
+  { text:"Multiple independent sources agreeing", cat:2 },
+  { text:"Wartime propaganda poster", cat:3 },
+  { text:"Memoir written decades later", cat:3 },
+  { text:"Account from someone with clear motive to lie", cat:3 },
+  { text:"Single uncorroborated witness", cat:3 },
+];
+
+const CAT_COLOURS = ['var(--cat0)','var(--cat1)','var(--cat2)','var(--cat3)'];
+const TIMER_SECS  = { 6:60, 9:90, 12:120, 15:150, 18:180 };
+
+// ── STATE ──
+let selectedCats  = 0;
+let selectedItems = 0;
+let activeItems   = [];   // shuffled subset
+let currentIndex  = 0;    // which card we're on
+let placements    = [];   // placements[i] = catIndex student chose
+let gameOver      = false;
+let cardLocked    = false;
+let timerOn       = false, timerSecs = 120, timerInterval = null;
+
+// Fisher-Yates
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+// ── SETUP SELECTORS ──
+function selectCats(el) {
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCats = parseInt(el.dataset.cats);
+  checkReady();
+}
+function selectItems(el) {
+  document.querySelectorAll('.item-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedItems = parseInt(el.dataset.items);
+  checkReady();
+}
+function checkReady() {
+  const btn = document.getElementById('btn-start');
+  const ok = selectedCats >= 2 && selectedItems >= 1;
+  btn.classList.toggle('ready', ok);
+}
+
+// ── START ──
+function startGame() {
+  if (!selectedCats || !selectedItems) return;
+
+  // Filter items to only those in the selected categories
+  const eligible = ALL_ITEMS.filter(item => item.cat < selectedCats);
+  if (eligible.length < selectedItems) {
+    // Clamp to available items instead of blocking
+    selectedItems = eligible.length;
+  }
+
+  // Ensure even-ish spread across categories
+  const perCat = Math.floor(selectedItems / selectedCats);
+  const extra  = selectedItems % selectedCats;
+  let pool = [];
+  for (let c = 0; c < selectedCats; c++) {
+    const catItems = shuffle(ALL_ITEMS.filter(item => item.cat === c));
+    pool.push(...catItems.slice(0, perCat + (c < extra ? 1 : 0)));
+  }
+  activeItems = shuffle(pool);
+  placements  = new Array(activeItems.length).fill(null);
+  currentIndex = 0;
+  gameOver = false; cardLocked = false;
+
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+  document.getElementById('hd-right').style.display = 'flex';
+  document.getElementById('done-total').textContent = activeItems.length;
+
+  stopTimer();
+  timerSecs = TIMER_SECS[activeItems.length] || 120;
+  updateTimerDisplay();
+
+  buildBuckets();
+  showCard(0);
+  updateProgress();
+  if (timerOn) startTimer();
+}
+
+// ── BUILD BUCKETS ──
+function buildBuckets() {
+  const cont = document.getElementById('buckets');
+  cont.innerHTML = '';
+  for (let c = 0; c < selectedCats; c++) {
+    const bucket = document.createElement('div');
+    bucket.className = 'bucket';
+    bucket.dataset.cat = c;
+    bucket.innerHTML = `
+      <div class="bucket-title">${CATEGORIES[c]}</div>
+      <div class="bucket-count" id="bcount-${c}">0 items</div>
+    `;
+    bucket.addEventListener('click', () => assignCard(c));
+    cont.appendChild(bucket);
+  }
+}
+
+// ── SHOW CARD ──
+function showCard(index) {
+  if (index >= activeItems.length) {
+    // All done — enable submit
+    document.getElementById('btn-submit').classList.add('ready');
+    document.getElementById('current-card').style.display = 'none';
+    document.getElementById('card-counter').textContent = 'All sorted! Check your answers →';
+    return;
+  }
+  const item = activeItems[index];
+  const cardEl = document.getElementById('current-card');
+  const textEl = document.getElementById('current-card-text');
+  cardEl.style.display = '';
+  cardEl.classList.remove('fly-off','slide-in');
+  void cardEl.offsetWidth; // reflow to restart animation
+  cardEl.classList.add('slide-in');
+  textEl.textContent = item.text;
+  document.getElementById('card-counter').textContent = `Card ${index+1} of ${activeItems.length}`;
+  document.getElementById('btn-submit').classList.remove('ready');
+}
+
+// ── ASSIGN CARD TO CATEGORY ──
+function assignCard(catIndex) {
+  if (gameOver || cardLocked || currentIndex >= activeItems.length) return;
+  cardLocked = true;
+
+  placements[currentIndex] = catIndex;
+
+  // Add to bucket
+  const bucket = document.querySelector(`.bucket[data-cat="${catIndex}"]`);
+  const item = document.createElement('div');
+  item.className = 'placed-item';
+  item.dataset.itemIndex = currentIndex;
+  item.textContent = activeItems[currentIndex].text;
+  bucket.appendChild(item);
+
+  // Update bucket count
+  const inBucket = placements.filter(p=>p===catIndex).length;
+  document.getElementById(`bcount-${catIndex}`).textContent = `${inBucket} item${inBucket!==1?'s':''}`;
+
+  // Fly card off
+  const cardEl = document.getElementById('current-card');
+  cardEl.classList.add('fly-off');
+
+  currentIndex++;
+  updateProgress();
+
+  setTimeout(() => { cardLocked = false; showCard(currentIndex); }, 340);
+}
+
+function updateProgress() {
+  const done = placements.filter(p=>p!==null).length;
+  document.getElementById('done-count').textContent = done;
+  document.getElementById('progress-fill').style.width = (done / activeItems.length * 100) + '%';
+}
+
+// ── SUBMIT ──
+function submitAnswers() {
+  if (gameOver) return;
+  gameOver = true; stopTimer();
+
+  let correct = 0;
+
+  // Score by placement index — avoids duplicate text matching bugs
+  placements.forEach((placedCat, i) => {
+    if (placedCat === null) return;
+    const ok = activeItems[i].cat === placedCat;
+    if (ok) correct++;
+  });
+  // Visually mark bucket items by matching text+index via data attribute
+  document.querySelectorAll('.placed-item').forEach(el => {
+    const idx = parseInt(el.dataset.itemIndex);
+    if (isNaN(idx)) return;
+    const ok = activeItems[idx].cat === placements[idx];
+    el.classList.add(ok ? 'correct' : 'wrong');
+  });
+
+  showResults(correct);
+}
+
+function showResults(correct) {
+  const total = activeItems.length;
+  const pct = Math.round(correct/total*100);
+  const [emoji,heading] = pct===100?['🏆','Perfect!']
+    :pct>=75?['🎉','Well sorted!']
+    :pct>=50?['👍','Good effort!']
+    :['📚','Keep studying!'];
+
+  document.getElementById('res-emoji').textContent = emoji;
+  document.getElementById('res-heading').textContent = heading;
+  document.getElementById('res-score').textContent = `${correct}/${total} correct`;
+
+  // Build per-category breakdown
+  const cont = document.getElementById('result-cats');
+  cont.innerHTML = '';
+  for (let c = 0; c < selectedCats; c++) {
+    const block = document.createElement('div');
+    block.className = 'result-cat-block';
+    block.style.cssText = `background:var(--cat${c}-bg);border:1px solid var(--cat${c}-border);`;
+
+    const title = document.createElement('div');
+    title.className = 'result-cat-title';
+    title.style.color = CAT_COLOURS[c];
+    title.textContent = CATEGORIES[c];
+    block.appendChild(title);
+
+    const itemsWrap = document.createElement('div');
+    itemsWrap.className = 'result-items';
+
+    activeItems.forEach((item, i) => {
+      if (placements[i] === c) {
+        const ok = item.cat === c;
+        const chip = document.createElement('div');
+        chip.className = 'result-item ' + (ok?'correct':'wrong');
+        chip.innerHTML = item.text + (!ok
+          ? `<span class="correct-cat">→ ${CATEGORIES[item.cat]}</span>`
+          : '');
+        itemsWrap.appendChild(chip);
+      }
+    });
+
+    if (!itemsWrap.children.length) {
+      itemsWrap.innerHTML = '<span style="font-size:0.72rem;color:var(--text-dim)">Nothing placed here</span>';
+    }
+
+    block.appendChild(itemsWrap);
+    cont.appendChild(block);
+  }
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+// ── TIMER ──
+function startTimer() {
+  timerSecs = TIMER_SECS[activeItems.length] || 120;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timerSecs--; updateTimerDisplay();
+    if (timerSecs<=0) { stopTimer(); submitAnswers(); }
+  }, 1000);
+}
+function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+function updateTimerDisplay() {
+  const m=Math.floor(timerSecs/60),s=timerSecs%60;
+  const el=document.getElementById('hd-timer');
+  if (!el) return;
+  el.textContent=`${m}:${s.toString().padStart(2,'0')}`;
+  el.classList.toggle('urgent',timerSecs<=20);
+}
+document.getElementById('timer-toggle').addEventListener('change',function(){
+  timerOn=this.checked;
+  document.getElementById('hd-timer').classList.toggle('active',timerOn);
+  stopTimer();
+  if(timerOn && !gameOver && currentIndex < (activeItems.length || 0))startTimer();
+});
+
+// ── RESTART / CHANGE ──
+function goToStart() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-start').classList.add('active');
+  document.getElementById('hd-right').style.display='none';
+  stopTimer();
+}
+function restart() {
+  document.getElementById('overlay').classList.remove('open');
+  startGame();
+}
+document.getElementById('btn-restart').addEventListener('click', goToStart);
+document.getElementById('btn-retry').addEventListener('click', restart);
+document.getElementById('btn-change').addEventListener('click', goToStart);
+</script>
+</body>
+</html>

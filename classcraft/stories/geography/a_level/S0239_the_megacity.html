@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ClassCraft — The Megacity</title>
+  <link rel="stylesheet" href="../../../style.css"/>
+  <style>
+/* ═══════════════════════════════════════════════
+       SCIENCE STORY ENGINE — style layer
+       All visual decisions live here.
+       Story authors never touch this section.
+    ═══════════════════════════════════════════════ */
+
+    .story-wrap {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 3rem 1.25rem 6rem;
+    }
+
+    @media (min-width: 768px) {
+      .story-wrap { padding: 5rem 2rem 8rem; }
+    }
+
+    /* ── Progress ── */
+    .progress-track {
+      height: 2px;
+      background: var(--parchment-deep);
+      margin-bottom: 2.5rem;
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 1px;
+      transition: width 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      width: 0%;
+    }
+
+    /* ── Panel transitions ── */
+    .panel {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+    .panel.in { opacity: 1; transform: translateY(0); }
+
+    /* ── Typography ── */
+    .eyebrow {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .story-h {
+      font-family: var(--font-display);
+      font-size: clamp(1.7rem, 5vw, 2.6rem);
+      font-weight: 300;
+      line-height: 1.12;
+      margin-bottom: 1.75rem;
+      color: var(--ink);
+    }
+
+    .story-prose {
+      font-size: 1.05rem;
+      line-height: 1.88;
+      color: var(--ink-mid);
+    }
+    .story-prose p { margin-bottom: 1.1em; max-width: 100%; }
+    .story-prose p:last-child { margin-bottom: 0; }
+    .story-prose strong { color: var(--ink); font-weight: 500; }
+    .story-prose em { font-style: italic; }
+
+    /* ── Scene illustration ── */
+    .scene {
+      width: 100%;
+      aspect-ratio: 16 / 6;
+      background: var(--parchment-mid);
+      border: 1px solid var(--parchment-deep);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 1.75rem;
+    }
+    .scene svg { width: 100%; height: 100%; }
+
+    /* ── Knowledge callout ── */
+    .fact-box {
+      border-left: 3px solid var(--accent);
+      background: var(--parchment-mid);
+      padding: 1.1rem 1.3rem;
+      margin: 1.75rem 0;
+      border-radius: 0 3px 3px 0;
+    }
+    .fact-box .fact-label {
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 0.45rem;
+    }
+    .fact-box p {
+      font-size: 0.88rem;
+      color: var(--ink-mid);
+      line-height: 1.65;
+      margin: 0;
+      max-width: 100%;
+    }
+
+    /* ── Formula display ── */
+    .formula-box {
+      background: var(--parchment-deep);
+      border: 1px solid rgba(139,94,60,0.2);
+      border-radius: 3px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.75rem 0;
+      text-align: center;
+    }
+    .formula-box .formula-label {
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 0.75rem;
+    }
+    .formula-box .formula-main {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 4vw, 1.9rem);
+      font-weight: 400;
+      color: var(--ink);
+      letter-spacing: 0.04em;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .formula-box .formula-vars {
+      font-size: 0.8rem;
+      color: var(--ink-mid);
+      line-height: 1.7;
+    }
+
+    /* ── Worked example ── */
+    .worked {
+      background: var(--parchment-mid);
+      border: 1px solid var(--parchment-deep);
+      border-radius: 3px;
+      padding: 1.1rem 1.3rem;
+      margin: 1.75rem 0;
+    }
+    .worked-label {
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      display: block;
+      margin-bottom: 0.6rem;
+    }
+    .worked-steps {
+      font-size: 0.88rem;
+      color: var(--ink-mid);
+      line-height: 1.85;
+      margin: 0;
+      max-width: 100%;
+    }
+    .worked-steps strong { color: var(--ink); font-weight: 500; }
+
+    /* ── Answer input zone ── */
+    .answer-zone {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .answer-prompt {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--ink);
+      margin-bottom: 1.1rem;
+    }
+
+    /* Numeric input */
+    .answer-numeric {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .answer-numeric input[type="number"] {
+      width: 120px;
+      padding: 0.7rem 0.9rem;
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--ink);
+      background: var(--parchment);
+      border: 1px solid var(--parchment-deep);
+      border-radius: 2px;
+      outline: none;
+      transition: border-color 0.2s;
+      -moz-appearance: textfield;
+    }
+    .answer-numeric input::-webkit-inner-spin-button,
+    .answer-numeric input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .answer-numeric input:focus { border-color: var(--accent); }
+    .answer-unit {
+      font-size: 0.9rem;
+      color: var(--ink-mid);
+      font-style: italic;
+    }
+
+    /* MCQ choices */
+    .mcq-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .mcq-btn {
+      width: 100%;
+      text-align: left;
+      padding: 0.9rem 1.1rem;
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      color: var(--ink-mid);
+      background: var(--parchment-mid);
+      border: 1px solid var(--parchment-deep);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.15s;
+      position: relative;
+    }
+    .mcq-btn::before {
+      content: '→';
+      margin-right: 0.55rem;
+      color: var(--accent-light);
+      display: inline-block;
+      transition: transform 0.15s;
+    }
+    .mcq-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--parchment);
+      color: var(--ink);
+      transform: translateX(4px);
+    }
+    .mcq-btn:hover:not(:disabled)::before { transform: translateX(4px); }
+    .mcq-btn:disabled { cursor: default; }
+
+    /* Submit button */
+    .submit-btn {
+      margin-top: 0.85rem;
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.8rem 1.6rem;
+      border: 1px solid var(--ink);
+      color: var(--ink);
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      border-radius: 1px;
+    }
+    .submit-btn:hover { background: var(--ink); color: var(--parchment); }
+    .submit-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* ── Feedback states ── */
+    .feedback {
+      display: none;
+      margin-top: 1.1rem;
+      padding: 1rem 1.2rem;
+      border-radius: 3px;
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+    .feedback.show { display: block; }
+    .feedback.correct {
+      background: #eef6e8;
+      border: 1px solid #7aad4a;
+      color: #2d5a0f;
+    }
+    .feedback.wrong {
+      background: #fbefef;
+      border: 1px solid #c97a7a;
+      color: #5c1a1a;
+    }
+    .feedback.hint {
+      background: var(--parchment-mid);
+      border: 1px solid var(--parchment-deep);
+      color: var(--ink-mid);
+    }
+    .feedback .fb-label {
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 0.4rem;
+      opacity: 0.75;
+    }
+
+    /* ── Consequence story beat ── */
+    .consequence {
+      display: none;
+      margin-top: 1.25rem;
+      padding: 1.1rem 1.3rem;
+      background: var(--parchment-mid);
+      border-left: 3px solid var(--accent-light);
+      border-radius: 0 3px 3px 0;
+      font-size: 0.92rem;
+      line-height: 1.7;
+      color: var(--ink-mid);
+      font-style: italic;
+    }
+    .consequence.show { display: block; }
+    .consequence strong { font-style: normal; color: var(--ink); font-weight: 500; }
+
+    /* ── Attempts tracker ── */
+    .attempts-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.65rem;
+    }
+    .attempt-pip {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--parchment-deep);
+      border: 1px solid var(--parchment-deep);
+      transition: background 0.2s;
+    }
+    .attempt-pip.used { background: var(--accent-light); border-color: var(--accent-light); }
+    .attempt-pip.wrong-pip { background: #c97a7a; border-color: #c97a7a; }
+    .attempts-label {
+      font-size: 0.72rem;
+      color: var(--ink-light);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Continue button ── */
+    .continue-btn {
+      display: none;
+      margin-top: 1.4rem;
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.8rem 1.6rem;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      border-radius: 1px;
+    }
+    .continue-btn.show { display: inline-block; }
+    .continue-btn:hover { background: var(--accent); color: var(--parchment); }
+
+    /* ── Intro screen ── */
+    .intro { text-align: center; }
+    .intro .meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 1.5rem 0 2rem;
+    }
+    .meta-tag {
+      font-size: 0.67rem;
+      font-weight: 500;
+      padding: 0.28rem 0.75rem;
+      border-radius: 20px;
+      border: 1px solid var(--rule);
+      color: var(--ink-mid);
+      letter-spacing: 0.05em;
+    }
+    .start-btn {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.9rem 2.1rem;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      border-radius: 1px;
+    }
+    .start-btn:hover { background: var(--accent); color: var(--parchment); }
+
+    /* ── End screen ── */
+    .end-screen { display: none; }
+    .end-screen.show { display: block; }
+    .end-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--rule);
+      padding: 0.35rem 1rem;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+    }
+    .score-display {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 10vw, 5rem);
+      font-weight: 300;
+      color: var(--accent);
+      line-height: 1;
+      margin: 1rem 0 0.25rem;
+    }
+    .score-label {
+      font-size: 0.8rem;
+      color: var(--ink-light);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .score-summary {
+      font-size: 0.95rem;
+      color: var(--ink-mid);
+      line-height: 1.75;
+      max-width: 52ch;
+      margin: 1.5rem auto 2rem;
+    }
+    .question-review {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+    .review-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--parchment-mid);
+      border: 1px solid var(--parchment-deep);
+      border-radius: 2px;
+      font-size: 0.85rem;
+      color: var(--ink-mid);
+      line-height: 1.5;
+    }
+    .review-icon { flex-shrink: 0; font-size: 1rem; }
+    .restart-btn {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.85rem 1.75rem;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      border-radius: 1px;
+    }
+    .restart-btn:hover { background: var(--accent); color: var(--parchment); }
+
+    /* ── Hint toggle ── */
+    .hint-toggle {
+      font-size: 0.75rem;
+      color: var(--accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      margin-top: 0.5rem;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="../../../index.html" class="nav-logo">Class<span>Craft</span></a>
+      <div class="nav-overlay" id="nav-overlay"></div>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="../../../index.html">Home</a></li>
+        <li><a href="../../../games.html">Games</a></li>
+        <li><a href="../../../draw-it.html">Draw It</a></li>
+        <li><a href="../../../roleplay.html">Roleplay</a></li>
+        <li><a href="../../../about.html">Contributors</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="story-wrap">
+    <div id="intro-screen" class="panel intro"></div>
+    <div id="scene-screen" style="display:none;">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="panel" id="scene-panel"></div>
+    </div>
+    <div id="end-screen" class="end-screen"></div>
+  </div>
+  <footer><div class="container"><p>&copy; <span id="year"></span> ClassCraft &middot; classcraft.co.uk</p></div></footer>
+  <script>const STORY_DATA = {"meta": {"title": "The Megacity", "subtitle": "Lagos grows by 3,000 people every day. Can governance keep pace with one of the world's fastest-growing megacities?", "subject": "Geography", "topic": "Megacity Growth & Governance", "level": "A-Level", "tags": ["Geography", "A-Level", "Urbanisation", "~12 min", "3 questions"], "intro": "You are an urban governance researcher studying Lagos, Nigeria — projected to become the world's largest city by 2100. With a population exceeding 16 million and growing by over a million people per year, Lagos faces enormous challenges in housing, sanitation, and transport."}, "scenes": {"scene1": "<svg viewBox='0 0 700 262' xmlns='http://www.w3.org/2000/svg'><rect width='700' height='262' fill='#d8cfc3'/>\n<rect x='0' y='180' width='700' height='82' fill='#8a7868'/>\n<rect x='40' y='60' width='35' height='120' fill='#706860'/>\n<rect x='90' y='30' width='30' height='150' fill='#a09080'/>\n<rect x='140' y='80' width='45' height='100' fill='#b0a898'/>\n<rect x='200' y='50' width='25' height='130' fill='#706860'/>\n<rect x='250' y='90' width='55' height='90' fill='#8a7868'/>\n<rect x='320' y='20' width='30' height='160' fill='#a09080'/>\n<rect x='370' y='70' width='40' height='110' fill='#706860'/>\n<rect x='430' y='40' width='35' height='140' fill='#b0a898'/>\n<rect x='480' y='100' width='50' height='80' fill='#a09080'/>\n<rect x='550' y='60' width='30' height='120' fill='#706860'/>\n<rect x='600' y='110' width='60' height='70' fill='#8a7868'/></svg>", "scene2": "<svg viewBox='0 0 700 262' xmlns='http://www.w3.org/2000/svg'><rect width='700' height='262' fill='#d8cfc3'/>\n<rect x='0' y='180' width='700' height='82' fill='#8a7868'/>\n<rect x='40' y='60' width='35' height='120' fill='#706860'/>\n<rect x='90' y='30' width='30' height='150' fill='#a09080'/>\n<rect x='140' y='80' width='45' height='100' fill='#b0a898'/>\n<rect x='200' y='50' width='25' height='130' fill='#706860'/>\n<rect x='250' y='90' width='55' height='90' fill='#8a7868'/>\n<rect x='320' y='20' width='30' height='160' fill='#a09080'/>\n<rect x='370' y='70' width='40' height='110' fill='#706860'/>\n<rect x='430' y='40' width='35' height='140' fill='#b0a898'/>\n<rect x='480' y='100' width='50' height='80' fill='#a09080'/>\n<rect x='550' y='60' width='30' height='120' fill='#706860'/>\n<rect x='600' y='110' width='60' height='70' fill='#8a7868'/></svg>", "scene3": "<svg viewBox='0 0 700 262' xmlns='http://www.w3.org/2000/svg'><rect width='700' height='262' fill='#e8e0d4'/>\n<rect x='0' y='180' width='700' height='82' fill='#8a7868'/>\n<rect x='60' y='80' width='50' height='100' fill='#706860'/>\n<rect x='130' y='50' width='40' height='130' fill='#a09080'/>\n<rect x='190' y='100' width='55' height='80' fill='#b0a898'/>\n<rect x='270' y='60' width='35' height='120' fill='#706860'/>\n<rect x='330' y='90' width='60' height='90' fill='#8a7868'/>\n<rect x='420' y='40' width='45' height='140' fill='#a09080'/>\n<rect x='490' y='70' width='50' height='110' fill='#706860'/>\n<rect x='560' y='110' width='70' height='70' fill='#b0a898'/>\n<circle cx='650' cy='50' r='25' fill='#b89878'/></svg>"}, "nodes": [{"id": "start", "type": "story", "chapter": "Mission Briefing", "title": "The Scale of Lagos", "scene": "scene1", "body": "<p>Your briefing from the Lagos State Government contains staggering figures:</p><p>Current population (2024 estimate): <strong>16.6 million</strong><br>Annual growth rate: <strong>3.5%</strong><br>Population density in central Lagos: <strong>20,000 people per km²</strong><br>Percentage living in informal settlements: <strong>60%</strong></p><p>You must first calculate the <strong>daily population increase</strong>.</p>", "factBox": {"label": "Megacity Definition", "text": "A megacity has a population exceeding 10 million. In 1970, there were only 3 megacities. By 2030, there will be over 40. Most growth is occurring in the Global South."}, "next": "q1"}, {"id": "q1", "type": "numeric", "chapter": "Question 1 of 3 — Daily Growth", "title": "Growing Every Day", "scene": "scene1", "body": "<p>Population: <strong>16,600,000</strong><br>Annual growth rate: <strong>3.5%</strong><br>Days in a year: <strong>365</strong></p>", "workedBox": {"label": "How to approach it", "steps": "<p><strong>Step 1:</strong> Annual increase = 16,600,000 × 0.035 = 581,000</p><p><strong>Step 2:</strong> Daily increase = 581,000 ÷ 365</p>"}, "question": "How many people are added to Lagos's population each day (to the nearest hundred)?", "unit": "people per day", "answer": 1592, "tolerance": 50, "maxAttempts": 2, "hintText": "Annual increase = 16,600,000 × 0.035 = 581,000. Divide by 365.", "feedbackCorrect": "Correct — approximately 1,592 people per day. That is the equivalent of filling a large secondary school every single day.", "feedbackWrong": "A common mistake is giving generic answers without specific place-based detail. Always name locations, dates, and statistics from your case studies. The answer is approximately 1,592. Annual increase = 16,600,000 × 0.035 = 581,000. Daily = 581,000 ÷ 365 = 1,592.", "consequence": "<strong>The Lagos planning officer looks weary.</strong> <em>\"Almost 1,600 new residents every day. We cannot build formal housing fast enough. That is why 60% of our population lives in informal settlements.\"</em>", "next": "mid1", "bloomsLevel": "Analyse"}, {"id": "mid1", "type": "story", "chapter": "Informal Housing", "title": "Life in Makoko", "scene": "scene2", "body": "<p>You visit <strong>Makoko</strong>, one of Lagos's most famous informal settlements — a community of over <strong>250,000 people</strong> built on stilts over the Lagos Lagoon.</p><p>Of Lagos's <strong>16.6 million</strong> residents, <strong>60%</strong> live in informal settlements like Makoko. You need to calculate the <strong>absolute number</strong> living informally.</p>", "factBox": {"label": "Informal Settlements", "text": "Informal settlements lack formal land tenure, reliable utilities, and adequate sanitation. They are not signs of failure — they are rational responses to housing shortages and poverty. Upgrading informal settlements 'in situ' is often more effective than demolition."}, "next": "q2"}, {"id": "q2", "type": "numeric", "chapter": "Question 2 of 3 — Informal Population", "title": "The Scale of Informality", "scene": "scene2", "body": "<p>Lagos population: <strong>16,600,000</strong><br>Percentage in informal settlements: <strong>60%</strong></p>", "workedBox": {"label": "How to approach it", "steps": "<p><strong>Step 1:</strong> Informal population = total population × proportion</p><p><strong>Step 2:</strong> = 16,600,000 × 0.60</p>"}, "question": "How many people in Lagos live in informal settlements (in millions, to 1 decimal place)?", "unit": "million", "answer": 10.0, "tolerance": 0.1, "maxAttempts": 2, "hintText": "16,600,000 × 0.60. Express in millions.", "feedbackCorrect": "Correct — approximately 10.0 million people. Ten million people living without formal water supply, sewage systems, or secure housing.", "feedbackWrong": "A common mistake is giving generic answers without specific place-based detail. Always name locations, dates, and statistics from your case studies. The answer is approximately 10.0 million. 16,600,000 × 0.60 = 9,960,000 ≈ 10.0 million.", "consequence": "<strong>You document the scale of the challenge.</strong> <em>\"Ten million people in informal settlements. Any governance strategy that ignores informal settlements ignores most of the city.\"</em>", "next": "mid2", "bloomsLevel": "Analyse"}, {"id": "mid2", "type": "story", "chapter": "Governance Evaluation", "title": "Can Government Keep Up?", "scene": "scene3", "body": "<p>You evaluate the <strong>effectiveness of governance</strong> in managing Lagos's growth. The Lagos State Government has introduced several initiatives:</p><p>• <strong>Bus Rapid Transit (BRT)</strong> — dedicated bus lanes<br>• <strong>Eko Atlantic</strong> — a new planned city on reclaimed land<br>• <strong>Makoko demolition orders</strong> — controversial plans to demolish waterfront settlements</p>", "factBox": {"label": "Top-Down vs Bottom-Up", "text": "Top-down governance imposes solutions from above. Bottom-up approaches involve communities in decision-making. Research consistently shows that bottom-up approaches are more effective and sustainable for informal settlement improvement."}, "next": "q3"}, {"id": "q3", "type": "mcq", "chapter": "Question 3 of 3 — Governance Strategy", "title": "The Most Effective Approach", "scene": "scene3", "body": "<p>Evaluate which governance approach is most likely to effectively and sustainably improve living conditions for the majority of Lagos's residents.</p>", "question": "Which governance approach would be most effective for improving living conditions in Lagos?", "options": [{"text": "Demolish all informal settlements and relocate residents to new government-built housing estates on the city outskirts", "correct": false}, {"text": "Upgrade existing informal settlements in situ by improving water supply, sanitation, and road access while involving communities in planning decisions", "correct": true}, {"text": "Build more luxury developments like Eko Atlantic to attract foreign investment, which will eventually benefit all residents", "correct": false}, {"text": "Restrict rural-urban migration by requiring permits to enter the city, limiting population growth to manageable levels", "correct": false}], "maxAttempts": 2, "hintText": "Consider which approach addresses the needs of the 10 million people already living in informal settlements.", "feedbackCorrect": "Correct. In-situ upgrading is the most effective approach because it preserves existing community networks, economic activities, and social structures while addressing critical needs — clean water, sanitation, and access roads.", "feedbackWrong": "A common mistake is giving generic answers without specific place-based detail. Always name locations, dates, and statistics from your case studies. The correct answer is in-situ upgrading of informal settlements with community involvement. This is the approach supported by the UN-Habitat and most urban development researchers.", "consequence": "<strong>You submit your governance report.</strong> <em>\"Lagos does not need grand plans for the few — it needs practical improvements for the many. In-situ upgrading, delivered with community participation, is how you govern a megacity.\"</em>", "next": "end", "examTip": "In the exam, use a named case study with specific facts and figures. Generic answers without place-specific detail lose marks.", "bloomsLevel": "Evaluate"}], "ending": {"perfect": "Exceptional urban governance analysis. You quantified Lagos's daily growth, calculated the informal settlement population, and identified the most effective governance strategy.", "partial": "You engaged with megacity governance, but some calculations or evaluations need strengthening. Return to refine your understanding.", "retry": "Megacity governance analysis requires both data skills and critical evaluation. Try again to achieve a perfect score.", "topic": "Megacity growth and governance — population growth calculations, informal settlements, governance strategies (in-situ upgrading, demolition, market-driven development), top-down vs bottom-up approaches, and the case study of Lagos."}};</script>
+  <script>
+(function () {
+
+    /* ── State ── */
+    let state = {
+      nodeIndex:   0,
+      attempts:    0,
+      score:       0,
+      totalQ:      0,
+      correctQ:    0,
+      log:         [],
+      pendingNext: null
+    };
+
+    const S       = STORY_DATA;
+    const nodes   = S.nodes;
+    const nodeMap = {};
+    nodes.forEach(n => nodeMap[n.id] = n);
+
+    /* ── Boot ── */
+    function boot() {
+      document.title = `ClassCraft \u2014 ${S.meta.title}`;
+      document.getElementById('year').textContent = new Date().getFullYear();
+      buildIntro();
+    }
+
+    /* ── Intro screen ── */
+    function buildIntro() {
+      const intro = document.getElementById('intro-screen');
+      intro.innerHTML = `
+        <span class="eyebrow">Interactive ${S.meta.subject} Lesson</span>
+        <h1 class="story-h">${S.meta.title}</h1>
+        <p class="story-prose" style="margin:0 auto 0.5rem; text-align:center; max-width:52ch;">${S.meta.subtitle}</p>
+        <p class="story-prose" style="margin:0 auto 1.5rem; color:var(--ink-mid); text-align:center; max-width:52ch; font-size:0.95rem;">${S.meta.intro}</p>
+        <div class="meta-tags">${S.meta.tags.map(t => `<span class="meta-tag">${t}</span>`).join('')}</div>
+        <button class="start-btn" onclick="startStory()">Begin mission \u2192</button>
+      `;
+      show(intro);
+    }
+
+    /* ── Start ── */
+    window.startStory = function () {
+      document.getElementById('intro-screen').style.display = 'none';
+      document.getElementById('scene-screen').style.display = 'block';
+      renderNode(nodes[0].id);
+    };
+
+    /* ── Render a node ── */
+    function renderNode(id) {
+      const node = nodeMap[id];
+      if (!node) { showEnd(); return; }
+      if (id === 'end') { showEnd(); return; }
+
+      state.attempts    = 0;
+      state.pendingNext = node.next;
+
+      const panel = document.getElementById('scene-panel');
+      panel.classList.remove('in');
+
+      updateProgress(id);
+
+      setTimeout(() => {
+        panel.innerHTML = buildNodeHTML(node);
+        panel.classList.add('in');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        bindNode(node);
+      }, 320);
+    }
+
+    /* ── Progress bar ── */
+    function updateProgress(id) {
+      const total   = nodes.length;
+      const idx     = nodes.findIndex(n => n.id === id);
+      const pct     = total <= 1 ? 0 : Math.round((idx / (total - 1)) * 100);
+      document.getElementById('progress-fill').style.width = pct + '%';
+    }
+
+    /* ── Build node HTML ── */
+    function buildNodeHTML(node) {
+      let h = '';
+
+      h += `<span class="eyebrow">${esc(node.chapter || '')}</span>`;
+      h += `<h2 class="story-h">${esc(node.title || '')}</h2>`;
+
+      if (node.scene && S.scenes[node.scene]) {
+        h += `<div class="scene">${S.scenes[node.scene]}</div>`;
+      }
+
+      if (node.body) {
+        h += `<div class="story-prose">${node.body}</div>`;
+      }
+
+      if (node.factBox) {
+        h += `<div class="fact-box">
+          <span class="fact-label">\ud83d\udcda ${esc(node.factBox.label)}</span>
+          <p>${esc(node.factBox.text)}</p>
+        </div>`;
+      }
+
+      if (node.formulaBox) {
+        h += `<div class="formula-box">
+          <span class="formula-label">\ud83d\udd22 ${esc(node.formulaBox.label)}</span>
+          <span class="formula-main">${esc(node.formulaBox.formula)}</span>
+          <span class="formula-vars">${esc(node.formulaBox.vars)}</span>
+        </div>`;
+      }
+
+      if (node.workedBox) {
+        h += `<div class="worked">
+          <span class="worked-label">\u270f\ufe0f ${esc(node.workedBox.label)}</span>
+          <button class="hint-toggle" onclick="var s=this.nextElementSibling;if(s.style.display==='none'){s.style.display='block';this.textContent='Hide working ↑'}else{s.style.display='none';this.textContent='Show working ↓'}">Show working ↓</button>
+          <div class="worked-steps" style="display:none">${node.workedBox.steps}</div>
+        </div>`;
+      }
+
+      if (node.type === 'numeric') {
+        h += `<div class="answer-zone">
+          <p class="answer-prompt">${esc(node.question)}</p>
+          <div class="answer-numeric">
+            <input type="number" id="num-input" placeholder="?" step="any" />
+            <span class="answer-unit">${esc(node.unit || '')}</span>
+          </div>
+          ${attemptsHTML(node.maxAttempts || 2)}
+          <div id="hint-area"></div>
+          <div class="feedback" id="feedback"></div>
+          <div class="consequence" id="consequence"></div>
+          <br>
+          <button class="submit-btn" id="submit-btn" onclick="submitNumeric()">Check answer \u2192</button>
+          <button class="continue-btn" id="continue-btn" onclick="goNext()">Continue \u2192</button>
+        </div>`;
+      } else if (node.type === 'mcq') {
+        h += `<div class="answer-zone">
+          <p class="answer-prompt">${esc(node.question)}</p>
+          <div class="mcq-choices" id="mcq-choices">
+            ${(node.options || []).map((opt, i) =>
+              `<button class="mcq-btn" id="opt-${i}" onclick="submitMCQ(${i})">${esc(opt.text)}</button>`
+            ).join('')}
+          </div>
+          ${attemptsHTML(node.maxAttempts || 2)}
+          <div id="hint-area"></div>
+          <div class="feedback" id="feedback"></div>
+          <div class="consequence" id="consequence"></div>
+          <button class="continue-btn" id="continue-btn" onclick="goNext()">Continue \u2192</button>
+        </div>`;
+      } else {
+        h += `<div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--rule);">
+          <button class="continue-btn show" id="continue-btn" onclick="goNext()">Continue \u2192</button>
+        </div>`;
+      }
+
+      return h;
+    }
+
+    /* ── Attempts pips ── */
+    function attemptsHTML(max) {
+      let pips = '';
+      for (let i = 0; i < max; i++) {
+        pips += `<div class="attempt-pip" id="pip-${i}"></div>`;
+      }
+      return `<div class="attempts-row">${pips}<span class="attempts-label">${max} attempt${max > 1 ? 's' : ''}</span></div>`;
+    }
+
+    /* ── Bind interactive elements ── */
+    function bindNode(node) {
+      const ni = document.getElementById('num-input');
+      if (ni) {
+        ni.addEventListener('keydown', e => {
+          if (e.key === 'Enter') submitNumeric();
+        });
+        ni.focus();
+      }
+    }
+
+    /* ── Numeric submit ── */
+    window.submitNumeric = function () {
+      const node  = getCurrentNode();
+      const input = document.getElementById('num-input');
+      const val   = parseFloat(input.value);
+
+      if (isNaN(val)) { input.focus(); return; }
+
+      state.attempts++;
+      markPip(state.attempts - 1, true);
+
+      const tol   = node.tolerance || 0;
+      const correct = Math.abs(val - node.answer) <= tol;
+
+      if (correct) {
+        handleCorrect(node, val);
+      } else {
+        handleWrong(node, val);
+      }
+    };
+
+    /* ── MCQ submit ── */
+    window.submitMCQ = function (idx) {
+      const node = getCurrentNode();
+      const opt  = node.options[idx];
+
+      state.attempts++;
+      markPip(state.attempts - 1, false);
+
+      (node.options || []).forEach((_, i) => {
+        const b = document.getElementById(`opt-${i}`);
+        if (b) { b.disabled = true; b.style.opacity = '0.45'; }
+      });
+      const chosen = document.getElementById(`opt-${idx}`);
+      if (chosen) { chosen.style.opacity = '1'; chosen.style.borderColor = 'var(--accent)'; }
+
+      if (opt.correct) {
+        handleCorrect(node, opt.text);
+      } else {
+        handleWrong(node, opt.text);
+      }
+    };
+
+    /* ── Correct answer ── */
+    function handleCorrect(node, userVal) {
+      state.correctQ++;
+      state.totalQ++;
+      state.log.push({ question: node.title, correct: true, userAnswer: userVal });
+
+      showFeedback('correct', '\u2713 Correct', node.feedbackCorrect || 'Well done.');
+
+      if (node.consequence) {
+        showConsequence(node.consequence);
+      }
+
+      disableSubmit();
+      state.pendingNext = node.next;
+      showContinue();
+    }
+
+    /* ── Wrong answer ── */
+    function handleWrong(node, userVal) {
+      const max = node.maxAttempts || 2;
+
+      if (state.attempts < max) {
+        showFeedback('wrong', '\u2717 Not quite', 'That\'s not right. Check your working and try again.');
+        if (node.hintText) {
+          showHint(node.hintText);
+        }
+        const sub = document.getElementById('submit-btn');
+        if (sub) sub.disabled = false;
+        if (node.type === 'mcq') {
+          (node.options || []).forEach((opt, i) => {
+            if (!opt.correct) {
+              const b = document.getElementById(`opt-${i}`);
+            }
+          });
+        }
+        markPip(state.attempts - 1, false, true);
+      } else {
+        state.totalQ++;
+        state.log.push({ question: node.title, correct: false, userAnswer: userVal });
+
+        showFeedback('wrong', '\u2717 Out of attempts', node.feedbackWrong || `The correct answer was ${node.answer}.`);
+
+        if (node.consequence) {
+          showConsequence(node.consequence);
+        }
+
+        disableSubmit();
+        state.pendingNext = node.nextWrong || node.next;
+        showContinue();
+      }
+    }
+
+    /* ── UI helpers ── */
+    function showFeedback(type, label, text) {
+      const fb = document.getElementById('feedback');
+      if (!fb) return;
+      fb.className = `feedback show ${type}`;
+      fb.innerHTML = `<span class="fb-label">${esc(label)}</span>${esc(text)}`;
+    }
+
+    function showConsequence(html) {
+      const c = document.getElementById('consequence');
+      if (!c) return;
+      c.innerHTML = html;
+      c.classList.add('show');
+    }
+
+    function showHint(text) {
+      const ha = document.getElementById('hint-area');
+      if (!ha) return;
+      ha.innerHTML = `<div class="feedback hint show" style="margin-top:0.5rem"><span class="fb-label">\ud83d\udca1 Hint</span>${esc(text)}</div>`;
+    }
+
+    function disableSubmit() {
+      const sub = document.getElementById('submit-btn');
+      if (sub) sub.disabled = true;
+      const ni = document.getElementById('num-input');
+      if (ni) ni.disabled = true;
+    }
+
+    function showContinue() {
+      const btn = document.getElementById('continue-btn');
+      if (btn) btn.classList.add('show');
+    }
+
+    function markPip(idx, pending, wrong) {
+      const pip = document.getElementById(`pip-${idx}`);
+      if (!pip) return;
+      if (wrong) {
+        pip.classList.add('wrong-pip');
+      } else {
+        pip.classList.add('used');
+      }
+    }
+
+    /* ── Navigate to next node ── */
+    window.goNext = function () {
+      const next = state.pendingNext;
+      if (!next) return;
+      state.pendingNext = null;
+      if (next === 'end' || !nodeMap[next]) {
+        showEnd();
+      } else {
+        renderNode(next);
+      }
+    };
+
+    /* ── End screen ── */
+    function showEnd() {
+      document.getElementById('scene-screen').style.display  = 'none';
+      document.getElementById('progress-fill').style.width   = '100%';
+
+      const pct     = state.totalQ > 0 ? Math.round((state.correctQ / state.totalQ) * 100) : 100;
+      const summary = pct === 100
+        ? S.ending.perfect
+        : pct >= 50
+          ? S.ending.partial
+          : S.ending.partial;
+
+      let reviewHTML = '';
+      state.log.forEach(entry => {
+        reviewHTML += `<div class="review-item">
+          <span class="review-icon">${entry.correct ? '\u2713' : '\u2717'}</span>
+          <div>${esc(entry.question)} \u2014 ${entry.correct ? '<span style="color:#3a7020">answered correctly</span>' : '<span style="color:#8a2020">answer revealed</span>'}</div>
+        </div>`;
+      });
+
+      const endEl = document.getElementById('end-screen');
+      endEl.innerHTML = `
+        <span class="end-badge">Mission Complete</span>
+        <div class="score-display">${pct}%</div>
+        <div class="score-label">accuracy score</div>
+        <p class="score-summary">${esc(summary)}</p>
+        ${reviewHTML ? `<div class="question-review">${reviewHTML}</div>` : ''}
+        <div class="fact-box" style="text-align:left; margin-bottom:2rem;">
+          <span class="fact-label">\ud83d\udcda What you practised</span>
+          <p>${esc(S.ending.topic)}</p>
+        </div>
+        <p style="font-size:0.85rem; color:var(--ink-light); margin-bottom:1.5rem;">${esc(S.ending.retry)}</p>
+        <button class="restart-btn" onclick="restartStory()">\u2190 Try again</button>
+      `;
+      endEl.classList.add('show');
+      endEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /* ── Restart ── */
+    window.restartStory = function () {
+      state = { nodeIndex: 0, attempts: 0, score: 0, totalQ: 0, correctQ: 0, log: [], pendingNext: null };
+      document.getElementById('end-screen').classList.remove('show');
+      document.getElementById('end-screen').innerHTML = '';
+      document.getElementById('scene-screen').style.display  = 'block';
+      document.getElementById('progress-fill').style.width   = '0%';
+      renderNode(nodes[0].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    /* ── Helpers ── */
+    function getCurrentNode() {
+      const panel = document.getElementById('scene-panel');
+      const ey    = panel ? panel.querySelector('.eyebrow') : null;
+      const label = ey ? ey.textContent : '';
+      return nodes.find(n => n.chapter === label) || nodes[0];
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function show(el) {
+      setTimeout(() => el.classList.add('in'), 60);
+    }
+
+    /* ── Nav ── */
+    const toggle  = document.getElementById('nav-toggle');
+    const links   = document.getElementById('nav-links');
+    const overlay = document.getElementById('nav-overlay');
+    const open  = () => { toggle.classList.add('open');    links.classList.add('open');    overlay.classList.add('open');    document.body.style.overflow = 'hidden'; };
+    const close = () => { toggle.classList.remove('open'); links.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = '';       };
+    toggle.addEventListener('click',   () => toggle.classList.contains('open') ? close() : open());
+    overlay.addEventListener('click',  close);
+    links.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+
+    /* ── Go ── */
+    boot();
+
+  })();
+  </script>
+</body>
+</html>

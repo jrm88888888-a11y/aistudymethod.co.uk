@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecosystem Architects | KS3 Biology Simulation | Free | martine...</title>
+    <meta name="description" content="Play Ecosystem Architects — a free interactive KS3 biology simulation. No login required. Build decision-making skills with this classroom-ready game.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --navy:#312E81;--mid:#4F46E5;--gold:#818CF8;--gold2:#6366F1;
+  --white:#FFFFFF;--offwh:#F5F7FA;--grey:#8892A4;--dgrey:#2D3748;
+  --green:#1E8449;--red:#C0392B;--amber:#E67E22;--card:#FFFFFF;
+  --border:#E2E8F0;--shadow:0 4px 24px rgba(0,0,0,0.10);--r:10px;
+  --btn-a:#1A5276;--btn-b:#145A32;--btn-c:#922B21;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{font-family:'Nunito',sans-serif;background:var(--offwh);color:var(--dgrey);min-height:100vh;display:flex;overflow:hidden;}
+
+.sidebar{width:260px;min-width:260px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;height:100vh;position:relative;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.2rem 0.8rem;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h1{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);letter-spacing:2px;}
+.sidebar-logo p{font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:0.5rem 0;}
+.sidebar-nav button{display:flex;align-items:center;width:100%;padding:0.8rem 1.2rem;background:none;border:none;color:rgba(255,255,255,0.6);font-family:'Nunito',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.2s;text-align:left;gap:0.6rem;}
+.sidebar-nav button:hover{background:rgba(255,255,255,0.08);color:var(--white);}
+.sidebar-nav button.active{background:rgba(255,255,255,0.15);color:var(--gold);border-left:3px solid var(--gold);}
+.sidebar-nav button .check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0;}
+.sidebar-nav button.done .check{background:var(--green);border-color:var(--green);color:var(--white);}
+.sidebar-nav button .phase-dots{margin-left:auto;display:flex;gap:3px;}
+.sidebar-nav button .phase-dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.sidebar-nav button .phase-dots .dot.filled{background:var(--gold);}
+.sidebar-sep{height:1px;background:rgba(255,255,255,0.1);margin:0.3rem 1.2rem;}
+.sidebar-timer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,0.1);}
+.timer-display{font-family:'DM Mono',monospace;font-size:2.2rem;color:var(--gold);text-align:center;margin-bottom:0.5rem;}
+.timer-btns{display:flex;gap:0.5rem;}
+.timer-btns button{flex:1;padding:0.4rem;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:'Nunito',sans-serif;}
+.timer-btns button:hover{background:rgba(255,255,255,0.1);}
+
+.main{flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(0,0,0,0.15);}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+.topbar-phase{display:flex;gap:0.5rem;align-items:center;}
+.phase-step{padding:0.3rem 1rem;border-radius:20px;font-size:0.8rem;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.phase-step.active{background:var(--gold);color:var(--navy);font-weight:600;}
+.phase-step.completed{background:rgba(30,132,73,0.3);color:#6FCF97;}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.topbar-right button{padding:0.3rem 1rem;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.85rem;}
+.topbar-right button:hover{background:rgba(255,255,255,0.1);}
+.topbar-right button.primary{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+.topbar-right button.primary:hover{opacity:0.9;}
+
+.content{flex:1;padding:2rem;max-width:1400px;width:100%;margin:0 auto;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.2rem;}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--navy);letter-spacing:1px;margin-bottom:0.8rem;}
+.card h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:0.5rem;}
+
+.setup-hero{text-align:center;padding:3rem 0 2rem;}
+.setup-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--navy);letter-spacing:3px;}
+.setup-hero p{font-size:1.1rem;color:var(--grey);margin-top:0.5rem;}
+.setup-hero .subtitle{color:var(--gold);font-weight:600;font-size:1.2rem;margin-top:0.2rem;}
+.team-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;}
+.team-input{display:flex;align-items:center;gap:0.8rem;background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:0.8rem 1rem;transition:border-color 0.2s;}
+.team-input:focus-within{border-color:var(--gold);}
+.team-input .num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);width:30px;}
+.team-input input{flex:1;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:1rem;color:var(--dgrey);}
+.team-count-btns{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem;}
+.team-count-btns button{width:48px;height:48px;border-radius:50%;border:2px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.2rem;cursor:pointer;transition:all 0.2s;color:var(--dgrey);}
+.team-count-btns button.active{background:var(--navy);color:var(--gold);border-color:var(--navy);}
+.start-btn{display:block;margin:2rem auto 0;padding:1rem 3rem;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--r);cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+
+.report-card{background:#FFF8E7;border:3px solid #2D2D2D;border-radius:4px;padding:2rem;font-family:Georgia,'Times New Roman',serif;}
+.report-masthead{text-align:center;border-bottom:3px double #2D2D2D;padding-bottom:1rem;margin-bottom:1.5rem;}
+.report-masthead h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#1a1a1a;letter-spacing:4px;}
+.report-masthead .dateline{font-size:0.85rem;color:#666;margin-top:0.3rem;font-style:italic;}
+.report-items{display:grid;gap:0.8rem;}
+.report-item{display:flex;gap:0.8rem;padding:0.6rem 0;border-bottom:1px solid #ddd;align-items:baseline;}
+.report-item .bullet{color:var(--gold);font-weight:bold;font-size:1.2rem;flex-shrink:0;}
+.report-item .text{font-size:1rem;line-height:1.5;color:#333;}
+.event-box{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid var(--amber);border-radius:var(--r);padding:1.2rem 1.5rem;margin-top:1.5rem;}
+.event-box h3{font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:1.3rem;margin-bottom:0.5rem;}
+.event-box p{font-size:1rem;line-height:1.5;}
+.no-event{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:2px solid var(--green);border-radius:var(--r);padding:1rem 1.5rem;margin-top:1.5rem;text-align:center;color:var(--green);font-weight:600;}
+
+.decisions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+.decisions-grid .decision-card:nth-child(5){grid-column:1 / -1;}
+.decision-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:0.8rem 1rem;border-left:4px solid var(--navy);}
+.decision-card .d-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.15rem;}
+.decision-card .d-question{font-size:0.95rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
+.option{display:flex;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:6px;margin-bottom:0.25rem;background:var(--offwh);transition:background 0.15s;align-items:baseline;}
+.option .letter{font-family:'DM Mono',monospace;font-weight:700;font-size:0.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--white);}
+.option .letter.a{background:var(--btn-a);}
+.option .letter.b{background:var(--btn-b);}
+.option .letter.c{background:var(--btn-c);}
+.option .desc{font-size:0.85rem;line-height:1.3;color:var(--dgrey);}
+
+.entry-matrix{width:100%;border-collapse:separate;border-spacing:0;}
+.entry-matrix th{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--white);background:var(--navy);padding:0.8rem;text-align:center;position:sticky;top:0;z-index:5;}
+.entry-matrix th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.entry-matrix th:last-child{border-radius:0 var(--r) 0 0;}
+.entry-matrix td{padding:0.6rem;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+.entry-matrix td:first-child{text-align:left;font-weight:600;font-size:0.9rem;color:var(--navy);min-width:180px;max-width:300px;}
+.abc-group{display:flex;gap:6px;justify-content:center;}
+.abc-btn{width:56px;height:56px;border-radius:12px;border:3px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--dgrey);user-select:none;}
+.abc-btn:active{transform:scale(0.95);}
+.abc-btn.sel-a{background:var(--btn-a);color:var(--white);border-color:var(--btn-a);}
+.abc-btn.sel-b{background:var(--btn-b);color:var(--white);border-color:var(--btn-b);}
+.abc-btn.sel-c{background:var(--btn-c);color:var(--white);border-color:var(--btn-c);}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin:1rem 0;}
+.metric-card{background:var(--white);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);text-align:center;}
+.metric-card .m-name{font-size:0.8rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;}
+.metric-card .m-val{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--navy);}
+.metric-card .m-delta{font-size:0.85rem;font-weight:600;margin-top:0.2rem;}
+.metric-card .m-delta.pos{color:var(--green);}
+.metric-card .m-delta.neg{color:var(--red);}
+.metric-card .m-delta.zero{color:var(--grey);}
+.metric-bar{height:6px;background:var(--border);border-radius:3px;margin-top:0.5rem;overflow:hidden;}
+.metric-bar-fill{height:100%;border-radius:3px;background:var(--mid);transition:width 0.5s ease;}
+
+.results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:1rem;}
+.results-table th{font-family:'Bebas Neue',sans-serif;background:var(--navy);color:var(--white);padding:0.7rem;text-align:center;font-size:0.85rem;}
+.results-table th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.results-table th:last-child{border-radius:0 var(--r) 0 0;}
+.results-table td{padding:0.5rem;text-align:center;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.9rem;}
+.results-table td:first-child{text-align:left;font-family:'Nunito',sans-serif;font-weight:600;}
+
+.lb-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--white);border-radius:var(--r);margin-bottom:0.8rem;box-shadow:var(--shadow);}
+.lb-row:first-child{border:2px solid var(--gold);background:linear-gradient(135deg,#FFFDE7,#FFF8E1);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--navy);width:50px;text-align:center;}
+.lb-row:first-child .lb-rank{color:var(--gold);}
+.lb-name{flex:1;font-size:1.3rem;font-weight:600;color:var(--navy);}
+.lb-stats{display:flex;gap:2rem;}
+.lb-stat{text-align:center;}
+.lb-stat .val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--navy);}
+.lb-stat .lbl{font-size:0.7rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;}
+
+.final-hero{text-align:center;padding:2rem 0;}
+.final-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--gold);letter-spacing:3px;}
+.podium{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;align-items:flex-end;flex-wrap:wrap;}
+.podium-item{text-align:center;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;min-width:180px;}
+.podium-item.first{padding-bottom:2.5rem;border:3px solid var(--gold);transform:scale(1.1);}
+.podium-item .medal{font-size:3rem;}
+.podium-item .pname{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);margin:0.3rem 0;}
+.podium-item .pval{font-family:'DM Mono',monospace;font-size:1.2rem;color:var(--green);font-weight:700;}
+
+.debrief-q{background:var(--white);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:0.8rem;box-shadow:var(--shadow);border-left:4px solid var(--gold);}
+.debrief-q .qnum{font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:1rem;letter-spacing:1px;}
+.debrief-q p{font-size:1.05rem;color:var(--dgrey);line-height:1.5;margin-top:0.3rem;}
+.takeaway-card{background:linear-gradient(135deg,var(--navy),var(--mid));border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;color:var(--white);}
+.takeaway-card h3{font-family:'Bebas Neue',sans-serif;color:var(--gold);margin-bottom:0.5rem;font-size:1.2rem;}
+.takeaway-card p{font-size:0.95rem;line-height:1.5;opacity:0.9;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.overlay-box{background:var(--white);border-radius:var(--r);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+.overlay-box h2{font-family:'Bebas Neue',sans-serif;color:var(--navy);font-size:1.8rem;margin-bottom:1rem;}
+.overlay-box p,.overlay-box li{font-size:0.95rem;line-height:1.6;margin-bottom:0.5rem;color:var(--dgrey);}
+.overlay-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey);}
+
+.svg-container{text-align:center;margin:1rem 0;}
+.svg-container svg{max-width:100%;height:auto;border-radius:var(--r);box-shadow:var(--shadow);}
+
+.curriculum-card{background:var(--white);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:0.6rem;box-shadow:var(--shadow);border-left:4px solid var(--mid);}
+.curriculum-card .c-topic{font-weight:600;color:var(--navy);font-size:0.95rem;}
+.curriculum-card .c-spec{font-size:0.8rem;color:var(--grey);margin-top:0.15rem;}
+.curriculum-card .c-how{font-size:0.9rem;color:var(--dgrey);margin-top:0.3rem;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>ECOSYSTEM ARCHITECTS</h1>
+    <p>Science &bull; KS3</p>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-timer">
+    <div class="timer-display" id="timerDisplay">10:00</div>
+    <div class="timer-btns">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseTimer()">Pause</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">SETUP</div>
+    <div class="topbar-phase" id="topbarPhase"></div>
+    <div class="topbar-right" id="topbarRight"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="overlay-box">
+    <button class="overlay-close" onclick="closeHelp()">&times;</button>
+    <h2>How to Play</h2>
+    <p><strong>Ecosystem Architects</strong> is a 7-round simulation where teams make strategic decisions across 6 key metrics.</p>
+    <p><strong>Each Round</strong> has 4 phases:</p>
+    <ul>
+      <li><strong>Briefing</strong> &mdash; Read the situation report and any random events aloud.</li>
+      <li><strong>Decision Cards</strong> &mdash; Show the 5 decisions. Teams discuss (~10 min, use the timer).</li>
+      <li><strong>Team Entry</strong> &mdash; Each team taps A, B, or C for each decision.</li>
+      <li><strong>Results</strong> &mdash; Scores update and metric changes are displayed.</li>
+    </ul>
+    <p><strong>Metrics:</strong> Biodiversity Index, Species Count, Water Quality, Visitor Revenue, Park Budget, Community Approval. Each decision shifts these metrics. The team with the best overall performance wins.</p>
+    <p><strong>Scoring:</strong> Final score is the sum of all metric values (normalised to their scales).</p>
+  </div>
+</div>
+
+<script>
+// ======================== EMBEDDED DATA ========================
+const SIM = {"title": "Ecosystem Architects", "subject": "Science", "level": "KS3", "duration": "90 minutes", "teamSize": "3-5 students", "numTeams": "4-6 teams", "overview": "Ecosystem Architects is a strategic simulation where student teams take on the role of the management board for Greenhollow National Park. Over seven rounds representing the seasons of a full year, teams must balance the competing demands of wildlife conservation, environmental protection, tourism revenue, community relations, and ethical responsibility. Every decision has consequences that ripple through the ecosystem.\n\nThe simulation is built around real ecological principles: food webs are interconnected, biodiversity supports ecosystem resilience, and human activity creates both opportunities and pressures. Students will discover that there are rarely perfect answers in conservation management — only trade-offs that require scientific understanding and careful judgement.\n\nTeams track six key metrics throughout the game. The challenge is not to maximise any single metric but to keep the whole system healthy. A park with high revenue but collapsing biodiversity is failing, just as a pristine wilderness with no funding will eventually lose its protections. The winning team is the one that best navigates these tensions using sound scientific reasoning.", "scenario": "Welcome to Greenhollow National Park — 12,000 hectares of ancient woodland, freshwater lakes, upland moorland, and wildflower meadows in the heart of England. The park is home to 120 recorded species including red squirrels, otters, peregrine falcons, great crested newts, and a recovering population of pine martens. The main lake, Mirrow Water, feeds a river system that supports salmon spawning grounds downstream.\n\nYour team has just been appointed as the new management board. The previous board resigned after a difficult year of budget cuts and public complaints. Biodiversity has been declining, water quality is mediocre, and the local community is split between those who want more tourism jobs and those who want stricter conservation. You have a budget of $800,000 for the year, a modest visitor revenue stream, and a park that needs your attention. Every decision you make will shape the future of Greenhollow.", "metrics": [{"name": "Biodiversity Index", "start": 50, "unit": "/100", "description": "A composite measure of species diversity, population health, and habitat quality across the park. Scores above 70 indicate a thriving ecosystem; below 30 signals ecological collapse."}, {"name": "Species Count", "start": 120, "unit": "species", "description": "The total number of confirmed species recorded in the park, including mammals, birds, amphibians, fish, invertebrates, and plants. Losing species is far easier than gaining them back."}, {"name": "Water Quality", "start": 60, "unit": "/100", "description": "Measures dissolved oxygen, nitrate levels, pH balance, and clarity of Mirrow Water and its tributaries. Affects amphibians, fish, otters, and downstream communities."}, {"name": "Visitor Revenue", "start": 500000, "unit": "$", "description": "Annual income from entry fees, gift shops, guided tours, and camping permits. This funds park operations but high visitor numbers can damage sensitive habitats."}, {"name": "Park Budget", "start": 800000, "unit": "$", "description": "Your remaining operational budget for the year. Spent on ranger patrols, habitat restoration, equipment, research, and infrastructure. Once it runs out, you cannot fund new projects."}, {"name": "Community Approval", "start": 50, "unit": "/100", "description": "How the local community feels about park management. Affected by job creation, access policies, noise, and whether the park is seen as a good neighbour. Below 25 risks political pressure to change management."}], "finalScoring": "Final scores are calculated by combining all six metrics with weighted multipliers. Biodiversity Index is weighted x3 (max 300 points), Species Count is scored as (final count / starting count) x 100 then weighted x2 (max approximately 200 points), Water Quality is weighted x2 (max 200 points), Visitor Revenue is scored as (final revenue / 1,000,000) x 100 (max approximately 100 points), Park Budget remaining is scored as (budget / 800,000) x 50 (max 50 points), and Community Approval is weighted x1.5 (max 150 points). The total possible score is approximately 1,000 points. Any metric that falls below its critical threshold (Biodiversity below 20, Water Quality below 20, Budget below 0, Community Approval below 15) triggers a 100-point penalty per breached threshold. This rewards balanced management over maximising any single metric.", "curriculumLinks": [{"topic": "Ecosystems", "spec": "KS3 Science — Biology: Relationships in an ecosystem", "how": "Students manage an entire ecosystem and see how different habitats (woodland, wetland, moorland) support different communities of organisms. Decisions about land use directly affect ecosystem health."}, {"topic": "Food webs and food chains", "spec": "KS3 Science — Biology: Feeding relationships", "how": "Multiple decisions involve predator-prey relationships (pine martens and squirrels, otters and fish, peregrine falcons and prey birds). Removing or adding species cascades through the food web."}, {"topic": "Biodiversity", "spec": "KS3 Science — Biology: Biodiversity and the effect of human interaction on ecosystems", "how": "The Biodiversity Index and Species Count metrics directly track biodiversity. Students learn that diversity provides resilience and that monocultures or species loss weakens ecosystems."}, {"topic": "Interdependence of organisms", "spec": "KS3 Science — Biology: Relationships in an ecosystem", "how": "Decisions frequently demonstrate interdependence — pollinator loss affects wildflowers, tree removal affects nesting birds, water quality affects the entire aquatic food chain from invertebrates to otters."}, {"topic": "Adaptation", "spec": "KS3 Science — Biology: Genetics and evolution", "how": "The heatwave event and invasive species scenarios explore how organisms are adapted to specific conditions and what happens when those conditions change faster than populations can respond."}, {"topic": "Human impact on environment", "spec": "KS3 Science — Biology: Biodiversity and the effect of human interaction on ecosystems", "how": "Tourism pressure, chemical spills, habitat fragmentation, and pollution all model real human impacts. Students directly control the level of human interference and observe consequences."}, {"topic": "Classification and identification", "spec": "KS3 Science — Biology: Classification of living organisms", "how": "Species surveys, monitoring programmes, and the Species Count metric require students to think about how organisms are identified, recorded, and categorised within the park."}, {"topic": "Conservation and habitat destruction", "spec": "KS3 Science — Biology: Biodiversity and the effect of human interaction on ecosystems", "how": "The entire simulation is a conservation management exercise. Students weigh habitat restoration against development, learn about wildlife corridors, reintroduction programmes, and protected zones."}], "rounds": [{"num": 1, "name": "Spring Awakening", "report": ["Ranger surveys confirm 120 species currently recorded in the park. Red squirrel numbers are stable but confined to the northern woodland. Otter tracks spotted along Mirrow Water for the first time in three years.", "Wildflower meadows are showing early blooms but several areas near the main car park have been trampled flat by winter visitors ignoring path markers.", "The water quality team reports Mirrow Water at 60/100 — acceptable but not good. Nutrient run-off from farmland upstream is causing algal growth in the shallows.", "Local businesses have submitted a joint letter requesting more tourist infrastructure — better paths, a new visitor centre, and extended opening hours during summer.", "Your predecessor left an unfinished species survey. The data is six months out of date and several monitoring stations have broken sensors."], "randomEvent": null, "decisions": [{"id": "R1D1", "domain": "Wildlife", "question": "Spring is nesting season. Rangers report that a pair of peregrine falcons are attempting to nest on the south cliff face — directly above the most popular climbing route. How do you respond?", "optA": "Close the entire south cliff face to climbers for the full nesting season (March to July). Post rangers to enforce the closure.", "optB": "Close only the section directly around the nest (50-metre radius) and redirect climbers to alternative routes on the north face.", "optC": "Keep the cliff open but install warning signs asking climbers to be quiet near the nest. Monitor the nest with a camera.", "effects": "A: Biodiversity +8, Species Count +2 (successful nesting adds fledglings to population), Revenue -$30,000 (lost climbing permits), Community -8 (climbers angry), Budget -$15,000 (ranger enforcement). B: Biodiversity +5, Species Count +1, Revenue -$15,000, Community -3, Budget -$8,000. C: Biodiversity -2 (70% chance the falcons abandon the nest due to disturbance), Revenue +$5,000, Community +3."}, {"id": "R1D2", "domain": "Environment", "question": "The trampled wildflower meadows near the car park need attention. These meadows support pollinators that are critical for the wider ecosystem. What is your restoration plan?", "optA": "Fence off all damaged meadows, reseed with native wildflower mix, and build raised boardwalks so visitors can view without trampling. Full restoration project.", "optB": "Fence off the worst-damaged areas only and reseed them. Redirect foot traffic with new path markers but no boardwalks.", "optC": "Leave the meadows to recover naturally. Put up information signs explaining why visitors should stay on paths.", "effects": "A: Biodiversity +10, Water Quality +3 (wildflower roots reduce run-off), Budget -$75,000 (boardwalks are expensive), Community +5 (visitors love boardwalks), Revenue +$10,000 (new attraction). B: Biodiversity +6, Water Quality +2, Budget -$25,000, Community +2. C: Biodiversity +1 (very slow natural recovery), Budget -$2,000 (signs only), Community -3 (park looks neglected)."}, {"id": "R1D3", "domain": "Resources", "question": "Your predecessor's unfinished species survey means you are working with incomplete data. Proper conservation requires knowing exactly what lives in your park. How do you handle the monitoring gap?", "optA": "Commission a full park-wide biodiversity survey using professional ecologists. Takes 8 weeks and gives you comprehensive baseline data for every habitat.", "optB": "Repair the broken monitoring stations and train volunteer rangers to complete the survey over the next three months. Slower but cheaper.", "optC": "Focus monitoring resources on flagship species only (red squirrels, otters, peregrines, pine martens) since those are what the public cares about.", "effects": "A: Biodiversity +5 (better data means better decisions — bonus applied in future rounds), Species Count +8 (you discover species you did not know were there), Budget -$90,000. B: Biodiversity +3, Species Count +4, Budget -$30,000, Community +4 (volunteers feel involved). C: Biodiversity -3 (ignoring non-flagship species lets problems go undetected), Species Count +1, Budget -$15,000, Community +2."}, {"id": "R1D4", "domain": "Tourism", "question": "Local businesses want a new visitor centre with a cafe, gift shop, and interactive exhibits about the park's wildlife. The current welcome hut is a draughty shed with a photocopied map on the wall.", "optA": "Build a full eco-friendly visitor centre with solar panels, living green roof, and interactive wildlife exhibits. Construction takes two rounds and the site requires clearing 0.5 hectares of scrubland.", "optB": "Renovate the existing welcome hut into a modest information point with displays, a small shop, and proper toilets. No habitat clearance needed.", "optC": "Invest in a digital approach instead — create a park app with augmented reality wildlife guides, live webcam feeds from nest cameras, and online booking. No building work at all.", "effects": "A: Revenue +$80,000 (but only from Round 3 onwards), Budget -$200,000 (spread over 2 rounds), Biodiversity -4 (scrubland clearance removes habitat), Community +12 (jobs and pride), Species Count -3. B: Revenue +$30,000, Budget -$50,000, Community +6. C: Revenue +$20,000, Budget -$40,000, Community +3 (younger visitors love it, older residents less impressed), Biodiversity +2 (reduced physical footprint)."}, {"id": "R1D5", "domain": "Ethics", "question": "A pharmaceutical company has offered $150,000 to conduct research in the park, studying fungi in the ancient woodland that may have antibiotic properties. They want exclusive access to a 2-hectare research zone for 12 months, which would mean fencing off a section of public woodland.", "optA": "Accept the deal. The money is significant, and discovering new antibiotics could benefit millions of people. The research zone is a small fraction of total woodland.", "optB": "Accept but negotiate strict conditions: researchers must follow a park-approved protocol, share all findings publicly, limit their footprint to 1 hectare, and restore the site afterwards.", "optC": "Decline the offer. The park's role is conservation and public access, not commercial research. Allowing corporate access sets a dangerous precedent.", "effects": "A: Budget +$150,000, Biodiversity -6 (fencing disrupts animal movement corridors, research activity disturbs ground-nesting birds), Community -5 (public access restricted), Species Count -2. B: Budget +$100,000 (reduced fee for stricter terms), Biodiversity -2, Community -2. C: Biodiversity +2 (undisturbed woodland), Community +4 (public access preserved), Budget +$0."}]}, {"num": 2, "name": "Summer Surge", "report": ["Summer has arrived and visitor numbers have tripled. The car park is overflowing on weekends, with cars parked on grass verges and blocking the access road.", "Rangers report increased litter in all areas of the park, particularly around the lakeside picnic area. Plastic waste has been found in otter habitats along the riverbank.", "The warm weather has boosted insect populations, which is great news for the bat colonies in the old mine shafts and for the park's bird populations.", "A local farmer has offered to lease 50 hectares of adjacent farmland to the park at a discount rate. The land borders the eastern woodland and could create a wildlife corridor.", "Social media posts about the park have gone viral after a visitor photographed a pine marten — the first public sighting in years. Visitor interest is surging."], "randomEvent": "Heatwave alert: A prolonged heatwave has hit the region. Mirrow Water levels have dropped 40%, exposing mudflats and concentrating fish in shrinking pools. Fire risk in the moorland and dry woodland is rated as extreme. Rangers are on high alert.", "decisions": [{"id": "R2D1", "domain": "Wildlife", "question": "The heatwave has shrunk Mirrow Water dramatically. Fish are crowded into smaller pools, making them easy prey but also vulnerable to oxygen depletion. Otters are thriving short-term but the fish population could crash. What action do you take?", "optA": "Install emergency solar-powered aerators in the lake to boost dissolved oxygen levels. Temporarily ban all fishing (including the popular angling permits) to reduce pressure on fish stocks.", "optB": "Restrict fishing to catch-and-release only and close the most vulnerable shallow pools to all human access. Let the ecosystem adjust naturally beyond that.", "optC": "Take no special action. Heatwaves are natural events and ecosystems have dealt with them for millennia. Intervening could create dependency.", "effects": "A: Water Quality +10, Biodiversity +6, Species Count +3 (fish populations protected), Budget -$35,000 (aerators), Revenue -$25,000 (lost angling permits), Community -6 (anglers furious). B: Water Quality +5, Biodiversity +3, Species Count +1, Revenue -$10,000, Community -3, Budget -$5,000. C: Water Quality -8 (oxygen depletion kills fish), Biodiversity -6, Species Count -5 (localized fish die-off, amphibians affected), Community +2 (no restrictions)."}, {"id": "R2D2", "domain": "Environment", "question": "The heatwave has pushed fire risk to extreme levels. Dry moorland and woodland are highly flammable. You need a fire management strategy.", "optA": "Create firebreaks by clearing 3-metre strips of vegetation along key boundaries. Station a dedicated fire watch team 24/7 with water tankers pre-positioned.", "optB": "Implement controlled burns on the driest sections of moorland now, under supervision. This is a traditional management technique that reduces fuel load and actually promotes heather regeneration.", "optC": "Close the moorland entirely to visitors and rely on existing fire service arrangements. Focus budget elsewhere.", "effects": "A: Biodiversity -3 (firebreaks remove habitat strips), Budget -$60,000, Community +5 (people feel safe), Water Quality +2 (firebreaks reduce ash run-off risk). B: Biodiversity +4 (controlled burns promote habitat mosaic and new growth), Budget -$30,000, Species Count +2 (new habitat niches), Community -4 (locals worried about deliberate fires). C: Revenue -$20,000 (moorland closure), Budget -$5,000, Biodiversity -1 (risk of uncontrolled fire remains)."}, {"id": "R2D3", "domain": "Resources", "question": "The farmer's offer to lease 50 hectares of adjacent farmland is on the table. The land has been intensively farmed for 20 years — low biodiversity but good soil. It borders the eastern woodland where red squirrels live.", "optA": "Lease the full 50 hectares and begin converting it into a wildlife corridor connecting the eastern and northern woodlands. Plant native trees and create hedgerow networks. Long-term project: 3-5 years to mature.", "optB": "Lease 25 hectares closest to the woodland edge. Create a buffer zone with wildflower meadows and hedgerows — quicker to establish than full woodland and immediately useful for pollinators.", "optC": "Decline the lease. The park budget is already stretched and maintaining extra land diverts resources from the existing park. Focus on what you already have.", "effects": "A: Budget -$120,000 (lease + planting), Biodiversity +12 (long-term, +4 now and +4 in R5 and +4 in R7 as corridor matures), Species Count +5 (new habitat attracts species), Community +6 (local farmer gets income). B: Budget -$55,000, Biodiversity +7 (+4 now, +3 in R5 as meadows establish), Species Count +3, Community +4. C: Budget +$0, Biodiversity -2 (missed opportunity, fragmentation continues), Community -3 (farmer disappointed)."}, {"id": "R2D4", "domain": "Tourism", "question": "Visitor numbers are at record highs after the pine marten photo went viral. The car park cannot cope, litter is a serious problem, and rangers are overwhelmed. How do you manage the summer surge?", "optA": "Introduce a daily visitor cap of 500 people with an online booking system. Hire 4 additional seasonal rangers for litter patrols and visitor management. Build an overflow car park on a gravel field.", "optB": "Keep the park open but introduce a congestion charge at peak times ($5 surcharge on weekends). Use the extra revenue to fund a litter cleanup crew and additional bins.", "optC": "Embrace the boom. Keep everything open and free-flowing. More visitors means more revenue, and the park should be accessible to everyone without restrictions.", "effects": "A: Revenue -$20,000 (cap limits income), Budget -$80,000 (rangers + car park), Biodiversity +8 (reduced trampling and disturbance), Water Quality +4 (less litter in waterways), Community -6 (locals cannot get in easily). B: Revenue +$45,000 (congestion charge income), Budget -$25,000 (cleanup crew), Biodiversity +3, Water Quality +2, Community -4 (people resent charges). C: Revenue +$70,000, Biodiversity -10 (severe habitat damage from overcrowding), Water Quality -6 (litter and erosion increase run-off), Species Count -4 (ground-nesting birds fail, otter disturbance), Community +5 (businesses love it)."}, {"id": "R2D5", "domain": "Ethics", "question": "A documentary film crew wants to film the pine martens for a prime-time BBC nature series. This would generate incredible publicity for the park. However, they want to use night-vision equipment, bait stations, and camera traps in the pine martens' core territory during their breeding season.", "optA": "Allow full filming access. The publicity will bring long-term tourism revenue and raise awareness of conservation. Pine martens have been filmed before without apparent harm.", "optB": "Allow filming with strict conditions: no bait stations, cameras must be at least 30 metres from known den sites, no filming during the denning period (March-April), and a park ecologist must accompany the crew at all times.", "optC": "Decline the filming request. Pine martens are only just recovering in the park and any disturbance during breeding season could set the population back years. No amount of publicity is worth that risk.", "effects": "A: Revenue +$40,000 (publicity boost in future rounds), Biodiversity -5 (breeding disturbance), Species Count -2 (pine marten breeding failure), Community +8 (everyone wants to see their park on TV). B: Revenue +$25,000, Biodiversity +2 (controlled presence actually helps monitor the martens), Budget -$10,000 (ecologist time), Community +6. C: Biodiversity +4 (undisturbed breeding), Community -2 (missed opportunity for publicity), Revenue -$5,000."}]}, {"num": 3, "name": "Autumn Harvest", "report": ["Autumn colours are drawing photographers and walkers. Visitor numbers remain strong but more manageable than the summer peak.", "The annual fungi survey has begun. Rangers have recorded 47 species of fungi in the ancient woodland, including several rare species that indicate old-growth forest health.", "Salmon are beginning their upstream migration through the river system. This is critical for otters, herons, and the wider nutrient cycle — salmon carry ocean nutrients inland when they spawn and die.", "Red squirrel caches are being monitored. Rangers are concerned that squirrels in the southern woodland are showing signs of stress — lower body weight and fewer food caches than expected.", "The annual budget review shows your spending to date. You need to plan carefully for winter operations."], "randomEvent": null, "decisions": [{"id": "R3D1", "domain": "Wildlife", "question": "Red squirrels in the southern woodland are underweight and struggling. Ecologists believe the problem is competition from grey squirrels that have crossed into the park from neighbouring land. Grey squirrels outcompete reds for food and carry squirrelpox virus, which is lethal to reds. What is your management approach?", "optA": "Begin a targeted grey squirrel removal programme using humane traps. This is standard conservation practice used by the Red Squirrel Survival Trust. Aim to remove 80% of greys from the southern woodland.", "optB": "Install supplementary feeding stations for red squirrels using specially designed feeders that exclude grey squirrels (reds are lighter and can access feeders that greys cannot). Monitor but do not remove greys.", "optC": "Let nature take its course. Grey squirrels are now part of the British ecosystem. Intervening in species competition is playing God with nature.", "effects": "A: Biodiversity +7 (red squirrels recover, native woodland ecology restored), Species Count +3 (red squirrel population grows), Budget -$40,000, Community -8 (animal rights groups protest the grey squirrel cull). B: Biodiversity +3, Species Count +1, Budget -$20,000, Community +2. C: Biodiversity -8 (reds likely extinct in park within 2 years), Species Count -4 (loss of reds plus knock-on effects on woodland seed dispersal), Community +3 (no controversy)."}, {"id": "R3D2", "domain": "Environment", "question": "Salmon are migrating upstream but a weir (small dam) built decades ago for a water mill is blocking their passage at a critical point. Only the strongest fish can leap it. The weir also creates a nice millpond that visitors enjoy.", "optA": "Remove the weir entirely. Restore the natural river flow. The millpond will drain and the area will return to a natural river channel with gravel beds ideal for salmon spawning.", "optB": "Install a fish ladder alongside the weir so salmon can bypass the obstruction. The weir and millpond remain intact for visitors.", "optC": "Leave the weir as it is. It is a heritage structure with historical value. The strongest salmon can still get past, which is natural selection in action.", "effects": "A: Biodiversity +10 (restored river connectivity benefits entire aquatic ecosystem), Water Quality +8 (natural flow improves oxygenation), Species Count +4 (more salmon spawning, more invertebrate habitat), Community -7 (loss of picturesque millpond upsets locals), Budget -$45,000. B: Biodiversity +5, Water Quality +3, Species Count +2, Budget -$35,000, Community +3 (everyone happy). C: Biodiversity -3 (salmon population continues to decline), Water Quality -2, Community +4 (heritage preserved), Species Count -2."}, {"id": "R3D3", "domain": "Resources", "question": "Winter is coming and you need to plan your ranger team for the cold months. Currently you have 8 full-time rangers. Winter is quieter for visitors but critical for maintenance, wildlife monitoring, and preparing for spring.", "optA": "Maintain the full team of 8 rangers through winter. Assign them to habitat restoration projects, wildlife monitoring, path repairs, and invasive species surveys. Productive winter means a better spring.", "optB": "Reduce to 5 rangers for winter to save on wages. Focus them on essential tasks: security patrols, emergency response, and basic maintenance. Non-urgent projects wait until spring.", "optC": "Reduce to 4 rangers and supplement with a winter volunteer programme. Recruit 15 local volunteers for weekend conservation tasks. Cheaper and builds community relationships.", "effects": "A: Budget -$90,000 (full winter wages), Biodiversity +5 (winter restoration work pays off in spring), Water Quality +3 (maintenance prevents winter erosion), Community +2. B: Budget -$55,000, Biodiversity +1, Water Quality +1, Community -2 (staff morale drops, laid-off rangers upset). C: Budget -$35,000, Biodiversity +3, Community +10 (volunteers become park advocates), Water Quality +2, but Species Count -1 (volunteers accidentally disturb a hibernation site due to inexperience)."}, {"id": "R3D4", "domain": "Tourism", "question": "A luxury glamping company wants to set up 12 permanent safari-style tents near the edge of the ancient woodland. They would pay the park $60,000 per year in rent and bring high-spending tourists. The proposed site is currently rough grassland used by barn owls for hunting.", "optA": "Approve the glamping site at the proposed location near the woodland. The revenue is excellent and glamping attracts environmentally conscious tourists who may donate to conservation.", "optB": "Approve glamping but relocate it to the old meadow near the visitor car park — further from sensitive habitat but less scenic. The company agrees but will only pay $35,000 rent for the less attractive location.", "optC": "Reject the glamping proposal. Permanent structures near ancient woodland create light pollution, noise disturbance, and fragment the hunting grounds of nocturnal species.", "effects": "A: Revenue +$60,000, Budget +$60,000, Biodiversity -8 (barn owl hunting ground destroyed, light pollution disturbs nocturnal species), Species Count -3 (barn owls relocate, moths decline near artificial lights), Community +5. B: Revenue +$35,000, Budget +$35,000, Biodiversity -2 (minimal habitat impact at new site), Community +4. C: Biodiversity +3 (hunting grounds protected), Community -4 (business community frustrated), Revenue -$5,000."}, {"id": "R3D5", "domain": "Ethics", "question": "Your ecologist has discovered that the ancient woodland contains a population of dormice — a protected species under UK law. Proper dormouse surveys require a licence and formal reporting to Natural England. However, reporting will trigger legal restrictions that could delay your planned woodland management work by 6 months.", "optA": "Report the dormouse population immediately and apply for all necessary licences. Follow the law fully even though it delays your management timeline. Science depends on accurate reporting.", "optB": "Report the dormice but request an expedited review from Natural England, arguing that your management work will actually benefit dormice by improving woodland structure. Submit a revised management plan showing dormouse-friendly practices.", "optC": "Delay reporting until after the planned management work is completed. The work will help the woodland overall and the dormice will benefit eventually. Report them in the spring survey instead.", "effects": "A: Biodiversity +6 (legal protections kick in, dormouse habitat secured), Species Count +2, Budget -$15,000 (licence fees and survey costs), Community +3 (transparent management), delayed management means Biodiversity bonus of +3 does not apply until R5. B: Biodiversity +8 (best of both worlds if expedited review granted — 70% chance), Species Count +2, Budget -$20,000 (expedited fees), Community +2. C: Biodiversity -4 (management work damages dormouse habitat before protections apply), Species Count -2 (dormouse population declines), Community -6 if discovered (30% chance of legal investigation, $50,000 fine)."}]}, {"num": 4, "name": "Winter Crisis", "report": ["A harsh winter has set in. Heavy snowfall has blocked access roads for two weeks and temperatures dropped to -12 degrees Celsius. Visitor numbers have plummeted.", "Rangers report that the deer population has grown significantly over the past year. Without natural predators, deer are overgrazing the woodland understorey, stripping bark from young trees and eating wildflower shoots before they can establish.", "Ice has formed across most of Mirrow Water. While this is normal, the combination of ice cover and low water levels from the summer heatwave means oxygen levels under the ice are dangerously low.", "Heating and emergency maintenance costs have eaten into the winter budget. Two fallen trees have blocked major paths and a section of boardwalk was damaged by flooding.", "The mid-year financial review shows that parks across the country are facing budget pressures. There are rumours of central government funding cuts in the spring."], "randomEvent": "Invasive species detected: A ranger has found evidence of grey squirrels in the northern woodland — the last stronghold of the park's red squirrel population. Droppings, bark stripping patterns, and a confirmed sighting near the main red squirrel feeding area. If the greys establish here, the reds will have nowhere left in the park.", "decisions": [{"id": "R4D1", "domain": "Wildlife", "question": "URGENT: Grey squirrels have reached the northern woodland. Red squirrels here are the park's last viable population. Ecologists say you have a 4-week window before the greys establish breeding pairs. What is your emergency response?", "optA": "Launch an emergency trapping programme. Deploy 40 humane traps across the northern woodland, checked twice daily. Bring in specialist contractors from the Red Squirrel Survival Trust to assist. All-out effort to stop the invasion.", "optB": "Set up a defensive perimeter of traps around the core red squirrel territory. Accept that you cannot clear the entire woodland but aim to protect the most important area. Simultaneously set up a captive breeding programme as an insurance policy.", "optC": "Focus resources on the captive breeding programme only. Capture 10 breeding pairs of red squirrels for a managed population. If the wild population is lost, you can reintroduce them later when conditions are better.", "effects": "A: Biodiversity +10, Species Count +4 (red squirrels saved, grey squirrel advance halted), Budget -$70,000, Community -6 (another trapping programme draws protests). B: Biodiversity +6, Species Count +2, Budget -$50,000, Community -3. C: Biodiversity -5 (wild red squirrel population collapses), Species Count -3 (wild reds functionally extinct in park), Budget -$45,000 (captive breeding is expensive), Community +2 (cute captive squirrels for PR)."}, {"id": "R4D2", "domain": "Environment", "question": "Oxygen levels under the ice on Mirrow Water are critically low. Fish, amphibians, and invertebrates are at risk of a winter kill. Great crested newts — a legally protected species — hibernate in the lake margins.", "optA": "Break strategic holes in the ice using heated buoys to allow gas exchange. Install the aerators from summer (if you have them) or purchase new ones. Active intervention to prevent die-off.", "optB": "Break a few holes in the ice manually near the deepest parts of the lake where oxygen levels are highest. This provides some relief without the cost of equipment.", "optC": "Leave the lake alone. Winter kills happen naturally and the ecosystem will recover in spring. The strongest individuals survive, maintaining genetic fitness in the population.", "effects": "A: Water Quality +8, Biodiversity +6, Species Count +3 (great crested newts and fish populations protected), Budget -$30,000. B: Water Quality +4, Biodiversity +3, Species Count +1, Budget -$5,000. C: Water Quality -10, Biodiversity -8, Species Count -6 (major die-off of fish, amphibians, and aquatic invertebrates; otter food supply devastated)."}, {"id": "R4D3", "domain": "Resources", "question": "The deer overpopulation problem is getting worse. Without predators, the herd has grown to 180 deer in a park that ecologists say can sustainably support 60. Young trees are being eaten faster than they can grow, threatening woodland regeneration.", "optA": "Introduce a controlled deer cull, reducing the herd to 70 animals. Use professional stalkers who operate at dawn to minimise public awareness. Venison can be sold to local restaurants to offset costs.", "optB": "Begin a deer contraception programme using dart-delivered contraceptives. Slower to take effect (2-3 years to reduce numbers) but avoids killing. Fence off the most vulnerable areas of young woodland in the meantime.", "optC": "Investigate reintroducing a natural predator. The park's ecologists have been discussing a pilot programme to bring lynx to Greenhollow. Lynx naturally control deer populations and were native to Britain until around 700 AD.", "effects": "A: Biodiversity +8 (woodland understorey recovers), Species Count +4 (wildflowers and ground-nesting birds return), Budget -$20,000 (offset by venison sales), Community -10 (public outrage at deer cull), Revenue +$10,000 (venison income). B: Biodiversity +3 (slow improvement), Budget -$65,000 (contraception programme + fencing), Community +5 (humane approach praised). C: Biodiversity +15 (if successful — natural predator-prey balance restored), Species Count +6, Budget -$100,000 (very expensive pilot), Community -12 (fear and controversy), but effects take 2 rounds to materialise — immediate Biodiversity +3, full effect in R6."}, {"id": "R4D4", "domain": "Tourism", "question": "Winter visitor numbers are very low but costs are high. An adventure sports company wants to partner with the park to offer winter activities: mountain biking, orienteering, and wild swimming in the lake. They would bring their own equipment and instructors, paying the park 20% of profits.", "optA": "Accept the full package of activities. Mountain biking trails through the woodland, orienteering courses across the moorland, and supervised wild swimming in Mirrow Water.", "optB": "Accept orienteering and mountain biking on designated trails only — no off-trail riding and no wild swimming in the lake during winter (too much disturbance to overwintering wildlife).", "optC": "Decline all winter sports partnerships. Winter is when wildlife needs the most peace. The park should be a quiet refuge during the hardest months of the year.", "effects": "A: Revenue +$50,000, Community +8 (winter jobs and activities), Biodiversity -7 (mountain bike erosion damages woodland floor, swimming disturbs overwintering birds), Water Quality -4 (bank erosion from swimmers and bikes), Species Count -2. B: Revenue +$30,000, Community +5, Biodiversity -2 (some trail erosion), Budget -$10,000 (trail maintenance). C: Revenue -$10,000 (lost opportunity), Biodiversity +4 (undisturbed winter), Community -5 (businesses frustrated), Water Quality +2."}, {"id": "R4D5", "domain": "Ethics", "question": "Budget pressures are mounting. A mining company has approached you about conducting exploratory drilling on the moorland to assess mineral deposits. They offer $200,000 just for permission to survey. They claim the drilling will leave minimal surface damage. However, the moorland is a peat bog that stores thousands of tonnes of carbon.", "optA": "Accept the survey. $200,000 would solve your budget problems and it is just a survey — no mining is being approved. You can decide about actual mining later.", "optB": "Decline the survey but propose an alternative: the mining company funds a peatland restoration project ($100,000) in exchange for positive publicity about their environmental commitments. They get good PR, the park gets funding.", "optC": "Decline outright. Peat bogs are critical carbon stores and even exploratory drilling risks damaging the water table and releasing stored carbon. The park's role is to protect this habitat, not exploit it.", "effects": "A: Budget +$200,000, Biodiversity -6 (drilling disturbs ground-nesting birds, damages peat structure), Water Quality -8 (drilling near water table risks contamination), Community +4 (jobs narrative), Species Count -3. B: Budget +$100,000, Biodiversity +8 (peatland restoration is one of the best conservation investments), Water Quality +6 (healthy peat filters water), Community +6 (everyone looks good). C: Biodiversity +3 (status quo protected), Water Quality +2, Community -3 (missed economic opportunity)."}]}, {"num": 5, "name": "New Year, New Threats", "report": ["A new year begins with troubling news. Water testing has revealed elevated nitrate and phosphate levels in the streams feeding Mirrow Water. The source has been traced to a large farm upstream that has recently intensified its operations.", "The pine marten population has grown to 6 confirmed individuals — the best count in decades. They are naturally controlling grey squirrel numbers in the northern woodland.", "Climate data shows that average temperatures in the park have risen 1.2 degrees Celsius over the past 20 years. Phenology records show that spring events (first flowers, first migrant birds) are occurring 10 days earlier than they did in the 1990s.", "A national newspaper has published a league table of national parks ranked by biodiversity. Your park's ranking depends on your decisions so far.", "The local council is developing a new housing estate of 200 homes on land adjacent to the park's western boundary. Construction will begin in 3 months."], "randomEvent": "Chemical spill: A tractor on the upstream farm has overturned, spilling 500 litres of agricultural pesticide into the stream that feeds Mirrow Water. The toxic plume is moving downstream and will reach the lake within 48 hours. Water Quality drops by 15 points immediately. Emergency response required.", "decisions": [{"id": "R5D1", "domain": "Wildlife", "question": "The chemical spill is heading for Mirrow Water. The pesticide is toxic to aquatic invertebrates and fish at current concentrations. Otters, kingfishers, and herons that feed on contaminated fish could suffer secondary poisoning. You have 48 hours.", "optA": "Deploy emergency containment booms across the stream before it enters the lake. Set up activated carbon filtration at the stream mouth. Evacuate fish from the most vulnerable pools using electrofishing (stuns fish temporarily for safe capture and relocation).", "optB": "Deploy containment booms and filtration at the stream mouth. Issue a warning to downstream water users. Do not attempt to move fish — electrofishing is stressful and the contamination may be diluted enough by the time it reaches the lake.", "optC": "Focus all resources on documenting the spill for a legal claim against the farm. Water sampling, photography, and expert testimony. The contamination will pass through the system naturally in 2-3 weeks. Use the compensation money for future restoration.", "effects": "A: Water Quality +12 (from the -15 starting point, net -3 from pre-spill level), Biodiversity +8, Species Count +4 (fish and invertebrates saved), Budget -$85,000 (emergency response is expensive). B: Water Quality +7 (net -8 from pre-spill), Biodiversity +4, Species Count +2, Budget -$40,000, Community +3 (downstream users warned). C: Water Quality -5 (net -20 from pre-spill — severe contamination), Biodiversity -10, Species Count -8 (major die-off), Budget +$60,000 (compensation claim — arrives in R7), Community +5 (legal action against polluter is popular)."}, {"id": "R5D2", "domain": "Environment", "question": "Climate change is shifting the park's ecology. Spring is arriving earlier, some species are moving northward, and traditional habitats are under pressure. Your ecologist recommends a climate adaptation strategy. What approach do you take?", "optA": "Assisted migration: actively plant tree species from warmer climates (e.g., holm oak, sweet chestnut) alongside native species to create a forest that can cope with future warming. Install water management systems to maintain lake levels during droughts.", "optB": "Increase habitat connectivity: focus on wildlife corridors, hedgerow networks, and removing barriers so species can move naturally as conditions change. Build resilience through diversity rather than trying to predict exactly what will happen.", "optC": "Maintain the status quo. The park's role is to preserve its current character. Planting non-native species changes what the park is. Focus on protecting what we have rather than engineering a future ecosystem.", "effects": "A: Biodiversity +6 (more resilient forest long-term), Species Count +3 (new tree species), Budget -$70,000, Water Quality +4 (water management), Community -3 (purists object to non-native planting). B: Biodiversity +8 (connectivity is the gold standard for climate adaptation), Species Count +5 (movement allows colonisation of new areas), Budget -$45,000, Community +4 (popular with conservation groups). C: Biodiversity -4 (park becomes increasingly vulnerable to climate shocks), Budget -$5,000, Community +2 (traditional approach reassures some people)."}, {"id": "R5D3", "domain": "Resources", "question": "The housing development on the western boundary will bring 200 homes within 500 metres of the park. Construction will cause noise and dust for 18 months. Once complete, the extra population will increase visitor pressure. You have been invited to the planning consultation.", "optA": "Oppose the development formally. Submit objections citing ecological impact assessments and demand an Environmental Impact Assessment. Rally community conservation groups to support your position.", "optB": "Negotiate conditions: demand that the developer funds a 200-metre green buffer zone between the estate and the park, contributes $80,000 to park conservation, and installs sustainable drainage to prevent run-off reaching the park's waterways.", "optC": "Support the development in exchange for a formal partnership. The developer builds a nature trail connecting the estate to the park, funds a community ranger position, and promotes the park to new residents. Embrace the new neighbours.", "effects": "A: Biodiversity +3 (if opposition succeeds — 40% chance of blocking development), Community -8 (developers and pro-housing residents furious), Budget -$20,000 (legal costs). If opposition fails: Biodiversity -6 (no mitigations in place), Community -12. B: Biodiversity +5 (buffer zone protects park edge), Water Quality +4 (sustainable drainage), Budget +$80,000, Community +6. C: Revenue +$40,000 (new visitors), Community +10 (partnership celebrated), Biodiversity -3 (increased footfall, edge effects), Budget +$30,000 (funded ranger post)."}, {"id": "R5D4", "domain": "Tourism", "question": "The newspaper league table has attracted attention to your park. A major outdoor festival company wants to host a 3-day summer music and nature festival in the park — 5,000 attendees camping on the main meadow. They offer $100,000 in fees.", "optA": "Accept the festival. $100,000 is transformative money. The meadow will recover, and the publicity will boost visitor numbers for years. Set conditions on noise levels and waste management.", "optB": "Offer a counter-proposal: a smaller Nature Festival of 1,000 attendees focused on wildlife walks, conservation talks, and acoustic music. Less money ($30,000) but on-brand for the park and lower ecological impact.", "optC": "Decline. 5,000 people camping on a meadow for 3 days will compact the soil, destroy ground flora, generate tonnes of waste, and cause noise disturbance across the entire park during peak breeding season.", "effects": "A: Revenue +$100,000, Budget +$100,000, Biodiversity -12 (catastrophic meadow damage, noise disturbs breeding birds across the park), Water Quality -6 (waste and sanitation run-off), Species Count -5 (ground-nesting birds fail), Community +8 (festival brings excitement). B: Revenue +$30,000, Budget +$30,000, Biodiversity -2 (minor meadow impact), Community +6 (positive event), Species Count +1 (nature walks find new species records). C: Biodiversity +4 (meadow fully protected), Community -4 (missed economic opportunity), Revenue -$5,000."}, {"id": "R5D5", "domain": "Ethics", "question": "Your ecologist has discovered that the recovering otter population is being illegally trapped. Evidence points to a local landowner downstream who blames otters for eating fish from his private lake. The police say they need more evidence before they can act. Your ranger has offered to conduct covert night surveillance.", "optA": "Authorise the covert surveillance operation. Station rangers with night-vision cameras near the suspected trapping sites. If you catch the poacher, the legal case is watertight. Otters are legally protected — this is a serious wildlife crime.", "optB": "Do not conduct surveillance (legal grey area). Instead, install obvious trail cameras and warning signs along the river stating that otters are legally protected and the area is monitored. Deter the poacher without confrontation.", "optC": "Approach the landowner directly for a conversation. Understand his concerns about fish loss. Offer to install otter-proof fencing around his lake at the park's expense. Solve the root cause rather than pursuing punishment.", "effects": "A: Biodiversity +6 (otter killing stops), Species Count +2, Budget -$20,000 (surveillance operation), Community -5 (local landowners feel targeted and paranoid). B: Biodiversity +3 (deterrent effect, but poacher may move operations), Species Count +1, Budget -$8,000, Community +2 (non-confrontational). C: Biodiversity +5 (root cause addressed, otters and landowner both protected), Budget -$25,000 (fencing costs), Community +8 (cooperative approach praised), Species Count +2."}]}, {"num": 6, "name": "Spring Recovery", "report": ["A new spring arrives and the park is showing signs of recovery — or decline — based on your management decisions over the past year.", "Wildflower surveys show early results from any restoration work. If meadows were protected or restored, bee and butterfly counts are up significantly.", "The salmon spawning season was affected by last year's water quality events. Rangers are counting returning fish to see how the population has responded.", "A university has approached the park about establishing a long-term ecological research station. They would bring 8 PhD students and 3 professors to conduct year-round monitoring.", "The park's annual report is due for publication. This public document will show all your management decisions and their outcomes. Media interest is expected."], "randomEvent": null, "decisions": [{"id": "R6D1", "domain": "Wildlife", "question": "Spring surveys reveal that hedgehog numbers in the park have dropped 60% in two years. The main causes are badger predation (badgers eat hedgehog eggs and young) and loss of hedgerow habitat. Badgers are legally protected. What do you do?", "optA": "Create dedicated hedgehog sanctuaries — fenced areas within the park where badgers cannot enter but hedgehogs can (using gaps too small for badgers). Plant dense hedgerow habitat inside these zones.", "optB": "Focus on hedgerow restoration across the whole park. More hedgerow means more habitat for hedgehogs and dozens of other species. This helps hedgehogs indirectly without interfering with badger populations.", "optC": "Accept that predation is natural. Badgers are protected and more numerous because they are successful. Hedgehog decline is sad but intervention in predator-prey dynamics can have unintended consequences.", "effects": "A: Biodiversity +6, Species Count +3 (hedgehog population stabilises), Budget -$35,000 (fencing and planting), Community +5 (people love hedgehogs). B: Biodiversity +8 (hedgerows benefit many species: nesting birds, dormice, insects), Species Count +5 (habitat supports multiple species), Budget -$30,000, Community +4. C: Biodiversity -4 (hedgehog population continues to crash), Species Count -3, Community -3 (public upset about hedgehog decline)."}, {"id": "R6D2", "domain": "Environment", "question": "The upstream farm that caused the chemical spill has been sold. The new owner wants to work with the park and is offering to convert 30 hectares of farmland along the river into a natural flood plain with wetland habitat. However, this would mean the land floods regularly, which some locals fear will increase flooding in the village downstream.", "optA": "Support the flood plain restoration fully. Natural flood plains slow water flow, reduce flood peaks downstream, filter pollutants, and create exceptional wetland habitat. The science clearly shows this reduces flooding overall.", "optB": "Support a partial restoration of 15 hectares, keeping the rest as low-intensity grazing land. This provides some wetland benefits while addressing community concerns about flood risk.", "optC": "Stay neutral. This is the farmer's decision and the park should not get involved in off-site land management. Focus your energy and budget within the park boundaries.", "effects": "A: Biodiversity +12, Water Quality +10, Species Count +8 (wetlands are biodiversity hotspots — otters, amphibians, wading birds, dragonflies), Budget -$40,000 (partnership costs), Community -4 (flood fears despite the science). B: Biodiversity +7, Water Quality +6, Species Count +4, Budget -$20,000, Community +2 (compromise reassures people). C: Biodiversity +0, Water Quality +0, Community +3 (no controversy), Budget +$0."}, {"id": "R6D3", "domain": "Resources", "question": "The university research station proposal would bring significant scientific expertise to the park. They want to build a small field station (two portable cabins and a laboratory) near the ancient woodland. In exchange, they offer free ecological monitoring, student labour for conservation projects, and published research that raises the park's scientific profile.", "optA": "Accept the full proposal. Two cabins and a lab near the ancient woodland. The scientific benefits are enormous — expert monitoring, free labour, and published research that strengthens the park's case for future funding.", "optB": "Accept but relocate the station to the old ranger depot near the main entrance. Less ideal for the researchers (further from study sites) but no new structures in sensitive areas. Offer transport between the depot and field sites.", "optC": "Decline. More buildings, more people, and more vehicles in the park means more disturbance. The park is not a campus. Conservation should come first.", "effects": "A: Biodiversity +5 (net: +8 from expert monitoring minus -3 from cabin construction and activity near ancient woodland), Species Count +6 (researchers discover unrecorded species), Budget -$25,000 (utilities and support), Community +5. B: Biodiversity +6, Species Count +4, Budget -$20,000, Community +4. C: Biodiversity -2 (missed scientific input), Community -3 (university partnership lost), Budget +$0."}, {"id": "R6D4", "domain": "Tourism", "question": "Your annual report will be published next week. You have a choice about how to present your management record to the public. The media will scrutinise it.", "optA": "Full transparency: publish all data including failures, setbacks, and controversial decisions. Include an honest assessment of what worked and what did not. Let the public judge your record openly.", "optB": "Balanced report: present achievements prominently with context for difficult decisions. Acknowledge challenges but frame them as learning opportunities. Professional and positive without hiding anything.", "optC": "Highlight only successes and downplay problems. Focus on flagship species recoveries and visitor satisfaction. Avoid drawing attention to budget overruns, species losses, or controversial choices.", "effects": "A: Community +10 (public respects honesty), Revenue +$15,000 (trust attracts donors), Biodiversity +2 (public scrutiny helps accountability). Risk: if your record is genuinely poor, Community -5 instead (people angry about mismanagement). B: Community +5, Revenue +$10,000. C: Community -8 (investigative journalist exposes spin — 60% chance), Revenue +$5,000 initially but Revenue -$20,000 if exposed."}, {"id": "R6D5", "domain": "Ethics", "question": "A group of Travellers has set up an unauthorised camp on the park's south meadow. They have 8 caravans, about 30 people including children, and several horses. The camp is near a stream and there are concerns about waste disposal. Local residents are demanding immediate eviction.", "optA": "Begin legal eviction proceedings immediately. The camp is unauthorised, potentially damaging to the meadow habitat, and the park cannot set a precedent of allowing unofficial occupation of conservation land.", "optB": "Engage with the community respectfully. Provide temporary waste disposal facilities and portable toilets. Negotiate a timeline for voluntary departure (2 weeks) while helping them find an authorised site. Monitor the environmental impact.", "optC": "Allow them to stay on a designated area away from the stream, with conditions: proper waste disposal, horses kept off sensitive ground, and a small rent contribution. Many traditional Traveller practices are low-impact and their presence could deter poachers.", "effects": "A: Community +6 (residents satisfied), Biodiversity +2 (meadow protected), but Community -6 (Traveller community and civil liberties groups condemn the decision — net 0), Budget -$15,000 (legal costs). B: Biodiversity -1 (minor short-term impact), Budget -$8,000 (facilities), Community +8 (humane approach widely praised), Water Quality -1 (temporary). C: Biodiversity -3, Community -4 (residents angry), Budget +$2,000 (rent), Water Quality -2, but Community +4 among different groups (net 0). No perfect answer — this tests ethical reasoning."}]}, {"num": 7, "name": "The Reckoning", "report": ["Your final season as the Greenhollow management board has arrived. The government funding review is this month and parks with strong biodiversity records will receive bonus funding.", "A full species survey has been completed. Every habitat has been assessed and the park's Biodiversity Index has been recalculated based on all your decisions over the year.", "The local community has submitted feedback forms. Approval ratings reflect a year of your management — every decision, every controversy, every success.", "Financial auditors have reviewed the park's accounts. Your budget management and revenue generation will be assessed against the starting position.", "This is your last chance to shape Greenhollow's future. The decisions you make now will define the park's trajectory for the next decade."], "randomEvent": "Government funding review: Parks with a Biodiversity Index above 65 receive a $150,000 bonus grant. Parks above 80 receive $250,000. Parks below 40 face a 20% budget cut next year. Your current Biodiversity Index determines which category you fall into.", "decisions": [{"id": "R7D1", "domain": "Wildlife", "question": "The final species survey has revealed that a pair of white-tailed eagles has been spotted hunting over Mirrow Water — the first recorded visit in over 100 years. If they could be encouraged to stay and nest, it would be a conservation triumph. However, eagles are apex predators that will compete with peregrines and take lambs from farms bordering the park.", "optA": "Create optimal nesting conditions: build an artificial nest platform on the lakeside cliff, establish a 500-metre disturbance-free zone, and start a livestock compensation scheme for farmers who lose lambs to eagle predation.", "optB": "Monitor the eagles carefully but do not actively intervene. If they choose to nest naturally, protect the site then. Avoid creating infrastructure for a species that may not stay. Start conversations with farmers about potential compensation.", "optC": "Do not encourage the eagles. The park already has peregrine falcons as its top avian predator. Adding eagles could destabilise the existing food web and antagonise farming neighbours. Let them pass through naturally.", "effects": "A: Biodiversity +12 (apex predator restoration is a conservation milestone), Species Count +5 (eagles plus associated monitoring reveals other species), Budget -$60,000, Community -8 (farmers terrified about lambs), Revenue +$30,000 (eagle watching tourism). B: Biodiversity +5 (if they stay — 50% chance), Species Count +2, Budget -$10,000 (monitoring), Community -2. C: Biodiversity -2 (missed opportunity for apex predator restoration), Community +4 (no controversy), Species Count +0."}, {"id": "R7D2", "domain": "Environment", "question": "Your ecologist presents a 10-year rewilding vision for Greenhollow. The proposal is to allow 40% of the park to return to fully wild conditions — no path maintenance, no visitor access, no active management. Just nature managing itself. The remaining 60% would be managed for visitors and sustainable recreation.", "optA": "Adopt the full rewilding vision. Designate 40% of the park as a wild core zone. Remove paths, close access, and let natural processes take over. This is the cutting edge of conservation science.", "optB": "Adopt a modified version: designate 25% as a wild core zone and 15% as a restricted-access research zone (scientists only). This protects significant habitat while keeping more of the park accessible.", "optC": "Reject rewilding. The park exists for both nature and people. Locking people out of 40% of the park is elitist and will destroy community support. Instead, invest in sustainable access across the whole park.", "effects": "A: Biodiversity +15, Species Count +8, Water Quality +6 (undisturbed riparian zones recover), Revenue -$40,000 (lost visitor access), Community -10 (public fury at being locked out of their park), Budget -$20,000 (boundary management). B: Biodiversity +10, Species Count +5, Water Quality +4, Revenue -$20,000, Community -4, Budget -$15,000. C: Biodiversity +2, Revenue +$15,000, Community +8, Water Quality +1."}, {"id": "R7D3", "domain": "Resources", "question": "With the government funding review imminent, you need to decide how to present the park's case. You have data on every metric but the way you frame it matters.", "optA": "Lead with hard scientific data. Present detailed biodiversity surveys, water quality measurements, species population trends, and peer-reviewed evidence of ecological improvement. Let the data speak for itself.", "optB": "Combine scientific data with community impact stories. Show the numbers but also present testimonials from volunteers, school visits, local businesses, and community events. Make the human case alongside the ecological one.", "optC": "Focus on value for money. Show how efficiently the park budget has been managed, revenue generated, and cost savings achieved. Argue that the park delivers economic returns that justify continued funding.", "effects": "A: Biodiversity +4 (strong science case secures targeted funding), Budget +$40,000 (grant for research), Community -2 (feels impersonal). B: Biodiversity +3, Budget +$30,000, Community +8 (people feel valued), Revenue +$15,000 (donor interest). C: Budget +$50,000 (treasury loves efficiency), Community +3, Biodiversity -2 (funding priorities shift to revenue-generating activities over conservation)."}, {"id": "R7D4", "domain": "Tourism", "question": "A legacy decision: you can establish a permanent visitor experience that will define how people engage with the park for years to come. What do you build?", "optA": "A canopy walkway through the ancient woodland — a 500-metre elevated path at treetop level giving visitors a bird's-eye view of the forest ecosystem without disturbing the ground. World-class eco-tourism attraction.", "optB": "A wetland discovery centre on the lakeside — a zero-carbon building with underwater viewing windows, educational exhibits about freshwater ecosystems, and a laboratory for school visits. Focus on education over spectacle.", "optC": "A network of wildlife hides and self-guided trails with QR codes linking to audio guides, species information, and live camera feeds. Low-tech, low-impact, and distributed across the whole park rather than concentrated in one spot.", "effects": "A: Revenue +$80,000, Budget -$150,000 (major construction), Biodiversity -4 (construction in ancient woodland, tree anchoring for walkway), Community +10 (iconic attraction), Species Count -2 (canopy disturbance affects nesting birds). B: Revenue +$50,000, Budget -$100,000, Biodiversity +4 (educational impact, school visits create future conservationists), Water Quality +3 (monitoring from the centre), Community +8. C: Revenue +$25,000, Budget -$30,000, Biodiversity +6 (minimal impact, hides actually help monitoring), Species Count +3 (quiet observation reveals new species), Community +4."}, {"id": "R7D5", "domain": "Ethics", "question": "Your final decision. A billionaire conservationist offers to buy Greenhollow National Park for $5 million and convert it into a private nature reserve. No public access, no tourism, no compromises — just pure conservation managed by a team of world-class ecologists. The money would fund three new community parks in the local area. Do you recommend this to the government?", "optA": "Recommend the sale. The park would achieve the highest possible biodiversity under private conservation management. Three new community parks would serve local people. It is the best outcome for both nature and people — just not in the same place.", "optB": "Reject the sale but invite the billionaire to become a major donor and partner. Offer to name the research station after them, give them a seat on the advisory board, and direct their funding toward the park's most ambitious conservation projects.", "optC": "Reject the sale completely. National parks belong to the nation. Privatising public land — no matter how good the intention — sets a dangerous precedent. Conservation must be done with communities, not instead of them.", "effects": "A: Biodiversity +20 (maximum possible conservation outcome), Species Count +10, Water Quality +10 — but Community -20 (public loses their park), Revenue set to $0 (no public access), all other scores become academic as park leaves public management. This is the nuclear option. B: Biodiversity +8, Budget +$200,000 (major donation), Community +6, Revenue +$20,000, Species Count +3. C: Biodiversity +2, Community +12 (public ownership defended), Revenue +$5,000, no budget change."}]}], "debriefQuestions": ["Which decision was the hardest for your team to agree on? What scientific evidence did you use to make your choice, and did different team members weigh that evidence differently?", "Look at your final Biodiversity Index and Species Count. Can you trace specific decisions that had the biggest positive or negative impact? How did those effects connect to real ecological principles like food webs, habitat connectivity, or predator-prey relationships?", "How did the tension between tourism revenue and conservation play out in your management? Can you think of real-world examples where national parks face this same dilemma?", "Did any of your decisions have unexpected knock-on effects — where helping one part of the ecosystem hurt another? What does this tell you about interdependence in ecosystems?", "The grey squirrel and deer overpopulation decisions involved controlling animal populations. What scientific arguments exist for and against human intervention in predator-prey relationships? Is there a difference between removing an invasive species and culling a native one?", "How did climate change and the chemical spill affect your planning? In a real ecosystem, how do sudden shocks interact with long-term pressures? Which is more dangerous for biodiversity — a single crisis or gradual decline?", "If you could go back and change one decision, which would it be and why? What does this tell you about the importance of baseline data and monitoring in conservation science?"], "keyTakeaways": ["Ecosystems are interconnected: decisions about one species or habitat ripple through the entire food web. Removing a predator, polluting a water source, or destroying a habitat does not just affect the immediate target — it changes the whole system.", "Conservation requires trade-offs: there is rarely a perfect answer. Protecting wildlife can conflict with community needs, budgets, tourism, and even other conservation goals. Good management means understanding the science well enough to make informed compromises.", "Biodiversity is resilience: ecosystems with more species and more genetic diversity are better able to withstand shocks like heatwaves, pollution events, and disease outbreaks. Monocultures and simplified ecosystems are fragile.", "Long-term thinking beats short-term gains: decisions that save money or boost revenue now often cost more in ecological damage later. Investing in habitat restoration, monitoring, and connectivity pays off over time even when the immediate returns seem small.", "Science and data drive good decisions: the teams that invested in monitoring, surveys, and research had better information to work with. In real conservation, evidence-based management consistently outperforms guesswork and gut feeling."]};
+const SVGS = {"r1_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><line x1=\"320\" y1=\"168\" x2=\"320\" y2=\"144\" stroke=\"#4F46E5\" stroke-width=\"3\"/><path d=\"M320,144 Q338,128 326,124\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"3\"/><path d=\"M320,152 Q304,140 316,134\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Spring Awakening</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n</svg>", "r1_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Spring Awakening</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><ellipse cx=\"106\" cy=\"160\" rx=\"14\" ry=\"10\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"112\" cy=\"157\" r=\"2\" fill=\"#EEF2FF\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Wildlife</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"#4F46E5\" opacity=\"0.25\"/><path d=\"M208,168 Q208,150 216,150 Q224,150 218,160 Q212,164 218,170 Q214,174 208,168 Z\" fill=\"#4F46E5\" opacity=\"0.75\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><polygon points=\"318,144 334,168 302,168\" fill=\"#4F46E5\" opacity=\"0.55\"/><polygon points=\"318,152 328,168 308,168\" fill=\"#4F46E5\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Resources</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"154\" r=\"12\" fill=\"#4F46E5\" opacity=\"0.85\"/><rect x=\"410\" y=\"166\" width=\"28\" height=\"3\" fill=\"#4F46E5\"/><line x1=\"424\" y1=\"169\" x2=\"424\" y2=\"178\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Tourism</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r2_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"150\" r=\"14\" fill=\"#4F46E5\"/><line x1=\"320\" y1=\"128\" x2=\"320\" y2=\"122\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"320\" y1=\"172\" x2=\"320\" y2=\"178\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"298\" y1=\"150\" x2=\"292\" y2=\"150\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"342\" y1=\"150\" x2=\"348\" y2=\"150\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Summer Surge</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n</svg>", "r2_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Summer Surge</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><ellipse cx=\"106\" cy=\"160\" rx=\"14\" ry=\"10\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"112\" cy=\"157\" r=\"2\" fill=\"#EEF2FF\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Wildlife</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"#4F46E5\" opacity=\"0.25\"/><path d=\"M208,168 Q208,150 216,150 Q224,150 218,160 Q212,164 218,170 Q214,174 208,168 Z\" fill=\"#4F46E5\" opacity=\"0.75\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><polygon points=\"318,144 334,168 302,168\" fill=\"#4F46E5\" opacity=\"0.55\"/><polygon points=\"318,152 328,168 308,168\" fill=\"#4F46E5\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Resources</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"154\" r=\"12\" fill=\"#4F46E5\" opacity=\"0.85\"/><rect x=\"410\" y=\"166\" width=\"28\" height=\"3\" fill=\"#4F46E5\"/><line x1=\"424\" y1=\"169\" x2=\"424\" y2=\"178\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Tourism</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r3_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><line x1=\"320\" y1=\"168\" x2=\"320\" y2=\"144\" stroke=\"#4F46E5\" stroke-width=\"3\"/><path d=\"M320,144 Q338,128 326,124\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"3\"/><path d=\"M320,152 Q304,140 316,134\" fill=\"none\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Autumn Harvest</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n</svg>", "r3_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Autumn Harvest</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><ellipse cx=\"106\" cy=\"160\" rx=\"14\" ry=\"10\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"112\" cy=\"157\" r=\"2\" fill=\"#EEF2FF\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Wildlife</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"#4F46E5\" opacity=\"0.25\"/><path d=\"M208,168 Q208,150 216,150 Q224,150 218,160 Q212,164 218,170 Q214,174 208,168 Z\" fill=\"#4F46E5\" opacity=\"0.75\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><polygon points=\"318,144 334,168 302,168\" fill=\"#4F46E5\" opacity=\"0.55\"/><polygon points=\"318,152 328,168 308,168\" fill=\"#4F46E5\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Resources</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"154\" r=\"12\" fill=\"#4F46E5\" opacity=\"0.85\"/><rect x=\"410\" y=\"166\" width=\"28\" height=\"3\" fill=\"#4F46E5\"/><line x1=\"424\" y1=\"169\" x2=\"424\" y2=\"178\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Tourism</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r4_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"292,168 316,128 324,142 334,134 348,168\" fill=\"#4F46E5\" opacity=\"0.8\"/><polygon points=\"316,128 310,138 322,138\" fill=\"#EEF2FF\" opacity=\"0.6\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Winter Crisis</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n</svg>", "r4_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Winter Crisis</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><ellipse cx=\"106\" cy=\"160\" rx=\"14\" ry=\"10\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"112\" cy=\"157\" r=\"2\" fill=\"#EEF2FF\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Wildlife</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"#4F46E5\" opacity=\"0.25\"/><path d=\"M208,168 Q208,150 216,150 Q224,150 218,160 Q212,164 218,170 Q214,174 208,168 Z\" fill=\"#4F46E5\" opacity=\"0.75\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><polygon points=\"318,144 334,168 302,168\" fill=\"#4F46E5\" opacity=\"0.55\"/><polygon points=\"318,152 328,168 308,168\" fill=\"#4F46E5\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Resources</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"154\" r=\"12\" fill=\"#4F46E5\" opacity=\"0.85\"/><rect x=\"410\" y=\"166\" width=\"28\" height=\"3\" fill=\"#4F46E5\"/><line x1=\"424\" y1=\"169\" x2=\"424\" y2=\"178\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Tourism</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r5_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><path d=\"M320,126 L342,138 L342,158 Q342,174 320,176 Q298,174 298,158 L298,138 Z\" fill=\"#4F46E5\" opacity=\"0.9\"/><path d=\"M314,150 L318,156 L328,144\" stroke=\"#EEF2FF\" stroke-width=\"3\" fill=\"none\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">New Year, New Threats</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n</svg>", "r5_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">New Year, New Threats</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><ellipse cx=\"106\" cy=\"160\" rx=\"14\" ry=\"10\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"112\" cy=\"157\" r=\"2\" fill=\"#EEF2FF\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Wildlife</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"#4F46E5\" opacity=\"0.25\"/><path d=\"M208,168 Q208,150 216,150 Q224,150 218,160 Q212,164 218,170 Q214,174 208,168 Z\" fill=\"#4F46E5\" opacity=\"0.75\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><polygon points=\"318,144 334,168 302,168\" fill=\"#4F46E5\" opacity=\"0.55\"/><polygon points=\"318,152 328,168 308,168\" fill=\"#4F46E5\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Resources</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"154\" r=\"12\" fill=\"#4F46E5\" opacity=\"0.85\"/><rect x=\"410\" y=\"166\" width=\"28\" height=\"3\" fill=\"#4F46E5\"/><line x1=\"424\" y1=\"169\" x2=\"424\" y2=\"178\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Tourism</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r6_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"150\" r=\"14\" fill=\"#4F46E5\"/><line x1=\"320\" y1=\"128\" x2=\"320\" y2=\"122\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"320\" y1=\"172\" x2=\"320\" y2=\"178\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"298\" y1=\"150\" x2=\"292\" y2=\"150\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/><line x1=\"342\" y1=\"150\" x2=\"348\" y2=\"150\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Spring Recovery</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n</svg>", "r6_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Spring Recovery</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><ellipse cx=\"106\" cy=\"160\" rx=\"14\" ry=\"10\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"112\" cy=\"157\" r=\"2\" fill=\"#EEF2FF\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Wildlife</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"#4F46E5\" opacity=\"0.25\"/><path d=\"M208,168 Q208,150 216,150 Q224,150 218,160 Q212,164 218,170 Q214,174 208,168 Z\" fill=\"#4F46E5\" opacity=\"0.75\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><polygon points=\"318,144 334,168 302,168\" fill=\"#4F46E5\" opacity=\"0.55\"/><polygon points=\"318,152 328,168 308,168\" fill=\"#4F46E5\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Resources</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"154\" r=\"12\" fill=\"#4F46E5\" opacity=\"0.85\"/><rect x=\"410\" y=\"166\" width=\"28\" height=\"3\" fill=\"#4F46E5\"/><line x1=\"424\" y1=\"169\" x2=\"424\" y2=\"178\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Tourism</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r7_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#EEF2FF\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#4F46E5\" stroke-width=\"1.5\"/>\n  <g><line x1=\"320\" y1=\"130\" x2=\"320\" y2=\"170\" stroke=\"#4F46E5\" stroke-width=\"3\"/><line x1=\"300\" y1=\"136\" x2=\"340\" y2=\"136\" stroke=\"#4F46E5\" stroke-width=\"3\"/><path d=\"M296,150 L300,136 L304,150\" fill=\"none\" stroke=\"#818CF8\" stroke-width=\"2\"/><path d=\"M336,150 L340,136 L344,150\" fill=\"none\" stroke=\"#818CF8\" stroke-width=\"2\"/><rect x=\"314\" y=\"166\" width=\"12\" height=\"6\" rx=\"2\" fill=\"#4F46E5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#4F46E5\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#818CF8\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">The Reckoning</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#4F46E5\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n</svg>", "r7_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#EEF2FF\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#4F46E5\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#4F46E5\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">The Reckoning</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><ellipse cx=\"106\" cy=\"160\" rx=\"14\" ry=\"10\" fill=\"#4F46E5\" opacity=\"0.85\"/><circle cx=\"112\" cy=\"157\" r=\"2\" fill=\"#EEF2FF\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Wildlife</text>\n  <g opacity=\"0.85\"><circle cx=\"212\" cy=\"160\" r=\"16\" fill=\"#4F46E5\" opacity=\"0.25\"/><path d=\"M208,168 Q208,150 216,150 Q224,150 218,160 Q212,164 218,170 Q214,174 208,168 Z\" fill=\"#4F46E5\" opacity=\"0.75\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><polygon points=\"318,144 334,168 302,168\" fill=\"#4F46E5\" opacity=\"0.55\"/><polygon points=\"318,152 328,168 308,168\" fill=\"#4F46E5\" opacity=\"0.85\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Resources</text>\n  <g opacity=\"0.85\"><circle cx=\"424\" cy=\"154\" r=\"12\" fill=\"#4F46E5\" opacity=\"0.85\"/><rect x=\"410\" y=\"166\" width=\"28\" height=\"3\" fill=\"#4F46E5\"/><line x1=\"424\" y1=\"169\" x2=\"424\" y2=\"178\" stroke=\"#4F46E5\" stroke-width=\"2.5\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Tourism</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#4F46E5\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#4F46E5\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#4338CA\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#4F46E5\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Ecosystem Architects</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#4F46E5\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>"};
+
+// ======================== EFFECTS PARSER ========================
+// Build alias map: short names -> full metric name
+const METRIC_ALIASES = {};
+(function() {
+  for (const m of SIM.metrics) {
+    const name = m.name;
+    METRIC_ALIASES[name.toLowerCase()] = name;
+    // Add partial aliases: last word, last two words, etc.
+    const words = name.split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const partial = words.slice(i).join(' ').toLowerCase();
+      if (partial.length >= 3 && !METRIC_ALIASES[partial]) {
+        METRIC_ALIASES[partial] = name;
+      }
+    }
+    // Also add without common suffixes
+    const noLevel = name.replace(/\s+(Level|Score|Rating|Index|Remaining|Value)$/i, '').toLowerCase();
+    if (noLevel !== name.toLowerCase() && !METRIC_ALIASES[noLevel]) {
+      METRIC_ALIASES[noLevel] = name;
+    }
+  }
+})();
+
+function findMetric(text) {
+  // Try exact match first, then longest partial match
+  const lower = text.toLowerCase();
+  for (const m of SIM.metrics) {
+    if (lower.includes(m.name.toLowerCase())) return m.name;
+  }
+  // Try aliases (longest first)
+  const aliases = Object.keys(METRIC_ALIASES).sort((a,b) => b.length - a.length);
+  for (const alias of aliases) {
+    if (lower.includes(alias)) return METRIC_ALIASES[alias];
+  }
+  return null;
+}
+
+function parseEffects(effectsStr) {
+  if (!effectsStr) return {};
+  const results = {};
+  const clauses = effectsStr.split(/[.;,]/).map(s => s.trim()).filter(s => s.length > 0);
+
+  for (const clause of clauses) {
+    const metricName = findMetric(clause);
+    if (!metricName) continue;
+
+    // "set to X"
+    const setMatch = clause.match(/set\s+to\s+(-?[\d,.]+)/i);
+    if (setMatch) {
+      results[metricName] = { type: 'set', value: parseNum(setMatch[1]) };
+      continue;
+    }
+
+    // "+/-$X,XXX" or "+/-X" or "+/-X%"
+    const deltaMatch = clause.match(/([+-])\s*\$?([\d,.]+)[%]?/);
+    if (deltaMatch) {
+      const sign = deltaMatch[1] === '+' ? 1 : -1;
+      const val = parseNum(deltaMatch[2]) * sign;
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+      continue;
+    }
+
+    // "-$X,XXX" embedded
+    const negMatch = clause.match(/-\$([\d,.]+)/);
+    if (negMatch) {
+      const val = -parseNum(negMatch[1]);
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+    }
+  }
+  return results;
+}
+
+function parseNum(s) {
+  return parseFloat(s.replace(/,/g, '')) || 0;
+}
+
+function clampMetric(metricDef, value) {
+  const unit = metricDef.unit || '';
+  if (unit === '/100') return Math.max(0, Math.min(100, value));
+  if (unit === '%') return Math.max(-100, Math.min(100, value));
+  if (unit === '$') return Math.max(0, value); // no negative cash
+  return value;
+}
+
+// ======================== GAME STATE ========================
+let G = {
+  started: false,
+  teamCount: 3,
+  teams: [],
+  currentScreen: 'setup',
+  currentRound: 1,
+  currentPhase: 0,
+  roundsComplete: new Set(),
+  teamMetrics: {}, // teamIdx -> {metricName: value}
+  roundDecisions: {}, // round -> teamIdx -> {D1:'A', D2:'B', ...}
+  roundSnapshots: {}, // round -> teamIdx -> {metricName: {before, after, delta}}
+};
+
+function initMetrics() {
+  G.teamMetrics = {};
+  for (let t = 0; t < G.teams.length; t++) {
+    G.teamMetrics[t] = {};
+    for (const m of SIM.metrics) {
+      G.teamMetrics[t][m.name] = m.start;
+    }
+  }
+}
+
+// ======================== TIMER ========================
+let timerInterval = null, timerSeconds = 600;
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + s.toString().padStart(2,'0');
+  document.getElementById('timerDisplay').style.color = timerSeconds <= 60 ? '#EF5350' : 'var(--gold)';
+}
+function startTimer() { if (timerInterval) return; timerInterval = setInterval(() => { if (timerSeconds > 0) { timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; } }, 1000); }
+function pauseTimer() { clearInterval(timerInterval); timerInterval = null; }
+function resetTimer() { pauseTimer(); timerSeconds = 600; updateTimerDisplay(); }
+updateTimerDisplay();
+
+// ======================== NAVIGATION ========================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let h = '<button onclick="goTo(\'setup\')" class="' + (G.currentScreen==='setup'?'active':'') + '"><span class="check"></span> Setup</button>';
+  for (let r = 1; r <= 7; r++) {
+    const done = G.roundsComplete.has(r);
+    const isActive = G.currentScreen === 'round' && G.currentRound === r;
+    h += '<button onclick="goToRound('+r+')" class="' + (isActive?'active':'') + ' ' + (done?'done':'') + '">';
+    h += '<span class="check">' + (done?'&#10003;':'') + '</span> Round ' + r;
+    if (isActive) { h += '<span class="phase-dots">'; for (let p=0;p<4;p++) h += '<span class="dot '+(G.currentPhase>=p?'filled':'')+'"></span>'; h += '</span>'; }
+    h += '</button>';
+  }
+  h += '<div class="sidebar-sep"></div>';
+  h += '<button onclick="goTo(\'leaderboard\')" class="'+(G.currentScreen==='leaderboard'?'active':'')+'"><span class="check"></span> Leaderboard</button>';
+  h += '<button onclick="goTo(\'final\')" class="'+(G.currentScreen==='final'?'active':'')+'"><span class="check"></span> Final Results</button>';
+  h += '<button onclick="goTo(\'debrief\')" class="'+(G.currentScreen==='debrief'?'active':'')+'"><span class="check"></span> Debrief</button>';
+  nav.innerHTML = h;
+}
+
+function goTo(s) { G.currentScreen = s; render(); }
+function goToRound(r) { if (!G.started) return; G.currentScreen = 'round'; G.currentRound = r; G.currentPhase = G.roundsComplete.has(r) ? 3 : 0; render(); }
+function setPhase(p) { G.currentPhase = p; render(); }
+
+function render() {
+  buildSidebar();
+  const c = document.getElementById('content');
+  if (G.currentScreen === 'setup') renderSetup(c);
+  else if (G.currentScreen === 'round') renderRound(c);
+  else if (G.currentScreen === 'leaderboard') renderLeaderboard(c);
+  else if (G.currentScreen === 'final') renderFinal(c);
+  else if (G.currentScreen === 'debrief') renderDebrief(c);
+  updateTopbar();
+}
+
+function updateTopbar() {
+  const title = document.getElementById('topbarTitle');
+  const phase = document.getElementById('topbarPhase');
+  const right = document.getElementById('topbarRight');
+  if (G.currentScreen === 'setup') {
+    title.textContent = 'SETUP';
+    phase.innerHTML = '';
+    right.innerHTML = '<button onclick="showHelp()">How to Play</button>';
+  } else if (G.currentScreen === 'round') {
+    const rd = SIM.rounds[G.currentRound-1];
+    title.textContent = 'ROUND ' + rd.num + ': ' + rd.name.toUpperCase();
+    const phases = ['Briefing','Decisions','Team Entry','Results'];
+    phase.innerHTML = phases.map((p,i) => '<button class="phase-step '+(i===G.currentPhase?'active':i<G.currentPhase?'completed':'')+'" onclick="setPhase('+i+')">'+p+'</button>').join('');
+    let btns = '';
+    if (G.currentPhase > 0) btns += '<button onclick="setPhase('+(G.currentPhase-1)+')">&#8592; Back</button>';
+    if (G.currentPhase < 3) btns += '<button class="primary" onclick="nextPhase()">Next &#8594;</button>';
+    else if (G.currentRound < 7) btns += '<button class="primary" onclick="goToRound('+(G.currentRound+1)+')">Round '+(G.currentRound+1)+' &#8594;</button>';
+    else btns += '<button class="primary" onclick="goTo(\'final\')">Final Results &#8594;</button>';
+    right.innerHTML = btns;
+  } else {
+    title.textContent = G.currentScreen.toUpperCase().replace('LEADERBOARD','LEADERBOARD');
+    phase.innerHTML = '';
+    right.innerHTML = G.currentScreen === 'final' ? '<button class="primary" onclick="goTo(\'debrief\')">Debrief &#8594;</button>' : '';
+  }
+}
+
+function nextPhase() {
+  if (G.currentPhase === 2) {
+    const r = G.currentRound;
+    if (!validateEntries(r)) return;
+    calculateRound(r);
+  }
+  G.currentPhase = Math.min(3, G.currentPhase + 1);
+  render();
+}
+
+function validateEntries(r) {
+  if (!G.roundDecisions[r]) { alert('Please enter decisions for all teams first.'); return false; }
+  for (let t = 0; t < G.teams.length; t++) {
+    const td = G.roundDecisions[r][t];
+    if (!td) { alert(G.teams[t] + ' has not entered any decisions.'); return false; }
+    for (const dec of SIM.rounds[r-1].decisions) {
+      if (!td[dec.id]) { alert(G.teams[t] + ' is missing ' + dec.id + '.'); return false; }
+    }
+  }
+  return true;
+}
+
+function showHelp() { document.getElementById('helpOverlay').classList.add('show'); }
+function closeHelp() { document.getElementById('helpOverlay').classList.remove('show'); }
+
+// ======================== SETUP ========================
+function renderSetup(c) {
+  let h = '<div class="screen active"><div class="setup-hero"><h1>' + SIM.title.toUpperCase() + '</h1><p class="subtitle">' + SIM.subject + ' &bull; ' + SIM.level + '</p><p>Lead your team through 7 rounds of strategic decisions.</p></div>';
+  h += '<div class="card"><h2>Number of Teams</h2><div class="team-count-btns">';
+  for (let i = 2; i <= 6; i++) h += '<button class="'+(G.teamCount===i?'active':'')+'" onclick="setTeamCount('+i+')">'+i+'</button>';
+  h += '</div><h2>Team Names</h2><div class="team-inputs" id="teamInputs">';
+  for (let i = 0; i < G.teamCount; i++) {
+    const val = G.teams[i] || '';
+    h += '<div class="team-input"><span class="num">'+(i+1)+'</span><input type="text" placeholder="Team '+(i+1)+' name" value="'+val+'" onchange="setTeamName('+i+',this.value)" /></div>';
+  }
+  h += '</div></div><button class="start-btn" onclick="startGame()">START GAME</button>';
+  h += '<div style="text-align:center;margin-top:1rem;"><button onclick="showHelp()" style="background:none;border:none;color:var(--mid);text-decoration:underline;cursor:pointer;font-family:\'Nunito\',sans-serif;">How to Play</button></div></div>';
+  c.innerHTML = h;
+}
+
+function setTeamCount(n) { G.teamCount = n; render(); }
+function setTeamName(i, v) { G.teams[i] = v.trim(); }
+
+function startGame() {
+  const inputs = document.querySelectorAll('#teamInputs input');
+  G.teams = [];
+  inputs.forEach((inp, i) => G.teams.push(inp.value.trim() || 'Team '+(i+1)));
+  G.teams = G.teams.slice(0, G.teamCount);
+  initMetrics();
+  G.started = true;
+  G.currentScreen = 'round';
+  G.currentRound = 1;
+  G.currentPhase = 0;
+  render();
+}
+
+// ======================== ROUND RENDERING ========================
+function renderRound(c) {
+  const r = G.currentRound;
+  const rd = SIM.rounds[r-1];
+  let h = '<div class="screen active">';
+  if (G.currentPhase === 0) h += renderBriefing(rd, r);
+  else if (G.currentPhase === 1) h += renderDecisions(rd, r);
+  else if (G.currentPhase === 2) h += renderEntry(r, rd);
+  else if (G.currentPhase === 3) h += renderResults(r);
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+function renderBriefing(rd, r) {
+  let h = '';
+  // SVG illustration
+  const svgKey = 'r'+r+'_briefing';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="report-card"><div class="report-masthead"><h1>' + SIM.title.toUpperCase() + '</h1><div class="dateline">Round ' + rd.num + ' of 7 &bull; ' + rd.name + '</div></div>';
+  h += '<div class="report-items">';
+  for (const item of rd.report) {
+    h += '<div class="report-item"><span class="bullet">&#9679;</span><span class="text">' + item + '</span></div>';
+  }
+  h += '</div>';
+  if (rd.randomEvent) {
+    h += '<div class="event-box"><h3>&#9889; RANDOM EVENT</h3><p>' + rd.randomEvent + '</p></div>';
+  } else {
+    h += '<div class="no-event">&#9728;&#65039; No random event this round &mdash; steady conditions ahead.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderDecisions(rd, r) {
+  let h = '';
+  const svgKey = 'r'+r+'_decisions';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="decisions-grid">';
+  for (const dec of rd.decisions) {
+    h += '<div class="decision-card"><div class="d-label">' + dec.id + ' &mdash; ' + dec.domain.toUpperCase() + '</div>';
+    h += '<div class="d-question">' + dec.question + '</div>';
+    const opts = [['A', dec.optA], ['B', dec.optB], ['C', dec.optC]];
+    for (const [l, desc] of opts) {
+      h += '<div class="option"><span class="letter ' + l.toLowerCase() + '">' + l + '</span><span class="desc">' + desc + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderEntry(r, rd) {
+  if (!G.roundDecisions[r]) {
+    G.roundDecisions[r] = {};
+    for (let t = 0; t < G.teams.length; t++) G.roundDecisions[r][t] = {};
+  }
+  let h = '<div class="card" style="overflow-x:auto;"><h2>TEAM DECISIONS &mdash; ROUND ' + r + '</h2>';
+  h += '<table class="entry-matrix"><thead><tr><th>Decision</th>';
+  for (const tn of G.teams) h += '<th>' + tn + '</th>';
+  h += '</tr></thead><tbody>';
+  for (const dec of rd.decisions) {
+    h += '<tr><td><strong>' + dec.id + ' &mdash; ' + dec.domain + '</strong><br><span style="font-size:0.8rem;font-weight:400;color:var(--grey);">' + truncate(dec.question, 70) + '</span></td>';
+    for (let t = 0; t < G.teams.length; t++) {
+      const cur = (G.roundDecisions[r][t] || {})[dec.id] || '';
+      h += '<td><div class="abc-group">';
+      for (const ch of ['A','B','C']) {
+        const sel = cur === ch ? 'sel-'+ch.toLowerCase() : '';
+        h += '<button class="abc-btn '+sel+'" onclick="pickChoice('+r+','+t+',\''+dec.id+'\',\''+ch+'\')">'+ch+'</button>';
+      }
+      h += '</div></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+
+function pickChoice(r, t, did, ch) {
+  if (!G.roundDecisions[r]) G.roundDecisions[r] = {};
+  if (!G.roundDecisions[r][t]) G.roundDecisions[r][t] = {};
+  G.roundDecisions[r][t][did] = ch;
+  render();
+}
+
+// ======================== SCORING ENGINE ========================
+function calculateRound(r) {
+  const rd = SIM.rounds[r-1];
+  if (!G.roundSnapshots[r]) G.roundSnapshots[r] = {};
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const before = {};
+    for (const m of SIM.metrics) before[m.name] = G.teamMetrics[t][m.name];
+    
+    // Apply each decision's effects
+    for (const dec of rd.decisions) {
+      const choice = G.roundDecisions[r][t][dec.id];
+      const effectsStr = dec.effects;
+      // Parse the choice-specific effects from the combined string
+      const choiceEffects = extractChoiceEffects(effectsStr, choice);
+      const parsed = parseEffects(choiceEffects);
+      
+      for (const [metricName, effect] of Object.entries(parsed)) {
+        const mDef = SIM.metrics.find(m => m.name === metricName);
+        if (!mDef) continue;
+        if (effect.type === 'set') {
+          G.teamMetrics[t][metricName] = effect.value;
+        } else {
+          G.teamMetrics[t][metricName] += effect.value;
+        }
+        if (mDef) G.teamMetrics[t][metricName] = clampMetric(mDef, G.teamMetrics[t][metricName]);
+      }
+    }
+    
+    // Save snapshot
+    const after = {};
+    const deltas = {};
+    for (const m of SIM.metrics) {
+      after[m.name] = G.teamMetrics[t][m.name];
+      deltas[m.name] = after[m.name] - before[m.name];
+    }
+    G.roundSnapshots[r][t] = { before, after, deltas };
+  }
+  G.roundsComplete.add(r);
+}
+
+function extractChoiceEffects(effectsStr, choice) {
+  // Effects format: "A: effect1. effect2. B: effect1. effect2. C: effect1."
+  // Split by A:/B:/C: markers
+  const regex = /\b([ABC]):\s*/g;
+  const parts = {};
+  let lastKey = null, lastIdx = 0;
+  let match;
+  const matches = [];
+  while ((match = regex.exec(effectsStr)) !== null) {
+    matches.push({ key: match[1], idx: match.index, end: match.index + match[0].length });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].end;
+    const end = i + 1 < matches.length ? matches[i+1].idx : effectsStr.length;
+    parts[matches[i].key] = effectsStr.substring(start, end).trim();
+  }
+  return parts[choice] || '';
+}
+
+function fmtVal(value, unit) {
+  if (unit === '$' || unit === 'USD') return '$' + Math.round(value).toLocaleString();
+  if (unit === '%') return value.toFixed(1) + '%';
+  if (unit === '/100') return Math.round(value) + '/100';
+  return Math.round(value).toLocaleString() + (unit && unit !== '$' && unit !== '%' && unit !== '/100' ? ' ' + unit : '');
+}
+
+function fmtDelta(delta, unit) {
+  const sign = delta >= 0 ? '+' : '';
+  if (unit === '$' || unit === 'USD') return sign + '$' + Math.round(delta).toLocaleString();
+  if (unit === '%') return sign + delta.toFixed(1) + '%';
+  return sign + Math.round(delta).toLocaleString();
+}
+
+// ======================== RESULTS ========================
+function renderResults(r) {
+  if (!G.roundSnapshots[r]) return '<div class="card"><h2>No results yet</h2></div>';
+  
+  let h = '<div class="card"><h2>ROUND ' + r + ' RESULTS</h2>';
+  h += '<table class="results-table"><thead><tr><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '</tr></thead><tbody>';
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<tr><td>' + G.teams[t] + '</td>';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      h += '<td>' + fmtVal(val, m.unit) + '<br><span class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</span></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Per-team metric cards
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<div class="card"><h3>' + G.teams[t] + '</h3><div class="metrics-grid">';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      const barPct = m.unit === '/100' ? val : m.unit === '%' ? Math.max(0, val) : Math.min(100, (val / (m.start > 0 ? m.start * 3 : 100000)) * 100);
+      h += '<div class="metric-card"><div class="m-name">' + m.name + '</div>';
+      h += '<div class="m-val">' + fmtVal(val, m.unit) + '</div>';
+      h += '<div class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</div>';
+      if (m.unit === '/100') h += '<div class="metric-bar"><div class="metric-bar-fill" style="width:' + Math.max(0, Math.min(100, val)) + '%"></div></div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  }
+  
+  return h;
+}
+
+// ======================== LEADERBOARD ========================
+function getScore(t) {
+  // Composite score: each metric contributes up to 100 points (clamped)
+  let score = 0;
+  for (const m of SIM.metrics) {
+    const val = G.teamMetrics[t][m.name];
+    let c;
+    if (m.unit === '/100') {
+      c = val;
+    } else if (m.unit === '%') {
+      c = Math.min(val, 100);
+    } else {
+      // For $, people, users, coins, degrees, etc: normalise against start value
+      const base = Math.abs(m.start) > 0 ? Math.abs(m.start) : 100;
+      c = (val / base) * 50;
+    }
+    // Clamp each metric to [-100, 100] so no single metric dominates
+    score += Math.max(-100, Math.min(100, c));
+  }
+  return Math.round(score);
+}
+
+function renderLeaderboard(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Start the game first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  let h = '<div class="screen active"><div class="card"><h2>LEADERBOARD</h2></div>';
+  const medals = ['&#129351;','&#129352;','&#129353;'];
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<div class="lb-row"><div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>';
+    h += '<div class="lb-name">' + r.name + '</div><div class="lb-stats">';
+    for (const m of SIM.metrics.slice(0, 4)) {
+      h += '<div class="lb-stat"><div class="val">' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</div><div class="lbl">' + m.name + '</div></div>';
+    }
+    h += '<div class="lb-stat"><div class="val">' + Math.round(r.score) + '</div><div class="lbl">Score</div></div>';
+    h += '</div></div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== FINAL RESULTS ========================
+function renderFinal(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Complete all rounds first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  const medals = ['&#127942;','&#129352;','&#129353;'];
+  
+  let h = '<div class="screen active"><div class="final-hero"><h1>FINAL RESULTS</h1></div>';
+  h += '<div class="podium">';
+  const order = ranked.length >= 3 ? [1, 0, 2] : ranked.length >= 2 ? [1, 0] : [0];
+  for (const oi of order) {
+    if (oi >= ranked.length) continue;
+    const r = ranked[oi];
+    h += '<div class="podium-item ' + (oi === 0 ? 'first' : '') + '"><div class="medal">' + (medals[oi] || '') + '</div>';
+    h += '<div class="pname">' + r.name + '</div><div class="pval">Score: ' + Math.round(r.score) + '</div></div>';
+  }
+  h += '</div>';
+  
+  // Full results table
+  h += '<div class="card"><h2>FULL BREAKDOWN</h2><table class="results-table"><thead><tr><th>Rank</th><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '<th>Score</th></tr></thead><tbody>';
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<tr><td>#' + (i+1) + '</td><td>' + r.name + '</td>';
+    for (const m of SIM.metrics) h += '<td>' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</td>';
+    h += '<td><strong>' + Math.round(r.score) + '</strong></td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+  c.innerHTML = h;
+}
+
+// ======================== DEBRIEF ========================
+function renderDebrief(c) {
+  let h = '<div class="screen active"><div class="card"><h2>DEBRIEF DISCUSSION</h2><p>Use these questions to guide whole-class discussion.</p></div>';
+  
+  if (SIM.debriefQuestions) {
+    for (let i = 0; i < SIM.debriefQuestions.length; i++) {
+      h += '<div class="debrief-q"><div class="qnum">QUESTION ' + (i+1) + '</div><p>' + SIM.debriefQuestions[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.keyTakeaways) {
+    h += '<div class="card"><h2>KEY TAKEAWAYS</h2></div>';
+    for (let i = 0; i < SIM.keyTakeaways.length; i++) {
+      h += '<div class="takeaway-card"><h3>Takeaway ' + (i+1) + '</h3><p>' + SIM.keyTakeaways[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.curriculumLinks) {
+    h += '<div class="card"><h2>CURRICULUM LINKS</h2></div>';
+    for (const cl of SIM.curriculumLinks) {
+      h += '<div class="curriculum-card"><div class="c-topic">' + cl.topic + '</div><div class="c-spec">' + cl.spec + '</div><div class="c-how">' + cl.how + '</div></div>';
+    }
+  }
+  
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== INIT ========================
+render();
+</script>
+</body>
+</html>

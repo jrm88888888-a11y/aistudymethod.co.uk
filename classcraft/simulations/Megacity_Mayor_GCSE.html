@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Megacity Mayor | GCSE Geography Simulation | Free | classcraft....</title>
+    <meta name="description" content="Play Megacity Mayor — a free interactive GCSE geography simulation. No login required. Build decision-making skills with this classroom-ready game.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root {
+  --navy:#78350F;--mid:#D97706;--gold:#FBBF24;--gold2:#F59E0B;
+  --white:#FFFFFF;--offwh:#F5F7FA;--grey:#8892A4;--dgrey:#2D3748;
+  --green:#1E8449;--red:#C0392B;--amber:#E67E22;--card:#FFFFFF;
+  --border:#E2E8F0;--shadow:0 4px 24px rgba(0,0,0,0.10);--r:10px;
+  --btn-a:#1A5276;--btn-b:#145A32;--btn-c:#922B21;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{font-family:'Nunito',sans-serif;background:var(--offwh);color:var(--dgrey);min-height:100vh;display:flex;overflow:hidden;}
+
+.sidebar{width:260px;min-width:260px;background:var(--navy);color:var(--white);display:flex;flex-direction:column;height:100vh;position:relative;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.2rem 0.8rem;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h1{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);letter-spacing:2px;}
+.sidebar-logo p{font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:0.5rem 0;}
+.sidebar-nav button{display:flex;align-items:center;width:100%;padding:0.8rem 1.2rem;background:none;border:none;color:rgba(255,255,255,0.6);font-family:'Nunito',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.2s;text-align:left;gap:0.6rem;}
+.sidebar-nav button:hover{background:rgba(255,255,255,0.08);color:var(--white);}
+.sidebar-nav button.active{background:rgba(255,255,255,0.15);color:var(--gold);border-left:3px solid var(--gold);}
+.sidebar-nav button .check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0;}
+.sidebar-nav button.done .check{background:var(--green);border-color:var(--green);color:var(--white);}
+.sidebar-nav button .phase-dots{margin-left:auto;display:flex;gap:3px;}
+.sidebar-nav button .phase-dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.sidebar-nav button .phase-dots .dot.filled{background:var(--gold);}
+.sidebar-sep{height:1px;background:rgba(255,255,255,0.1);margin:0.3rem 1.2rem;}
+.sidebar-timer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,0.1);}
+.timer-display{font-family:'DM Mono',monospace;font-size:2.2rem;color:var(--gold);text-align:center;margin-bottom:0.5rem;}
+.timer-btns{display:flex;gap:0.5rem;}
+.timer-btns button{flex:1;padding:0.4rem;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:'Nunito',sans-serif;}
+.timer-btns button:hover{background:rgba(255,255,255,0.1);}
+
+.main{flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(0,0,0,0.15);}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%;}
+.topbar-phase{display:flex;gap:0.5rem;align-items:center;}
+.phase-step{padding:0.3rem 1rem;border-radius:20px;font-size:0.8rem;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.phase-step.active{background:var(--gold);color:var(--navy);font-weight:600;}
+.phase-step.completed{background:rgba(30,132,73,0.3);color:#6FCF97;}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.topbar-right button{padding:0.3rem 1rem;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:none;color:var(--white);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.85rem;}
+.topbar-right button:hover{background:rgba(255,255,255,0.1);}
+.topbar-right button.primary{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+.topbar-right button.primary:hover{opacity:0.9;}
+
+.content{flex:1;padding:2rem;max-width:1400px;width:100%;margin:0 auto;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.2rem;}
+.card h2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--navy);letter-spacing:1px;margin-bottom:0.8rem;}
+.card h3{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:0.5rem;}
+
+.setup-hero{text-align:center;padding:3rem 0 2rem;}
+.setup-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--navy);letter-spacing:3px;}
+.setup-hero p{font-size:1.1rem;color:var(--grey);margin-top:0.5rem;}
+.setup-hero .subtitle{color:var(--gold);font-weight:600;font-size:1.2rem;margin-top:0.2rem;}
+.team-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;}
+.team-input{display:flex;align-items:center;gap:0.8rem;background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:0.8rem 1rem;transition:border-color 0.2s;}
+.team-input:focus-within{border-color:var(--gold);}
+.team-input .num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);width:30px;}
+.team-input input{flex:1;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:1rem;color:var(--dgrey);}
+.team-count-btns{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem;}
+.team-count-btns button{width:48px;height:48px;border-radius:50%;border:2px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.2rem;cursor:pointer;transition:all 0.2s;color:var(--dgrey);}
+.team-count-btns button.active{background:var(--navy);color:var(--gold);border-color:var(--navy);}
+.start-btn{display:block;margin:2rem auto 0;padding:1rem 3rem;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--r);cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+
+.report-card{background:#FFF8E7;border:3px solid #2D2D2D;border-radius:4px;padding:2rem;font-family:Georgia,'Times New Roman',serif;}
+.report-masthead{text-align:center;border-bottom:3px double #2D2D2D;padding-bottom:1rem;margin-bottom:1.5rem;}
+.report-masthead h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#1a1a1a;letter-spacing:4px;}
+.report-masthead .dateline{font-size:0.85rem;color:#666;margin-top:0.3rem;font-style:italic;}
+.report-items{display:grid;gap:0.8rem;}
+.report-item{display:flex;gap:0.8rem;padding:0.6rem 0;border-bottom:1px solid #ddd;align-items:baseline;}
+.report-item .bullet{color:var(--gold);font-weight:bold;font-size:1.2rem;flex-shrink:0;}
+.report-item .text{font-size:1rem;line-height:1.5;color:#333;}
+.event-box{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid var(--amber);border-radius:var(--r);padding:1.2rem 1.5rem;margin-top:1.5rem;}
+.event-box h3{font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:1.3rem;margin-bottom:0.5rem;}
+.event-box p{font-size:1rem;line-height:1.5;}
+.no-event{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:2px solid var(--green);border-radius:var(--r);padding:1rem 1.5rem;margin-top:1.5rem;text-align:center;color:var(--green);font-weight:600;}
+
+.decisions-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+.decisions-grid .decision-card:nth-child(5){grid-column:1 / -1;}
+.decision-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:0.8rem 1rem;border-left:4px solid var(--navy);}
+.decision-card .d-label{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.15rem;}
+.decision-card .d-question{font-size:0.95rem;font-weight:600;color:var(--navy);margin-bottom:0.5rem;line-height:1.3;}
+.option{display:flex;gap:0.5rem;padding:0.3rem 0.5rem;border-radius:6px;margin-bottom:0.25rem;background:var(--offwh);transition:background 0.15s;align-items:baseline;}
+.option .letter{font-family:'DM Mono',monospace;font-weight:700;font-size:0.75rem;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--white);}
+.option .letter.a{background:var(--btn-a);}
+.option .letter.b{background:var(--btn-b);}
+.option .letter.c{background:var(--btn-c);}
+.option .desc{font-size:0.85rem;line-height:1.3;color:var(--dgrey);}
+
+.entry-matrix{width:100%;border-collapse:separate;border-spacing:0;}
+.entry-matrix th{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--white);background:var(--navy);padding:0.8rem;text-align:center;position:sticky;top:0;z-index:5;}
+.entry-matrix th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.entry-matrix th:last-child{border-radius:0 var(--r) 0 0;}
+.entry-matrix td{padding:0.6rem;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+.entry-matrix td:first-child{text-align:left;font-weight:600;font-size:0.9rem;color:var(--navy);min-width:180px;max-width:300px;}
+.abc-group{display:flex;gap:6px;justify-content:center;}
+.abc-btn{width:56px;height:56px;border-radius:12px;border:3px solid var(--border);background:var(--white);font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--dgrey);user-select:none;}
+.abc-btn:active{transform:scale(0.95);}
+.abc-btn.sel-a{background:var(--btn-a);color:var(--white);border-color:var(--btn-a);}
+.abc-btn.sel-b{background:var(--btn-b);color:var(--white);border-color:var(--btn-b);}
+.abc-btn.sel-c{background:var(--btn-c);color:var(--white);border-color:var(--btn-c);}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin:1rem 0;}
+.metric-card{background:var(--white);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);text-align:center;}
+.metric-card .m-name{font-size:0.8rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;}
+.metric-card .m-val{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:700;color:var(--navy);}
+.metric-card .m-delta{font-size:0.85rem;font-weight:600;margin-top:0.2rem;}
+.metric-card .m-delta.pos{color:var(--green);}
+.metric-card .m-delta.neg{color:var(--red);}
+.metric-card .m-delta.zero{color:var(--grey);}
+.metric-bar{height:6px;background:var(--border);border-radius:3px;margin-top:0.5rem;overflow:hidden;}
+.metric-bar-fill{height:100%;border-radius:3px;background:var(--mid);transition:width 0.5s ease;}
+
+.results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:1rem;}
+.results-table th{font-family:'Bebas Neue',sans-serif;background:var(--navy);color:var(--white);padding:0.7rem;text-align:center;font-size:0.85rem;}
+.results-table th:first-child{text-align:left;border-radius:var(--r) 0 0 0;}
+.results-table th:last-child{border-radius:0 var(--r) 0 0;}
+.results-table td{padding:0.5rem;text-align:center;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.9rem;}
+.results-table td:first-child{text-align:left;font-family:'Nunito',sans-serif;font-weight:600;}
+
+.lb-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--white);border-radius:var(--r);margin-bottom:0.8rem;box-shadow:var(--shadow);}
+.lb-row:first-child{border:2px solid var(--gold);background:linear-gradient(135deg,#FFFDE7,#FFF8E1);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--navy);width:50px;text-align:center;}
+.lb-row:first-child .lb-rank{color:var(--gold);}
+.lb-name{flex:1;font-size:1.3rem;font-weight:600;color:var(--navy);}
+.lb-stats{display:flex;gap:2rem;}
+.lb-stat{text-align:center;}
+.lb-stat .val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--navy);}
+.lb-stat .lbl{font-size:0.7rem;color:var(--grey);text-transform:uppercase;letter-spacing:1px;}
+
+.final-hero{text-align:center;padding:2rem 0;}
+.final-hero h1{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--gold);letter-spacing:3px;}
+.podium{display:flex;justify-content:center;gap:1.5rem;margin:2rem 0;align-items:flex-end;flex-wrap:wrap;}
+.podium-item{text-align:center;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:1.5rem;min-width:180px;}
+.podium-item.first{padding-bottom:2.5rem;border:3px solid var(--gold);transform:scale(1.1);}
+.podium-item .medal{font-size:3rem;}
+.podium-item .pname{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--navy);margin:0.3rem 0;}
+.podium-item .pval{font-family:'DM Mono',monospace;font-size:1.2rem;color:var(--green);font-weight:700;}
+
+.debrief-q{background:var(--white);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:0.8rem;box-shadow:var(--shadow);border-left:4px solid var(--gold);}
+.debrief-q .qnum{font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:1rem;letter-spacing:1px;}
+.debrief-q p{font-size:1.05rem;color:var(--dgrey);line-height:1.5;margin-top:0.3rem;}
+.takeaway-card{background:linear-gradient(135deg,var(--navy),var(--mid));border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;color:var(--white);}
+.takeaway-card h3{font-family:'Bebas Neue',sans-serif;color:var(--gold);margin-bottom:0.5rem;font-size:1.2rem;}
+.takeaway-card p{font-size:0.95rem;line-height:1.5;opacity:0.9;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.overlay-box{background:var(--white);border-radius:var(--r);padding:2rem;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3);}
+.overlay-box h2{font-family:'Bebas Neue',sans-serif;color:var(--navy);font-size:1.8rem;margin-bottom:1rem;}
+.overlay-box p,.overlay-box li{font-size:0.95rem;line-height:1.6;margin-bottom:0.5rem;color:var(--dgrey);}
+.overlay-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--grey);}
+
+.svg-container{text-align:center;margin:1rem 0;}
+.svg-container svg{max-width:100%;height:auto;border-radius:var(--r);box-shadow:var(--shadow);}
+
+.curriculum-card{background:var(--white);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:0.6rem;box-shadow:var(--shadow);border-left:4px solid var(--mid);}
+.curriculum-card .c-topic{font-weight:600;color:var(--navy);font-size:0.95rem;}
+.curriculum-card .c-spec{font-size:0.8rem;color:var(--grey);margin-top:0.15rem;}
+.curriculum-card .c-how{font-size:0.9rem;color:var(--dgrey);margin-top:0.3rem;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>MEGACITY MAYOR</h1>
+    <p>Geography &bull; GCSE</p>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-timer">
+    <div class="timer-display" id="timerDisplay">10:00</div>
+    <div class="timer-btns">
+      <button onclick="startTimer()">Start</button>
+      <button onclick="pauseTimer()">Pause</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">SETUP</div>
+    <div class="topbar-phase" id="topbarPhase"></div>
+    <div class="topbar-right" id="topbarRight"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="overlay-box">
+    <button class="overlay-close" onclick="closeHelp()">&times;</button>
+    <h2>How to Play</h2>
+    <p><strong>Megacity Mayor</strong> is a 7-round simulation where teams make strategic decisions across 7 key metrics.</p>
+    <p><strong>Each Round</strong> has 4 phases:</p>
+    <ul>
+      <li><strong>Briefing</strong> &mdash; Read the situation report and any random events aloud.</li>
+      <li><strong>Decision Cards</strong> &mdash; Show the 5 decisions. Teams discuss (~10 min, use the timer).</li>
+      <li><strong>Team Entry</strong> &mdash; Each team taps A, B, or C for each decision.</li>
+      <li><strong>Results</strong> &mdash; Scores update and metric changes are displayed.</li>
+    </ul>
+    <p><strong>Metrics:</strong> Population, Air Quality Index, Housing Index, GDP per Capita, Green Coverage, Transport Efficiency, Social Inequality. Each decision shifts these metrics. The team with the best overall performance wins.</p>
+    <p><strong>Scoring:</strong> Final score is the sum of all metric values (normalised to their scales).</p>
+  </div>
+</div>
+
+<script>
+// ======================== EMBEDDED DATA ========================
+const SIM = {"title": "Megacity Mayor", "subject": "Geography", "level": "GCSE", "duration": "90 minutes", "teamSize": "3-5 students", "numTeams": "4-6 teams", "overview": "Megacity Mayor places teams in charge of a rapidly growing city of 10 million people in a newly emerging economy. Over seven annual rounds, teams must tackle the interconnected challenges of urbanisation: housing shortages, traffic gridlock, air pollution, inequality, and the constant pressure of a population that grows whether you plan for it or not.\n\nEach round presents a realistic briefing on the city's condition along with five decisions spanning housing, transport, environment, economy, and ethics. Every choice has quantified trade-offs across seven tracked metrics. Build tower blocks and you ease housing pressure but worsen air quality. Invest in metro systems and GDP rises but treasury funds vanish. Ignore inequality and social unrest drags everything down.\n\nThe simulation mirrors real urban challenges faced by megacities like Lagos, Mumbai, and Sao Paulo. The winning team achieves the best balanced scorecard across all seven metrics, proving that successful urban management requires integrated thinking, not just maximising one measure at the expense of others.", "scenario": "Welcome to Nova Cidade, a coastal megacity of 10 million people in a newly industrialised country. The city has grown explosively over the past two decades as rural-to-urban migration and natural increase have driven rapid urbanisation. Informal settlements house 30% of the population. Traffic congestion costs the economy billions. Air quality is deteriorating and green spaces are vanishing under concrete.\n\nYou have been elected as the city's leadership team with a mandate to transform Nova Cidade into a liveable, prosperous, and sustainable megacity. Your starting metrics reflect a city with serious problems but enormous potential. Every year brings new pressures, crises, and opportunities. The choices you make will determine whether Nova Cidade becomes a model for sustainable urban living or collapses under the weight of its own growth.", "metrics": [{"name": "Population", "start": 10000000, "unit": "people", "description": "Total city population. Grows through natural increase and migration. Affected by quality of life and economic opportunity."}, {"name": "Air Quality Index", "start": 45, "unit": "/100", "description": "Air quality score where 100 is pristine. Below 30 triggers health emergencies. Affected by transport, industry, and green coverage."}, {"name": "Housing Index", "start": 40, "unit": "/100", "description": "Adequacy of housing provision. Below 30 triggers social unrest. Measures formal housing availability, quality, and affordability."}, {"name": "GDP per Capita", "start": 8000, "unit": "USD", "description": "Economic output per person. Funds public services and attracts investment. Affected by infrastructure, education, and trade."}, {"name": "Green Coverage", "start": 15, "unit": "%", "description": "Percentage of city area that is parks, gardens, street trees, or natural habitat. Affects air quality, quality of life, and flood resilience."}, {"name": "Transport Efficiency", "start": 35, "unit": "/100", "description": "How well people can move around the city. Measures average commute time, public transport coverage, and congestion levels."}, {"name": "Social Inequality", "start": 0.45, "unit": "Gini coefficient", "description": "Income inequality measure where 0 is perfect equality and 1 is maximum inequality. Lower is better. Above 0.55 triggers social unrest."}], "finalScoring": "Final Score = (Air Quality Index x 20) + (Housing Index x 20) + (GDP per Capita / 100) + (Green Coverage x 30) + (Transport Efficiency x 20) - (Social Inequality x 2000). Population is a multiplier: teams with population above 12M get a x1.1 bonus. Highest total score wins.", "curriculumLinks": [{"topic": "Urbanisation", "spec": "GCSE Geography", "how": "The entire simulation models rapid urbanisation in an LIC/NEE context, including push-pull migration factors and natural population increase."}, {"topic": "Urban challenges", "spec": "GCSE Geography", "how": "Housing decisions address squatter settlements, slum upgrading, and social housing. Transport decisions tackle congestion and public transit."}, {"topic": "Sustainable urban living", "spec": "GCSE Geography", "how": "Green infrastructure, renewable energy, and waste management decisions directly teach sustainable urban strategies."}, {"topic": "Urban growth in LICs and NEEs", "spec": "GCSE Geography", "how": "Nova Cidade mirrors real megacities in newly emerging economies with rapid growth, informal housing, and infrastructure deficits."}, {"topic": "Urban planning", "spec": "GCSE Geography", "how": "Teams experience the real trade-offs urban planners face between economic growth, social equity, and environmental protection."}, {"topic": "Inequality", "spec": "GCSE Geography", "how": "The Gini coefficient metric and ethical dilemmas highlight how urban growth can widen or narrow social gaps."}, {"topic": "Environmental management", "spec": "GCSE Geography", "how": "Air quality, green coverage, and pollution decisions connect to urban environmental management strategies."}], "rounds": [{"num": 1, "name": "Year 1 — Taking Office", "report": ["Nova Cidade's population stands at 10 million. Approximately 3 million live in informal settlements (favelas) with no legal tenure, unreliable water, and no sewage connection.", "The city's main transport is private cars and minibuses. Average commute time is 95 minutes. Only 12% of residents have access to a metro or bus rapid transit system.", "Air quality monitoring shows PM2.5 levels regularly exceed WHO safe limits. Industrial zones in the east produce visible smog.", "GDP per capita is $8,000 — growing at 4% annually but wealth is concentrated. The richest 10% earn 15 times more than the poorest 10%.", "Green spaces have been steadily consumed by development. Only 15% of the city area remains green, compared to a recommended minimum of 30%."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Housing", "question": "3 million people live in informal settlements. What is your first housing strategy?", "optA": "Mass demolition and relocation — clear the largest favela and move residents to new tower blocks on the city outskirts", "optB": "In-situ upgrading — install water, sewage, electricity, and paved paths within existing settlements while granting legal land tenure", "optC": "Public-private partnership — offer tax breaks to developers who build affordable housing units throughout the city", "effects": "A: Housing Index +8, Social Inequality +0.03 (displacement disrupts communities), Transport Efficiency -3 (outskirts far from jobs), GDP per Capita +200 (construction boom), Green Coverage -2% (outskirt development). B: Housing Index +5, Social Inequality -0.04 (tenure security), Quality of Life implicit +5, GDP per Capita +100 (local economy boosted), Green Coverage +0%. C: Housing Index +6, Social Inequality +0.02 (developers build for profit not poorest), GDP per Capita +400 (investment), Green Coverage -1% (infill development)."}, {"id": "D2", "domain": "Transport", "question": "Commute times are crushing productivity. What transport investment do you prioritise?", "optA": "Build a new 6-lane urban motorway connecting the eastern suburbs to the city centre", "optB": "Invest in a Bus Rapid Transit (BRT) network with dedicated lanes across 5 major corridors", "optC": "Begin construction of a metro rail system — 2 lines, 30 stations, operational in 3 years", "effects": "A: Transport Efficiency +8, Air Quality -5 (more cars encouraged), GDP per Capita +300 (freight movement), Green Coverage -3% (road footprint), Social Inequality +0.02 (benefits car owners). B: Transport Efficiency +10, Air Quality +2 (fewer car trips), GDP per Capita +200, Green Coverage -1%, Social Inequality -0.02 (affordable public transit). C: Transport Efficiency +4 now (+12 when complete in Round 4), Air Quality +3, GDP per Capita -200 (construction disruption short term), Green Coverage -1%, Social Inequality -0.03 (mass transit benefits all)."}, {"id": "D3", "domain": "Environment", "question": "Industrial smog is worsening. How do you address air quality?", "optA": "Impose strict emission standards on all factories — comply within 12 months or face closure", "optB": "Create an emissions trading scheme — factories buy pollution permits, with caps reducing annually", "optC": "Plant 500,000 urban trees and create green corridors connecting parks across the city", "effects": "A: Air Quality +8, GDP per Capita -400 (factory compliance costs, some close), Social Inequality +0.02 (job losses in industrial sector), Housing Index +0. B: Air Quality +5, GDP per Capita +100 (trading creates market, efficient factories profit), Social Inequality +0.01, Green Coverage +0%. C: Air Quality +3 now (+5 more over 3 rounds as trees mature), GDP per Capita +100 (green jobs), Green Coverage +4%, Social Inequality -0.01 (green jobs in poorer areas)."}, {"id": "D4", "domain": "Economy", "question": "The national government offers a Special Economic Zone (SEZ). Where do you locate it?", "optA": "On reclaimed coastal wetland — large flat area ideal for port-linked manufacturing", "optB": "In a brownfield industrial area in the east — redeveloping abandoned factories", "optC": "As a distributed tech hub — multiple smaller zones near universities and transport nodes", "effects": "A: GDP per Capita +600, Air Quality -4 (industrial pollution), Green Coverage -3% (wetland destroyed), Transport Efficiency +2 (port access), Social Inequality +0.03 (wealth concentrated). B: GDP per Capita +400, Air Quality +2 (modern replaces old polluters), Green Coverage +1% (brownfield greening around zone), Transport Efficiency +0, Social Inequality -0.01 (jobs near existing communities). C: GDP per Capita +300, Air Quality +0, Green Coverage +0%, Transport Efficiency +3 (distributed reduces commutes), Social Inequality -0.03 (opportunity spread widely)."}, {"id": "D5", "domain": "Ethics", "question": "A historic but crumbling neighbourhood of 50,000 residents sits on prime waterfront land. A multinational wants to buy it for a luxury development worth $2 billion to the city economy. Residents don't want to leave.", "optA": "Approve the development — use compulsory purchase orders. Offer residents market-rate compensation and relocation.", "optB": "Negotiate a mixed development — the multinational builds luxury on 60% of the land, 40% is upgraded for existing residents with new affordable housing", "optC": "Reject the development — protect the historic neighbourhood and invest in community-led regeneration instead", "effects": "A: GDP per Capita +500, Housing Index +3 (new luxury housing), Social Inequality +0.05 (gentrification displaces poor), Green Coverage -1%, Transport Efficiency +0, Air Quality +0. B: GDP per Capita +300, Housing Index +5, Social Inequality +0.01 (compromise), Green Coverage +0%, Transport Efficiency +0. C: GDP per Capita +0, Housing Index +2 (gradual improvement), Social Inequality -0.03 (community empowered), Green Coverage +1% (community gardens), Transport Efficiency +0."}]}, {"num": 2, "name": "Year 2 — Earthquake", "report": ["Population has grown to approximately 10.4 million through natural increase and continued rural-urban migration.", "Housing improvements from Year 1 are beginning to show, but informal settlements still house millions.", "Transport projects are under construction. Commuters are frustrated by roadworks and diversions.", "Air quality data shows slight improvements in some areas but worsening in others due to construction dust.", "International investors are watching Nova Cidade with interest following Year 1's economic decisions."], "randomEvent": "EARTHQUAKE: A magnitude 6.2 earthquake strikes 40km from the city centre. Informal settlements suffer worst — 500 buildings collapse in favelas (poorly constructed). Formal buildings mostly survive. All teams: Housing Index -8. Teams that chose in-situ upgrading (strengthened informal housing) in R1: Housing Index -4 instead. Infrastructure projects delayed by 6 months. GDP per Capita -300 (economic disruption). Social Inequality +0.02 (poor communities hit hardest).", "decisions": [{"id": "D1", "domain": "Housing", "question": "The earthquake has displaced 200,000 people from collapsed informal housing. How do you respond?", "optA": "Emergency tent camps in city parks and sports facilities — fast but temporary", "optB": "Rapid prefabricated housing on government-owned land — decent quality, 6-month timeline", "optC": "Fast-track building regulations to allow residents to rebuild with earthquake-resistant designs, providing free materials and engineering support", "effects": "A: Housing Index +3, Green Coverage -2% (parks occupied), Social Inequality +0.02 (camps become semi-permanent slums), GDP per Capita -100. B: Housing Index +6, Green Coverage -1%, Social Inequality -0.01, GDP per Capita +100 (construction stimulus). C: Housing Index +4, Green Coverage +0%, Social Inequality -0.03 (community empowerment), GDP per Capita +200 (local building economy)."}, {"id": "D2", "domain": "Transport", "question": "The earthquake damaged several road bridges and disrupted transport networks. What is your priority?", "optA": "Repair all vehicle bridges immediately — restore car and bus routes to normal", "optB": "Repair critical bridges but also create temporary cycle lanes and pedestrian routes through damaged areas", "optC": "Use the disruption as an opportunity to redesign the damaged corridors with dedicated bus and cycle lanes, reducing car capacity", "effects": "A: Transport Efficiency +5, Air Quality -2 (cars back to pre-quake levels), GDP per Capita +200 (trade routes restored). B: Transport Efficiency +4, Air Quality +2 (cycling reduces emissions), GDP per Capita +100, Green Coverage +1% (street planting along new routes). C: Transport Efficiency +6 (long-term better design), Air Quality +4, GDP per Capita +0 (disruption during rebuild), Social Inequality -0.02 (cycling is cheap transport)."}, {"id": "D3", "domain": "Environment", "question": "Earthquake rubble — 2 million tonnes of concrete and debris — needs disposal. How do you handle it?", "optA": "Dump it in a coastal landfill site — fast and cheap", "optB": "Crush and recycle 70% as aggregate for new construction. Landfill the rest.", "optC": "Use rubble to create new coastal parkland — land reclamation for green space, not development", "effects": "A: Air Quality -3 (dust, transport emissions), Green Coverage -1% (landfill), GDP per Capita +100 (cheap disposal), Social Inequality +0.01 (landfill near poor communities). B: Air Quality -1 (some dust), Green Coverage +0%, GDP per Capita +200 (recycled materials save costs), Social Inequality +0. C: Air Quality -1, Green Coverage +3% (new coastal park), GDP per Capita +0, Social Inequality -0.02 (public green space benefits all)."}, {"id": "D4", "domain": "Economy", "question": "International aid of $500 million is offered for earthquake recovery. How do you allocate it?", "optA": "80% to infrastructure repair, 20% to humanitarian relief — get the city running again fast", "optB": "Equal three-way split: 33% infrastructure, 33% housing, 33% economic stimulus for affected businesses", "optC": "60% to housing and community rebuilding, 30% to small business grants, 10% to infrastructure", "effects": "A: Transport Efficiency +4, GDP per Capita +400 (infrastructure boosts economy), Housing Index +2, Social Inequality +0.02 (infrastructure benefits wealthy areas more). B: Transport Efficiency +2, GDP per Capita +250, Housing Index +4, Social Inequality -0.01 (balanced approach). C: Transport Efficiency +1, GDP per Capita +150, Housing Index +7, Social Inequality -0.04 (poorest communities prioritised)."}, {"id": "D5", "domain": "Ethics", "question": "Earthquake rescue teams found that a major building that collapsed was built with substandard materials by a politically connected developer. 23 people died. What do you do?", "optA": "Full criminal prosecution of the developer and a public inquiry into building standards", "optB": "Quiet settlement — the developer pays compensation to victims' families and funds a new building inspection unit", "optC": "Use this as a catalyst for a complete overhaul of building regulations, requiring independent structural assessments for all new construction", "effects": "A: Social Inequality -0.03 (justice seen to be done), GDP per Capita -200 (investors nervous about regulation), Housing Index +2 (public confidence in buildings). B: Social Inequality +0.03 (corruption tolerated), GDP per Capita +100 (investors reassured), Housing Index +1. C: Social Inequality -0.02, GDP per Capita -100 (compliance costs), Housing Index +5 (safer buildings long-term), Air Quality +1 (better construction standards reduce dust)."}]}, {"num": 3, "name": "Year 3 — Consolidation", "report": ["Population has reached approximately 10.8 million. Recovery from the earthquake is underway.", "Housing construction is booming — both formal and informal. The skyline is full of cranes.", "Transport projects from Year 1 are progressing. BRT routes are partially operational. Metro tunnelling continues if chosen.", "A tech company wants to establish its Asian-Pacific headquarters in Nova Cidade, bringing 5,000 high-salary jobs.", "Waste management is becoming critical — the city generates 12,000 tonnes of waste per day and the main landfill is 80% full."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Housing", "question": "The construction boom is creating new neighbourhoods. How do you manage housing development?", "optA": "Let the market lead — remove planning restrictions to accelerate housing supply", "optB": "Mandate that 30% of all new housing developments must be affordable units", "optC": "Create a city-owned housing company that builds and rents social housing at below-market rates", "effects": "A: Housing Index +10, GDP per Capita +300 (construction economy), Social Inequality +0.04 (luxury dominates), Green Coverage -3% (unplanned sprawl), Air Quality -2. B: Housing Index +7, GDP per Capita +200, Social Inequality -0.03 (affordable provision), Green Coverage -1%, Air Quality -1. C: Housing Index +5, GDP per Capita +0 (public spending), Social Inequality -0.05 (direct provision for poorest), Green Coverage +0%, Air Quality +0."}, {"id": "D2", "domain": "Transport", "question": "Ride-hailing apps and electric scooters are flooding the city. How do you regulate new mobility?", "optA": "Welcome all — no regulation. Let the market innovate and competition reduce prices", "optB": "Regulate ride-hailing with congestion pricing — higher fares in peak hours and central areas, revenue funds public transit", "optC": "Ban ride-hailing in the city centre. Invest in integrated public transport with a single smart card for bus, BRT, and metro", "effects": "A: Transport Efficiency +5, Air Quality -3 (more vehicles on roads), GDP per Capita +200 (gig economy), Social Inequality +0.02 (benefits phone-owning middle class). B: Transport Efficiency +6, Air Quality +2 (congestion reduced), GDP per Capita +300 (efficiency gains + revenue), Social Inequality -0.01 (revenue funds public transit). C: Transport Efficiency +8 (integrated system), Air Quality +4 (fewer cars in centre), GDP per Capita +100, Social Inequality -0.03 (universal public transport)."}, {"id": "D3", "domain": "Environment", "question": "The landfill is almost full. How do you handle the city's 12,000 tonnes of daily waste?", "optA": "Open a new mega-landfill on agricultural land 30km outside the city", "optB": "Build a waste-to-energy incineration plant that generates electricity for 200,000 homes", "optC": "Implement a comprehensive recycling and composting programme with door-to-door collection, aiming to divert 60% from landfill", "effects": "A: Air Quality -3 (methane, transport emissions), Green Coverage -2% (lost agricultural land), GDP per Capita +100 (cheap disposal), Social Inequality +0.02 (landfill near rural poor). B: Air Quality -2 (incineration emissions, but less than methane), Green Coverage +0%, GDP per Capita +300 (energy generation), Social Inequality +0.01 (plant near poor area). C: Air Quality +3 (reduced decomposition gases), Green Coverage +1% (composting creates urban gardens), GDP per Capita +200 (recycling industry jobs), Social Inequality -0.02 (waste-picker cooperatives formalised)."}, {"id": "D4", "domain": "Economy", "question": "The tech company will bring 5,000 jobs paying 3x the city average. Where do you locate their headquarters?", "optA": "Purpose-built tech campus on a greenfield site in the wealthy northern suburbs — close to where executives want to live", "optB": "Converted industrial zone in the east — regenerating a deprived area with new investment", "optC": "City centre waterfront — flagship development visible to the world, boosting city brand", "effects": "A: GDP per Capita +500, Social Inequality +0.04 (wealth concentrated in north), Green Coverage -2% (greenfield lost), Transport Efficiency -2 (more traffic to suburbs), Air Quality -1. B: GDP per Capita +400, Social Inequality -0.03 (investment in deprived area), Green Coverage +1% (regeneration includes green space), Transport Efficiency +1, Air Quality +2 (replaces old industry). C: GDP per Capita +450, Social Inequality +0.01, Green Coverage -1% (waterfront development), Transport Efficiency +2 (central location), Air Quality +0."}, {"id": "D5", "domain": "Ethics", "question": "Street vendors — 200,000 of them — are the backbone of the informal economy but create congestion and waste. A citywide crackdown is proposed.", "optA": "Clear all street vendors from main roads — enforce strictly. Offer them space in designated market buildings.", "optB": "Create vendor zones on major streets with allocated pitches, hygiene standards, and small fees. Vendors choose to join or relocate.", "optC": "Leave vendors alone — they provide affordable food and goods to working people and employ themselves", "effects": "A: Transport Efficiency +3 (clearer roads), Air Quality +1 (less waste), Social Inequality +0.04 (livelihoods destroyed for many who can't afford market rents), GDP per Capita -100 (informal economy shrinks). B: Transport Efficiency +2, Air Quality +2 (hygiene improves), Social Inequality -0.01 (formalisation with protection), GDP per Capita +100 (vendors pay tax, access credit). C: Transport Efficiency +0, Air Quality +0, Social Inequality -0.02 (livelihoods protected), GDP per Capita +0."}]}, {"num": 4, "name": "Year 4 — Heatwave Crisis", "report": ["Population has reached approximately 11.2 million. Growth continues at 3-4% annually.", "Metro system (if chosen) is now operational — 2 lines serving 800,000 daily passengers.", "Housing construction continues but demand still outstrips supply. Property prices rising 12% annually.", "The city's green spaces are under increasing pressure from development.", "Weather forecasters predict an extreme heatwave — temperatures expected to exceed 42C for 10 consecutive days."], "randomEvent": "HEATWAVE AIR QUALITY CRISIS: 10 days of 42C+ heat creates a toxic smog event. Ground-level ozone combines with vehicle emissions. All teams: Air Quality -10. Teams with Green Coverage above 20%: Air Quality -6 instead (urban cooling effect). Teams with Green Coverage above 25%: Air Quality -4 only. 500 heat-related deaths, predominantly among elderly and poor communities with no air conditioning. Social Inequality +0.02 (poor suffer most).", "decisions": [{"id": "D1", "domain": "Housing", "question": "The heatwave killed 500 people, mostly in poorly ventilated informal housing and concrete tower blocks. How do you respond?", "optA": "Install air conditioning in all public housing — immediate relief for vulnerable residents", "optB": "Retrofit buildings with passive cooling — white roofs, better ventilation, shading, and insulation", "optC": "Create a network of 50 public cooling centres in libraries, community centres, and malls across the city", "effects": "A: Housing Index +4, Air Quality -3 (AC units increase energy demand and emit heat), GDP per Capita -200 (energy costs), Social Inequality -0.02 (protects vulnerable). B: Housing Index +3, Air Quality +2 (reduced energy demand, white roofs reflect heat), GDP per Capita +100 (green construction jobs), Social Inequality -0.01, Green Coverage +0%. C: Housing Index +1, Air Quality +0, GDP per Capita -100, Social Inequality -0.03 (accessible to all), Green Coverage +0%."}, {"id": "D2", "domain": "Transport", "question": "The heatwave revealed that commuters on buses and walking in the sun suffer most. How do you adapt transport for extreme heat?", "optA": "Add air-conditioned buses and covered bus shelters across all routes", "optB": "Plant shade tree corridors along all major walking and cycling routes — a 5-year programme", "optC": "Introduce flexible working hours policy — businesses stagger start times to reduce peak-hour crowding and heat exposure", "effects": "A: Transport Efficiency +4, Air Quality -2 (AC energy), GDP per Capita -100 (running costs), Social Inequality -0.01. B: Transport Efficiency +2, Air Quality +4 (trees filter air + shade), Green Coverage +3%, GDP per Capita +100 (green jobs), Social Inequality -0.02. C: Transport Efficiency +6 (spread peak demand), Air Quality +2 (less congestion at peak), GDP per Capita +200 (productivity gains), Social Inequality -0.01."}, {"id": "D3", "domain": "Environment", "question": "The heatwave demonstrated the urban heat island effect. How do you cool the city long-term?", "optA": "Mandatory green roofs on all new buildings and retrofits on public buildings", "optB": "Restore the city's two rivers — remove concrete channels, create blue-green corridors with parks along riverbanks", "optC": "Build three large artificial lakes in different city zones — recreation, cooling, and stormwater management", "effects": "A: Air Quality +4, Green Coverage +4%, GDP per Capita +100 (green industry), Housing Index +2 (cooler homes), Social Inequality -0.01. B: Air Quality +5, Green Coverage +5%, GDP per Capita +200 (waterfront regeneration), Housing Index +0, Social Inequality -0.03 (public spaces for all), Transport Efficiency +1 (riverside cycle paths). C: Air Quality +3, Green Coverage +3%, GDP per Capita +300 (lakeside development), Housing Index +0, Social Inequality +0.01 (lakeside housing premium)."}, {"id": "D4", "domain": "Economy", "question": "The heatwave cost the economy $400 million in lost productivity, health costs, and damage. How do you fund climate adaptation?", "optA": "Issue green bonds — borrow $1 billion at low interest to fund climate-proof infrastructure over 5 years", "optB": "Introduce a carbon tax on businesses and vehicles — raises $200 million annually but increases costs", "optC": "Apply for international climate adaptation funding from the Green Climate Fund — $300 million available but with strict sustainability conditions", "effects": "A: GDP per Capita +300 (stimulus spending), Air Quality +2 (funded projects), Housing Index +3 (funded retrofits), Social Inequality +0.01 (debt servicing diverts from social spending). B: GDP per Capita -200 (tax burden), Air Quality +5 (incentivises clean technology), Transport Efficiency +2 (funds public transit), Social Inequality +0.02 (regressive tax). C: GDP per Capita +100, Air Quality +4, Green Coverage +2% (required by conditions), Social Inequality -0.02 (conditions require equity focus), Housing Index +2."}, {"id": "D5", "domain": "Ethics", "question": "Data shows the 500 heatwave deaths occurred almost entirely in the poorest neighbourhoods. Wealthy areas with gardens and AC had zero deaths. A citizens' group demands climate justice.", "optA": "Declare a climate emergency and redirect 20% of the city budget from all departments to a Climate Justice Fund for the poorest communities", "optB": "Create a targeted programme: free solar panels, insulation, and water tanks for the 100,000 most vulnerable households", "optC": "Acknowledge the inequality but argue that citywide economic growth will eventually benefit everyone — continue current balanced approach", "effects": "A: Social Inequality -0.06 (major redistribution), GDP per Capita -300 (budget reallocation from other services), Housing Index +4 (investment in poor areas), Air Quality +2. B: Social Inequality -0.04, GDP per Capita -100, Housing Index +3 (targeted improvement), Air Quality +1 (solar reduces fossil fuels). C: Social Inequality +0.02 (perceived inaction), GDP per Capita +200 (business confidence), Housing Index +1, Air Quality +0."}]}, {"num": 5, "name": "Year 5 — Migration Surge", "report": ["Population has grown to approximately 11.8 million through steady growth.", "Housing and transport investments from earlier rounds are maturing. The city feels more functional.", "Air quality has improved in some zones but remains dangerous in industrial and high-traffic corridors.", "Nova Cidade is gaining international recognition — featured in urban planning journals as a 'city to watch'.", "A regional conflict and agricultural crisis in neighbouring countries triggers a mass migration event."], "randomEvent": "MIGRATION SURGE: 2 million refugees and economic migrants arrive over the next 12 months. Population jumps to approximately 14 million. All teams: Housing Index -12 (extreme pressure), Transport Efficiency -6 (overcrowding), Social Inequality +0.04 (tension between locals and newcomers), GDP per Capita -400 (denominator effect — same economy, more people). Air Quality -3 (more people, more vehicles).", "decisions": [{"id": "D1", "domain": "Housing", "question": "2 million new arrivals need somewhere to live. Informal settlements are expanding rapidly on every vacant lot. What is your response?", "optA": "Open 10 emergency reception centres and fast-track planning permission for temporary housing estates", "optB": "Designate 5 new satellite towns on the city periphery with planned housing, services, and transport links", "optC": "Integrate new arrivals into existing neighbourhoods — convert unused commercial buildings, allow subdivisions, and provide rent subsidies", "effects": "A: Housing Index +6, Green Coverage -2% (vacant lots built on), Transport Efficiency -2 (camps poorly connected), Social Inequality +0.01 (segregation), GDP per Capita +0. B: Housing Index +8, Green Coverage -3% (peripheral development), Transport Efficiency +2 (planned transport), Social Inequality -0.01 (planned integration), GDP per Capita +200 (construction stimulus). C: Housing Index +5, Green Coverage +0%, Transport Efficiency +0, Social Inequality -0.03 (social mixing), GDP per Capita +100 (rent subsidy stimulates landlord investment)."}, {"id": "D2", "domain": "Transport", "question": "The transport system is overwhelmed. Buses are running at 200% capacity. How do you cope?", "optA": "Buy 500 additional buses and run extended hours — brute force capacity increase", "optB": "Implement congestion charging in the city centre and use revenue to fund free public transport for all", "optC": "Fast-track a bicycle-sharing scheme with 50,000 bikes and 2,000 stations, plus protected cycle lanes on 20 major routes", "effects": "A: Transport Efficiency +8, Air Quality -4 (diesel buses), GDP per Capita +100, Social Inequality -0.01 (bus riders are typically lower income). B: Transport Efficiency +10, Air Quality +5 (fewer cars), GDP per Capita +200 (congestion revenue + productivity), Social Inequality -0.04 (free transit is progressive). C: Transport Efficiency +5, Air Quality +4 (zero emissions), GDP per Capita +100 (health benefits), Green Coverage +1% (cycle infrastructure greening), Social Inequality -0.02 (cheap transport)."}, {"id": "D3", "domain": "Environment", "question": "The population surge is generating 18,000 tonnes of waste daily — up from 12,000. What emergency measures do you take?", "optA": "Resume landfill dumping at maximum capacity — deal with the crisis now, sustainability later", "optB": "Deploy 100 community waste sorting and recycling stations in high-density areas with paid waste-sorter jobs", "optC": "Ban single-use plastics citywide and mandate composting for all food businesses and households", "effects": "A: Air Quality -4 (methane, vermin), Green Coverage -1%, GDP per Capita +0 (cheap but no value created), Social Inequality +0.01 (landfill near poor areas). B: Air Quality +2 (less rotting waste), Green Coverage +0%, GDP per Capita +200 (recycling economy), Social Inequality -0.03 (jobs for poorest, including migrants). C: Air Quality +3 (reduced waste volume), Green Coverage +1% (composting for urban gardens), GDP per Capita -100 (business compliance costs), Social Inequality -0.01."}, {"id": "D4", "domain": "Economy", "question": "2 million new residents are both a burden and an opportunity. How do you integrate them economically?", "optA": "Create free trade zones where migrants can start businesses without permits or taxes for 3 years", "optB": "Launch a city-funded skills training programme — language, construction, healthcare, and tech skills for 100,000 migrants in Year 1", "optC": "Invest in a microloan programme — small loans of $500-5000 for migrant entrepreneurs to start businesses", "effects": "A: GDP per Capita +500 (entrepreneurship explosion), Social Inequality +0.03 (unregulated work suppresses wages for locals), Transport Efficiency -1 (informal commerce clusters), Air Quality -1 (unregulated businesses). B: GDP per Capita +300, Social Inequality -0.04 (skills reduce poverty), Housing Index +1 (construction training), Transport Efficiency +1 (healthcare training reduces sick days). C: GDP per Capita +350, Social Inequality -0.03 (entrepreneurship for poor), Transport Efficiency +0, Air Quality +0."}, {"id": "D5", "domain": "Ethics", "question": "Tensions are rising between established residents and new arrivals. A protest turns violent in the eastern district. 20 injured.", "optA": "Increase police presence and enforce strict public order — safety first", "optB": "Launch a citywide integration programme: cultural festivals, shared sports leagues, community mediation centres", "optC": "Address the root cause — announce a massive public works programme (parks, schools, clinics) in areas with highest tension, employing both locals and migrants", "effects": "A: Social Inequality +0.03 (heavy-handed approach, migrants targeted), Transport Efficiency +1 (order restored), GDP per Capita +0, Housing Index +0. B: Social Inequality -0.04 (social cohesion), GDP per Capita +100 (cultural economy), Green Coverage +1% (community gardens included), Housing Index +0. C: Social Inequality -0.05 (shared employment + new facilities), GDP per Capita +200 (public works stimulus), Housing Index +3 (new clinics and schools), Green Coverage +2% (parks built), Air Quality +1."}]}, {"num": 6, "name": "Year 6 — Maturation", "report": ["Population has stabilised at approximately 14.3 million. Migration has slowed but natural increase continues.", "The city is adapting to its new size. Infrastructure investments are paying off in some areas.", "International media coverage is mixed — praised for ambition, criticised for inequality.", "A national election is approaching. The winning party will set urban policy for the next 5 years.", "A major international sporting event bid (Olympics or World Cup) is being discussed."], "randomEvent": null, "decisions": [{"id": "D1", "domain": "Housing", "question": "Property prices have risen 40% in 3 years. Middle-income workers can no longer afford to live near their jobs. How do you address the housing affordability crisis?", "optA": "Rent controls — cap rent increases at inflation rate for 5 years", "optB": "Massive public housing programme — build 100,000 social housing units over 3 years", "optC": "Reform zoning laws to allow higher density development everywhere, increasing supply through market forces", "effects": "A: Housing Index +6, GDP per Capita -200 (reduced investment in rental housing), Social Inequality -0.03 (protects renters), Transport Efficiency +1 (people stay near jobs). B: Housing Index +8, GDP per Capita +200 (construction jobs), Social Inequality -0.05 (direct provision), Green Coverage -2% (land needed), Air Quality -1 (construction). C: Housing Index +5, GDP per Capita +300 (development boom), Social Inequality +0.02 (market benefits wealthy first), Green Coverage -3% (densification removes gardens), Air Quality -2 (construction dust)."}, {"id": "D2", "domain": "Transport", "question": "The transport network needs a unifying strategy. What is your long-term vision?", "optA": "Car-centric: complete the motorway ring road and build 20 multi-storey car parks in the centre", "optB": "Transit-oriented development: extend the metro to 5 lines, with high-density mixed-use zones around every station", "optC": "15-minute city: redesign neighbourhoods so all essential services are within 15 minutes' walk or cycle of every home", "effects": "A: Transport Efficiency +8, Air Quality -6 (induced car demand), GDP per Capita +300 (car industry), Green Coverage -3% (road footprint), Social Inequality +0.03 (cars for wealthy, noise for poor). B: Transport Efficiency +12, Air Quality +4 (modal shift), GDP per Capita +400 (agglomeration benefits), Green Coverage -1%, Social Inequality -0.03 (universal access). C: Transport Efficiency +10, Air Quality +5 (reduced travel demand), GDP per Capita +200, Green Coverage +2% (local green spaces), Social Inequality -0.04 (neighbourhood equality)."}, {"id": "D3", "domain": "Environment", "question": "The city's two rivers are severely polluted — industrial effluent, sewage, and plastic waste. A river restoration plan could transform the city.", "optA": "Full river restoration — daylighting buried sections, building wetland filtration, creating 30km of riverside parks. Cost: massive but transformative.", "optB": "Targeted cleanup of the worst pollution hotspots. Install sewage interceptors and ban industrial discharge.", "optC": "Cover the most polluted sections with elevated parks — hide the problem and create green space above", "effects": "A: Air Quality +6, Green Coverage +6%, GDP per Capita +300 (waterfront regeneration), Social Inequality -0.03 (public space), Housing Index +3 (desirable riverside living), Transport Efficiency +2 (riverside paths). B: Air Quality +4, Green Coverage +2%, GDP per Capita +100, Social Inequality -0.01, Housing Index +1. C: Air Quality +1 (pollution continues underneath), Green Coverage +3%, GDP per Capita +200 (development above), Social Inequality +0.01 (wealthy gated riverside communities)."}, {"id": "D4", "domain": "Economy", "question": "The digital economy is booming globally. How do you position Nova Cidade?", "optA": "Free broadband for all — universal internet access funded by a tech levy on large companies", "optB": "Create a digital skills academy — free coding, AI, and data science training for 50,000 young people per year", "optC": "Build a Silicon Valley-style innovation district with tax breaks for startups, venture capital funds, and a tech university", "effects": "A: GDP per Capita +300 (digital inclusion boosts all sectors), Social Inequality -0.04 (digital access for all), Transport Efficiency +2 (remote work), Air Quality +1 (less commuting). B: GDP per Capita +400 (skilled workforce), Social Inequality -0.03 (upward mobility), Transport Efficiency +0, Housing Index +0. C: GDP per Capita +600 (tech investment), Social Inequality +0.03 (tech wealth concentrated), Green Coverage -1% (district development), Transport Efficiency +1."}, {"id": "D5", "domain": "Ethics", "question": "A proposal for facial recognition surveillance across the city promises to reduce crime by 30% but raises privacy concerns. Civil liberties groups are outraged.", "optA": "Full deployment — safety of 14 million people outweighs privacy concerns of a few", "optB": "Limited deployment in high-crime areas only, with an independent oversight board and sunset clause requiring renewal every 2 years", "optC": "Reject surveillance — invest instead in community policing, youth programmes, and street lighting improvements", "effects": "A: Housing Index +3 (safer neighbourhoods), Social Inequality +0.04 (surveillance disproportionately targets minorities and poor), GDP per Capita +200 (lower crime costs), Air Quality +0. B: Housing Index +2, Social Inequality +0.01 (targeted deployment), GDP per Capita +150, Air Quality +0. C: Housing Index +1, Social Inequality -0.03 (community trust), GDP per Capita +100 (youth employment), Green Coverage +1% (improved public spaces), Air Quality +0."}]}, {"num": 7, "name": "Year 7 — Legacy", "report": ["Population stands at approximately 14.5-15 million. Nova Cidade is now one of the world's 30 largest cities.", "The International Olympic Committee has shortlisted Nova Cidade for the 2040 Summer Olympics.", "Your metrics will determine whether the bid succeeds and how history judges your leadership.", "Air quality, transport, housing, and inequality figures will all be scrutinised by the IOC assessment team.", "This is your final year to make legacy decisions that shape the city's future for decades."], "randomEvent": "OLYMPIC BID OPPORTUNITY: The IOC evaluates Nova Cidade. Requirements for a successful bid: Air Quality >55, Transport Efficiency >60, Housing Index >60, and Social Inequality <0.40. Meeting all four: GDP per Capita +1000 (tourism and investment boost). Meeting three of four: GDP per Capita +400. Meeting fewer than three: bid fails, no bonus. All teams also receive a final population adjustment: +200,000 if Housing Index >55, -200,000 if Housing Index <35.", "decisions": [{"id": "D1", "domain": "Housing", "question": "Final housing legacy: what lasting institution do you create?", "optA": "A community land trust — city-owned land leased to residents at affordable rates in perpetuity, preventing gentrification", "optB": "A housing innovation lab — testing new construction methods (3D printing, modular housing, bamboo construction) to reduce costs by 40%", "optC": "Homeownership programme — subsidised mortgages to convert 500,000 renters into homeowners", "effects": "A: Housing Index +5, Social Inequality -0.05 (permanent affordability), GDP per Capita +0, Green Coverage +1% (community green spaces mandated). B: Housing Index +7, Social Inequality -0.02 (cheaper housing), GDP per Capita +300 (construction innovation exports), Green Coverage +0%. C: Housing Index +6, Social Inequality -0.01 (ownership builds wealth but excludes poorest), GDP per Capita +200 (mortgage market), Green Coverage -1% (suburban expansion)."}, {"id": "D2", "domain": "Transport", "question": "The city needs a final transport investment to cement its system. What is your choice?", "optA": "Autonomous electric bus fleet — 1,000 self-driving buses running 24/7 on optimised routes", "optB": "Aerial cable car system connecting hilltop informal settlements to the metro network — inspired by Medellin", "optC": "Complete pedestrianisation of the historic city centre — a car-free zone of 5 square kilometres", "effects": "A: Transport Efficiency +8, Air Quality +5 (electric, optimised routes), GDP per Capita +300 (tech showcase), Social Inequality -0.02 (24/7 access). B: Transport Efficiency +5, Air Quality +2, GDP per Capita +100, Social Inequality -0.05 (connects most isolated communities), Green Coverage +0%, Housing Index +3 (hilltop areas now accessible). C: Transport Efficiency +4 (mixed — great for centre, car users inconvenienced), Air Quality +6 (no cars in centre), GDP per Capita +200 (tourism, retail), Green Coverage +3% (streets become plazas and parks), Social Inequality -0.02."}, {"id": "D3", "domain": "Environment", "question": "Your environmental legacy decision: what signature green project do you deliver?", "optA": "A new national park on the city's coastal wetlands — 2,000 hectares of protected biodiversity", "optB": "100% renewable electricity for all city-owned buildings and infrastructure (solar, wind, and tidal)", "optC": "A circular economy zone — industrial ecology where one factory's waste is another's raw material, zero-waste manufacturing district", "effects": "A: Green Coverage +8%, Air Quality +4, GDP per Capita +200 (ecotourism), Social Inequality -0.02 (public access), Housing Index +0, Transport Efficiency +0. B: Air Quality +6, Green Coverage +2% (solar farm land), GDP per Capita +200 (energy savings), Social Inequality -0.01, Housing Index +1, Transport Efficiency +0. C: Air Quality +5, Green Coverage +1%, GDP per Capita +400 (industrial innovation), Social Inequality -0.02 (manufacturing jobs), Housing Index +0, Transport Efficiency +0."}, {"id": "D4", "domain": "Economy", "question": "How do you ensure Nova Cidade's economic prosperity is shared fairly as your final act?", "optA": "Universal basic income pilot — every resident receives $100/month funded by a wealth tax on the city's richest 1%", "optB": "Employee ownership mandate — all companies with 50+ employees must offer a 10% equity stake to workers within 5 years", "optC": "Sovereign wealth fund — invest city revenues from land sales and green bonds into a permanent fund that pays dividends to all residents", "effects": "A: Social Inequality -0.06 (direct redistribution), GDP per Capita -200 (wealth tax flight), Housing Index +2 (poverty reduction), Air Quality +0, Transport Efficiency +0. B: Social Inequality -0.04 (worker ownership), GDP per Capita +200 (motivated workforce), Housing Index +1, Air Quality +0. C: Social Inequality -0.03 (long-term dividends), GDP per Capita +300 (investment returns), Housing Index +1, Air Quality +0, Transport Efficiency +0."}, {"id": "D5", "domain": "Ethics", "question": "The Olympic bid depends on your metrics, but a scandal has emerged: a construction company building the Olympic stadium used exploited migrant labour — 16-hour days, confiscated passports, below-minimum wages. How do you respond?", "optA": "Cover it up — the Olympic bid is too important. Quietly pay off the workers and replace the company.", "optB": "Public acknowledgement and immediate action — halt stadium construction, launch a labour rights investigation, and create a workers' charter for all Olympic projects", "optC": "Withdraw the Olympic bid entirely — use the $3 billion budget for affordable housing, schools, and hospitals instead", "effects": "A: GDP per Capita +400 (bid continues), Social Inequality +0.05 (exploitation tolerated), Housing Index +0, Air Quality +0. If discovered later (50% chance): GDP per Capita -800 and Social Inequality +0.05 (scandal). B: GDP per Capita +0 (delay costs), Social Inequality -0.04 (justice and worker protection), Housing Index +1, bid delayed but strengthened by ethics (IOC impressed: +200 GDP if bid succeeds). C: GDP per Capita +300 (redirected investment), Social Inequality -0.06 (housing and services for poorest), Housing Index +8 (massive investment), Green Coverage +2%, Transport Efficiency +2. Olympic bid cancelled."}]}], "debriefQuestions": ["Which of the seven metrics proved hardest to improve? What does this tell us about the interconnected challenges of managing a megacity?", "How did the earthquake in Year 2 and heatwave in Year 4 expose inequalities within the city? What does this teach about vulnerability and resilience?", "Compare your housing strategy across all 7 rounds. Did you prioritise market-led or government-led solutions? What are the real-world advantages and disadvantages of each approach?", "The migration surge added 2 million people. How did your city cope compared to other teams? What lessons does this hold for real megacities experiencing rapid growth?", "Track your Social Inequality (Gini) metric through all rounds. When did it improve and when did it worsen? What types of decisions had the biggest impact on inequality?", "If you were advising the mayor of a real megacity in an LIC or NEE, what three policies would you recommend based on your simulation experience?", "The Olympic bid required strong metrics across multiple categories. Did the pursuit of one goal (like GDP growth) ever undermine another (like inequality)? How does this reflect real-world urban governance?"], "keyTakeaways": ["Urbanisation creates interconnected challenges — housing, transport, environment, economy, and inequality cannot be solved in isolation because decisions in one domain always affect others.", "Rapid urban growth in LICs and NEEs outpaces infrastructure investment, creating persistent gaps between demand and provision that require both immediate responses and long-term planning.", "Social inequality is both a cause and consequence of urban problems — the poorest communities suffer most from environmental hazards, poor housing, and inadequate transport, creating cycles of disadvantage.", "Sustainable urban development requires balancing economic growth with environmental protection and social equity — there is no single right answer, only better or worse trade-offs.", "Natural disasters and migration surges disproportionately affect cities that have underinvested in resilient infrastructure and social cohesion, revealing the true cost of short-term thinking."]};
+const SVGS = {"r1_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><rect x=\"298\" y=\"146\" width=\"44\" height=\"24\" fill=\"#D97706\"/><rect x=\"298\" y=\"138\" width=\"10\" height=\"10\" fill=\"#D97706\"/><rect x=\"316\" y=\"134\" width=\"8\" height=\"14\" fill=\"#D97706\"/><rect x=\"332\" y=\"138\" width=\"10\" height=\"10\" fill=\"#D97706\"/><rect x=\"316\" y=\"158\" width=\"8\" height=\"12\" fill=\"#FFFBEB\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 1 — Taking Office</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n</svg>", "r1_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R1</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 1 — Taking Office</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,144 124,160 118,160 118,176 94,176 94,160 88,160\" fill=\"#D97706\" opacity=\"0.85\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><circle cx=\"204\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><circle cx=\"222\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M198,164 L204,154 L224,154 L228,164\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Transport</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"16\" fill=\"#D97706\" opacity=\"0.25\"/><path d=\"M314,168 Q314,150 322,150 Q330,150 324,160 Q318,164 324,170 Q320,174 314,168 Z\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><path d=\"M412,170 L412,162 L420,162 L420,156 L428,156 L428,150 L436,150 L436,170 Z\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Economy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r2_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"322,126 310,150 320,150 318,174 330,150 320,150\" fill=\"#D97706\" opacity=\"0.9\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 2 — Earthquake</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n</svg>", "r2_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R2</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 2 — Earthquake</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,144 124,160 118,160 118,176 94,176 94,160 88,160\" fill=\"#D97706\" opacity=\"0.85\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><circle cx=\"204\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><circle cx=\"222\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M198,164 L204,154 L224,154 L228,164\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Transport</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"16\" fill=\"#D97706\" opacity=\"0.25\"/><path d=\"M314,168 Q314,150 322,150 Q330,150 324,160 Q318,164 324,170 Q320,174 314,168 Z\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><path d=\"M412,170 L412,162 L420,162 L420,156 L428,156 L428,150 L436,150 L436,170 Z\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Economy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r3_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><rect x=\"302\" y=\"152\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#D97706\" opacity=\"0.9\"/><rect x=\"322\" y=\"152\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#FBBF24\" opacity=\"0.7\"/><rect x=\"312\" y=\"136\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 3 — Consolidation</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n</svg>", "r3_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R3</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 3 — Consolidation</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,144 124,160 118,160 118,176 94,176 94,160 88,160\" fill=\"#D97706\" opacity=\"0.85\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><circle cx=\"204\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><circle cx=\"222\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M198,164 L204,154 L224,154 L228,164\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Transport</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"16\" fill=\"#D97706\" opacity=\"0.25\"/><path d=\"M314,168 Q314,150 322,150 Q330,150 324,160 Q318,164 324,170 Q320,174 314,168 Z\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><path d=\"M412,170 L412,162 L420,162 L420,156 L428,156 L428,150 L436,150 L436,170 Z\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Economy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r4_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"150\" r=\"14\" fill=\"#D97706\"/><line x1=\"320\" y1=\"128\" x2=\"320\" y2=\"122\" stroke=\"#D97706\" stroke-width=\"2.5\"/><line x1=\"320\" y1=\"172\" x2=\"320\" y2=\"178\" stroke=\"#D97706\" stroke-width=\"2.5\"/><line x1=\"298\" y1=\"150\" x2=\"292\" y2=\"150\" stroke=\"#D97706\" stroke-width=\"2.5\"/><line x1=\"342\" y1=\"150\" x2=\"348\" y2=\"150\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 4 — Heatwave Crisis</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n</svg>", "r4_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R4</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 4 — Heatwave Crisis</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,144 124,160 118,160 118,176 94,176 94,160 88,160\" fill=\"#D97706\" opacity=\"0.85\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><circle cx=\"204\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><circle cx=\"222\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M198,164 L204,154 L224,154 L228,164\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Transport</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"16\" fill=\"#D97706\" opacity=\"0.25\"/><path d=\"M314,168 Q314,150 322,150 Q330,150 324,160 Q318,164 324,170 Q320,174 314,168 Z\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><path d=\"M412,170 L412,162 L420,162 L420,156 L428,156 L428,150 L436,150 L436,170 Z\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Economy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r5_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><circle cx=\"320\" cy=\"150\" r=\"6\" fill=\"#D97706\"/><circle cx=\"302\" cy=\"136\" r=\"4\" fill=\"#FBBF24\"/><circle cx=\"338\" cy=\"136\" r=\"4\" fill=\"#FBBF24\"/><circle cx=\"302\" cy=\"164\" r=\"4\" fill=\"#FBBF24\"/><circle cx=\"338\" cy=\"164\" r=\"4\" fill=\"#FBBF24\"/><line x1=\"320\" y1=\"150\" x2=\"302\" y2=\"136\" stroke=\"#D97706\" stroke-width=\"1.5\"/><line x1=\"320\" y1=\"150\" x2=\"338\" y2=\"136\" stroke=\"#D97706\" stroke-width=\"1.5\"/><line x1=\"320\" y1=\"150\" x2=\"302\" y2=\"164\" stroke=\"#D97706\" stroke-width=\"1.5\"/><line x1=\"320\" y1=\"150\" x2=\"338\" y2=\"164\" stroke=\"#D97706\" stroke-width=\"1.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 5 — Migration Surge</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n</svg>", "r5_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R5</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 5 — Migration Surge</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,144 124,160 118,160 118,176 94,176 94,160 88,160\" fill=\"#D97706\" opacity=\"0.85\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><circle cx=\"204\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><circle cx=\"222\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M198,164 L204,154 L224,154 L228,164\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Transport</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"16\" fill=\"#D97706\" opacity=\"0.25\"/><path d=\"M314,168 Q314,150 322,150 Q330,150 324,160 Q318,164 324,170 Q320,174 314,168 Z\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><path d=\"M412,170 L412,162 L420,162 L420,156 L428,156 L428,150 L436,150 L436,170 Z\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Economy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r6_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><line x1=\"320\" y1=\"168\" x2=\"320\" y2=\"144\" stroke=\"#D97706\" stroke-width=\"3\"/><path d=\"M320,144 Q338,128 326,124\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"3\"/><path d=\"M320,152 Q304,140 316,134\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 6 — Maturation</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n</svg>", "r6_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R6</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 6 — Maturation</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,144 124,160 118,160 118,176 94,176 94,160 88,160\" fill=\"#D97706\" opacity=\"0.85\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><circle cx=\"204\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><circle cx=\"222\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M198,164 L204,154 L224,154 L228,164\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Transport</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"16\" fill=\"#D97706\" opacity=\"0.25\"/><path d=\"M314,168 Q314,150 322,150 Q330,150 324,160 Q318,164 324,170 Q320,174 314,168 Z\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><path d=\"M412,170 L412,162 L420,162 L420,156 L428,156 L428,150 L436,150 L436,170 Z\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Economy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>", "r7_briefing": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FFFBEB\"/><stop offset=\"100%\" stop-color=\"white\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.7\" stroke=\"#D97706\" stroke-width=\"1.5\"/>\n  <g><polygon points=\"306,128 334,128 324,150 334,172 306,172 316,150\" fill=\"#D97706\" opacity=\"0.8\"/><rect x=\"304\" y=\"126\" width=\"32\" height=\"4\" rx=\"2\" fill=\"#D97706\"/><rect x=\"304\" y=\"170\" width=\"32\" height=\"4\" rx=\"2\" fill=\"#D97706\"/></g>\n  <circle cx=\"80\" cy=\"300\" r=\"40\" fill=\"#D97706\" opacity=\"0.08\"/>\n  <circle cx=\"560\" cy=\"60\" r=\"50\" fill=\"#FBBF24\" opacity=\"0.1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"250\" text-anchor=\"middle\" font-size=\"22\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 7 — Legacy</text>\n  <text x=\"320\" y=\"280\" text-anchor=\"middle\" font-size=\"14\" fill=\"#D97706\" opacity=\"0.7\" font-family=\"system-ui,sans-serif\">Market Report &amp; Briefing</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n</svg>", "r7_decisions": "<svg viewBox=\"0 0 640 360\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs><linearGradient id=\"bg2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"white\"/><stop offset=\"100%\" stop-color=\"#FFFBEB\"/></linearGradient></defs>\n  <rect width=\"640\" height=\"360\" fill=\"url(#bg2)\" rx=\"12\"/>\n  <rect x=\"16\" y=\"16\" width=\"608\" height=\"328\" rx=\"8\" fill=\"white\" opacity=\"0.6\" stroke=\"#D97706\" stroke-width=\"1\"/>\n  <rect x=\"24\" y=\"24\" width=\"60\" height=\"28\" rx=\"14\" fill=\"#D97706\"/>\n  <text x=\"54\" y=\"43\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"white\" font-family=\"system-ui,sans-serif\">R7</text>\n  <text x=\"320\" y=\"80\" text-anchor=\"middle\" font-size=\"18\" font-weight=\"bold\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Year 7 — Legacy</text>\n  <text x=\"320\" y=\"100\" text-anchor=\"middle\" font-size=\"12\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Decision Time &#8212; Choose Your Strategy</text>\n  <g opacity=\"0.85\"><polygon points=\"106,144 124,160 118,160 118,176 94,176 94,160 88,160\" fill=\"#D97706\" opacity=\"0.85\"/></g>\n  <text x=\"106\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Housing</text>\n  <g opacity=\"0.85\"><circle cx=\"204\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><circle cx=\"222\" cy=\"170\" r=\"6\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/><path d=\"M198,164 L204,154 L224,154 L228,164\" fill=\"none\" stroke=\"#D97706\" stroke-width=\"2.5\"/></g>\n  <text x=\"212\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Transport</text>\n  <g opacity=\"0.85\"><circle cx=\"318\" cy=\"160\" r=\"16\" fill=\"#D97706\" opacity=\"0.25\"/><path d=\"M314,168 Q314,150 322,150 Q330,150 324,160 Q318,164 324,170 Q320,174 314,168 Z\" fill=\"#D97706\" opacity=\"0.75\"/></g>\n  <text x=\"318\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Environment</text>\n  <g opacity=\"0.85\"><path d=\"M412,170 L412,162 L420,162 L420,156 L428,156 L428,150 L436,150 L436,170 Z\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"424\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Economy</text>\n  <g opacity=\"0.85\"><polygon points=\"530,142 548,160 540,160 540,178 520,178 520,160 512,160\" fill=\"#D97706\" opacity=\"0.8\"/></g>\n  <text x=\"530\" y=\"194\" text-anchor=\"middle\" font-size=\"10\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Ethics</text>\n  <line x1=\"80\" y1=\"226\" x2=\"560\" y2=\"226\" stroke=\"#D97706\" stroke-width=\"0.5\" opacity=\"0.2\"/>\n  <text x=\"320\" y=\"256\" text-anchor=\"middle\" font-size=\"13\" fill=\"#B45309\" font-family=\"system-ui,sans-serif\">Consider each domain carefully before choosing A, B, or C</text>\n  <rect x=\"16\" y=\"312\" width=\"608\" height=\"32\" fill=\"#D97706\" opacity=\"0.05\"/>\n  <text x=\"32\" y=\"333\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">Megacity Mayor</text>\n  <text x=\"608\" y=\"333\" text-anchor=\"end\" font-size=\"11\" fill=\"#D97706\" opacity=\"0.6\" font-family=\"system-ui,sans-serif\">5 Decisions</text>\n</svg>"};
+
+// ======================== EFFECTS PARSER ========================
+// Build alias map: short names -> full metric name
+const METRIC_ALIASES = {};
+(function() {
+  for (const m of SIM.metrics) {
+    const name = m.name;
+    METRIC_ALIASES[name.toLowerCase()] = name;
+    // Add partial aliases: last word, last two words, etc.
+    const words = name.split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const partial = words.slice(i).join(' ').toLowerCase();
+      if (partial.length >= 3 && !METRIC_ALIASES[partial]) {
+        METRIC_ALIASES[partial] = name;
+      }
+    }
+    // Also add without common suffixes
+    const noLevel = name.replace(/\s+(Level|Score|Rating|Index|Remaining|Value)$/i, '').toLowerCase();
+    if (noLevel !== name.toLowerCase() && !METRIC_ALIASES[noLevel]) {
+      METRIC_ALIASES[noLevel] = name;
+    }
+  }
+})();
+
+function findMetric(text) {
+  // Try exact match first, then longest partial match
+  const lower = text.toLowerCase();
+  for (const m of SIM.metrics) {
+    if (lower.includes(m.name.toLowerCase())) return m.name;
+  }
+  // Try aliases (longest first)
+  const aliases = Object.keys(METRIC_ALIASES).sort((a,b) => b.length - a.length);
+  for (const alias of aliases) {
+    if (lower.includes(alias)) return METRIC_ALIASES[alias];
+  }
+  return null;
+}
+
+function parseEffects(effectsStr) {
+  if (!effectsStr) return {};
+  const results = {};
+  const clauses = effectsStr.split(/[.;,]/).map(s => s.trim()).filter(s => s.length > 0);
+
+  for (const clause of clauses) {
+    const metricName = findMetric(clause);
+    if (!metricName) continue;
+
+    // "set to X"
+    const setMatch = clause.match(/set\s+to\s+(-?[\d,.]+)/i);
+    if (setMatch) {
+      results[metricName] = { type: 'set', value: parseNum(setMatch[1]) };
+      continue;
+    }
+
+    // "+/-$X,XXX" or "+/-X" or "+/-X%"
+    const deltaMatch = clause.match(/([+-])\s*\$?([\d,.]+)[%]?/);
+    if (deltaMatch) {
+      const sign = deltaMatch[1] === '+' ? 1 : -1;
+      const val = parseNum(deltaMatch[2]) * sign;
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+      continue;
+    }
+
+    // "-$X,XXX" embedded
+    const negMatch = clause.match(/-\$([\d,.]+)/);
+    if (negMatch) {
+      const val = -parseNum(negMatch[1]);
+      if (results[metricName]) { results[metricName].value += val; }
+      else { results[metricName] = { type: 'delta', value: val }; }
+    }
+  }
+  return results;
+}
+
+function parseNum(s) {
+  return parseFloat(s.replace(/,/g, '')) || 0;
+}
+
+function clampMetric(metricDef, value) {
+  const unit = metricDef.unit || '';
+  if (unit === '/100') return Math.max(0, Math.min(100, value));
+  if (unit === '%') return Math.max(-100, Math.min(100, value));
+  if (unit === '$') return Math.max(0, value); // no negative cash
+  return value;
+}
+
+// ======================== GAME STATE ========================
+let G = {
+  started: false,
+  teamCount: 3,
+  teams: [],
+  currentScreen: 'setup',
+  currentRound: 1,
+  currentPhase: 0,
+  roundsComplete: new Set(),
+  teamMetrics: {}, // teamIdx -> {metricName: value}
+  roundDecisions: {}, // round -> teamIdx -> {D1:'A', D2:'B', ...}
+  roundSnapshots: {}, // round -> teamIdx -> {metricName: {before, after, delta}}
+};
+
+function initMetrics() {
+  G.teamMetrics = {};
+  for (let t = 0; t < G.teams.length; t++) {
+    G.teamMetrics[t] = {};
+    for (const m of SIM.metrics) {
+      G.teamMetrics[t][m.name] = m.start;
+    }
+  }
+}
+
+// ======================== TIMER ========================
+let timerInterval = null, timerSeconds = 600;
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + s.toString().padStart(2,'0');
+  document.getElementById('timerDisplay').style.color = timerSeconds <= 60 ? '#EF5350' : 'var(--gold)';
+}
+function startTimer() { if (timerInterval) return; timerInterval = setInterval(() => { if (timerSeconds > 0) { timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); timerInterval = null; } }, 1000); }
+function pauseTimer() { clearInterval(timerInterval); timerInterval = null; }
+function resetTimer() { pauseTimer(); timerSeconds = 600; updateTimerDisplay(); }
+updateTimerDisplay();
+
+// ======================== NAVIGATION ========================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let h = '<button onclick="goTo(\'setup\')" class="' + (G.currentScreen==='setup'?'active':'') + '"><span class="check"></span> Setup</button>';
+  for (let r = 1; r <= 7; r++) {
+    const done = G.roundsComplete.has(r);
+    const isActive = G.currentScreen === 'round' && G.currentRound === r;
+    h += '<button onclick="goToRound('+r+')" class="' + (isActive?'active':'') + ' ' + (done?'done':'') + '">';
+    h += '<span class="check">' + (done?'&#10003;':'') + '</span> Round ' + r;
+    if (isActive) { h += '<span class="phase-dots">'; for (let p=0;p<4;p++) h += '<span class="dot '+(G.currentPhase>=p?'filled':'')+'"></span>'; h += '</span>'; }
+    h += '</button>';
+  }
+  h += '<div class="sidebar-sep"></div>';
+  h += '<button onclick="goTo(\'leaderboard\')" class="'+(G.currentScreen==='leaderboard'?'active':'')+'"><span class="check"></span> Leaderboard</button>';
+  h += '<button onclick="goTo(\'final\')" class="'+(G.currentScreen==='final'?'active':'')+'"><span class="check"></span> Final Results</button>';
+  h += '<button onclick="goTo(\'debrief\')" class="'+(G.currentScreen==='debrief'?'active':'')+'"><span class="check"></span> Debrief</button>';
+  nav.innerHTML = h;
+}
+
+function goTo(s) { G.currentScreen = s; render(); }
+function goToRound(r) { if (!G.started) return; G.currentScreen = 'round'; G.currentRound = r; G.currentPhase = G.roundsComplete.has(r) ? 3 : 0; render(); }
+function setPhase(p) { G.currentPhase = p; render(); }
+
+function render() {
+  buildSidebar();
+  const c = document.getElementById('content');
+  if (G.currentScreen === 'setup') renderSetup(c);
+  else if (G.currentScreen === 'round') renderRound(c);
+  else if (G.currentScreen === 'leaderboard') renderLeaderboard(c);
+  else if (G.currentScreen === 'final') renderFinal(c);
+  else if (G.currentScreen === 'debrief') renderDebrief(c);
+  updateTopbar();
+}
+
+function updateTopbar() {
+  const title = document.getElementById('topbarTitle');
+  const phase = document.getElementById('topbarPhase');
+  const right = document.getElementById('topbarRight');
+  if (G.currentScreen === 'setup') {
+    title.textContent = 'SETUP';
+    phase.innerHTML = '';
+    right.innerHTML = '<button onclick="showHelp()">How to Play</button>';
+  } else if (G.currentScreen === 'round') {
+    const rd = SIM.rounds[G.currentRound-1];
+    title.textContent = 'ROUND ' + rd.num + ': ' + rd.name.toUpperCase();
+    const phases = ['Briefing','Decisions','Team Entry','Results'];
+    phase.innerHTML = phases.map((p,i) => '<button class="phase-step '+(i===G.currentPhase?'active':i<G.currentPhase?'completed':'')+'" onclick="setPhase('+i+')">'+p+'</button>').join('');
+    let btns = '';
+    if (G.currentPhase > 0) btns += '<button onclick="setPhase('+(G.currentPhase-1)+')">&#8592; Back</button>';
+    if (G.currentPhase < 3) btns += '<button class="primary" onclick="nextPhase()">Next &#8594;</button>';
+    else if (G.currentRound < 7) btns += '<button class="primary" onclick="goToRound('+(G.currentRound+1)+')">Round '+(G.currentRound+1)+' &#8594;</button>';
+    else btns += '<button class="primary" onclick="goTo(\'final\')">Final Results &#8594;</button>';
+    right.innerHTML = btns;
+  } else {
+    title.textContent = G.currentScreen.toUpperCase().replace('LEADERBOARD','LEADERBOARD');
+    phase.innerHTML = '';
+    right.innerHTML = G.currentScreen === 'final' ? '<button class="primary" onclick="goTo(\'debrief\')">Debrief &#8594;</button>' : '';
+  }
+}
+
+function nextPhase() {
+  if (G.currentPhase === 2) {
+    const r = G.currentRound;
+    if (!validateEntries(r)) return;
+    calculateRound(r);
+  }
+  G.currentPhase = Math.min(3, G.currentPhase + 1);
+  render();
+}
+
+function validateEntries(r) {
+  if (!G.roundDecisions[r]) { alert('Please enter decisions for all teams first.'); return false; }
+  for (let t = 0; t < G.teams.length; t++) {
+    const td = G.roundDecisions[r][t];
+    if (!td) { alert(G.teams[t] + ' has not entered any decisions.'); return false; }
+    for (const dec of SIM.rounds[r-1].decisions) {
+      if (!td[dec.id]) { alert(G.teams[t] + ' is missing ' + dec.id + '.'); return false; }
+    }
+  }
+  return true;
+}
+
+function showHelp() { document.getElementById('helpOverlay').classList.add('show'); }
+function closeHelp() { document.getElementById('helpOverlay').classList.remove('show'); }
+
+// ======================== SETUP ========================
+function renderSetup(c) {
+  let h = '<div class="screen active"><div class="setup-hero"><h1>' + SIM.title.toUpperCase() + '</h1><p class="subtitle">' + SIM.subject + ' &bull; ' + SIM.level + '</p><p>Lead your team through 7 rounds of strategic decisions.</p></div>';
+  h += '<div class="card"><h2>Number of Teams</h2><div class="team-count-btns">';
+  for (let i = 2; i <= 6; i++) h += '<button class="'+(G.teamCount===i?'active':'')+'" onclick="setTeamCount('+i+')">'+i+'</button>';
+  h += '</div><h2>Team Names</h2><div class="team-inputs" id="teamInputs">';
+  for (let i = 0; i < G.teamCount; i++) {
+    const val = G.teams[i] || '';
+    h += '<div class="team-input"><span class="num">'+(i+1)+'</span><input type="text" placeholder="Team '+(i+1)+' name" value="'+val+'" onchange="setTeamName('+i+',this.value)" /></div>';
+  }
+  h += '</div></div><button class="start-btn" onclick="startGame()">START GAME</button>';
+  h += '<div style="text-align:center;margin-top:1rem;"><button onclick="showHelp()" style="background:none;border:none;color:var(--mid);text-decoration:underline;cursor:pointer;font-family:\'Nunito\',sans-serif;">How to Play</button></div></div>';
+  c.innerHTML = h;
+}
+
+function setTeamCount(n) { G.teamCount = n; render(); }
+function setTeamName(i, v) { G.teams[i] = v.trim(); }
+
+function startGame() {
+  const inputs = document.querySelectorAll('#teamInputs input');
+  G.teams = [];
+  inputs.forEach((inp, i) => G.teams.push(inp.value.trim() || 'Team '+(i+1)));
+  G.teams = G.teams.slice(0, G.teamCount);
+  initMetrics();
+  G.started = true;
+  G.currentScreen = 'round';
+  G.currentRound = 1;
+  G.currentPhase = 0;
+  render();
+}
+
+// ======================== ROUND RENDERING ========================
+function renderRound(c) {
+  const r = G.currentRound;
+  const rd = SIM.rounds[r-1];
+  let h = '<div class="screen active">';
+  if (G.currentPhase === 0) h += renderBriefing(rd, r);
+  else if (G.currentPhase === 1) h += renderDecisions(rd, r);
+  else if (G.currentPhase === 2) h += renderEntry(r, rd);
+  else if (G.currentPhase === 3) h += renderResults(r);
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+function renderBriefing(rd, r) {
+  let h = '';
+  // SVG illustration
+  const svgKey = 'r'+r+'_briefing';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="report-card"><div class="report-masthead"><h1>' + SIM.title.toUpperCase() + '</h1><div class="dateline">Round ' + rd.num + ' of 7 &bull; ' + rd.name + '</div></div>';
+  h += '<div class="report-items">';
+  for (const item of rd.report) {
+    h += '<div class="report-item"><span class="bullet">&#9679;</span><span class="text">' + item + '</span></div>';
+  }
+  h += '</div>';
+  if (rd.randomEvent) {
+    h += '<div class="event-box"><h3>&#9889; RANDOM EVENT</h3><p>' + rd.randomEvent + '</p></div>';
+  } else {
+    h += '<div class="no-event">&#9728;&#65039; No random event this round &mdash; steady conditions ahead.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderDecisions(rd, r) {
+  let h = '';
+  const svgKey = 'r'+r+'_decisions';
+  if (SVGS[svgKey]) h += '<div class="svg-container">'+SVGS[svgKey]+'</div>';
+  
+  h += '<div class="decisions-grid">';
+  for (const dec of rd.decisions) {
+    h += '<div class="decision-card"><div class="d-label">' + dec.id + ' &mdash; ' + dec.domain.toUpperCase() + '</div>';
+    h += '<div class="d-question">' + dec.question + '</div>';
+    const opts = [['A', dec.optA], ['B', dec.optB], ['C', dec.optC]];
+    for (const [l, desc] of opts) {
+      h += '<div class="option"><span class="letter ' + l.toLowerCase() + '">' + l + '</span><span class="desc">' + desc + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderEntry(r, rd) {
+  if (!G.roundDecisions[r]) {
+    G.roundDecisions[r] = {};
+    for (let t = 0; t < G.teams.length; t++) G.roundDecisions[r][t] = {};
+  }
+  let h = '<div class="card" style="overflow-x:auto;"><h2>TEAM DECISIONS &mdash; ROUND ' + r + '</h2>';
+  h += '<table class="entry-matrix"><thead><tr><th>Decision</th>';
+  for (const tn of G.teams) h += '<th>' + tn + '</th>';
+  h += '</tr></thead><tbody>';
+  for (const dec of rd.decisions) {
+    h += '<tr><td><strong>' + dec.id + ' &mdash; ' + dec.domain + '</strong><br><span style="font-size:0.8rem;font-weight:400;color:var(--grey);">' + truncate(dec.question, 70) + '</span></td>';
+    for (let t = 0; t < G.teams.length; t++) {
+      const cur = (G.roundDecisions[r][t] || {})[dec.id] || '';
+      h += '<td><div class="abc-group">';
+      for (const ch of ['A','B','C']) {
+        const sel = cur === ch ? 'sel-'+ch.toLowerCase() : '';
+        h += '<button class="abc-btn '+sel+'" onclick="pickChoice('+r+','+t+',\''+dec.id+'\',\''+ch+'\')">'+ch+'</button>';
+      }
+      h += '</div></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+
+function pickChoice(r, t, did, ch) {
+  if (!G.roundDecisions[r]) G.roundDecisions[r] = {};
+  if (!G.roundDecisions[r][t]) G.roundDecisions[r][t] = {};
+  G.roundDecisions[r][t][did] = ch;
+  render();
+}
+
+// ======================== SCORING ENGINE ========================
+function calculateRound(r) {
+  const rd = SIM.rounds[r-1];
+  if (!G.roundSnapshots[r]) G.roundSnapshots[r] = {};
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const before = {};
+    for (const m of SIM.metrics) before[m.name] = G.teamMetrics[t][m.name];
+    
+    // Apply each decision's effects
+    for (const dec of rd.decisions) {
+      const choice = G.roundDecisions[r][t][dec.id];
+      const effectsStr = dec.effects;
+      // Parse the choice-specific effects from the combined string
+      const choiceEffects = extractChoiceEffects(effectsStr, choice);
+      const parsed = parseEffects(choiceEffects);
+      
+      for (const [metricName, effect] of Object.entries(parsed)) {
+        const mDef = SIM.metrics.find(m => m.name === metricName);
+        if (!mDef) continue;
+        if (effect.type === 'set') {
+          G.teamMetrics[t][metricName] = effect.value;
+        } else {
+          G.teamMetrics[t][metricName] += effect.value;
+        }
+        if (mDef) G.teamMetrics[t][metricName] = clampMetric(mDef, G.teamMetrics[t][metricName]);
+      }
+    }
+    
+    // Save snapshot
+    const after = {};
+    const deltas = {};
+    for (const m of SIM.metrics) {
+      after[m.name] = G.teamMetrics[t][m.name];
+      deltas[m.name] = after[m.name] - before[m.name];
+    }
+    G.roundSnapshots[r][t] = { before, after, deltas };
+  }
+  G.roundsComplete.add(r);
+}
+
+function extractChoiceEffects(effectsStr, choice) {
+  // Effects format: "A: effect1. effect2. B: effect1. effect2. C: effect1."
+  // Split by A:/B:/C: markers
+  const regex = /\b([ABC]):\s*/g;
+  const parts = {};
+  let lastKey = null, lastIdx = 0;
+  let match;
+  const matches = [];
+  while ((match = regex.exec(effectsStr)) !== null) {
+    matches.push({ key: match[1], idx: match.index, end: match.index + match[0].length });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].end;
+    const end = i + 1 < matches.length ? matches[i+1].idx : effectsStr.length;
+    parts[matches[i].key] = effectsStr.substring(start, end).trim();
+  }
+  return parts[choice] || '';
+}
+
+function fmtVal(value, unit) {
+  if (unit === '$' || unit === 'USD') return '$' + Math.round(value).toLocaleString();
+  if (unit === '%') return value.toFixed(1) + '%';
+  if (unit === '/100') return Math.round(value) + '/100';
+  return Math.round(value).toLocaleString() + (unit && unit !== '$' && unit !== '%' && unit !== '/100' ? ' ' + unit : '');
+}
+
+function fmtDelta(delta, unit) {
+  const sign = delta >= 0 ? '+' : '';
+  if (unit === '$' || unit === 'USD') return sign + '$' + Math.round(delta).toLocaleString();
+  if (unit === '%') return sign + delta.toFixed(1) + '%';
+  return sign + Math.round(delta).toLocaleString();
+}
+
+// ======================== RESULTS ========================
+function renderResults(r) {
+  if (!G.roundSnapshots[r]) return '<div class="card"><h2>No results yet</h2></div>';
+  
+  let h = '<div class="card"><h2>ROUND ' + r + ' RESULTS</h2>';
+  h += '<table class="results-table"><thead><tr><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '</tr></thead><tbody>';
+  
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<tr><td>' + G.teams[t] + '</td>';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      h += '<td>' + fmtVal(val, m.unit) + '<br><span class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</span></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Per-team metric cards
+  for (let t = 0; t < G.teams.length; t++) {
+    const snap = G.roundSnapshots[r][t];
+    h += '<div class="card"><h3>' + G.teams[t] + '</h3><div class="metrics-grid">';
+    for (const m of SIM.metrics) {
+      const val = snap.after[m.name];
+      const delta = snap.deltas[m.name];
+      const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      const barPct = m.unit === '/100' ? val : m.unit === '%' ? Math.max(0, val) : Math.min(100, (val / (m.start > 0 ? m.start * 3 : 100000)) * 100);
+      h += '<div class="metric-card"><div class="m-name">' + m.name + '</div>';
+      h += '<div class="m-val">' + fmtVal(val, m.unit) + '</div>';
+      h += '<div class="m-delta ' + deltaClass + '">' + fmtDelta(delta, m.unit) + '</div>';
+      if (m.unit === '/100') h += '<div class="metric-bar"><div class="metric-bar-fill" style="width:' + Math.max(0, Math.min(100, val)) + '%"></div></div>';
+      h += '</div>';
+    }
+    h += '</div></div>';
+  }
+  
+  return h;
+}
+
+// ======================== LEADERBOARD ========================
+function getScore(t) {
+  // Composite score: each metric contributes up to 100 points (clamped)
+  let score = 0;
+  for (const m of SIM.metrics) {
+    const val = G.teamMetrics[t][m.name];
+    let c;
+    if (m.unit === '/100') {
+      c = val;
+    } else if (m.unit === '%') {
+      c = Math.min(val, 100);
+    } else {
+      // For $, people, users, coins, degrees, etc: normalise against start value
+      const base = Math.abs(m.start) > 0 ? Math.abs(m.start) : 100;
+      c = (val / base) * 50;
+    }
+    // Clamp each metric to [-100, 100] so no single metric dominates
+    score += Math.max(-100, Math.min(100, c));
+  }
+  return Math.round(score);
+}
+
+function renderLeaderboard(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Start the game first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  let h = '<div class="screen active"><div class="card"><h2>LEADERBOARD</h2></div>';
+  const medals = ['&#129351;','&#129352;','&#129353;'];
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<div class="lb-row"><div class="lb-rank">' + (medals[i] || '#'+(i+1)) + '</div>';
+    h += '<div class="lb-name">' + r.name + '</div><div class="lb-stats">';
+    for (const m of SIM.metrics.slice(0, 4)) {
+      h += '<div class="lb-stat"><div class="val">' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</div><div class="lbl">' + m.name + '</div></div>';
+    }
+    h += '<div class="lb-stat"><div class="val">' + Math.round(r.score) + '</div><div class="lbl">Score</div></div>';
+    h += '</div></div>';
+  }
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== FINAL RESULTS ========================
+function renderFinal(c) {
+  if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Complete all rounds first</h2></div></div>'; return; }
+  const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
+  const medals = ['&#127942;','&#129352;','&#129353;'];
+  
+  let h = '<div class="screen active"><div class="final-hero"><h1>FINAL RESULTS</h1></div>';
+  h += '<div class="podium">';
+  const order = ranked.length >= 3 ? [1, 0, 2] : ranked.length >= 2 ? [1, 0] : [0];
+  for (const oi of order) {
+    if (oi >= ranked.length) continue;
+    const r = ranked[oi];
+    h += '<div class="podium-item ' + (oi === 0 ? 'first' : '') + '"><div class="medal">' + (medals[oi] || '') + '</div>';
+    h += '<div class="pname">' + r.name + '</div><div class="pval">Score: ' + Math.round(r.score) + '</div></div>';
+  }
+  h += '</div>';
+  
+  // Full results table
+  h += '<div class="card"><h2>FULL BREAKDOWN</h2><table class="results-table"><thead><tr><th>Rank</th><th>Team</th>';
+  for (const m of SIM.metrics) h += '<th>' + m.name + '</th>';
+  h += '<th>Score</th></tr></thead><tbody>';
+  for (let i = 0; i < ranked.length; i++) {
+    const r = ranked[i];
+    h += '<tr><td>#' + (i+1) + '</td><td>' + r.name + '</td>';
+    for (const m of SIM.metrics) h += '<td>' + fmtVal(G.teamMetrics[r.idx][m.name], m.unit) + '</td>';
+    h += '<td><strong>' + Math.round(r.score) + '</strong></td></tr>';
+  }
+  h += '</tbody></table></div></div>';
+  c.innerHTML = h;
+}
+
+// ======================== DEBRIEF ========================
+function renderDebrief(c) {
+  let h = '<div class="screen active"><div class="card"><h2>DEBRIEF DISCUSSION</h2><p>Use these questions to guide whole-class discussion.</p></div>';
+  
+  if (SIM.debriefQuestions) {
+    for (let i = 0; i < SIM.debriefQuestions.length; i++) {
+      h += '<div class="debrief-q"><div class="qnum">QUESTION ' + (i+1) + '</div><p>' + SIM.debriefQuestions[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.keyTakeaways) {
+    h += '<div class="card"><h2>KEY TAKEAWAYS</h2></div>';
+    for (let i = 0; i < SIM.keyTakeaways.length; i++) {
+      h += '<div class="takeaway-card"><h3>Takeaway ' + (i+1) + '</h3><p>' + SIM.keyTakeaways[i] + '</p></div>';
+    }
+  }
+  
+  if (SIM.curriculumLinks) {
+    h += '<div class="card"><h2>CURRICULUM LINKS</h2></div>';
+    for (const cl of SIM.curriculumLinks) {
+      h += '<div class="curriculum-card"><div class="c-topic">' + cl.topic + '</div><div class="c-spec">' + cl.spec + '</div><div class="c-how">' + cl.how + '</div></div>';
+    }
+  }
+  
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+// ======================== INIT ========================
+render();
+</script>
+</body>
+</html>
