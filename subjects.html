@@ -739,6 +739,16 @@ a.resource-card:focus-visible { outline: 2px solid var(--accent); outline-offset
 
  <div class="filter-divider"></div>
 
+ <!-- Exam Board (disabled until level selected) -->
+ <div class="filter-group board-wrapper">
+ <span class="filter-label">Exam Board</span>
+ <select class="filter-select" id="filterBoard" disabled onchange="applyFilters()">
+ <option value="all">All Boards</option>
+ </select>
+ </div>
+
+ <div class="filter-divider"></div>
+
  <!-- Sub-topic (disabled until subject + level selected) -->
  <div class="filter-group subtopic-wrapper">
  <span class="filter-label">Topic</span>
@@ -960,6 +970,7 @@ a.resource-card:focus-visible { outline: 2px solid var(--accent); outline-offset
 let state = {
  subject: 'all',
  level: 'all',
+ board: 'all',
  subtopic: 'all',
  stage: 'all'
 };
@@ -1062,15 +1073,44 @@ const SUBTOPICS = {
 // ============================================
 // FILTER LOGIC
 // ============================================
+
+// Exam board options per level. KS3 has only General; IBDP has SL / HL;
+// GCSE and A-Level surface the boards relevant to that qualification.
+const EXAM_BOARDS = {
+ 'ks3':     [{ value: 'general',          label: 'General' }],
+ 'gcse':    [
+   { value: 'aqa',             label: 'AQA' },
+   { value: 'edexcel',         label: 'Edexcel' },
+   { value: 'ocr',             label: 'OCR' },
+   { value: 'cambridge-igcse', label: 'Cambridge iGCSE' },
+   { value: 'edexcel-igcse',   label: 'Edexcel iGCSE' },
+   { value: 'ccea',            label: 'CCEA' },
+   { value: 'general',         label: 'General' },
+ ],
+ 'a-level': [
+   { value: 'aqa',     label: 'AQA' },
+   { value: 'edexcel', label: 'Edexcel' },
+   { value: 'ocr',     label: 'OCR' },
+   { value: 'ccea',    label: 'CCEA' },
+   { value: 'general', label: 'General' },
+ ],
+ 'ibdp':    [
+   { value: 'sl', label: 'SL' },
+   { value: 'hl', label: 'HL' },
+ ],
+};
+
 function applyFilters() {
  state.subject = document.getElementById('filterSubject').value;
  state.level = document.getElementById('filterLevel').value;
+ state.board = document.getElementById('filterBoard').value;
  state.subtopic = document.getElementById('filterSubtopic').value;
 
- // Update subtopic dropdown
+ // Update dependent dropdowns
+ updateBoardDropdown();
  updateSubtopicDropdown();
 
- const isFiltered = state.subject !== 'all' || state.level !== 'all' || state.subtopic !== 'all' || state.stage !== 'all';
+ const isFiltered = state.subject !== 'all' || state.level !== 'all' || state.board !== 'all' || state.subtopic !== 'all' || state.stage !== 'all';
 
  // Show/hide active filters bar
  const af = document.getElementById('activeFilters');
@@ -1093,6 +1133,28 @@ function setStage(stage) {
  });
 
  applyFilters();
+}
+
+function updateBoardDropdown() {
+ const sel = document.getElementById('filterBoard');
+ const lvl = state.level;
+ if (lvl === 'all' || !EXAM_BOARDS[lvl]) {
+   sel.disabled = true;
+   sel.innerHTML = '<option value="all">All Boards</option>';
+   state.board = 'all';
+   return;
+ }
+ // KS3 has only General — keep dropdown enabled but with one option
+ sel.disabled = false;
+ const current = sel.value;
+ const boards = EXAM_BOARDS[lvl];
+ sel.innerHTML = '<option value="all">All Boards</option>' +
+   boards.map(b => `<option value="${b.value}" ${current === b.value ? 'selected' : ''}>${b.label}</option>`).join('');
+ // If current selection isn't in the new list, reset to 'all'
+ if (current !== 'all' && !boards.some(b => b.value === current)) {
+   sel.value = 'all';
+   state.board = 'all';
+ }
 }
 
 function updateSubtopicDropdown() {
@@ -1184,10 +1246,19 @@ function showFilteredView() {
  // pill, the topic filter is ignored so they see the orientation games for the
  // chosen subject/level regardless of which topic was selected.
  const ignoreTopic = state.stage === 'view';
+ // Exam board matching: when the user picks a specific board (e.g. AQA),
+ // resources tagged with that board OR with 'general' both pass — general
+ // content is intentionally board-agnostic. When the user picks 'General'
+ // explicitly, only general-tagged resources show.
  const matching = RESOURCES.filter(r => {
+   const boardOK =
+     state.board === 'all' ||
+     r.examBoard === state.board ||
+     (state.board !== 'general' && r.examBoard === 'general');
    return (state.subject  === 'all' || r.subject  === state.subject)
        && (state.level    === 'all' || r.level    === state.level)
        && (state.stage    === 'all' || r.stage    === state.stage)
+       && boardOK
        && (ignoreTopic    || state.subtopic === 'all' || r.subtopic === state.subtopic);
  });
 
@@ -1233,9 +1304,11 @@ function seeAllStage(stage) {
 }
 
 function clearAllFilters() {
- state = { subject:'all', level:'all', subtopic:'all', stage:'all' };
+ state = { subject:'all', level:'all', board:'all', subtopic:'all', stage:'all' };
  document.getElementById('filterSubject').value = 'all';
  document.getElementById('filterLevel').value = 'all';
+ document.getElementById('filterBoard').value = 'all';
+ document.getElementById('filterBoard').disabled = true;
  document.getElementById('filterSubtopic').value = 'all';
  document.getElementById('filterSubtopic').disabled = true;
  document.querySelectorAll('.velvet-pill').forEach(p => {
@@ -1246,6 +1319,7 @@ function clearAllFilters() {
 }
 
 // Init
+updateBoardDropdown();
 updateSubtopicDropdown();
 renderDefaultView();
 </script>
