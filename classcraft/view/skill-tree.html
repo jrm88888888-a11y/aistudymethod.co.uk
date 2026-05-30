@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="Skill Tree — explore a subject as a world map of units linked by prerequisite paths.">
+<title>Skill Tree — AI Study Method</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="view-engine.css">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700;900&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+  .st-stage { padding: 0; }
+  #st-svg { display:block; width: 100%; height: 100%; min-height: 540px; cursor: grab; touch-action: none; background: radial-gradient(circle at 30% 20%, rgba(74,222,154,0.06), transparent 60%), radial-gradient(circle at 70% 80%, rgba(123,111,255,0.06), transparent 60%); }
+  #st-svg:active { cursor: grabbing; }
+  .st-node-bg { fill: var(--vw-surface-2); stroke: var(--vw-border-strong); stroke-width: 1.5; transition: all 0.15s; cursor: pointer; }
+  .st-node-bg.unlocked { stroke: var(--vw-accent-bright); }
+  .st-node-bg.locked  { fill: var(--vw-surface); stroke: var(--vw-border); }
+  .st-node-bg:hover { stroke: var(--vw-accent-bright); stroke-width: 2.5; }
+  .st-node-bg.explored { fill: var(--vw-accent-soft); stroke: var(--vw-accent-bright); }
+  .st-node-label { fill: var(--vw-text); font-family: 'Playfair Display', serif; font-weight: 700; pointer-events: none; }
+  .st-node-blurb { fill: var(--vw-text-mid); font-family: 'Nunito', sans-serif; font-size: 10px; pointer-events: none; }
+  .st-edge { stroke: var(--vw-border-strong); stroke-width: 2; fill: none; opacity: 0.5; }
+  .st-edge.unlocked { stroke: var(--vw-accent); opacity: 0.85; }
+
+  .st-info { position: absolute; bottom: 12px; left: 12px; right: 12px; background: var(--vw-surface); border: 1px solid var(--vw-border); border-radius: 12px; padding: 12px 16px; z-index: 4; max-width: 540px; }
+  .st-info .name { font-family: 'Playfair Display', serif; font-weight: 800; font-size: 16px; color: var(--vw-accent-bright); }
+  .st-info .blurb { color: var(--vw-text-mid); font-size: 12px; margin-top: 4px; line-height: 1.5; }
+  .st-info .reqs { font-size: 11px; color: var(--vw-text-dim); margin-top: 6px; }
+  .st-info .topics { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .st-info .topics span { background: var(--vw-surface-2); padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
+
+  .st-help { position: absolute; top: 10px; left: 12px; background: rgba(15,17,23,0.7); border: 1px solid var(--vw-border); border-radius: 18px; padding: 5px 12px; font-size: 11px; color: var(--vw-text-mid); z-index: 4; }
+</style>
+</head>
+<body>
+
+<nav class="aism"><div class="nav-inner"><a class="logo" href="../../index.html"><div class="logo-mark">V</div><div><div class="logo-primary">AI Study Method</div><span class="logo-secondary">The Velvet Method™</span></div></a><ul class="nav-links"><li><a href="../../subjects.html">Subjects</a></li><li><a href="../../velvet-method.html">The Velvet Method</a></li><li><a href="../../courses.html">Courses</a></li><li><a href="../../ai-study-guide.html">AI Lab</a></li><li><a href="../../parents.html">Parents</a></li><li><a href="../../about.html">About</a></li></ul><a href="../../courses.html" class="btn-primary">View the Course →</a></div></nav>
+<div class="back-strip"><a href="../../subjects.html">← Back to all subjects</a></div>
+
+<div class="engine-wrap">
+  <div class="engine-meta">
+    <div>
+      <span class="badge">V · View</span>
+      <div class="crumb" id="vw-crumb">…</div>
+      <h1 id="vw-title">Skill Tree</h1>
+      <p class="sub" id="vw-sub">A map of the whole subject. Pan, zoom, and explore each unit — see what builds on what.</p>
+    </div>
+  </div>
+
+  <div class="vw-hud">
+    <div class="vw-hud-item"><div class="vw-hud-num" id="st-explored">0/0</div><div class="vw-hud-label">Explored</div></div>
+    <div class="vw-hud-item"><div class="vw-hud-num" id="st-unlocked">0/0</div><div class="vw-hud-label">Unlocked</div></div>
+    <div class="vw-hud-actions">
+      <button class="vw-btn" type="button" id="btn-fit">Fit view</button>
+      <button class="vw-btn" type="button" id="btn-reset">Reset</button>
+    </div>
+  </div>
+
+  <div class="vw-stage st-stage">
+    <div class="st-help">Drag to pan · scroll/pinch to zoom · tap a node to explore</div>
+    <svg id="st-svg" viewBox="0 0 1000 700"></svg>
+    <div class="st-info" id="st-info" style="display:none">
+      <div class="name" id="st-info-name"></div>
+      <div class="blurb" id="st-info-blurb"></div>
+      <div class="reqs" id="st-info-reqs"></div>
+      <div class="topics" id="st-info-topics"></div>
+    </div>
+    <div class="vw-toast" id="vw-toast"></div>
+    <div class="vw-end" id="vw-end">
+      <div class="vw-end-card">
+        <div class="vw-end-emoji">🧭</div>
+        <h2 class="vw-end-title">You've explored the whole map!</h2>
+        <div class="vw-end-stats" id="vw-end-stats"></div>
+        <div class="vw-end-btns">
+          <button class="vw-btn" type="button" onclick="ST.reset()">Explore again</button>
+          <button class="vw-btn primary" type="button" onclick="window.location.href='../../subjects.html'">Back to subjects</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vw-disclaimer">View-stage orientation activity — curricula are AI-generated representative samples for review. Not affiliated with any exam board.</div>
+</div>
+
+<footer class="aism">© 2026 AI Study Method · <a href="../../subjects.html">All games</a></footer>
+
+<script src="view-engine.js"></script>
+<script>
+const ST = (function(){
+  let C = null, svg = null;
+  let explored = new Set();
+  let pan = { x: 0, y: 0, scale: 1 };
+  let drag = null;
+
+  async function init() {
+    VW.renderState('loading');
+    try { C = await VW.loadCurriculum(); }
+    catch (e) { VW.renderState('error', e.message); return; }
+    rebuildStage();
+    VW.setMeta(C, 'Skill Tree', 'A map of the whole subject. Pan, zoom, and explore each unit — see what builds on what.');
+    render();
+    setupInput();
+  }
+
+  function rebuildStage() {
+    const stage = document.querySelector('.vw-stage');
+    stage.classList.add('st-stage');
+    stage.innerHTML = `
+      <div class="st-help">Drag to pan · scroll/pinch to zoom · tap a node to explore</div>
+      <svg id="st-svg" viewBox="0 0 1000 700"></svg>
+      <div class="st-info" id="st-info" style="display:none">
+        <div class="name" id="st-info-name"></div>
+        <div class="blurb" id="st-info-blurb"></div>
+        <div class="reqs" id="st-info-reqs"></div>
+        <div class="topics" id="st-info-topics"></div>
+      </div>
+      <div class="vw-toast" id="vw-toast"></div>
+      <div class="vw-end" id="vw-end">
+        <div class="vw-end-card">
+          <div class="vw-end-emoji">🧭</div>
+          <h2 class="vw-end-title">You've explored the whole map!</h2>
+          <div class="vw-end-stats" id="vw-end-stats"></div>
+          <div class="vw-end-btns">
+            <button class="vw-btn" type="button" onclick="ST.reset()">Explore again</button>
+            <button class="vw-btn primary" type="button" onclick="window.location.href='../../subjects.html'">Back to subjects</button>
+          </div>
+        </div>
+      </div>`;
+    svg = document.getElementById('st-svg');
+  }
+
+  function reset() { explored = new Set(); VW.hideEnd(); render(); }
+
+  function layoutNodes() {
+    // Layer by prerequisite depth using `prerequisites` and `sequence`
+    const units = C.units;
+    const prereqs = {};
+    (C.prerequisites || []).forEach(p => prereqs[p.unit] = p.requires || []);
+
+    // Compute depth per unit
+    const depth = {};
+    function calc(id, seen) {
+      if (depth[id] != null) return depth[id];
+      if (seen.has(id)) return 0;
+      seen.add(id);
+      const ps = prereqs[id] || [];
+      if (!ps.length) { depth[id] = 0; return 0; }
+      depth[id] = 1 + Math.max(...ps.map(p => calc(p, new Set(seen))));
+      return depth[id];
+    }
+    units.forEach(u => calc(u.id, new Set()));
+
+    // Group by depth, position
+    const byLayer = {};
+    units.forEach(u => { (byLayer[depth[u.id]] ||= []).push(u); });
+    const layers = Object.keys(byLayer).map(Number).sort((a,b)=>a-b);
+    const layerW = 1000, layerH = 700;
+    const positions = {};
+    layers.forEach((d, li) => {
+      const ys = byLayer[d];
+      const cy = (layerH / (layers.length + 1)) * (li + 1);
+      ys.forEach((u, i) => {
+        const cx = (layerW / (ys.length + 1)) * (i + 1);
+        positions[u.id] = { x: cx, y: cy };
+      });
+    });
+    return { positions, prereqs };
+  }
+
+  function render() {
+    const { positions, prereqs } = layoutNodes();
+    svg.innerHTML = '';
+
+    // Edges first (under nodes)
+    Object.keys(prereqs).forEach(id => {
+      prereqs[id].forEach(p => {
+        const a = positions[p], b = positions[id];
+        if (!a || !b) return;
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        const mx = (a.x + b.x)/2;
+        path.setAttribute('d', `M${a.x},${a.y} Q${mx},${(a.y+b.y)/2} ${b.x},${b.y}`);
+        path.setAttribute('class', 'st-edge' + (isUnlocked(id) ? ' unlocked' : ''));
+        svg.appendChild(path);
+      });
+    });
+
+    // Nodes
+    C.units.forEach(u => {
+      const p = positions[u.id];
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('class', 'st-node');
+      g.setAttribute('transform', `translate(${p.x},${p.y})`);
+      const unlocked = isUnlocked(u.id);
+      const explored_ = explored.has(u.id);
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x', -75); rect.setAttribute('y', -28);
+      rect.setAttribute('width', 150); rect.setAttribute('height', 56);
+      rect.setAttribute('rx', 12);
+      rect.setAttribute('class', 'st-node-bg ' + (explored_ ? 'explored' : (unlocked ? 'unlocked' : 'locked')));
+      rect.dataset.id = u.id;
+      g.appendChild(rect);
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('class','st-node-label');
+      label.setAttribute('text-anchor','middle');
+      label.setAttribute('y', -2);
+      label.setAttribute('font-size','13');
+      label.textContent = u.name.length > 18 ? u.name.slice(0,16) + '…' : u.name;
+      g.appendChild(label);
+
+      if (!unlocked) {
+        const lock = document.createElementNS('http://www.w3.org/2000/svg','text');
+        lock.setAttribute('text-anchor','middle');
+        lock.setAttribute('y', 14);
+        lock.setAttribute('fill', '#6b7280');
+        lock.setAttribute('font-size','11');
+        lock.textContent = '🔒 locked';
+        g.appendChild(lock);
+      } else {
+        const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
+        sub.setAttribute('class','st-node-blurb');
+        sub.setAttribute('text-anchor','middle');
+        sub.setAttribute('y', 14);
+        sub.textContent = explored_ ? '✓ explored' : 'tap to explore';
+        g.appendChild(sub);
+      }
+
+      svg.appendChild(g);
+    });
+
+    applyPan();
+    updateHUD();
+  }
+
+  function isUnlocked(id) {
+    const ps = (C.prerequisites || []).find(p => p.unit === id);
+    if (!ps) return true;
+    return (ps.requires || []).every(r => explored.has(r));
+  }
+
+  function updateHUD() {
+    document.getElementById('st-explored').textContent = `${explored.size}/${C.units.length}`;
+    const unlockedCount = C.units.filter(u => isUnlocked(u.id)).length;
+    document.getElementById('st-unlocked').textContent = `${unlockedCount}/${C.units.length}`;
+    if (explored.size === C.units.length) {
+      setTimeout(() => VW.showEnd('🧭', 'You\'ve explored the whole map!', [
+        { value: `${C.units.length}`, label: 'Units' },
+        { value: `${C.topics.length}`, label: 'Topics seen' }
+      ]), 400);
+    }
+  }
+
+  function exploreUnit(id) {
+    if (!isUnlocked(id)) { VW.toast('Locked — explore the prerequisite units first.', 'bad'); return; }
+    explored.add(id);
+    const info = document.getElementById('st-info');
+    const u = C.units.find(x => x.id === id);
+    document.getElementById('st-info-name').textContent = u.name;
+    document.getElementById('st-info-blurb').textContent = u.blurb || '';
+    const reqs = (C.prerequisites || []).find(p => p.unit === id)?.requires || [];
+    document.getElementById('st-info-reqs').textContent = reqs.length
+      ? 'Builds on: ' + reqs.map(r => C.units.find(x=>x.id===r)?.name || r).join(' · ')
+      : 'No prerequisites — this is a foundation unit.';
+    const topics = C.topics.filter(t => t.unit === id);
+    document.getElementById('st-info-topics').innerHTML = topics.map(t => `<span>${VW.esc(t.name)}</span>`).join('');
+    info.style.display = 'block';
+    render();
+  }
+
+  function applyPan() {
+    svg.setAttribute('viewBox', `${-pan.x/pan.scale} ${-pan.y/pan.scale} ${1000/pan.scale} ${700/pan.scale}`);
+  }
+
+  function fit() { pan = { x: 0, y: 0, scale: 1 }; applyPan(); }
+
+  function setupInput() {
+    svg.addEventListener('pointerdown', (e) => {
+      const rect = e.target.closest('.st-node-bg');
+      if (rect) { exploreUnit(rect.dataset.id); return; }
+      drag = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
+    });
+    svg.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      pan.x = drag.px + (e.clientX - drag.x);
+      pan.y = drag.py + (e.clientY - drag.y);
+      applyPan();
+    });
+    window.addEventListener('pointerup', () => drag = null);
+    svg.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const dz = e.deltaY < 0 ? 1.1 : 0.9;
+      pan.scale = Math.max(0.5, Math.min(2.5, pan.scale * dz));
+      applyPan();
+    }, { passive: false });
+    document.getElementById('btn-fit').onclick = fit;
+    document.getElementById('btn-reset').onclick = reset;
+  }
+
+  return { init, reset };
+})();
+document.addEventListener('DOMContentLoaded', ST.init);
+</script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="Zoom-In: orbit-to-ground orientation. Predict what's inside each unit, then drill into the topics.">
+<title>Zoom-In — AI Study Method</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="view-engine.css">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700;900&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+  .zm-level { padding: 16px; text-align: center; transition: opacity 0.3s ease; }
+  .zm-level h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin: 0 0 4px; }
+  .zm-level .help { color: var(--vw-text-mid); font-size: 13px; margin-bottom: 18px; line-height: 1.5; max-width: 540px; margin-left: auto; margin-right: auto; }
+  .zm-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; max-width: 760px; margin: 0 auto; }
+  .zm-tile { background: var(--vw-surface-2); border: 2px solid var(--vw-border); border-radius: 12px; padding: 18px 12px; cursor: pointer; transition: all 0.15s; font-weight: 700; font-size: 13px; color: var(--vw-text); }
+  .zm-tile:hover { border-color: var(--vw-accent-bright); transform: translateY(-2px); }
+  .zm-tile.selected { background: var(--vw-accent-soft); border-color: var(--vw-accent-bright); color: var(--vw-accent-bright); }
+  .zm-tile small { display: block; color: var(--vw-text-mid); font-weight: 500; margin-top: 4px; font-size: 11px; line-height: 1.3; }
+
+  .zm-predict { background: var(--vw-surface); border: 1px solid var(--vw-border); border-radius: 14px; padding: 18px; margin: 20px auto; max-width: 540px; text-align: left; }
+  .zm-predict h3 { font-family: 'Playfair Display', serif; font-size: 16px; margin: 0 0 10px; color: var(--vw-accent-bright); }
+  .zm-predict-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .zm-predict-chip { background: var(--vw-surface-2); border: 1.5px solid var(--vw-border); border-radius: 18px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; user-select: none; transition: all 0.15s; }
+  .zm-predict-chip:hover { border-color: var(--vw-accent); }
+  .zm-predict-chip.picked { background: var(--vw-purple-soft); border-color: var(--vw-purple); color: var(--vw-text); }
+  .zm-predict-chip.right { background: var(--vw-accent-soft); border-color: var(--vw-accent-bright); color: var(--vw-accent-bright); }
+  .zm-predict-chip.wrong { background: var(--vw-warn-soft); border-color: var(--vw-warn); color: var(--vw-warn); text-decoration: line-through; }
+  .zm-predict-cta { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+
+  .zm-breadcrumb { font-size: 11px; color: var(--vw-text-mid); text-align: center; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; font-family: 'DM Mono', monospace; }
+</style>
+</head>
+<body>
+
+<nav class="aism"><div class="nav-inner"><a class="logo" href="../../index.html"><div class="logo-mark">V</div><div><div class="logo-primary">AI Study Method</div><span class="logo-secondary">The Velvet Method™</span></div></a><ul class="nav-links"><li><a href="../../subjects.html">Subjects</a></li><li><a href="../../velvet-method.html">The Velvet Method</a></li><li><a href="../../courses.html">Courses</a></li><li><a href="../../ai-study-guide.html">AI Lab</a></li><li><a href="../../parents.html">Parents</a></li><li><a href="../../about.html">About</a></li></ul><a href="../../courses.html" class="btn-primary">View the Course →</a></div></nav>
+<div class="back-strip"><a href="../../subjects.html">← Back to all subjects</a></div>
+
+<div class="engine-wrap">
+  <div class="engine-meta">
+    <div>
+      <span class="badge">V · View</span>
+      <div class="crumb" id="vw-crumb">…</div>
+      <h1 id="vw-title">Zoom-In</h1>
+      <p class="sub" id="vw-sub">Start from the whole subject, predict what's inside each unit, then drill down.</p>
+    </div>
+  </div>
+
+  <div class="vw-hud">
+    <div class="vw-hud-item"><div class="vw-hud-num" id="zm-units">0/0</div><div class="vw-hud-label">Units toured</div></div>
+    <div class="vw-hud-item"><div class="vw-hud-num" id="zm-acc">—</div><div class="vw-hud-label">Prediction acc</div></div>
+    <div class="vw-hud-actions">
+      <button class="vw-btn" type="button" id="btn-back">↩ Back</button>
+      <button class="vw-btn" type="button" id="btn-reset">Reset</button>
+    </div>
+  </div>
+
+  <div class="vw-stage">
+    <div id="zm-content"></div>
+    <div class="vw-toast" id="vw-toast"></div>
+    <div class="vw-end" id="vw-end">
+      <div class="vw-end-card">
+        <div class="vw-end-emoji">🔍</div>
+        <h2 class="vw-end-title">Whole subject toured!</h2>
+        <div class="vw-end-stats" id="vw-end-stats"></div>
+        <div class="vw-end-btns">
+          <button class="vw-btn" type="button" onclick="ZM.reset()">Tour again</button>
+          <button class="vw-btn primary" type="button" onclick="window.location.href='../../subjects.html'">Back to subjects</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vw-disclaimer">View-stage orientation activity — curricula are AI-generated representative samples for review. Not affiliated with any exam board.</div>
+</div>
+
+<footer class="aism">© 2026 AI Study Method · <a href="../../subjects.html">All games</a></footer>
+
+<script src="view-engine.js"></script>
+<script>
+const ZM = (function(){
+  let C = null, view = 'subject', currentUnit = null;
+  let toured = new Set(), predictions = []; // {unit, predicted:[], correct:[], missed:[]}
+
+  async function init() {
+    VW.renderState('loading');
+    try { C = await VW.loadCurriculum(); }
+    catch (e) { VW.renderState('error', e.message); return; }
+    rebuildStage();
+    VW.setMeta(C, 'Zoom-In', `Start from the whole of ${C.subjectDisplay}, predict what's inside each unit, then drill down to the topics.`);
+    document.getElementById('btn-back').onclick = back;
+    document.getElementById('btn-reset').onclick = reset;
+    render();
+  }
+  function rebuildStage() {
+    const stage = document.querySelector('.vw-stage');
+    stage.innerHTML = `
+      <div id="zm-content"></div>
+      <div class="vw-toast" id="vw-toast"></div>
+      <div class="vw-end" id="vw-end">
+        <div class="vw-end-card">
+          <div class="vw-end-emoji">🔍</div>
+          <h2 class="vw-end-title">Whole subject toured!</h2>
+          <div class="vw-end-stats" id="vw-end-stats"></div>
+          <div class="vw-end-btns">
+            <button class="vw-btn" type="button" onclick="ZM.reset()">Tour again</button>
+            <button class="vw-btn primary" type="button" onclick="window.location.href='../../subjects.html'">Back to subjects</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  function reset() { view = 'subject'; currentUnit = null; toured.clear(); predictions = []; VW.hideEnd(); render(); }
+  function back() { if (view === 'predict' || view === 'unit') { view = 'subject'; render(); } }
+
+  function updateHUD() {
+    document.getElementById('zm-units').textContent = `${toured.size}/${C.units.length}`;
+    if (predictions.length) {
+      const totals = predictions.reduce((a,p) => ({c: a.c + p.correct.length, t: a.t + p.predicted.length}), {c:0, t:0});
+      document.getElementById('zm-acc').textContent = totals.t ? `${Math.round(100*totals.c/totals.t)}%` : '—';
+    } else {
+      document.getElementById('zm-acc').textContent = '—';
+    }
+  }
+
+  function render() {
+    const root = document.getElementById('zm-content');
+    if (view === 'subject') {
+      root.innerHTML = `
+        <div class="zm-level">
+          <div class="zm-breadcrumb">${VW.esc(C.subjectDisplay)} · ${VW.esc(C.levelDisplay)}</div>
+          <h2>${VW.esc(C.subjectDisplay)}</h2>
+          <p class="help">This subject splits into ${C.units.length} units. Tap a unit to predict what's inside, then zoom into its topics.</p>
+          <div class="zm-tiles" id="zm-tiles"></div>
+        </div>`;
+      const tiles = document.getElementById('zm-tiles');
+      C.units.forEach(u => {
+        const el = document.createElement('div');
+        el.className = 'zm-tile' + (toured.has(u.id) ? ' selected' : '');
+        el.innerHTML = `${VW.esc(u.name)}<small>${VW.esc(u.blurb||'')}</small>`;
+        el.onclick = () => { currentUnit = u; view = 'predict'; render(); };
+        tiles.appendChild(el);
+      });
+    } else if (view === 'predict') {
+      // Predict-then-reveal: show a mix of (correct topics for this unit) + (decoys from other units)
+      const correct = C.topics.filter(t => t.unit === currentUnit.id);
+      const decoys  = VW.shuffle(C.topics.filter(t => t.unit !== currentUnit.id)).slice(0, Math.max(2, Math.min(4, correct.length)));
+      const pool    = VW.shuffle([...correct, ...decoys]);
+      root.innerHTML = `
+        <div class="zm-level">
+          <div class="zm-breadcrumb">${VW.esc(C.subjectDisplay)} → ${VW.esc(currentUnit.name)}</div>
+          <h2>What's inside ${VW.esc(currentUnit.name)}?</h2>
+          <p class="help">Pick the topics you think belong under this unit. Then tap reveal to check.</p>
+          <div class="zm-predict">
+            <h3>Tap each topic you think belongs here</h3>
+            <div class="zm-predict-list" id="zm-pool"></div>
+            <div class="zm-predict-cta">
+              <button class="vw-btn" type="button" id="btn-reveal">Reveal answer</button>
+              <button class="vw-btn primary" type="button" id="btn-skip">Skip prediction</button>
+            </div>
+          </div>
+        </div>`;
+      const list = document.getElementById('zm-pool');
+      const picked = new Set();
+      pool.forEach(t => {
+        const c = document.createElement('div');
+        c.className = 'zm-predict-chip';
+        c.textContent = t.name;
+        c.onclick = () => {
+          if (picked.has(t.id)) { picked.delete(t.id); c.classList.remove('picked'); }
+          else { picked.add(t.id); c.classList.add('picked'); }
+        };
+        c.dataset.id = t.id;
+        list.appendChild(c);
+      });
+      document.getElementById('btn-reveal').onclick = () => {
+        const picked_arr = [...picked];
+        const correct_ids = new Set(correct.map(t=>t.id));
+        const got_right = picked_arr.filter(id => correct_ids.has(id));
+        const got_wrong = picked_arr.filter(id => !correct_ids.has(id));
+        const missed    = correct.filter(t => !picked.has(t.id)).map(t => t.id);
+        // Annotate chips
+        document.querySelectorAll('.zm-predict-chip').forEach(c => {
+          const id = c.dataset.id;
+          if (correct_ids.has(id) && picked.has(id)) { c.className = 'zm-predict-chip right'; }
+          else if (!correct_ids.has(id) && picked.has(id)) { c.className = 'zm-predict-chip wrong'; }
+          else if (correct_ids.has(id) && !picked.has(id)) { c.className = 'zm-predict-chip right'; c.textContent = '+ ' + c.textContent; }
+        });
+        predictions.push({ unit: currentUnit.id, predicted: picked_arr, correct: got_right, missed: missed });
+        VW.toast(`${got_right.length}/${correct.length} correct${got_wrong.length ? ` (${got_wrong.length} extra)` : ''}`, got_right.length === correct.length && !got_wrong.length ? 'ok' : '');
+        // Show continue button
+        const cta = document.querySelector('.zm-predict-cta');
+        cta.innerHTML = '<button class="vw-btn primary" type="button" id="btn-continue">Zoom in →</button>';
+        document.getElementById('btn-continue').onclick = () => { view = 'unit'; render(); };
+      };
+      document.getElementById('btn-skip').onclick = () => { view = 'unit'; render(); };
+    } else if (view === 'unit') {
+      toured.add(currentUnit.id);
+      const topics = C.topics.filter(t => t.unit === currentUnit.id);
+      root.innerHTML = `
+        <div class="zm-level">
+          <div class="zm-breadcrumb">${VW.esc(C.subjectDisplay)} → ${VW.esc(currentUnit.name)}</div>
+          <h2>${VW.esc(currentUnit.name)}</h2>
+          <p class="help">${VW.esc(currentUnit.blurb || '')}</p>
+          <div class="zm-tiles">${topics.map(t => `
+            <div class="zm-tile" style="cursor:default">
+              ${VW.esc(t.name)}<small>${VW.esc(t.blurb||'')}</small>
+            </div>`).join('')}</div>
+          <div style="margin-top:18px"><button class="vw-btn primary" type="button" id="btn-up">← Back to all units</button></div>
+        </div>`;
+      document.getElementById('btn-up').onclick = back;
+      if (toured.size === C.units.length) {
+        setTimeout(() => {
+          const totals = predictions.reduce((a,p) => ({c: a.c + p.correct.length, t: a.t + p.predicted.length}), {c:0, t:0});
+          const acc = totals.t ? Math.round(100*totals.c/totals.t) : '—';
+          VW.showEnd('🔍', 'Whole subject toured!', [
+            { value: `${C.units.length}`, label: 'Units' },
+            { value: `${C.topics.length}`, label: 'Topics seen' },
+            { value: totals.t ? acc + '%' : '—', label: 'Prediction acc' }
+          ]);
+        }, 800);
+      }
+    }
+    updateHUD();
+  }
+
+  return { init, reset };
+})();
+document.addEventListener('DOMContentLoaded', ZM.init);
+</script>
+</body>
+</html>

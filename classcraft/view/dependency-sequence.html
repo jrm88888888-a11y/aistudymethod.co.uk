@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="Dependency Sequence: order the units of a subject so each one only uses what's already been learned.">
+<title>Dependency Sequence — AI Study Method</title>
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="view-engine.css">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700;900&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+  .ds-track { display: grid; gap: 8px; padding: 10px; max-width: 540px; margin: 0 auto; }
+  .ds-slot { background: rgba(255,255,255,0.02); border: 2px dashed var(--vw-border); border-radius: 12px; padding: 10px 14px; min-height: 56px; display: flex; align-items: center; gap: 12px; transition: all 0.15s; }
+  .ds-slot.over { border-color: var(--vw-accent-bright); background: var(--vw-accent-soft); }
+  .ds-slot.ok    { border-style: solid; border-color: var(--vw-accent-bright); background: var(--vw-accent-soft); }
+  .ds-slot.bad   { border-style: solid; border-color: var(--vw-warn); background: var(--vw-warn-soft); }
+  .ds-slot-num { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 800; color: var(--vw-text-mid); width: 36px; text-align: center; }
+  .ds-slot-content { flex: 1; }
+  .ds-card { background: var(--vw-surface-2); border: 1.5px solid var(--vw-border-strong); border-radius: 10px; padding: 8px 12px; font-weight: 700; cursor: grab; touch-action: none; user-select: none; }
+  .ds-card.dragging { opacity: 0.5; }
+  .ds-card .blurb { font-size: 11px; color: var(--vw-text-mid); font-weight: 500; margin-top: 2px; }
+
+  .ds-bank { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; max-width: 540px; margin: 0 auto 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--vw-border); border-radius: 12px; }
+  .ds-bank h3 { width: 100%; font-size: 10px; font-weight: 800; color: var(--vw-text-mid); text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 4px; }
+  .ds-bank .ds-card { min-width: 140px; flex: 1; }
+
+  .ds-arrow { color: var(--vw-text-dim); text-align: center; font-size: 18px; line-height: 1; }
+</style>
+</head>
+<body>
+
+<nav class="aism"><div class="nav-inner"><a class="logo" href="../../index.html"><div class="logo-mark">V</div><div><div class="logo-primary">AI Study Method</div><span class="logo-secondary">The Velvet Method™</span></div></a><ul class="nav-links"><li><a href="../../subjects.html">Subjects</a></li><li><a href="../../velvet-method.html">The Velvet Method</a></li><li><a href="../../courses.html">Courses</a></li><li><a href="../../ai-study-guide.html">AI Lab</a></li><li><a href="../../parents.html">Parents</a></li><li><a href="../../about.html">About</a></li></ul><a href="../../courses.html" class="btn-primary">View the Course →</a></div></nav>
+<div class="back-strip"><a href="../../subjects.html">← Back to all subjects</a></div>
+
+<div class="engine-wrap">
+  <div class="engine-meta">
+    <div>
+      <span class="badge">V · View</span>
+      <div class="crumb" id="vw-crumb">…</div>
+      <h1 id="vw-title">Dependency Sequence</h1>
+      <p class="sub" id="vw-sub">Arrange the units so each one only depends on units already placed before it. Multiple valid orderings exist.</p>
+    </div>
+  </div>
+
+  <div class="vw-hud">
+    <div class="vw-hud-item"><div class="vw-hud-num" id="ds-placed">0/0</div><div class="vw-hud-label">Placed</div></div>
+    <div class="vw-hud-item"><div class="vw-hud-num" id="ds-valid">—</div><div class="vw-hud-label">Order</div></div>
+    <div class="vw-hud-actions">
+      <button class="vw-btn" type="button" id="btn-check">Check</button>
+      <button class="vw-btn" type="button" id="btn-reset">Reset</button>
+    </div>
+  </div>
+
+  <div class="vw-stage">
+    <div class="ds-bank" id="ds-bank"><h3>Drag the units into a valid learning order</h3></div>
+    <div class="ds-track" id="ds-track"></div>
+    <div class="vw-toast" id="vw-toast"></div>
+    <div class="vw-end" id="vw-end">
+      <div class="vw-end-card">
+        <div class="vw-end-emoji">🧗</div>
+        <h2 class="vw-end-title">Pathway complete!</h2>
+        <div class="vw-end-stats" id="vw-end-stats"></div>
+        <div class="vw-end-btns">
+          <button class="vw-btn" type="button" onclick="DS.reset()">Play again</button>
+          <button class="vw-btn primary" type="button" onclick="window.location.href='../../subjects.html'">Back to subjects</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vw-disclaimer">View-stage orientation activity — curricula are AI-generated representative samples for review. Not affiliated with any exam board.</div>
+</div>
+
+<footer class="aism">© 2026 AI Study Method · <a href="../../subjects.html">All games</a></footer>
+
+<script src="view-engine.js"></script>
+<script>
+const DS = (function(){
+  let C = null;
+  let slots = [];   // length=units.length, each entry: unitId or null
+  let dragging = null;
+  let lastCheckOK = null;
+
+  async function init() {
+    VW.renderState('loading');
+    try { C = await VW.loadCurriculum(); }
+    catch (e) { VW.renderState('error', e.message); return; }
+    rebuildStage();
+    VW.setMeta(C, 'Dependency Sequence', `Arrange ${C.subjectDisplay}'s units in a valid learning order — each unit can only use what's been placed before it.`);
+    slots = new Array(C.units.length).fill(null);
+    render();
+    setupInput();
+  }
+  function rebuildStage() {
+    const stage = document.querySelector('.vw-stage');
+    stage.innerHTML = `
+      <div class="ds-bank" id="ds-bank"><h3>Drag the units into a valid learning order</h3></div>
+      <div class="ds-track" id="ds-track"></div>
+      <div class="vw-toast" id="vw-toast"></div>
+      <div class="vw-end" id="vw-end">
+        <div class="vw-end-card">
+          <div class="vw-end-emoji">🧗</div>
+          <h2 class="vw-end-title">Pathway complete!</h2>
+          <div class="vw-end-stats" id="vw-end-stats"></div>
+          <div class="vw-end-btns">
+            <button class="vw-btn" type="button" onclick="DS.reset()">Play again</button>
+            <button class="vw-btn primary" type="button" onclick="window.location.href='../../subjects.html'">Back to subjects</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  function reset() { slots = new Array(C.units.length).fill(null); lastCheckOK = null; VW.hideEnd(); render(); }
+
+  function render() {
+    const bank = document.getElementById('ds-bank');
+    bank.innerHTML = '<h3>Drag the units into a valid learning order</h3>';
+    VW.shuffle(C.units).filter(u => !slots.includes(u.id)).forEach(u => {
+      const c = makeCard(u);
+      bank.appendChild(c);
+    });
+
+    const tr = document.getElementById('ds-track');
+    tr.innerHTML = '';
+    slots.forEach((id, i) => {
+      const slot = document.createElement('div');
+      slot.className = 'ds-slot';
+      slot.dataset.slot = i;
+      const num = document.createElement('div'); num.className='ds-slot-num'; num.textContent = (i+1); slot.appendChild(num);
+      const wrap = document.createElement('div'); wrap.className='ds-slot-content';
+      if (id) {
+        const u = C.units.find(x => x.id === id);
+        wrap.appendChild(makeCard(u, true));
+        // status marker
+        if (lastCheckOK === true || lastCheckOK === false) {
+          const ok = isPositionValid(i);
+          slot.classList.add(ok ? 'ok' : 'bad');
+        }
+      } else {
+        wrap.innerHTML = '<span style="color:var(--vw-text-dim);font-size:12px">— drop a unit here —</span>';
+      }
+      slot.appendChild(wrap);
+      tr.appendChild(slot);
+    });
+
+    const placedCount = slots.filter(Boolean).length;
+    document.getElementById('ds-placed').textContent = `${placedCount}/${C.units.length}`;
+  }
+
+  function makeCard(u, placed) {
+    const c = document.createElement('div');
+    c.className = 'ds-card';
+    c.dataset.id = u.id;
+    c.dataset.placed = placed ? '1' : '0';
+    c.innerHTML = `${VW.esc(u.name)}<div class="blurb">${VW.esc(u.blurb||'')}</div>`;
+    return c;
+  }
+
+  function isPositionValid(slotIdx) {
+    const u = slots[slotIdx];
+    if (!u) return false;
+    const prereqs = (C.prerequisites || []).find(p => p.unit === u)?.requires || [];
+    // All prereqs must appear in slots 0..slotIdx-1
+    return prereqs.every(p => {
+      const idx = slots.indexOf(p);
+      return idx >= 0 && idx < slotIdx;
+    });
+  }
+
+  function checkOrder() {
+    if (slots.includes(null)) { VW.toast('Place every unit first.', 'bad'); return; }
+    const ok = slots.every((u, i) => isPositionValid(i));
+    lastCheckOK = ok;
+    render();
+    if (ok) {
+      VW.toast("✓ Valid pathway — every unit's prerequisites come first.", 'ok');
+      setTimeout(() => VW.showEnd('🧗', 'Pathway complete!', [
+        { value: slots.length, label: 'Units placed' },
+        { value: 'Valid', label: 'Order' }
+      ]), 400);
+    } else {
+      VW.toast('Some units come before their prerequisites — see the red slots.', 'bad');
+    }
+    document.getElementById('ds-valid').textContent = ok ? 'Valid' : 'Invalid';
+  }
+
+  function setupInput() {
+    const stage = document.querySelector('.vw-stage');
+    stage.addEventListener('pointerdown', (e) => {
+      const card = e.target.closest('.ds-card');
+      if (!card) return;
+      e.preventDefault();
+      const r = card.getBoundingClientRect();
+      const ghost = card.cloneNode(true);
+      ghost.style.position='fixed'; ghost.style.left=r.left+'px'; ghost.style.top=r.top+'px';
+      ghost.style.pointerEvents='none'; ghost.style.zIndex='9999'; ghost.style.opacity='0.9';
+      ghost.style.width = r.width + 'px';
+      document.body.appendChild(ghost);
+      card.classList.add('dragging');
+      dragging = { id: card.dataset.id, fromPlaced: card.dataset.placed === '1', src: card, ghost, dx: e.clientX - r.left, dy: e.clientY - r.top };
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!dragging) return; e.preventDefault();
+      dragging.ghost.style.left = (e.clientX - dragging.dx) + 'px';
+      dragging.ghost.style.top  = (e.clientY - dragging.dy) + 'px';
+      document.querySelectorAll('.ds-slot').forEach(s => s.classList.remove('over'));
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      const slot = under && under.closest('.ds-slot');
+      if (slot) slot.classList.add('over');
+    });
+    stage.addEventListener('pointerup', (e) => {
+      if (!dragging) return; e.preventDefault();
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      const slot = under && under.closest('.ds-slot');
+      dragging.ghost.remove();
+      document.querySelectorAll('.ds-slot').forEach(s => s.classList.remove('over'));
+      if (slot) {
+        const slotIdx = +slot.dataset.slot;
+        // If unit was already placed elsewhere, remove from old slot
+        const existing = slots.indexOf(dragging.id);
+        if (existing >= 0) slots[existing] = null;
+        // If target slot occupied, swap
+        const cur = slots[slotIdx];
+        if (cur) slots[existing >= 0 ? existing : slots.indexOf(null)] = cur;
+        slots[slotIdx] = dragging.id;
+        lastCheckOK = null;
+      }
+      if (dragging.src) dragging.src.classList.remove('dragging');
+      dragging = null;
+      render();
+    });
+    stage.addEventListener('pointercancel', () => { if (dragging) { dragging.ghost.remove(); if (dragging.src) dragging.src.classList.remove('dragging'); dragging = null; } });
+    document.getElementById('btn-check').onclick = checkOrder;
+    document.getElementById('btn-reset').onclick = reset;
+  }
+  return { init, reset };
+})();
+document.addEventListener('DOMContentLoaded', DS.init);
+</script>
+</body>
+</html>
