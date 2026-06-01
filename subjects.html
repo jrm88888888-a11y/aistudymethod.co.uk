@@ -2759,10 +2759,16 @@ function showFilteredView() {
  // content is intentionally board-agnostic. When the user picks 'General'
  // explicitly, only general-tagged resources show.
  const matching = RESOURCES.filter(r => {
+   // examBoard may be a comma-separated list (e.g. "general,aqa,edexcel") so
+   // an adventure can carry multiple board affiliations. The filter passes if:
+   //   • user picked 'all' boards, OR
+   //   • the resource's list of boards includes the selected board, OR
+   //   • user picked a specific board AND the resource is tagged 'general'.
+   const boardList = (r.examBoard || 'general').split(',').map(s => s.trim());
    const boardOK =
      state.board === 'all' ||
-     r.examBoard === state.board ||
-     (state.board !== 'general' && r.examBoard === 'general');
+     boardList.includes(state.board) ||
+     (state.board !== 'general' && boardList.includes('general'));
    return (state.subject  === 'all' || r.subject  === state.subject)
        && (state.level    === 'all' || r.level    === state.level)
        && (state.stage    === 'all' || r.stage    === state.stage)
