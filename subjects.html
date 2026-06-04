@@ -163,6 +163,57 @@
  line-height: 1;
 }
 
+/* Format pills (Browse by format strip) */
+.format-pill {
+ background: none;
+ border: 1.5px solid var(--border);
+ border-radius: 20px;
+ padding: 4px 12px;
+ color: var(--text-secondary);
+ font-family: 'DM Sans', sans-serif;
+ font-size: 12px;
+ font-weight: 500;
+ cursor: pointer;
+ text-decoration: none;
+ transition: all 0.2s ease;
+ display: inline-block;
+}
+.format-pill:hover {
+ border-color: var(--accent);
+ color: var(--accent);
+}
+.format-pill.active {
+ background: var(--accent-soft);
+ border-color: var(--accent);
+ color: var(--accent);
+ font-weight: 600;
+}
+.format-pill--link {
+ border-style: dashed;
+}
+
+/* Format chip in the active-filter strip */
+.format-chip {
+ display: inline-flex;
+ align-items: center;
+ gap: 8px;
+ background: var(--accent-soft);
+ border: 1px solid var(--border-accent);
+ color: var(--accent);
+ font-family: 'DM Mono', monospace;
+ font-size: 10.5px;
+ font-weight: 600;
+ letter-spacing: 1px;
+ text-transform: uppercase;
+ padding: 4px 10px;
+ border-radius: 16px;
+}
+.format-chip button {
+ background: none; border: none; cursor: pointer;
+ color: var(--accent); font-size: 14px; line-height: 1;
+ padding: 0; margin: 0;
+}
+
 /* Active filters indicator */
 .active-filters {
  display: none;
@@ -785,16 +836,18 @@ a.resource-card:focus-visible { outline: 2px solid var(--accent); outline-offset
  <div>
  <div style="display:inline-flex;align-items:center;gap:8px;background:var(--accent-soft);border:1px solid var(--border-accent);color:var(--accent);font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:30px;margin-bottom:12px;font-family:'DM Mono',monospace;">Free Resources</div>
  <h1>Every subject.<br><em>Every Velvet stage.</em></h1>
- <p>Games, vocabulary tools, diagrams, roleplay stories and simulations — all demonstrating the Velvet Method in action. Filter by subject, level, or stage to find exactly what you need.</p>
+ <p>Mini-lessons, concept maps, quiz games, roleplay stories and competitions — all demonstrating the Velvet Method in action. Filter by subject, level, or stage to find exactly what you need.</p>
  <div class="format-strip" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;font-family:'DM Sans',sans-serif;font-size:12px;">
  <span style="color:var(--text-muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;align-self:center;margin-right:4px;">Browse by format:</span>
- <a href="classcraft/games.html" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;color:var(--text-secondary);text-decoration:none;transition:all 0.2s;">Games</a>
- <a href="classcraft/roleplay.html" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;color:var(--text-secondary);text-decoration:none;transition:all 0.2s;">Roleplay Stories</a>
- <a href="classcraft/simulations.html" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;color:var(--text-secondary);text-decoration:none;transition:all 0.2s;">Simulations</a>
- <a href="classcraft/books.html" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;color:var(--text-secondary);text-decoration:none;transition:all 0.2s;">Revision Books</a>
- <a href="classcraft/jokes.html" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;color:var(--text-secondary);text-decoration:none;transition:all 0.2s;">Jokes</a>
- <a href="classcraft/nature.html" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;color:var(--text-secondary);text-decoration:none;transition:all 0.2s;">Nature Gallery</a>
- <a href="classcraft/draw-it.html" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;color:var(--text-secondary);text-decoration:none;transition:all 0.2s;">Draw It</a>
+ <button class="format-pill" data-format="mini-lesson"    onclick="setFormat('mini-lesson')">Mini-Lessons</button>
+ <button class="format-pill" data-format="concept-map"    onclick="setFormat('concept-map')">Concept Maps</button>
+ <button class="format-pill" data-format="quiz-game"      onclick="setFormat('quiz-game')">Quiz Games</button>
+ <button class="format-pill" data-format="roleplay"       onclick="setFormat('roleplay')">Roleplay Stories</button>
+ <button class="format-pill" data-format="competition"    onclick="setFormat('competition')">Competitions</button>
+ <button class="format-pill" data-format="prompt-book"    onclick="setFormat('prompt-book')">Prompt Books</button>
+ <button class="format-pill" data-format="joke-pack"      onclick="setFormat('joke-pack')">Jokes</button>
+ <button class="format-pill" data-format="nature-gallery" onclick="setFormat('nature-gallery')">Nature Gallery</button>
+ <a class="format-pill format-pill--link" href="classcraft/draw-it.html">Draw It →</a>
  </div>
  </div>
  <div class="subjects-right">
@@ -921,6 +974,7 @@ a.resource-card:focus-visible { outline: 2px solid var(--accent); outline-offset
 
  <!-- Active filters indicator -->
  <div class="active-filters" id="activeFilters">
+ <span id="formatChipSlot"></span>
  <span class="filter-count" id="filterCount"></span>
  <button class="clear-filters" onclick="clearAllFilters()">Clear all</button>
  </div>
@@ -1113,7 +1167,20 @@ let state = {
  level: 'all',
  board: 'all',
  subtopic: 'all',
- stage: 'all'
+ stage: 'all',
+ format: 'all'
+};
+
+// Human-readable labels for each format key
+const FORMAT_LABELS = {
+ 'mini-lesson':    'Mini-Lessons',
+ 'concept-map':    'Concept Maps',
+ 'quiz-game':      'Quiz Games',
+ 'roleplay':       'Roleplay Stories',
+ 'competition':    'Competitions',
+ 'prompt-book':    'Prompt Books',
+ 'joke-pack':      'Jokes',
+ 'nature-gallery': 'Nature Gallery'
 };
 
 // How many cards to show per stage section in the default view.
@@ -2726,7 +2793,15 @@ function applyFilters() {
  updateBoardDropdown();
  updateSubtopicDropdown();
 
- const isFiltered = state.subject !== 'all' || state.level !== 'all' || state.board !== 'all' || state.subtopic !== 'all' || state.stage !== 'all';
+ const isFiltered = state.subject !== 'all' || state.level !== 'all' || state.board !== 'all' || state.subtopic !== 'all' || state.stage !== 'all' || state.format !== 'all';
+
+ // Refresh the format chip in active-filters strip
+ const chipSlot = document.getElementById('formatChipSlot');
+ if (state.format !== 'all') {
+   chipSlot.innerHTML = `<span class="format-chip">Format · ${FORMAT_LABELS[state.format] || state.format}<button onclick="clearFormat()" aria-label="Remove format filter">×</button></span>`;
+ } else {
+   chipSlot.innerHTML = '';
+ }
 
  // Show/hide active filters bar
  const af = document.getElementById('activeFilters');
@@ -2738,6 +2813,27 @@ function applyFilters() {
  }
 
  showFilteredView();
+}
+
+function setFormat(fmt) {
+ // Toggle: clicking the active pill clears the format filter
+ if (state.format === fmt) {
+   state.format = 'all';
+ } else {
+   state.format = fmt;
+ }
+ document.querySelectorAll('.format-pill').forEach(p => {
+   p.classList.toggle('active', p.dataset.format === state.format);
+ });
+ applyFilters();
+ // Smooth-scroll to results so the user sees what changed
+ document.getElementById('filterBar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function clearFormat() {
+ state.format = 'all';
+ document.querySelectorAll('.format-pill').forEach(p => p.classList.remove('active'));
+ applyFilters();
 }
 
 function setStage(stage) {
@@ -2826,7 +2922,7 @@ function esc(s) {
 
 // Build the HTML for a single resource card from a RESOURCES entry
 function cardHTML(r) {
- const isBook = r.type === 'revision-book';
+ const isBook = r.type === 'prompt-book';
  const targetAttrs = isBook ? ' target="_blank" rel="noopener"' : '';
  return '<a href="' + esc(r.href) + '" class="resource-card"' + targetAttrs
    + ' data-subject="' + esc(r.subject) + '"'
@@ -2888,6 +2984,7 @@ function showFilteredView() {
    return (state.subject  === 'all' || r.subject  === state.subject)
        && (state.level    === 'all' || r.level    === state.level)
        && (state.stage    === 'all' || r.stage    === state.stage)
+       && (state.format   === 'all' || r.type     === state.format)
        && boardOK
        && (ignoreTopic    || state.subtopic === 'all' || r.subtopic === state.subtopic);
  });
@@ -2907,6 +3004,9 @@ function showFilteredView() {
  grid.innerHTML = matching.map(cardHTML).join('');
 
  const parts = [];
+ if (state.format !== 'all') {
+   parts.push(FORMAT_LABELS[state.format] || state.format);
+ }
  if (state.stage !== 'all') {
    const stageNames = {view:'View',evaluate:'Evaluate',learn:'Learn',verify:'Verify',explore:'Explore',transform:'Transform'};
    parts.push(stageNames[state.stage]);
@@ -2934,7 +3034,7 @@ function seeAllStage(stage) {
 }
 
 function clearAllFilters() {
- state = { subject:'all', level:'all', board:'all', subtopic:'all', stage:'all' };
+ state = { subject:'all', level:'all', board:'all', subtopic:'all', stage:'all', format:'all' };
  document.getElementById('filterSubject').value = 'all';
  document.getElementById('filterLevel').value = 'all';
  document.getElementById('filterBoard').value = 'all';
@@ -2944,6 +3044,8 @@ function clearAllFilters() {
  document.querySelectorAll('.velvet-pill').forEach(p => {
  p.classList.toggle('active', p.dataset.stage === 'all');
  });
+ document.querySelectorAll('.format-pill').forEach(p => p.classList.remove('active'));
+ document.getElementById('formatChipSlot').innerHTML = '';
  document.getElementById('activeFilters').classList.remove('visible');
  showDefaultView();
 }
