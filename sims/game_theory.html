@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Theory · Prisoner's Dilemma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --gold-soft: rgba(251,191,36,0.18);
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+select { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: var(--r-sm); padding: 8px 10px; width: 100%; cursor: pointer; }
+select:focus { outline: none; border-color: var(--cyan); }
+
+/* Payoff matrix */
+.matrix-block { display: grid; grid-template-columns: 60px 1fr; align-items: stretch; gap: 8px; }
+.col-labels { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.row-labels { display: grid; grid-template-rows: 1fr 1fr; gap: 8px; }
+.axis-label { color: var(--text-dim); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; }
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; }
+.cell { background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 16px; position: relative; transition: all 200ms ease; min-height: 80px; }
+.cell:hover { background: var(--bg-elev-2); }
+.cell.nash { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 18px rgba(251,191,36,0.25); }
+.cell.pareto { border-color: var(--green); }
+.cell.nash.pareto { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 18px rgba(251,191,36,0.25), inset 0 0 0 2px rgba(52,211,153,0.5); }
+.cell .strat { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; text-align: center; }
+.payoffs { display: flex; gap: 4px; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 22px; }
+.payoffs input { width: 44px; background: transparent; border: 1px solid transparent; border-radius: var(--r-sm); color: inherit; font-family: inherit; font-size: 22px; text-align: center; padding: 2px 0; cursor: text; transition: border-color 120ms ease, background 120ms ease; }
+.payoffs input:hover { border-color: var(--panel-border); background: rgba(255,255,255,0.02); }
+.payoffs input:focus { outline: none; border-color: var(--cyan); background: var(--bg-elev-2); }
+.payoffs input.p1 { color: var(--cyan); }
+.payoffs input.p2 { color: var(--amber); }
+.payoffs .sep { color: var(--text-faint); }
+.cell .badges { position: absolute; top: 6px; right: 8px; display: flex; gap: 4px; }
+.badge { font-size: 9px; padding: 2px 6px; border-radius: 999px; font-weight: 600; letter-spacing: 0.04em; }
+.badge.nash { background: var(--gold-soft); color: var(--gold); }
+.badge.pareto { background: var(--green-soft); color: var(--green); }
+
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .badge[title] { cursor: help; }
+.readout .lbl[title] { border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.rose { color: var(--rose); }
+.canvas-wrap { position: relative; width: 100%; }
+canvas { width: 100%; display: block; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.strat-row { display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
+.strat-row .who { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.strat-row.p1 .who { color: var(--cyan); }
+.strat-row.p2 .who { color: var(--amber); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.tournament-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.tournament-table th, .tournament-table td { padding: 6px 4px; text-align: center; border: 1px solid var(--panel-border); }
+.tournament-table th { color: var(--text-dim); font-weight: 500; font-size: 10px; background: var(--bg-elev-1); }
+.tournament-table th.diag { background: var(--bg-elev-2); }
+.tournament-table td { background: var(--bg-elev-1); }
+.leaderboard { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+.lb-row { display: grid; grid-template-columns: 24px 1fr 80px 60px; align-items: center; gap: 8px; padding: 6px 10px; background: var(--bg-elev-1); border-radius: var(--r-sm); border: 1px solid var(--panel-border); font-size: 12px; }
+.lb-row .rank { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.lb-row .name { color: var(--text); }
+.lb-row .score { font-family: 'JetBrains Mono', monospace; text-align: right; color: var(--cyan); }
+.lb-row .bar { background: var(--grid); height: 4px; border-radius: 999px; overflow: hidden; }
+.lb-row .bar > div { height: 100%; background: var(--cyan); }
+.lb-row.gold { border-color: var(--gold); }
+.lb-row.gold .rank { color: var(--gold); }
+.insight-banner-wrap { max-width: 1400px; margin: 12px auto 0; padding: 0 24px; }
+.insight-banner { padding: 8px 0 8px 10px; border-left: 2px solid var(--cyan); color: var(--text-dim); font-size: 13px; font-style: italic; line-height: 1.5; margin: 0; }
+.try-panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.try-panel .try-label { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin-bottom: 10px; }
+.try-panel .try-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.try-panel .try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-panel .try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-panel .try-note.show, .try-panel .try-note:not(:empty) { opacity: 1; }
+.try-panel .try-note strong { color: var(--text); }
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: 1fr; }
+  .matrix-block { grid-template-columns: 36px 1fr; }
+  .row-labels { grid-template-columns: none; }
+}
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Game Theory · Prisoner's Dilemma</h1>
+    <p class="sub">Payoff matrices, Nash equilibria, and iterated strategy tournaments</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+<div class="insight-banner-wrap"><div class="insight-banner">In one round, defection dominates. But in a repeated game, conditional cooperation can beat everything — sometimes.</div></div>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">T</span><span>Run TfT vs AllD</span>
+      <span class="kbd-key">C</span><span>TfT vs AllC</span>
+      <span class="kbd-key">N</span><span>Noise tournament</span>
+      <span class="kbd-key">Space</span><span>Run current pair</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Payoff matrix · (P1, P2)</h3>
+        <span style="font-size: 11px; color: var(--text-dim);">click any value to edit</span>
+      </div>
+      <div class="matrix-block">
+        <div></div>
+        <div class="col-labels">
+          <div class="axis-label">P2: Cooperate</div>
+          <div class="axis-label">P2: Defect</div>
+        </div>
+        <div class="row-labels">
+          <div class="axis-label">P1: C</div>
+          <div class="axis-label">P1: D</div>
+        </div>
+        <div class="matrix-grid" id="matrix"></div>
+      </div>
+      <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size:11px; color: var(--text-dim);">Presets:</span>
+        <button data-preset="pd">Prisoner's Dilemma</button>
+        <button data-preset="stag">Stag Hunt</button>
+        <button data-preset="chicken">Chicken</button>
+        <button data-preset="coord">Coordination</button>
+      </div>
+      <div style="margin-top: 14px; font-size: 12px; color: var(--text-dim);">
+        <span id="analysisText"></span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <div class="title-row">
+        <h3>Iterated game</h3>
+        <div class="seg" id="viewToggle">
+          <button data-mode="iterated" class="active">Iterated</button>
+          <button data-mode="tournament">Tournament</button>
+        </div>
+      </div>
+      <div id="iteratedView">
+        <div class="canvas-wrap" style="height: 180px; margin-bottom: 6px;"><canvas id="scoreChart"></canvas></div>
+        <div class="canvas-wrap" style="height: 80px;"><canvas id="moves"></canvas></div>
+        <div class="readouts" style="margin-top: 14px;">
+          <div class="readout"><div class="lbl">P1 total</div><div class="val cyan" id="oP1">0</div></div>
+          <div class="readout"><div class="lbl">P2 total</div><div class="val amber" id="oP2">0</div></div>
+          <div class="readout"><div class="lbl">Cooperation rate</div><div class="val green" id="oCoop">—</div></div>
+          <div class="readout"><div class="lbl">Last round</div><div class="val" id="oLast">—</div></div>
+        </div>
+      </div>
+      <div id="tournamentView" style="display:none;">
+        <div id="tournamentResults"></div>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+
+    <div class="try-panel" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="tftVsAllD">TfT vs Always Defect</button>
+        <button data-try="tftVsAllC">TfT vs Always Cooperate</button>
+        <button data-try="tournNoise">Run tournament with 5% noise</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Strategies</p>
+      <div class="strat-row p1">
+        <div class="who">P1</div>
+        <select id="p1Strat"></select>
+      </div>
+      <div class="strat-row p2">
+        <div class="who">P2</div>
+        <select id="p2Strat"></select>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Match settings</p>
+      <div class="control">
+        <div class="control-row"><span class="label">Rounds</span><span class="value num" id="vRounds">100</span></div>
+        <input type="range" id="rounds" min="10" max="500" step="5" value="100">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">Trembling-hand noise</span><span class="value num" id="vNoise">0%</span></div>
+        <input type="range" id="noise" min="0" max="50" step="1" value="0">
+      </div>
+      <div class="actions">
+        <button class="primary" id="runMatch">Run match</button>
+        <button id="runTournament">Run full tournament</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Dominant strategy</p>
+      <div class="readout" style="margin-bottom: 10px;"><div class="lbl" title="A dominant strategy is one that gives a player a higher payoff than any alternative no matter what the other player does.">P1 dominant</div><div class="val cyan" id="oDom1">—</div></div>
+      <div class="readout"><div class="lbl" title="A dominant strategy is one that gives a player a higher payoff than any alternative no matter what the other player does.">P2 dominant</div><div class="val amber" id="oDom2">—</div></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  c.width = rect.width * dpr; c.height = rect.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+// Payoffs: cells in order CC, CD, DC, DD where outer row is P1, inner is P2
+// state.payoffs[i][j] = [p1, p2] where i is P1 action (0=C,1=D), j is P2 action.
+const state = {
+  payoffs: [
+    [[3,3], [0,5]],
+    [[5,0], [1,1]]
+  ],
+  p1Strat: 'TitForTat',
+  p2Strat: 'AlwaysDefect',
+  rounds: 100,
+  noise: 0,
+  history: [], // {a1, a2, p1, p2}
+  view: 'iterated',
+  animProg: 1,
+  animStart: 0,
+  tournamentData: null
+};
+
+const strategies = {
+  AlwaysCooperate: {
+    name: 'Always Cooperate',
+    init: () => ({}),
+    decide: (h, mySide, st) => 0
+  },
+  AlwaysDefect: {
+    name: 'Always Defect',
+    init: () => ({}),
+    decide: (h, mySide, st) => 1
+  },
+  TitForTat: {
+    name: 'Tit-for-Tat',
+    init: () => ({}),
+    decide: (h, mySide, st) => {
+      if (h.length === 0) return 0;
+      return mySide === 0 ? h[h.length-1].a2 : h[h.length-1].a1;
+    }
+  },
+  TitForTwoTats: {
+    name: 'Tit-for-Two-Tats',
+    init: () => ({}),
+    decide: (h, mySide, st) => {
+      if (h.length < 2) return 0;
+      const last = h[h.length-1], prev = h[h.length-2];
+      const oppLast = mySide === 0 ? last.a2 : last.a1;
+      const oppPrev = mySide === 0 ? prev.a2 : prev.a1;
+      return (oppLast === 1 && oppPrev === 1) ? 1 : 0;
+    }
+  },
+  GenerousTFT: {
+    name: 'Generous TFT (10% forgive)',
+    init: () => ({}),
+    decide: (h, mySide, st) => {
+      if (h.length === 0) return 0;
+      const oppLast = mySide === 0 ? h[h.length-1].a2 : h[h.length-1].a1;
+      if (oppLast === 1 && Math.random() < 0.1) return 0;
+      return oppLast;
+    }
+  },
+  Random: {
+    name: 'Random (50/50)',
+    init: () => ({}),
+    decide: (h, mySide, st) => Math.random() < 0.5 ? 0 : 1
+  },
+  Grudger: {
+    name: 'Grudger',
+    init: () => ({grudge: false}),
+    decide: (h, mySide, st) => {
+      if (h.length > 0) {
+        const oppLast = mySide === 0 ? h[h.length-1].a2 : h[h.length-1].a1;
+        if (oppLast === 1) st.grudge = true;
+      }
+      return st.grudge ? 1 : 0;
+    }
+  },
+  Pavlov: {
+    name: 'Pavlov (win-stay lose-shift)',
+    init: () => ({}),
+    decide: (h, mySide, st, payoffs) => {
+      if (h.length === 0) return 0;
+      const last = h[h.length-1];
+      const myPay = mySide === 0 ? last.p1 : last.p2;
+      const myLast = mySide === 0 ? last.a1 : last.a2;
+      // Aspiration level = mean of my payoffs across all 4 outcomes (adapts to matrix).
+      let sum = 0, count = 0;
+      if (payoffs) {
+        for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+          sum += payoffs[i][j][mySide]; count++;
+        }
+      }
+      const aspiration = count ? sum / count : 2;
+      const win = myPay >= aspiration;
+      return win ? myLast : 1 - myLast;
+    }
+  },
+  Adaptive: {
+    name: 'Adaptive (learns pattern)',
+    init: () => ({}),
+    decide: (h, mySide, st) => {
+      if (h.length === 0) return 0; // open cooperatively
+      // Use a short window of recent opponent moves; adapt within a few rounds.
+      const window = Math.min(h.length, 8);
+      let oppD = 0;
+      for (let i = h.length - window; i < h.length; i++) {
+        const opp = mySide === 0 ? h[i].a2 : h[i].a1;
+        if (opp === 1) oppD++;
+      }
+      const pD = oppD / window;
+      // If opponent defects more than half the time, switch to defection.
+      // Bias toward cooperation early; bias toward defection if heavily exploited.
+      if (h.length < 3) return 0;
+      return pD >= 0.5 ? 1 : 0;
+    }
+  }
+};
+
+// Populate selects
+function populateSelects() {
+  const opts = Object.entries(strategies).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join('');
+  $('p1Strat').innerHTML = opts;
+  $('p2Strat').innerHTML = opts;
+  $('p1Strat').value = state.p1Strat;
+  $('p2Strat').value = state.p2Strat;
+}
+
+function runGame(p1Key, p2Key, rounds, noise, payoffs) {
+  const s1 = strategies[p1Key];
+  const s2 = strategies[p2Key];
+  const st1 = s1.init();
+  const st2 = s2.init();
+  const history = [];
+  let p1Score = 0, p2Score = 0;
+  for (let i = 0; i < rounds; i++) {
+    let a1 = s1.decide(history, 0, st1, payoffs);
+    let a2 = s2.decide(history, 1, st2, payoffs);
+    // Noise (trembling-hand) applied AFTER decision, BEFORE recording.
+    if (Math.random() < noise) a1 = 1 - a1;
+    if (Math.random() < noise) a2 = 1 - a2;
+    const [pa, pb] = payoffs[a1][a2];
+    p1Score += pa; p2Score += pb;
+    history.push({a1, a2, p1: pa, p2: pb, cum1: p1Score, cum2: p2Score});
+  }
+  return { history, p1Score, p2Score };
+}
+
+function renderMatrix() {
+  const m = $('matrix');
+  m.innerHTML = '';
+  const labels = [['C','C'], ['C','D'], ['D','C'], ['D','D']];
+  // analysis
+  const { nash, pareto, dom1, dom2 } = analyse();
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 2; j++) {
+      const [p1, p2] = state.payoffs[i][j];
+      const idx = i * 2 + j;
+      const isNash = nash.some(n => n[0] === i && n[1] === j);
+      const isPareto = pareto.some(n => n[0] === i && n[1] === j);
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (isNash ? ' nash' : '') + (isPareto ? ' pareto' : '');
+      const badges = [];
+      if (isNash) badges.push('<span class="badge nash" title="Nash equilibrium: a strategy combination where no player can improve their payoff by unilaterally changing their move.">NASH</span>');
+      if (isPareto) badges.push('<span class="badge pareto" title="Pareto optimal: an outcome where no player can be made better off without making another worse off.">PARETO</span>');
+      cell.innerHTML = `
+        <div class="badges">${badges.join('')}</div>
+        <div class="payoffs">
+          <input class="p1" data-i="${i}" data-j="${j}" data-k="0" value="${p1}" type="number" step="1">
+          <span class="sep">,</span>
+          <input class="p2" data-i="${i}" data-j="${j}" data-k="1" value="${p2}" type="number" step="1">
+        </div>`;
+      m.appendChild(cell);
+    }
+  }
+  m.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const i = +inp.dataset.i, j = +inp.dataset.j, k = +inp.dataset.k;
+      const v = parseInt(inp.value, 10);
+      if (isFinite(v)) {
+        state.payoffs[i][j][k] = v;
+        renderMatrix();
+        runCurrent();
+      }
+    });
+  });
+
+  $('oDom1').textContent = dom1 === null ? 'None' : (dom1 === 0 ? 'Cooperate' : 'Defect');
+  $('oDom2').textContent = dom2 === null ? 'None' : (dom2 === 0 ? 'Cooperate' : 'Defect');
+
+  // analysis text
+  let analysisTxt = '';
+  if (nash.length === 0) analysisTxt = 'No pure-strategy Nash equilibrium.';
+  else if (nash.length === 1) {
+    const [i, j] = nash[0];
+    analysisTxt = `Unique Nash equilibrium at (${i===0?'C':'D'}, ${j===0?'C':'D'}).`;
+  } else {
+    analysisTxt = `${nash.length} Nash equilibria: ` + nash.map(([i,j]) => `(${i===0?'C':'D'}, ${j===0?'C':'D'})`).join(', ') + '.';
+  }
+  if (pareto.length > 0) {
+    analysisTxt += ' Pareto optimal: ' + pareto.map(([i,j]) => `(${i===0?'C':'D'}, ${j===0?'C':'D'})`).join(', ') + '.';
+  }
+  // dilemma check
+  const dilemma = nash.length === 1 && !pareto.some(p => p[0] === nash[0][0] && p[1] === nash[0][1]);
+  if (dilemma) analysisTxt += ' Classic dilemma — the equilibrium is Pareto-dominated.';
+  $('analysisText').textContent = analysisTxt;
+}
+
+function analyse() {
+  const P = state.payoffs;
+  // Nash: cell (i,j) is Nash if neither player can improve unilaterally
+  const nash = [];
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 2; j++) {
+      const [p1, p2] = P[i][j];
+      const altI = P[1-i][j][0];
+      const altJ = P[i][1-j][1];
+      if (p1 >= altI && p2 >= altJ) nash.push([i, j]);
+    }
+  }
+  // Pareto: no other cell dominates it on both players
+  const pareto = [];
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 2; j++) {
+      let dominated = false;
+      for (let a = 0; a < 2; a++) {
+        for (let b = 0; b < 2; b++) {
+          if (a === i && b === j) continue;
+          const [p1a, p2a] = P[a][b];
+          const [p1, p2] = P[i][j];
+          if (p1a >= p1 && p2a >= p2 && (p1a > p1 || p2a > p2)) { dominated = true; break; }
+        }
+        if (dominated) break;
+      }
+      if (!dominated) pareto.push([i, j]);
+    }
+  }
+  // Dominant strategies
+  // P1: row i dominates row 1-i if P[i][j][0] >= P[1-i][j][0] for all j (strict at least once)
+  let dom1 = null;
+  for (let i = 0; i < 2; i++) {
+    let dom = true, strict = false;
+    for (let j = 0; j < 2; j++) {
+      if (P[i][j][0] < P[1-i][j][0]) { dom = false; break; }
+      if (P[i][j][0] > P[1-i][j][0]) strict = true;
+    }
+    if (dom && strict) dom1 = i;
+  }
+  let dom2 = null;
+  for (let j = 0; j < 2; j++) {
+    let dom = true, strict = false;
+    for (let i = 0; i < 2; i++) {
+      if (P[i][j][1] < P[i][1-j][1]) { dom = false; break; }
+      if (P[i][j][1] > P[i][1-j][1]) strict = true;
+    }
+    if (dom && strict) dom2 = j;
+  }
+  return { nash, pareto, dom1, dom2 };
+}
+
+function drawScoreChart() {
+  const c = $('scoreChart');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const h = state.history;
+  if (h.length === 0) return;
+  const pad = { l: 44, r: 16, t: 12, b: 22 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const maxScore = Math.max(h[h.length-1].cum1, h[h.length-1].cum2, 1);
+
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    ctx.fillText(Math.round(maxScore * (4-i) / 4), pad.l - 6, y);
+  }
+
+  const visible = Math.floor(state.animProg * h.length);
+  const xAt = i => pad.l + (i / Math.max(h.length-1, 1)) * pw;
+  const yAt = s => pad.t + ph * (1 - s / maxScore);
+
+  // P1
+  ctx.beginPath();
+  for (let i = 0; i < visible && i < h.length; i++) {
+    const x = xAt(i), y = yAt(h[i].cum1);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2; ctx.stroke();
+  // P2
+  ctx.beginPath();
+  for (let i = 0; i < visible && i < h.length; i++) {
+    const x = xAt(i), y = yAt(h[i].cum2);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
+
+  // x-axis ticks
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const xStep = h.length <= 50 ? 10 : h.length <= 150 ? 30 : 50;
+  for (let i = 0; i <= h.length; i += xStep) {
+    const x = xAt(i);
+    ctx.fillText(i.toString(), x, H - pad.b + 4);
+  }
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+  // labels
+  ctx.fillStyle = '#22d3ee'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillText('P1 cumulative', pad.l + 6, pad.t + 4);
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillText('P2 cumulative', pad.l + 6, pad.t + 18);
+}
+
+function drawMoves() {
+  const c = $('moves');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const h = state.history;
+  if (h.length === 0) return;
+  const pad = { l: 44, r: 16, t: 6, b: 16 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const n = h.length;
+  const bw = pw / n;
+  const visible = Math.floor(state.animProg * n);
+
+  // two rows: P1 (top), P2 (bottom)
+  const rowH = ph / 2 - 2;
+  for (let i = 0; i < visible; i++) {
+    const x = pad.l + i * bw;
+    const c1 = h[i].a1 === 0 ? '#34d399' : '#f43f5e';
+    const c2 = h[i].a2 === 0 ? '#34d399' : '#f43f5e';
+    ctx.fillStyle = c1;
+    ctx.fillRect(x, pad.t, Math.max(1, bw - 0.5), rowH);
+    ctx.fillStyle = c2;
+    ctx.fillRect(x, pad.t + rowH + 4, Math.max(1, bw - 0.5), rowH);
+  }
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('P1', pad.l - 6, pad.t + rowH / 2);
+  ctx.fillText('P2', pad.l - 6, pad.t + rowH + 4 + rowH / 2);
+}
+
+function updateLive() {
+  const h = state.history;
+  $('oP1').textContent = h.length ? h[h.length-1].cum1 : 0;
+  $('oP2').textContent = h.length ? h[h.length-1].cum2 : 0;
+  let coop = 0;
+  for (const r of h) { if (r.a1 === 0) coop++; if (r.a2 === 0) coop++; }
+  const rate = h.length ? (coop / (2 * h.length)) * 100 : 0;
+  $('oCoop').textContent = h.length ? rate.toFixed(1) + '%' : '—';
+  if (h.length) {
+    const last = h[h.length-1];
+    const a1 = last.a1 === 0 ? 'C' : 'D';
+    const a2 = last.a2 === 0 ? 'C' : 'D';
+    $('oLast').textContent = `(${a1}, ${a2}) → ${last.p1},${last.p2}`;
+  } else $('oLast').textContent = '—';
+
+  // explainer
+  const { nash, pareto } = analyse();
+  let txt = `<span class="k">${strategies[state.p1Strat].name}</span> vs <span class="k">${strategies[state.p2Strat].name}</span> over <span class="k">${state.rounds}</span> rounds`;
+  if (state.noise > 0) txt += ` with <span class="k">${state.noise}%</span> noise`;
+  txt += '. ';
+  if (h.length > 0) {
+    const winner = h[h.length-1].cum1 > h[h.length-1].cum2 ? 'P1' : h[h.length-1].cum1 < h[h.length-1].cum2 ? 'P2' : 'Tie';
+    txt += `Final: P1 <span class="k">${h[h.length-1].cum1}</span>, P2 <span class="k">${h[h.length-1].cum2}</span> — <span class="k">${winner}</span>. `;
+    txt += `Joint cooperation rate <span class="k">${rate.toFixed(1)}%</span>. `;
+  }
+  if (nash.length === 1 && nash[0][0] === 1 && nash[0][1] === 1) {
+    txt += 'In one-shot play, mutual defection is the unique Nash — yet repeated play can sustain cooperation via reciprocity.';
+  } else if (nash.length > 1) {
+    txt += 'Multiple equilibria — outcomes depend on which one players coordinate on.';
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function runCurrent() {
+  const res = runGame(state.p1Strat, state.p2Strat, state.rounds, state.noise / 100, state.payoffs);
+  state.history = res.history;
+  state.animProg = 0;
+  state.animStart = performance.now();
+  requestAnimationFrame(tick);
+}
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function tick(now) {
+  const elapsed = now - state.animStart;
+  const dur = Math.min(2000, 200 + state.rounds * 4);
+  state.animProg = Math.min(1, elapsed / dur);
+  const eased = easeOutCubic(state.animProg);
+  state.animProg = eased;
+  drawScoreChart();
+  drawMoves();
+  updateLive();
+  if (state.animProg < 1) requestAnimationFrame(tick);
+}
+
+function runTournament() {
+  const keys = Object.keys(strategies);
+  const n = keys.length;
+  const rounds = 200;
+  const scores = keys.map(() => 0);
+  const matrix = [];
+  for (let i = 0; i < n; i++) {
+    const row = [];
+    for (let j = 0; j < n; j++) {
+      const res = runGame(keys[i], keys[j], rounds, state.noise / 100, state.payoffs);
+      row.push({ p1: res.p1Score, p2: res.p2Score });
+      scores[i] += res.p1Score;
+    }
+    matrix.push(row);
+  }
+  return { keys, scores, matrix };
+}
+
+function renderTournament(data) {
+  const container = $('tournamentResults');
+  const { keys, scores, matrix } = data;
+  // matrix table
+  let html = '<table class="tournament-table"><thead><tr><th></th>';
+  for (const k of keys) html += `<th>${strategies[k].name.split(' ')[0].slice(0, 6)}</th>`;
+  html += '<th>Total</th></tr></thead><tbody>';
+  for (let i = 0; i < keys.length; i++) {
+    html += `<tr><th style="text-align:left; padding-left: 8px;">${strategies[keys[i]].name}</th>`;
+    for (let j = 0; j < keys.length; j++) {
+      if (i === j) {
+        html += `<td style="color: var(--text-faint); background: var(--bg-elev-2);">${matrix[i][j].p1}</td>`;
+      } else {
+        const cell = matrix[i][j];
+        const won = cell.p1 > cell.p2;
+        const tied = cell.p1 === cell.p2;
+        const color = won ? 'var(--green)' : tied ? 'var(--text-dim)' : 'var(--rose)';
+        const bg = won ? 'rgba(52,211,153,0.08)' : tied ? 'transparent' : 'rgba(244,63,94,0.06)';
+        html += `<td style="color: ${color}; background: ${bg};">${cell.p1}</td>`;
+      }
+    }
+    html += `<td style="color: var(--cyan); font-weight: 600;">${scores[i]}</td>`;
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+
+  // leaderboard
+  const ranked = keys.map((k, i) => ({ key: k, name: strategies[k].name, score: scores[i] }))
+    .sort((a, b) => b.score - a.score);
+  const maxS = ranked[0].score;
+  html += '<div class="leaderboard">';
+  ranked.forEach((r, idx) => {
+    const w = (r.score / maxS) * 100;
+    html += `<div class="lb-row ${idx === 0 ? 'gold' : ''}">
+      <span class="rank">${idx + 1}</span>
+      <span class="name">${r.name}</span>
+      <div class="bar"><div style="width:${w}%"></div></div>
+      <span class="score">${r.score}</span>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// Presets
+const presets = {
+  pd: [[[3,3],[0,5]],[[5,0],[1,1]]],
+  stag: [[[4,4],[0,3]],[[3,0],[2,2]]],
+  chicken: [[[3,3],[1,5]],[[5,1],[0,0]]],
+  coord: [[[2,2],[0,0]],[[0,0],[1,1]]]
+};
+
+// Wire UI
+populateSelects();
+renderMatrix();
+
+$('p1Strat').addEventListener('change', e => { state.p1Strat = e.target.value; runCurrent(); });
+$('p2Strat').addEventListener('change', e => { state.p2Strat = e.target.value; runCurrent(); });
+$('rounds').addEventListener('input', e => { state.rounds = parseInt(e.target.value); $('vRounds').textContent = state.rounds; });
+$('rounds').addEventListener('change', () => runCurrent());
+$('noise').addEventListener('input', e => { state.noise = parseInt(e.target.value); $('vNoise').textContent = state.noise + '%'; });
+$('noise').addEventListener('change', () => runCurrent());
+$('runMatch').addEventListener('click', () => runCurrent());
+
+$('runTournament').addEventListener('click', async () => {
+  // toggle to tournament view
+  document.querySelectorAll('#viewToggle button').forEach(b => b.classList.remove('active'));
+  document.querySelector('#viewToggle button[data-mode="tournament"]').classList.add('active');
+  $('iteratedView').style.display = 'none';
+  $('tournamentView').style.display = '';
+  $('tournamentResults').innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-dim);">Running tournament…</div>';
+  state.view = 'tournament';
+  await new Promise(r => setTimeout(r, 60));
+  // chunked for ~1s feel
+  const start = performance.now();
+  const data = runTournament();
+  const elapsed = performance.now() - start;
+  if (elapsed < 600) await new Promise(r => setTimeout(r, 600 - elapsed));
+  state.tournamentData = data;
+  renderTournament(data);
+});
+
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.view = b.dataset.mode;
+    if (state.view === 'iterated') {
+      $('iteratedView').style.display = '';
+      $('tournamentView').style.display = 'none';
+      drawScoreChart(); drawMoves();
+    } else {
+      $('iteratedView').style.display = 'none';
+      $('tournamentView').style.display = '';
+      if (!state.tournamentData) $('tournamentResults').innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-dim);">Click "Run full tournament" to generate results.</div>';
+    }
+  });
+});
+
+document.querySelectorAll('button[data-preset]').forEach(b => {
+  b.addEventListener('click', () => {
+    const p = presets[b.dataset.preset];
+    state.payoffs = JSON.parse(JSON.stringify(p));
+    renderMatrix();
+    runCurrent();
+  });
+});
+
+window.addEventListener('resize', () => { drawScoreChart(); drawMoves(); });
+
+// initial run
+runCurrent();
+
+// "Try this" presets — set strategies, rounds, noise; dispatch input events and run.
+const TRY_NOTES = {
+  tftVsAllD: "TfT defects after the first round — both end up in mutual defection. AllD wins by one round.",
+  tftVsAllC: "Mutual cooperation throughout — both score the maximum.",
+  tournNoise: "Under noise, simple TfT degrades. Generous TfT and Pavlov outperform it.",
+};
+function applyTry(id) {
+  const note = $('tryNote');
+  note.textContent = TRY_NOTES[id] || '';
+  note.classList.add('show');
+  if (id === 'tftVsAllD') {
+    $('p1Strat').value = 'TitForTat';
+    $('p2Strat').value = 'AlwaysDefect';
+    $('rounds').value = 100;
+    $('noise').value = 0;
+    $('vRounds').textContent = '100';
+    $('vNoise').textContent = '0%';
+    state.p1Strat = 'TitForTat';
+    state.p2Strat = 'AlwaysDefect';
+    state.rounds = 100;
+    state.noise = 0;
+    runCurrent();
+  } else if (id === 'tftVsAllC') {
+    $('p1Strat').value = 'TitForTat';
+    $('p2Strat').value = 'AlwaysCooperate';
+    $('rounds').value = 100;
+    $('noise').value = 0;
+    $('vRounds').textContent = '100';
+    $('vNoise').textContent = '0%';
+    state.p1Strat = 'TitForTat';
+    state.p2Strat = 'AlwaysCooperate';
+    state.rounds = 100;
+    state.noise = 0;
+    runCurrent();
+  } else if (id === 'tournNoise') {
+    $('noise').value = 5;
+    $('vNoise').textContent = '5%';
+    state.noise = 5;
+    $('runTournament').click();
+  }
+}
+document.querySelectorAll('.try-panel [data-try]').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const btn = document.getElementById('kbdHelpBtn');
+  if (!modal || !btn) return;
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  btn.addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 't') { applyTry('tftVsAllD'); }
+    else if (k === 'c') { applyTry('tftVsAllC'); }
+    else if (k === 'n') { applyTry('tournNoise'); }
+    else if (e.key === ' ') { e.preventDefault(); runCurrent(); }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="hotelling.html">
+      <div class="related-title">Hotelling's Law</div>
+      <div class="related-desc">Why competitors converge to the median voter</div>
+    </a>
+    <a class="related-card" href="monty_hall.html">
+      <div class="related-title">Monty Hall</div>
+      <div class="related-desc">Switching wins two-thirds of the time. Here's why.</div>
+    </a>
+    <a class="related-card" href="regression_mean.html">
+      <div class="related-title">Regression to the Mean</div>
+      <div class="related-desc">Why coaching the bottom looks like it works</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

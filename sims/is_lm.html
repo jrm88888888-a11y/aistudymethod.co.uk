@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IS-LM Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; transition: color 120ms ease; }
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 18px 24px 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.panel + .panel { margin-top: 16px; }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range] { cursor: ew-resize; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button:active { transform: translateY(0.5px); }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+button.toggle.active { background: var(--cyan-soft); color: var(--cyan); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; transition: color 120ms ease, background 120ms ease; }
+.seg button:hover:not(.active) { color: var(--text); }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.canvas-wrap { position: relative; width: 100%; }
+canvas { width: 100%; display: block; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .section-label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.readout .val.gold { color: var(--gold); }
+.readout .val.small { font-size: 14px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.control { margin-bottom: 12px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--text); }
+.subhead { font-size: 11px; color: var(--text-dim); margin: 12px 0 8px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+.legend .sw { display: inline-block; width: 12px; height: 4px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.insight-banner { font-style: italic; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 0 0 0 8px; font-size: 13px; margin: 6px 0 0; }
+.try-panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px; }
+.try-panel .try-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+.try-panel .try-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.try-panel .try-row button { font-size: 12px; padding: 6px 12px; }
+.try-panel .try-note { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin: 4px 0 0; }
+.actions button { font-size: 12px; padding: 6px 12px; }
+canvas { cursor: default; }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>IS-LM Model</h1>
+    <p class="sub">Goods and money market equilibrium, fiscal and monetary policy, and aggregate demand</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+<div style="max-width: 1400px; margin: 14px auto 0; padding: 0 24px;">
+  <p class="insight-banner" style="margin: 0;">Fiscal stimulus shifts IS; monetary expansion shifts LM. Both raise output — but they push interest rates in opposite directions.</p>
+</div>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>Fiscal stimulus</span>
+      <span class="kbd-key">2</span><span>Monetary expansion</span>
+      <span class="kbd-key">3</span><span>Crowding out demo</span>
+      <span class="kbd-key">L</span><span>Toggle liquidity trap</span>
+      <span class="kbd-key">R</span><span>Reset</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>IS-LM equilibrium</h3>
+        <div class="seg" id="modeSeg">
+          <button data-mode="normal" class="active">Normal</button>
+          <button data-mode="liq">Liquidity trap</button>
+        </div>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background: var(--amber)"></span>IS (goods)</span>
+        <span><span class="sw" style="background: var(--cyan)"></span>LM (money)</span>
+        <span><span class="sw" style="background: var(--text-faint)"></span>Previous equilibrium</span>
+        <span><span class="sw" style="background: var(--green)"></span>Potential Y*</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="islm" style="height: 420px;"></canvas></div>
+      <div class="explainer" id="explainer">The IS curve is the locus of (Y, r) where the goods market clears; LM is the locus where the money market clears. Equilibrium is the intersection.</div>
+    </div>
+
+    <div class="panel">
+      <div class="title-row">
+        <h3 title="AD curve (aggregate demand): how total demand for output varies with the price level, derived from IS-LM." style="cursor: help;">Derived AD curve</h3>
+        <span style="font-size: 11px; color: var(--text-dim);">price level → output</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="ad" style="height: 260px;"></canvas></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="section-label" title="IS curve: combinations of output Y and interest rate r where the goods market clears (Investment = Savings).">IS curve (goods market)</div>
+      <div class="control"><div class="control-row"><span class="label">Autonomous spending C₀</span><span class="value" id="vC0">240</span></div><input type="range" id="sC0" min="0" max="500" step="10" value="240"></div>
+      <div class="control"><div class="control-row"><span class="label">Govt spending G</span><span class="value" id="vG">400</span></div><input type="range" id="sG" min="0" max="500" step="10" value="400"></div>
+      <div class="control"><div class="control-row"><span class="label">MPC (c)</span><span class="value" id="vC">0.70</span></div><input type="range" id="sC" min="0.1" max="0.95" step="0.01" value="0.7"></div>
+      <div class="control"><div class="control-row"><span class="label">Tax rate t</span><span class="value" id="vT">0.20</span></div><input type="range" id="sT" min="0" max="0.5" step="0.01" value="0.2"></div>
+      <div class="control"><div class="control-row"><span class="label">Investment sensitivity b</span><span class="value" id="vB">50</span></div><input type="range" id="sB" min="10" max="200" step="5" value="50"></div>
+
+      <div class="section-label" style="margin-top:14px;" title="LM curve: combinations of output Y and interest rate r where money supply equals money demand.">LM curve (money market)</div>
+      <div class="control"><div class="control-row"><span class="label">Money supply M</span><span class="value" id="vM">400</span></div><input type="range" id="sM" min="200" max="2000" step="20" value="400"></div>
+      <div class="control"><div class="control-row"><span class="label">Price level P</span><span class="value" id="vP">1.00</span></div><input type="range" id="sP" min="0.5" max="2.5" step="0.05" value="1.0"></div>
+      <div class="control"><div class="control-row"><span class="label">Income demand k_Y</span><span class="value" id="vKy">0.50</span></div><input type="range" id="sKy" min="0.1" max="1.5" step="0.05" value="0.5"></div>
+      <div class="control"><div class="control-row"><span class="label">Interest demand k_r</span><span class="value" id="vKr">25</span></div><input type="range" id="sKr" min="5" max="100" step="1" value="25"></div>
+
+      <div class="section-label" style="margin-top:14px;">Potential output</div>
+      <div class="control"><div class="control-row"><span class="label">Y*</span><span class="value" id="vYstar">1000</span></div><input type="range" id="sYstar" min="500" max="2000" step="20" value="1000"></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-label">Shocks</div>
+      <div class="actions">
+        <button id="shockFiscal">Fiscal stimulus</button>
+        <button id="shockTax">Tax cut</button>
+        <button id="shockMonEx">Monetary expansion</button>
+        <button id="shockMonCo">Monetary contraction</button>
+        <button id="shockCrowd">Crowding out demo</button>
+        <button id="shockReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="try-panel" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-row">
+        <button id="tryFiscal">Fiscal stimulus</button>
+      </div>
+      <p class="try-note">IS shifts right; output and interest rate both rise. Higher r 'crowds out' some private investment.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryMonExp">Monetary expansion</button>
+      </div>
+      <p class="try-note">LM shifts right; output rises and interest rates fall — no crowding out.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryLiqTrap">Liquidity trap</button>
+      </div>
+      <p class="try-note">When LM is flat at low rates, more money doesn't move output. Only fiscal policy works.</p>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <div class="section-label">Readouts</div>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Equilibrium Y</div><div class="val cyan" id="rY">—</div></div>
+        <div class="readout"><div class="lbl">Equilibrium r</div><div class="val cyan" id="rR">—</div></div>
+        <div class="readout"><div class="lbl" title="The naive Keynesian multiplier 1/(1 − c(1 − t)) — the change in Y per unit of autonomous spending before accounting for higher interest rates.">Spending multiplier k</div><div class="val violet small" id="rK">—</div></div>
+        <div class="readout"><div class="lbl" title="Fiscal multiplier: the change in equilibrium output Y per unit increase in government spending G, after crowding out via higher r.">Fiscal mult (with crowd-out)</div><div class="val violet small" id="rFK">—</div></div>
+        <div class="readout"><div class="lbl" title="The change in equilibrium output per unit increase in money supply — zero in a liquidity trap.">Monetary mult dY/dM</div><div class="val violet small" id="rMM">—</div></div>
+        <div class="readout"><div class="lbl">dr/dM</div><div class="val violet small" id="rDrDm">—</div></div>
+        <div class="readout"><div class="lbl">Real money M/P</div><div class="val small" id="rRM">—</div></div>
+        <div class="readout"><div class="lbl">Gap vs Y*</div><div class="val rose small" id="rGap">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = (id) => document.getElementById(id);
+const $$ = (s) => document.querySelectorAll(s);
+const fmt = (x, d=0) => (isFinite(x) ? x.toFixed(d) : '—');
+const clamp = (x,a,b) => Math.min(b, Math.max(a, x));
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+function getCss(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// IS: Y = k*(C0 + G - b*r)  where k = 1/(1 - c*(1-t))
+// Solve for r given Y: r = (C0 + G)/b - Y/(b*k)
+// LM: M/P = k_Y * Y - k_r * r  ->  r = (k_Y*Y - M/P)/k_r
+
+const state = {
+  // Defaults tuned so that the initial equilibrium sits at Y ≈ 1000, r ≈ 4%,
+  // right at potential output — a clean baseline for shocks.
+  C0: 240, G: 400, c: 0.7, t: 0.2, b: 50,
+  M: 400, P: 1.0, kY: 0.5, kR: 25,
+  Ystar: 1000,
+  mode: 'normal',
+  prev: null,
+  anim: null,
+  inShockAnim: false,
+};
+
+function k() { return 1 / (1 - state.c * (1 - state.t)); }
+function realM() { return state.M / state.P; }
+
+function isR(Y) {
+  // r = (C0 + G)/b - Y/(b*k)
+  return (state.C0 + state.G)/state.b - Y/(state.b * k());
+}
+function lmR(Y) {
+  // base linear curve
+  const r = (state.kY * Y - realM()) / state.kR;
+  if (state.mode === 'liq') {
+    // flatten when r is below threshold (e.g. r < 2)
+    const floor = 2;
+    if (r < floor) return floor;
+  }
+  return r;
+}
+
+function isY(r) {
+  return k() * (state.C0 + state.G - state.b * r);
+}
+
+function equilibrium() {
+  if (state.mode === 'normal') {
+    // (C0+G)/b - Y/(b*k) = (k_Y*Y - M/P)/k_r
+    // (C0+G)*k_r/b - Y*k_r/(b*k) = k_Y*Y - M/P
+    // (C0+G)*k_r/b + M/P = Y*(k_Y + k_r/(b*k))
+    const num = (state.C0 + state.G) * state.kR / state.b + realM();
+    const den = state.kY + state.kR / (state.b * k());
+    const Y = num / den;
+    const r = isR(Y);
+    return { Y, r };
+  } else {
+    // liquidity trap: LM has flat segment at r = 2 for Y below threshold
+    // intersection with flat region: r = 2, Y from IS: Y = k*(C0+G-b*2)
+    const floor = 2;
+    const Yflat = k() * (state.C0 + state.G - state.b * floor);
+    // threshold where LM becomes upward sloping: k_Y * Y - M/P = floor * k_r
+    // Y_thr = (floor * k_r + M/P)/k_Y
+    const Yth = (floor * state.kR + realM())/state.kY;
+    if (Yflat < Yth) {
+      // intersection is at r = 2 with Y = Yflat (and Yflat <= Yth)
+      return { Y: Yflat, r: floor };
+    } else {
+      const num = (state.C0 + state.G) * state.kR / state.b + realM();
+      const den = state.kY + state.kR / (state.b * k());
+      const Y = num / den;
+      const r = isR(Y);
+      return { Y, r };
+    }
+  }
+}
+
+// Plot ranges
+const Y_MAX = 2400;
+const R_MAX = 28;
+
+const islm = $('islm');
+let ctx = fitCanvas(islm);
+const margin = { l: 60, t: 24, r: 28, b: 50 };
+
+function plotBox(c) {
+  const w = c.clientWidth, h = c.clientHeight;
+  return { x: margin.l, y: margin.t, w: w - margin.l - margin.r, h: h - margin.t - margin.b };
+}
+function yToX(Y, box){ return box.x + (Y/Y_MAX)*box.w; }
+function rToY(r, box){ return box.y + box.h - (r/R_MAX)*box.h; }
+
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x+r, y);
+  c.arcTo(x+w, y, x+w, y+h, r);
+  c.arcTo(x+w, y+h, x, y+h, r);
+  c.arcTo(x, y+h, x, y, r);
+  c.arcTo(x, y, x+w, y, r);
+  c.closePath();
+}
+
+function drawAxes(c, box, xMax, yMax, xLabel, yLabel, xStep, yStep) {
+  c.save();
+  c.strokeStyle = getCss('--grid');
+  c.lineWidth = 1;
+  c.fillStyle = getCss('--text-dim');
+  c.font = "11px 'JetBrains Mono', monospace";
+  for (let y = 0; y <= yMax; y += yStep) {
+    const py = box.y + box.h - (y/yMax)*box.h;
+    c.globalAlpha = (y % (yStep*2) === 0) ? 1 : 0.5;
+    c.beginPath(); c.moveTo(box.x, py); c.lineTo(box.x + box.w, py); c.stroke();
+    if (y % (yStep*2) === 0) { c.textAlign = 'right'; c.fillText(String(y), box.x - 8, py + 4); c.textAlign = 'start'; }
+  }
+  for (let x = 0; x <= xMax; x += xStep) {
+    const px = box.x + (x/xMax)*box.w;
+    c.globalAlpha = (x % (xStep*2) === 0) ? 1 : 0.5;
+    c.beginPath(); c.moveTo(px, box.y); c.lineTo(px, box.y + box.h); c.stroke();
+    if (x % (xStep*2) === 0) c.fillText(String(x), px - 12, box.y + box.h + 16);
+  }
+  c.globalAlpha = 1;
+  c.strokeStyle = getCss('--text-faint');
+  c.beginPath();
+  c.moveTo(box.x, box.y); c.lineTo(box.x, box.y + box.h); c.lineTo(box.x + box.w, box.y + box.h);
+  c.stroke();
+  // axis labels
+  c.fillStyle = getCss('--text-dim');
+  c.font = "12px 'Inter', sans-serif";
+  c.fillText(xLabel, box.x + box.w/2 - 30, box.y + box.h + 36);
+  c.save();
+  c.translate(box.x - 40, box.y + box.h/2);
+  c.rotate(-Math.PI/2);
+  c.fillText(yLabel, -20, 0);
+  c.restore();
+  c.restore();
+}
+
+function strokeCurve(c, points, color, w=2.5, dash=null, glow=false) {
+  c.save();
+  c.strokeStyle = color; c.lineWidth = w;
+  if (dash) c.setLineDash(dash);
+  if (glow) { c.shadowColor = color; c.shadowBlur = 10; }
+  c.beginPath();
+  for (let i=0; i<points.length; i++) {
+    if (i === 0) c.moveTo(points[i][0], points[i][1]);
+    else c.lineTo(points[i][0], points[i][1]);
+  }
+  c.stroke();
+  c.restore();
+}
+
+function drawDot(c, x, y, color, r=6, glow=false) {
+  c.save();
+  if (glow) { c.shadowColor = color; c.shadowBlur = 16; }
+  c.fillStyle = color;
+  c.beginPath(); c.arc(x, y, r, 0, Math.PI*2); c.fill();
+  c.restore();
+}
+
+function isPoints(box) {
+  // sample Y from 0..Y_MAX
+  const pts = [];
+  const N = 60;
+  for (let i=0; i<=N; i++) {
+    const Y = (i/N)*Y_MAX;
+    const r = isR(Y);
+    pts.push([yToX(Y, box), rToY(r, box)]);
+  }
+  return pts;
+}
+function lmPoints(box) {
+  const pts = [];
+  const N = 60;
+  for (let i=0; i<=N; i++) {
+    const Y = (i/N)*Y_MAX;
+    const r = lmR(Y);
+    pts.push([yToX(Y, box), rToY(r, box)]);
+  }
+  return pts;
+}
+
+function drawIslm() {
+  const w = islm.clientWidth, h = islm.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = getCss('--bg-elev-1'); roundRect(ctx, 0, 0, w, h, 10); ctx.fill();
+  const box = plotBox(islm);
+  drawAxes(ctx, box, Y_MAX, R_MAX, 'Output (Y)', 'Interest rate (r, %)', 200, 2);
+
+  // Potential output line
+  ctx.save();
+  ctx.strokeStyle = getCss('--green');
+  ctx.setLineDash([4,4]);
+  ctx.lineWidth = 1.5;
+  const xs = yToX(state.Ystar, box);
+  ctx.beginPath(); ctx.moveTo(xs, box.y); ctx.lineTo(xs, box.y + box.h); ctx.stroke();
+  ctx.fillStyle = getCss('--green'); ctx.font = "11px 'JetBrains Mono', monospace";
+  ctx.fillText('Y* = ' + fmt(state.Ystar,0), xs + 4, box.y + 14);
+  ctx.restore();
+
+  // Clip curves and equilibrium glyphs to the chart area so an off-canvas equilibrium
+  // (extreme parameter combinations producing r < 0 or r > R_MAX) doesn't leak outside.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(box.x, box.y, box.w, box.h);
+  ctx.clip();
+
+  // Curves
+  strokeCurve(ctx, isPoints(box), getCss('--amber'), 2.5);
+  strokeCurve(ctx, lmPoints(box), getCss('--cyan'), 2.5);
+
+  // Previous equilibrium ghost
+  if (state.prev) {
+    drawDot(ctx, yToX(state.prev.Y, box), rToY(state.prev.r, box), getCss('--text-faint'), 5);
+    // Arrow from prev to current
+    const eq = equilibrium();
+    drawArrow(ctx, yToX(state.prev.Y, box), rToY(state.prev.r, box), yToX(eq.Y, box), rToY(eq.r, box));
+  }
+
+  // Equilibrium glowing dot
+  const eq = equilibrium();
+  const eqX = yToX(eq.Y, box), eqY = rToY(eq.r, box);
+  // dropdowns
+  ctx.save();
+  ctx.setLineDash([4,4]); ctx.strokeStyle = getCss('--text-faint'); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(eqX, eqY); ctx.lineTo(eqX, box.y + box.h); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(eqX, eqY); ctx.lineTo(box.x, eqY); ctx.stroke();
+  ctx.restore();
+  const pulse = state.inShockAnim ? 0 : (0.6 + 0.4*Math.sin(performance.now()/400));
+  ctx.save();
+  ctx.shadowColor = getCss('--gold'); ctx.shadowBlur = state.inShockAnim ? 8 : (14 + 6*pulse);
+  ctx.fillStyle = getCss('--gold');
+  ctx.beginPath(); ctx.arc(eqX, eqY, 7, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // Curve labels
+  ctx.fillStyle = getCss('--amber'); ctx.font = "12px 'Inter', sans-serif";
+  // IS label near right end
+  const isEnd = isR(Y_MAX);
+  if (isEnd > 0 && isEnd < R_MAX) ctx.fillText('IS', yToX(Y_MAX, box) - 18, rToY(isEnd, box) - 6);
+  else ctx.fillText('IS', box.x + box.w - 30, box.y + 30);
+  ctx.fillStyle = getCss('--cyan');
+  const lmEnd = lmR(Y_MAX);
+  if (lmEnd < R_MAX) ctx.fillText('LM', yToX(Y_MAX, box) - 30, rToY(lmEnd, box) + 4);
+  else ctx.fillText('LM', box.x + box.w - 26, box.y + 16);
+
+  // Liquidity trap shade
+  if (state.mode === 'liq') {
+    ctx.save();
+    ctx.fillStyle = 'rgba(167,139,250,0.10)';
+    const yFloor = rToY(2, box);
+    ctx.fillRect(box.x, yFloor, box.w, box.y + box.h - yFloor);
+    ctx.fillStyle = getCss('--violet'); ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText('liquidity trap zone (r ≈ 0)', box.x + 8, yFloor - 6);
+    ctx.restore();
+  }
+
+  // Release the clip applied above.
+  ctx.restore();
+
+  // If equilibrium is off-canvas, draw an indicator at the nearest edge so the user
+  // sees that the intersection has been pushed out of the visible region.
+  if (eq.Y < 0 || eq.Y > Y_MAX || eq.r < 0 || eq.r > R_MAX || !isFinite(eq.Y) || !isFinite(eq.r)) {
+    const clampedY = clamp(isFinite(eq.Y) ? eq.Y : 0, 0, Y_MAX);
+    const clampedR = clamp(isFinite(eq.r) ? eq.r : 0, 0, R_MAX);
+    const cx = yToX(clampedY, box), cy = rToY(clampedR, box);
+    ctx.save();
+    ctx.strokeStyle = getCss('--rose');
+    ctx.lineWidth = 2;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = getCss('--rose'); ctx.font = "10px 'JetBrains Mono', monospace";
+    ctx.fillText('off-chart', cx + 12, cy + 4);
+    ctx.restore();
+  }
+}
+
+function drawArrow(c, x1, y1, x2, y2) {
+  c.save();
+  c.strokeStyle = getCss('--text-dim');
+  c.lineWidth = 1.5;
+  c.setLineDash([3,3]);
+  // curve via control point
+  const mx = (x1+x2)/2 + 30, my = (y1+y2)/2 - 30;
+  c.beginPath();
+  c.moveTo(x1, y1);
+  c.quadraticCurveTo(mx, my, x2, y2);
+  c.stroke();
+  // arrowhead
+  c.setLineDash([]);
+  const ang = Math.atan2(y2 - my, x2 - mx);
+  c.beginPath();
+  c.moveTo(x2, y2);
+  c.lineTo(x2 - 8*Math.cos(ang - Math.PI/6), y2 - 8*Math.sin(ang - Math.PI/6));
+  c.lineTo(x2 - 8*Math.cos(ang + Math.PI/6), y2 - 8*Math.sin(ang + Math.PI/6));
+  c.closePath();
+  c.fillStyle = getCss('--text-dim');
+  c.fill();
+  c.restore();
+}
+
+// ---- AD curve ----
+const ad = $('ad');
+let actx = fitCanvas(ad);
+
+function adY(P) {
+  // Solve IS-LM at price P
+  const real = state.M / P;
+  if (state.mode === 'normal') {
+    const num = (state.C0 + state.G) * state.kR / state.b + real;
+    const den = state.kY + state.kR / (state.b * k());
+    return num / den;
+  } else {
+    const floor = 2;
+    const Yflat = k() * (state.C0 + state.G - state.b * floor);
+    const Yth = (floor * state.kR + real)/state.kY;
+    if (Yflat < Yth) return Yflat;
+    const num = (state.C0 + state.G) * state.kR / state.b + real;
+    const den = state.kY + state.kR / (state.b * k());
+    return num / den;
+  }
+}
+
+function drawAd() {
+  const w = ad.clientWidth, h = ad.clientHeight;
+  actx.clearRect(0, 0, w, h);
+  actx.fillStyle = getCss('--bg-elev-1'); roundRect(actx, 0, 0, w, h, 10); actx.fill();
+
+  const adBox = { x: margin.l, y: margin.t, w: w - margin.l - margin.r, h: h - margin.t - margin.b };
+  const P_MAX = 2.5, P_MIN = 0.5;
+
+  // axes
+  actx.save();
+  actx.strokeStyle = getCss('--grid');
+  actx.lineWidth = 1;
+  actx.fillStyle = getCss('--text-dim');
+  actx.font = "11px 'JetBrains Mono', monospace";
+  for (let p = 0.5; p <= 2.5; p += 0.25) {
+    const py = adBox.y + adBox.h - ((p - P_MIN)/(P_MAX - P_MIN))*adBox.h;
+    actx.globalAlpha = (Math.round(p*100) % 50 === 0) ? 1 : 0.5;
+    actx.beginPath(); actx.moveTo(adBox.x, py); actx.lineTo(adBox.x + adBox.w, py); actx.stroke();
+    if (Math.round(p*100) % 50 === 0) { actx.textAlign = 'right'; actx.fillText(p.toFixed(2), adBox.x - 8, py + 4); actx.textAlign = 'start'; }
+  }
+  for (let y = 0; y <= Y_MAX; y += 200) {
+    const px = adBox.x + (y/Y_MAX)*adBox.w;
+    actx.globalAlpha = (y % 400 === 0) ? 1 : 0.5;
+    actx.beginPath(); actx.moveTo(px, adBox.y); actx.lineTo(px, adBox.y + adBox.h); actx.stroke();
+    if (y % 400 === 0) actx.fillText(String(y), px - 12, adBox.y + adBox.h + 16);
+  }
+  actx.globalAlpha = 1;
+  actx.strokeStyle = getCss('--text-faint');
+  actx.beginPath();
+  actx.moveTo(adBox.x, adBox.y); actx.lineTo(adBox.x, adBox.y + adBox.h); actx.lineTo(adBox.x + adBox.w, adBox.y + adBox.h);
+  actx.stroke();
+  actx.fillStyle = getCss('--text-dim');
+  actx.font = "12px 'Inter', sans-serif";
+  actx.fillText('Output (Y)', adBox.x + adBox.w/2 - 30, adBox.y + adBox.h + 36);
+  actx.save();
+  actx.translate(adBox.x - 40, adBox.y + adBox.h/2);
+  actx.rotate(-Math.PI/2);
+  actx.fillText('Price level (P)', -30, 0);
+  actx.restore();
+  actx.restore();
+
+  // Clip AD curve drawing to the chart so extreme parameters don't spill outside.
+  actx.save();
+  actx.beginPath();
+  actx.rect(adBox.x, adBox.y, adBox.w, adBox.h);
+  actx.clip();
+
+  // AD curve: for each P, compute Y
+  const pts = [];
+  const N = 80;
+  for (let i=0; i<=N; i++) {
+    const P = P_MIN + (i/N)*(P_MAX - P_MIN);
+    const Y = adY(P);
+    const px = adBox.x + (Y/Y_MAX)*adBox.w;
+    const py = adBox.y + adBox.h - ((P - P_MIN)/(P_MAX - P_MIN))*adBox.h;
+    pts.push([px, py]);
+  }
+  strokeCurve(actx, pts, getCss('--violet'), 2.5);
+
+  // current price marker
+  const Ycur = adY(state.P);
+  const pxC = adBox.x + (clamp(Ycur, 0, Y_MAX)/Y_MAX)*adBox.w;
+  const pyC = adBox.y + adBox.h - ((state.P - P_MIN)/(P_MAX - P_MIN))*adBox.h;
+  // dropdowns
+  actx.save();
+  actx.setLineDash([3,3]); actx.strokeStyle = getCss('--text-faint');
+  actx.beginPath(); actx.moveTo(pxC, pyC); actx.lineTo(pxC, adBox.y + adBox.h); actx.stroke();
+  actx.beginPath(); actx.moveTo(pxC, pyC); actx.lineTo(adBox.x, pyC); actx.stroke();
+  actx.restore();
+  const pulse = state.inShockAnim ? 0 : (0.6 + 0.4*Math.sin(performance.now()/400));
+  actx.save();
+  actx.shadowColor = getCss('--gold'); actx.shadowBlur = state.inShockAnim ? 6 : (12 + 4*pulse);
+  actx.fillStyle = getCss('--gold');
+  actx.beginPath(); actx.arc(pxC, pyC, 6, 0, Math.PI*2); actx.fill();
+  actx.restore();
+
+  // Release clip
+  actx.restore();
+
+  // Label (drawn outside clip so it's always visible at chart edge if curve is off-canvas)
+  actx.fillStyle = getCss('--violet'); actx.font = "12px 'Inter', sans-serif";
+  const labelPt = pts[pts.length-1];
+  const labelX = clamp(labelPt[0], adBox.x + 6, adBox.x + adBox.w - 6);
+  const labelY = clamp(labelPt[1], adBox.y + 12, adBox.y + adBox.h - 6);
+  actx.fillText('AD', labelX - 24, labelY - 4);
+}
+
+// ---- Readouts ----
+function updateReadouts() {
+  const eq = equilibrium();
+  $('rY').textContent = fmt(eq.Y, 0);
+  $('rR').textContent = fmt(eq.r, 2) + '%';
+  $('rK').textContent = fmt(k(), 2);
+  // fiscal multiplier with crowd-out: dY/dG = k_r / (k_r/(b*k) + k_Y) * (some derivation)
+  // Actually: from total equations, dY/dG = k_r / (k_r/k + k_Y * b) ... derive cleanly
+  // Y = num/den, num = (C0+G)*k_r/b + M/P, den = k_Y + k_r/(b*k)
+  // dY/dG = (k_r/b) / den
+  const den = state.kY + state.kR/(state.b*k());
+  const fiscalMult = (state.kR/state.b) / den;
+  // Monetary multiplier dY/dM = (1/P) / den  (in liquidity trap, =0 because LM is flat)
+  let monMult, drDm;
+  if (state.mode === 'liq' && Math.abs(eq.r - 2) < 1e-6) {
+    monMult = 0; drDm = 0;
+  } else {
+    monMult = (1/state.P) / den;
+    // dr/dM along the IS curve: r = (C0+G)/b - Y/(b*k); dr/dM = -(1/(b*k)) * dY/dM
+    drDm = -(1/(state.b*k())) * monMult;
+  }
+  $('rFK').textContent = fmt(fiscalMult, 2);
+  $('rMM').textContent = fmt(monMult, 2);
+  $('rDrDm').textContent = (drDm*100).toFixed(3) + ' pp/M';
+  $('rRM').textContent = fmt(realM(), 0);
+  const gap = eq.Y - state.Ystar;
+  if (gap > 5) {
+    $('rGap').textContent = '+' + fmt(gap,0) + ' (inflationary)';
+    $('rGap').className = 'val rose small';
+  } else if (gap < -5) {
+    $('rGap').textContent = fmt(gap,0) + ' (recessionary)';
+    $('rGap').className = 'val rose small';
+  } else {
+    $('rGap').textContent = 'at potential';
+    $('rGap').className = 'val green small';
+  }
+
+  // explainer
+  let txt;
+  const onFlat = state.mode === 'liq' && Math.abs(eq.r - 2) < 1e-6;
+  if (state.mode === 'liq' && onFlat) {
+    txt = `Liquidity trap: equilibrium sits on the flat segment of LM at r = <span class="k">2%</span>. Money and bonds are perfect substitutes — extra M is hoarded, dY/dM = 0. Fiscal policy (raise G or cut t) shifts IS to the right and lifts Y with <em>no</em> crowding out (dr = 0). Current Y = <span class="k">${fmt(eq.Y,0)}</span>.`;
+  } else if (state.mode === 'liq') {
+    txt = `Liquidity trap is selected but equilibrium is above the flat segment (r = <span class="k">${fmt(eq.r,2)}%</span>). Try cutting M or G to push the economy down into the trap region (r ≈ 2%).`;
+  } else {
+    const crowding = (k() - fiscalMult) / Math.max(k(), 1e-9) * 100;
+    txt = `Naive spending multiplier k = 1/(1 − c(1−t)) = <span class="k">${fmt(k(),2)}</span>. With crowding out the realised fiscal multiplier is <span class="k">${fmt(fiscalMult,2)}</span> — about <span class="k">${crowding.toFixed(0)}%</span> of the impulse is absorbed by higher r. Monetary multiplier dY/dM = <span class="k">${fmt(monMult,2)}</span>.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+// ---- Animation ----
+function animateChange(targets, ms=700) {
+  const start = {};
+  for (const key of Object.keys(targets)) start[key] = state[key];
+  state.prev = equilibrium();
+  state.inShockAnim = true;
+  const t0 = performance.now();
+  state.anim = (now) => {
+    const t = Math.min(1, (now - t0)/ms);
+    const e = easeOutCubic(t);
+    for (const key of Object.keys(targets)) {
+      state[key] = start[key] + (targets[key] - start[key]) * e;
+      // update slider visuals
+      syncSlider(key);
+    }
+    updateReadouts();
+    if (t >= 1) {
+      state.anim = null;
+      state.inShockAnim = false;
+      // clear prev after a moment
+      setTimeout(() => { state.prev = null; }, 1200);
+    }
+  };
+}
+
+function syncSlider(key) {
+  const map = { C0: ['sC0','vC0',0], G: ['sG','vG',0], c: ['sC','vC',2], t: ['sT','vT',2], b: ['sB','vB',0],
+                M: ['sM','vM',0], P: ['sP','vP',2], kY: ['sKy','vKy',2], kR: ['sKr','vKr',0], Ystar: ['sYstar','vYstar',0] };
+  if (!map[key]) return;
+  const [s, v, d] = map[key];
+  $(s).value = state[key];
+  $(v).textContent = state[key].toFixed(d);
+}
+
+// ---- Wire sliders ----
+function bindSlider(sid, vid, key, dec) {
+  const s = $(sid), v = $(vid);
+  v.textContent = state[key].toFixed(dec);
+  s.value = state[key];
+  s.addEventListener('input', (e) => {
+    state[key] = parseFloat(e.target.value);
+    v.textContent = state[key].toFixed(dec);
+    updateReadouts();
+  });
+}
+bindSlider('sC0','vC0','C0',0);
+bindSlider('sG','vG','G',0);
+bindSlider('sC','vC','c',2);
+bindSlider('sT','vT','t',2);
+bindSlider('sB','vB','b',0);
+bindSlider('sM','vM','M',0);
+bindSlider('sP','vP','P',2);
+bindSlider('sKy','vKy','kY',2);
+bindSlider('sKr','vKr','kR',0);
+bindSlider('sYstar','vYstar','Ystar',0);
+
+// ---- Shocks ----
+$('shockFiscal').addEventListener('click', () => animateChange({ G: clamp(state.G + 120, 0, 500) }));
+$('shockTax').addEventListener('click', () => animateChange({ t: clamp(state.t - 0.08, 0, 0.5) }));
+$('shockMonEx').addEventListener('click', () => animateChange({ M: clamp(state.M + 300, 200, 2000) }));
+$('shockMonCo').addEventListener('click', () => animateChange({ M: clamp(state.M - 300, 200, 2000) }));
+$('shockCrowd').addEventListener('click', () => {
+  // Highlight crowding out: make LM steep (low k_r, so r reacts strongly to Y),
+  // then raise G. The new equilibrium will have noticeably higher r and a
+  // smaller ΔY than k·ΔG would predict.
+  animateChange({ G: clamp(state.G + 150, 0, 500), kR: 12 });
+});
+$('shockReset').addEventListener('click', () => {
+  animateChange({ C0:240, G:400, c:0.7, t:0.2, b:50, M:400, P:1.0, kY:0.5, kR:25, Ystar:1000 });
+});
+
+// ---- Try this experiments ----
+$('tryFiscal').addEventListener('click', () => { $('shockFiscal').click(); });
+$('tryMonExp').addEventListener('click', () => { $('shockMonEx').click(); });
+$('tryLiqTrap').addEventListener('click', () => {
+  state.mode = 'liq';
+  $$('#modeSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode === 'liq'));
+  // push the economy down into the trap region first: cut M, then expand to demonstrate no effect
+  animateChange({ M: 250, G: 300, kR: 25 });
+  setTimeout(() => { $('shockMonEx').click(); }, 800);
+});
+
+// ---- Mode toggle ----
+$$('#modeSeg button').forEach(b => b.addEventListener('click', (e) => {
+  state.mode = e.target.dataset.mode;
+  $$('#modeSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode === state.mode));
+  updateReadouts();
+}));
+
+// ---- Loop ----
+window.addEventListener('resize', () => {
+  ctx = fitCanvas(islm);
+  actx = fitCanvas(ad);
+});
+
+function loop(now) {
+  if (state.anim) state.anim(now);
+  drawIslm();
+  drawAd();
+  requestAnimationFrame(loop);
+}
+
+ctx = fitCanvas(islm);
+actx = fitCanvas(ad);
+updateReadouts();
+requestAnimationFrame(loop);
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const btn = document.getElementById('kbdHelpBtn');
+  if (!modal || !btn) return;
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  btn.addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === '1') { $('shockFiscal').click(); }
+    else if (e.key === '2') { $('shockMonEx').click(); }
+    else if (e.key === '3') { $('shockCrowd').click(); }
+    else if (k === 'l') {
+      const target = state.mode === 'liq' ? 'normal' : 'liq';
+      const tgt = document.querySelector(`#modeSeg button[data-mode="${target}"]`);
+      if (tgt) tgt.click();
+    }
+    else if (k === 'r') { $('shockReset').click(); }
+  });
+})();
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="supply_demand.html">
+      <div class="related-title">Supply & Demand</div>
+      <div class="related-desc">Curves, surpluses, taxes, ceilings, and deadweight loss</div>
+    </a>
+    <a class="related-card" href="compound_interest.html">
+      <div class="related-title">Compound Interest</div>
+      <div class="related-desc">How nominal vs real returns play out over 50 years</div>
+    </a>
+    <a class="related-card" href="malthus.html">
+      <div class="related-title">Malthusian Dynamics</div>
+      <div class="related-desc">Population vs food, and the Industrial Revolution</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

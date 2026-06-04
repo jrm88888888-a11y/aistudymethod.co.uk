@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>p-Hacking & False Discovery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+
+* { box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.num, .mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+.back:hover { color: var(--cyan); }
+
+main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+}
+
+.canvas-area { display: flex; flex-direction: column; gap: 16px; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.panel h2 { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
+.panel h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--text); }
+
+.section-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.plot-wrap {
+  position: relative;
+  width: 100%;
+  background: var(--bg-elev-1);
+  border-radius: var(--r-md);
+  border: 1px solid var(--panel-border);
+  overflow: hidden;
+}
+.plot-wrap canvas { display: block; width: 100%; height: 100%; }
+
+#grid-wrap { aspect-ratio: 2 / 1; }
+#power-wrap { aspect-ratio: 2.5 / 1; }
+#filed-wrap { aspect-ratio: 4 / 1; }
+
+.controls .row {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;
+}
+.controls .row:last-child { margin-bottom: 0; }
+.controls .lbl {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12px; color: var(--text-dim);
+}
+.controls .lbl .val {
+  color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px;
+}
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%;
+  height: 4px; border-radius: 999px; background: var(--grid); outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none;
+}
+input[type=range]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none;
+}
+button {
+  font-family: inherit; font-size: 13px; color: var(--text);
+  background: var(--bg-elev-1); border: 1px solid var(--panel-border);
+  border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease;
+}
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+button.rose { border-color: var(--rose); color: var(--rose); }
+button.rose.active { background: var(--rose); color: #1a040a; }
+button.ghost:hover { border-color: var(--text-dim); background: var(--bg-elev-2); }
+
+.seg {
+  display: inline-flex; background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px;
+  flex-wrap: wrap;
+}
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readout .k {
+  text-transform: uppercase; letter-spacing: 0.07em; font-size: 10px; color: var(--text-dim);
+}
+.readout .k[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .v { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--text); }
+.readout .v.cyan { color: var(--cyan); }
+.readout .v.rose { color: var(--rose); }
+.readout .v.amber { color: var(--amber); }
+.readout .v.green { color: var(--green); }
+.readout .v.small { font-size: 14px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-dim); }
+.legend .item { display: flex; align-items: center; gap: 6px; }
+.legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.explainer {
+  background: var(--bg-elev-1);
+  border-left: 2px solid var(--cyan);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  line-height: 1.55;
+}
+.explainer .hi { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+
+.toggle-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.switch {
+  position: relative; display: inline-block; width: 36px; height: 20px;
+}
+.switch input { display: none; }
+.switch .slider {
+  position: absolute; inset: 0; background: var(--grid);
+  border-radius: 999px; transition: 200ms; cursor: pointer;
+}
+.switch .slider::before {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px; border-radius: 50%; background: var(--text-dim); transition: 200ms;
+}
+.switch input:checked + .slider { background: var(--cyan-soft); }
+.switch input:checked + .slider::before { background: var(--cyan); transform: translateX(16px); }
+
+.method-list { display: flex; flex-direction: column; gap: 8px; }
+.method-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border); border-radius: var(--r-sm);
+}
+.method-row .info { display: flex; flex-direction: column; gap: 1px; }
+.method-row .info .name { font-size: 13px; color: var(--text); }
+.method-row .info .desc { font-size: 11px; color: var(--text-dim); }
+
+.insight-banner { padding: 10px 16px 10px 14px; border-left: 2px solid var(--cyan); color: var(--text-dim); font-size: 13px; font-style: italic; margin: 14px 24px 0; max-width: 1352px; background: rgba(34,211,238,0.04); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.try-panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px; box-shadow: var(--shadow); }
+.try-panel .try-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); font-weight: 600; margin-bottom: 10px; }
+.try-panel .try-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.try-panel .try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-panel .try-buttons button:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-2); }
+.try-panel .try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; min-height: 1em; transition: color 200ms ease, opacity 200ms ease; opacity: 0.6; }
+.try-panel .try-note.show { color: var(--text); opacity: 1; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; border-radius: 999px; }
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+.method-row { transition: background 120ms ease, border-color 120ms ease; }
+.method-row:hover { background: var(--bg-elev-2); border-color: var(--panel-border); }
+.switch .slider:hover { background: var(--bg-elev-2); }
+.switch input:checked + .slider:hover { background: var(--cyan-soft); }
+
+@media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { main { padding: 16px; gap: 16px; } .insight-banner { margin: 12px 16px 0; } }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">&larr; All simulations</a>
+  <div class="title-block">
+    <h1>p-Hacking &amp; False Discovery</h1>
+    <p class="sub">Run experiments on a known-fair coin and watch "significant" findings appear out of pure chance</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+<div class="insight-banner">Run enough experiments and you'll get a "significant" result on a fair coin. The 5% false-positive rate is the trap.</div>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Run 1 experiment</span>
+      <span class="kbd-key">R</span><span>Run 10</span>
+      <span class="kbd-key">C</span><span>Run continuously</span>
+      <span class="kbd-key">X</span><span>Reset</span>
+      <span class="kbd-key">B</span><span>Toggle Bonferroni</span>
+      <span class="kbd-key">H</span><span>Toggle Holm</span>
+      <span class="kbd-key">F</span><span>Toggle BH FDR</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="canvas-area">
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+        <h2 style="margin:0;">Experiment grid</h2>
+        <div class="legend">
+          <div class="item"><span class="dot" style="background:#3a4458"></span> p &gt; &alpha; (not significant)</div>
+          <div class="item"><span class="dot" style="background:var(--rose)"></span> p &le; &alpha; (false positive)</div>
+          <div class="item"><span class="dot" style="background:var(--green)"></span> survives correction</div>
+        </div>
+      </div>
+      <div class="plot-wrap" id="grid-wrap">
+        <canvas id="grid"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Publication bias — the file drawer</h2>
+      <div class="toggle-row" style="margin-bottom:12px;">
+        <label class="switch"><input type="checkbox" id="pub-toggle"><span class="slider"></span></label>
+        <span style="color:var(--text-dim); font-size:13px;">Journal only publishes p &lt; 0.05</span>
+      </div>
+      <div class="plot-wrap" id="filed-wrap">
+        <canvas id="filed"></canvas>
+      </div>
+      <div class="explainer" style="margin-top:10px;" id="filed-explainer">
+        Toggle on to filter the grid down to only "publishable" experiments. The faded dots below represent the file drawer — null results that are never seen, even though the underlying truth is identical.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Statistical power</h2>
+      <p style="margin:0 0 10px; color:var(--text-dim); font-size:12px;">
+        Probability of detecting a real effect of given Cohen's d under current n (per group) and &alpha; (two-sample z-test). Shallower bars mean more real effects go undetected — Type II errors.
+      </p>
+      <div class="plot-wrap" id="power-wrap">
+        <canvas id="power"></canvas>
+      </div>
+    </div>
+
+    <div class="try-panel">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="run100">Run 100 experiments at α=0.05</button>
+        <button data-try="bonf">Bonferroni correction</button>
+        <button data-try="pubBias">Publication bias on</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+
+    <div class="panel explainer" id="explainer">Loading…</div>
+  </div>
+
+  <aside class="controls">
+    <div class="panel">
+      <div class="section-label">Experiment parameters</div>
+      <div class="row">
+        <div class="lbl"><span>Significance threshold &alpha;</span><span class="val" id="a-val">0.050</span></div>
+        <input type="range" id="a" min="1" max="100" value="50">
+      </div>
+      <div class="row">
+        <div class="lbl"><span>Flips per experiment n</span><span class="val" id="n-val">100</span></div>
+        <input type="range" id="n" min="10" max="200" value="100" step="2">
+      </div>
+      <div class="row">
+        <div class="lbl"><span>Run speed</span><span class="val" id="sp-val">10/s</span></div>
+        <input type="range" id="sp" min="1" max="60" value="10">
+      </div>
+      <div class="button-row">
+        <button id="run-1" class="primary">Run 1</button>
+        <button id="run-10" class="primary">Run 10</button>
+        <button id="run-100" class="primary">Run continuously</button>
+      </div>
+      <div class="button-row">
+        <button id="reset" class="ghost">Reset</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="section-label">Multiple-testing corrections</div>
+      <div class="method-list">
+        <div class="method-row">
+          <div class="info">
+            <div class="name">None</div>
+            <div class="desc">Raw &alpha; threshold per test</div>
+          </div>
+          <label class="switch"><input type="radio" name="corr" value="none" checked><span class="slider"></span></label>
+        </div>
+        <div class="method-row">
+          <div class="info">
+            <div class="name">Bonferroni</div>
+            <div class="desc">&alpha; / m — strictest, controls FWER</div>
+          </div>
+          <label class="switch"><input type="radio" name="corr" value="bonf"><span class="slider"></span></label>
+        </div>
+        <div class="method-row">
+          <div class="info">
+            <div class="name">Holm-Bonferroni</div>
+            <div class="desc">Step-down, slightly more powerful</div>
+          </div>
+          <label class="switch"><input type="radio" name="corr" value="holm"><span class="slider"></span></label>
+        </div>
+        <div class="method-row">
+          <div class="info">
+            <div class="name">Benjamini-Hochberg</div>
+            <div class="desc">Controls FDR — most powerful</div>
+          </div>
+          <label class="switch"><input type="radio" name="corr" value="bh"><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="section-label">Live statistics</div>
+      <div class="readouts">
+        <div class="readout"><span class="k">Experiments run</span><span class="v cyan" id="m-run">0</span></div>
+        <div class="readout"><span class="k">False positives (raw)</span><span class="v rose" id="fp-raw">0</span></div>
+        <div class="readout"><span class="k">After correction</span><span class="v green" id="fp-corr">0</span></div>
+        <div class="readout"><span class="k" title="False positive rate observed: the fraction of experiments that produced a significant result even though no real effect exists.">Observed FPR</span><span class="v small" id="fpr-obs">—</span></div>
+        <div class="readout"><span class="k" title="The false positive rate you would expect given the significance threshold α — typically α itself for uncorrected tests.">Expected FPR</span><span class="v small" id="fpr-exp">—</span></div>
+        <div class="readout"><span class="k" title="Type I error: rejecting the null hypothesis when it is actually true (a false positive).">Type I error rate</span><span class="v small" id="t1-rate">—</span></div>
+        <div class="readout"><span class="k" title="File drawer effect: the fraction of non-significant results that go unpublished, biasing the literature toward false positives.">File drawer ratio</span><span class="v small amber" id="fd-ratio">—</span></div>
+        <div class="readout"><span class="k">Published</span><span class="v small" id="pub-count">0</span></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+'use strict';
+
+// ---------- utilities ----------
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = Math.max(1, Math.round(r.width * dpr));
+  c.height = Math.max(1, Math.round(r.height * dpr));
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return { ctx, w: r.width, h: r.height };
+}
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+// log-gamma via Stirling-style series — sufficient for n up to 200
+function logGamma(z) {
+  // Lanczos approximation
+  const g = 7;
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+  ];
+  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - logGamma(1 - z);
+  z -= 1;
+  let x = c[0];
+  for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
+  const t = z + g + 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+function logBinomCoef(n, k) {
+  return logGamma(n + 1) - logGamma(k + 1) - logGamma(n - k + 1);
+}
+
+// two-sided binomial p-value under H0: p=0.5
+function binomialTwoSidedP(k, n) {
+  // exact: P(|X - n/2| >= |k - n/2|) under Binom(n, 0.5)
+  const center = n / 2;
+  const dev = Math.abs(k - center);
+  let p = 0;
+  for (let i = 0; i <= n; i++) {
+    if (Math.abs(i - center) >= dev) {
+      p += Math.exp(logBinomCoef(n, i) - n * Math.log(2));
+    }
+  }
+  return Math.min(1, p);
+}
+
+// Normal CDF
+function normCdf(x) {
+  // Abramowitz & Stegun 7.1.26
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  const ax = Math.abs(x) / Math.SQRT2;
+  const t = 1 / (1 + p * ax);
+  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-ax * ax);
+  return 0.5 * (1 + sign * y);
+}
+
+// ---------- state ----------
+const state = {
+  alpha: 0.05,
+  n: 100,
+  speed: 10,
+  experiments: [],  // {k, n, p}
+  running: false,
+  publish: false,
+  correction: 'none',
+  lastTick: 0,
+  pending: 0,
+};
+
+// ---------- experiment generation ----------
+function runExperiment() {
+  let k = 0;
+  for (let i = 0; i < state.n; i++) {
+    if (Math.random() < 0.5) k++;
+  }
+  const p = binomialTwoSidedP(k, state.n);
+  state.experiments.push({ k, n: state.n, p, born: performance.now() });
+}
+
+// ---------- corrections ----------
+function applyCorrection() {
+  const m = state.experiments.length;
+  const a = state.alpha;
+  // base
+  for (const e of state.experiments) e.sig = e.p <= a;
+  if (state.correction === 'none' || m === 0) {
+    for (const e of state.experiments) e.passed = e.sig;
+    return;
+  }
+  if (state.correction === 'bonf') {
+    const cutoff = a / m;
+    for (const e of state.experiments) e.passed = e.p <= cutoff;
+    return;
+  }
+  // Sort indices by p
+  const idx = state.experiments.map((e, i) => i).sort((x, y) => state.experiments[x].p - state.experiments[y].p);
+  if (state.correction === 'holm') {
+    // Holm step-down: rank r from 0..m-1 (sorted by p ascending).
+    // Reject p_(r) if p_(r) <= a/(m - r); stop at first failure, reject none thereafter.
+    let stopped = false;
+    for (let r = 0; r < idx.length; r++) {
+      const i = idx[r];
+      if (stopped) { state.experiments[i].passed = false; continue; }
+      const cutoff = a / (m - r);
+      if (state.experiments[i].p <= cutoff) {
+        state.experiments[i].passed = true;
+      } else {
+        state.experiments[i].passed = false;
+        stopped = true;
+      }
+    }
+    return;
+  }
+  if (state.correction === 'bh') {
+    // BH: find largest r such that p_(r) <= (r/m) * a; reject all up to that rank
+    let kmax = -1;
+    for (let r = 0; r < idx.length; r++) {
+      const cutoff = ((r + 1) / m) * a;
+      if (state.experiments[idx[r]].p <= cutoff) kmax = r;
+    }
+    for (let r = 0; r < idx.length; r++) {
+      state.experiments[idx[r]].passed = r <= kmax;
+    }
+    return;
+  }
+}
+
+// ---------- grid render ----------
+const gridCanvas = document.getElementById('grid');
+const filedCanvas = document.getElementById('filed');
+const powerCanvas = document.getElementById('power');
+
+function calcGridLayout(w, h, count) {
+  if (count === 0) return { cols: 1, rows: 1, cell: 12, gap: 3 };
+  // try cell sizes to fit
+  const maxCell = 18;
+  const minCell = 4;
+  let best = { cols: 1, rows: 1, cell: minCell, gap: 2 };
+  for (let cell = maxCell; cell >= minCell; cell--) {
+    const gap = Math.max(2, Math.floor(cell * 0.25));
+    const stride = cell + gap;
+    const cols = Math.max(1, Math.floor((w + gap) / stride));
+    const rows = Math.ceil(count / cols);
+    if (rows * stride - gap <= h) {
+      return { cols, rows, cell, gap };
+    }
+    best = { cols, rows, cell, gap };
+  }
+  return best;
+}
+
+function drawGrid() {
+  const { ctx, w, h } = fitCanvas(gridCanvas);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#0d131c';
+  ctx.fillRect(0, 0, w, h);
+
+  const pad = 14;
+  const aw = w - pad * 2, ah = h - pad * 2;
+  // Reserve 4000 cells max for nice layout planning
+  const reserveCount = Math.max(state.experiments.length, 400);
+  const layout = calcGridLayout(aw, ah, reserveCount);
+  const stride = layout.cell + layout.gap;
+
+  const now = performance.now();
+  for (let i = 0; i < state.experiments.length; i++) {
+    const e = state.experiments[i];
+    const col = i % layout.cols;
+    const row = Math.floor(i / layout.cols);
+    const x = pad + col * stride;
+    const y = pad + row * stride;
+    if (y + layout.cell > h - pad) continue;
+
+    const age = (now - e.born) / 280;
+    const grow = Math.min(1, age);
+    const r = (layout.cell / 2) * easeOutCubic(grow);
+
+    // color
+    let color, glow = 0;
+    if (state.publish && !e.sig) {
+      color = 'rgba(151,161,176,0.10)';
+    } else if (e.sig && !e.passed) {
+      // significant raw but eliminated by correction
+      color = 'rgba(244,63,94,0.35)';
+    } else if (e.passed) {
+      color = '#34d399';
+      glow = 8;
+    } else if (e.sig) {
+      color = '#f43f5e';
+      glow = 8;
+    } else {
+      color = '#3a4458';
+    }
+
+    if (glow > 0) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = glow;
+    } else {
+      ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x + layout.cell / 2, y + layout.cell / 2, r, 0, Math.PI * 2);
+    ctx.fill();
+    // subtle outline so individual dots remain visible against the panel
+    if (r > 1.5 && glow === 0 && !state.publish) {
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x + layout.cell / 2, y + layout.cell / 2, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+  ctx.shadowBlur = 0;
+
+  // overlay header
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(state.experiments.length + ' experiments', pad, h - 4);
+  ctx.textAlign = 'right';
+  ctx.fillText('coin is fair (H0 true) — every red is a false positive', w - pad, h - 4);
+}
+
+function drawFiled() {
+  const { ctx, w, h } = fitCanvas(filedCanvas);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#0d131c';
+  ctx.fillRect(0, 0, w, h);
+
+  // show only non-significant ones, faded
+  const fileDrawer = state.experiments.filter(e => !e.sig);
+  const pad = 10;
+  const aw = w - pad * 2, ah = h - pad * 2;
+  const cell = 6, gap = 3;
+  const cols = Math.max(1, Math.floor((aw + gap) / (cell + gap)));
+  for (let i = 0; i < fileDrawer.length; i++) {
+    const col = i % cols, row = Math.floor(i / cols);
+    const x = pad + col * (cell + gap), y = pad + row * (cell + gap);
+    if (y + cell > h - pad) break;
+    ctx.fillStyle = 'rgba(151,161,176,0.22)';
+    ctx.beginPath();
+    ctx.arc(x + cell/2, y + cell/2, cell/2, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('File drawer: ' + fileDrawer.length + ' unpublished null results', pad, h - 4);
+}
+
+function drawPower() {
+  const { ctx, w, h } = fitCanvas(powerCanvas);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#0d131c';
+  ctx.fillRect(0, 0, w, h);
+
+  const pad = { l: 50, r: 20, t: 18, b: 30 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+
+  // bars for effect sizes d
+  const effects = [
+    { d: 0.2, label: 'small (d=0.2)' },
+    { d: 0.5, label: 'medium (d=0.5)' },
+    { d: 0.8, label: 'large (d=0.8)' },
+  ];
+  // power = P(reject | H1 true). Approx with two-sided z-test:
+  // For coin with true p = 0.5 + d*sigma_p?? — we use a sensible approx:
+  // power = 1 - Phi(z_{1-a/2} - d*sqrt(n)) + Phi(-z_{1-a/2} - d*sqrt(n))
+  function inverseNorm(p) {
+    // Beasley-Springer-Moro approximation
+    const a1 = -39.69683028665376, a2 = 220.9460984245205, a3 = -275.9285104469687;
+    const a4 = 138.3577518672690, a5 = -30.66479806614716, a6 = 2.506628277459239;
+    const b1 = -54.47609879822406, b2 = 161.5858368580409, b3 = -155.6989798598866;
+    const b4 = 66.80131188771972, b5 = -13.28068155288572;
+    const c1 = -7.784894002430293e-3, c2 = -0.3223964580411365, c3 = -2.400758277161838;
+    const c4 = -2.549732539343734, c5 = 4.374664141464968, c6 = 2.938163982698783;
+    const d1 = 7.784695709041462e-3, d2 = 0.3224671290700398, d3 = 2.445134137142996;
+    const d4 = 3.754408661907416;
+    const plow = 0.02425, phigh = 1 - plow;
+    let q, r;
+    if (p < plow) { q = Math.sqrt(-2 * Math.log(p)); return (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) / ((((d1*q+d2)*q+d3)*q+d4)*q+1); }
+    if (p <= phigh) { q = p - 0.5; r = q*q; return (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)*q / (((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1); }
+    q = Math.sqrt(-2 * Math.log(1 - p));
+    return -(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) / ((((d1*q+d2)*q+d3)*q+d4)*q+1);
+  }
+  const zcrit = inverseNorm(1 - state.alpha / 2);
+  // Two-sample z-test convention: noncentrality = d * sqrt(n/2)
+  // (n here is per-group; e.g. d=0.5, n=100 → power ≈ 0.94)
+  const ncbar = Math.sqrt(state.n / 2);
+  const powers = effects.map(e => {
+    const ncp = e.d * ncbar;
+    return 1 - normCdf(zcrit - ncp) + normCdf(-zcrit - ncp);
+  });
+
+  // axes
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let p = 0; p <= 1; p += 0.2) {
+    const y = pad.t + (1 - p) * ph;
+    ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  for (let p = 0; p <= 1.001; p += 0.2) {
+    ctx.fillText(p.toFixed(1), pad.l - 8, pad.t + (1 - p) * ph + 4);
+  }
+
+  // power = 0.8 reference line
+  ctx.strokeStyle = 'rgba(245,158,11,0.45)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t + 0.2 * ph);
+  ctx.lineTo(pad.l + pw, pad.t + 0.2 * ph);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('0.80 target', pad.l + 6, pad.t + 0.2 * ph - 4);
+
+  // bars
+  const barW = pw / effects.length * 0.6;
+  effects.forEach((e, i) => {
+    const cx = pad.l + (i + 0.5) * (pw / effects.length);
+    const bx = cx - barW / 2;
+    const power = powers[i];
+    const bh = power * ph;
+    const by = pad.t + ph - bh;
+
+    // background ghost (max possible)
+    ctx.fillStyle = 'rgba(34,211,238,0.06)';
+    ctx.fillRect(bx, pad.t, barW, ph);
+
+    // fill
+    const grad = ctx.createLinearGradient(0, by, 0, by + bh);
+    grad.addColorStop(0, '#22d3ee');
+    grad.addColorStop(1, 'rgba(34,211,238,0.4)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(bx, by, barW, bh);
+
+    // value
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '13px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText((power * 100).toFixed(1) + '%', cx, by - 6);
+
+    // label
+    ctx.fillStyle = '#97a1b0';
+    ctx.font = '12px Inter, sans-serif';
+    ctx.fillText(e.label, cx, pad.t + ph + 18);
+  });
+}
+
+// ---------- readouts ----------
+function updateReadouts() {
+  applyCorrection();
+  const m = state.experiments.length;
+  const fpRaw = state.experiments.filter(e => e.sig).length;
+  const fpCorr = state.experiments.filter(e => e.passed).length;
+  const fpr = m > 0 ? fpRaw / m : 0;
+  const published = state.publish ? fpRaw : m;
+  const fdRatio = state.publish && fpRaw > 0 ? (m - fpRaw) / fpRaw : 0;
+
+  document.getElementById('m-run').textContent = String(m);
+  document.getElementById('fp-raw').textContent = String(fpRaw);
+  document.getElementById('fp-corr').textContent = String(fpCorr);
+  document.getElementById('fpr-obs').textContent = m > 0 ? (fpr * 100).toFixed(2) + '%' : '—';
+  document.getElementById('fpr-exp').textContent = (state.alpha * 100).toFixed(2) + '%';
+  document.getElementById('t1-rate').textContent = m > 0 ? (fpr * 100).toFixed(2) + '%' : '—';
+  document.getElementById('fd-ratio').textContent = state.publish && fpRaw > 0
+    ? (m - fpRaw) + ':' + fpRaw
+    : (state.publish ? '—' : 'off');
+  document.getElementById('pub-count').textContent = String(published);
+
+  // explainer
+  const expl = document.getElementById('explainer');
+  let html;
+  if (m === 0) {
+    html = `You haven't run any experiments yet. The coin is set to <span class="hi">perfectly fair</span> — every experiment's null hypothesis is true. With &alpha; = <span class="hi">${state.alpha.toFixed(3)}</span>, classical theory predicts <span class="hi">${(state.alpha*100).toFixed(1)}%</span> of experiments will land in the rejection region anyway. Click "Run 100 continuously" to watch the false discoveries accumulate.`;
+  } else {
+    const expected = m * state.alpha;
+    const methodLabel = ({none:'no correction', bonf:'Bonferroni', holm:'Holm', bh:'Benjamini-Hochberg'})[state.correction];
+    html = `Across <span class="hi">${m}</span> experiments (coin truly fair), <span class="hi">${fpRaw}</span> reached p &le; &alpha; — close to the expected <span class="hi">${expected.toFixed(1)}</span> = m&middot;&alpha;. Under <span class="hi">${methodLabel}</span>, only <span class="hi">${fpCorr}</span> survive. `;
+    if (state.publish) {
+      html += `With the journal filter on, you'd only see the <span class="hi">${fpRaw}</span> red dots — every single "published" finding is false. The <span class="hi">${m - fpRaw}</span> null results sit unread in the file drawer.`;
+    } else {
+      if (state.correction === 'none') {
+        html += `Without correction, more experiments produce more false positives in absolute terms but the rate stays near &alpha;. Real damage comes when these are cherry-picked for publication.`;
+      } else if (state.correction === 'bonf') {
+        html += `Bonferroni is strictest — guarantees FWER &le; &alpha; but discards real effects too (low power).`;
+      } else if (state.correction === 'holm') {
+        html += `Holm-Bonferroni is uniformly more powerful than Bonferroni at the same FWER guarantee.`;
+      } else {
+        html += `Benjamini-Hochberg controls the <em>false discovery rate</em>, not FWER — far more powerful in large m, at the cost of allowing some false positives among the rejections.`;
+      }
+    }
+  }
+  expl.innerHTML = html;
+
+  const fe = document.getElementById('filed-explainer');
+  if (state.publish) {
+    fe.innerHTML = `Of <span class="hi">${m}</span> experiments, only <span class="hi">${fpRaw}</span> appear in the journal. The other <span class="hi">${m - fpRaw}</span> — all consistent with a fair coin — sit invisibly. A meta-analyst seeing only the journal would conclude with great confidence that the coin is biased.`;
+  } else {
+    fe.innerHTML = `Toggle on to filter the grid down to only "publishable" experiments. The faded dots below represent the file drawer — null results that are never seen, even though the underlying truth is identical.`;
+  }
+}
+
+// ---------- run loop ----------
+// Pause the rAF when there's no work to do; restart on user action.
+let tickRaf = null;
+function tick(now) {
+  if (state.running || state.pending > 0) {
+    const interval = 1000 / state.speed;
+    if (now - state.lastTick > interval) {
+      state.lastTick = now;
+      runExperiment();
+      if (state.pending > 0) state.pending--;
+      updateReadouts();
+    }
+    drawGrid();
+    drawFiled();
+    tickRaf = requestAnimationFrame(tick);
+  } else {
+    tickRaf = null;
+  }
+}
+function kickTick() { if (!tickRaf) tickRaf = requestAnimationFrame(tick); }
+
+// ---------- bindings ----------
+function bindControls() {
+  const aEl = document.getElementById('a');
+  const nEl = document.getElementById('n');
+  const spEl = document.getElementById('sp');
+  // alpha slider maps 1..100 to range 0.001..0.10 with smooth feel
+  function sliderToAlpha(v) {
+    // log-ish scaling: at min v=1 -> 0.001, v=100 -> 0.10
+    const t = (v - 1) / 99;
+    const logMin = Math.log(0.001), logMax = Math.log(0.10);
+    return Math.exp(logMin + (logMax - logMin) * t);
+  }
+  function alphaToSlider(a) {
+    const logMin = Math.log(0.001), logMax = Math.log(0.10);
+    const t = (Math.log(a) - logMin) / (logMax - logMin);
+    return Math.round(1 + t * 99);
+  }
+  aEl.value = alphaToSlider(0.05);
+  state.alpha = sliderToAlpha(parseInt(aEl.value, 10));
+  document.getElementById('a-val').textContent = state.alpha.toFixed(3);
+
+  aEl.addEventListener('input', () => {
+    state.alpha = sliderToAlpha(parseInt(aEl.value, 10));
+    document.getElementById('a-val').textContent = state.alpha.toFixed(3);
+    updateReadouts(); drawGrid(); drawFiled(); drawPower();
+  });
+  nEl.addEventListener('input', () => {
+    state.n = parseInt(nEl.value, 10);
+    document.getElementById('n-val').textContent = String(state.n);
+    drawPower();
+  });
+  spEl.addEventListener('input', () => {
+    state.speed = parseInt(spEl.value, 10);
+    document.getElementById('sp-val').textContent = state.speed + '/s';
+  });
+
+  document.getElementById('run-1').addEventListener('click', () => {
+    runExperiment(); updateReadouts(); drawGrid(); drawFiled();
+  });
+  document.getElementById('run-10').addEventListener('click', () => {
+    state.pending += 10;
+    kickTick();
+  });
+  document.getElementById('run-100').addEventListener('click', (ev) => {
+    state.running = !state.running;
+    ev.currentTarget.classList.toggle('active', state.running);
+    ev.currentTarget.textContent = state.running ? 'Pause' : 'Run continuously';
+    if (state.running) kickTick();
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    state.experiments = []; state.running = false; state.pending = 0;
+    document.getElementById('run-100').classList.remove('active');
+    document.getElementById('run-100').textContent = 'Run continuously';
+    updateReadouts(); drawGrid(); drawFiled();
+  });
+
+  document.getElementById('pub-toggle').addEventListener('change', (e) => {
+    state.publish = e.target.checked;
+    updateReadouts(); drawGrid(); drawFiled();
+  });
+
+  document.querySelectorAll('input[name="corr"]').forEach(r => {
+    r.addEventListener('change', () => {
+      state.correction = r.value;
+      updateReadouts(); drawGrid();
+    });
+  });
+}
+
+window.addEventListener('resize', () => {
+  drawGrid(); drawFiled(); drawPower();
+});
+
+bindControls();
+updateReadouts();
+drawGrid();
+drawFiled();
+drawPower();
+// tick will start itself when state.running or state.pending changes via kickTick()
+
+// "Try this" presets — set parameters, dispatch input events, and run 100 experiments.
+const TRY_NOTES = {
+  run100: "About 5 of these false positives. Each one is a paper a researcher might publish.",
+  bonf: "Bonferroni divides α by the number of tests. Few false positives survive — but real effects also get harder to detect.",
+  pubBias: "Only the false positives get published. The file drawer hides 95% of the evidence.",
+};
+function alphaToSliderVal(a) {
+  const logMin = Math.log(0.001), logMax = Math.log(0.10);
+  const t = (Math.log(a) - logMin) / (logMax - logMin);
+  return Math.round(1 + t * 99);
+}
+function resetAndQueue100() {
+  // Reset the existing run
+  document.getElementById('reset').click();
+  // Set alpha to 0.05 and n to 100 via slider inputs
+  const aEl = document.getElementById('a');
+  const nEl = document.getElementById('n');
+  aEl.value = alphaToSliderVal(0.05);
+  aEl.dispatchEvent(new Event('input', { bubbles: true }));
+  nEl.value = 100;
+  nEl.dispatchEvent(new Event('input', { bubbles: true }));
+  // Push speed up so it finishes quickly
+  const spEl = document.getElementById('sp');
+  spEl.value = 60;
+  spEl.dispatchEvent(new Event('input', { bubbles: true }));
+  // Queue 100 experiments
+  state.pending += 100;
+  kickTick();
+}
+function applyTry(id) {
+  const note = document.getElementById('tryNote');
+  note.textContent = TRY_NOTES[id] || '';
+  note.classList.add('show');
+  if (id === 'run100') {
+    // Use raw correction
+    document.querySelector('input[name="corr"][value="none"]').checked = true;
+    document.querySelector('input[name="corr"][value="none"]').dispatchEvent(new Event('change', { bubbles: true }));
+    // Ensure publish bias is off
+    const pub = document.getElementById('pub-toggle');
+    if (pub.checked) { pub.checked = false; pub.dispatchEvent(new Event('change', { bubbles: true })); }
+    resetAndQueue100();
+  } else if (id === 'bonf') {
+    const bonf = document.querySelector('input[name="corr"][value="bonf"]');
+    bonf.checked = true;
+    bonf.dispatchEvent(new Event('change', { bubbles: true }));
+    const pub = document.getElementById('pub-toggle');
+    if (pub.checked) { pub.checked = false; pub.dispatchEvent(new Event('change', { bubbles: true })); }
+    resetAndQueue100();
+  } else if (id === 'pubBias') {
+    document.querySelector('input[name="corr"][value="none"]').checked = true;
+    document.querySelector('input[name="corr"][value="none"]').dispatchEvent(new Event('change', { bubbles: true }));
+    const pub = document.getElementById('pub-toggle');
+    if (!pub.checked) { pub.checked = true; pub.dispatchEvent(new Event('change', { bubbles: true })); }
+    resetAndQueue100();
+  }
+}
+document.querySelectorAll('.try-panel [data-try]').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const btn = document.getElementById('kbdHelpBtn');
+  if (!modal || !btn) return;
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  btn.addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  function toggleCorr(value) {
+    const current = state.correction;
+    const target = (current === value) ? 'none' : value;
+    const radio = document.querySelector(`input[name="corr"][value="${target}"]`);
+    if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true })); }
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); document.getElementById('run-1').click(); }
+    else if (k === 'r') { document.getElementById('run-10').click(); }
+    else if (k === 'c') { document.getElementById('run-100').click(); }
+    else if (k === 'x') { document.getElementById('reset').click(); }
+    else if (k === 'b') { toggleCorr('bonf'); }
+    else if (k === 'h') { toggleCorr('holm'); }
+    else if (k === 'f') { toggleCorr('bh'); }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="bayes_visualiser.html">
+      <div class="related-title">Bayes' Theorem</div>
+      <div class="related-desc">Why a rare disease + accurate test still means most positives are false</div>
+    </a>
+    <a class="related-card" href="regression_mean.html">
+      <div class="related-title">Regression to the Mean</div>
+      <div class="related-desc">Why coaching the bottom looks like it works</div>
+    </a>
+    <a class="related-card" href="signal_detection.html">
+      <div class="related-title">Signal Detection</div>
+      <div class="related-desc">Sensitivity (d′) vs criterion (β), with full ROC</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

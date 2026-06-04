@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lorenz Curve — Income Inequality & Gini</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; font-size: 13px; min-height: 100vh; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.topbar { display: flex; align-items: center; gap: 24px; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+
+/* Keyboard help indicator + modal */
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+
+main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.panel-title { font-size: 14px; font-weight: 600; margin: 0 0 4px; color: var(--text); }
+.panel-sub { font-size: 11px; color: var(--text-dim); margin: 0 0 12px; }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; margin-top: 14px; }
+.section-label:first-of-type { margin-top: 0; }
+
+canvas { display: block; width: 100%; }
+#lorenzCanvas { height: 520px; cursor: crosshair; }
+#lorenzCanvas.over-point { cursor: grab; }
+#lorenzCanvas.dragging { cursor: grabbing; }
+#quintCanvas { height: 220px; }
+
+.hero-gini {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.hero-gini .num-big {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  transition: color 300ms ease;
+}
+.hero-gini .label { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+.gini-low { color: var(--green); }
+.gini-mid { color: var(--amber); }
+.gini-high { color: var(--rose); }
+
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; color: var(--text); font-size: 12px; cursor: pointer; transition: all 120ms ease; font-family: inherit; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.seg button:hover:not(.active) { background: var(--bg-elev-2); }
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.preset-btn {
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.preset-btn:hover { background: var(--bg-elev-2); border-color: var(--cyan); transform: translateY(-1px); }
+.preset-btn:active { transform: translateY(0); }
+.preset-btn.active { border-color: var(--cyan); background: rgba(34,211,238,0.06); }
+.preset-btn .country { color: var(--text); }
+.preset-btn .gini-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); }
+.preset-btn.active .gini-num { color: var(--cyan); }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readout .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+.label[title], .section-label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .value { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--text); }
+.readout .value.cyan { color: var(--cyan); }
+.readout .value.amber { color: var(--amber); }
+.readout .value.green { color: var(--green); }
+.readout .value.rose { color: var(--rose); }
+
+.explainer {
+  background: var(--bg-elev-1);
+  border-left: 2px solid var(--cyan);
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 14px;
+  line-height: 1.55;
+}
+.explainer strong { color: var(--text); font-weight: 600; }
+
+button {
+  font-family: inherit; font-size: 13px;
+  color: var(--text);
+  background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+
+.canvas-title { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+.canvas-title strong { color: var(--text); }
+.legend { display: inline-flex; gap: 14px; font-size: 11px; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; color: var(--text-dim); }
+.legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.legend .dot.cyan { background: var(--cyan); }
+.legend .dot.dash { width: 12px; height: 2px; border-radius: 0; background: var(--text-dim); }
+
+.help-line { font-size: 11px; color: var(--text-faint); margin-top: 8px; }
+
+.insight-banner {
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  border-left: 2px solid var(--cyan);
+  padding: 6px 0 6px 10px;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+.try-panel-section {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.try-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Income Inequality &amp; the Gini Coefficient</h1>
+    <p class="sub">Drag the control points on the Lorenz curve or load real-country presets</p>
+    <p class="insight-banner">The Lorenz curve bows away from equality. The larger the bow, the bigger the Gini — and the more income concentrated at the top.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1-9</span><span>Jump to country preset 1-9</span>
+      <span class="kbd-key">R</span><span>Reset to default</span>
+      <span class="kbd-key">↑ / ↓</span><span>Move selected control point ±1%</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help / deselect</span>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="layout">
+    <div>
+      <div class="panel" style="margin-bottom: 24px;">
+        <div class="canvas-title">
+          <span><strong>Lorenz Curve</strong> — cumulative income share vs cumulative population</span>
+          <span class="legend">
+            <span><span class="dot cyan"></span>Lorenz curve</span>
+            <span><span class="dot dash"></span>perfect equality</span>
+          </span>
+        </div>
+        <canvas id="lorenzCanvas"></canvas>
+        <div class="help-line">Drag any of the 5 interior control points to reshape the curve. The endpoints at (0,0) and (1,1) are fixed.</div>
+      </div>
+
+      <div class="panel">
+        <div class="canvas-title">
+          <span><strong>Income share by quintile</strong></span>
+          <span class="legend"><span>Bottom 20% — Top 20%</span></span>
+        </div>
+        <canvas id="quintCanvas"></canvas>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="section-label" title="Gini: a single-number summary of inequality. 0 = perfect equality; 1 = one person has everything.">Gini coefficient</div>
+        <div class="hero-gini">
+          <span class="num-big" id="giniBig">0.000</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-faint); margin-bottom: 4px;">
+          G = 1 − 2∫₀¹ L(x) dx
+        </div>
+        <div class="readouts" style="margin-top: 14px;">
+          <div class="readout">
+            <span class="label">Top 10% holds</span>
+            <span class="value mono" id="top10">—</span>
+          </div>
+          <div class="readout">
+            <span class="label">Bottom 50% holds</span>
+            <span class="value mono" id="bottom50">—</span>
+          </div>
+          <div class="readout">
+            <span class="label">Bottom 20% holds</span>
+            <span class="value mono" id="bottom20">—</span>
+          </div>
+          <div class="readout">
+            <span class="label" title="Palma ratio: income share of the top 10% divided by the income share of the bottom 40%.">Palma ratio</span>
+            <span class="value mono" id="palma">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top: 24px;">
+        <div class="section-label">Country presets</div>
+        <div class="preset-grid" id="presetGrid"></div>
+      </div>
+
+      <div class="panel" style="margin-top: 24px;">
+        <div class="section-label">Context</div>
+        <div class="explainer" id="explainer">Drag a point or pick a country to begin.</div>
+      </div>
+
+      <div class="try-panel-section" style="margin-top: 24px;">
+        <div class="try-label">Try this</div>
+        <div class="try-buttons">
+          <button data-try="equal">Perfect equality</button>
+          <button data-try="usa">USA today</button>
+          <button data-try="za">South Africa</button>
+        </div>
+        <div class="try-note" id="tryNote"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+const lorenzCanvas = document.getElementById('lorenzCanvas');
+const quintCanvas = document.getElementById('quintCanvas');
+
+// ---------- Control points ----------
+// 7 points: (0,0), 5 draggables at x = 1/6,2/6,3/6,4/6,5/6, then (1,1).
+// We'll store as array of {x,y}.
+function makePoints(gini) {
+  // Synthesize a Lorenz curve approximating target Gini.
+  // Use parametric form L(x) = x^(p) with p chosen by binary search:
+  // for L(x)=x^p, G = (p-1)/(p+1). So p = (1+G)/(1-G).
+  const G = Math.max(0, Math.min(0.99, gini));
+  const p = (1 + G) / (1 - G);
+  const xs = [0, 1/6, 2/6, 3/6, 4/6, 5/6, 1];
+  return xs.map(x => ({ x, y: Math.pow(x, p) }));
+}
+
+let points = makePoints(0.30);
+let dragIdx = -1;
+let hoverIdx = -1;
+let selectedIdx = -1;
+
+// Presets
+const presets = [
+  { name: 'Norway', gini: 0.26 },
+  { name: 'Germany', gini: 0.31 },
+  { name: 'UK', gini: 0.35 },
+  { name: 'China', gini: 0.38 },
+  { name: 'USA', gini: 0.41 },
+  { name: 'Mexico', gini: 0.45 },
+  { name: 'Brazil', gini: 0.53 },
+  { name: 'South Africa', gini: 0.63 },
+  { name: 'Perfect equality', gini: 0.00 },
+  { name: 'Perfect inequality', gini: 1.00 }
+];
+
+// ---------- Catmull-Rom spline ----------
+function catmullRomPath(pts, segs = 30) {
+  // Catmull-Rom with reflected virtual endpoints so tangents at (0,0) and (1,1)
+  // are smooth. Then enforce Lorenz-curve constraints: 0 ≤ y ≤ x, monotone non-decreasing.
+  const first = pts[0], second = pts[1];
+  const last = pts[pts.length - 1], penult = pts[pts.length - 2];
+  // reflect: pre = first + (first - second), post = last + (last - penult)
+  const pre = { x: 2 * first.x - second.x, y: 2 * first.y - second.y };
+  const post = { x: 2 * last.x - penult.x, y: 2 * last.y - penult.y };
+  const P = [pre, ...pts, post];
+  const out = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = P[i], p1 = P[i + 1], p2 = P[i + 2], p3 = P[i + 3];
+    const segCount = (i === pts.length - 2) ? segs : segs; // include endpoint only on last segment
+    for (let s = 0; s < segCount; s++) {
+      const t = s / segs;
+      const t2 = t * t, t3 = t2 * t;
+      const x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * t +
+        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+      const y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * t +
+        (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+        (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+      out.push({ x, y });
+    }
+  }
+  // Always include the true endpoint
+  out.push({ x: last.x, y: last.y });
+  // monotonicity & bounds: a Lorenz curve must be non-decreasing in x and y, and below y=x.
+  let prevX = -Infinity;
+  for (let i = 0; i < out.length; i++) {
+    // ensure x is non-decreasing too (the spline can wiggle slightly in x near endpoints)
+    if (out[i].x < prevX) out[i].x = prevX;
+    prevX = out[i].x;
+    out[i].x = Math.max(0, Math.min(1, out[i].x));
+    out[i].y = Math.max(0, Math.min(out[i].x, out[i].y));
+    if (i > 0 && out[i].y < out[i - 1].y) out[i].y = out[i - 1].y;
+  }
+  return out;
+}
+
+// ---------- Gini calculation ----------
+function computeGini(curvePts) {
+  // Trapezoid rule for ∫L(x)dx, G = 1 - 2*area
+  let area = 0;
+  for (let i = 1; i < curvePts.length; i++) {
+    const x0 = curvePts[i - 1].x, x1 = curvePts[i].x;
+    const y0 = curvePts[i - 1].y, y1 = curvePts[i].y;
+    area += (x1 - x0) * (y0 + y1) / 2;
+  }
+  return Math.max(0, Math.min(1, 1 - 2 * area));
+}
+
+// L(x) from curve via linear interp
+function L(curve, x) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  // binary search
+  let lo = 0, hi = curve.length - 1;
+  while (lo < hi - 1) {
+    const mid = (lo + hi) >> 1;
+    if (curve[mid].x < x) lo = mid; else hi = mid;
+  }
+  const a = curve[lo], b = curve[hi];
+  const dx = b.x - a.x;
+  if (dx <= 1e-12) return a.y; // duplicate-x guard
+  const t = (x - a.x) / dx;
+  return a.y + t * (b.y - a.y);
+}
+
+function giniColor(g) {
+  if (g < 0.30) return getComputedStyle(document.documentElement).getPropertyValue('--green').trim() || '#34d399';
+  if (g < 0.45) return getComputedStyle(document.documentElement).getPropertyValue('--amber').trim() || '#f59e0b';
+  return getComputedStyle(document.documentElement).getPropertyValue('--rose').trim() || '#f43f5e';
+}
+
+// ---------- Render Lorenz ----------
+function drawLorenz() {
+  const ctx = fitCanvas(lorenzCanvas);
+  const r = lorenzCanvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+  ctx.clearRect(0, 0, W, H);
+  const padL = 56, padR = 16, padT = 16, padB = 40;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  // grid
+  ctx.strokeStyle = 'rgba(26,34,48,0.9)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const x = padL + (i / 10) * pw;
+    const y = padT + (i / 10) * ph;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+  }
+
+  // Map functions
+  const tx = (x) => padL + x * pw;
+  const ty = (y) => padT + (1 - y) * ph;
+
+  // Compute curve
+  const curve = catmullRomPath(points, 60);
+
+  // Inequality area (between equality line and Lorenz curve)
+  const g = computeGini(curve);
+  const col = giniColor(g);
+  // Gradient that morphs based on Gini: green<0.3, amber 0.3-0.45, rose>0.45
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + ph);
+  let c1, c2, c3;
+  // Pick stops based on Gini
+  if (g < 0.30) {
+    c1 = 'rgba(52,211,153,0.30)';
+    c2 = 'rgba(52,211,153,0.15)';
+    c3 = 'rgba(52,211,153,0.02)';
+  } else if (g < 0.45) {
+    c1 = 'rgba(245,158,11,0.30)';
+    c2 = 'rgba(245,158,11,0.18)';
+    c3 = 'rgba(245,158,11,0.03)';
+  } else {
+    c1 = 'rgba(244,63,94,0.32)';
+    c2 = 'rgba(244,63,94,0.18)';
+    c3 = 'rgba(244,63,94,0.03)';
+  }
+  grad.addColorStop(0, c1);
+  grad.addColorStop(0.5, c2);
+  grad.addColorStop(1, c3);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(tx(0), ty(0));
+  for (let i = 0; i < curve.length; i++) {
+    ctx.lineTo(tx(curve[i].x), ty(curve[i].y));
+  }
+  // close along equality line back to origin
+  for (let i = curve.length - 1; i >= 0; i--) {
+    ctx.lineTo(tx(curve[i].x), ty(curve[i].x));
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // Equality line
+  ctx.strokeStyle = 'rgba(151,161,176,0.55)';
+  ctx.setLineDash([6, 5]);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(tx(0), ty(0));
+  ctx.lineTo(tx(1), ty(1));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Annotation: "Gini area" label inside the inequality region (only if G > ~0.05)
+  if (g > 0.05) {
+    // Place label near the widest gap (typically around x = 0.7)
+    const xLabel = 0.7;
+    const yMidUpper = xLabel;             // equality line
+    const yMidLower = L(curve, xLabel);   // Lorenz value at that x
+    const yMid = (yMidUpper + yMidLower) / 2;
+    if (yMidUpper - yMidLower > 0.04) {
+      const X = tx(xLabel), Y = ty(yMid);
+      ctx.fillStyle = col;
+      ctx.font = '600 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Gini area', X, Y - 4);
+      ctx.fillStyle = 'rgba(230,237,243,0.75)';
+      ctx.font = '500 10px "JetBrains Mono", monospace';
+      ctx.fillText(`G = ${g.toFixed(3)}`, X, Y + 10);
+    }
+  }
+
+  // Lorenz curve
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i < curve.length; i++) {
+    const X = tx(curve[i].x), Y = ty(curve[i].y);
+    if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+  }
+  ctx.stroke();
+
+  // Soft glow around curve
+  ctx.strokeStyle = 'rgba(34,211,238,0.18)';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // Control points
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const X = tx(p.x), Y = ty(p.y);
+    const fixed = (i === 0 || i === points.length - 1);
+    const isHover = hoverIdx === i;
+    const isDrag = dragIdx === i;
+    ctx.beginPath();
+    ctx.arc(X, Y, fixed ? 4 : (isDrag ? 8 : (isHover ? 7 : 5.5)), 0, Math.PI * 2);
+    ctx.fillStyle = fixed ? '#5b6573' : '#22d3ee';
+    if (isHover || isDrag) {
+      ctx.shadowColor = 'rgba(34,211,238,0.7)';
+      ctx.shadowBlur = 12;
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    if (!fixed) {
+      ctx.strokeStyle = '#0a0e14';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
+  // axes
+  ctx.strokeStyle = 'rgba(95,109,127,0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
+
+  // labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 5; i++) {
+    const v = i / 5;
+    ctx.fillText((v * 100).toFixed(0) + '%', tx(v), padT + ph + 16);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const v = i / 5;
+    ctx.fillText((v * 100).toFixed(0) + '%', padL - 8, ty(v) + 4);
+  }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.fillText('Cumulative share of population (poorest → richest)', padL + pw / 2, padT + ph + 32);
+  ctx.save();
+  ctx.translate(18, padT + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Cumulative share of income', 0, 0);
+  ctx.restore();
+}
+
+// ---------- Render quintile bars ----------
+function drawQuintiles(curve) {
+  const ctx = fitCanvas(quintCanvas);
+  const r = quintCanvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+  ctx.clearRect(0, 0, W, H);
+  const padL = 50, padR = 16, padT = 16, padB = 36;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  // 5 quintiles
+  const labels = ['Bottom 20%', '20–40%', '40–60%', '60–80%', 'Top 20%'];
+  const shares = [];
+  for (let i = 0; i < 5; i++) {
+    const a = i / 5, b = (i + 1) / 5;
+    shares.push(Math.max(0, L(curve, b) - L(curve, a)));
+  }
+  const maxShare = Math.max(0.45, ...shares);
+
+  // grid
+  ctx.strokeStyle = 'rgba(26,34,48,0.9)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+  }
+
+  // bars
+  const bw = pw / 5;
+  for (let i = 0; i < 5; i++) {
+    const s = shares[i];
+    const x = padL + i * bw + bw * 0.15;
+    const w = bw * 0.7;
+    const h = (s / maxShare) * ph;
+    const y = padT + ph - h;
+    // color: bottom quintiles cyan, top quintile amber to highlight
+    let color1 = 'rgba(34,211,238,0.85)', color2 = 'rgba(34,211,238,0.35)';
+    if (i === 4) {
+      color1 = 'rgba(245,158,11,0.85)';
+      color2 = 'rgba(245,158,11,0.35)';
+    } else if (i === 0) {
+      color1 = 'rgba(52,211,153,0.85)';
+      color2 = 'rgba(52,211,153,0.35)';
+    }
+    const grad = ctx.createLinearGradient(0, y, 0, y + h);
+    grad.addColorStop(0, color1); grad.addColorStop(1, color2);
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, w, h);
+    // label on top
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '500 12px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText((s * 100).toFixed(1) + '%', x + w / 2, y - 6);
+    // category label
+    ctx.fillStyle = '#97a1b0';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.fillText(labels[i], x + w / 2, padT + ph + 16);
+  }
+
+  // y-axis ticks
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = (i / 4) * maxShare;
+    ctx.fillText((v * 100).toFixed(0) + '%', padL - 6, padT + ph - (i / 4) * ph + 3);
+  }
+
+  // axes
+  ctx.strokeStyle = 'rgba(95,109,127,0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
+}
+
+// ---------- Stats / readouts ----------
+function updateReadouts() {
+  const curve = catmullRomPath(points, 100);
+  const g = computeGini(curve);
+  const top10 = 1 - L(curve, 0.9);
+  const bottom50 = L(curve, 0.5);
+  const bottom20 = L(curve, 0.2);
+  const bottom40 = L(curve, 0.4);
+  const palma = bottom40 > 0.0001 ? top10 / bottom40 : Infinity;
+
+  const giniEl = document.getElementById('giniBig');
+  giniEl.textContent = g.toFixed(3);
+  giniEl.classList.remove('gini-low', 'gini-mid', 'gini-high');
+  if (g < 0.30) giniEl.classList.add('gini-low');
+  else if (g < 0.45) giniEl.classList.add('gini-mid');
+  else giniEl.classList.add('gini-high');
+
+  document.getElementById('top10').textContent = (top10 * 100).toFixed(1) + '%';
+  document.getElementById('bottom50').textContent = (bottom50 * 100).toFixed(1) + '%';
+  document.getElementById('bottom20').textContent = (bottom20 * 100).toFixed(1) + '%';
+  document.getElementById('palma').textContent = isFinite(palma) ? palma.toFixed(2) : '∞';
+
+  drawQuintiles(curve);
+  updateExplainer(g, top10, bottom50, palma);
+}
+
+function nearest(arr, val) {
+  let best = arr[0], bd = Math.abs(arr[0].gini - val);
+  for (const p of arr) {
+    const d = Math.abs(p.gini - val);
+    if (d < bd) { bd = d; best = p; }
+  }
+  return best;
+}
+
+function updateExplainer(g, top10, bottom50, palma) {
+  const el = document.getElementById('explainer');
+  // Find closest real-economy preset
+  const ref = nearest(presets.filter(p => p.gini > 0 && p.gini < 1), g);
+  const top10Pct = (top10 * 100).toFixed(1);
+  const bot50Pct = (bottom50 * 100).toFixed(1);
+  let context;
+  if (g < 0.05) {
+    context = `<strong>Near perfect equality.</strong> Every quintile holds ≈20% of income — the Lorenz curve traces the diagonal. This is a theoretical limit; no real economy achieves it.`;
+  } else if (g > 0.95) {
+    context = `<strong>Near perfect inequality.</strong> Income concentrates in one individual — the Lorenz curve hugs the x-axis then jumps to 1. A theoretical limit.`;
+  } else if (g < 0.30) {
+    context = `<strong>Low inequality</strong> — close to <strong>${ref.name}</strong> (G ≈ ${ref.gini.toFixed(2)}). The bottom 50% holds <strong>${bot50Pct}%</strong> and the top 10% holds <strong>${top10Pct}%</strong>. Strong redistribution is at work.`;
+  } else if (g < 0.45) {
+    context = `<strong>Moderate inequality</strong> — close to <strong>${ref.name}</strong> (G ≈ ${ref.gini.toFixed(2)}). The top 10% (${top10Pct}%) holds more than the bottom 50% (${bot50Pct}%). Palma ratio ≈ <strong>${isFinite(palma) ? palma.toFixed(2) : '∞'}</strong>.`;
+  } else {
+    context = `<strong>High inequality</strong> — close to <strong>${ref.name}</strong> (G ≈ ${ref.gini.toFixed(2)}). The top 10% captures <strong>${top10Pct}%</strong> of income while the bottom 50% gets only <strong>${bot50Pct}%</strong>. Palma ratio ≈ <strong>${isFinite(palma) ? palma.toFixed(2) : '∞'}</strong>.`;
+  }
+  el.innerHTML = context;
+}
+
+// ---------- Animation for preset transitions ----------
+let animRAF = null;
+function animateToPoints(target, duration = 600) {
+  if (animRAF) cancelAnimationFrame(animRAF);
+  const start = points.map(p => ({ x: p.x, y: p.y }));
+  const t0 = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - t0) / duration);
+    const e = 1 - Math.pow(1 - t, 3); // easeOutCubic
+    for (let i = 0; i < points.length; i++) {
+      points[i].x = start[i].x + (target[i].x - start[i].x) * e;
+      points[i].y = start[i].y + (target[i].y - start[i].y) * e;
+    }
+    drawLorenz();
+    updateReadouts();
+    if (t < 1) animRAF = requestAnimationFrame(step);
+    else animRAF = null;
+  }
+  animRAF = requestAnimationFrame(step);
+}
+
+// ---------- Hit testing ----------
+function getHit(mx, my) {
+  const r = lorenzCanvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+  const padL = 56, padR = 16, padT = 16, padB = 40;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+  for (let i = 1; i < points.length - 1; i++) {
+    const X = padL + points[i].x * pw;
+    const Y = padT + (1 - points[i].y) * ph;
+    if ((mx - X) ** 2 + (my - Y) ** 2 < 121) return i;
+  }
+  return -1;
+}
+
+function canvasCoords(e) {
+  const r = lorenzCanvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top, r };
+}
+
+lorenzCanvas.addEventListener('mousemove', (e) => {
+  const { x, y } = canvasCoords(e);
+  if (dragIdx >= 0) {
+    const r = lorenzCanvas.getBoundingClientRect();
+    const padL = 56, padR = 16, padT = 16, padB = 40;
+    const pw = r.width - padL - padR;
+    const ph = r.height - padT - padB;
+    let nx = (x - padL) / pw;
+    let ny = 1 - (y - padT) / ph;
+    // clamp x within neighbors (preserve monotonic x)
+    const left = points[dragIdx - 1].x + 0.005;
+    const right = points[dragIdx + 1].x - 0.005;
+    nx = Math.max(left, Math.min(right, nx));
+    // clamp y: monotonic non-decreasing, and ≤ x
+    const yMin = points[dragIdx - 1].y;
+    const yMax = Math.min(points[dragIdx + 1].y, nx);
+    ny = Math.max(yMin, Math.min(yMax, ny));
+    points[dragIdx].x = nx;
+    points[dragIdx].y = ny;
+    // Clear preset selection on user drag
+    document.querySelectorAll('.preset-btn.active').forEach(b => b.classList.remove('active'));
+    drawLorenz();
+    updateReadouts();
+  } else {
+    const h = getHit(x, y);
+    if (h !== hoverIdx) {
+      hoverIdx = h;
+      // toggle cursor: grab when over a draggable interior point
+      lorenzCanvas.classList.toggle('over-point', h > 0 && h < points.length - 1);
+      drawLorenz();
+    }
+  }
+});
+
+lorenzCanvas.addEventListener('mousedown', (e) => {
+  const { x, y } = canvasCoords(e);
+  const h = getHit(x, y);
+  if (h > 0 && h < points.length - 1) {
+    dragIdx = h;
+    selectedIdx = h;
+    lorenzCanvas.classList.add('dragging');
+  } else {
+    selectedIdx = -1;
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  if (dragIdx >= 0) {
+    dragIdx = -1;
+    lorenzCanvas.classList.remove('dragging');
+    drawLorenz();
+  }
+});
+
+// ---------- Preset buttons ----------
+function buildPresets() {
+  const grid = document.getElementById('presetGrid');
+  grid.innerHTML = '';
+  presets.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.className = 'preset-btn';
+    b.innerHTML = `<span class="country">${p.name}</span><span class="gini-num">${p.gini.toFixed(2)}</span>`;
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.preset-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      animateToPoints(makePoints(p.gini), 600);
+    });
+    grid.appendChild(b);
+  });
+}
+
+// ---------- Init ----------
+window.addEventListener('resize', () => { drawLorenz(); updateReadouts(); });
+
+// ---------- Try this experiments ----------
+function applyTry(name) {
+  const presetMap = {
+    equal: { name: 'Perfect equality', note: 'The Lorenz curve becomes the 45° line. <strong>Gini = 0.</strong>' },
+    usa:   { name: 'USA',              note: 'The top 10% hold about <strong>30%</strong> of income; the bottom half hold around <strong>16%</strong>.' },
+    za:    { name: 'South Africa',     note: 'One of the most unequal large economies — <strong>Gini = 0.63</strong>, top 10% hold around half of all income.' }
+  };
+  const cfg = presetMap[name];
+  if (!cfg) return;
+  // Find the matching preset button and click it (re-uses existing animation logic)
+  const btns = document.querySelectorAll('#presetGrid .preset-btn');
+  const idx = presets.findIndex(p => p.name === cfg.name);
+  if (idx >= 0 && btns[idx]) {
+    btns[idx].click();
+  }
+  document.getElementById('tryNote').innerHTML = cfg.note;
+}
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+(function init() {
+  buildPresets();
+  // Default to USA-ish to give an interesting starting state
+  points = makePoints(0.41);
+  document.querySelectorAll('.preset-btn').forEach((b, i) => { if (presets[i].name === 'USA') b.classList.add('active'); });
+  drawLorenz();
+  updateReadouts();
+})();
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  document.getElementById('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  function nudgeSelected(delta) {
+    if (selectedIdx <= 0 || selectedIdx >= points.length - 1) return;
+    const p = points[selectedIdx];
+    const yMin = points[selectedIdx - 1].y;
+    const yMax = Math.min(points[selectedIdx + 1].y, p.x);
+    p.y = Math.max(yMin, Math.min(yMax, p.y + delta));
+    document.querySelectorAll('.preset-btn.active').forEach(b => b.classList.remove('active'));
+    drawLorenz();
+    updateReadouts();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); selectedIdx = -1; drawLorenz(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const btns = document.querySelectorAll('#presetGrid .preset-btn');
+    if (/^[1-9]$/.test(e.key)) {
+      const idx = parseInt(e.key, 10) - 1;
+      if (btns[idx]) btns[idx].click();
+    } else if (e.key.toLowerCase() === 'r') {
+      // reset to USA default
+      const usaIdx = presets.findIndex(p => p.name === 'USA');
+      if (usaIdx >= 0 && btns[usaIdx]) btns[usaIdx].click();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault(); nudgeSelected(0.01);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault(); nudgeSelected(-0.01);
+    }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="hotelling.html">
+      <div class="related-title">Hotelling's Law</div>
+      <div class="related-desc">Why competitors converge to the median voter</div>
+    </a>
+    <a class="related-card" href="supply_demand.html">
+      <div class="related-title">Supply & Demand</div>
+      <div class="related-desc">Curves, surpluses, taxes, ceilings, and deadweight loss</div>
+    </a>
+    <a class="related-card" href="malthus.html">
+      <div class="related-title">Malthusian Dynamics</div>
+      <div class="related-desc">Population vs food, and the Industrial Revolution</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

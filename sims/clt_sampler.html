@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central Limit Theorem — Sampler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; font-size: 13px; min-height: 100vh; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.topbar { display: flex; align-items: center; gap: 24px; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+
+/* Keyboard help indicator + modal */
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.controls-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.panel-title { font-size: 14px; font-weight: 600; margin: 0 0 4px; color: var(--text); }
+.panel-sub { font-size: 11px; color: var(--text-dim); margin: 0 0 12px; letter-spacing: 0.03em; }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+
+canvas { display: block; width: 100%; height: 320px; }
+canvas.editable { cursor: crosshair; }
+#popCanvas.custom-mode { cursor: ns-resize; }
+
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; color: var(--text); font-size: 12px; cursor: pointer; transition: all 120ms ease; font-family: inherit; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.seg button:hover:not(.active) { background: var(--bg-elev-2); }
+
+button {
+  font-family: inherit; font-size: 13px;
+  color: var(--text);
+  background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; border-radius: 999px;
+  background: var(--grid); outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(34,211,238,0.12);
+  cursor: pointer; border: none;
+  transition: box-shadow 120ms ease;
+}
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--cyan); cursor: pointer; border: none;
+}
+
+.control-group { margin-bottom: 14px; }
+.control-group:last-child { margin-bottom: 0; }
+.control-group .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.control-group label { font-size: 12px; color: var(--text-dim); }
+.control-group .val { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--cyan); font-weight: 500; }
+.snap-ticks { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-faint); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.readouts.three { grid-template-columns: 1fr 1fr 1fr; }
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readout .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+.label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .value { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--text); }
+.readout .value.cyan { color: var(--cyan); }
+.readout .value.amber { color: var(--amber); }
+.readout .value.green { color: var(--green); }
+.readout .value.rose { color: var(--rose); }
+
+.explainer {
+  background: var(--bg-elev-1);
+  border-left: 2px solid var(--cyan);
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 14px;
+  line-height: 1.55;
+}
+.explainer strong { color: var(--text); font-weight: 600; }
+.explainer .badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  margin-left: 6px;
+}
+.badge.yes { background: var(--green-soft); color: var(--green); }
+.badge.no { background: var(--rose-soft); color: var(--rose); }
+
+.canvas-wrap { position: relative; }
+.canvas-title { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+.legend { display: inline-flex; gap: 14px; font-size: 11px; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; color: var(--text-dim); }
+.legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.legend .dot.cyan { background: var(--cyan); }
+.legend .dot.amber { background: var(--amber); }
+
+.speed-seg button { font-size: 11px; padding: 5px 10px; }
+
+.insight-banner {
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  border-left: 2px solid var(--cyan);
+  padding: 6px 0 6px 10px;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+.try-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.try-panel .try-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.try-panel .try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-panel .try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-panel .try-buttons button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.try-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+  .controls-row { grid-template-columns: 1fr; }
+}
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Central Limit Theorem</h1>
+    <p class="sub">Watch sample means converge to a normal distribution regardless of the population shape</p>
+    <p class="insight-banner">No matter how weird the population, the distribution of sample means becomes a normal — and it gets narrower as n grows.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Toggle run continuously</span>
+      <span class="kbd-key">1</span><span>Draw 1 sample</span>
+      <span class="kbd-key">0</span><span>Draw 10 samples</span>
+      <span class="kbd-key">9</span><span>Draw 100 samples</span>
+      <span class="kbd-key">R</span><span>Reset</span>
+      <span class="kbd-key">U</span><span>Uniform population</span>
+      <span class="kbd-key">E</span><span>Exponential population</span>
+      <span class="kbd-key">B</span><span>Bimodal population</span>
+      <span class="kbd-key">S</span><span>Skewed population</span>
+      <span class="kbd-key">C</span><span>Custom population</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="grid">
+    <div class="panel">
+      <div class="canvas-title">
+        <span><strong style="color:var(--text)">Population Distribution</strong> &nbsp; <span style="color:var(--text-faint)">(drag bars in Custom mode)</span></span>
+        <span class="legend"><span><span class="dot cyan"></span>density</span></span>
+      </div>
+      <div class="canvas-wrap"><canvas id="popCanvas"></canvas></div>
+      <div style="margin-top: 12px;">
+        <div class="section-label">Population shape</div>
+        <div class="seg" id="shapeSeg">
+          <button data-shape="uniform" class="active">Uniform</button>
+          <button data-shape="exponential">Exponential</button>
+          <button data-shape="bimodal">Bimodal</button>
+          <button data-shape="skewed">Right-skewed</button>
+          <button data-shape="custom">Custom</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="canvas-title">
+        <span><strong style="color:var(--text)">Sampling Distribution of x̄</strong> &nbsp; <span style="color:var(--text-faint)">(<span id="sampleCount" class="mono">0</span> draws)</span></span>
+        <span class="legend">
+          <span><span class="dot cyan"></span>samples</span>
+          <span><span class="dot amber"></span>theoretical N(μ, σ²/n)</span>
+        </span>
+      </div>
+      <div class="canvas-wrap"><canvas id="sampCanvas"></canvas></div>
+      <div class="readouts three" style="margin-top: 12px;">
+        <div class="readout">
+          <span class="label">Pop. μ</span>
+          <span class="value mono" id="popMu">—</span>
+        </div>
+        <div class="readout">
+          <span class="label">Pop. σ</span>
+          <span class="value mono" id="popSigma">—</span>
+        </div>
+        <div class="readout">
+          <span class="label">Latest x̄</span>
+          <span class="value mono cyan" id="latestMean">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-row">
+    <div class="panel">
+      <div class="panel-title">Sampling controls</div>
+      <div class="control-group">
+        <div class="row"><label>Sample size n</label><span class="val mono" id="nVal">10</span></div>
+        <input type="range" min="1" max="200" step="1" value="10" id="nSlider">
+        <div class="snap-ticks"><span>1</span><span>2</span><span>5</span><span>10</span><span>30</span><span>100</span><span>200</span></div>
+      </div>
+      <div class="control-group">
+        <div class="row"><label>Drawing speed</label></div>
+        <div class="seg speed-seg" id="speedSeg">
+          <button data-speed="slow">Slow</button>
+          <button data-speed="medium" class="active">Medium</button>
+          <button data-speed="fast">Fast</button>
+          <button data-speed="instant">Instant</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="row"><label>Max samples</label><span class="val mono" id="maxVal">10,000</span></div>
+        <input type="range" min="100" max="10000" step="100" value="10000" id="maxSlider">
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Actions</div>
+      <div class="button-row">
+        <button class="primary" id="draw1">Draw 1</button>
+        <button class="primary" id="draw10">Draw 10</button>
+        <button class="primary" id="draw100">Draw 100</button>
+      </div>
+      <div class="button-row">
+        <button class="primary" id="runToggle">Run continuously</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <div class="readouts" style="margin-top: 14px;">
+        <div class="readout">
+          <span class="label" title="Standard error: the expected standard deviation of the sample mean, equal to the population standard deviation divided by √n.">Theoretical SE = σ/√n</span>
+          <span class="value mono amber" id="theoSE">—</span>
+        </div>
+        <div class="readout">
+          <span class="label" title="The standard deviation actually observed across your collected sample means.">Observed SE</span>
+          <span class="value mono cyan" id="obsSE">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Normality check</div>
+      <div class="readouts">
+        <div class="readout">
+          <span class="label" title="Kolmogorov–Smirnov test p-value: probability of seeing this much deviation from a normal distribution by chance. Higher means closer to normal.">KS p-value</span>
+          <span class="value mono" id="ksP">—</span>
+        </div>
+        <div class="readout">
+          <span class="label">Approx. normal</span>
+          <span class="value mono" id="isNormal">—</span>
+        </div>
+      </div>
+      <div class="explainer" id="explainer">
+        Select a population shape and click <strong>Draw 1</strong> to begin sampling.
+      </div>
+    </div>
+  </div>
+
+  <div class="try-panel" style="margin-top: 24px;">
+    <div class="try-label">Try this</div>
+    <div class="try-buttons">
+      <button data-try="exp1">Exponential population, n = 1</button>
+      <button data-try="exp30">Same population, n = 30</button>
+      <button data-try="bimodal100">Bimodal, n = 100</button>
+    </div>
+    <div class="try-note" id="tryNote"></div>
+  </div>
+</main>
+
+<script>
+// ---------- Canvas utils ----------
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+const popCanvas = document.getElementById('popCanvas');
+const sampCanvas = document.getElementById('sampCanvas');
+
+// ---------- State ----------
+const NBINS_POP = 40;
+const POP_MIN = 0, POP_MAX = 1;
+let popBins = new Array(NBINS_POP).fill(0); // density (will be normalized)
+let shape = 'uniform';
+let nSample = 10;
+let speed = 'medium';
+let maxSamples = 10000;
+let runContinuously = false;
+let runRAF = null;
+let drawQueue = 0;
+let lastDrawTime = 0;
+let drawIntervalMs = 200;
+let highlightDots = []; // dots being sampled (for animation)
+let highlightFade = 0; // 0..1
+let popMu = 0, popSigma = 0;
+let popPDF = []; // cumulative for sampling
+let sampleMeans = []; // accumulated means
+let latestMean = null;
+let SAMP_BINS = 60;
+let sampHist = new Array(SAMP_BINS).fill(0);
+let sampDomain = [0, 1]; // dynamic
+let editingBar = false;
+
+// ---------- Population definitions ----------
+function setShape(s) {
+  shape = s;
+  // Toggle cursor affordance for custom-edit mode
+  popCanvas.classList.toggle('custom-mode', s === 'custom');
+  popBins = new Array(NBINS_POP).fill(0);
+  for (let i = 0; i < NBINS_POP; i++) {
+    const x = (i + 0.5) / NBINS_POP;
+    if (s === 'uniform') {
+      popBins[i] = 1;
+    } else if (s === 'exponential') {
+      const lam = 4;
+      popBins[i] = lam * Math.exp(-lam * x);
+    } else if (s === 'bimodal') {
+      const a = Math.exp(-((x - 0.25) ** 2) / (2 * 0.05 ** 2));
+      const b = Math.exp(-((x - 0.75) ** 2) / (2 * 0.05 ** 2));
+      popBins[i] = a + b;
+    } else if (s === 'skewed') {
+      // chi-squared-like (k=3): x*exp(-x*scale)
+      const t = x * 6;
+      popBins[i] = Math.pow(t, 1) * Math.exp(-t / 2);
+    } else if (s === 'custom') {
+      // Start with a shape user can modify; keep current bins or default to a hump
+      const c = Math.exp(-((x - 0.5) ** 2) / (2 * 0.1 ** 2));
+      popBins[i] = c;
+    }
+  }
+  normalizePop();
+  computePopStats();
+  resetSampling();
+}
+
+function normalizePop() {
+  let s = 0;
+  for (let i = 0; i < NBINS_POP; i++) s += popBins[i];
+  if (s <= 0) {
+    popBins = popBins.map(() => 1);
+    s = NBINS_POP;
+  }
+  // normalize so sum * dx = 1
+  const dx = (POP_MAX - POP_MIN) / NBINS_POP;
+  for (let i = 0; i < NBINS_POP; i++) popBins[i] = popBins[i] / (s * dx);
+}
+
+function computePopStats() {
+  const dx = (POP_MAX - POP_MIN) / NBINS_POP;
+  let mu = 0, m2 = 0;
+  for (let i = 0; i < NBINS_POP; i++) {
+    const x = (i + 0.5) / NBINS_POP;
+    const p = popBins[i] * dx;
+    mu += x * p;
+    m2 += x * x * p;
+  }
+  popMu = mu;
+  popSigma = Math.sqrt(Math.max(0, m2 - mu * mu));
+  // build CDF for sampling
+  popPDF = [];
+  let cum = 0;
+  for (let i = 0; i < NBINS_POP; i++) {
+    cum += popBins[i] * dx;
+    popPDF.push(cum);
+  }
+  // ensure last is 1
+  for (let i = 0; i < NBINS_POP; i++) popPDF[i] /= popPDF[NBINS_POP - 1];
+}
+
+function samplePopulation() {
+  const u = Math.random();
+  // binary search in popPDF
+  let lo = 0, hi = NBINS_POP - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (popPDF[mid] < u) lo = mid + 1;
+    else hi = mid;
+  }
+  // jitter within bin
+  const binLeft = lo / NBINS_POP;
+  const binRight = (lo + 1) / NBINS_POP;
+  return binLeft + Math.random() * (binRight - binLeft);
+}
+
+// ---------- Drawing population ----------
+function drawPop() {
+  const ctx = fitCanvas(popCanvas);
+  const r = popCanvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+  ctx.clearRect(0, 0, W, H);
+  // background grid
+  const padL = 38, padR = 12, padT = 12, padB = 28;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+  // y axis grid
+  ctx.strokeStyle = 'rgba(26,34,48,0.9)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+  }
+  // find max bin
+  let maxV = 0;
+  for (let i = 0; i < NBINS_POP; i++) maxV = Math.max(maxV, popBins[i]);
+  if (maxV <= 0) maxV = 1;
+  // bars
+  const bw = pw / NBINS_POP;
+  for (let i = 0; i < NBINS_POP; i++) {
+    const h = (popBins[i] / maxV) * ph;
+    const x = padL + i * bw;
+    const y = padT + ph - h;
+    const grad = ctx.createLinearGradient(0, y, 0, y + h);
+    grad.addColorStop(0, 'rgba(34,211,238,0.85)');
+    grad.addColorStop(1, 'rgba(34,211,238,0.35)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x + 0.5, y, Math.max(1, bw - 1), h);
+  }
+  // overlay sampled-dot highlights
+  if (highlightFade > 0) {
+    for (const d of highlightDots) {
+      const x = padL + d.x * pw;
+      const yBase = padT + ph;
+      ctx.fillStyle = `rgba(245,158,11,${0.95 * highlightFade})`;
+      ctx.beginPath(); ctx.arc(x, yBase - 8, 4 + 2 * highlightFade, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowColor = 'rgba(245,158,11,0.6)'; ctx.shadowBlur = 8 * highlightFade;
+      ctx.beginPath(); ctx.arc(x, yBase - 8, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+  // axis
+  ctx.strokeStyle = 'rgba(95,109,127,0.45)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, padT + ph); ctx.lineTo(W - padR, padT + ph); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.stroke();
+  // mu line
+  const muX = padL + popMu * pw;
+  ctx.strokeStyle = 'rgba(245,158,11,0.7)';
+  ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(muX, padT); ctx.lineTo(muX, padT + ph); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'var(--amber)'; ctx.fillStyle = '#f59e0b';
+  ctx.font = '500 11px "JetBrains Mono", monospace';
+  ctx.fillText('μ', muX + 4, padT + 12);
+  // x labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 5; i++) {
+    const x = padL + (i / 5) * pw;
+    const v = (i / 5).toFixed(1);
+    ctx.fillText(v, x, padT + ph + 14);
+  }
+  ctx.textAlign = 'right';
+  ctx.fillText('0', padL - 6, padT + ph + 3);
+  ctx.fillText('max', padL - 6, padT + 8);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter, sans-serif';
+  ctx.fillText('x', W - padR - 10, padT + ph + 22);
+}
+
+// ---------- Drawing sampling distribution ----------
+function drawSamp() {
+  const ctx = fitCanvas(sampCanvas);
+  const r = sampCanvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+  ctx.clearRect(0, 0, W, H);
+  const padL = 38, padR = 12, padT = 12, padB = 28;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  // grid
+  ctx.strokeStyle = 'rgba(26,34,48,0.9)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+  }
+
+  // determine domain — center on μ but use min/max of samples plus theoretical
+  const seTheo = popSigma / Math.sqrt(nSample);
+  const span = Math.max(seTheo * 4, 0.1);
+  let domLo = Math.max(POP_MIN, popMu - span);
+  let domHi = Math.min(POP_MAX, popMu + span);
+  if (sampleMeans.length > 0) {
+    let lo = Infinity, hi = -Infinity;
+    for (const m of sampleMeans) { if (m < lo) lo = m; if (m > hi) hi = m; }
+    domLo = Math.min(domLo, lo - 0.02);
+    domHi = Math.max(domHi, hi + 0.02);
+  }
+  domLo = Math.max(0, domLo);
+  domHi = Math.min(1, Math.max(domHi, domLo + 0.01));
+  sampDomain = [domLo, domHi];
+
+  // rebuild histogram
+  sampHist = new Array(SAMP_BINS).fill(0);
+  for (const m of sampleMeans) {
+    const t = (m - domLo) / (domHi - domLo);
+    if (t < 0 || t > 1) continue;
+    let idx = Math.floor(t * SAMP_BINS);
+    if (idx >= SAMP_BINS) idx = SAMP_BINS - 1;
+    sampHist[idx]++;
+  }
+  // normalize histogram to density (so it overlays theoretical curve)
+  const dxS = (domHi - domLo) / SAMP_BINS;
+  const totalN = sampleMeans.length || 1;
+  const densHist = sampHist.map(c => c / (totalN * dxS));
+
+  // theoretical curve scaling
+  const sampleSE = popSigma / Math.sqrt(nSample);
+  const peakPDF = sampleSE > 0 ? 1 / (sampleSE * Math.sqrt(2 * Math.PI)) : 1;
+  // max bar density
+  let maxDens = peakPDF;
+  for (const v of densHist) maxDens = Math.max(maxDens, v);
+  if (maxDens <= 0) maxDens = 1;
+
+  // bars
+  const bw = pw / SAMP_BINS;
+  for (let i = 0; i < SAMP_BINS; i++) {
+    const v = densHist[i];
+    if (v <= 0) continue;
+    const h = (v / maxDens) * ph;
+    const x = padL + i * bw;
+    const y = padT + ph - h;
+    const grad = ctx.createLinearGradient(0, y, 0, y + h);
+    grad.addColorStop(0, 'rgba(34,211,238,0.85)');
+    grad.addColorStop(1, 'rgba(34,211,238,0.30)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x + 0.5, y, Math.max(1, bw - 1), h);
+  }
+
+  // theoretical normal curve
+  if (sampleSE > 0 && popSigma > 0) {
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const steps = 200;
+    for (let i = 0; i <= steps; i++) {
+      const xv = domLo + (i / steps) * (domHi - domLo);
+      const pdf = (1 / (sampleSE * Math.sqrt(2 * Math.PI))) *
+        Math.exp(-((xv - popMu) ** 2) / (2 * sampleSE * sampleSE));
+      const X = padL + (i / steps) * pw;
+      const Y = padT + ph - (pdf / maxDens) * ph;
+      if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+    // soft fill under curve
+    ctx.lineTo(padL + pw, padT + ph);
+    ctx.lineTo(padL, padT + ph);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(245,158,11,0.06)';
+    ctx.fill();
+
+    // ±SE markers (μ ± σ/√n) annotated on the canvas
+    const seLo = popMu - sampleSE, seHi = popMu + sampleSE;
+    if (seLo >= domLo && seHi <= domHi) {
+      const xLo = padL + ((seLo - domLo) / (domHi - domLo)) * pw;
+      const xHi = padL + ((seHi - domLo) / (domHi - domLo)) * pw;
+      // bracket showing ±SE width
+      const yBr = padT + 14;
+      ctx.strokeStyle = 'rgba(245,158,11,0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(xLo, yBr); ctx.lineTo(xLo, yBr + 6);
+      ctx.moveTo(xLo, yBr + 3); ctx.lineTo(xHi, yBr + 3);
+      ctx.moveTo(xHi, yBr); ctx.lineTo(xHi, yBr + 6);
+      ctx.stroke();
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '500 10px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('±σ/√n', (xLo + xHi) / 2, yBr - 2);
+    }
+    // μ tick on x-axis
+    const xMu = padL + ((popMu - domLo) / (domHi - domLo)) * pw;
+    ctx.strokeStyle = 'rgba(245,158,11,0.5)';
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(xMu, padT); ctx.lineTo(xMu, padT + ph); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '500 10px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('μ', xMu + 3, padT + ph - 4);
+  }
+
+  // latest mean indicator
+  if (latestMean !== null) {
+    const x = padL + ((latestMean - domLo) / (domHi - domLo)) * pw;
+    ctx.strokeStyle = 'rgba(34,211,238,0.8)';
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // axes
+  ctx.strokeStyle = 'rgba(95,109,127,0.45)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, padT + ph); ctx.lineTo(W - padR, padT + ph); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.stroke();
+  // x ticks
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 5; i++) {
+    const t = i / 5;
+    const xVal = domLo + t * (domHi - domLo);
+    const X = padL + t * pw;
+    ctx.fillText(xVal.toFixed(2), X, padT + ph + 14);
+  }
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillText('x̄', W - padR - 14, padT + ph + 22);
+}
+
+// ---------- Sampling ----------
+function resetSampling() {
+  sampleMeans = [];
+  latestMean = null;
+  drawQueue = 0;
+  runContinuously = false;
+  document.getElementById('runToggle').classList.remove('active');
+  document.getElementById('runToggle').textContent = 'Run continuously';
+  highlightDots = []; highlightFade = 0;
+  updateAll();
+}
+
+function drawOneSample(animate) {
+  if (sampleMeans.length >= maxSamples) {
+    runContinuously = false;
+    document.getElementById('runToggle').classList.remove('active');
+    document.getElementById('runToggle').textContent = 'Run continuously';
+    return false;
+  }
+  const sample = [];
+  for (let i = 0; i < nSample; i++) sample.push(samplePopulation());
+  let s = 0; for (const v of sample) s += v;
+  const mean = s / nSample;
+  sampleMeans.push(mean);
+  latestMean = mean;
+  if (animate) {
+    highlightDots = sample.map(x => ({ x }));
+    highlightFade = 1;
+  }
+  return true;
+}
+
+// ---------- Stats: KS test ----------
+function ksPvalue() {
+  const n = sampleMeans.length;
+  if (n < 8) return null;
+  const sigma = popSigma / Math.sqrt(nSample);
+  if (sigma <= 0) return null;
+  const sorted = sampleMeans.slice().sort((a, b) => a - b);
+  let dmax = 0;
+  for (let i = 0; i < n; i++) {
+    const z = (sorted[i] - popMu) / sigma;
+    const cdf = normalCDF(z);
+    const ecdfHi = (i + 1) / n;
+    const ecdfLo = i / n;
+    dmax = Math.max(dmax, Math.abs(ecdfHi - cdf), Math.abs(cdf - ecdfLo));
+  }
+  // Kolmogorov distribution asymptotic
+  const en = Math.sqrt(n);
+  const lambda = (en + 0.12 + 0.11 / en) * dmax;
+  // series for Q(lambda)
+  let p = 0;
+  for (let j = 1; j <= 100; j++) {
+    p += 2 * Math.pow(-1, j - 1) * Math.exp(-2 * j * j * lambda * lambda);
+  }
+  return Math.max(0, Math.min(1, p));
+}
+
+function normalCDF(z) {
+  // Abramowitz & Stegun
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989422804 * Math.exp(-z * z / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return z > 0 ? 1 - p : p;
+}
+
+// ---------- UI updates ----------
+function updateAll() {
+  drawPop();
+  drawSamp();
+  document.getElementById('popMu').textContent = popMu.toFixed(3);
+  document.getElementById('popSigma').textContent = popSigma.toFixed(3);
+  document.getElementById('latestMean').textContent = latestMean === null ? '—' : latestMean.toFixed(3);
+  document.getElementById('sampleCount').textContent = sampleMeans.length.toLocaleString('en-US');
+  const seT = popSigma / Math.sqrt(nSample);
+  document.getElementById('theoSE').textContent = seT.toFixed(3);
+  // observed SE
+  if (sampleMeans.length > 1) {
+    let s = 0; for (const m of sampleMeans) s += m;
+    const mu = s / sampleMeans.length;
+    let v = 0; for (const m of sampleMeans) v += (m - mu) ** 2;
+    const sd = Math.sqrt(v / (sampleMeans.length - 1));
+    document.getElementById('obsSE').textContent = sd.toFixed(3);
+  } else {
+    document.getElementById('obsSE').textContent = '—';
+  }
+  // normality
+  const p = ksPvalue();
+  const ksEl = document.getElementById('ksP');
+  const inEl = document.getElementById('isNormal');
+  if (p === null) {
+    ksEl.textContent = '—';
+    inEl.textContent = '—';
+    inEl.className = 'value mono';
+  } else {
+    ksEl.textContent = p.toFixed(3);
+    if (p > 0.05) {
+      inEl.textContent = 'YES';
+      inEl.className = 'value mono green';
+    } else {
+      inEl.textContent = 'NO';
+      inEl.className = 'value mono rose';
+    }
+  }
+  updateExplainer();
+}
+
+function updateExplainer() {
+  const el = document.getElementById('explainer');
+  const n = nSample;
+  const seT = popSigma / Math.sqrt(n);
+  const count = sampleMeans.length;
+  const shapeLabel = {
+    uniform: 'a flat <strong>uniform</strong> distribution',
+    exponential: 'an <strong>exponential</strong> distribution (heavily right-skewed)',
+    bimodal: 'a <strong>bimodal</strong> distribution with two peaks',
+    skewed: 'a <strong>right-skewed</strong> distribution',
+    custom: 'your <strong>custom</strong> distribution'
+  }[shape] || 'this distribution';
+  let html = '';
+  if (count === 0) {
+    html = `You're sampling from ${shapeLabel} (μ = <strong>${popMu.toFixed(3)}</strong>, σ = <strong>${popSigma.toFixed(3)}</strong>). ` +
+      `Click <strong>Draw 1</strong> to draw a sample of size n = <strong>${n}</strong>.`;
+  } else if (n === 1) {
+    html = `At <strong>n = 1</strong>, each "sample mean" is just one draw — the histogram of x̄ <em>mirrors the population shape exactly</em>. The CLT has not kicked in yet.`;
+  } else if (n < 5) {
+    html = `With small <strong>n = ${n}</strong>, x̄ starts smoothing but still inherits the population's skew or modality. Theoretical SE = σ/√n = <strong>${seT.toFixed(3)}</strong>.`;
+  } else if (n < 30) {
+    html = `At <strong>n = ${n}</strong>, the distribution of x̄ is tightening around μ = ${popMu.toFixed(3)} and starting to look bell-shaped. SE = σ/√n = <strong>${seT.toFixed(3)}</strong>.`;
+  } else {
+    html = `At <strong>n = ${n} ≥ 30</strong>, the sampling distribution is <em>approximately normal regardless of the population shape</em> — that's the CLT. SE = <strong>${seT.toFixed(3)}</strong>.`;
+  }
+  const p = ksPvalue();
+  if (p !== null && count >= 30) {
+    const label = p > 0.05 ? `<span class="badge yes">≈ normal (KS p = ${p.toFixed(2)})</span>` : `<span class="badge no">not yet normal (KS p = ${p.toFixed(3)})</span>`;
+    html += ` &nbsp;${label}`;
+  }
+  el.innerHTML = html;
+}
+
+// ---------- Animation loop ----------
+let instantBudget = 50;
+function tick(ts) {
+  if (!tick.last) tick.last = ts;
+  const dt = ts - tick.last;
+  tick.last = ts;
+
+  // process queue
+  let drewSomething = false;
+  if (drawQueue > 0 || runContinuously) {
+    lastDrawTime += dt;
+    let interval = drawIntervalMs;
+    if (speed === 'instant') interval = 0;
+    instantBudget = 200;
+    while (lastDrawTime >= interval) {
+      lastDrawTime -= interval;
+      const willAnimate = speed !== 'instant';
+      const ok = drawOneSample(willAnimate);
+      if (!ok) { drawQueue = 0; break; }
+      drewSomething = true;
+      if (drawQueue > 0) drawQueue--;
+      if (!runContinuously && drawQueue <= 0) break;
+      if (sampleMeans.length >= maxSamples) {
+        runContinuously = false;
+        document.getElementById('runToggle').classList.remove('active');
+        document.getElementById('runToggle').textContent = 'Run continuously';
+        break;
+      }
+      // instant mode: cap work per frame to avoid blocking
+      if (interval === 0) {
+        if (--instantBudget <= 0) break;
+      }
+    }
+    if (drewSomething) updateAll();
+  }
+
+  // animate highlight fade
+  if (highlightFade > 0) {
+    highlightFade -= dt / 600;
+    if (highlightFade <= 0) { highlightFade = 0; highlightDots = []; }
+    drawPop();
+  }
+
+  requestAnimationFrame(tick);
+}
+
+function setSpeed(s) {
+  speed = s;
+  drawIntervalMs = s === 'slow' ? 500 : s === 'medium' ? 180 : s === 'fast' ? 50 : 0;
+}
+
+// ---------- Wiring ----------
+document.querySelectorAll('#shapeSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#shapeSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    setShape(b.dataset.shape);
+  });
+});
+document.querySelectorAll('#speedSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#speedSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    setSpeed(b.dataset.speed);
+  });
+});
+
+const nSlider = document.getElementById('nSlider');
+const nValEl = document.getElementById('nVal');
+const snapValues = [1, 2, 5, 10, 30, 100, 200];
+nSlider.addEventListener('input', () => {
+  let v = parseInt(nSlider.value, 10);
+  // snap if within 2 of a key value
+  for (const k of snapValues) {
+    if (Math.abs(v - k) <= 2) { v = k; break; }
+  }
+  nSample = v;
+  nSlider.value = v; // reflect snap on the thumb
+  nValEl.textContent = v;
+  updateAll();
+});
+
+const maxSlider = document.getElementById('maxSlider');
+const maxValEl = document.getElementById('maxVal');
+maxSlider.addEventListener('input', () => {
+  maxSamples = parseInt(maxSlider.value, 10);
+  maxValEl.textContent = maxSamples.toLocaleString('en-US');
+});
+
+document.getElementById('draw1').addEventListener('click', () => { drawQueue += 1; });
+document.getElementById('draw10').addEventListener('click', () => { drawQueue += 10; });
+document.getElementById('draw100').addEventListener('click', () => { drawQueue += 100; });
+document.getElementById('runToggle').addEventListener('click', (e) => {
+  runContinuously = !runContinuously;
+  if (runContinuously) {
+    e.target.classList.add('active');
+    e.target.textContent = 'Stop';
+  } else {
+    e.target.classList.remove('active');
+    e.target.textContent = 'Run continuously';
+  }
+});
+document.getElementById('resetBtn').addEventListener('click', resetSampling);
+
+// custom-bar editing
+popCanvas.addEventListener('mousedown', (e) => {
+  if (shape !== 'custom') return;
+  editingBar = true;
+  applyDrag(e);
+});
+popCanvas.addEventListener('mousemove', (e) => {
+  if (!editingBar) return;
+  applyDrag(e);
+});
+window.addEventListener('mouseup', () => { editingBar = false; });
+popCanvas.addEventListener('mouseleave', () => { editingBar = false; });
+
+function applyDrag(e) {
+  const r = popCanvas.getBoundingClientRect();
+  const padL = 38, padR = 12, padT = 12, padB = 28;
+  const pw = r.width - padL - padR;
+  const ph = r.height - padT - padB;
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+  if (x < padL || x > r.width - padR) return;
+  const idx = Math.floor(((x - padL) / pw) * NBINS_POP);
+  if (idx < 0 || idx >= NBINS_POP) return;
+  const t = 1 - Math.max(0, Math.min(1, (y - padT) / ph));
+  // unnormalized — set bin height proportional to t, then renormalize
+  let maxV = 0; for (const v of popBins) maxV = Math.max(maxV, v);
+  popBins[idx] = Math.max(0.01, t) * (maxV || 1);
+  normalizePop();
+  computePopStats();
+  // reset samples because population changed
+  sampleMeans = []; latestMean = null;
+  updateAll();
+}
+
+// init
+function updateCanvasSizes() {
+  // ensure canvases use container width
+}
+window.addEventListener('resize', () => { updateAll(); });
+
+// ---------- Try this experiments ----------
+function applyTry(name) {
+  let shapeKey, n, note;
+  if (name === 'exp1') {
+    shapeKey = 'exponential'; n = 1;
+    note = 'At <strong>n = 1</strong> the sampling distribution looks exactly like the population — that\'s the starting point.';
+  } else if (name === 'exp30') {
+    shapeKey = 'exponential'; n = 30;
+    note = 'Now the distribution is approximately normal, even though the population is heavily skewed.';
+  } else if (name === 'bimodal100') {
+    shapeKey = 'bimodal'; n = 100;
+    note = 'Even two distinct humps average out into a single bell at large n.';
+  } else return;
+
+  // Update shape seg
+  document.querySelectorAll('#shapeSeg button').forEach(x => {
+    x.classList.toggle('active', x.dataset.shape === shapeKey);
+  });
+  setShape(shapeKey);
+  // Update n slider + state
+  nSlider.value = n;
+  nSample = n;
+  nValEl.textContent = n;
+  nSlider.dispatchEvent(new Event('input'));
+  // Show note + auto-run a batch so user sees the effect
+  document.getElementById('tryNote').innerHTML = note;
+  drawQueue += 300;
+}
+document.querySelectorAll('.try-panel .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+(function init() {
+  // set initial seg states for hidden defaults
+  setShape('uniform');
+  setSpeed('medium');
+  updateAll();
+  requestAnimationFrame(tick);
+})();
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  document.getElementById('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  function pickShape(key) {
+    const map = { u: 'uniform', e: 'exponential', b: 'bimodal', s: 'skewed', c: 'custom' };
+    const target = map[key];
+    if (!target) return;
+    document.querySelectorAll('#shapeSeg button').forEach(x => {
+      x.classList.toggle('active', x.dataset.shape === target);
+    });
+    setShape(target);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); document.getElementById('runToggle').click(); }
+    else if (e.key === '1') { drawQueue += 1; }
+    else if (e.key === '0') { drawQueue += 10; }
+    else if (e.key === '9') { drawQueue += 100; }
+    else if (k === 'r') { resetSampling(); }
+    else if ('uebsc'.includes(k)) { pickShape(k); }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="bayes_visualiser.html">
+      <div class="related-title">Bayes' Theorem</div>
+      <div class="related-desc">Why a rare disease + accurate test still means most positives are false</div>
+    </a>
+    <a class="related-card" href="regression_mean.html">
+      <div class="related-title">Regression to the Mean</div>
+      <div class="related-desc">Why coaching the bottom looks like it works</div>
+    </a>
+    <a class="related-card" href="p_hacking.html">
+      <div class="related-title">p-Hacking</div>
+      <div class="related-desc">Run enough experiments and a fair coin will look loaded</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Epidemic Model (SEIR)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+
+/* Keyboard help indicator + modal */
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 440px; }
+canvas { width: 100%; height: 100%; display: block; }
+.phase-wrap { position: relative; width: 100%; height: 220px; margin-top: 12px; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.averted { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.averted.yes { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+.averted.no { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+
+.insight-banner {
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  border-left: 2px solid var(--cyan);
+  padding: 6px 0 6px 10px;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+.try-panel-section {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: 1fr; }
+}
+.try-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Epidemic Model (SEIR)</h1>
+    <p class="sub">Susceptible · Exposed · Infectious · Recovered dynamics</p>
+    <p class="insight-banner">An epidemic peaks when enough people have been infected that R_eff drops below 1. Vaccination shortcuts this — at H = 1 − 1/R₀, the outbreak never gets going.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Toggle stacked / line view</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">V</span><span>Cycle vaccination 0 / 30 / 60 / 90%</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Compartmental dynamics</h3>
+        <div class="seg" id="viewToggle">
+          <button data-mode="stacked" class="active">Stacked area</button>
+          <button data-mode="line">Lines</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="main"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Susceptible</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Exposed</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Infectious</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>Recovered</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--text-dim); opacity:0.5"></span>Herd immunity threshold</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <div class="title-row">
+        <h3>Phase portrait (I vs S)</h3>
+        <span style="font-size: 11px; color: var(--text-dim);">trajectory in state space</span>
+      </div>
+      <div class="phase-wrap"><canvas id="phase"></canvas></div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Disease parameters</p>
+      <div class="control">
+        <div class="control-row"><span class="label" title="R₀: basic reproduction number — average secondary infections from one infectious person in a fully susceptible population.">Basic reproduction R₀</span><span class="value num" id="vR0">2.5</span></div>
+        <input type="range" id="r0" min="0.5" max="8" step="0.1" value="2.5">
+        <div class="refs">
+          <span class="ref-chip" data-r0="1.3">Flu ≈ 1.3</span>
+          <span class="ref-chip" data-r0="2.5">COVID ≈ 2.5</span>
+          <span class="ref-chip" data-r0="6.0">Smallpox ≈ 6</span>
+          <span class="ref-chip" data-r0="15">Measles ≈ 15</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">Incubation period 1/σ (days)</span><span class="value num" id="vInc">5</span></div>
+        <input type="range" id="inc" min="1" max="21" step="1" value="5">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">Recovery period 1/γ (days)</span><span class="value num" id="vRec">10</span></div>
+        <input type="range" id="rec" min="1" max="30" step="1" value="10">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Population & intervention</p>
+      <div class="control">
+        <div class="control-row"><span class="label">Initial exposed E₀</span><span class="value num" id="vE0">10</span></div>
+        <input type="range" id="e0" min="1" max="1000" step="1" value="10">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">Population N</span><span class="value num" id="vN">1,000,000</span></div>
+        <input type="range" id="n" min="3" max="7" step="0.01" value="6">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">Vaccination coverage v</span><span class="value num" id="vV">0%</span></div>
+        <input type="range" id="v" min="0" max="95" step="1" value="0">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Outbreak summary</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Peak infectious</div><div class="val rose" id="oPeakI">—</div></div>
+        <div class="readout"><div class="lbl">Day of peak</div><div class="val" id="oPeakDay">—</div></div>
+        <div class="readout"><div class="lbl">Total ever infected</div><div class="val amber" id="oTotal">—</div></div>
+        <div class="readout"><div class="lbl" title="R_eff: effective reproduction number, accounting for immunity and behaviour. Outbreaks shrink when R_eff < 1.">Effective R</div><div class="val cyan" id="oReff">—</div></div>
+        <div class="readout"><div class="lbl" title="Herd immunity threshold: the fraction of the population that must be immune to keep R_eff below 1.">Herd immunity</div><div class="val green" id="oHerd">—</div></div>
+        <div class="readout"><div class="lbl">Outcome</div><div class="val" id="oAverted">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="covidnone">COVID, no vaccine</button>
+        <button data-try="covid60">Same COVID, 60% vaccinated</button>
+        <button data-try="measles">Measles unchecked</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const params = {
+  R0: 2.5, inc: 5, rec: 10, E0: 10, N: 1e6, v: 0,
+  viewMode: 'stacked'
+};
+
+let simulation = null;
+let animStart = 0;
+const ANIM_DUR = 1500;
+let animProg = 1;
+let animToken = 0; // cancellation token for animation loop
+
+function simulate() {
+  const N = params.N;
+  const beta = params.R0 / params.rec;
+  const sigma = 1 / params.inc;
+  const gamma = 1 / params.rec;
+  const vFrac = params.v / 100;
+  const vaccinated = N * vFrac;
+  // Clamp E0 to remaining susceptibles (can't have more exposed than non-vaccinated population)
+  const E0 = Math.min(params.E0, Math.max(0, N - vaccinated));
+  let S = N - vaccinated - E0;
+  let E = E0;
+  let I = 0;
+  let R = vaccinated;
+  // RK4 integrator with adaptive sub-stepping for high R0 / fast dynamics
+  const Tmax = 500;
+  // Choose dt so that fastest rate × dt is small enough for stability/accuracy
+  const fastest = Math.max(beta, sigma, gamma);
+  const dt = Math.min(0.1, 0.25 / Math.max(fastest, 1e-6));
+  const steps = Math.floor(Tmax / dt);
+  // Sample at ~1 day cadence regardless of dt
+  const sampleEvery = Math.max(1, Math.round(1 / dt));
+  const series = [];
+  let peakI = 0, peakDay = 0;
+  const deriv = (S, E, I) => {
+    const inf = beta * S * I / N;
+    return {
+      dS: -inf,
+      dE: inf - sigma * E,
+      dI: sigma * E - gamma * I,
+      dR: gamma * I
+    };
+  };
+  for (let i = 0; i <= steps; i++) {
+    const t = i * dt;
+    if (i % sampleEvery === 0) {
+      series.push({ t, S, E, I, R });
+      if (I > peakI) { peakI = I; peakDay = t; }
+    }
+    // RK4
+    const k1 = deriv(S, E, I);
+    const k2 = deriv(S + 0.5*dt*k1.dS, E + 0.5*dt*k1.dE, I + 0.5*dt*k1.dI);
+    const k3 = deriv(S + 0.5*dt*k2.dS, E + 0.5*dt*k2.dE, I + 0.5*dt*k2.dI);
+    const k4 = deriv(S + dt*k3.dS, E + dt*k3.dE, I + dt*k3.dI);
+    S += dt/6 * (k1.dS + 2*k2.dS + 2*k3.dS + k4.dS);
+    E += dt/6 * (k1.dE + 2*k2.dE + 2*k3.dE + k4.dE);
+    I += dt/6 * (k1.dI + 2*k2.dI + 2*k3.dI + k4.dI);
+    R += dt/6 * (k1.dR + 2*k2.dR + 2*k3.dR + k4.dR);
+    if (S < 0) S = 0;
+    if (E < 0) E = 0;
+    if (I < 0) I = 0;
+    if (R > N) R = N;
+  }
+  const totalEver = (R - vaccinated) + I + E; // people who got infected
+  const Reff = params.R0 * (1 - vFrac);
+  const herd = (1 - 1 / params.R0) * 100;
+  return { series, peakI, peakDay, totalEver, Reff, herd, vaccinated };
+}
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function drawMain() {
+  const c = $('main');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 56, r: 16, t: 16, b: 28 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const sim = simulation;
+  if (!sim) return;
+
+  // x-axis: dynamic — find when epidemic dies down
+  let xMax = sim.series.length;
+  // find tail: where I < 0.0005*N and after peak. Compare by index of true max, not float equality.
+  const tailIdx = (() => {
+    let peakIdx = 0;
+    for (let i = 1; i < sim.series.length; i++) {
+      if (sim.series[i].I > sim.series[peakIdx].I) peakIdx = i;
+    }
+    for (let i = peakIdx; i < sim.series.length; i++) {
+      if (sim.series[i].I < 0.0005 * params.N) return Math.min(sim.series.length, i + 30);
+    }
+    return sim.series.length;
+  })();
+  xMax = Math.max(60, Math.min(500, tailIdx));
+  const visibleEnd = Math.floor(animProg * xMax);
+
+  // grid
+  ctx.strokeStyle = 'rgba(26,34,48,1)';
+  ctx.lineWidth = 1;
+  const yTicks = 5;
+  for (let i = 0; i <= yTicks; i++) {
+    const y = pad.t + (ph * i / yTicks);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  const xTickStep = xMax <= 60 ? 10 : xMax <= 150 ? 30 : xMax <= 300 ? 50 : 100;
+  for (let t = 0; t <= xMax; t += xTickStep) {
+    const x = pad.l + (t / xMax) * pw;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+
+  // axis labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= yTicks; i++) {
+    const y = pad.t + (ph * i / yTicks);
+    const pct = ((yTicks - i) / yTicks) * 100;
+    ctx.fillText(pct.toFixed(0) + '%', pad.l - 8, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let t = 0; t <= xMax; t += xTickStep) {
+    const x = pad.l + (t / xMax) * pw;
+    ctx.fillText('day ' + t, x, H - pad.b + 6);
+  }
+
+  const N = params.N;
+  const xAt = i => pad.l + (i / xMax) * pw;
+  const yAt = f => pad.t + ph * (1 - f);
+
+  if (params.viewMode === 'stacked') {
+    // stacked areas, top to bottom: S, E, I, R, but conventionally bottom is S
+    // We'll draw bottom→top order: R (bottom), I, E, S (top) so that I sits prominently
+    // Actually for SEIR, typically S decreases — stacked with S largest at bottom is common.
+    // We'll stack S (bottom), R (top of S), E, I (top). Let's instead stack in semantic order:
+    // bottom: R (recovered), then S? Let's stack: S at bottom, E above, I above, R on top → sums to N.
+    const order = ['S', 'E', 'I', 'R'];
+    const colors = { S: '#22d3ee', E: '#f59e0b', I: '#f43f5e', R: '#34d399' };
+    const fillColors = { S: 'rgba(34,211,238,0.55)', E: 'rgba(245,158,11,0.65)', I: 'rgba(244,63,94,0.75)', R: 'rgba(52,211,153,0.55)' };
+
+    let bottoms = new Array(visibleEnd + 1).fill(0);
+    for (const key of order) {
+      const tops = new Array(visibleEnd + 1);
+      for (let i = 0; i <= visibleEnd && i < sim.series.length; i++) {
+        tops[i] = bottoms[i] + sim.series[i][key] / N;
+      }
+      ctx.beginPath();
+      ctx.moveTo(xAt(0), yAt(bottoms[0]));
+      for (let i = 0; i <= visibleEnd && i < sim.series.length; i++) {
+        ctx.lineTo(xAt(i), yAt(tops[i]));
+      }
+      for (let i = visibleEnd; i >= 0; i--) {
+        ctx.lineTo(xAt(i), yAt(bottoms[i]));
+      }
+      ctx.closePath();
+      ctx.fillStyle = fillColors[key];
+      ctx.fill();
+      // outline at top
+      ctx.beginPath();
+      for (let i = 0; i <= visibleEnd && i < sim.series.length; i++) {
+        const x = xAt(i), y = yAt(tops[i]);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = colors[key];
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      bottoms = tops;
+    }
+  } else {
+    // line chart
+    const lines = [
+      { key: 'S', color: '#22d3ee' },
+      { key: 'E', color: '#f59e0b' },
+      { key: 'I', color: '#f43f5e' },
+      { key: 'R', color: '#34d399' }
+    ];
+    for (const ln of lines) {
+      ctx.beginPath();
+      for (let i = 0; i <= visibleEnd && i < sim.series.length; i++) {
+        const x = xAt(i), y = yAt(sim.series[i][ln.key] / N);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = ln.color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  // herd immunity threshold dashed line + danger zone
+  const herdFrac = Math.max(0, Math.min(1, 1 - 1 / params.R0));
+  if (params.R0 > 1) {
+    // danger zone: above the herd threshold means too many susceptibles → outbreak unchecked.
+    // Convention: we shade the region BELOW the herd line (i.e. lower vaccination/immunity) as danger.
+    // Actually: above the dashed line on the y-axis represents > H proportion of immune (=safe).
+    // Below represents danger.
+    const yH = yAt(herdFrac);
+    ctx.fillStyle = 'rgba(244,63,94,0.06)';
+    ctx.fillRect(pad.l, yH, pw, (H - pad.b) - yH);
+
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(151, 161, 176, 0.65)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, yH); ctx.lineTo(W - pad.r, yH); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(151, 161, 176, 0.85)';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('H = ' + (herdFrac * 100).toFixed(1) + '%  (danger zone below)', pad.l + 6, yH - 3);
+  }
+
+  // axis box
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function drawPhase() {
+  const c = $('phase');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l: 52, r: 16, t: 12, b: 28 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const sim = simulation; if (!sim) return;
+  const N = params.N;
+
+  // grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const x = pad.l + pw * i / 4;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    ctx.fillText(((4 - i) / 4 * sim.peakI * 1.2 / N * 100).toFixed(1) + '%', pad.l - 8, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i <= 4; i++) {
+    const x = pad.l + pw * i / 4;
+    ctx.fillText((i / 4 * 100).toFixed(0) + '%', x, H - pad.b + 6);
+  }
+  // axis label
+  ctx.textAlign = 'center'; ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter';
+  ctx.fillText('S / N', pad.l + pw / 2, H - 4);
+  ctx.save(); ctx.translate(12, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('I / N', 0, 0); ctx.restore();
+
+  // trajectory
+  const iMax = Math.max(sim.peakI * 1.2, 1);
+  const xAt = s => pad.l + (s / N) * pw;
+  const yAt = i => pad.t + ph * (1 - (i / iMax));
+
+  // visible range based on animProg
+  const visibleEnd = Math.floor(animProg * sim.series.length);
+  ctx.beginPath();
+  for (let i = 0; i <= visibleEnd && i < sim.series.length; i++) {
+    const d = sim.series[i];
+    const x = xAt(d.S), y = yAt(d.I);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 1.8; ctx.stroke();
+
+  // mark herd line vertical
+  const herdS = (1 / params.R0); // S/N at which dI/dt = 0
+  if (params.R0 > 1) {
+    const x = xAt(herdS * N);
+    ctx.save();
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = 'rgba(251,191,36,0.55)';
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(251,191,36,0.85)'; ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('S* = 1/R₀', x + 4, pad.t + 4);
+  }
+
+  // current head dot
+  if (visibleEnd > 0 && visibleEnd < sim.series.length) {
+    const d = sim.series[visibleEnd];
+    const x = xAt(d.S), y = yAt(d.I);
+    ctx.fillStyle = '#22d3ee';
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(34,211,238,0.25)';
+    ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill();
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function fmtPct(v) {
+  if (!isFinite(v) || v < 0) return '0.0%';
+  return v.toFixed(1) + '%';
+}
+function fmtInt(n) {
+  return Math.round(n).toLocaleString('en-US');
+}
+
+function updateReadouts() {
+  if (!simulation) return;
+  const sim = simulation;
+  $('oPeakI').textContent = fmtPct(sim.peakI / params.N * 100);
+  $('oPeakDay').textContent = sim.peakDay.toFixed(0) + 'd';
+  $('oTotal').textContent = fmtPct(sim.totalEver / params.N * 100);
+  $('oReff').textContent = sim.Reff.toFixed(2);
+  $('oHerd').textContent = sim.herd > 0 ? sim.herd.toFixed(1) + '%' : '—';
+  const averted = sim.Reff < 1;
+  const el = $('oAverted');
+  el.innerHTML = '<span class="averted ' + (averted ? 'yes' : 'no') + '">' + (averted ? 'AVERTED' : 'OUTBREAK') + '</span>';
+
+  // explainer
+  const need = params.R0 > 1 ? (1 - 1 / params.R0) * 100 : 0;
+  let txt = `With <span class="k">R₀ = ${params.R0.toFixed(1)}</span> you need <span class="k">${need.toFixed(1)}%</span> immunity (vaccination + prior infection) to halt spread. `;
+  txt += `Currently <span class="k">v = ${params.v}%</span> vaccination gives <span class="k">R_eff = ${sim.Reff.toFixed(2)}</span>. `;
+  if (sim.Reff < 1) txt += 'The outbreak fizzles before reaching epidemic scale.';
+  else txt += `Expect a peak of <span class="k">${(sim.peakI / params.N * 100).toFixed(1)}%</span> infectious around day <span class="k">${sim.peakDay.toFixed(0)}</span>, with <span class="k">${(sim.totalEver / params.N * 100).toFixed(1)}%</span> of the population infected before it ends.`;
+  $('explainer').innerHTML = txt;
+}
+
+function startAnim() {
+  animStart = performance.now();
+  animProg = 0;
+  const token = ++animToken; // invalidate any in-flight ticks
+  requestAnimationFrame(now => tick(now, token));
+}
+
+function tick(now, token) {
+  if (token !== animToken) return; // a newer animation has superseded this one
+  const elapsed = now - animStart;
+  const raw = Math.min(1, elapsed / ANIM_DUR);
+  animProg = easeOutCubic(raw);
+  drawMain();
+  drawPhase();
+  if (raw < 1) requestAnimationFrame(n => tick(n, token));
+}
+
+function rerun() {
+  simulation = simulate();
+  updateReadouts();
+  startAnim();
+}
+
+// Wire controls
+function fmtN(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'k';
+  return n.toString();
+}
+
+$('r0').addEventListener('input', e => {
+  params.R0 = parseFloat(e.target.value);
+  $('vR0').textContent = params.R0.toFixed(1);
+  rerun();
+});
+$('inc').addEventListener('input', e => {
+  params.inc = parseInt(e.target.value);
+  $('vInc').textContent = params.inc;
+  rerun();
+});
+$('rec').addEventListener('input', e => {
+  params.rec = parseInt(e.target.value);
+  $('vRec').textContent = params.rec;
+  rerun();
+});
+$('e0').addEventListener('input', e => {
+  const raw = parseInt(e.target.value);
+  // Cap E0 at remaining susceptibles
+  const cap = Math.max(1, Math.floor(params.N * (1 - params.v / 100)));
+  params.E0 = Math.min(raw, cap);
+  $('vE0').textContent = params.E0.toLocaleString('en-US');
+  rerun();
+});
+$('n').addEventListener('input', e => {
+  const exp = parseFloat(e.target.value);
+  params.N = Math.round(Math.pow(10, exp));
+  $('vN').textContent = params.N.toLocaleString('en-US');
+  rerun();
+});
+$('v').addEventListener('input', e => {
+  params.v = parseInt(e.target.value);
+  $('vV').textContent = params.v + '%';
+  rerun();
+});
+document.querySelectorAll('.ref-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    const r0 = parseFloat(c.dataset.r0);
+    params.R0 = r0;
+    $('r0').value = r0;
+    $('vR0').textContent = r0.toFixed(1);
+    rerun();
+  });
+});
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('active')) return;
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.viewMode = b.dataset.mode;
+    // Quick replay so the switch feels intentional rather than a snap.
+    startAnim();
+  });
+});
+
+window.addEventListener('resize', () => { drawMain(); drawPhase(); });
+
+// ---------- Try this experiments ----------
+function applyTry(name) {
+  const presets = {
+    covidnone: { R0: 2.5, inc: 5, rec: 10, v: 0,
+                 note: 'Classic COVID parameters with no immunity — almost <strong>90%</strong> are infected over the run.' },
+    covid60:   { R0: 2.5, inc: 5, rec: 10, v: 60,
+                 note: '<strong>R_eff drops below 1</strong> and the wave is suppressed.' },
+    measles:   { R0: 15,  inc: 5, rec: 10, v: 0,
+                 note: 'Extremely high R₀ — herd immunity needs <strong>93%</strong> coverage. Without it, nearly everyone gets sick.' }
+  };
+  const cfg = presets[name];
+  if (!cfg) return;
+  $('r0').value = cfg.R0;
+  $('inc').value = cfg.inc;
+  $('rec').value = cfg.rec;
+  $('v').value = cfg.v;
+  // Update labels manually
+  params.R0 = cfg.R0; $('vR0').textContent = cfg.R0.toFixed(1);
+  params.inc = cfg.inc; $('vInc').textContent = cfg.inc;
+  params.rec = cfg.rec; $('vRec').textContent = cfg.rec;
+  params.v = cfg.v; $('vV').textContent = cfg.v + '%';
+  // Dispatch input events so any other listeners re-run too
+  ['r0','inc','rec','v'].forEach(id => $(id).dispatchEvent(new Event('input')));
+  rerun();
+  document.getElementById('tryNote').innerHTML = cfg.note;
+}
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+// initial
+rerun();
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  document.getElementById('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  const vCycle = [0, 30, 60, 90];
+  const DEFAULTS = { R0: 2.5, inc: 5, rec: 10, E0: 10, N: 1e6, v: 0 };
+
+  function resetDefaults() {
+    params.R0 = DEFAULTS.R0; $('r0').value = DEFAULTS.R0; $('vR0').textContent = DEFAULTS.R0.toFixed(1);
+    params.inc = DEFAULTS.inc; $('inc').value = DEFAULTS.inc; $('vInc').textContent = DEFAULTS.inc;
+    params.rec = DEFAULTS.rec; $('rec').value = DEFAULTS.rec; $('vRec').textContent = DEFAULTS.rec;
+    params.E0 = DEFAULTS.E0; $('e0').value = DEFAULTS.E0; $('vE0').textContent = DEFAULTS.E0.toLocaleString('en-US');
+    params.N = DEFAULTS.N; $('n').value = 6; $('vN').textContent = DEFAULTS.N.toLocaleString('en-US');
+    params.v = DEFAULTS.v; $('v').value = DEFAULTS.v; $('vV').textContent = DEFAULTS.v + '%';
+    rerun();
+  }
+
+  function cycleVaccination() {
+    const cur = params.v;
+    let idx = vCycle.indexOf(cur);
+    if (idx === -1) {
+      // find next greater
+      idx = vCycle.findIndex(v => v > cur);
+      if (idx === -1) idx = 0;
+    } else {
+      idx = (idx + 1) % vCycle.length;
+    }
+    const next = vCycle[idx];
+    params.v = next;
+    $('v').value = next;
+    $('vV').textContent = next + '%';
+    rerun();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') {
+      e.preventDefault();
+      const next = params.viewMode === 'stacked' ? 'line' : 'stacked';
+      const btn = document.querySelector(`#viewToggle button[data-mode="${next}"]`);
+      if (btn) btn.click();
+    } else if (k === 'r') {
+      resetDefaults();
+    } else if (k === 'v') {
+      cycleVaccination();
+    }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="malthus.html">
+      <div class="related-title">Malthusian Dynamics</div>
+      <div class="related-desc">Population vs food, and the Industrial Revolution</div>
+    </a>
+    <a class="related-card" href="cellular_automata.html">
+      <div class="related-title">Cellular Automata</div>
+      <div class="related-desc">Simple rules that make complexity, and the famous Game of Life</div>
+    </a>
+    <a class="related-card" href="bayes_visualiser.html">
+      <div class="related-title">Bayes' Theorem</div>
+      <div class="related-desc">Why a rare disease + accurate test still means most positives are false</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

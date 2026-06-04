@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black-Scholes Options Pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; font-size: 13px; min-height: 100vh; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.topbar { display: flex; align-items: center; gap: 24px; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+.back:hover { color: var(--cyan); }
+
+main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+.left-stack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.panel.full { grid-column: span 2; }
+.panel-title { font-size: 14px; font-weight: 600; margin: 0 0 4px; color: var(--text); }
+.panel-sub { font-size: 11px; color: var(--text-dim); margin: 0 0 12px; }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; margin-top: 14px; }
+.section-label:first-of-type { margin-top: 0; }
+
+canvas { display: block; width: 100%; }
+#priceCanvas { height: 320px; }
+#heatCanvas { height: 320px; }
+.greek-canvas { height: 90px; }
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; border-radius: 999px;
+  background: var(--grid); outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(34,211,238,0.12);
+  cursor: pointer; border: none;
+  transition: box-shadow 120ms ease;
+}
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--cyan); cursor: pointer; border: none;
+}
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.control-group { margin-bottom: 12px; }
+.control-group .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.control-group label { font-size: 12px; color: var(--text-dim); }
+.control-group .val { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--cyan); font-weight: 500; }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readout .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+.label[title], .greek-row .name[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .value { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--text); }
+.readout .value.cyan { color: var(--cyan); }
+.readout .value.amber { color: var(--amber); }
+.readout .value.green { color: var(--green); }
+.readout .value.rose { color: var(--rose); }
+.readout .value.big { font-size: 22px; }
+
+.moneyness {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+.moneyness.itm { background: var(--green-soft); color: var(--green); border-color: rgba(52,211,153,0.4); }
+.moneyness.atm { background: var(--amber-soft); color: var(--amber); border-color: rgba(245,158,11,0.4); }
+.moneyness.otm { background: var(--rose-soft); color: var(--rose); border-color: rgba(244,63,94,0.4); }
+
+.explainer {
+  background: var(--bg-elev-1);
+  border-left: 2px solid var(--cyan);
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 14px;
+  line-height: 1.55;
+}
+.explainer strong { color: var(--text); font-weight: 600; }
+
+.canvas-title { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+.canvas-title strong { color: var(--text); }
+.legend { display: inline-flex; gap: 12px; font-size: 11px; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; color: var(--text-dim); }
+.legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.legend .dot.cyan { background: var(--cyan); }
+.legend .dot.rose { background: var(--rose); }
+.legend .dot.amber { background: var(--amber); }
+
+.greek-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.greek-row {
+  display: grid;
+  grid-template-columns: 56px 1fr 70px;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 4px;
+  border-radius: var(--r-sm);
+}
+.greek-row .name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.greek-row .name .sub { font-size: 9px; color: var(--text-dim); display: block; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+.greek-row .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--cyan);
+  text-align: right;
+}
+.greek-row .v.put { color: var(--rose); font-size: 11px; }
+
+.parity {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--bg-elev-1);
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  margin-top: 10px;
+  line-height: 1.55;
+}
+.parity .lhs { color: var(--cyan); }
+.parity .rhs { color: var(--amber); }
+.parity .ok { color: var(--green); }
+
+.formula {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; }
+  .left-stack { grid-template-columns: 1fr; }
+}
+
+.insight-banner {
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  border-left: 2px solid var(--cyan);
+  padding: 6px 0 6px 10px;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+.try-panel-section {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.try-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px;
+  font-family: inherit; color: var(--text);
+  background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px; cursor: pointer;
+  transition: all 120ms ease;
+}
+.try-buttons button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.try-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Black-Scholes Options Pricing</h1>
+    <p class="sub">European call and put values, Greeks, and the put–call parity identity</p>
+    <p class="insight-banner">Option price isn't just about the strike — it's a five-dimensional function of stock price, time, volatility, and interest. The Greeks tell you how each one moves the needle.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>At-the-money 30 days</span>
+      <span class="kbd-key">2</span><span>Deep ITM call</span>
+      <span class="kbd-key">3</span><span>High vol explosion</span>
+      <span class="kbd-key">↑</span><span>Increase σ by 5%</span>
+      <span class="kbd-key">↓</span><span>Decrease σ by 5%</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="layout">
+    <div class="left-stack">
+      <div class="panel full">
+        <div class="canvas-title">
+          <span><strong>Option price vs underlying</strong> &nbsp; <span style="color:var(--text-faint)">S = stock price</span></span>
+          <span class="legend">
+            <span><span class="dot cyan"></span>Call</span>
+            <span><span class="dot rose"></span>Put</span>
+            <span><span class="dot amber"></span>Current S</span>
+          </span>
+        </div>
+        <canvas id="priceCanvas"></canvas>
+      </div>
+
+      <div class="panel full">
+        <div class="canvas-title">
+          <span><strong>Call price surface</strong> &nbsp; <span style="color:var(--text-faint)">price as a function of S and time to expiry</span></span>
+          <span class="legend">
+            <span style="display:inline-flex;align-items:center;gap:4px">
+              <span style="width:48px;height:8px;border-radius:2px;background:linear-gradient(90deg,#0a2540,#1b6ca8,#22d3ee,#f59e0b)"></span>
+              low → high
+            </span>
+            <span><span class="dot amber"></span>Current (S, T)</span>
+          </span>
+        </div>
+        <canvas id="heatCanvas"></canvas>
+      </div>
+
+      <div class="panel full">
+        <div class="canvas-title">
+          <span><strong>Greeks</strong> — call values; how each sensitivity varies with S</span>
+        </div>
+        <div class="greek-grid">
+          <div class="greek-row">
+            <div class="name" title="Delta: how much the option price changes when the stock price moves £1.">Δ<span class="sub">Delta</span></div>
+            <canvas class="greek-canvas" data-greek="delta"></canvas>
+            <div class="v" id="vDelta">—</div>
+          </div>
+          <div class="greek-row">
+            <div class="name" title="Gamma: how fast Delta changes as the stock price moves — the curvature of the option price.">Γ<span class="sub">Gamma</span></div>
+            <canvas class="greek-canvas" data-greek="gamma"></canvas>
+            <div class="v" id="vGamma">—</div>
+          </div>
+          <div class="greek-row">
+            <div class="name" title="Theta: daily decay in the option's value as expiry approaches.">Θ<span class="sub">Theta</span></div>
+            <canvas class="greek-canvas" data-greek="theta"></canvas>
+            <div class="v" id="vTheta">—</div>
+          </div>
+          <div class="greek-row">
+            <div class="name" title="Vega: sensitivity of the option price to a 1% change in volatility.">ν<span class="sub">Vega</span></div>
+            <canvas class="greek-canvas" data-greek="vega"></canvas>
+            <div class="v" id="vVega">—</div>
+          </div>
+          <div class="greek-row">
+            <div class="name" title="Rho: sensitivity of the option price to a 1% change in the interest rate.">ρ<span class="sub">Rho</span></div>
+            <canvas class="greek-canvas" data-greek="rho"></canvas>
+            <div class="v" id="vRho">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="section-label">Parameters</div>
+        <div class="control-group">
+          <div class="row"><label>Stock price S</label><span class="val mono" id="vS">100.0</span></div>
+          <input type="range" min="50" max="200" step="0.5" value="100" id="sliderS">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Strike K</label><span class="val mono" id="vK">100.0</span></div>
+          <input type="range" min="50" max="200" step="0.5" value="100" id="sliderK">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Time to expiry</label><span class="val mono" id="vT">90 days</span></div>
+          <input type="range" min="1" max="730" step="1" value="90" id="sliderT">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Volatility σ</label><span class="val mono" id="vSig">25.0%</span></div>
+          <input type="range" min="1" max="150" step="0.5" value="25" id="sliderSig">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Risk-free rate r</label><span class="val mono" id="vR">5.0%</span></div>
+          <input type="range" min="0" max="15" step="0.1" value="5" id="sliderR">
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top: 24px;">
+        <div class="section-label">Pricing</div>
+        <div class="readouts">
+          <div class="readout">
+            <span class="label">Call price</span>
+            <span class="value big mono cyan" id="callPrice">—</span>
+          </div>
+          <div class="readout">
+            <span class="label">Put price</span>
+            <span class="value big mono rose" id="putPrice">—</span>
+          </div>
+          <div class="readout">
+            <span class="label">d₁</span>
+            <span class="value mono" id="d1">—</span>
+          </div>
+          <div class="readout">
+            <span class="label">d₂</span>
+            <span class="value mono" id="d2">—</span>
+          </div>
+        </div>
+        <div style="margin-top: 14px;">
+          <span class="moneyness" id="moneynessBadge">—</span>
+        </div>
+        <div class="parity" id="parityRow">
+          <strong style="color:var(--text)">Put–Call parity</strong><br>
+          <span class="lhs">C − P</span> = <span id="lhsVal">—</span><br>
+          <span class="rhs">S − K·e<sup>−rT</sup></span> = <span id="rhsVal">—</span><br>
+          <span id="parityOk">—</span>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top: 24px;">
+        <div class="section-label">Context</div>
+        <div class="explainer" id="explainer">Move any slider to begin.</div>
+      </div>
+
+      <div class="try-panel-section" style="margin-top: 24px;">
+        <div class="try-label">Try this</div>
+        <div class="try-buttons">
+          <button data-try="atm">At-the-money, 30 days</button>
+          <button data-try="itm">Deep ITM call</button>
+          <button data-try="highvol">High vol explosion</button>
+        </div>
+        <div class="try-note" id="tryNote"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ---------- Canvas utility ----------
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+// ---------- Hart's rational approximation for N(x) ----------
+// High-accuracy CDF of standard normal. Hart's approximation (with the same
+// coefficients as in West, 2005). Maximum relative error ~1e-15.
+function normCDF(x) {
+  // Use error function based approach with Hart's coefficients
+  const absx = Math.abs(x);
+  let r;
+  if (absx <= 7.07106781186547) {
+    // Numerator and denominator polynomials (Hart 5666)
+    const a = [
+      220.206867912376,
+      221.213596169931,
+      112.079291497871,
+      33.912866078383,
+      6.37396220353165,
+      0.700383064443688,
+      3.52624965998911e-02
+    ];
+    const b = [
+      440.413735824752,
+      793.826512519948,
+      637.333633378831,
+      296.564248779674,
+      86.7807322029461,
+      16.064177579207,
+      1.75566716318264,
+      8.83883476483184e-02
+    ];
+    const num = ((((((a[6] * absx + a[5]) * absx + a[4]) * absx + a[3]) * absx + a[2]) * absx + a[1]) * absx + a[0]);
+    const den = (((((((b[7] * absx + b[6]) * absx + b[5]) * absx + b[4]) * absx + b[3]) * absx + b[2]) * absx + b[1]) * absx + b[0]);
+    r = Math.exp(-0.5 * absx * absx) * num / den;
+  } else {
+    // tail expansion (continued fraction)
+    let y = absx;
+    let cf = y + 1 / (y + 2 / (y + 3 / (y + 4 / (y + 0.65))));
+    r = Math.exp(-0.5 * y * y) / (cf * Math.sqrt(2 * Math.PI));
+  }
+  return x > 0 ? 1 - r : r;
+}
+
+// Standard normal density
+function normPDF(x) {
+  return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+}
+
+// ---------- Black-Scholes ----------
+function bsCompute(S, K, T, sigma, r) {
+  // T in years, sigma decimal, r decimal
+  // Handle T -> 0 with intrinsic value
+  if (T <= 1e-9 || sigma <= 1e-9) {
+    const call = Math.max(0, S - K);
+    const put = Math.max(0, K - S);
+    // Greeks degenerate
+    return {
+      d1: NaN, d2: NaN, call, put,
+      delta: S > K ? 1 : 0,
+      gamma: 0,
+      thetaCallYr: 0, thetaPutYr: 0,
+      vega: 0,
+      rhoCall: 0, rhoPut: 0
+    };
+  }
+  const sqrtT = Math.sqrt(T);
+  const d1 = (Math.log(S / K) + (r + sigma * sigma / 2) * T) / (sigma * sqrtT);
+  const d2 = d1 - sigma * sqrtT;
+  const Nd1 = normCDF(d1), Nd2 = normCDF(d2);
+  const nNd1 = normCDF(-d1), nNd2 = normCDF(-d2);
+  const pd1 = normPDF(d1);
+
+  const call = S * Nd1 - K * Math.exp(-r * T) * Nd2;
+  const put = K * Math.exp(-r * T) * nNd2 - S * nNd1;
+
+  const delta = Nd1; // call delta
+  const gamma = pd1 / (S * sigma * sqrtT);
+  // Theta per year
+  const thetaCall = -(S * pd1 * sigma) / (2 * sqrtT) - r * K * Math.exp(-r * T) * Nd2;
+  const thetaPut = -(S * pd1 * sigma) / (2 * sqrtT) + r * K * Math.exp(-r * T) * nNd2;
+  // Vega per 1.00 (100%) change in sigma; usually scaled per 1% => /100
+  const vega = S * pd1 * sqrtT; // per unit sigma; per 1% = vega/100
+  // Rho per 1.00 change in r; per 1% = /100
+  const rhoCall = K * T * Math.exp(-r * T) * Nd2;
+  const rhoPut = -K * T * Math.exp(-r * T) * nNd2;
+
+  return {
+    d1, d2, call, put,
+    delta, gamma,
+    thetaCallYr: thetaCall, thetaPutYr: thetaPut,
+    vega,
+    rhoCall, rhoPut
+  };
+}
+
+// ---------- State ----------
+const state = {
+  S: 100, K: 100, T_days: 90, sigma: 0.25, r: 0.05
+};
+
+function syncStateFromUI() {
+  state.S = parseFloat(document.getElementById('sliderS').value);
+  state.K = parseFloat(document.getElementById('sliderK').value);
+  state.T_days = parseFloat(document.getElementById('sliderT').value);
+  state.sigma = parseFloat(document.getElementById('sliderSig').value) / 100;
+  state.r = parseFloat(document.getElementById('sliderR').value) / 100;
+  document.getElementById('vS').textContent = state.S.toFixed(1);
+  document.getElementById('vK').textContent = state.K.toFixed(1);
+  document.getElementById('vT').textContent = `${state.T_days.toFixed(0)} days`;
+  document.getElementById('vSig').textContent = `${(state.sigma * 100).toFixed(1)}%`;
+  document.getElementById('vR').textContent = `${(state.r * 100).toFixed(1)}%`;
+}
+
+// ---------- Drawing the price curve ----------
+function drawPriceCurve() {
+  const canvas = document.getElementById('priceCanvas');
+  const ctx = fitCanvas(canvas);
+  const r = canvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+  ctx.clearRect(0, 0, W, H);
+  const padL = 56, padR = 16, padT = 16, padB = 36;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  // S range: centered on K with ±50% band, expanded if state.S is outside
+  const center = state.K;
+  let Slo = 0.5 * center;
+  let Shi = 1.5 * center;
+  if (state.S < Slo) Slo = Math.max(0, state.S - 0.05 * center);
+  if (state.S > Shi) Shi = state.S + 0.05 * center;
+  const T = state.T_days / 365;
+
+  const N = 160;
+  const calls = [], puts = [];
+  let maxV = 0;
+  for (let i = 0; i <= N; i++) {
+    const S = Slo + (i / N) * (Shi - Slo);
+    const bs = bsCompute(S, state.K, T, state.sigma, state.r);
+    calls.push({ S, v: bs.call });
+    puts.push({ S, v: bs.put });
+    if (bs.call > maxV) maxV = bs.call;
+    if (bs.put > maxV) maxV = bs.put;
+  }
+  // Add a bit of headroom
+  maxV = Math.max(maxV, state.K * 0.1) * 1.1;
+
+  const tx = (S) => padL + ((S - Slo) / (Shi - Slo)) * pw;
+  const ty = (v) => padT + (1 - v / maxV) * ph;
+
+  // grid
+  ctx.strokeStyle = 'rgba(26,34,48,0.9)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = padT + (i / 5) * ph;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+  }
+  for (let i = 0; i <= 10; i++) {
+    const x = padL + (i / 10) * pw;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
+  }
+
+  // strike marker
+  const xK = tx(state.K);
+  ctx.strokeStyle = 'rgba(95,109,127,0.6)';
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath(); ctx.moveTo(xK, padT); ctx.lineTo(xK, padT + ph); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.fillText('K', xK + 3, padT + 11);
+
+  // intrinsic value (call) — dashed faint
+  ctx.strokeStyle = 'rgba(34,211,238,0.25)';
+  ctx.setLineDash([3, 4]);
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(tx(Slo), ty(Math.max(0, Slo - state.K)));
+  ctx.lineTo(tx(state.K), ty(0));
+  ctx.lineTo(tx(Shi), ty(Math.max(0, Shi - state.K)));
+  ctx.stroke();
+  // intrinsic (put)
+  ctx.strokeStyle = 'rgba(244,63,94,0.25)';
+  ctx.beginPath();
+  ctx.moveTo(tx(Slo), ty(Math.max(0, state.K - Slo)));
+  ctx.lineTo(tx(state.K), ty(0));
+  ctx.lineTo(tx(Shi), ty(Math.max(0, state.K - Shi)));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // call curve
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  calls.forEach((p, i) => { const X = tx(p.S), Y = ty(p.v); i === 0 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); });
+  ctx.stroke();
+  // put curve
+  ctx.strokeStyle = '#f43f5e';
+  ctx.beginPath();
+  puts.forEach((p, i) => { const X = tx(p.S), Y = ty(p.v); i === 0 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); });
+  ctx.stroke();
+
+  // current S line (glowing amber)
+  const xS = tx(state.S);
+  ctx.shadowColor = 'rgba(245,158,11,0.7)';
+  ctx.shadowBlur = 12;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(xS, padT); ctx.lineTo(xS, padT + ph); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = '500 10px "JetBrains Mono", monospace';
+  ctx.fillText('S', xS + 3, padT + 22);
+
+  // current point dots
+  const bsNow = bsCompute(state.S, state.K, T, state.sigma, state.r);
+  const yC = ty(bsNow.call), yP = ty(bsNow.put);
+  // dot ring
+  ctx.beginPath(); ctx.arc(xS, yC, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#22d3ee';
+  ctx.shadowColor = 'rgba(34,211,238,0.7)'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(xS, yC, 3, 0, Math.PI * 2); ctx.fillStyle = '#0a0e14'; ctx.fill();
+  ctx.beginPath(); ctx.arc(xS, yP, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#f43f5e';
+  ctx.shadowColor = 'rgba(244,63,94,0.7)'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(xS, yP, 3, 0, Math.PI * 2); ctx.fillStyle = '#0a0e14'; ctx.fill();
+
+  // axes
+  ctx.strokeStyle = 'rgba(95,109,127,0.6)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+  for (let i = 0; i <= 5; i++) {
+    const t = i / 5;
+    const S = Slo + t * (Shi - Slo);
+    ctx.fillText(S.toFixed(0), tx(S), padT + ph + 14);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const v = (i / 5) * maxV;
+    ctx.fillText(v.toFixed(1), padL - 6, ty(v) + 3);
+  }
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Stock price S', padL + pw / 2, padT + ph + 30);
+  // Y-axis label
+  ctx.save();
+  ctx.translate(16, padT + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Option price', 0, 0);
+  ctx.restore();
+}
+
+// ---------- Heat map ----------
+function colorFor(v01) {
+  // v01 in 0..1, deep blue → cyan → amber
+  v01 = Math.max(0, Math.min(1, v01));
+  const stops = [
+    { t: 0, r: 10, g: 20, b: 40 },
+    { t: 0.25, r: 30, g: 70, b: 130 },
+    { t: 0.55, r: 34, g: 170, b: 220 },
+    { t: 0.80, r: 240, g: 200, b: 90 },
+    { t: 1.00, r: 245, g: 158, b: 11 }
+  ];
+  for (let i = 1; i < stops.length; i++) {
+    if (v01 <= stops[i].t) {
+      const a = stops[i - 1], b = stops[i];
+      const u = (v01 - a.t) / (b.t - a.t);
+      const r = Math.round(a.r + (b.r - a.r) * u);
+      const g = Math.round(a.g + (b.g - a.g) * u);
+      const bl = Math.round(a.b + (b.b - a.b) * u);
+      return `rgb(${r},${g},${bl})`;
+    }
+  }
+  return 'rgb(245,158,11)';
+}
+
+function drawHeat() {
+  const canvas = document.getElementById('heatCanvas');
+  const ctx = fitCanvas(canvas);
+  const r = canvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+  ctx.clearRect(0, 0, W, H);
+  // Right padding holds the colour scale bar (~10px wide) plus tick labels.
+  const padL = 56, padR = 60, padT = 16, padB = 36;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+  const scaleW = 10;
+  const scaleX = W - padR + 8;
+
+  // grid: NxM cells
+  const NX = 60, NY = 36;
+  const cellW = pw / NX, cellH = ph / NY;
+
+  let Slo = 0.5 * state.K, Shi = 1.5 * state.K;
+  if (state.S < Slo) Slo = Math.max(0, state.S - 0.05 * state.K);
+  if (state.S > Shi) Shi = state.S + 0.05 * state.K;
+  // T from very small (1 day) to current T*2 (or up to 2 years)
+  const Tmax_days = Math.max(state.T_days * 1.6, 60);
+  const Tlo = 1 / 365;
+  const Thi = Tmax_days / 365;
+
+  // first pass: find max for normalization (deep ITM corner)
+  // Approximate max as call at S=Shi, T=Thi
+  const maxV = Math.max(
+    bsCompute(Shi, state.K, Thi, state.sigma, state.r).call,
+    bsCompute(Shi, state.K, Tlo, state.sigma, state.r).call,
+    state.K * 0.6
+  );
+
+  // draw cells
+  for (let j = 0; j < NY; j++) {
+    const T = Tlo + ((j + 0.5) / NY) * (Thi - Tlo);
+    for (let i = 0; i < NX; i++) {
+      const S = Slo + ((i + 0.5) / NX) * (Shi - Slo);
+      const v = bsCompute(S, state.K, T, state.sigma, state.r).call;
+      const v01 = v / maxV;
+      ctx.fillStyle = colorFor(v01);
+      ctx.fillRect(padL + i * cellW, padT + (NY - 1 - j) * cellH, cellW + 0.7, cellH + 0.7);
+    }
+  }
+
+  // crosshairs
+  const xS = padL + ((state.S - Slo) / (Shi - Slo)) * pw;
+  const T = state.T_days / 365;
+  const yT = padT + ph - ((T - Tlo) / (Thi - Tlo)) * ph;
+  ctx.strokeStyle = 'rgba(245,158,11,0.85)';
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(xS, padT); ctx.lineTo(xS, padT + ph); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL, yT); ctx.lineTo(padL + pw, yT); ctx.stroke();
+  ctx.setLineDash([]);
+  // dot
+  ctx.beginPath(); ctx.arc(xS, yT, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#f59e0b';
+  ctx.shadowColor = 'rgba(245,158,11,0.7)'; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(xS, yT, 2.5, 0, Math.PI * 2); ctx.fillStyle = '#0a0e14'; ctx.fill();
+
+  // axes
+  ctx.strokeStyle = 'rgba(95,109,127,0.6)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
+
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+  for (let i = 0; i <= 5; i++) {
+    const t = i / 5;
+    const S = Slo + t * (Shi - Slo);
+    ctx.fillText(S.toFixed(0), padL + t * pw, padT + ph + 14);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const t = i / 4;
+    const days = Math.round((Tlo + t * (Thi - Tlo)) * 365);
+    ctx.fillText(days + 'd', padL - 6, padT + ph - t * ph + 3);
+  }
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Stock price S', padL + pw / 2, padT + ph + 30);
+  ctx.save(); ctx.translate(16, padT + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Days to expiry', 0, 0); ctx.restore();
+
+  // ---- Quantitative colour scale bar (same gradient as the heat map) ----
+  // Draw vertically from top (=maxV) to bottom (=0), in `scaleW` width.
+  const SCALE_STEPS = 80;
+  for (let k = 0; k < SCALE_STEPS; k++) {
+    const t = 1 - k / SCALE_STEPS; // top = 1 (max), bottom = 0
+    ctx.fillStyle = colorFor(t);
+    const y = padT + (k / SCALE_STEPS) * ph;
+    ctx.fillRect(scaleX, y, scaleW, ph / SCALE_STEPS + 0.5);
+  }
+  // border
+  ctx.strokeStyle = 'rgba(95,109,127,0.6)'; ctx.lineWidth = 1;
+  ctx.strokeRect(scaleX, padT, scaleW, ph);
+  // tick labels at min, mid, max
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const tickX = scaleX + scaleW + 4;
+  ctx.fillText(maxV.toFixed(1), tickX, padT);
+  ctx.fillText((maxV / 2).toFixed(1), tickX, padT + ph / 2);
+  ctx.fillText('0', tickX, padT + ph);
+  ctx.textBaseline = 'alphabetic';
+}
+
+// ---------- Greek sparklines ----------
+function drawGreek(canvas, kind) {
+  const ctx = fitCanvas(canvas);
+  const r = canvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+  ctx.clearRect(0, 0, W, H);
+  const padL = 8, padR = 8, padT = 8, padB = 14;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  let Slo = 0.5 * state.K, Shi = 1.5 * state.K;
+  if (state.S < Slo) Slo = Math.max(0, state.S - 0.05 * state.K);
+  if (state.S > Shi) Shi = state.S + 0.05 * state.K;
+  const T = state.T_days / 365;
+  const N = 120;
+  const vals = [];
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i <= N; i++) {
+    const S = Slo + (i / N) * (Shi - Slo);
+    const bs = bsCompute(S, state.K, T, state.sigma, state.r);
+    let v;
+    if (kind === 'delta') v = bs.delta;
+    else if (kind === 'gamma') v = bs.gamma;
+    else if (kind === 'theta') v = bs.thetaCallYr / 365;
+    else if (kind === 'vega') v = bs.vega / 100;
+    else if (kind === 'rho') v = bs.rhoCall / 100;
+    vals.push({ S, v });
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  if (hi === lo) { hi = lo + 1; }
+  // include zero line if relevant
+  if (lo > 0) lo = 0;
+  if (hi < 0) hi = 0;
+  // small margin
+  const margin = (hi - lo) * 0.08;
+  lo -= margin; hi += margin;
+
+  const tx = (S) => padL + ((S - Slo) / (Shi - Slo)) * pw;
+  const ty = (v) => padT + (1 - (v - lo) / (hi - lo)) * ph;
+
+  // zero line
+  if (lo < 0 && hi > 0) {
+    ctx.strokeStyle = 'rgba(95,109,127,0.4)';
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    const y0 = ty(0);
+    ctx.moveTo(padL, y0); ctx.lineTo(padL + pw, y0); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // strike marker
+  const xK = tx(state.K);
+  ctx.strokeStyle = 'rgba(95,109,127,0.5)';
+  ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(xK, padT); ctx.lineTo(xK, padT + ph); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // fill under curve (or above for negative)
+  ctx.beginPath();
+  vals.forEach((p, i) => { const X = tx(p.S), Y = ty(p.v); i === 0 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); });
+  ctx.lineTo(tx(Shi), ty(0));
+  ctx.lineTo(tx(Slo), ty(0));
+  ctx.closePath();
+  let fillCol;
+  if (kind === 'theta') fillCol = 'rgba(244,63,94,0.18)';
+  else fillCol = 'rgba(34,211,238,0.18)';
+  ctx.fillStyle = fillCol; ctx.fill();
+
+  // line
+  ctx.strokeStyle = kind === 'theta' ? '#f43f5e' : '#22d3ee';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  vals.forEach((p, i) => { const X = tx(p.S), Y = ty(p.v); i === 0 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); });
+  ctx.stroke();
+
+  // current dot
+  const cur = bsCompute(state.S, state.K, T, state.sigma, state.r);
+  let cv;
+  if (kind === 'delta') cv = cur.delta;
+  else if (kind === 'gamma') cv = cur.gamma;
+  else if (kind === 'theta') cv = cur.thetaCallYr / 365;
+  else if (kind === 'vega') cv = cur.vega / 100;
+  else if (kind === 'rho') cv = cur.rhoCall / 100;
+  const X = tx(state.S), Y = ty(cv);
+  ctx.beginPath(); ctx.arc(X, Y, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#f59e0b';
+  ctx.shadowColor = 'rgba(245,158,11,0.7)'; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(X, Y, 2, 0, Math.PI * 2); ctx.fillStyle = '#0a0e14'; ctx.fill();
+
+  // axis baseline
+  ctx.strokeStyle = 'rgba(95,109,127,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, padT + ph); ctx.lineTo(padL + pw, padT + ph); ctx.stroke();
+  // S ticks small
+  ctx.fillStyle = '#5b6573'; ctx.font = '9px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+  ctx.fillText(Slo.toFixed(0), padL + 0, padT + ph + 10);
+  ctx.fillText(state.K.toFixed(0), xK, padT + ph + 10);
+  ctx.fillText(Shi.toFixed(0), padL + pw, padT + ph + 10);
+}
+
+function drawAllGreeks() {
+  document.querySelectorAll('.greek-canvas').forEach(c => drawGreek(c, c.dataset.greek));
+}
+
+// ---------- Update readouts ----------
+function updateReadouts() {
+  const T = state.T_days / 365;
+  const bs = bsCompute(state.S, state.K, T, state.sigma, state.r);
+  document.getElementById('callPrice').textContent = bs.call.toFixed(2);
+  document.getElementById('putPrice').textContent = bs.put.toFixed(2);
+  document.getElementById('d1').textContent = isNaN(bs.d1) ? '—' : bs.d1.toFixed(3);
+  document.getElementById('d2').textContent = isNaN(bs.d2) ? '—' : bs.d2.toFixed(3);
+  document.getElementById('vDelta').textContent = bs.delta.toFixed(3);
+  document.getElementById('vGamma').textContent = bs.gamma.toFixed(4);
+  // Theta per day
+  document.getElementById('vTheta').textContent = (bs.thetaCallYr / 365).toFixed(3);
+  // Vega per 1% vol
+  document.getElementById('vVega').textContent = (bs.vega / 100).toFixed(3);
+  // Rho per 1% rate
+  document.getElementById('vRho').textContent = (bs.rhoCall / 100).toFixed(3);
+
+  // moneyness
+  const m = document.getElementById('moneynessBadge');
+  const diff = (state.S - state.K) / state.K;
+  m.classList.remove('itm', 'atm', 'otm');
+  if (Math.abs(diff) < 0.01) {
+    m.classList.add('atm'); m.textContent = 'ATM — At The Money';
+  } else if (diff > 0) {
+    m.classList.add('itm'); m.textContent = `ITM (call) — S is ${(diff * 100).toFixed(1)}% above K`;
+  } else {
+    m.classList.add('otm'); m.textContent = `OTM (call) — S is ${Math.abs(diff * 100).toFixed(1)}% below K`;
+  }
+
+  // parity
+  const lhs = bs.call - bs.put;
+  const rhs = state.S - state.K * Math.exp(-state.r * T);
+  document.getElementById('lhsVal').textContent = lhs.toFixed(3);
+  document.getElementById('rhsVal').textContent = rhs.toFixed(3);
+  const ok = Math.abs(lhs - rhs) < 1e-4;
+  const pk = document.getElementById('parityOk');
+  if (ok) {
+    pk.innerHTML = `<span class="ok">✓ identity holds (Δ = ${(lhs - rhs).toExponential(2)})</span>`;
+  } else {
+    pk.innerHTML = `<span style="color:var(--rose)">Δ = ${(lhs - rhs).toFixed(6)}</span>`;
+  }
+
+  updateExplainer(bs);
+}
+
+// ---------- Explainer ----------
+let lastChanged = null;
+function updateExplainer(bs) {
+  const el = document.getElementById('explainer');
+  const m = (state.S - state.K) / state.K;
+  const vegaPer1 = bs.vega / 100;
+  const thetaPerDay = bs.thetaCallYr / 365;
+  const rhoPer1 = bs.rhoCall / 100;
+  let html = '';
+  if (state.T_days <= 3) {
+    html = `<strong>Near expiry.</strong> With ${state.T_days} day${state.T_days === 1 ? '' : 's'} left, theta decay accelerates and the call's value collapses toward its intrinsic value max(S−K, 0) = <strong>${Math.max(0, state.S - state.K).toFixed(2)}</strong>.`;
+  } else if (lastChanged === 'sigma') {
+    html = `<strong>Vega</strong> measures sensitivity to volatility. At σ = ${(state.sigma * 100).toFixed(1)}%, a 1-percentage-point rise in σ changes the call by ≈ <strong>${vegaPer1.toFixed(3)}</strong>. Vega peaks when the option is at-the-money.`;
+  } else if (lastChanged === 'T') {
+    html = `<strong>Theta</strong> is the time decay. This call loses ≈ <strong>${Math.abs(thetaPerDay).toFixed(4)}</strong> per day, all else equal. Decay is fastest for ATM options and accelerates as expiry nears.`;
+  } else if (lastChanged === 'r') {
+    html = `<strong>Rho</strong> is sensitivity to the risk-free rate. At r = ${(state.r * 100).toFixed(1)}%, a 1-percentage-point rise in r changes the call by ≈ <strong>${rhoPer1.toFixed(3)}</strong>. Rho is small unless T is long.`;
+  } else if (lastChanged === 'S' || lastChanged === 'K') {
+    if (Math.abs(m) < 0.01) {
+      html = `<strong>At the money</strong> (S ≈ K). Delta ≈ ${bs.delta.toFixed(2)} (just over 0.5 because of the drift term), and gamma is at its peak — small moves in S produce the largest non-linear repricing.`;
+    } else if (m > 0) {
+      html = `Call is <strong>in the money</strong> by ${(m * 100).toFixed(1)}%. Delta ≈ <strong>${bs.delta.toFixed(2)}</strong> — the call gains ≈ ${(bs.delta * 100).toFixed(0)}¢ per $1 rise in S. As S → ∞, Delta → 1.`;
+    } else {
+      html = `Call is <strong>out of the money</strong> by ${Math.abs(m * 100).toFixed(1)}%. Delta ≈ <strong>${bs.delta.toFixed(2)}</strong> — the call's value is mostly time/volatility premium and is less responsive to S.`;
+    }
+  } else {
+    // initial state — give a useful summary
+    html = `Call <strong>${bs.call.toFixed(2)}</strong>, Put <strong>${bs.put.toFixed(2)}</strong>. The call's delta is ${bs.delta.toFixed(2)}, gamma ${bs.gamma.toFixed(3)}, theta ${thetaPerDay.toFixed(3)}/day. Move any slider — try σ or T — to see how the price and Greeks respond.`;
+  }
+  el.innerHTML = html;
+}
+
+// ---------- Wire up ----------
+function bind(id, key) {
+  const slider = document.getElementById(id);
+  slider.addEventListener('input', () => {
+    lastChanged = key;
+    syncStateFromUI();
+    redraw();
+  });
+}
+bind('sliderS', 'S');
+bind('sliderK', 'K');
+bind('sliderT', 'T');
+bind('sliderSig', 'sigma');
+bind('sliderR', 'r');
+
+function redraw() {
+  drawPriceCurve();
+  drawHeat();
+  drawAllGreeks();
+  updateReadouts();
+}
+
+window.addEventListener('resize', () => { redraw(); });
+
+// ---------- Try this experiments ----------
+function applyTry(name) {
+  const presets = {
+    atm:     { S: 100, K: 100, T: 30,  sig: 25, r: 4,
+               note: 'Classic ATM short-dated option. <strong>Theta</strong> is biggest here; <strong>Gamma</strong> peaks at this strike.' },
+    itm:     { S: 140, K: 100, T: 180, sig: 25, r: 4,
+               note: '<strong>Delta ≈ 1</strong>; the call behaves almost like the underlying. <strong>Gamma</strong> and <strong>Vega</strong> are small.' },
+    highvol: { S: 100, K: 100, T: 90,  sig: 80, r: 4,
+               note: 'Both call and put are expensive when volatility is high — even at the strike.' }
+  };
+  const cfg = presets[name];
+  if (!cfg) return;
+  const sS = document.getElementById('sliderS');
+  const sK = document.getElementById('sliderK');
+  const sT = document.getElementById('sliderT');
+  const sSig = document.getElementById('sliderSig');
+  const sR = document.getElementById('sliderR');
+  sS.value = cfg.S; sK.value = cfg.K; sT.value = cfg.T;
+  sSig.value = cfg.sig; sR.value = cfg.r;
+  // Fire input events so the existing handlers re-run
+  [sS, sK, sT, sSig, sR].forEach(s => s.dispatchEvent(new Event('input')));
+  document.getElementById('tryNote').innerHTML = cfg.note;
+}
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+(function init() {
+  syncStateFromUI();
+  redraw();
+})();
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const btn = document.getElementById('kbdHelpBtn');
+  if (!modal || !btn) return;
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  btn.addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === '1') { applyTry('atm'); }
+    else if (e.key === '2') { applyTry('itm'); }
+    else if (e.key === '3') { applyTry('highvol'); }
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const sSig = document.getElementById('sliderSig');
+      if (!sSig) return;
+      const step = e.key === 'ArrowUp' ? 5 : -5;
+      const min = parseFloat(sSig.min || '1');
+      const max = parseFloat(sSig.max || '150');
+      const next = Math.min(max, Math.max(min, parseFloat(sSig.value) + step));
+      sSig.value = next;
+      sSig.dispatchEvent(new Event('input'));
+    }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="compound_interest.html">
+      <div class="related-title">Compound Interest</div>
+      <div class="related-desc">How nominal vs real returns play out over 50 years</div>
+    </a>
+    <a class="related-card" href="monty_hall.html">
+      <div class="related-title">Monty Hall</div>
+      <div class="related-desc">Switching wins two-thirds of the time. Here's why.</div>
+    </a>
+    <a class="related-card" href="signal_detection.html">
+      <div class="related-title">Signal Detection</div>
+      <div class="related-desc">Sensitivity (d′) vs criterion (β), with full ROC</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

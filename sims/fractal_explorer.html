@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fractal Explorer — Mandelbrot & Julia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; transition: color 120ms ease; }
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 18px 24px 24px; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .canvas-grid { grid-template-columns: 1fr !important; } }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 3px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range] { cursor: ew-resize; }
+input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button:active { transform: translateY(0.5px); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button:disabled:hover { background: var(--bg-elev-1); border-color: var(--panel-border); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.title-row h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.title-row .meta { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.canvas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.fractal-wrap { position: relative; aspect-ratio: 1 / 1; background: #04060a; border-radius: var(--r-md); overflow: hidden; cursor: crosshair; }
+.fractal-wrap canvas { width: 100%; height: 100%; display: block; }
+.fractal-wrap .overlay { position: absolute; top: 8px; left: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); background: rgba(10,14,20,0.7); padding: 4px 8px; border-radius: var(--r-sm); pointer-events: none; }
+.fractal-wrap .corner { position: absolute; bottom: 8px; right: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); background: rgba(10,14,20,0.7); padding: 4px 8px; border-radius: var(--r-sm); pointer-events: none; }
+.progress-track { height: 3px; background: var(--grid); border-radius: 999px; overflow: hidden; margin-top: 8px; }
+.progress-fill { height: 100%; background: var(--cyan); width: 0%; transition: width 80ms linear; box-shadow: var(--glow-cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 8px 10px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 14px; margin-top: 2px; color: var(--text); word-break: break-all; }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.gold { color: var(--gold); }
+.readout .val.small { font-size: 12px; }
+.control { margin-bottom: 12px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.bookmarks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bookmark { background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 0; cursor: pointer; overflow: hidden; transition: all 120ms ease; text-align: left; font-family: inherit; color: inherit; }
+.bookmark:hover { border-color: var(--cyan); transform: translateY(-1px); }
+.bookmark:active { transform: translateY(0); }
+.bookmark canvas { width: 100%; aspect-ratio: 1/1; display: block; background: #04060a; }
+.bookmark .bmtext { padding: 6px 8px; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--panel-border); }
+.bookmark .bmtext .nm { color: var(--text); font-weight: 500; display: block; margin-bottom: 2px; font-size: 11px; }
+.palette-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.palette-btn { padding: 6px 4px; font-size: 11px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); border-radius: var(--r-sm); cursor: pointer; transition: all 120ms; }
+.palette-btn:hover { color: var(--text); border-color: var(--cyan); }
+.palette-btn.active { background: var(--cyan-soft); color: var(--cyan); border-color: var(--cyan); }
+.palette-swatch { height: 6px; border-radius: 2px; margin-top: 4px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 12px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 14px; line-height: 1.55; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.mode-pill { font-size: 10px; padding: 3px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.mode-pill.cyan { color: var(--cyan); background: var(--cyan-soft); }
+.mode-pill.amber { color: var(--amber); background: var(--amber-soft); }
+.crosshair { position: absolute; pointer-events: none; width: 14px; height: 14px; border: 1.5px solid var(--amber); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: var(--glow-amber); opacity: 0; transition: opacity 180ms ease; }
+.crosshair.visible { opacity: 1; }
+.crosshair::before, .crosshair::after { content: ''; position: absolute; background: var(--amber); }
+.crosshair::before { left: 50%; top: -6px; width: 1px; height: 5px; transform: translateX(-50%); }
+.crosshair::after { left: 50%; bottom: -6px; width: 1px; height: 5px; transform: translateX(-50%); }
+.coord-num { font-family: 'JetBrains Mono', monospace; }
+.insight-banner { font-style: italic; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 0 0 0 8px; font-size: 13px; margin: 6px 0 0; }
+.try-panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px; }
+.try-panel .try-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+.try-panel .try-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.try-panel .try-row button { font-size: 12px; padding: 6px 12px; }
+.try-panel .try-note { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin: 4px 0 0; }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Fractal Explorer — Mandelbrot & Julia</h1>
+    <p class="sub">Click the Mandelbrot to seed the Julia set. Scroll to zoom.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+<div style="max-width: 1400px; margin: 14px auto 0; padding: 0 24px;">
+  <p class="insight-banner" style="margin: 0;">The Mandelbrot set's boundary contains infinite detail. Click any point to see the Julia set at that c.</p>
+</div>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>Classic palette</span>
+      <span class="kbd-key">2</span><span>Fire palette</span>
+      <span class="kbd-key">3</span><span>Ice palette</span>
+      <span class="kbd-key">4</span><span>Psychedelic palette</span>
+      <span class="kbd-key">5</span><span>Greyscale palette</span>
+      <span class="kbd-key">R</span><span>Reset view</span>
+      <span class="kbd-key">B</span><span>Back (zoom history)</span>
+      <span class="kbd-key">+</span><span>Iterations +50</span>
+      <span class="kbd-key">−</span><span>Iterations −50</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="canvas-grid">
+        <div>
+          <div class="title-row">
+            <h3>Mandelbrot set <span class="mode-pill cyan">parameter space</span></h3>
+            <span class="meta" id="mandMeta">—</span>
+          </div>
+          <div class="fractal-wrap" id="mandWrap">
+            <canvas id="mandCanvas"></canvas>
+            <div class="overlay" id="mandOverlay">z → z² + c, vary c</div>
+            <div class="corner" id="mandCorner">—</div>
+            <div class="crosshair" id="mandCross"></div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="mandProgress"></div></div>
+        </div>
+        <div>
+          <div class="title-row">
+            <h3>Julia set <span class="mode-pill amber">dynamic space</span></h3>
+            <span class="meta" id="juliaMeta">—</span>
+          </div>
+          <div class="fractal-wrap" id="juliaWrap">
+            <canvas id="juliaCanvas"></canvas>
+            <div class="overlay" id="juliaOverlay">c fixed, vary z₀</div>
+            <div class="corner" id="juliaCorner">—</div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="juliaProgress"></div></div>
+        </div>
+      </div>
+
+      <div class="explainer" id="explainer">
+        <strong style="color: var(--text);">How to read this.</strong> The Mandelbrot set on the left plots the parameter <span class="k">c</span>: a point is coloured black if iterating <span class="k">z ← z² + c</span> from <span class="k">z₀ = 0</span> stays bounded. Coloured points escape, and the colour encodes how quickly. Each <span class="k">c</span> in the Mandelbrot set has a corresponding Julia set — click anywhere on the left to fix <span class="k">c</span> and redraw the Julia set on the right. Points inside the Mandelbrot give connected Julia sets; points outside give Cantor-dust Julia sets.
+      </div>
+    </div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Live readouts</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Zoom</div><div class="val cyan small" id="oZoom">1.00×</div></div>
+        <div class="readout"><div class="lbl">Render time</div><div class="val amber small" id="oRender">— ms</div></div>
+        <div class="readout" style="grid-column: span 2;"><div class="lbl">Mandelbrot centre</div><div class="val small" id="oCentre">-0.500000, 0.000000</div></div>
+        <div class="readout" style="grid-column: span 2;"><div class="lbl">Cursor c = a + bi</div><div class="val gold small" id="oCursor">—</div></div>
+        <div class="readout"><div class="lbl">Iter at cursor</div><div class="val small" id="oIter">—</div></div>
+        <div class="readout"><div class="lbl">In set?</div><div class="val small" id="oInSet">—</div></div>
+        <div class="readout" style="grid-column: span 2;"><div class="lbl">Julia c value</div><div class="val cyan small" id="oJuliaC">0.000000 + 0.000000i</div></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 14px;">
+      <p class="section-label">Navigation</p>
+      <div class="btn-row" style="margin-bottom: 10px;">
+        <button id="backBtn">← Back</button>
+        <button id="resetBtn">Reset view</button>
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">Max iterations</span><span class="value num" id="vIter">200</span></div>
+        <input type="range" id="iter" min="50" max="1000" step="10" value="200">
+      </div>
+      <div id="iterHint" style="display: none; font-size: 11px; color: var(--amber); background: var(--amber-soft); padding: 6px 8px; border-radius: var(--r-sm); margin-bottom: 8px;"></div>
+      <div style="font-size: 11px; color: var(--text-faint); line-height: 1.5;">
+        Scroll on either canvas to zoom. Click the Mandelbrot to set <span class="k coord-num">c</span> for the Julia set.
+      </div>
+    </div>
+
+    <div class="try-panel" style="margin-top: 14px;">
+      <div class="try-label">Try this</div>
+      <div class="try-row">
+        <button id="trySeahorse">Seahorse Valley</button>
+      </div>
+      <p class="try-note">A famous region with spiral structures. Zoom in to find more, similar structures inside.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryEdgeCardioid">Edge of the cardioid</button>
+      </div>
+      <p class="try-note">Julia sets just outside the Mandelbrot are 'dust' — disconnected.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryInsideCardioid">Inside the cardioid</button>
+      </div>
+      <p class="try-note">Julia sets for c inside the Mandelbrot are connected — single intricate curves.</p>
+    </div>
+
+    <div class="panel" style="margin-top: 14px;">
+      <p class="section-label">Colour palette</p>
+      <div class="palette-row">
+        <button class="palette-btn active" data-palette="classic">Classic<div class="palette-swatch" style="background: linear-gradient(90deg, #04121a, #22d3ee, #fbbf24, #fff);"></div></button>
+        <button class="palette-btn" data-palette="fire">Fire<div class="palette-swatch" style="background: linear-gradient(90deg, #000, #7a0000, #f43f5e, #fbbf24, #fff);"></div></button>
+        <button class="palette-btn" data-palette="ice">Ice<div class="palette-swatch" style="background: linear-gradient(90deg, #000814, #0a3d62, #22d3ee, #e6edf3);"></div></button>
+        <button class="palette-btn" data-palette="psyche">Psyche<div class="palette-swatch" style="background: linear-gradient(90deg, #f43f5e, #fbbf24, #34d399, #22d3ee, #a78bfa);"></div></button>
+        <button class="palette-btn" data-palette="grey">Grey<div class="palette-swatch" style="background: linear-gradient(90deg, #000, #888, #fff);"></div></button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 14px;">
+      <p class="section-label">Bookmarks</p>
+      <div class="bookmarks" id="bookmarks"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ============================================================
+ * WEB WORKER source (inlined). Computes rows of escape values
+ * and posts ImageData back to the main thread.
+ * ============================================================ */
+const WORKER_SRC = `
+self.currentJob = 0;
+self.onmessage = function(e) {
+  // Cancel signal: just bump currentJob so any in-progress loop's posts are dropped.
+  if (e.data && e.data.cancel) {
+    self.currentJob = e.data.jobId || (self.currentJob + 1);
+    return;
+  }
+  const {jobId, w, h, cx, cy, scale, maxIter, mode, jcr, jci, palette} = e.data;
+  self.currentJob = jobId;
+  // palette is a Uint8ClampedArray of RGB triples, length = 3 * paletteSize
+  const paletteSize = palette.length / 3;
+  const buf = new Uint8ClampedArray(w * h * 4);
+  const log2 = Math.log(2);
+
+  // Smooth colouring helper
+  function shade(zr, zi, n, maxIter) {
+    if (n >= maxIter) return [0, 0, 0]; // inside set
+    const mag = Math.sqrt(zr*zr + zi*zi);
+    let mu = n + 1 - Math.log(Math.log(mag)) / log2;
+    if (!isFinite(mu)) mu = n;
+    // Map mu into palette via cyclic, perceptually-smooth lookup
+    const t = (mu * 6.0) % paletteSize;
+    const i0 = Math.floor(t) % paletteSize;
+    const i1 = (i0 + 1) % paletteSize;
+    const f = t - Math.floor(t);
+    const r = palette[i0*3]   * (1-f) + palette[i1*3]   * f;
+    const g = palette[i0*3+1] * (1-f) + palette[i1*3+1] * f;
+    const b = palette[i0*3+2] * (1-f) + palette[i1*3+2] * f;
+    return [r|0, g|0, b|0];
+  }
+
+  const ROWS_PER_POST = 16;
+  let lastPost = 0;
+  const escapeR2 = 1 << 16; // big bailout for smooth colouring
+
+  for (let py = 0; py < h; py++) {
+    const y0 = cy + (py - h/2) * scale;
+    for (let px = 0; px < w; px++) {
+      const x0 = cx + (px - w/2) * scale;
+      let zr, zi, cr, ci;
+      if (mode === 'mandelbrot') {
+        zr = 0; zi = 0;
+        cr = x0; ci = y0;
+      } else {
+        zr = x0; zi = y0;
+        cr = jcr; ci = jci;
+      }
+      let n = 0;
+      let zr2 = zr*zr, zi2 = zi*zi;
+      // Cardioid + bulb early-out for mandelbrot only (significant speed-up)
+      let inside = false;
+      if (mode === 'mandelbrot') {
+        const xm = cr - 0.25;
+        const q = xm*xm + ci*ci;
+        if (q*(q + xm) < 0.25*ci*ci) inside = true;
+        if (!inside) {
+          const xp = cr + 1.0;
+          if (xp*xp + ci*ci < 0.0625) inside = true;
+        }
+      }
+      if (inside) {
+        n = maxIter;
+      } else {
+        while (zr2 + zi2 < escapeR2 && n < maxIter) {
+          zi = 2 * zr * zi + ci;
+          zr = zr2 - zi2 + cr;
+          zr2 = zr*zr; zi2 = zi*zi;
+          n++;
+        }
+      }
+      const [r, g, b] = shade(zr, zi, n, maxIter);
+      const idx = (py * w + px) * 4;
+      buf[idx] = r; buf[idx+1] = g; buf[idx+2] = b; buf[idx+3] = 255;
+    }
+    if ((py - lastPost) >= ROWS_PER_POST || py === h - 1) {
+      if (self.currentJob !== jobId) return; // stale — bail and drop the buffer
+      self.postMessage({jobId, progress: (py+1)/h});
+      lastPost = py;
+    }
+  }
+  if (self.currentJob !== jobId) return; // stale
+  self.postMessage({jobId, done: true, buffer: buf.buffer}, [buf.buffer]);
+};
+`;
+
+/* ============================================================
+ * PALETTES — perceptually-smooth cyclic HSL lookup tables
+ * ============================================================ */
+function buildPalette(name) {
+  const N = 256;
+  const out = new Uint8ClampedArray(N * 3);
+  for (let i = 0; i < N; i++) {
+    const t = i / N;
+    let r, g, b;
+    if (name === 'classic') {
+      // Electric blue → gold cycling
+      const phase = t * Math.PI * 2;
+      r = 9 + 127 * (1 + Math.sin(phase + 0.0)) / 2 + 80 * Math.pow(t, 0.5);
+      g = 30 + 130 * (1 + Math.sin(phase + 1.2)) / 2 + 50 * Math.pow(t, 0.6);
+      b = 50 + 180 * (1 + Math.sin(phase + 2.4)) / 2;
+    } else if (name === 'fire') {
+      // Black → red → orange → yellow → white
+      const u = t;
+      r = Math.min(255, 255 * Math.pow(u, 0.4));
+      g = Math.max(0, 255 * Math.pow(Math.max(0, u - 0.25) / 0.75, 1.4));
+      b = Math.max(0, 255 * Math.pow(Math.max(0, u - 0.7) / 0.3, 2.0));
+    } else if (name === 'ice') {
+      const u = t;
+      r = 20 + 200 * Math.pow(u, 1.8);
+      g = 40 + 200 * Math.pow(u, 1.1);
+      b = 60 + 195 * Math.pow(u, 0.6);
+    } else if (name === 'psyche') {
+      const h = (t * 720) % 360;
+      const s = 0.85;
+      const l = 0.45 + 0.25 * Math.sin(t * Math.PI * 6);
+      [r, g, b] = hslToRgb(h, s, l);
+    } else if (name === 'grey') {
+      const u = Math.pow(t, 0.85);
+      r = g = b = u * 255;
+    }
+    out[i*3]   = Math.max(0, Math.min(255, r|0));
+    out[i*3+1] = Math.max(0, Math.min(255, g|0));
+    out[i*3+2] = Math.max(0, Math.min(255, b|0));
+  }
+  return out;
+}
+function hslToRgb(h, s, l) {
+  h /= 360;
+  let r, g, b;
+  if (s === 0) { r = g = b = l; }
+  else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return [r * 255, g * 255, b * 255];
+}
+
+/* ============================================================
+ * Worker manager — one worker per fractal canvas
+ * ============================================================ */
+class FractalRenderer {
+  constructor(canvas, mode) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.mode = mode; // 'mandelbrot' or 'julia'
+    this.w = 0; this.h = 0;
+    this.image = null;
+    this.worker = null;
+    this.jobId = 0;
+    this.useWorker = true;
+    this.onProgress = null;
+    this.onDone = null;
+    this.lastRenderMs = 0;
+    this.fallbackState = null;
+    try {
+      const blob = new Blob([WORKER_SRC], {type: 'application/javascript'});
+      this.worker = new Worker(URL.createObjectURL(blob));
+      this.worker.onmessage = (e) => this._onMsg(e);
+    } catch (err) {
+      console.warn('Web Worker unavailable, using fallback', err);
+      this.useWorker = false;
+    }
+  }
+
+  fit() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = this.canvas.getBoundingClientRect();
+    // Cap render resolution to keep things responsive at modest cost
+    const cap = 720;
+    let cssW = rect.width, cssH = rect.height;
+    let renderW = Math.min(cap, Math.floor(cssW * dpr));
+    let renderH = Math.min(cap, Math.floor(cssH * dpr));
+    this.canvas.width = renderW;
+    this.canvas.height = renderH;
+    this.w = renderW;
+    this.h = renderH;
+    this.image = this.ctx.createImageData(this.w, this.h);
+  }
+
+  render(view, maxIter, palette, juliaC) {
+    this.jobId++;
+    const jobId = this.jobId;
+    const startedAt = performance.now();
+    this._startedAt = startedAt;
+    if (this.onProgress) this.onProgress(0);
+    if (this.useWorker) {
+      // Persistent worker: send a cancel hint (bumps the worker's currentJob),
+      // then queue the new job. The worker drops stale progress/done posts;
+      // the main thread also drops them in _onMsg via jobId check.
+      if (this.worker) {
+        try { this.worker.postMessage({ cancel: true, jobId }); } catch (_) {}
+      } else {
+        try {
+          const blob = new Blob([WORKER_SRC], {type: 'application/javascript'});
+          this.worker = new Worker(URL.createObjectURL(blob));
+          this.worker.onmessage = (e) => this._onMsg(e);
+        } catch (err) {
+          this.useWorker = false;
+          this._renderFallback(jobId, view, maxIter, palette, juliaC);
+          return;
+        }
+      }
+      const paletteCopy = new Uint8ClampedArray(palette);
+      this.worker.postMessage({
+        jobId,
+        w: this.w, h: this.h,
+        cx: view.cx, cy: view.cy, scale: view.scale,
+        maxIter,
+        mode: this.mode,
+        jcr: juliaC ? juliaC.cr : 0,
+        jci: juliaC ? juliaC.ci : 0,
+        palette: paletteCopy,
+      });
+    } else {
+      // chunked fallback: 50 rows per animation frame
+      this._renderFallback(jobId, view, maxIter, palette, juliaC);
+    }
+  }
+
+  _renderFallback(jobId, view, maxIter, palette, juliaC) {
+    const { w, h } = this;
+    const buf = this.image.data;
+    const paletteSize = palette.length / 3;
+    const log2 = Math.log(2);
+    const escapeR2 = 1 << 16;
+    let py = 0;
+    const step = () => {
+      if (jobId !== this.jobId) return; // cancelled
+      const end = Math.min(h, py + 50);
+      for (; py < end; py++) {
+        const y0 = view.cy + (py - h/2) * view.scale;
+        for (let px = 0; px < w; px++) {
+          const x0 = view.cx + (px - w/2) * view.scale;
+          let zr, zi, cr, ci;
+          if (this.mode === 'mandelbrot') { zr = 0; zi = 0; cr = x0; ci = y0; }
+          else { zr = x0; zi = y0; cr = juliaC.cr; ci = juliaC.ci; }
+          let n = 0;
+          let zr2 = zr*zr, zi2 = zi*zi;
+          while (zr2 + zi2 < escapeR2 && n < maxIter) {
+            zi = 2*zr*zi + ci;
+            zr = zr2 - zi2 + cr;
+            zr2 = zr*zr; zi2 = zi*zi;
+            n++;
+          }
+          let r, g, b;
+          if (n >= maxIter) { r = 0; g = 0; b = 0; }
+          else {
+            const mag = Math.sqrt(zr2 + zi2);
+            let mu = n + 1 - Math.log(Math.log(mag)) / log2;
+            if (!isFinite(mu)) mu = n;
+            const t = (mu * 6.0) % paletteSize;
+            const i0 = Math.floor(t) % paletteSize;
+            const i1 = (i0 + 1) % paletteSize;
+            const f = t - Math.floor(t);
+            r = palette[i0*3]   * (1-f) + palette[i1*3]   * f;
+            g = palette[i0*3+1] * (1-f) + palette[i1*3+1] * f;
+            b = palette[i0*3+2] * (1-f) + palette[i1*3+2] * f;
+          }
+          const idx = (py * w + px) * 4;
+          buf[idx]   = r|0;
+          buf[idx+1] = g|0;
+          buf[idx+2] = b|0;
+          buf[idx+3] = 255;
+        }
+      }
+      this.ctx.putImageData(this.image, 0, 0);
+      if (this.onProgress) this.onProgress(py / h);
+      if (py < h) requestAnimationFrame(step);
+      else {
+        this.lastRenderMs = performance.now() - this._startedAt;
+        if (this.onDone) this.onDone(this.lastRenderMs);
+      }
+    };
+    requestAnimationFrame(step);
+  }
+
+  _onMsg(e) {
+    const { jobId } = e.data;
+    if (jobId !== this.jobId) return; // stale
+    if (e.data.progress !== undefined) {
+      if (this.onProgress) this.onProgress(e.data.progress);
+    } else if (e.data.done) {
+      const arr = new Uint8ClampedArray(e.data.buffer);
+      this.image.data.set(arr);
+      this.ctx.putImageData(this.image, 0, 0);
+      this.lastRenderMs = performance.now() - this._startedAt;
+      if (this.onDone) this.onDone(this.lastRenderMs);
+    }
+  }
+}
+
+/* ============================================================
+ * View state, history, controls
+ * ============================================================ */
+const state = {
+  mand: { cx: -0.5, cy: 0.0, scale: 3.5 / 720 }, // scale = world units per pixel; init full Mandelbrot
+  julia: { cx: 0.0, cy: 0.0, scale: 3.5 / 720 },
+  maxIter: 200,
+  palette: 'classic',
+  paletteData: null,
+  juliaC: { cr: -0.7269, ci: 0.1889 }, // classic dendrite
+  history: [],
+  cursorC: null,
+};
+
+const BOOKMARKS = [
+  { name: 'Seahorse Valley',  desc: 'Spiral fractals near -0.75', cx: -0.745428,  cy: 0.113009,   scale: 3.5e-5 / 1 },
+  { name: 'Elephant Valley',  desc: 'Trunk-like cusps',           cx: 0.275,      cy: 0.0,        scale: 0.012 },
+  { name: 'Triple Spiral',    desc: 'Three-arm spiral',           cx: -0.088,     cy: 0.654,      scale: 0.001 },
+  { name: 'Misiurewicz Pt',   desc: 'Self-similar branch tip',    cx: -0.77568377,cy: 0.13646737, scale: 1.5e-4 },
+  { name: 'Mini Mandelbrot',  desc: 'Tiny replica buried deep',   cx: -1.7497219, cy: 0.0000028,  scale: 2.5e-5 },
+];
+
+state.paletteData = buildPalette('classic');
+
+// Canvas setup
+const mandCanvas = $('mandCanvas');
+const juliaCanvas = $('juliaCanvas');
+const mandRenderer = new FractalRenderer(mandCanvas, 'mandelbrot');
+const juliaRenderer = new FractalRenderer(juliaCanvas, 'julia');
+
+// Compute proper initial scales based on actual canvas pixel widths
+function initScales() {
+  mandRenderer.fit();
+  juliaRenderer.fit();
+  state.mand.scale = 3.5 / mandRenderer.w;
+  state.julia.scale = 3.5 / juliaRenderer.w;
+}
+initScales();
+
+mandRenderer.onProgress = (p) => { $('mandProgress').style.width = (p * 100) + '%'; };
+mandRenderer.onDone = (ms) => {
+  $('mandProgress').style.width = '100%';
+  $('oRender').textContent = ms.toFixed(0) + ' ms';
+  // Give the 100% bar a moment to be visible before hiding.
+  setTimeout(() => {
+    // Only collapse if no newer render has started since.
+    if ($('mandProgress').style.width === '100%') $('mandProgress').style.width = '0%';
+  }, 350);
+};
+juliaRenderer.onProgress = (p) => { $('juliaProgress').style.width = (p * 100) + '%'; };
+juliaRenderer.onDone = (ms) => {
+  $('juliaProgress').style.width = '100%';
+  setTimeout(() => {
+    if ($('juliaProgress').style.width === '100%') $('juliaProgress').style.width = '0%';
+  }, 350);
+};
+
+function renderAll() {
+  state.paletteData = buildPalette(state.palette);
+  mandRenderer.render(state.mand, state.maxIter, state.paletteData, null);
+  juliaRenderer.render(state.julia, state.maxIter, state.paletteData, state.juliaC);
+  updateReadouts();
+}
+function renderMand() {
+  mandRenderer.render(state.mand, state.maxIter, state.paletteData, null);
+  updateReadouts();
+}
+function renderJulia() {
+  juliaRenderer.render(state.julia, state.maxIter, state.paletteData, state.juliaC);
+  updateReadouts();
+}
+
+function updateReadouts() {
+  const initialScale = 3.5 / mandRenderer.w;
+  const zoom = initialScale / state.mand.scale;
+  if (zoom >= 1e6) $('oZoom').textContent = zoom.toExponential(2) + '×';
+  else if (zoom >= 1000) $('oZoom').textContent = zoom.toFixed(0) + '×';
+  else $('oZoom').textContent = zoom.toFixed(2) + '×';
+  $('oCentre').textContent = `${state.mand.cx.toFixed(8)}, ${state.mand.cy.toFixed(8)}`;
+  $('oJuliaC').textContent = `${state.juliaC.cr.toFixed(6)} ${state.juliaC.ci >= 0 ? '+' : '-'} ${Math.abs(state.juliaC.ci).toFixed(6)}i`;
+  $('mandMeta').textContent = `centre (${state.mand.cx.toFixed(4)}, ${state.mand.cy.toFixed(4)})`;
+  $('juliaMeta').textContent = `c = ${state.juliaC.cr.toFixed(4)} ${state.juliaC.ci >= 0 ? '+' : '-'} ${Math.abs(state.juliaC.ci).toFixed(4)}i`;
+  $('backBtn').disabled = state.history.length === 0;
+  // Auto-suggest higher iteration count at deep zooms — the visible boundary
+  // needs more iterations to resolve as the scale shrinks.
+  const suggested = Math.max(200, Math.round(200 + 110 * Math.max(0, Math.log10(Math.max(1, zoom)))));
+  const suggestedRounded = Math.min(1000, Math.ceil(suggested / 50) * 50);
+  if (suggestedRounded > state.maxIter + 25) {
+    $('iterHint').textContent = `Try ${suggestedRounded} iterations for sharper detail at this zoom.`;
+    $('iterHint').style.display = 'block';
+  } else {
+    $('iterHint').style.display = 'none';
+  }
+}
+
+/* ============================================================
+ * Coordinate helpers
+ * ============================================================ */
+function clientToWorld(view, canvas, evt) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (evt.clientX - rect.left) / rect.width * canvas.width;
+  const y = (evt.clientY - rect.top) / rect.height * canvas.height;
+  const wx = view.cx + (x - canvas.width/2) * view.scale;
+  const wy = view.cy + (y - canvas.height/2) * view.scale;
+  return { x, y, wx, wy };
+}
+
+/* ============================================================
+ * Mandelbrot interactions
+ * ============================================================ */
+const mandWrap = $('mandWrap');
+const mandCross = $('mandCross');
+
+mandWrap.addEventListener('mousemove', (e) => {
+  const { wx, wy } = clientToWorld(state.mand, mandCanvas, e);
+  state.cursorC = { cr: wx, ci: wy };
+  $('oCursor').textContent = `${wx.toFixed(6)} ${wy >= 0 ? '+' : '-'} ${Math.abs(wy).toFixed(6)}i`;
+  $('mandCorner').textContent = `(${wx.toFixed(6)}, ${wy.toFixed(6)})`;
+  // Iteration count at cursor (cheap inline)
+  const iter = iterateMandel(wx, wy, state.maxIter);
+  $('oIter').textContent = iter >= state.maxIter ? state.maxIter + ' (max)' : iter;
+  $('oInSet').textContent = iter >= state.maxIter ? 'inside' : 'outside';
+  // Crosshair pinned to Julia c
+  const cx = state.juliaC.cr, cy = state.juliaC.ci;
+  const sx = (cx - state.mand.cx) / state.mand.scale + mandCanvas.width/2;
+  const sy = (cy - state.mand.cy) / state.mand.scale + mandCanvas.height/2;
+  const rect = mandCanvas.getBoundingClientRect();
+  const dispX = sx / mandCanvas.width * rect.width;
+  const dispY = sy / mandCanvas.height * rect.height;
+  if (dispX >= 0 && dispX <= rect.width && dispY >= 0 && dispY <= rect.height) {
+    mandCross.classList.add('visible');
+    mandCross.style.left = dispX + 'px';
+    mandCross.style.top = dispY + 'px';
+  } else {
+    mandCross.classList.remove('visible');
+  }
+});
+mandWrap.addEventListener('mouseleave', () => {
+  $('oCursor').textContent = '—';
+  $('oIter').textContent = '—';
+  $('oInSet').textContent = '—';
+  $('mandCorner').textContent = '—';
+  mandCross.classList.remove('visible');
+});
+
+mandWrap.addEventListener('click', (e) => {
+  const { wx, wy } = clientToWorld(state.mand, mandCanvas, e);
+  // Set julia c
+  state.juliaC = { cr: wx, ci: wy };
+  state.julia.cx = 0.0; state.julia.cy = 0.0;
+  state.julia.scale = 3.5 / juliaRenderer.w;
+  renderJulia();
+});
+
+function iterateMandel(cr, ci, maxIter) {
+  let zr = 0, zi = 0, n = 0;
+  let zr2 = 0, zi2 = 0;
+  while (zr2 + zi2 < 256 && n < maxIter) {
+    zi = 2*zr*zi + ci;
+    zr = zr2 - zi2 + cr;
+    zr2 = zr*zr; zi2 = zi*zi;
+    n++;
+  }
+  return n;
+}
+
+function handleWheel(view, canvas, wrap, isMand) {
+  wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    // Save history snapshot before applying
+    if (isMand) {
+      state.history.push({ cx: state.mand.cx, cy: state.mand.cy, scale: state.mand.scale });
+      if (state.history.length > 200) state.history.shift();
+    }
+    const { wx, wy } = clientToWorld(view, canvas, e);
+    const zoomFactor = e.deltaY < 0 ? 0.75 : 1.0/0.75;
+    // limit double precision: scale not below ~5e-15
+    const newScale = Math.max(5e-16, view.scale * zoomFactor);
+    // Recentre so cursor stays at the same world point
+    view.cx = wx + (view.cx - wx) * (newScale / view.scale);
+    view.cy = wy + (view.cy - wy) * (newScale / view.scale);
+    view.scale = newScale;
+    if (isMand) renderMand();
+    else renderJulia();
+  }, { passive: false });
+}
+handleWheel(state.mand, mandCanvas, mandWrap, true);
+handleWheel(state.julia, juliaCanvas, $('juliaWrap'), false);
+
+// Click on julia to recenter (no c change)
+$('juliaWrap').addEventListener('click', (e) => {
+  const { wx, wy } = clientToWorld(state.julia, juliaCanvas, e);
+  state.julia.cx = wx; state.julia.cy = wy;
+  renderJulia();
+});
+$('juliaWrap').addEventListener('mousemove', (e) => {
+  const { wx, wy } = clientToWorld(state.julia, juliaCanvas, e);
+  $('juliaCorner').textContent = `z₀ = (${wx.toFixed(6)}, ${wy.toFixed(6)})`;
+});
+$('juliaWrap').addEventListener('mouseleave', () => { $('juliaCorner').textContent = '—'; });
+
+/* ============================================================
+ * History / reset / iter / palette
+ * ============================================================ */
+$('backBtn').addEventListener('click', () => {
+  const prev = state.history.pop();
+  if (!prev) return;
+  state.mand.cx = prev.cx; state.mand.cy = prev.cy; state.mand.scale = prev.scale;
+  renderMand();
+});
+$('resetBtn').addEventListener('click', () => {
+  state.history.push({ cx: state.mand.cx, cy: state.mand.cy, scale: state.mand.scale });
+  state.mand = { cx: -0.5, cy: 0.0, scale: 3.5 / mandRenderer.w };
+  state.julia.cx = 0; state.julia.cy = 0; state.julia.scale = 3.5 / juliaRenderer.w;
+  renderAll();
+});
+$('iter').addEventListener('input', (e) => {
+  state.maxIter = parseInt(e.target.value, 10);
+  $('vIter').textContent = state.maxIter;
+});
+$('iter').addEventListener('change', () => { renderAll(); });
+
+document.querySelectorAll('.palette-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.palette-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.palette = b.dataset.palette;
+    state.paletteData = buildPalette(state.palette);
+    renderAll();
+  });
+});
+
+/* ============================================================
+ * Bookmark thumbnails
+ * ============================================================ */
+function renderBookmarkThumbs() {
+  const container = $('bookmarks');
+  container.innerHTML = '';
+  const palette = buildPalette('classic');
+  BOOKMARKS.forEach(bm => {
+    const btn = document.createElement('button');
+    btn.className = 'bookmark';
+    const cv = document.createElement('canvas');
+    cv.width = 90; cv.height = 90;
+    btn.appendChild(cv);
+    const txt = document.createElement('div');
+    txt.className = 'bmtext';
+    txt.innerHTML = `<span class="nm">${bm.name}</span>${bm.desc}`;
+    btn.appendChild(txt);
+    container.appendChild(btn);
+    // Render small mandelbrot thumbnail synchronously (90x90 is fast)
+    drawThumbnail(cv, bm, palette);
+    btn.addEventListener('click', () => {
+      state.history.push({ cx: state.mand.cx, cy: state.mand.cy, scale: state.mand.scale });
+      state.mand.cx = bm.cx; state.mand.cy = bm.cy;
+      // bm.scale is world-units per pixel at 90px width, so world width is bm.scale * 90.
+      // Convert to the main renderer's scale (world per pixel at mandRenderer.w).
+      state.mand.scale = (bm.scale * 90) / mandRenderer.w;
+      renderMand();
+    });
+  });
+}
+function drawThumbnail(cv, bm, palette) {
+  const ctx = cv.getContext('2d');
+  const w = cv.width, h = cv.height;
+  const img = ctx.createImageData(w, h);
+  const buf = img.data;
+  const maxIter = 120;
+  const escapeR2 = 1 << 14;
+  const log2 = Math.log(2);
+  const paletteSize = palette.length / 3;
+  const scale = bm.scale; // world per pixel at 90px width => world width = scale * 90
+  for (let py = 0; py < h; py++) {
+    const y0 = bm.cy + (py - h/2) * scale;
+    for (let px = 0; px < w; px++) {
+      const x0 = bm.cx + (px - w/2) * scale;
+      let zr = 0, zi = 0, n = 0, zr2 = 0, zi2 = 0;
+      while (zr2 + zi2 < escapeR2 && n < maxIter) {
+        zi = 2*zr*zi + y0;
+        zr = zr2 - zi2 + x0;
+        zr2 = zr*zr; zi2 = zi*zi;
+        n++;
+      }
+      let r, g, b;
+      if (n >= maxIter) { r = 4; g = 6; b = 10; }
+      else {
+        const mag = Math.sqrt(zr2 + zi2);
+        let mu = n + 1 - Math.log(Math.log(mag)) / log2;
+        if (!isFinite(mu)) mu = n;
+        const t = (mu * 6.0) % paletteSize;
+        const i0 = Math.floor(t) % paletteSize;
+        const i1 = (i0 + 1) % paletteSize;
+        const f = t - Math.floor(t);
+        r = palette[i0*3]   * (1-f) + palette[i1*3]   * f;
+        g = palette[i0*3+1] * (1-f) + palette[i1*3+1] * f;
+        b = palette[i0*3+2] * (1-f) + palette[i1*3+2] * f;
+      }
+      const idx = (py * w + px) * 4;
+      buf[idx]=r|0; buf[idx+1]=g|0; buf[idx+2]=b|0; buf[idx+3]=255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+/* ============================================================
+ * Initial render + resize handling
+ * ============================================================ */
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const oldMandW = mandRenderer.w, oldJuliaW = juliaRenderer.w;
+    mandRenderer.fit();
+    juliaRenderer.fit();
+    // preserve world-space coverage
+    state.mand.scale = state.mand.scale * oldMandW / mandRenderer.w;
+    state.julia.scale = state.julia.scale * oldJuliaW / juliaRenderer.w;
+    renderAll();
+  }, 150);
+});
+
+renderAll();
+renderBookmarkThumbs();
+
+// ---- Try this experiments ----
+function jumpToBookmark(name) {
+  const bm = BOOKMARKS.find(b => b.name === name);
+  if (!bm) return;
+  state.history.push({ cx: state.mand.cx, cy: state.mand.cy, scale: state.mand.scale });
+  state.mand.cx = bm.cx; state.mand.cy = bm.cy;
+  state.mand.scale = (bm.scale * 90) / mandRenderer.w;
+  renderMand();
+}
+function setJuliaC(cr, ci) {
+  state.juliaC = { cr, ci };
+  state.julia.cx = 0.0; state.julia.cy = 0.0;
+  state.julia.scale = 3.5 / juliaRenderer.w;
+  renderJulia();
+}
+$('trySeahorse').addEventListener('click', () => jumpToBookmark('Seahorse Valley'));
+$('tryEdgeCardioid').addEventListener('click', () => setJuliaC(-0.75, 0.05));
+$('tryInsideCardioid').addEventListener('click', () => setJuliaC(-0.4, 0.6));
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const btn = document.getElementById('kbdHelpBtn');
+  if (!modal || !btn) return;
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  btn.addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  function pickPalette(name) {
+    const tgt = document.querySelector(`.palette-btn[data-palette="${name}"]`);
+    if (tgt) tgt.click();
+  }
+  function bumpIter(delta) {
+    const sl = $('iter');
+    if (!sl) return;
+    const min = parseInt(sl.min, 10);
+    const max = parseInt(sl.max, 10);
+    const next = Math.min(max, Math.max(min, parseInt(sl.value, 10) + delta));
+    sl.value = next;
+    sl.dispatchEvent(new Event('input'));
+    sl.dispatchEvent(new Event('change'));
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    const palettes = { '1':'classic', '2':'fire', '3':'ice', '4':'psyche', '5':'grey' };
+    if (palettes[e.key]) { pickPalette(palettes[e.key]); }
+    else if (k === 'r') { $('resetBtn').click(); }
+    else if (k === 'b') { $('backBtn').click(); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); bumpIter(50); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); bumpIter(-50); }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="cellular_automata.html">
+      <div class="related-title">Cellular Automata</div>
+      <div class="related-desc">Simple rules that make complexity, and the famous Game of Life</div>
+    </a>
+    <a class="related-card" href="eigenvalue_vis.html">
+      <div class="related-title">Eigenvalues</div>
+      <div class="related-desc">Directions a matrix can stretch but cannot rotate</div>
+    </a>
+    <a class="related-card" href="fourier_builder.html">
+      <div class="related-title">Fourier Series</div>
+      <div class="related-desc">Build any waveform from sines, or watch the epicycles spin</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

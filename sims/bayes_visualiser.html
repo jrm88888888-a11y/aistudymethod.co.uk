@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bayes' Theorem — Test Result Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; line-height: 1.45; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+
+/* Keyboard help indicator + modal */
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; gap: 24px; grid-template-columns: 1fr 360px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.panel h2 { font-size: 15px; font-weight: 600; margin: 0 0 12px; }
+.label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); font-weight: 500; }
+.label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+
+.hero { padding: 22px 24px; }
+.hero .frame { color: var(--text-dim); font-size: 13px; margin-bottom: 14px; line-height: 1.55; }
+.hero .frame strong { color: var(--text); }
+.hero .result-row { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+.hero .result-text { font-size: 14px; color: var(--text-dim); }
+.hero .result-text strong { color: var(--text); }
+.hero .result-big { font-family: 'JetBrains Mono', monospace; font-size: 44px; font-weight: 700; letter-spacing: -0.02em; transition: color 220ms ease; }
+
+.grid-wrap { display: flex; flex-direction: column; gap: 8px; }
+.grid-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-dim); }
+.legend-chip { display: inline-flex; align-items: center; gap: 6px; }
+.legend-chip .sw { width: 10px; height: 10px; border-radius: 2px; }
+
+#freqGrid { width: 100%; height: 360px; display: block; }
+#treeCanvas { width: 100%; height: 380px; display: block; }
+
+.controls { display: flex; flex-direction: column; gap: 16px; }
+.ctl { display: flex; flex-direction: column; gap: 6px; }
+.ctl .row { display: flex; justify-content: space-between; align-items: baseline; }
+.ctl .val { font-family: 'JetBrains Mono', monospace; color: var(--cyan); font-size: 13px; }
+
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.presets button { padding: 6px 10px; font-size: 12px; }
+.presets button:active { transform: translateY(1px); }
+.presets button.active { background: var(--cyan-soft); color: var(--cyan); border-color: var(--cyan); }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+.r-item .label { display: block; margin-bottom: 2px; }
+.r-item .v { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; }
+.r-item .v.tp { color: var(--cyan); }
+.r-item .v.fp { color: var(--amber); }
+.r-item .v.tn { color: var(--text-dim); }
+.r-item .v.fn { color: var(--rose); }
+
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px 14px; border-radius: 0 var(--r-md) var(--r-md) 0; font-size: 13px; color: var(--text-dim); line-height: 1.55; }
+.explainer strong { color: var(--text); }
+
+.full { grid-column: 1 / -1; }
+@media (max-width: 1000px) {
+  .wrap { grid-template-columns: 1fr; }
+}
+
+.insight-banner {
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  border-left: 2px solid var(--cyan);
+  padding: 6px 0 6px 10px;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+.try-panel-section {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.try-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Bayes' Theorem</h1>
+    <p class="sub">Why a 99% accurate test for a rare disease still mostly raises false alarms</p>
+    <p class="insight-banner">If a disease is rare, even an accurate test produces mostly false positives. The base rate dominates.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>COVID rapid test preset</span>
+      <span class="kbd-key">2</span><span>HIV screening preset</span>
+      <span class="kbd-key">3</span><span>Mammography preset</span>
+      <span class="kbd-key">4</span><span>Perfect test preset</span>
+      <span class="kbd-key">R</span><span>Reset to default (COVID)</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="panel hero full">
+    <div class="frame">A new test for <strong id="diseaseName">a disease</strong> has just been developed. <strong>You test positive.</strong> What is the probability you actually have it?</div>
+    <div class="result-row">
+      <div class="result-text">If you test <strong style="color:var(--cyan)">POSITIVE</strong> → P(disease) =</div>
+      <div class="result-big" id="ppvBig">—</div>
+      <div class="result-text" id="ppvVerdict">—</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>1,000 people, coloured by outcome</h2>
+    <div class="grid-wrap">
+      <canvas id="freqGrid"></canvas>
+      <div class="grid-legend">
+        <span class="legend-chip"><span class="sw" style="background:var(--cyan)"></span> True positive (sick, test +)</span>
+        <span class="legend-chip"><span class="sw" style="background:var(--amber)"></span> False positive (healthy, test +)</span>
+        <span class="legend-chip"><span class="sw" style="background:#2b3645"></span> True negative (healthy, test −)</span>
+        <span class="legend-chip"><span class="sw" style="background:var(--rose)"></span> False negative (sick, test −)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <h2>Controls</h2>
+
+    <div class="ctl">
+      <div class="row"><span class="label">Disease prevalence</span><span class="val" id="prevVal">1.0%</span></div>
+      <input id="prev" type="range" min="0" max="1000" value="500" step="1" />
+      <div class="row" style="font-size:11px;color:var(--text-faint);"><span>0.1%</span><span>20%</span></div>
+    </div>
+
+    <div class="ctl">
+      <div class="row"><span class="label" title="Among those who have the disease, the fraction the test correctly identifies as positive.">Test sensitivity (recall)</span><span class="val" id="sensVal">80.0%</span></div>
+      <input id="sens" type="range" min="500" max="999" value="800" step="1" />
+      <div class="row" style="font-size:11px;color:var(--text-faint);"><span>50%</span><span>99.9%</span></div>
+    </div>
+
+    <div class="ctl">
+      <div class="row"><span class="label" title="Among those without the disease, the fraction the test correctly identifies as negative.">Test specificity</span><span class="val" id="specVal">99.0%</span></div>
+      <input id="spec" type="range" min="500" max="999" value="990" step="1" />
+      <div class="row" style="font-size:11px;color:var(--text-faint);"><span>50%</span><span>99.9%</span></div>
+    </div>
+
+    <div>
+      <div class="label" style="margin-bottom:8px;">Presets</div>
+      <div class="presets" id="presets">
+        <button data-preset="covid">COVID rapid test</button>
+        <button data-preset="hiv">HIV screening</button>
+        <button data-preset="mammo">Mammography</button>
+        <button data-preset="perfect">Perfect test</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Probability tree</h2>
+    <canvas id="treeCanvas"></canvas>
+  </div>
+
+  <div class="panel">
+    <h2>Live readouts</h2>
+    <div class="readouts">
+      <div class="r-item"><span class="label">True positives</span><div class="v tp" id="rTP">8</div></div>
+      <div class="r-item"><span class="label">False positives</span><div class="v fp" id="rFP">10</div></div>
+      <div class="r-item"><span class="label">True negatives</span><div class="v tn" id="rTN">980</div></div>
+      <div class="r-item"><span class="label">False negatives</span><div class="v fn" id="rFN">2</div></div>
+      <div class="r-item"><span class="label" title="Positive Predictive Value: of all positive tests, the fraction that are true positives.">PPV (precision)</span><div class="v" id="rPPV" style="color:var(--cyan)">44.4%</div></div>
+      <div class="r-item"><span class="label" title="Negative Predictive Value: of all negative tests, the fraction that are true negatives.">NPV</span><div class="v" id="rNPV" style="color:var(--green)">99.8%</div></div>
+      <div class="r-item"><span class="label" title="LR+: how much more likely a positive result is in a diseased person than in a healthy one.">Likelihood ratio +</span><div class="v" id="rLRp">80.0</div></div>
+      <div class="r-item"><span class="label" title="LR−: how much less likely a negative result is in a diseased person.">Likelihood ratio −</span><div class="v" id="rLRm">0.20</div></div>
+    </div>
+  </div>
+
+  <div class="full">
+    <div class="explainer" id="explainer">
+      Even though the test is <strong>99.0%</strong> specific, because the disease is rare (1.0%), most positive results are false alarms.
+    </div>
+  </div>
+
+  <div class="try-panel-section full">
+    <div class="try-label">Try this</div>
+    <div class="try-buttons">
+      <button data-try="cancer">Rare cancer screen</button>
+      <button data-try="flu">Common flu test</button>
+      <button data-try="hiv">HIV screening</button>
+    </div>
+    <div class="try-note" id="tryNote"></div>
+  </div>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const COLORS = {
+  tp: '#22d3ee',
+  fp: '#f59e0b',
+  tn: '#2b3645',
+  fn: '#f43f5e',
+};
+
+// State
+let prevalence = 0.01;
+let sensitivity = 0.80;
+let specificity = 0.99;
+
+// Canvases
+const grid = $('freqGrid');
+const tree = $('treeCanvas');
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+// Sliders use 0..1000 -> log mapping for prevalence; linear-percentage for sens/spec
+function prevFromSlider(v) {
+  // log scale from 0.001 to 0.20
+  const t = v / 1000;
+  const lo = Math.log(0.001), hi = Math.log(0.20);
+  return Math.exp(lo + (hi - lo) * t);
+}
+function sliderFromPrev(p) {
+  const lo = Math.log(0.001), hi = Math.log(0.20);
+  return Math.round(((Math.log(p) - lo) / (hi - lo)) * 1000);
+}
+function sensFromSlider(v) { return v / 1000; }
+function sliderFromSens(s) { return Math.round(s * 1000); }
+
+// 25x40 grid; targets and currents
+const COLS = 25, ROWS = 40, N = COLS * ROWS;
+const targetColors = new Array(N).fill('tn');
+const currentColors = new Array(N).fill('tn');
+const flipStart = new Array(N).fill(-1);
+const flipFrom = new Array(N).fill('tn');
+const FLIP_DUR = 280;
+const STAGGER = 20;
+
+function computeCounts() {
+  // Spec-prescribed rounding: round TP, FN, FP independently; TN is the remainder so all four sum to N.
+  const tp = Math.round(N * prevalence * sensitivity);
+  const fn = Math.round(N * prevalence * (1 - sensitivity));
+  let fp = Math.round(N * (1 - prevalence) * (1 - specificity));
+  let tn = N - tp - fn - fp;
+  // Defensive: if rounding makes tn negative, absorb the overflow from fp.
+  if (tn < 0) { fp += tn; tn = 0; if (fp < 0) fp = 0; }
+  const sick = tp + fn;
+  const healthy = fp + tn;
+  return { sick, healthy, tp, fp, tn, fn };
+}
+
+function buildTargets() {
+  const { tp, fp, tn, fn, sick } = computeCounts();
+  // Arrangement: sick people first (first `sick` cells), then healthy.
+  // Within sick: tp then fn. Within healthy: fp then tn.
+  let idx = 0;
+  for (let i = 0; i < tp; i++) targetColors[idx++] = 'tp';
+  for (let i = 0; i < fn; i++) targetColors[idx++] = 'fn';
+  for (let i = 0; i < fp; i++) targetColors[idx++] = 'fp';
+  for (let i = 0; i < tn; i++) targetColors[idx++] = 'tn';
+  // Stagger flip
+  const now = performance.now();
+  let stIdx = 0;
+  for (let i = 0; i < N; i++) {
+    if (targetColors[i] !== currentColors[i]) {
+      flipFrom[i] = currentColors[i];
+      flipStart[i] = now + stIdx * STAGGER;
+      stIdx++;
+    }
+  }
+}
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function drawGrid(now) {
+  const ctx = grid.__ctx;
+  const w = grid.clientWidth, h = grid.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  // Cell layout: rectangular cells, slight gap, rounded corners
+  const gap = 2;
+  const cellW = (w - gap * (COLS - 1)) / COLS;
+  const cellH = (h - gap * (ROWS - 1)) / ROWS;
+  const size = Math.min(cellW, cellH);
+  const totalW = COLS * size + (COLS - 1) * gap;
+  const totalH = ROWS * size + (ROWS - 1) * gap;
+  const ox = (w - totalW) / 2;
+  const oy = (h - totalH) / 2;
+
+  let anyAnim = false;
+  // Iterate row-major; cells across columns first (matches "25 columns x 40 rows")
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const i = r * COLS + c;
+      const x = ox + c * (size + gap);
+      const y = oy + r * (size + gap);
+
+      let color;
+      if (flipStart[i] >= 0 && now >= flipStart[i]) {
+        const t = Math.min(1, (now - flipStart[i]) / FLIP_DUR);
+        if (t >= 1) {
+          currentColors[i] = targetColors[i];
+          flipStart[i] = -1;
+          color = COLORS[currentColors[i]];
+        } else {
+          anyAnim = true;
+          // flip effect: scale x to simulate card flip
+          const scale = Math.abs(Math.cos(t * Math.PI));
+          const fromCol = COLORS[flipFrom[i]];
+          const toCol = COLORS[targetColors[i]];
+          const cur = t < 0.5 ? fromCol : toCol;
+          drawRoundedRect(ctx, x + size * (1 - scale) / 2, y, size * scale, size, 2, cur);
+          continue;
+        }
+      } else if (flipStart[i] >= 0) {
+        anyAnim = true;
+        color = COLORS[currentColors[i]];
+      } else {
+        color = COLORS[currentColors[i]];
+      }
+      drawRoundedRect(ctx, x, y, size, size, 2, color);
+    }
+  }
+
+  if (anyAnim) requestAnimationFrame(drawGrid);
+}
+
+function drawRoundedRect(ctx, x, y, w, h, r, fill) {
+  if (w < 0.5 || h < 0.5) return;
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+
+// Tree drawing — leaves are sized in proportion to their counts
+function drawTree() {
+  const ctx = tree.__ctx;
+  const w = tree.clientWidth, h = tree.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  const { tp, fp, tn, fn, sick, healthy } = computeCounts();
+  const ppv = (tp + fp) > 0 ? tp / (tp + fp) : 0;
+
+  // Coordinates
+  const x0 = 30;          // root x
+  const x1 = 200;         // level 1 x
+  const x2 = w - 230;     // level 2 x (leaves)
+  const rootY = h / 2;
+
+  // Vertical band reserved for the tree (leave room for header/bracket label)
+  const topPad = 30, botPad = 30;
+  const usableH = h - topPad - botPad;
+
+  // Level 1 nodes positioned at the centroid of their group of leaves.
+  // Leaves stack vertically with heights proportional to their counts (clamped to a min so they remain visible).
+  const minLeafH = 18;
+  const leafGap = 6;
+  // Allocate proportional heights, then normalise so the four leaves + gaps fill usableH.
+  const counts = [tp, fn, fp, tn];
+  const rawH = counts.map(c => Math.max(minLeafH, (c / N) * (usableH - 3 * leafGap)));
+  const sumRaw = rawH.reduce((a, b) => a + b, 0) + 3 * leafGap;
+  const scale = (usableH) / sumRaw;
+  const leafH = rawH.map(v => v * scale);
+  // Compute leaf centers
+  let yCursor = topPad;
+  const leafCenters = [];
+  for (let i = 0; i < 4; i++) {
+    leafCenters.push(yCursor + leafH[i] / 2);
+    yCursor += leafH[i] + leafGap;
+  }
+  // Level 1 nodes at centroid of their two children (weighted by count, falls back to midpoint)
+  const sickW = (tp + fn) || 1;
+  const healthyW = (fp + tn) || 1;
+  const topY = (leafCenters[0] * (tp || 0.5) + leafCenters[1] * (fn || 0.5)) / ((tp || 0.5) + (fn || 0.5));
+  const botY = (leafCenters[2] * (fp || 0.5) + leafCenters[3] * (tn || 0.5)) / ((fp || 0.5) + (tn || 0.5));
+
+  // Branches
+  ctx.lineWidth = 1.5;
+  drawBranch(ctx, x0, rootY, x1, topY, '#2a3445', `P(D) = ${(prevalence * 100).toFixed(2)}%`);
+  drawBranch(ctx, x0, rootY, x1, botY, '#2a3445', `P(¬D) = ${((1 - prevalence) * 100).toFixed(2)}%`);
+  drawBranch(ctx, x1, topY, x2, leafCenters[0], '#1a2a3a', `P(+|D) = ${(sensitivity * 100).toFixed(1)}%`, COLORS.tp);
+  drawBranch(ctx, x1, topY, x2, leafCenters[1], '#1a2a3a', `P(−|D) = ${((1 - sensitivity) * 100).toFixed(1)}%`);
+  drawBranch(ctx, x1, botY, x2, leafCenters[2], '#1a2a3a', `P(+|¬D) = ${((1 - specificity) * 100).toFixed(1)}%`, COLORS.fp);
+  drawBranch(ctx, x1, botY, x2, leafCenters[3], '#1a2a3a', `P(−|¬D) = ${(specificity * 100).toFixed(1)}%`);
+
+  // Root + level 1 nodes
+  drawNode(ctx, x0, rootY, 'Population', '1,000', '#1f2937', '#e6edf3');
+  drawNode(ctx, x1, topY, 'Has disease', String(sick), '#2a1f29', COLORS.tp);
+  drawNode(ctx, x1, botY, "Doesn't have", String(healthy), '#1f2937', '#97a1b0');
+
+  // Leaves — height proportional to count
+  drawLeaf(ctx, x2, leafCenters[0], leafH[0], 'Test +', tp, COLORS.tp, true);
+  drawLeaf(ctx, x2, leafCenters[1], leafH[1], 'Test −', fn, COLORS.fn, false);
+  drawLeaf(ctx, x2, leafCenters[2], leafH[2], 'Test +', fp, COLORS.fp, true);
+  drawLeaf(ctx, x2, leafCenters[3], leafH[3], 'Test −', tn, '#97a1b0', false);
+
+  // Bracket connecting the two Test+ leaves
+  const bracketX = x2 + 150;
+  const y1 = leafCenters[0], y2 = leafCenters[2];
+  ctx.strokeStyle = COLORS.tp;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(bracketX - 6, y1);
+  ctx.lineTo(bracketX, y1);
+  ctx.lineTo(bracketX, y2);
+  ctx.lineTo(bracketX - 6, y2);
+  ctx.stroke();
+  ctx.fillStyle = COLORS.tp;
+  ctx.font = '600 12px Inter';
+  ctx.textAlign = 'left';
+  ctx.fillText('P(D | +) =', bracketX + 8, (y1 + y2) / 2 - 2);
+  ctx.font = '700 16px JetBrains Mono';
+  ctx.fillText((ppv * 100).toFixed(1) + '%', bracketX + 8, (y1 + y2) / 2 + 18);
+}
+
+function drawBranch(ctx, x1, y1, x2, y2, color, label, highlight) {
+  ctx.strokeStyle = highlight || color;
+  ctx.lineWidth = highlight ? 2 : 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x1 + 6, y1);
+  // curve
+  const cpx = (x1 + x2) / 2;
+  ctx.bezierCurveTo(cpx, y1, cpx, y2, x2 - 6, y2);
+  ctx.stroke();
+
+  // label midpoint
+  ctx.fillStyle = highlight ? '#e6edf3' : '#5b6573';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, (x1 + x2) / 2, (y1 + y2) / 2 - 4);
+}
+
+function drawNode(ctx, x, y, label, count, bg, fg) {
+  const w = 110, h = 36;
+  drawRoundedRect(ctx, x - 6, y - h / 2, w, h, 6, bg);
+  ctx.fillStyle = fg;
+  ctx.font = '600 11px Inter';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + 2, y - 8);
+  ctx.font = '500 13px JetBrains Mono';
+  ctx.fillText(count, x + 2, y + 8);
+}
+
+function drawLeaf(ctx, x, y, leafH, label, count, color, highlight) {
+  const w = 140;
+  const h = Math.max(24, Math.min(80, leafH));
+  drawRoundedRect(ctx, x - 6, y - h / 2, w, h, 6, highlight ? 'rgba(34,211,238,0.10)' : '#161d28');
+  if (highlight) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.rect(x - 6, y - h / 2, w, h);
+    ctx.stroke();
+  }
+  ctx.fillStyle = color;
+  ctx.font = '600 11px Inter';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  // Layout text within whatever vertical space we have
+  if (h >= 30) {
+    ctx.fillText(label, x + 2, y - 8);
+    const pct = N > 0 ? (count / N * 100).toFixed(1) : '0.0';
+    ctx.font = '500 12px JetBrains Mono';
+    ctx.fillStyle = '#e6edf3';
+    ctx.fillText(`${count} / 1000  (${pct}%)`, x + 2, y + 8);
+  } else {
+    const pct = N > 0 ? (count / N * 100).toFixed(1) : '0.0';
+    ctx.font = '500 11px JetBrains Mono';
+    ctx.fillStyle = '#e6edf3';
+    ctx.fillText(`${label}: ${count}  (${pct}%)`, x + 2, y);
+  }
+}
+
+// Update all
+function update() {
+  const { tp, fp, tn, fn, sick, healthy } = computeCounts();
+  const positives = tp + fp;
+  const negatives = tn + fn;
+  const ppv = positives > 0 ? tp / positives : 0;
+  const npv = negatives > 0 ? tn / negatives : 0;
+  const lrp = (1 - specificity) > 0 ? sensitivity / (1 - specificity) : Infinity;
+  const lrm = specificity > 0 ? (1 - sensitivity) / specificity : 0;
+
+  // Readouts
+  $('rTP').textContent = tp;
+  $('rFP').textContent = fp;
+  $('rTN').textContent = tn;
+  $('rFN').textContent = fn;
+  $('rPPV').textContent = (ppv * 100).toFixed(1) + '%';
+  $('rNPV').textContent = (npv * 100).toFixed(1) + '%';
+  $('rLRp').textContent = isFinite(lrp) ? lrp.toFixed(1) : '∞';
+  $('rLRm').textContent = lrm.toFixed(2);
+
+  // Big readout
+  $('ppvBig').textContent = (ppv * 100).toFixed(1) + '%';
+  let color = 'var(--rose)';
+  let verdict = 'Likely a false alarm';
+  if (ppv >= 0.8) { color = 'var(--green)'; verdict = 'Very likely a true case'; }
+  else if (ppv >= 0.5) { color = 'var(--amber)'; verdict = 'Roughly a coin flip'; }
+  $('ppvBig').style.color = color;
+  $('ppvVerdict').textContent = verdict;
+  $('ppvVerdict').style.color = color;
+
+  // Slider value labels
+  $('prevVal').textContent = (prevalence * 100).toFixed(prevalence < 0.01 ? 2 : 1) + '%';
+  $('sensVal').textContent = (sensitivity * 100).toFixed(1) + '%';
+  $('specVal').textContent = (specificity * 100).toFixed(1) + '%';
+
+  // Explainer — emphasise prevalence (base rate) as the dominant factor when it's low.
+  let ex = '';
+  const prevPct = (prevalence * 100).toFixed(prevalence < 0.01 ? 2 : 1);
+  const specPct = (specificity * 100).toFixed(1);
+  const sensPct = (sensitivity * 100).toFixed(1);
+  if (positives === 0) {
+    ex = `With prevalence at <strong>${prevPct}%</strong> on this scale of 1,000 people, no positive results emerge at all — adjust the sliders to explore.`;
+  } else if (prevalence < 0.02 && ppv < 0.5) {
+    ex = `The disease is rare — only about <strong>${prevPct}%</strong> of people have it — so even a test that's <strong>${specPct}%</strong> specific produces more false alarms than real cases. Of every <strong>${positives}</strong> positives, only <strong>${tp}</strong> are real, giving you a <strong>${(ppv * 100).toFixed(1)}%</strong> chance of actually having the disease. This is the base-rate fallacy.`;
+  } else if (ppv > 0.95) {
+    ex = `With prevalence at <strong>${prevPct}%</strong>, sensitivity <strong>${sensPct}%</strong> and specificity <strong>${specPct}%</strong>, a positive result is highly informative — about <strong>${(ppv * 100).toFixed(1)}%</strong> of positives are true cases.`;
+  } else {
+    ex = `Out of 1,000 people: <strong>${tp}</strong> true positives, <strong>${fp}</strong> false positives, <strong>${tn}</strong> true negatives, <strong>${fn}</strong> false negatives. A positive result means a <strong>${(ppv * 100).toFixed(1)}%</strong> chance of disease (PPV) — driven mostly by the base rate of <strong>${prevPct}%</strong>.`;
+  }
+  $('explainer').innerHTML = ex;
+
+  buildTargets();
+  requestAnimationFrame(drawGrid);
+  drawTree();
+}
+
+// Sliders
+function clearPresetActive() {
+  document.querySelectorAll('#presets button').forEach(x => x.classList.remove('active'));
+}
+$('prev').addEventListener('input', (e) => { prevalence = prevFromSlider(+e.target.value); clearPresetActive(); update(); });
+$('sens').addEventListener('input', (e) => { sensitivity = sensFromSlider(+e.target.value); clearPresetActive(); update(); });
+$('spec').addEventListener('input', (e) => { specificity = sensFromSlider(+e.target.value); clearPresetActive(); update(); });
+
+// Presets
+const PRESETS = {
+  covid:   { name: 'COVID-19',     prev: 0.01,   sens: 0.80,   spec: 0.99   },
+  hiv:     { name: 'HIV',          prev: 0.001,  sens: 0.999,  spec: 0.996  },
+  mammo:   { name: 'breast cancer',prev: 0.01,   sens: 0.75,   spec: 0.90   },
+  perfect: { name: 'a condition',  prev: 0.01,   sens: 0.999,  spec: 0.999  },
+};
+$('presets').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-preset]');
+  if (!b) return;
+  const p = PRESETS[b.dataset.preset];
+  // Clamp prevalence into slider range
+  const clampedPrev = Math.max(0.001, Math.min(0.20, p.prev));
+  prevalence = clampedPrev;
+  sensitivity = Math.max(0.50, Math.min(0.999, p.sens));
+  specificity = Math.max(0.50, Math.min(0.999, p.spec));
+  $('prev').value = sliderFromPrev(prevalence);
+  $('sens').value = sliderFromSens(sensitivity);
+  $('spec').value = sliderFromSens(specificity);
+  $('diseaseName').textContent = p.name;
+  // Mark active preset
+  document.querySelectorAll('#presets button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  update();
+});
+
+// Init
+function init() {
+  grid.__ctx = fitCanvas(grid);
+  tree.__ctx = fitCanvas(tree);
+  // Default: COVID rapid test — the surprising case where a "99% test" mostly raises false alarms.
+  prevalence = 0.01;
+  sensitivity = 0.80;
+  specificity = 0.99;
+  $('prev').value = sliderFromPrev(prevalence);
+  $('sens').value = sliderFromSens(sensitivity);
+  $('spec').value = sliderFromSens(specificity);
+  $('diseaseName').textContent = 'COVID-19';
+  const defaultPreset = document.querySelector('#presets button[data-preset="covid"]');
+  if (defaultPreset) defaultPreset.classList.add('active');
+  // Initialise grid colours to current targets directly (no flip on load)
+  buildTargets();
+  for (let i = 0; i < N; i++) {
+    currentColors[i] = targetColors[i];
+    flipStart[i] = -1;
+  }
+  update();
+}
+
+window.addEventListener('resize', () => {
+  grid.__ctx = fitCanvas(grid);
+  tree.__ctx = fitCanvas(tree);
+  requestAnimationFrame(drawGrid);
+  drawTree();
+});
+
+// ---------- Try this experiments ----------
+function applyTry(name) {
+  const cfgs = {
+    cancer: { prev: 0.005, sens: 0.90, spec: 0.95, label: 'cancer',
+              note: 'A 95% specific test still flags <strong>5%</strong> of healthy people. Far more healthy false positives than true cases.' },
+    flu:    { prev: 0.15,  sens: 0.80, spec: 0.95, label: 'flu',
+              note: 'Now the test is much more useful — <strong>most positives really do have the disease</strong>.' },
+    hiv:    { prev: 0.001, sens: 0.999, spec: 0.996, label: 'HIV',
+              note: 'Even at <strong>0.1% prevalence</strong>, a near-perfect <strong>99.6% specificity</strong> gives a reasonable PPV.' }
+  };
+  const c = cfgs[name];
+  if (!c) return;
+  prevalence = Math.max(0.001, Math.min(0.20, c.prev));
+  sensitivity = Math.max(0.50, Math.min(0.999, c.sens));
+  specificity = Math.max(0.50, Math.min(0.999, c.spec));
+  $('prev').value = sliderFromPrev(prevalence);
+  $('sens').value = sliderFromSens(sensitivity);
+  $('spec').value = sliderFromSens(specificity);
+  // Dispatch input events so any other listeners re-run
+  ['prev','sens','spec'].forEach(id => $(id).dispatchEvent(new Event('input')));
+  $('diseaseName').textContent = c.label;
+  // Clear preset highlight (these don't map 1:1 to existing presets except HIV)
+  document.querySelectorAll('#presets button').forEach(x => x.classList.remove('active'));
+  if (name === 'hiv') {
+    const hivBtn = document.querySelector('#presets button[data-preset="hiv"]');
+    if (hivBtn) hivBtn.classList.add('active');
+  }
+  update();
+  document.getElementById('tryNote').innerHTML = c.note;
+}
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+init();
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  document.getElementById('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (/^[1-4]$/.test(e.key)) {
+      const btns = document.querySelectorAll('#presets button[data-preset]');
+      const idx = parseInt(e.key, 10) - 1;
+      if (btns[idx]) btns[idx].click();
+    } else if (e.key.toLowerCase() === 'r') {
+      const btn = document.querySelector('#presets button[data-preset="covid"]');
+      if (btn) btn.click();
+    }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="signal_detection.html">
+      <div class="related-title">Signal Detection</div>
+      <div class="related-desc">Sensitivity (d′) vs criterion (β), with full ROC</div>
+    </a>
+    <a class="related-card" href="p_hacking.html">
+      <div class="related-title">p-Hacking</div>
+      <div class="related-desc">Run enough experiments and a fair coin will look loaded</div>
+    </a>
+    <a class="related-card" href="monty_hall.html">
+      <div class="related-title">Monty Hall</div>
+      <div class="related-desc">Switching wins two-thirds of the time. Here's why.</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

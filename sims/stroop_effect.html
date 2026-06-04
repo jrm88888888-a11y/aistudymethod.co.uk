@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stroop Effect — Cognitive Interference Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+
+  --stim-red: #ef4444;
+  --stim-blue: #3b82f6;
+  --stim-green: #22c55e;
+  --stim-yellow: #eab308;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; font-size: 13px; min-height: 100vh; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.topbar { display: flex; align-items: center; gap: 24px; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; transition: color 120ms ease; }
+.back:hover { color: var(--cyan); }
+
+main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.panel-title { font-size: 14px; font-weight: 600; margin: 0 0 4px; color: var(--text); }
+.panel-sub { font-size: 11px; color: var(--text-dim); margin: 0 0 12px; letter-spacing: 0.03em; }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+
+button {
+  font-family: inherit; font-size: 13px;
+  color: var(--text);
+  background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button:active { transform: translateY(0.5px); }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.stage {
+  position: relative;
+  height: 520px;
+  border-radius: var(--r-md);
+  background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+.stage.flash-correct { background: rgba(52,211,153,0.18); border-color: var(--green); }
+.stage.flash-wrong { background: rgba(244,63,94,0.18); border-color: var(--rose); }
+
+.stimulus {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: clamp(56px, 12vw, 120px);
+  letter-spacing: 0.04em;
+  user-select: none;
+  text-transform: uppercase;
+  transition: opacity 120ms ease;
+  text-align: center;
+  max-width: 96%;
+  line-height: 1;
+  white-space: nowrap;
+}
+.fixation { color: var(--text-dim); font-size: 72px; font-weight: 300; }
+
+.intro-card { text-align: center; max-width: 540px; padding: 24px; }
+.intro-card h2 { margin: 0 0 8px; font-size: 22px; }
+.intro-card p { color: var(--text-dim); line-height: 1.6; }
+.intro-card .keys { display:flex; gap:8px; justify-content:center; margin: 14px 0; }
+.intro-card .key { background: var(--bg-elev-2); border: 1px solid var(--panel-border); padding: 6px 10px; border-radius: var(--r-sm); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+.response-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-top: 14px;
+}
+.respBtn {
+  padding: 14px 8px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--panel-border);
+  background: var(--bg-elev-1);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  transition: all 100ms ease;
+  display:flex; flex-direction: column; align-items:center; gap: 6px;
+  position: relative;
+}
+.respBtn:hover:not(:disabled) { background: var(--bg-elev-2); transform: translateY(-1px); }
+.respBtn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.respBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+.respBtn[data-color="red"]:hover:not(:disabled)    { border-color: var(--stim-red); }
+.respBtn[data-color="blue"]:hover:not(:disabled)   { border-color: var(--stim-blue); }
+.respBtn[data-color="green"]:hover:not(:disabled)  { border-color: var(--stim-green); }
+.respBtn[data-color="yellow"]:hover:not(:disabled) { border-color: var(--stim-yellow); }
+.respBtn .swatch { width: 36px; height: 8px; border-radius: 999px; box-shadow: 0 0 12px rgba(255,255,255,0.04); }
+.respBtn .kbd { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-faint); letter-spacing: 0.05em; }
+.respBtn.pressed { transform: scale(0.96); }
+
+.progress-row {
+  display:flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.progress-bar { height: 4px; background: var(--grid); border-radius: 999px; overflow: hidden; margin-top: 8px; }
+.progress-bar .fill { height: 100%; background: var(--cyan); transition: width 200ms ease; }
+
+.block-tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: 0.04em;}
+.block-tag.congruent { background: var(--green-soft); color: var(--green); }
+.block-tag.incongruent { background: var(--rose-soft); color: var(--rose); }
+.block-tag.neutral { background: var(--cyan-soft); color: var(--cyan); }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readout .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+.readout .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .value { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 22px; color: var(--text); }
+.readout .value.cyan { color: var(--cyan); }
+.readout .value.amber { color: var(--amber); }
+.readout .value.green { color: var(--green); }
+.readout .value.rose { color: var(--rose); }
+
+.explainer {
+  background: var(--bg-elev-1);
+  border-left: 2px solid var(--cyan);
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 14px;
+  line-height: 1.55;
+}
+.explainer strong { color: var(--text); font-weight: 600; }
+
+canvas { display: block; width: 100%; }
+
+.history-list { max-height: 260px; overflow-y: auto; }
+.history-row {
+  display: grid; grid-template-columns: 1fr auto auto auto;
+  gap: 10px; padding: 8px 6px; border-bottom: 1px solid var(--panel-border);
+  font-size: 12px;
+}
+.history-row:last-child { border-bottom: none; }
+.history-row .date { color: var(--text-dim); }
+.history-row .interf { color: var(--amber); font-family: 'JetBrains Mono', monospace; }
+.history-row .acc { color: var(--green); font-family: 'JetBrains Mono', monospace; }
+
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.insight-banner {
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 1400px;
+  margin: 14px auto 0;
+  box-sizing: border-box;
+  padding: 4px 24px;
+}
+.insight-banner > span {
+  border-left: 2px solid var(--cyan);
+  padding-left: 10px;
+  display: inline-block;
+}
+.try-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-bottom: 24px;
+}
+.try-panel .try-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.try-panel .try-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.try-panel .try-pills button { font-size: 12px; padding: 7px 12px; }
+.try-panel .try-note {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  min-height: 1.5em;
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+  .stimulus { font-size: 84px; }
+}
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Stroop Effect</h1>
+    <p class="sub">Measure cognitive interference between word meaning and ink colour</p>
+  </div>
+</header>
+
+<div class="insight-banner"><span>Reading is automatic. When the word fights the colour, your brain has to suppress the word — and that costs time.</span></div>
+
+<main>
+  <div class="try-panel">
+    <div class="try-label">Try this</div>
+    <div class="try-pills">
+      <button id="tryStartBtn">Start a quick test</button>
+      <button id="tryHistoryBtn">Show my history</button>
+      <button id="tryExportBtn">Export as CSV</button>
+    </div>
+    <div class="try-note" id="tryNote">Three blocks of 20 trials. Press R/B/G/Y or click the buttons. We'll measure your interference.</div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="panel" style="margin-bottom: 24px;">
+        <div class="progress-row">
+          <div>
+            <span class="block-tag" id="blockTag">Ready</span>
+            <span style="color: var(--text-dim); margin-left: 8px;" id="blockText">Press Start to begin</span>
+          </div>
+          <div class="mono" id="trialCounter" style="color: var(--text-dim); font-size: 12px;">0 / 60</div>
+        </div>
+        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+
+        <div class="stage" id="stage">
+          <div class="intro-card" id="introCard">
+            <h2>Stroop Cognitive Interference Test</h2>
+            <p>You will see a coloured word displayed in the centre. Identify the <strong>ink colour</strong> — not the word — as quickly as you can.</p>
+            <div class="keys">
+              <div class="key">R · Red</div>
+              <div class="key">B · Blue</div>
+              <div class="key">G · Green</div>
+              <div class="key">Y · Yellow</div>
+            </div>
+            <p style="font-size:12px;">Three blocks of twenty trials. Reaction times are recorded in milliseconds.</p>
+            <button class="primary" id="startBtn" style="margin-top: 10px;">Start test</button>
+          </div>
+          <div class="stimulus" id="stimText" style="display:none;"></div>
+          <div class="fixation" id="fixation" style="display:none;">+</div>
+        </div>
+
+        <div class="response-row" id="responseRow">
+          <button class="respBtn" data-color="red" disabled><div class="swatch" style="background: var(--stim-red);"></div>Red<div class="kbd">R</div></button>
+          <button class="respBtn" data-color="blue" disabled><div class="swatch" style="background: var(--stim-blue);"></div>Blue<div class="kbd">B</div></button>
+          <button class="respBtn" data-color="green" disabled><div class="swatch" style="background: var(--stim-green);"></div>Green<div class="kbd">G</div></button>
+          <button class="respBtn" data-color="yellow" disabled><div class="swatch" style="background: var(--stim-yellow);"></div>Yellow<div class="kbd">Y</div></button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Reaction time distribution</div>
+        <p class="panel-sub" id="resultsSubtitle">Block results appear here as you complete each block</p>
+        <canvas id="rtCanvas" style="height: 280px;"></canvas>
+        <div class="explainer" id="rtExplainer">
+          <strong>Stroop interference</strong> is the slowdown caused when word meaning conflicts with ink colour. A typical adult shows ~80–120 ms of interference on the incongruent block.
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom: 24px;">
+        <div class="panel-title">Current session</div>
+        <p class="panel-sub">Live results updated after each response</p>
+        <div class="readouts">
+          <div class="readout"><div class="label" title="Mean reaction time across trials, measured in milliseconds.">Mean RT</div><div class="value cyan mono" id="rMean">—</div></div>
+          <div class="readout"><div class="label" title="Standard deviation of reaction times — how spread out the RT distribution is around the mean.">SD</div><div class="value mono" id="rSd">—</div></div>
+          <div class="readout"><div class="label">Accuracy</div><div class="value green mono" id="rAcc">—</div></div>
+          <div class="readout"><div class="label" title="Stroop interference: extra reaction time on incongruent trials compared with congruent ones.">Interference</div><div class="value amber mono" id="rInt">—</div></div>
+        </div>
+        <div style="margin-top: 14px;">
+          <div class="section-label">Block means</div>
+          <div class="readouts">
+            <div class="readout"><div class="label" title="Congruent trials: the colour word matches the ink colour (e.g. RED in red ink).">Congruent</div><div class="value green mono" id="rCong">—</div></div>
+            <div class="readout"><div class="label" title="Incongruent trials: the colour word conflicts with the ink colour (e.g. RED in blue ink) — these are the slow ones.">Incongruent</div><div class="value rose mono" id="rIncong">—</div></div>
+            <div class="readout" style="grid-column: 1 / 3;"><div class="label" title="Neutral trials: the displayed text is a non-colour word (or symbols) shown in a colour ink.">Neutral</div><div class="value cyan mono" id="rNeut">—</div></div>
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="restartBtn">Restart</button>
+          <button id="abortBtn" disabled>Abort</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Your history</div>
+        <p class="panel-sub">Saved locally (IndexedDB) across sessions</p>
+        <div class="history-list" id="historyList">
+          <div style="color: var(--text-faint); font-size: 12px; padding: 6px;">No sessions recorded yet.</div>
+        </div>
+        <div class="button-row">
+          <button id="exportBtn">Export CSV</button>
+          <button id="clearBtn">Clear history</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// -----------------------------------------------------------------------------
+// Stroop Effect simulation
+// -----------------------------------------------------------------------------
+
+const COLORS = {
+  red:    { css: '#ef4444', name: 'Red'    },
+  blue:   { css: '#3b82f6', name: 'Blue'   },
+  green:  { css: '#22c55e', name: 'Green'  },
+  yellow: { css: '#eab308', name: 'Yellow' },
+};
+const COLOR_KEYS = ['red','blue','green','yellow'];
+const KEY_MAP = { r: 'red', b: 'blue', g: 'green', y: 'yellow' };
+const NEUTRAL_WORDS = ['TABLE','CHAIR','PAPER','GLASS','METAL'];
+
+// ----------------------- IndexedDB ------------------------------------------
+
+const DB_NAME = 'stroop_history_v1';
+const STORE = 'sessions';
+let db = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) {
+        d.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function saveSession(s) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).add(s);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function loadHistory() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function clearHistory() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// ----------------------- Trial generation -----------------------------------
+
+function makeTrials() {
+  const trials = [];
+  // Block 1: congruent
+  for (let i = 0; i < 20; i++) {
+    const c = COLOR_KEYS[Math.floor(Math.random() * 4)];
+    trials.push({ block: 'congruent', word: c.toUpperCase(), ink: c, target: c });
+  }
+  // Block 2: incongruent (word color differs from ink)
+  for (let i = 0; i < 20; i++) {
+    const word = COLOR_KEYS[Math.floor(Math.random() * 4)];
+    let ink;
+    do { ink = COLOR_KEYS[Math.floor(Math.random() * 4)]; } while (ink === word);
+    trials.push({ block: 'incongruent', word: word.toUpperCase(), ink, target: ink });
+  }
+  // Block 3: neutral (non-color word)
+  for (let i = 0; i < 20; i++) {
+    const word = NEUTRAL_WORDS[Math.floor(Math.random() * NEUTRAL_WORDS.length)];
+    const ink = COLOR_KEYS[Math.floor(Math.random() * 4)];
+    trials.push({ block: 'neutral', word, ink, target: ink });
+  }
+
+  // Randomise *within* blocks but keep block order? Brief says "order randomised";
+  // we interpret this as randomising trial order within each block (presentation
+  // order is already varied) AND randomising the order of the three blocks.
+  const byBlock = {
+    congruent: trials.filter(t => t.block === 'congruent'),
+    incongruent: trials.filter(t => t.block === 'incongruent'),
+    neutral: trials.filter(t => t.block === 'neutral'),
+  };
+  for (const k of Object.keys(byBlock)) byBlock[k] = shuffle(byBlock[k]);
+  const order = shuffle(['congruent','incongruent','neutral']);
+  return order.flatMap(b => byBlock[b]);
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ----------------------- Test state -----------------------------------------
+
+let state = {
+  running: false,
+  trials: [],
+  idx: 0,
+  responses: [], // {trial, rt, correct}
+  stimStart: 0,
+  awaitingResp: false,
+  isiTimer: null,
+  blockEndsAt: 0,
+};
+
+const $ = (id) => document.getElementById(id);
+const stage = $('stage');
+const stimText = $('stimText');
+const fixation = $('fixation');
+const introCard = $('introCard');
+
+function startTest() {
+  state = {
+    running: true,
+    trials: makeTrials(),
+    idx: 0,
+    responses: [],
+    stimStart: 0,
+    awaitingResp: false,
+    isiTimer: null,
+  };
+  introCard.style.display = 'none';
+  $('startBtn').disabled = true;
+  $('abortBtn').disabled = false;
+  enableResponses(false);
+  showFixation(500).then(() => nextTrial());
+}
+
+function showFixation(ms) {
+  return new Promise((resolve) => {
+    stimText.style.display = 'none';
+    fixation.style.display = 'block';
+    setTimeout(() => {
+      fixation.style.display = 'none';
+      resolve();
+    }, ms);
+  });
+}
+
+function nextTrial() {
+  if (state.idx >= state.trials.length) return finishTest();
+  const t = state.trials[state.idx];
+  stimText.textContent = t.word;
+  stimText.style.color = COLORS[t.ink].css;
+  stimText.style.display = 'block';
+  fixation.style.display = 'none';
+  state.stimStart = performance.now();
+  state.awaitingResp = true;
+  enableResponses(true);
+  updateProgress();
+}
+
+function handleResponse(colorKey) {
+  if (!state.awaitingResp) return;
+  const t = state.trials[state.idx];
+  const rt = performance.now() - state.stimStart;
+  const correct = colorKey === t.target;
+  state.responses.push({ trial: t, rt, correct, response: colorKey });
+  state.awaitingResp = false;
+  enableResponses(false);
+
+  stage.classList.add(correct ? 'flash-correct' : 'flash-wrong');
+  stimText.style.opacity = '0.25';
+  setTimeout(() => {
+    stage.classList.remove('flash-correct','flash-wrong');
+    stimText.style.opacity = '1';
+    stimText.style.display = 'none';
+    state.idx++;
+    updateLiveReadouts();
+    // Inter-stimulus interval
+    setTimeout(() => {
+      if (!state.running) return;
+      // brief fixation
+      showFixation(350).then(() => {
+        if (state.running) nextTrial();
+      });
+    }, 250);
+  }, 250);
+}
+
+function enableResponses(on) {
+  document.querySelectorAll('.respBtn').forEach(b => b.disabled = !on);
+}
+
+function updateProgress() {
+  const total = state.trials.length;
+  $('trialCounter').textContent = `${state.idx + 1} / ${total}`;
+  $('progressFill').style.width = ((state.idx + 1) / total * 100) + '%';
+  const t = state.trials[state.idx];
+  const tag = $('blockTag');
+  tag.className = 'block-tag ' + t.block;
+  tag.textContent = t.block === 'congruent' ? 'Congruent'
+                  : t.block === 'incongruent' ? 'Incongruent'
+                  : 'Neutral';
+  $('blockText').textContent = `Block ${blockIndex(t.block) + 1} of 3 — identify the ink colour`;
+}
+
+function blockIndex(name) {
+  // determine which position this block is in within the randomised order
+  const order = [];
+  for (const t of state.trials) if (!order.includes(t.block)) order.push(t.block);
+  return order.indexOf(name);
+}
+
+const INTRO_HTML = `
+  <h2>Stroop Cognitive Interference Test</h2>
+  <p>You will see a coloured word displayed in the centre. Identify the <strong>ink colour</strong> — not the word — as quickly as you can.</p>
+  <div class="keys">
+    <div class="key">R · Red</div>
+    <div class="key">B · Blue</div>
+    <div class="key">G · Green</div>
+    <div class="key">Y · Yellow</div>
+  </div>
+  <p style="font-size:12px;">Three blocks of twenty trials. Reaction times are recorded in milliseconds.</p>
+  <button class="primary" id="startBtn" style="margin-top: 10px;">Start test</button>
+`;
+
+function restoreIntro() {
+  introCard.innerHTML = INTRO_HTML;
+  $('startBtn').addEventListener('click', startTest);
+}
+
+function abortTest() {
+  state.running = false;
+  state.awaitingResp = false;
+  enableResponses(false);
+  stimText.style.display = 'none';
+  fixation.style.display = 'none';
+  restoreIntro();
+  introCard.style.display = 'block';
+  $('startBtn').disabled = false;
+  $('abortBtn').disabled = true;
+  $('trialCounter').textContent = '0 / 60';
+  $('progressFill').style.width = '0%';
+  $('blockTag').className = 'block-tag';
+  $('blockTag').textContent = 'Ready';
+  $('blockText').textContent = 'Press Start to begin';
+}
+
+async function finishTest() {
+  state.running = false;
+  state.awaitingResp = false;
+  enableResponses(false);
+  stimText.style.display = 'none';
+  fixation.style.display = 'none';
+  introCard.style.display = 'block';
+  $('startBtn').disabled = false;
+  $('abortBtn').disabled = true;
+
+  // Update intro card with summary
+  const stats = computeStats(state.responses);
+  introCard.innerHTML = `
+    <h2>Session complete</h2>
+    <p style="color: var(--text-dim); line-height: 1.6;">Your interference score was
+      <strong style="color: var(--amber); font-family: 'JetBrains Mono', monospace;">${Math.round(stats.interference)} ms</strong>.
+      ${interferenceCommentary(stats.interference)}</p>
+    <div style="display:grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 16px 0; font-size:12px;">
+      <div><div style="color: var(--text-dim); font-size:10px;">CONGRUENT</div><div class="mono" style="font-size: 18px; color: var(--green);">${Math.round(stats.byBlock.congruent.mean)} ms</div></div>
+      <div><div style="color: var(--text-dim); font-size:10px;">INCONGRUENT</div><div class="mono" style="font-size: 18px; color: var(--rose);">${Math.round(stats.byBlock.incongruent.mean)} ms</div></div>
+      <div><div style="color: var(--text-dim); font-size:10px;">NEUTRAL</div><div class="mono" style="font-size: 18px; color: var(--cyan);">${Math.round(stats.byBlock.neutral.mean)} ms</div></div>
+    </div>
+    <p style="font-size:12px;">Accuracy <span class="mono" style="color: var(--green);">${(stats.accuracy*100).toFixed(1)}%</span></p>
+    <button class="primary" id="startBtn">Run again</button>
+  `;
+  // Rebind start button
+  $('startBtn').addEventListener('click', startTest);
+
+  // Save session
+  const session = {
+    timestamp: Date.now(),
+    responses: state.responses.map(r => ({ block: r.trial.block, rt: r.rt, correct: r.correct })),
+    stats,
+  };
+  try {
+    await saveSession(session);
+    await refreshHistory();
+  } catch (e) {
+    console.warn('Could not save session', e);
+  }
+
+  drawResults(stats);
+  $('rtExplainer').innerHTML = `<strong>Your interference score</strong> of
+    <strong style="color: var(--amber); font-family: 'JetBrains Mono', monospace;">${Math.round(stats.interference)} ms</strong>
+    is ${interferenceCommentary(stats.interference)}`;
+}
+
+function interferenceCommentary(ms) {
+  const TYPICAL = 100;
+  const diff = ms - TYPICAL;
+  const cmp = diff < 0 ? 'faster' : 'slower';
+  const absDiff = Math.abs(Math.round(diff));
+  if (ms < 50)  return `<strong>well below</strong> the typical adult interference of ~${TYPICAL} ms (you are ${absDiff} ms <strong>${cmp}</strong>) — exceptionally low interference.`;
+  if (ms < 90)  return `<strong>below</strong> the typical adult interference of ~${TYPICAL} ms (you are ${absDiff} ms <strong>${cmp}</strong>).`;
+  if (ms < 130) return `near the typical adult interference of ~${TYPICAL} ms (you are ${absDiff} ms ${cmp}).`;
+  if (ms < 200) return `<strong>above</strong> the typical adult interference of ~${TYPICAL} ms (you are ${absDiff} ms <strong>${cmp}</strong>).`;
+  return `<strong>well above</strong> the typical adult interference of ~${TYPICAL} ms (you are ${absDiff} ms <strong>${cmp}</strong>) — strong Stroop interference.`;
+}
+
+// ----------------------- Stats ----------------------------------------------
+
+function computeStats(responses) {
+  const correctOnly = responses.filter(r => r.correct);
+  const mean = arr => arr.reduce((s,x) => s + x, 0) / (arr.length || 1);
+  const sd = arr => {
+    if (arr.length < 2) return 0;
+    const m = mean(arr);
+    return Math.sqrt(arr.reduce((s,x) => s + (x-m)*(x-m), 0) / (arr.length - 1));
+  };
+  const byBlock = {};
+  for (const b of ['congruent','incongruent','neutral']) {
+    const rts = correctOnly.filter(r => r.trial.block === b).map(r => r.rt);
+    const all = responses.filter(r => r.trial.block === b);
+    const acc = all.length ? all.filter(r => r.correct).length / all.length : 0;
+    byBlock[b] = {
+      mean: mean(rts), sd: sd(rts), n: rts.length, rts, accuracy: acc,
+    };
+  }
+  const accuracy = responses.length ? responses.filter(r => r.correct).length / responses.length : 0;
+  return {
+    mean: mean(correctOnly.map(r => r.rt)),
+    sd: sd(correctOnly.map(r => r.rt)),
+    accuracy,
+    interference: byBlock.incongruent.mean - byBlock.congruent.mean,
+    byBlock,
+  };
+}
+
+function updateLiveReadouts() {
+  const s = computeStats(state.responses);
+  $('rMean').textContent = isFinite(s.mean) ? Math.round(s.mean) + ' ms' : '—';
+  $('rSd').textContent = isFinite(s.sd) ? Math.round(s.sd) + ' ms' : '—';
+  $('rAcc').textContent = (s.accuracy*100).toFixed(1) + '%';
+  const interf = s.interference;
+  $('rInt').textContent = isFinite(interf) && s.byBlock.incongruent.n && s.byBlock.congruent.n
+    ? (interf >= 0 ? '+' : '') + Math.round(interf) + ' ms' : '—';
+  $('rCong').textContent = s.byBlock.congruent.n ? Math.round(s.byBlock.congruent.mean) + ' ms' : '—';
+  $('rIncong').textContent = s.byBlock.incongruent.n ? Math.round(s.byBlock.incongruent.mean) + ' ms' : '—';
+  $('rNeut').textContent = s.byBlock.neutral.n ? Math.round(s.byBlock.neutral.mean) + ' ms' : '—';
+}
+
+// ----------------------- Results plot ---------------------------------------
+
+const rtCanvas = $('rtCanvas');
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return { ctx, w: r.width, h: r.height };
+}
+
+function drawResults(stats) {
+  const { ctx, w, h } = fitCanvas(rtCanvas);
+  ctx.clearRect(0,0,w,h);
+
+  // axes layout
+  const pad = { l: 56, r: 16, t: 18, b: 36 };
+  const plotW = w - pad.l - pad.r;
+  const plotH = h - pad.t - pad.b;
+  // x positions for 3 blocks
+  const blocks = ['congruent','incongruent','neutral'];
+  const colors = { congruent: '#34d399', incongruent: '#f43f5e', neutral: '#22d3ee' };
+  // RT y range
+  const allRts = [];
+  for (const b of blocks) allRts.push(...stats.byBlock[b].rts);
+  if (allRts.length === 0) {
+    ctx.fillStyle = '#5b6573';
+    ctx.font = '12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Distribution appears after first block', w/2, h/2);
+    return;
+  }
+  const minRt = Math.max(100, Math.min(...allRts) - 80);
+  const maxRt = Math.min(2500, Math.max(...allRts) + 80);
+  const yScale = (rt) => pad.t + plotH - ((rt - minRt) / (maxRt - minRt)) * plotH;
+
+  // grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  const tickCount = 6;
+  for (let i = 0; i <= tickCount; i++) {
+    const v = minRt + (i/tickCount)*(maxRt-minRt);
+    const y = yScale(v);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+    ctx.fillText(Math.round(v), pad.l - 6, y + 3);
+  }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px Inter, sans-serif';
+
+  // y label
+  ctx.save();
+  ctx.translate(14, pad.t + plotH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Reaction time (ms)', 0, 0);
+  ctx.restore();
+
+  blocks.forEach((b, i) => {
+    const cx = pad.l + plotW * ((i + 0.5) / 3);
+    const data = stats.byBlock[b];
+    const rts = data.rts;
+    const col = colors[b];
+
+    // violin via KDE
+    drawViolin(ctx, cx, rts, yScale, col);
+
+    // box-and-whisker overlay
+    if (rts.length >= 3) {
+      const sorted = rts.slice().sort((a,b)=>a-b);
+      const q = (p) => {
+        const idx = (sorted.length - 1) * p;
+        const lo = Math.floor(idx), hi = Math.ceil(idx);
+        return sorted[lo] + (sorted[hi]-sorted[lo])*(idx-lo);
+      };
+      const q1 = q(0.25), med = q(0.5), q3 = q(0.75);
+      const iqr = q3 - q1;
+      const lo = Math.max(sorted[0], q1 - 1.5*iqr);
+      const hi = Math.min(sorted[sorted.length-1], q3 + 1.5*iqr);
+      // whisker
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, yScale(lo)); ctx.lineTo(cx, yScale(hi));
+      ctx.stroke();
+      // caps
+      ctx.beginPath();
+      ctx.moveTo(cx - 10, yScale(lo)); ctx.lineTo(cx + 10, yScale(lo));
+      ctx.moveTo(cx - 10, yScale(hi)); ctx.lineTo(cx + 10, yScale(hi));
+      ctx.stroke();
+      // box
+      ctx.fillStyle = '#11161f';
+      ctx.fillRect(cx - 18, yScale(q3), 36, yScale(q1) - yScale(q3));
+      ctx.strokeRect(cx - 18, yScale(q3), 36, yScale(q1) - yScale(q3));
+      // median
+      ctx.strokeStyle = '#e6edf3';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx - 18, yScale(med)); ctx.lineTo(cx + 18, yScale(med));
+      ctx.stroke();
+    }
+
+    // individual dots (deterministic jitter from index hash)
+    rts.forEach((rt, k) => {
+      // deterministic pseudo-random in [-0.5, 0.5]
+      const h = Math.sin(k * 12.9898 + i * 78.233) * 43758.5453;
+      const j = (h - Math.floor(h)) - 0.5;
+      const jx = cx + j * 26;
+      ctx.fillStyle = col + '99';
+      ctx.beginPath();
+      ctx.arc(jx, yScale(rt), 2.4, 0, Math.PI*2);
+      ctx.fill();
+    });
+
+    // mean marker
+    if (rts.length) {
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(cx, yScale(data.mean), 3.4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // label
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(b[0].toUpperCase() + b.slice(1), cx, h - 12);
+    ctx.fillStyle = '#97a1b0';
+    ctx.font = '10px JetBrains Mono, monospace';
+    if (rts.length) ctx.fillText(`μ ${Math.round(data.mean)} ms`, cx, h - 24);
+  });
+}
+
+function drawViolin(ctx, cx, rts, yScale, color) {
+  if (rts.length < 2) return;
+  // KDE
+  const min = Math.min(...rts), max = Math.max(...rts);
+  const bw = Math.max(40, (max - min) / 8);
+  const steps = 40;
+  const range = max - min;
+  if (range === 0) return;
+  const pts = [];
+  for (let i = 0; i <= steps; i++) {
+    const v = min - bw + (i/steps) * (range + 2*bw);
+    let d = 0;
+    for (const r of rts) d += Math.exp(-0.5 * ((v - r)/bw) ** 2);
+    d /= rts.length * bw * Math.sqrt(2*Math.PI);
+    pts.push({ v, d });
+  }
+  const maxD = Math.max(...pts.map(p => p.d));
+  const width = 28;
+  ctx.fillStyle = color + '33';
+  ctx.strokeStyle = color + 'aa';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    const x = cx + (pts[i].d / maxD) * width;
+    const y = yScale(pts[i].v);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const x = cx - (pts[i].d / maxD) * width;
+    const y = yScale(pts[i].v);
+    ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+
+// ----------------------- History UI -----------------------------------------
+
+async function refreshHistory() {
+  const list = await loadHistory();
+  list.sort((a,b) => b.timestamp - a.timestamp);
+  const el = $('historyList');
+  if (list.length === 0) {
+    el.innerHTML = `<div style="color: var(--text-faint); font-size: 12px; padding: 6px;">No sessions recorded yet.</div>`;
+    return;
+  }
+  el.innerHTML = list.slice(0, 30).map(s => {
+    const d = new Date(s.timestamp);
+    const date = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<div class="history-row">
+      <div class="date">${date}</div>
+      <div class="interf">${(s.stats.interference >= 0 ? '+' : '') + Math.round(s.stats.interference)} ms</div>
+      <div class="acc">${(s.stats.accuracy*100).toFixed(0)}%</div>
+      <div class="mono" style="color: var(--text-dim);">μ ${Math.round(s.stats.mean)}</div>
+    </div>`;
+  }).join('');
+}
+
+function csvEscape(v) {
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+async function exportCSV() {
+  const list = await loadHistory();
+  if (list.length === 0) { alert('No sessions to export.'); return; }
+  const rows = [['session_id','timestamp','iso','block','trial_index','rt_ms','correct']];
+  list.forEach((s, si) => {
+    const iso = new Date(s.timestamp).toISOString();
+    s.responses.forEach((r, ti) => {
+      rows.push([si+1, s.timestamp, iso, r.block, ti+1, Math.round(r.rt*100)/100, r.correct ? 1 : 0]);
+    });
+  });
+  const csv = rows.map(r => r.map(csvEscape).join(',')).join('\n') + '\n';
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'stroop_history_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ----------------------- Event wiring ---------------------------------------
+
+document.querySelectorAll('.respBtn').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.disabled) return;
+    b.classList.add('pressed');
+    setTimeout(() => b.classList.remove('pressed'), 120);
+    handleResponse(b.dataset.color);
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (k in KEY_MAP && state.awaitingResp) {
+    e.preventDefault();
+    const btn = document.querySelector(`.respBtn[data-color="${KEY_MAP[k]}"]`);
+    if (btn) {
+      btn.classList.add('pressed');
+      setTimeout(() => btn.classList.remove('pressed'), 120);
+    }
+    handleResponse(KEY_MAP[k]);
+  }
+});
+
+$('startBtn').addEventListener('click', startTest);
+$('abortBtn').addEventListener('click', abortTest);
+$('restartBtn').addEventListener('click', () => {
+  abortTest();
+});
+$('exportBtn').addEventListener('click', exportCSV);
+$('clearBtn').addEventListener('click', async () => {
+  if (confirm('Erase all saved Stroop sessions?')) {
+    await clearHistory();
+    await refreshHistory();
+  }
+});
+
+window.addEventListener('resize', () => {
+  // redraw whatever was last shown — recompute from current responses
+  if (state.responses.length) drawResults(computeStats(state.responses));
+  else { const { ctx } = fitCanvas(rtCanvas); ctx.clearRect(0,0,rtCanvas.width, rtCanvas.height); }
+});
+
+// ----------------------- Try-this wiring ------------------------------------
+
+const TRY_NOTES = {
+  start: "Three blocks of 20 trials. Press R/B/G/Y or click the buttons. We'll measure your interference.",
+  history: "Your past sessions are stored locally — see how your interference score varies day to day.",
+  export: "Download your full RT data. Open it in any spreadsheet to analyse.",
+};
+function setTryNote(key) {
+  const el = document.getElementById('tryNote');
+  if (el && TRY_NOTES[key]) el.textContent = TRY_NOTES[key];
+}
+document.getElementById('tryStartBtn').addEventListener('click', () => {
+  setTryNote('start');
+  const startBtn = document.getElementById('startBtn');
+  if (startBtn && !startBtn.disabled) startBtn.click();
+});
+document.getElementById('tryHistoryBtn').addEventListener('click', () => {
+  setTryNote('history');
+  const list = document.getElementById('historyList');
+  if (list) {
+    list.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    list.style.transition = 'box-shadow 600ms ease';
+    list.style.boxShadow = '0 0 0 2px var(--cyan-soft)';
+    setTimeout(() => { list.style.boxShadow = ''; }, 1200);
+  }
+});
+document.getElementById('tryExportBtn').addEventListener('click', () => {
+  setTryNote('export');
+  exportCSV();
+});
+
+(async () => {
+  try {
+    await openDB();
+    await refreshHistory();
+  } catch (e) {
+    console.warn('IndexedDB unavailable', e);
+  }
+  // initial canvas fit
+  fitCanvas(rtCanvas);
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="signal_detection.html">
+      <div class="related-title">Signal Detection</div>
+      <div class="related-desc">Sensitivity (d′) vs criterion (β), with full ROC</div>
+    </a>
+    <a class="related-card" href="phoneme_space.html">
+      <div class="related-title">IPA Vowel Chart</div>
+      <div class="related-desc">A clickable formant synthesiser</div>
+    </a>
+    <a class="related-card" href="bayes_visualiser.html">
+      <div class="related-title">Bayes' Theorem</div>
+      <div class="related-desc">Why a rare disease + accurate test still means most positives are false</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

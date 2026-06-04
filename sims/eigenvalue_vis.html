@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eigenvalues & Eigenvectors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+
+/* Keyboard help indicator + modal */
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible, input[type=number]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; transition: color 120ms ease; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 18px 24px 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 12px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range] { cursor: ew-resize; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button:active { transform: translateY(0.5px); }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; transition: color 120ms ease, background 120ms ease; }
+.seg button:hover:not(.active) { color: var(--text); }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.canvas-wrap { position: relative; width: 100%; }
+canvas { width: 100%; display: block; }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 16px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.gold { color: var(--gold); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.readout .val.small { font-size: 13px; }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.preset-row button { font-size: 12px; padding: 6px 10px; }
+.matrix-display { display: grid; grid-template-columns: auto 1fr auto; gap: 4px; align-items: center; font-family: 'JetBrains Mono', monospace; margin-bottom: 12px; }
+.bracket { font-size: 36px; color: var(--text-dim); font-weight: 200; line-height: 1; }
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; padding: 4px 0; }
+.matrix-cell { background: var(--bg-elev-1); padding: 6px 10px; border-radius: var(--r-sm); text-align: center; font-size: 15px; color: var(--text); border: 1px solid var(--panel-border); }
+.slider-row { display: grid; grid-template-columns: 18px 1fr 56px; gap: 10px; align-items: center; margin-bottom: 10px; }
+.slider-row .name { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 13px; text-align: center; }
+.slider-row .v { color: var(--text); font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+.classification { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); margin-top: 10px; }
+.classification .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.classification .v { font-size: 14px; color: var(--cyan); margin-top: 4px; font-weight: 500; }
+.classification .v.amber { color: var(--amber); }
+.classification .v.rose { color: var(--rose); }
+.classification .v.violet { color: var(--violet); }
+.classification .v.green { color: var(--green); }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.55; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.explainer .acc { color: var(--amber); }
+.insight-banner { font-style: italic; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 0 0 0 8px; font-size: 13px; margin: 6px 0 0; }
+.try-panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px; }
+.try-panel .try-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+.try-panel .try-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.try-panel .try-row button { font-size: 12px; padding: 6px 12px; }
+.try-panel .try-note { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin: 4px 0 0; }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Eigenvalues & Eigenvectors</h1>
+    <p class="sub">A 2×2 matrix as a transformation. Watch what stays on its own line.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>Pure scaling</span>
+      <span class="kbd-key">2</span><span>Rotation 45°</span>
+      <span class="kbd-key">3</span><span>Horizontal shear</span>
+      <span class="kbd-key">4</span><span>Reflect y=x</span>
+      <span class="kbd-key">5</span><span>Project onto x</span>
+      <span class="kbd-key">6</span><span>Saddle (+2, −1)</span>
+      <span class="kbd-key">7</span><span>Near-singular</span>
+      <span class="kbd-key">Space</span><span>Reanimate transformation</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+<div style="max-width: 1400px; margin: 14px auto 0; padding: 0 24px;">
+  <p class="insight-banner" style="margin: 0;">An eigenvector points in a direction the matrix can stretch but cannot rotate. It's the matrix's 'preferred axis'.</p>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3 id="mainTitle">Linear transformation</h3>
+        <div class="seg" id="viewToggle">
+          <button data-mode="grid" class="active">Vector field</button>
+          <button data-mode="circle">Unit circle → ellipse</button>
+          <button data-mode="spiral">Repeated apply</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" style="height: 520px;"><canvas id="main"></canvas></div>
+      <div class="explainer" id="explainer"></div>
+    </div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Matrix A</p>
+      <div class="slider-row">
+        <span class="name">a</span>
+        <input type="range" id="sA" min="-3" max="3" step="0.1" value="2">
+        <span class="v" id="vA">2.0</span>
+      </div>
+      <div class="slider-row">
+        <span class="name">b</span>
+        <input type="range" id="sB" min="-3" max="3" step="0.1" value="0">
+        <span class="v" id="vB">0.0</span>
+      </div>
+      <div class="slider-row">
+        <span class="name">c</span>
+        <input type="range" id="sC" min="-3" max="3" step="0.1" value="0">
+        <span class="v" id="vC">0.0</span>
+      </div>
+      <div class="slider-row">
+        <span class="name">d</span>
+        <input type="range" id="sD" min="-3" max="3" step="0.1" value="0.5">
+        <span class="v" id="vD">0.5</span>
+      </div>
+      <div class="matrix-display" style="margin-top: 8px;">
+        <span class="bracket">[</span>
+        <div class="matrix-grid">
+          <div class="matrix-cell" id="mA">2.0</div>
+          <div class="matrix-cell" id="mB">0.0</div>
+          <div class="matrix-cell" id="mC">0.0</div>
+          <div class="matrix-cell" id="mD">0.5</div>
+        </div>
+        <span class="bracket">]</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="primary" id="animBtn">Animate</button>
+        <button id="resetMatBtn">Reset to I</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Presets</p>
+      <div class="preset-row">
+        <button data-preset="scale">Pure scaling</button>
+        <button data-preset="rot45">Rotation 45°</button>
+        <button data-preset="shear">Horizontal shear</button>
+        <button data-preset="reflect">Reflect y=x</button>
+        <button data-preset="project">Project onto x</button>
+        <button data-preset="saddle">Saddle (+2, −1)</button>
+        <button data-preset="nearsing">Near-singular</button>
+      </div>
+    </div>
+
+    <div class="try-panel" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-row">
+        <button id="tryScale">Pure scaling</button>
+      </div>
+      <p class="try-note">Eigenvectors align with the axes. λ₁=2 stretches x, λ₂=0.5 compresses y.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryRot">Rotation 45°</button>
+      </div>
+      <p class="try-note">Eigenvalues are complex — no real eigenvector exists. The matrix pure-rotates.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryProject">Singular projection</button>
+      </div>
+      <p class="try-note">One eigenvalue is zero. The nullspace collapses — y direction is annihilated.</p>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Live readouts</p>
+      <div class="readouts">
+        <div class="readout" style="grid-column: span 2;"><div class="lbl" title="Eigenvalues: scalars λ such that A·v = λ·v for some non-zero vector v.">Eigenvalues</div><div class="val cyan small" id="oLambda">—</div></div>
+        <div class="readout"><div class="lbl" title="Determinant: the signed factor by which the matrix scales areas (or volumes in higher dimensions).">Determinant</div><div class="val small" id="oDet">—</div></div>
+        <div class="readout"><div class="lbl" title="Trace: the sum of the diagonal entries — equals the sum of the eigenvalues.">Trace</div><div class="val small" id="oTrace">—</div></div>
+        <div class="readout"><div class="lbl" title="Discriminant of the characteristic polynomial. If negative, eigenvalues are complex and the map rotates.">Discriminant</div><div class="val amber small" id="oDisc">—</div></div>
+        <div class="readout"><div class="lbl" title="Condition number: ratio of largest to smallest singular value. Big values mean the matrix is nearly singular and numerically unstable.">Condition #</div><div class="val gold small" id="oCond">—</div></div>
+      </div>
+      <div class="classification">
+        <div class="lbl">Matrix type</div>
+        <div class="v" id="oType">—</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+const canvas = $('main');
+let ctx = fitCanvas(canvas);
+window.addEventListener('resize', () => { ctx = fitCanvas(canvas); draw(); });
+
+/* ============================================================
+ * State
+ * ============================================================ */
+const state = {
+  // current transform (animated towards target)
+  a: 1, b: 0, c: 0, d: 1,
+  // target transform from sliders
+  ta: 2, tb: 0, tc: 0, td: 0.5,
+  // animation
+  animating: false,
+  animStart: 0,
+  animFrom: { a: 1, b: 0, c: 0, d: 1 },
+  animTo: { a: 2, b: 0, c: 0, d: 0.5 },
+  mode: 'grid',
+  // spiral
+  spiralStep: 0,
+};
+
+// init slider readouts
+[['sA','vA','ta','mA'], ['sB','vB','tb','mB'], ['sC','vC','tc','mC'], ['sD','vD','td','mD']].forEach(([sl, vl, key, mc]) => {
+  const el = $(sl);
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value);
+    state[key] = v;
+    $(vl).textContent = v.toFixed(1);
+    $(mc).textContent = v.toFixed(1);
+    // Live update during slider drag — no animation, snap
+    state.a = state.ta; state.b = state.tb; state.c = state.tc; state.d = state.td;
+    state.animating = false;
+    updateAll();
+  });
+});
+
+$('animBtn').addEventListener('click', () => {
+  // Animate from identity (or current) → target
+  state.animFrom = { a: 1, b: 0, c: 0, d: 1 };
+  state.animTo = { a: state.ta, b: state.tb, c: state.tc, d: state.td };
+  state.animStart = performance.now();
+  state.animating = true;
+  requestAnimationFrame(animTick);
+});
+$('resetMatBtn').addEventListener('click', () => {
+  setSliders(1, 0, 0, 1);
+});
+
+function setSliders(a, b, c, d) {
+  state.ta = a; state.tb = b; state.tc = c; state.td = d;
+  $('sA').value = a; $('vA').textContent = a.toFixed(1); $('mA').textContent = a.toFixed(1);
+  $('sB').value = b; $('vB').textContent = b.toFixed(1); $('mB').textContent = b.toFixed(1);
+  $('sC').value = c; $('vC').textContent = c.toFixed(1); $('mC').textContent = c.toFixed(1);
+  $('sD').value = d; $('vD').textContent = d.toFixed(1); $('mD').textContent = d.toFixed(1);
+  state.a = a; state.b = b; state.c = c; state.d = d;
+  updateAll();
+}
+
+const PRESETS = {
+  scale:    { a: 2,    b: 0,   c: 0,   d: 0.5 },
+  rot45:    { a: 0.7,  b: -0.7, c: 0.7,  d: 0.7 },
+  shear:    { a: 1,    b: 1,   c: 0,   d: 1 },
+  reflect:  { a: 0,    b: 1,   c: 1,   d: 0 },
+  project:  { a: 1,    b: 0,   c: 0,   d: 0 },
+  saddle:   { a: 0.5,  b: 1.5, c: 1.5, d: 0.5 }, // eigenvalues 2, -1
+  nearsing: { a: 1,    b: 1,   c: 1,   d: 1.01 },
+};
+document.querySelectorAll('[data-preset]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = PRESETS[btn.dataset.preset];
+    setSliders(p.a, p.b, p.c, p.d);
+    // also animate from identity
+    state.animFrom = { a: 1, b: 0, c: 0, d: 1 };
+    state.animTo = { ...p };
+    state.animStart = performance.now();
+    state.animating = true;
+    requestAnimationFrame(animTick);
+  });
+});
+
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.mode = b.dataset.mode;
+    if (state.mode === 'spiral') {
+      state.spiralStep = 0;
+      runSpiral();
+    } else {
+      draw();
+    }
+  });
+});
+
+/* ============================================================
+ * Animation
+ * ============================================================ */
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function animTick(now) {
+  if (!state.animating) return;
+  const t = Math.min(1, (now - state.animStart) / 800);
+  const e = easeOutCubic(t);
+  state.a = state.animFrom.a + (state.animTo.a - state.animFrom.a) * e;
+  state.b = state.animFrom.b + (state.animTo.b - state.animFrom.b) * e;
+  state.c = state.animFrom.c + (state.animTo.c - state.animFrom.c) * e;
+  state.d = state.animFrom.d + (state.animTo.d - state.animFrom.d) * e;
+  draw();
+  if (t < 1) requestAnimationFrame(animTick);
+  else state.animating = false;
+}
+
+let spiralRAF = null;
+function runSpiral() {
+  if (spiralRAF) cancelAnimationFrame(spiralRAF);
+  state.spiralStep = 0;
+  let last = performance.now();
+  const tick = (now) => {
+    if (state.mode !== 'spiral') { spiralRAF = null; return; }
+    if (now - last > 1200) { state.spiralStep = (state.spiralStep + 1) % 12; last = now; }
+    draw();
+    spiralRAF = requestAnimationFrame(tick);
+  };
+  spiralRAF = requestAnimationFrame(tick);
+}
+
+/* ============================================================
+ * Eigen-decomposition for 2x2
+ * ============================================================ */
+function eigen(a, b, c, d) {
+  const tr = a + d;
+  const det = a*d - b*c;
+  const disc = tr*tr - 4*det;
+  let l1, l2, complex = false;
+  if (disc >= 0) {
+    const r = Math.sqrt(disc);
+    l1 = (tr + r) / 2;
+    l2 = (tr - r) / 2;
+  } else {
+    const im = Math.sqrt(-disc) / 2;
+    l1 = { re: tr/2, im: im };
+    l2 = { re: tr/2, im: -im };
+    complex = true;
+  }
+  let v1 = null, v2 = null;
+  if (!complex) {
+    v1 = eigvec(a, b, c, d, l1);
+    v2 = eigvec(a, b, c, d, l2);
+  }
+  return { l1, l2, v1, v2, tr, det, disc, complex };
+}
+function eigvec(a, b, c, d, lam) {
+  // (A - λI) v = 0
+  // [(a-λ) b]    [b      ]
+  // [c  (d-λ)] → v = [-(a-λ)] if b ≠ 0; or [d-λ, -c] if c ≠ 0; else axis-aligned.
+  let x, y;
+  if (Math.abs(b) > 1e-9) { x = b; y = lam - a; }
+  else if (Math.abs(c) > 1e-9) { x = lam - d; y = c; }
+  else {
+    // Diagonal: eigenvectors are e1 and e2.
+    if (Math.abs(lam - a) < 1e-9) { x = 1; y = 0; }
+    else { x = 0; y = 1; }
+  }
+  const n = Math.hypot(x, y);
+  if (n < 1e-12) return { x: 1, y: 0 };
+  return { x: x / n, y: y / n };
+}
+
+/* ============================================================
+ * Drawing
+ * ============================================================ */
+const VIEW = { unit: 60 }; // pixels per unit
+
+function worldToScreen(wx, wy, W, H) {
+  return { x: W/2 + wx * VIEW.unit, y: H/2 - wy * VIEW.unit };
+}
+
+function drawArrow(ctx, x0, y0, x1, y1, color, width = 1.5, headSize = 7) {
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const ang = Math.atan2(y1 - y0, x1 - x0);
+  // shorten line so it terminates inside the arrowhead, avoiding overlap artefacts
+  const ex = x1 - Math.cos(ang) * headSize * 0.6;
+  const ey = y1 - Math.sin(ang) * headSize * 0.6;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(ex, ey);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 - headSize * Math.cos(ang - 0.4), y1 - headSize * Math.sin(ang - 0.4));
+  ctx.lineTo(x1 - headSize * Math.cos(ang + 0.4), y1 - headSize * Math.sin(ang + 0.4));
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawGrid(W, H) {
+  ctx.save();
+  ctx.strokeStyle = '#131a25';
+  ctx.lineWidth = 1;
+  for (let x = -10; x <= 10; x++) {
+    const sx = W/2 + x * VIEW.unit;
+    ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.stroke();
+  }
+  for (let y = -10; y <= 10; y++) {
+    const sy = H/2 - y * VIEW.unit;
+    ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(W, sy); ctx.stroke();
+  }
+  // Axes
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+  // Axis labels
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  for (let x = -8; x <= 8; x += 2) {
+    if (x === 0) continue;
+    const sx = W/2 + x * VIEW.unit;
+    ctx.fillText(x.toString(), sx + 3, H/2 + 13);
+  }
+  for (let y = -6; y <= 6; y += 2) {
+    if (y === 0) continue;
+    const sy = H/2 - y * VIEW.unit;
+    ctx.fillText(y.toString(), W/2 + 4, sy - 3);
+  }
+  ctx.restore();
+}
+
+function draw() {
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  ctx.clearRect(0, 0, W, H);
+  drawGrid(W, H);
+
+  // Compute eigen-decomposition of current matrix
+  const { a, b, c, d } = state;
+  const E = eigen(a, b, c, d);
+
+  // Nullspace shading if singular
+  if (Math.abs(E.det) < 0.01) {
+    // Find null space direction: solve A v = 0. If A has a zero eigenvalue, eigenvector is nullspace.
+    let nv = null;
+    if (!E.complex) {
+      if (Math.abs(E.l1) < 0.05) nv = E.v1;
+      else if (Math.abs(E.l2) < 0.05) nv = E.v2;
+    }
+    if (nv) {
+      // Compute image direction (column space): A e1 or A e2 (whichever is nonzero)
+      let img = null;
+      const c1x = a, c1y = c;
+      const c2x = b, c2y = d;
+      if (Math.hypot(c1x, c1y) > 1e-6) {
+        const n = Math.hypot(c1x, c1y); img = { x: c1x/n, y: c1y/n };
+      } else if (Math.hypot(c2x, c2y) > 1e-6) {
+        const n = Math.hypot(c2x, c2y); img = { x: c2x/n, y: c2y/n };
+      }
+      // Shade nullspace stripe rose
+      ctx.save();
+      ctx.fillStyle = 'rgba(244,63,94,0.15)';
+      ctx.strokeStyle = 'rgba(244,63,94,0.5)';
+      ctx.lineWidth = 1;
+      const NX = nv.x * 20, NY = nv.y * 20;
+      const perpX = -nv.y * 0.2, perpY = nv.x * 0.2;
+      ctx.beginPath();
+      let p;
+      p = worldToScreen(NX + perpX, NY + perpY, W, H); ctx.moveTo(p.x, p.y);
+      p = worldToScreen(NX - perpX, NY - perpY, W, H); ctx.lineTo(p.x, p.y);
+      p = worldToScreen(-NX - perpX, -NY - perpY, W, H); ctx.lineTo(p.x, p.y);
+      p = worldToScreen(-NX + perpX, -NY + perpY, W, H); ctx.lineTo(p.x, p.y);
+      ctx.closePath();
+      ctx.fill();
+      // Label
+      ctx.font = '11px Inter, sans-serif';
+      ctx.fillStyle = '#f43f5e';
+      const lp = worldToScreen(nv.x * 4.2, nv.y * 4.2, W, H);
+      ctx.fillText('null space', lp.x + 6, lp.y);
+      ctx.restore();
+    }
+  }
+
+  // Draw mode-specific content
+  if (state.mode === 'grid') drawVectorField(W, H, a, b, c, d);
+  else if (state.mode === 'circle') drawCircle(W, H, a, b, c, d);
+  else if (state.mode === 'spiral') drawSpiral(W, H, a, b, c, d);
+
+  // Draw eigenvectors (in all modes except when complex)
+  drawEigenvectors(W, H, E);
+
+  // Label rotation angle if complex
+  if (E.complex && state.mode !== 'spiral') {
+    drawRotationAngle(W, H, E);
+  }
+
+  updateReadouts(E);
+}
+
+function drawVectorField(W, H, a, b, c, d) {
+  // 20×20 grid of vectors centered at origin in world space.
+  // Each base point is fixed in world; we draw arrow from base to base+A*base normalised.
+  // Spec says "arrows from origin" — interpret as: draw all 20×20 vectors as arrows FROM ORIGIN
+  // showing where each grid point lands. But that produces overlap; clearer interpretation:
+  // draw arrows from each grid point to its image (vector v → v + (A v - v)*progress = A v at end).
+  // We choose: arrows FROM ORIGIN to the image of each base unit vector. This shows the
+  // transformed grid most clearly.
+  // To keep the canvas readable, we draw arrows at each base point pointing to the image of that point.
+  const N = 9; // 9x9 = 81 visible (using "20x20" loosely; brief says ~20x20 but that's visually muddy on 520px canvas; use 11 per axis)
+  const arrowsPerSide = 11;
+  ctx.save();
+  for (let iy = -arrowsPerSide; iy <= arrowsPerSide; iy++) {
+    for (let ix = -arrowsPerSide; ix <= arrowsPerSide; ix++) {
+      const wx = ix * 0.5;
+      const wy = iy * 0.5;
+      if (Math.hypot(wx, wy) < 0.01) continue;
+      // Image
+      const ix2 = a*wx + b*wy;
+      const iy2 = c*wx + d*wy;
+      const p0 = worldToScreen(wx, wy, W, H);
+      const p1 = worldToScreen(ix2, iy2, W, H);
+      // Colour fade with distance from origin
+      const r = Math.hypot(wx, wy);
+      const alpha = Math.max(0.25, 1 - r / 6);
+      drawArrow(ctx, p0.x, p0.y, p1.x, p1.y, `rgba(34,211,238,${alpha * 0.55})`, 1, 5);
+    }
+  }
+  ctx.restore();
+}
+
+function drawCircle(W, H, a, b, c, d) {
+  // Unit circle → ellipse
+  ctx.save();
+  ctx.strokeStyle = 'rgba(151,161,176,0.5)';
+  ctx.lineWidth = 1.25;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  for (let i = 0; i <= 360; i++) {
+    const t = i * Math.PI / 180;
+    const x = Math.cos(t), y = Math.sin(t);
+    const p = worldToScreen(x, y, W, H);
+    if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // Image ellipse
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= 360; i++) {
+    const t = i * Math.PI / 180;
+    const x = Math.cos(t), y = Math.sin(t);
+    const ix2 = a*x + b*y;
+    const iy2 = c*x + d*y;
+    const p = worldToScreen(ix2, iy2, W, H);
+    if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+  // Origin marker
+  const o = worldToScreen(0, 0, W, H);
+  ctx.fillStyle = '#fbbf24';
+  ctx.beginPath(); ctx.arc(o.x, o.y, 3, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawSpiral(W, H, a, b, c, d) {
+  // Repeated application of A on a sample vector
+  const start = { x: 1, y: 0 };
+  let x = start.x, y = start.y;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(34,211,238,0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  let p = worldToScreen(x, y, W, H);
+  ctx.moveTo(p.x, p.y);
+  const N = 30;
+  const pts = [{x, y}];
+  for (let i = 0; i < N; i++) {
+    const nx = a*x + b*y;
+    const ny = c*x + d*y;
+    x = nx; y = ny;
+    if (Math.hypot(x, y) > 20 || Math.hypot(x, y) < 1e-6) break;
+    pts.push({x, y});
+    p = worldToScreen(x, y, W, H);
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+  // Dots, brightest = current step
+  pts.forEach((pp, i) => {
+    const p = worldToScreen(pp.x, pp.y, W, H);
+    const isCurrent = i === state.spiralStep % pts.length;
+    ctx.fillStyle = isCurrent ? '#fbbf24' : 'rgba(34,211,238,' + Math.max(0.2, 1 - i / pts.length) + ')';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, isCurrent ? 5 : 3, 0, Math.PI*2);
+    ctx.fill();
+  });
+  // Label
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.fillText(`v₀ = (1,0), v₁ = Av₀, v₂ = A²v₀, … (${pts.length} steps shown)`, 12, H - 12);
+  ctx.restore();
+}
+
+function drawEigenvectors(W, H, E) {
+  // Defective case: real repeated, single eigenvector direction
+  // Complex case: don't draw
+  const o = worldToScreen(0, 0, W, H);
+  if (E.complex) return;
+
+  const drawOne = (v, lam, color, label) => {
+    if (!v) return;
+    // Scale eigenvector to length |λ| * 1.5 for visibility but cap
+    const len = Math.min(5, Math.max(0.6, Math.abs(lam) * 1.5));
+    const ex = v.x * len, ey = v.y * len;
+    const p1 = worldToScreen(ex, ey, W, H);
+    const p1b = worldToScreen(-ex, -ey, W, H);
+    // Light line through full eigenvector direction
+    ctx.save();
+    ctx.strokeStyle = color + '55';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    const far = 12;
+    const f1 = worldToScreen(v.x * far, v.y * far, W, H);
+    const f2 = worldToScreen(-v.x * far, -v.y * far, W, H);
+    ctx.moveTo(f1.x, f1.y); ctx.lineTo(f2.x, f2.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Bold arrow showing scaling by lambda
+    drawArrow(ctx, o.x, o.y, p1.x, p1.y, color, 3, 9);
+    // Label
+    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.fillStyle = color;
+    const labelOffset = 14;
+    const lp = { x: p1.x + v.x * labelOffset, y: p1.y - v.y * labelOffset };
+    ctx.fillText(label, lp.x, lp.y);
+    ctx.restore();
+  };
+
+  // Detect defective: real repeated eigenvalues with only 1 independent eigvec direction
+  const repeated = !E.complex && Math.abs(E.l1 - E.l2) < 0.01;
+  if (repeated) {
+    // Both share same direction (or matrix is scalar multiple of I)
+    const dot = E.v1.x * E.v2.x + E.v1.y * E.v2.y;
+    const sameDir = Math.abs(Math.abs(dot) - 1) < 0.05;
+    if (sameDir && Math.abs(E.l1 - 0) > 1e-6) {
+      // Defective
+      drawOne(E.v1, E.l1, '#fbbf24', `λ = ${E.l1.toFixed(2)}`);
+      ctx.save();
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = '11px Inter, sans-serif';
+      ctx.fillText('defective matrix — single eigenvector direction', 12, 18);
+      ctx.restore();
+      return;
+    }
+  }
+  drawOne(E.v1, E.l1, '#22d3ee', `λ₁ = ${E.l1.toFixed(2)}`);
+  if (!repeated || Math.abs(E.v1.x * E.v2.x + E.v1.y * E.v2.y) < 0.95) {
+    drawOne(E.v2, E.l2, '#fbbf24', `λ₂ = ${E.l2.toFixed(2)}`);
+  }
+}
+
+function drawRotationAngle(W, H, E) {
+  // Complex eigenvalues a±bi → rotation angle θ = atan2(b, a)
+  const re = E.l1.re, im = Math.abs(E.l1.im);
+  const theta = Math.atan2(im, re);
+  const o = worldToScreen(0, 0, W, H);
+  const R = 70;
+  ctx.save();
+  ctx.strokeStyle = '#a78bfa';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  // Note: canvas y is inverted, but angle is around origin in math coords
+  // Arc from angle 0 (positive x-axis) to theta (positive y in math = -y on canvas)
+  ctx.arc(o.x, o.y, R, 0, -theta, true);
+  ctx.stroke();
+  // x-axis tick
+  ctx.strokeStyle = 'rgba(167,139,250,0.4)';
+  ctx.beginPath();
+  ctx.moveTo(o.x, o.y);
+  ctx.lineTo(o.x + R + 18, o.y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(o.x, o.y);
+  ctx.lineTo(o.x + (R + 18) * Math.cos(theta), o.y - (R + 18) * Math.sin(theta));
+  ctx.stroke();
+  // Label
+  ctx.fillStyle = '#a78bfa';
+  ctx.font = 'bold 13px "JetBrains Mono", monospace';
+  const labelAng = theta * 0.6;
+  ctx.fillText(`θ = ${(theta * 180 / Math.PI).toFixed(1)}°`, o.x + R * 0.7 * Math.cos(labelAng) + 6, o.y - R * 0.7 * Math.sin(labelAng));
+  ctx.font = '11px Inter, sans-serif';
+  ctx.fillStyle = '#a78bfa';
+  ctx.fillText('complex eigenvalues → rotation', 12, 18);
+  ctx.restore();
+}
+
+/* ============================================================
+ * Readouts & classification
+ * ============================================================ */
+function fmt(x) {
+  if (typeof x === 'object') {
+    return x.re.toFixed(2) + (x.im >= 0 ? ' + ' : ' − ') + Math.abs(x.im).toFixed(2) + 'i';
+  }
+  return x.toFixed(2);
+}
+
+function classify(E, a, b, c, d) {
+  const eps = 0.02;
+  if (Math.abs(E.det) < eps) return { txt: 'Singular (rank deficient)', color: 'rose' };
+  if (E.complex) {
+    const mod = Math.hypot(E.l1.re, E.l1.im);
+    if (Math.abs(mod - 1) < eps) return { txt: 'Pure rotation', color: 'violet' };
+    if (mod > 1) return { txt: 'Spiral outward (rotation + expansion)', color: 'violet' };
+    return { txt: 'Spiral inward (rotation + contraction)', color: 'violet' };
+  }
+  // Real eigenvalues
+  if (Math.abs(E.l1 - E.l2) < eps) {
+    // Check if A is exactly λI
+    if (Math.abs(b) < eps && Math.abs(c) < eps && Math.abs(a - d) < eps) return { txt: 'Scalar (λI)', color: 'cyan' };
+    return { txt: 'Defective / shear-like (repeated λ)', color: 'amber' };
+  }
+  if (E.l1 * E.l2 < 0) return { txt: 'Saddle point (eigenvalues opposite sign)', color: 'amber' };
+  if (E.l1 > 1 && E.l2 > 1) return { txt: 'Source — repels in all directions', color: 'green' };
+  if (E.l1 < 1 && E.l2 < 1 && E.l1 > 0 && E.l2 > 0) return { txt: 'Sink — attracts toward origin', color: 'cyan' };
+  if (Math.abs(Math.abs(E.l1) - 1) < eps && Math.abs(Math.abs(E.l2) - 1) < eps) return { txt: 'Reflection / unitary-like', color: 'violet' };
+  return { txt: 'Diagonalisable (distinct real λ)', color: 'cyan' };
+}
+
+function updateReadouts(E) {
+  if (E.complex) {
+    $('oLambda').innerHTML = `λ₁ = ${fmt(E.l1)}<br>λ₂ = ${fmt(E.l2)}`;
+  } else {
+    $('oLambda').innerHTML = `λ₁ = ${E.l1.toFixed(3)}<br>λ₂ = ${E.l2.toFixed(3)}`;
+  }
+  $('oDet').textContent = E.det.toFixed(3);
+  $('oTrace').textContent = E.tr.toFixed(3);
+  $('oDisc').textContent = E.disc.toFixed(3) + (E.disc < 0 ? ' (complex)' : E.disc < 0.01 ? ' (repeated)' : '');
+  // Condition number: |λ_max| / |λ_min| (using magnitudes)
+  let lmax, lmin;
+  if (E.complex) {
+    lmax = lmin = Math.hypot(E.l1.re, E.l1.im);
+  } else {
+    const m1 = Math.abs(E.l1), m2 = Math.abs(E.l2);
+    lmax = Math.max(m1, m2); lmin = Math.min(m1, m2);
+  }
+  const cond = lmin < 1e-12 ? Infinity : lmax / lmin;
+  $('oCond').textContent = isFinite(cond) ? cond.toFixed(2) : '∞ (singular)';
+
+  const cls = classify(E, state.a, state.b, state.c, state.d);
+  const typeEl = $('oType');
+  typeEl.className = 'v ' + cls.color;
+  typeEl.textContent = cls.txt;
+
+  updateExplainer(E, cls);
+}
+
+function updateExplainer(E, cls) {
+  const el = $('explainer');
+  let html = '';
+  if (E.complex) {
+    const mod = Math.hypot(E.l1.re, E.l1.im);
+    html = `The eigenvalues are complex: <span class="k">${fmt(E.l1)}</span> and <span class="k">${fmt(E.l2)}</span>. The matrix acts like a <span class="acc">rotation by θ = ${(Math.atan2(Math.abs(E.l1.im), E.l1.re) * 180 / Math.PI).toFixed(1)}°</span> combined with a scaling by <span class="k">|λ| = ${mod.toFixed(3)}</span>. No real direction is preserved — every vector spirals as A is applied repeatedly.`;
+  } else if (Math.abs(E.det) < 0.02) {
+    html = `The determinant is <span class="k">${E.det.toFixed(3)}</span> — the matrix is <span class="acc">singular</span>. One eigenvalue is zero, and its eigenvector spans the <span class="k">null space</span> (shaded rose). The transformation collapses the plane onto a line.`;
+  } else if (Math.abs(E.l1 - E.l2) < 0.02) {
+    html = `Eigenvalues coincide at <span class="k">λ = ${E.l1.toFixed(3)}</span>. This is a <span class="acc">defective</span> matrix: even though λ has algebraic multiplicity 2, only one eigenvector direction exists. A acts like λ·I plus a shear.`;
+  } else {
+    html = `Eigenvalues are real and distinct: <span class="k">λ₁ = ${E.l1.toFixed(3)}</span>, <span class="k">λ₂ = ${E.l2.toFixed(3)}</span>. Their eigenvectors (cyan and gold) define two privileged axes that A stretches by exactly λ — no rotation along those directions. Every other vector is some linear combination of the two, so A's action is fully captured by these two numbers.`;
+  }
+  if (state.mode === 'circle') html += ` In ellipse view, the unit circle (dashed) maps to the ellipse (cyan); the semi-axes of the ellipse lie along the eigenvectors with lengths |λ₁| and |λ₂|.`;
+  if (state.mode === 'spiral') html += ` In repeated-apply view, each cyan dot is A applied one more time to v₀ = (1, 0). The trajectory ${E.complex ? 'spirals' : Math.max(Math.abs(E.l1), Math.abs(E.l2)) > 1 ? 'shoots off toward the dominant eigenvector' : 'collapses toward the origin'}.`;
+  el.innerHTML = html;
+}
+
+function updateAll() {
+  draw();
+}
+
+// ---- Try this experiments ----
+function triggerPreset(name) {
+  const btn = document.querySelector('[data-preset="' + name + '"]');
+  if (btn) btn.click();
+}
+$('tryScale').addEventListener('click', () => triggerPreset('scale'));
+$('tryRot').addEventListener('click', () => triggerPreset('rot45'));
+$('tryProject').addEventListener('click', () => triggerPreset('project'));
+
+draw();
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  document.getElementById('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  const presetKeys = { '1': 'scale', '2': 'rot45', '3': 'shear', '4': 'reflect', '5': 'project', '6': 'saddle', '7': 'nearsing' };
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (presetKeys[e.key]) {
+      const btn = document.querySelector(`[data-preset="${presetKeys[e.key]}"]`);
+      if (btn) btn.click();
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      // Reanimate: store current target, animate from identity to current
+      const target = { a: state.a, b: state.b, c: state.c, d: state.d };
+      state.animFrom = { a: 1, b: 0, c: 0, d: 1 };
+      state.animTo = target;
+      state.animStart = performance.now();
+      state.animating = true;
+      requestAnimationFrame(animTick);
+    }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="fourier_builder.html">
+      <div class="related-title">Fourier Series</div>
+      <div class="related-desc">Build any waveform from sines, or watch the epicycles spin</div>
+    </a>
+    <a class="related-card" href="taylor_series.html">
+      <div class="related-title">Taylor Series</div>
+      <div class="related-desc">Polynomial approximations and where they break down</div>
+    </a>
+    <a class="related-card" href="fractal_explorer.html">
+      <div class="related-title">Mandelbrot & Julia</div>
+      <div class="related-desc">Zoom 10¹⁴ into the boundary that contains everything</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

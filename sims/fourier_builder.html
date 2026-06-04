@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fourier Series & Epicycles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+
+/* Keyboard help indicator + modal */
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+/* Harmonic-row sliders are smaller (denser list) */
+.h-row input[type=range]::-webkit-slider-thumb { width: 12px; height: 12px; box-shadow: 0 0 0 3px rgba(34,211,238,0.12); }
+.h-row input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgba(34,211,238,0.18); }
+.h-row input[type=range]::-moz-range-thumb { width: 12px; height: 12px; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.canvas-wrap { position: relative; width: 100%; }
+canvas { width: 100%; display: block; }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.gold { color: var(--gold); }
+
+.harmonic-list { max-height: 360px; overflow-y: auto; padding-right: 4px; }
+.harmonic-list::-webkit-scrollbar { width: 6px; }
+.harmonic-list::-webkit-scrollbar-track { background: var(--bg-elev-1); border-radius: 3px; }
+.harmonic-list::-webkit-scrollbar-thumb { background: var(--grid); border-radius: 3px; }
+.h-row { display: grid; grid-template-columns: 24px 1fr 1fr 32px; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--panel-border); font-size: 11px; }
+.h-row:last-child { border-bottom: none; }
+.h-num { font-family: 'JetBrains Mono', monospace; color: var(--text-dim); font-size: 11px; text-align: center; }
+.h-num.on { color: var(--text); }
+.h-amp, .h-phase { display: flex; flex-direction: column; gap: 2px; }
+.h-amp .lbl, .h-phase .lbl { font-size: 9px; color: var(--text-faint); display: flex; justify-content: space-between; }
+.h-amp .lbl .v { font-family: 'JetBrains Mono', monospace; color: var(--text-dim); }
+.h-toggle { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; transition: all 120ms ease; }
+.h-toggle:hover { border-color: var(--cyan); }
+.h-toggle.on { background: var(--cyan); border-color: var(--cyan); }
+.h-toggle.on:hover { background: #5be1f5; }
+.h-toggle.on::after { content: ''; width: 6px; height: 6px; background: var(--bg); border-radius: 2px; }
+.preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+
+.insight-banner {
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  border-left: 2px solid var(--cyan);
+  padding: 6px 0 6px 10px;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+.try-panel-section {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.try-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: 1fr; }
+}
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Fourier Series & Epicycles</h1>
+    <p class="sub">Build any periodic wave from rotating circles</p>
+    <p class="insight-banner">Any periodic signal — square, sawtooth, anything — is just a sum of sines and cosines. More harmonics, sharper edges, until Gibbs' 9% overshoot finally settles.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Play / pause</span>
+      <span class="kbd-key">1</span><span>Square preset</span>
+      <span class="kbd-key">2</span><span>Sawtooth preset</span>
+      <span class="kbd-key">3</span><span>Triangle preset</span>
+      <span class="kbd-key">4</span><span>Pulse preset</span>
+      <span class="kbd-key">5</span><span>Half-rectified preset</span>
+      <span class="kbd-key">H</span><span>Harmonic view</span>
+      <span class="kbd-key">E</span><span>Epicycle view</span>
+      <span class="kbd-key">+ / −</span><span>Increase / decrease active harmonics</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3 id="mainTitle">Epicycle construction</h3>
+        <div class="seg" id="viewToggle">
+          <button data-mode="epicycle" class="active">Epicycles</button>
+          <button data-mode="harmonic">Harmonics</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" style="height: 440px;"><canvas id="main"></canvas></div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <div class="title-row">
+        <h3>Frequency spectrum</h3>
+        <span style="font-size: 11px; color: var(--text-dim);">harmonic amplitudes</span>
+      </div>
+      <div class="canvas-wrap" style="height: 160px;"><canvas id="spectrum"></canvas></div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Presets</p>
+      <div class="preset-row">
+        <button data-preset="square">Square</button>
+        <button data-preset="sawtooth">Sawtooth</button>
+        <button data-preset="triangle">Triangle</button>
+        <button data-preset="pulse">Pulse</button>
+        <button data-preset="halfsine">Half-rectified</button>
+        <button data-preset="clear">Clear</button>
+      </div>
+      <div class="control" id="dutyControl" style="margin-top: 14px; display: none;">
+        <div class="control-row"><span class="label">Duty cycle (pulse)</span><span class="value num" id="vDuty">50%</span></div>
+        <input type="range" id="duty" min="5" max="95" step="1" value="50">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Animation</p>
+      <div class="control">
+        <div class="control-row"><span class="label">Speed</span><span class="value num" id="vSpeed">1.0×</span></div>
+        <input type="range" id="speed" min="0" max="300" step="5" value="100">
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="primary" id="playBtn">Pause</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Live values</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="The number of sinusoidal harmonic terms currently summed into the reconstruction.">Active harmonics</div><div class="val cyan" id="oActive">0</div></div>
+        <div class="readout"><div class="lbl" title="The fundamental period of the waveform — the length over which it repeats.">Period T</div><div class="val" id="oT">2π</div></div>
+        <div class="readout"><div class="lbl" title="Root-mean-square deviation between your partial Fourier sum and the target waveform.">RMS error vs target</div><div class="val amber" id="oTHD">—</div></div>
+        <div class="readout"><div class="lbl" title="The phase angle of the fundamental (first) harmonic, in radians.">Phase θ₁</div><div class="val gold" id="oPhase">0.00</div></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Harmonics</p>
+      <div class="harmonic-list" id="harmonics"></div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="sq3">Square wave, 3 harmonics</button>
+        <button data-try="sq16">Square wave, 16 harmonics</button>
+        <button data-try="tri16">Triangle wave</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+const N_HARMONICS = 16;
+
+// HSL colors for each harmonic
+function harmonicColor(n, alpha = 1) {
+  // step around hue cycle, harmonic 1 cyan-ish
+  const hue = (190 + (n - 1) * 22) % 360;
+  return `hsla(${hue}, 80%, 60%, ${alpha})`;
+}
+
+const state = {
+  view: 'epicycle',
+  speed: 1.0,
+  time: 0,
+  playing: true,
+  preset: 'square',
+  duty: 0.5,
+  harmonics: [], // {amp, phase, on, visibility} ; index 0 = n=1
+  visibility: [], // animated 0..1 for fade
+  lastFrameT: performance.now(),
+  trail: [], // points traced by epicycle tip; array of {x, y}
+  viewSwitchUntil: 0 // timestamp for crossfade overlay
+};
+
+// init harmonics
+for (let i = 0; i < N_HARMONICS; i++) {
+  state.harmonics.push({ amp: 0, phase: 0, on: true });
+  state.visibility.push(0);
+}
+
+function setPreset(name) {
+  state.preset = name;
+  for (const h of state.harmonics) { h.amp = 0; h.phase = 0; h.on = true; }
+  if (name === 'square') {
+    for (let n = 1; n <= N_HARMONICS; n++) {
+      const i = n - 1;
+      if (n % 2 === 1) state.harmonics[i].amp = 4 / (n * Math.PI);
+      else state.harmonics[i].amp = 0;
+      state.harmonics[i].phase = 0;
+    }
+  } else if (name === 'sawtooth') {
+    for (let n = 1; n <= N_HARMONICS; n++) {
+      const i = n - 1;
+      state.harmonics[i].amp = Math.abs(2 / (n * Math.PI));
+      state.harmonics[i].phase = (n % 2 === 0) ? Math.PI : 0;
+    }
+  } else if (name === 'triangle') {
+    for (let n = 1; n <= N_HARMONICS; n++) {
+      const i = n - 1;
+      if (n % 2 === 1) {
+        state.harmonics[i].amp = 8 / (n * n * Math.PI * Math.PI);
+        // alternate phase for triangle: cos representation -> for sin convention, add phase π/2 and alternate sign
+        // Triangle = sum 8/(n²π²) * (-1)^((n-1)/2) * sin(n x)/(n²) for odd n.
+        // To use sin(n t + phi): when sign is negative, phi = π.
+        const k = (n - 1) / 2;
+        state.harmonics[i].phase = (k % 2 === 0) ? 0 : Math.PI;
+      } else state.harmonics[i].amp = 0;
+    }
+  } else if (name === 'pulse') {
+    // Bipolar rectangular pulse: +1 on (0, 2πd), −1 on (2πd, 2π); period 2π.
+    // Sine-series coefficient: a_n = (2/(nπ)) · (1 − cos(2πnd)).
+    // (At d=0.5 this reduces to the square-wave series 4/(nπ) for odd n.)
+    const d = state.duty;
+    for (let n = 1; n <= N_HARMONICS; n++) {
+      const i = n - 1;
+      const a = (2 / (n * Math.PI)) * (1 - Math.cos(2 * Math.PI * n * d));
+      state.harmonics[i].amp = Math.abs(a);
+      state.harmonics[i].phase = a < 0 ? Math.PI : 0;
+    }
+  } else if (name === 'halfsine') {
+    // Half-wave rectified sine: f(t) = (1/π) + (1/2)sin(t) - (2/π) Σ cos(2k t)/(4k²-1)
+    // Using sin convention: cos(x) = sin(x + π/2)
+    // We ignore DC term (no n=0 slot). n=1 → amp 1/2, phase 0.
+    // For even n=2k: amp = (2/π) / (4k² - 1), phase = π/2 (since -cos → sin(x - π/2) i.e. phase = -π/2 or 3π/2)
+    state.harmonics[0].amp = 0.5; state.harmonics[0].phase = 0;
+    for (let n = 2; n <= N_HARMONICS; n++) {
+      const i = n - 1;
+      if (n % 2 === 0) {
+        const k = n / 2;
+        state.harmonics[i].amp = (2 / Math.PI) / (4 * k * k - 1);
+        // -cos = sin(x - π/2) => phase = -π/2 (or 3π/2)
+        state.harmonics[i].phase = (3 * Math.PI) / 2;
+      } else {
+        state.harmonics[i].amp = 0; state.harmonics[i].phase = 0;
+      }
+    }
+  } else if (name === 'clear') {
+    // all zero
+  }
+  renderHarmonics();
+  state.trail = [];
+}
+
+function targetWaveform(t) {
+  // Returns the value of the target waveform at angle t.
+  // Each waveform is aligned to match the Fourier reconstruction (sin basis, phase=0 at t=0).
+  if (state.preset === 'square') {
+    // Σ 4/(nπ) sin(nt) for odd n → starts at 0, rises to +1 on (0,π), -1 on (π,2π).
+    return Math.sin(t) >= 0 ? 1 : -1;
+  }
+  if (state.preset === 'sawtooth') {
+    // f(t) = (2/π) Σ (-1)^(n+1) sin(nt)/n → continuous ramp through origin,
+    // jumps from +1 → -1 at t = π, 3π, … (period 2π).
+    const x = ((t + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    return x / Math.PI - 1;
+  }
+  if (state.preset === 'triangle') {
+    // Σ 8/(π²n²) (-1)^((n-1)/2) sin(nt) for odd n → peaks at t = π/2, troughs at t = 3π/2.
+    const x = ((t / (2 * Math.PI)) % 1 + 1) % 1; // x ∈ [0,1)
+    if (x < 0.25) return 4 * x;            // 0 → 1
+    if (x < 0.75) return 2 - 4 * x;        // 1 → -1
+    return 4 * x - 4;                      // -1 → 0
+  }
+  if (state.preset === 'pulse') {
+    // sin-aligned rectangular pulse: +1 on (0, 2πd), -1 elsewhere
+    const x = ((t / (2 * Math.PI)) % 1 + 1) % 1;
+    return x < state.duty ? 1 : -1;
+  }
+  if (state.preset === 'halfsine') {
+    // Half-wave rectified sine, minus its DC term (1/π) so it aligns with the AC-only reconstruction.
+    const s = Math.sin(t);
+    return (s > 0 ? s : 0) - 1 / Math.PI;
+  }
+  return null;
+}
+
+function reconstruct(t) {
+  let s = 0;
+  for (let n = 1; n <= N_HARMONICS; n++) {
+    const h = state.harmonics[n - 1];
+    if (!h.on) continue;
+    const vis = state.visibility[n - 1];
+    s += vis * h.amp * Math.sin(n * t + h.phase);
+  }
+  return s;
+}
+
+function reconstructAll(t) {
+  // returns array of contributions per harmonic
+  const arr = [];
+  for (let n = 1; n <= N_HARMONICS; n++) {
+    const h = state.harmonics[n - 1];
+    arr.push((h.on ? state.visibility[n - 1] : 0) * h.amp * Math.sin(n * t + h.phase));
+  }
+  return arr;
+}
+
+function renderHarmonics() {
+  const list = $('harmonics');
+  list.innerHTML = '';
+  for (let n = 1; n <= N_HARMONICS; n++) {
+    const i = n - 1;
+    const h = state.harmonics[i];
+    const row = document.createElement('div');
+    row.className = 'h-row';
+    row.innerHTML = `
+      <span class="h-num ${h.amp > 0 && h.on ? 'on' : ''}" style="color: ${h.amp > 0 ? harmonicColor(n) : ''}">n${n}</span>
+      <div class="h-amp">
+        <div class="lbl"><span>amp</span><span class="v" id="amp-v-${n}">${h.amp.toFixed(2)}</span></div>
+        <input type="range" min="0" max="2" step="0.01" value="${h.amp}" data-n="${n}" data-kind="amp">
+      </div>
+      <div class="h-phase">
+        <div class="lbl"><span>phase</span><span class="v" id="ph-v-${n}">${h.phase.toFixed(2)}</span></div>
+        <input type="range" min="0" max="${(Math.PI * 2).toFixed(4)}" step="0.01" value="${h.phase}" data-n="${n}" data-kind="phase">
+      </div>
+      <button class="h-toggle ${h.on ? 'on' : ''}" data-n="${n}" data-kind="toggle" title="toggle harmonic"></button>
+    `;
+    list.appendChild(row);
+  }
+  list.querySelectorAll('input[type=range]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const n = parseInt(inp.dataset.n);
+      const kind = inp.dataset.kind;
+      const v = parseFloat(inp.value);
+      const i = n - 1;
+      if (kind === 'amp') {
+        state.harmonics[i].amp = v;
+        $('amp-v-' + n).textContent = v.toFixed(2);
+      } else if (kind === 'phase') {
+        state.harmonics[i].phase = v;
+        $('ph-v-' + n).textContent = v.toFixed(2);
+      }
+      // user editing breaks the preset
+      state.preset = 'custom';
+    });
+  });
+  list.querySelectorAll('button.h-toggle').forEach(b => {
+    b.addEventListener('click', () => {
+      const n = parseInt(b.dataset.n);
+      const i = n - 1;
+      state.harmonics[i].on = !state.harmonics[i].on;
+      b.classList.toggle('on', state.harmonics[i].on);
+    });
+  });
+}
+
+// Drawing
+
+function drawEpicycle(ctx, W, H) {
+  // left: epicycles, right: traced wave
+  const splitX = W * 0.45;
+  const cx = splitX * 0.5;
+  const cy = H * 0.5;
+  const scale = Math.min(splitX, H) * 0.35;
+
+  // grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = -3; i <= 3; i++) {
+    const x = cx + i * scale * 0.5;
+    ctx.beginPath(); ctx.moveTo(x, 10); ctx.lineTo(x, H - 10); ctx.stroke();
+  }
+  for (let i = -3; i <= 3; i++) {
+    const y = cy + i * scale * 0.5;
+    ctx.beginPath(); ctx.moveTo(10, y); ctx.lineTo(splitX - 6, y); ctx.stroke();
+  }
+  // separator
+  ctx.strokeStyle = '#1f2937';
+  ctx.beginPath(); ctx.moveTo(splitX, 10); ctx.lineTo(splitX, H - 10); ctx.stroke();
+
+  // compute chain of phasors
+  const t = state.time;
+  let px = cx, py = cy;
+  const tipPoints = []; // for connecting line later
+  tipPoints.push({ x: px, y: py });
+
+  // To represent f(t) = Σ A_n sin(n t + φ_n) as 2D motion:
+  // We rotate each phasor in the imaginary plane. The "y" component (imaginary part of A_n e^{i(n t + φ_n - π/2)}) gives sin.
+  // Phasor for harmonic n: angle = n t + φ_n - π/2 (so that imag = sin(n t + φ_n))
+  // But we want a 2D visualization. Use the natural complex phasor:
+  // y = Σ A_n sin(n t + φ_n); x is auxiliary, accumulated similarly with cos.
+  // We'll draw phasor rotating with angle θ_n = n t + φ_n, of length A_n, starting from the previous tip.
+  // The y component of tip = -A_n cos(θ_n)? Let's keep it consistent:
+  // We'll use vector (A_n cos(θ_n), A_n sin(θ_n)) added to running tip.
+  // The final y on the wave will be the imaginary part Σ A_n sin(θ_n).
+  // For visual interest, we use θ_n = n t + φ_n - π/2 so initial position is at angle -π/2 (pointing down).
+  // Then sin(θ_n) = sin(n t + φ_n - π/2) = -cos(n t + φ_n). Hmm that breaks waveform.
+  // Cleaner: just plot the *y-coordinate* of the final tip as the wave value. That y = Σ A_n sin(θ_n).
+  // To make our reconstruct(t) = Σ A_n sin(n t + φ_n) match the y of the chain, use θ_n = n t + φ_n.
+
+  // Draw chain.
+  // Canvas y grows downward, but we want positive wave amplitude to lift the tip UPWARD
+  // so that the left-pane tip's y-position lines up with the right-pane trace.
+  for (let n = 1; n <= N_HARMONICS; n++) {
+    const h = state.harmonics[n - 1];
+    const vis = state.visibility[n - 1];
+    if (!h.on || h.amp < 0.001 || vis < 0.01) continue;
+    const theta = n * t + h.phase;
+    const r = h.amp * scale * vis;
+    const nx = px + r * Math.cos(theta);
+    const ny = py - r * Math.sin(theta); // negate so positive sin lifts the tip up
+    // circle
+    ctx.strokeStyle = harmonicColor(n, 0.35 * vis);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.stroke();
+    // phasor arrow
+    ctx.strokeStyle = harmonicColor(n, vis);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(nx, ny);
+    ctx.stroke();
+    // small dot at tip
+    ctx.fillStyle = harmonicColor(n, vis);
+    ctx.beginPath(); ctx.arc(nx, ny, 2.5, 0, Math.PI * 2); ctx.fill();
+    px = nx; py = ny;
+    tipPoints.push({ x: px, y: py });
+  }
+
+  // final tip
+  ctx.fillStyle = '#22d3ee';
+  ctx.shadowColor = 'rgba(34,211,238,0.6)';
+  ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // record trail: stored as (t, y) along wave area
+  const tipY = py - cy; // pixel y-offset from origin
+  // Convert to wave coordinate: y_value = (py - cy)/scale → but our chain uses scale & sin convention.
+  // Use the actual reconstruct value for accuracy:
+  const wave = reconstruct(t);
+  // Update trail
+  state.trail.push(wave);
+  const maxTrail = 360; // points across the right pane
+  if (state.trail.length > maxTrail) state.trail.shift();
+
+  // Draw wave on right
+  const right = { x: splitX + 8, y: 8, w: W - splitX - 16, h: H - 16 };
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  // grid
+  for (let i = 0; i <= 6; i++) {
+    const x = right.x + right.w * i / 6;
+    ctx.beginPath(); ctx.moveTo(x, right.y); ctx.lineTo(x, right.y + right.h); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = right.y + right.h * i / 4;
+    ctx.beginPath(); ctx.moveTo(right.x, y); ctx.lineTo(right.x + right.w, y); ctx.stroke();
+  }
+  // zero line
+  const midY = right.y + right.h / 2;
+  ctx.strokeStyle = '#1f2937';
+  ctx.beginPath(); ctx.moveTo(right.x, midY); ctx.lineTo(right.x + right.w, midY); ctx.stroke();
+
+  const yMax = 1.8;
+  // connect line from tip to right pane start at current wave value
+  ctx.strokeStyle = 'rgba(34,211,238,0.35)';
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(right.x, midY - (wave / yMax) * (right.h / 2));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // draw trail: most recent at right edge, older trailing to right
+  // We invert so motion looks like wave streaming to the right
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = 'rgba(34,211,238,0.4)';
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  const len = state.trail.length;
+  for (let i = 0; i < len; i++) {
+    const v = state.trail[len - 1 - i];
+    const x = right.x + (i / Math.max(maxTrail - 1, 1)) * right.w;
+    const y = midY - (v / yMax) * (right.h / 2);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // overshoot annotation for square wave
+  annotateGibbs(ctx, right, midY, yMax);
+}
+
+function annotateGibbs(ctx, right, midY, yMax) {
+  if (state.preset !== 'square') return;
+  // Wilbraham-Gibbs constant: peak of partial sums = (2/π)·Si(π) ≈ 1.17898 for a ±1 square wave.
+  // The overshoot above the +1 level is ≈ 0.17898 in absolute terms; expressed as a fraction
+  // of the *full jump* (2 units, from -1 → +1) this is ≈ 8.95%. The peak position is what we plot.
+  const overshootVal = 1.17898;
+  const y = midY - (overshootVal / yMax) * (right.h / 2);
+  // arrow
+  ctx.strokeStyle = 'rgba(245,158,11,0.85)';
+  ctx.fillStyle = 'rgba(245,158,11,0.85)';
+  ctx.lineWidth = 1;
+  const ax = right.x + right.w * 0.85;
+  const ay = y - 22;
+  ctx.beginPath();
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(ax, y);
+  ctx.stroke();
+  // arrowhead
+  ctx.beginPath();
+  ctx.moveTo(ax, y);
+  ctx.lineTo(ax - 4, y - 6);
+  ctx.lineTo(ax + 4, y - 6);
+  ctx.closePath();
+  ctx.fill();
+  // label
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+  ctx.fillStyle = 'rgba(245,158,11,1)';
+  ctx.fillText('Gibbs +8.95% overshoot', ax - 6, ay + 8);
+
+  // dashed line at target ±1
+  ctx.strokeStyle = 'rgba(151,161,176,0.4)';
+  ctx.setLineDash([2, 3]);
+  const yp = midY - (1 / yMax) * (right.h / 2);
+  const yn = midY + (1 / yMax) * (right.h / 2);
+  ctx.beginPath(); ctx.moveTo(right.x, yp); ctx.lineTo(right.x + right.w, yp); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(right.x, yn); ctx.lineTo(right.x + right.w, yn); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawHarmonicView(ctx, W, H) {
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  const pad = { l: 40, r: 16, t: 16, b: 28 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  // grid
+  for (let i = 0; i <= 8; i++) {
+    const x = pad.l + (i / 8) * pw;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (i / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  const midY = pad.t + ph / 2;
+  ctx.strokeStyle = '#1f2937';
+  ctx.beginPath(); ctx.moveTo(pad.l, midY); ctx.lineTo(W - pad.r, midY); ctx.stroke();
+
+  const xMin = 0, xMax = Math.PI * 4; // two periods
+  const yMax = 1.8;
+  const samples = 800;
+
+  // draw each active harmonic faintly
+  for (let n = 1; n <= N_HARMONICS; n++) {
+    const h = state.harmonics[n - 1];
+    const vis = state.visibility[n - 1];
+    if (h.amp < 0.001 || vis < 0.01) continue;
+    ctx.strokeStyle = harmonicColor(n, 0.45 * vis);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= samples; i++) {
+      const t = xMin + (xMax - xMin) * i / samples;
+      const v = h.amp * Math.sin(n * t + h.phase);
+      const x = pad.l + (i / samples) * pw;
+      const y = midY - (v / yMax) * (ph / 2);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  // sum in bold cyan
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2.2;
+  ctx.shadowColor = 'rgba(34,211,238,0.4)';
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  for (let i = 0; i <= samples; i++) {
+    const t = xMin + (xMax - xMin) * i / samples;
+    const v = reconstruct(t);
+    const x = pad.l + (i / samples) * pw;
+    const y = midY - (v / yMax) * (ph / 2);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // target waveform (dashed amber) if a preset
+  if (state.preset !== 'clear' && state.preset !== 'custom') {
+    ctx.strokeStyle = 'rgba(245,158,11,0.55)';
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= samples; i++) {
+      const t = xMin + (xMax - xMin) * i / samples;
+      const v = targetWaveform(t);
+      if (v === null) continue;
+      const x = pad.l + (i / samples) * pw;
+      const y = midY - (v / yMax) * (ph / 2);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Current time marker — sweeps across the displayed two-period window then resets.
+  const span = xMax - xMin;
+  const tMod = ((state.time % span) + span) % span;
+  const mx = pad.l + (tMod / span) * pw;
+  ctx.strokeStyle = 'rgba(251,191,36,0.55)';
+  ctx.setLineDash([2, 4]);
+  ctx.beginPath(); ctx.moveTo(mx, pad.t); ctx.lineTo(mx, H - pad.b); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // y labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (i / 4) * ph;
+    const v = yMax * (1 - i / 2);
+    ctx.fillText(v.toFixed(1), pad.l - 6, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i <= 4; i++) {
+    const x = pad.l + (i / 4) * pw;
+    const t = (xMax - xMin) * i / 4;
+    ctx.fillText((t / Math.PI).toFixed(1) + 'π', x, H - pad.b + 6);
+  }
+
+  // gibbs annotation
+  if (state.preset === 'square') {
+    const yp = midY - (1.17898 / yMax) * (ph / 2);
+    const ax = pad.l + pw * 0.35;
+    const ay = yp - 24;
+    ctx.strokeStyle = 'rgba(245,158,11,0.85)';
+    ctx.fillStyle = 'rgba(245,158,11,0.85)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax, yp); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(ax, yp);
+    ctx.lineTo(ax - 4, yp - 6);
+    ctx.lineTo(ax + 4, yp - 6);
+    ctx.closePath(); ctx.fill();
+    ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = 'rgba(245,158,11,1)';
+    ctx.fillText('Gibbs +8.95% overshoot', ax + 6, ay + 8);
+  }
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function drawMain() {
+  const c = $('main');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  if (state.view === 'epicycle') drawEpicycle(ctx, W, H);
+  else drawHarmonicView(ctx, W, H);
+
+  // 200ms ease-out crossfade overlay when switching view modes.
+  if (state.viewSwitchUntil && performance.now() < state.viewSwitchUntil) {
+    const remaining = state.viewSwitchUntil - performance.now();
+    const t = remaining / 200; // 1.0 at switch, 0.0 at end
+    const ease = t * t; // ease-out (since t goes 1→0)
+    ctx.save();
+    ctx.globalAlpha = ease;
+    // Match canvas-wrap background (#04060a from .canvas-wrap)
+    ctx.fillStyle = '#04060a';
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
+function drawSpectrum() {
+  const c = $('spectrum');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l: 32, r: 12, t: 8, b: 22 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  // find max amp
+  let maxA = 0.1;
+  for (let i = 0; i < N_HARMONICS; i++) {
+    if (state.harmonics[i].on && state.harmonics[i].amp > maxA) maxA = state.harmonics[i].amp;
+  }
+  // grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (i / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (i / 4) * ph;
+    ctx.fillText((maxA * (1 - i / 4)).toFixed(2), pad.l - 4, y);
+  }
+  const barW = pw / N_HARMONICS - 4;
+  for (let n = 1; n <= N_HARMONICS; n++) {
+    const i = n - 1;
+    const h = state.harmonics[i];
+    const vis = state.visibility[i];
+    const a = h.on ? h.amp * vis : 0;
+    const bh = (a / maxA) * ph;
+    const x = pad.l + (n - 1) * (pw / N_HARMONICS) + 2;
+    const y = pad.t + ph - bh;
+    const col = harmonicColor(n);
+    ctx.fillStyle = col;
+    ctx.shadowColor = harmonicColor(n, 0.5);
+    ctx.shadowBlur = a > 0.05 ? 6 : 0;
+    ctx.fillRect(x, y, barW, bh);
+    ctx.shadowBlur = 0;
+    // number label
+    ctx.fillStyle = a > 0.01 ? '#e6edf3' : '#5b6573';
+    ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(n.toString(), x + barW / 2, H - pad.b + 4);
+  }
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function computeTHD() {
+  // sample the target waveform and our reconstruction, compute relative RMS error
+  if (state.preset === 'clear' || state.preset === 'custom') return null;
+  const N = 512;
+  let num = 0, den = 0;
+  for (let i = 0; i < N; i++) {
+    const t = (i / N) * 2 * Math.PI;
+    const tgt = targetWaveform(t);
+    if (tgt === null) return null;
+    const rec = reconstruct(t);
+    const d = rec - tgt;
+    num += d * d;
+    den += tgt * tgt;
+  }
+  if (den === 0) return null;
+  return Math.sqrt(num / den) * 100;
+}
+
+function updateReadouts() {
+  let active = 0;
+  for (let i = 0; i < N_HARMONICS; i++) {
+    if (state.harmonics[i].on && state.harmonics[i].amp > 0.001) active++;
+  }
+  $('oActive').textContent = active;
+  $('oT').textContent = '2π';
+  const thd = computeTHD();
+  $('oTHD').textContent = thd === null ? '—' : thd.toFixed(2) + '%';
+  // Phase of fundamental ∈ [0, 2π)
+  const phase = ((state.time % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  $('oPhase').textContent = phase.toFixed(2) + ' rad';
+
+  // explainer
+  const presetNames = { square: 'square wave', sawtooth: 'sawtooth wave', triangle: 'triangle wave', pulse: 'pulse wave', halfsine: 'half-wave rectified sine', clear: '—', custom: 'a custom spectrum' };
+  let txt = `Building <span class="k">${presetNames[state.preset] || 'custom'}</span> from <span class="k">${active}</span> harmonics. `;
+  if (state.preset === 'square') {
+    txt += `Only odd harmonics contribute (<span class="k">a_n = 4/nπ</span>). The Gibbs overshoot near each discontinuity stays at <span class="k">~9%</span> regardless of how many terms you add — convergence is pointwise but not uniform.`;
+  } else if (state.preset === 'triangle') {
+    txt += `Odd harmonics only with <span class="k">a_n = 8/(n²π²)</span> — the <span class="k">1/n²</span> decay (vs square's <span class="k">1/n</span>) means triangle converges much faster and avoids Gibbs.`;
+  } else if (state.preset === 'sawtooth') {
+    txt += `All harmonics present with <span class="k">a_n = 2/(nπ)</span> and alternating phase. Sharp jumps produce the classic Gibbs overshoot.`;
+  } else if (state.preset === 'pulse') {
+    txt += `Rectangular pulse, duty <span class="k">${(state.duty*100).toFixed(0)}%</span>: <span class="k">a_n = (2/nπ)·(1 − cos 2πnd)</span>. At 50% it collapses to the square wave; off-50% it gains even harmonics in a sinc-like envelope.`;
+  } else if (state.preset === 'halfsine') {
+    txt += `Half-wave rectified sine: fundamental + even harmonics only (no odd n>1). DC offset 1/π is subtracted so the AC reconstruction lines up with the dashed target.`;
+  } else {
+    txt += `Adjust amplitude and phase per harmonic to compose any periodic signal.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+// Animation loop
+function frame(now) {
+  const dt = Math.min(0.05, (now - state.lastFrameT) / 1000);
+  state.lastFrameT = now;
+  if (state.playing) state.time += dt * state.speed;
+  // animate visibility toward target (1 if on, 0 if off)
+  let changed = false;
+  for (let i = 0; i < N_HARMONICS; i++) {
+    const tgt = state.harmonics[i].on ? 1 : 0;
+    if (state.visibility[i] !== tgt) {
+      const dir = tgt > state.visibility[i] ? 1 : -1;
+      state.visibility[i] += dir * dt * 4;
+      if ((dir > 0 && state.visibility[i] > tgt) || (dir < 0 && state.visibility[i] < tgt)) state.visibility[i] = tgt;
+      changed = true;
+    }
+  }
+  drawMain();
+  drawSpectrum();
+  updateReadouts();
+  requestAnimationFrame(frame);
+}
+
+// Wire controls
+$('speed').addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  state.speed = v / 100;
+  $('vSpeed').textContent = state.speed.toFixed(1) + '×';
+});
+$('playBtn').addEventListener('click', () => {
+  state.playing = !state.playing;
+  $('playBtn').textContent = state.playing ? 'Pause' : 'Play';
+});
+$('resetBtn').addEventListener('click', () => {
+  state.time = 0;
+  state.trail = [];
+});
+$('duty').addEventListener('input', e => {
+  state.duty = parseInt(e.target.value) / 100;
+  $('vDuty').textContent = (state.duty * 100).toFixed(0) + '%';
+  if (state.preset === 'pulse') {
+    setPreset('pulse');
+  }
+});
+document.querySelectorAll('button[data-preset]').forEach(b => {
+  b.addEventListener('click', () => {
+    const p = b.dataset.preset;
+    setPreset(p);
+    // show duty control only for pulse
+    $('dutyControl').style.display = p === 'pulse' ? '' : 'none';
+  });
+});
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('active')) return;
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.view = b.dataset.mode;
+    $('mainTitle').textContent = state.view === 'epicycle' ? 'Epicycle construction' : 'Harmonic decomposition';
+    state.trail = [];
+    state.viewSwitchUntil = performance.now() + 200;
+  });
+});
+
+window.addEventListener('resize', () => { drawMain(); drawSpectrum(); });
+
+// ---------- Try this experiments ----------
+function applyTry(name) {
+  let note = '';
+  if (name === 'sq3') {
+    setPreset('square');
+    // Keep only n=1,3,5 active (the first three non-zero odd harmonics)
+    for (let i = 0; i < N_HARMONICS; i++) {
+      const n = i + 1;
+      state.harmonics[i].on = (n === 1 || n === 3 || n === 5);
+    }
+    note = 'Even three terms make the basic shape recognisable, but the corners are still very rounded.';
+  } else if (name === 'sq16') {
+    setPreset('square');
+    for (let i = 0; i < N_HARMONICS; i++) state.harmonics[i].on = true;
+    note = 'The shape is sharp now — but the <strong>Gibbs overshoot</strong> at the edges never quite goes away.';
+  } else if (name === 'tri16') {
+    setPreset('triangle');
+    for (let i = 0; i < N_HARMONICS; i++) state.harmonics[i].on = true;
+    note = 'Triangle waves converge much faster than square waves — coefficients fall as <strong>1/n²</strong>.';
+  }
+  // Hide duty control for these presets
+  $('dutyControl').style.display = 'none';
+  // Refresh the harmonic list to reflect new on/off states
+  renderHarmonics();
+  state.trail = [];
+  document.getElementById('tryNote').innerHTML = note;
+}
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+// initial
+setPreset('square');
+$('dutyControl').style.display = 'none';
+requestAnimationFrame(frame);
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  document.getElementById('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  const presetKeys = { '1': 'square', '2': 'sawtooth', '3': 'triangle', '4': 'pulse', '5': 'halfsine' };
+
+  function adjustActive(delta) {
+    // Count current active harmonics with amp > 0
+    if (delta > 0) {
+      // Turn on the lowest harmonic that's currently off (and has amp > 0)
+      for (let i = 0; i < N_HARMONICS; i++) {
+        if (!state.harmonics[i].on && state.harmonics[i].amp > 0.0001) {
+          state.harmonics[i].on = true;
+          renderHarmonics();
+          return;
+        }
+      }
+    } else {
+      // Turn off the highest harmonic that's currently on
+      for (let i = N_HARMONICS - 1; i >= 0; i--) {
+        if (state.harmonics[i].on && state.harmonics[i].amp > 0.0001) {
+          state.harmonics[i].on = false;
+          renderHarmonics();
+          return;
+        }
+      }
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); $('playBtn').click(); }
+    else if (presetKeys[e.key]) {
+      const p = presetKeys[e.key];
+      const btn = document.querySelector(`button[data-preset="${p}"]`);
+      if (btn) btn.click();
+    } else if (k === 'h') {
+      const btn = document.querySelector('#viewToggle button[data-mode="harmonic"]');
+      if (btn) btn.click();
+    } else if (k === 'e') {
+      const btn = document.querySelector('#viewToggle button[data-mode="epicycle"]');
+      if (btn) btn.click();
+    } else if (e.key === '+' || e.key === '=') {
+      adjustActive(1);
+    } else if (e.key === '-' || e.key === '_') {
+      adjustActive(-1);
+    }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="taylor_series.html">
+      <div class="related-title">Taylor Series</div>
+      <div class="related-desc">Polynomial approximations and where they break down</div>
+    </a>
+    <a class="related-card" href="fractal_explorer.html">
+      <div class="related-title">Mandelbrot & Julia</div>
+      <div class="related-desc">Zoom 10¹⁴ into the boundary that contains everything</div>
+    </a>
+    <a class="related-card" href="signal_detection.html">
+      <div class="related-title">Signal Detection</div>
+      <div class="related-desc">Sensitivity (d′) vs criterion (β), with full ROC</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

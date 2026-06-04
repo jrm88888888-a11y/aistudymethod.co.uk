@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Monty Hall — Stay or Switch?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; line-height: 1.45; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; gap: 24px; grid-template-columns: 1fr 360px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.panel h2 { font-size: 15px; font-weight: 600; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); font-weight: 500; }
+.full { grid-column: 1 / -1; }
+
+#doors { width: 100%; height: 380px; display: block; cursor: pointer; }
+#doors.locked { cursor: default; }
+#barchart { width: 100%; height: 220px; display: block; }
+#tree { width: 100%; height: 320px; display: block; }
+
+.game-status { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--bg-elev-1); border-radius: var(--r-md); margin-bottom: 12px; }
+.status-text { font-size: 14px; color: var(--text); }
+.status-text strong { color: var(--cyan); }
+.actions { display: flex; gap: 8px; }
+
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover:not(:disabled) { background: var(--bg-elev-2); border-color: var(--cyan); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary:hover:not(:disabled) { background: var(--cyan); color: #04121a; }
+button.danger { border-color: var(--rose); color: var(--rose); }
+button.danger:hover:not(:disabled) { background: var(--rose); color: #04121a; }
+
+.controls { display: flex; flex-direction: column; gap: 14px; }
+.section { padding-top: 12px; border-top: 1px solid var(--panel-border); }
+.section.first { padding-top: 0; border-top: none; }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.row button { flex: 1; min-width: 80px; }
+
+.ctl { display: flex; flex-direction: column; gap: 6px; }
+.ctl .top { display: flex; justify-content: space-between; align-items: baseline; }
+.ctl .v { font-family: 'JetBrains Mono', monospace; color: var(--cyan); font-size: 12px; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+
+.tog { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 13px; color: var(--text); }
+.tog input { display: none; }
+.tog .pill { width: 32px; height: 18px; background: var(--grid); border-radius: 999px; position: relative; transition: background 120ms; }
+.tog .pill::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--text-dim); border-radius: 50%; transition: all 140ms; }
+.tog input:checked + .pill { background: var(--amber-soft); }
+.tog input:checked + .pill::after { left: 16px; background: var(--amber); }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+.r-item .label { display: block; margin-bottom: 2px; }
+.r-item .v { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; }
+.r-item .v.stay { color: var(--amber); }
+.r-item .v.swt { color: var(--cyan); }
+
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px 14px; border-radius: 0 var(--r-md) var(--r-md) 0; font-size: 13px; color: var(--text-dim); line-height: 1.55; }
+.explainer strong { color: var(--text); }
+
+.result-banner { padding: 16px 18px; background: var(--bg-elev-1); border-radius: var(--r-md); border-left: 3px solid var(--cyan); margin-top: 12px; display: none; }
+.result-banner.show { display: block; }
+.result-banner.win { border-left-color: var(--green); }
+.result-banner.loss { border-left-color: var(--rose); }
+.result-banner .head { font-size: 18px; font-weight: 600; }
+.result-banner .head.win { color: var(--green); }
+.result-banner .head.loss { color: var(--rose); }
+.result-banner .sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+#explainPanel { display: none; }
+#explainPanel.show { display: block; }
+
+.insight-banner { padding: 10px 16px 10px 14px; border-left: 2px solid var(--cyan); color: var(--text-dim); font-size: 13px; font-style: italic; margin: 14px 24px 0; max-width: 1352px; background: rgba(34,211,238,0.04); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.try-panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px; box-shadow: var(--shadow); }
+.try-panel .try-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); font-weight: 600; margin-bottom: 10px; }
+.try-panel .try-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.try-panel .try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-panel .try-buttons button:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-2); }
+.try-panel .try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; min-height: 1em; transition: color 200ms ease, opacity 200ms ease; opacity: 0.6; }
+.try-panel .try-note.show { color: var(--text); opacity: 1; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* Keyboard help indicator + modal */
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.topbar .title-block { flex: 1; }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+.r-item .v.stay { transition: color 200ms ease; }
+.r-item .v.swt { transition: color 200ms ease; }
+.tog:hover .pill { background: var(--bg-elev-2); }
+.tog input:checked + .pill { background: var(--amber-soft); }
+.result-banner { transition: opacity 200ms ease; }
+
+@media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .wrap { padding: 16px; gap: 16px; } .insight-banner { margin: 12px 16px 0; } }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>The Monty Hall Problem</h1>
+    <p class="sub">Three doors, one car, a host who knows — and a counter-intuitive answer</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1 / 2 / 3</span><span>Pick door 1, 2, 3</span>
+      <span class="kbd-key">S</span><span>Stay with current pick</span>
+      <span class="kbd-key">W</span><span>Switch doors</span>
+      <span class="kbd-key">R</span><span>Reset / new game</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+<div class="insight-banner">Switching wins 2/3 of the time. The host's choice isn't random — they reveal information.</div>
+
+<div class="wrap">
+
+  <div class="panel">
+    <div class="game-status">
+      <div class="status-text" id="statusText">Pick a door to start.</div>
+      <div class="actions" id="actions">
+        <button class="primary" id="stayBtn" disabled>Stay</button>
+        <button class="primary" id="switchBtn" disabled>Switch</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+    </div>
+    <canvas id="doors"></canvas>
+    <div class="result-banner" id="resultBanner">
+      <div class="head" id="resultHead"></div>
+      <div class="sub" id="resultSub"></div>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <div class="section first">
+      <h2>Simulation</h2>
+      <div class="row">
+        <button id="run100">Run 100</button>
+        <button id="run1k">Run 1,000</button>
+        <button id="run10k">Run 10,000</button>
+      </div>
+      <div class="ctl" style="margin-top:10px;">
+        <div class="top"><span class="label">Speed</span><span class="v" id="speedV">Fast</span></div>
+        <input id="speed" type="range" min="0" max="100" value="80" />
+      </div>
+      <div style="margin-top:12px;">
+        <label class="tog">
+          <input type="checkbox" id="montyDoesntKnow" />
+          <span class="pill"></span>
+          <span>Monty doesn't know (random)</span>
+        </label>
+        <div style="font-size:11px; color: var(--text-faint); margin-top:6px; line-height:1.45;">
+          When on, the host picks a door at random. If they reveal the car, the trial is discarded — and the remaining win rates flatten to 50/50.
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <button id="whyBtn" class="primary" style="width:100%;">Why? — show probability tree</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Live readouts</h2>
+      <div class="readouts">
+        <div class="r-item"><span class="label">Stay wins</span><div class="v stay" id="rStayW">0</div></div>
+        <div class="r-item"><span class="label">Stay losses</span><div class="v" id="rStayL">0</div></div>
+        <div class="r-item"><span class="label">Stay win %</span><div class="v stay" id="rStayP">0.0%</div></div>
+        <div class="r-item"><span class="label">Switch wins</span><div class="v swt" id="rSwtW">0</div></div>
+        <div class="r-item"><span class="label">Switch losses</span><div class="v" id="rSwtL">0</div></div>
+        <div class="r-item"><span class="label">Switch win %</span><div class="v swt" id="rSwtP">0.0%</div></div>
+        <div class="r-item"><span class="label">Total trials</span><div class="v" id="rTot">0</div></div>
+        <div class="r-item"><span class="label">Convergence</span><div class="v" id="rConv" style="color: var(--text-dim);">—</div></div>
+      </div>
+      <button id="resetSim" style="margin-top:12px; width:100%;">Reset simulation</button>
+    </div>
+  </div>
+
+  <div class="panel full">
+    <h2>Empirical win rates <span style="color:var(--text-dim); font-weight: 400; font-size: 12px;">— bars grow toward theoretical lines</span></h2>
+    <canvas id="barchart"></canvas>
+  </div>
+
+  <div class="panel full" id="explainPanel">
+    <h2>Why switching wins — the probability tree</h2>
+    <canvas id="tree"></canvas>
+    <div class="explainer" style="margin-top:8px;" id="treeExplainer">
+      Initial pick is right <strong>1/3</strong> of the time and wrong <strong>2/3</strong>. The host's <em>knowledge</em> is the lever — they always reveal a goat from the remaining two doors, which concentrates the <strong>2/3</strong> probability onto the single unopened door. Switching wins exactly when your original pick was wrong, which is <strong>2/3</strong> of the time.
+    </div>
+  </div>
+
+  <div class="full">
+    <div class="try-panel">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="run1k">Run 1,000 trials</button>
+        <button data-try="noKnow">What if Monty doesn't know?</button>
+        <button data-try="run10k">Run 10,000 trials</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </div>
+
+  <div class="full">
+    <div class="explainer" id="mainExplainer">
+      Pick a door. The host (Monty) will open one of the others to reveal a 🐐, then you choose to <strong>Stay</strong> or <strong>Switch</strong>. Run many trials to see why switching wins about <strong>2/3</strong> of the time when Monty knows where the car is.
+    </div>
+  </div>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function easeInOutCubic(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+
+// Stats
+const stats = {
+  stayWins: 0, stayLosses: 0,
+  swtWins: 0, swtLosses: 0,
+  discarded: 0, // for "Monty doesn't know"
+};
+let montyDoesntKnow = false;
+
+// Game state
+const game = {
+  carDoor: -1,
+  pickDoor: -1,
+  revealedDoor: -1,
+  finalDoor: -1,
+  phase: 'pick', // pick -> revealed -> done
+  // For animation:
+  doorState: [
+    { open: 0, target: 0 }, // open: 0 closed -> 1 fully open
+    { open: 0, target: 0 },
+    { open: 0, target: 0 },
+  ],
+};
+
+const doors = $('doors');
+const bar = $('barchart');
+const tree = $('tree');
+let doorsCtx, barCtx, treeCtx;
+
+// ---- Doors rendering ----
+function drawDoors() {
+  const ctx = doorsCtx;
+  const w = doors.clientWidth, h = doors.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  const doorW = Math.min(160, (w - 80) / 3 - 10);
+  const doorH = Math.min(h - 80, doorW * 1.9);
+  const gap = (w - doorW * 3) / 4;
+  const baseY = (h - doorH) / 2;
+
+  // Stage floor
+  ctx.fillStyle = '#0c1219';
+  ctx.fillRect(0, baseY + doorH + 6, w, 12);
+
+  for (let i = 0; i < 3; i++) {
+    const x = gap + i * (doorW + gap);
+    const y = baseY;
+    drawDoor(ctx, x, y, doorW, doorH, i);
+  }
+}
+
+function drawDoor(ctx, x, y, w, h, i) {
+  // Frame
+  ctx.fillStyle = '#1a2230';
+  ctx.fillRect(x - 6, y - 6, w + 12, h + 12);
+
+  // Behind reveal: car or goat — only visible when door open
+  const st = game.doorState[i];
+  const isPicked = game.pickDoor === i;
+  const isRevealed = game.revealedDoor === i;
+  const carHere = game.carDoor === i;
+
+  // Always paint background (so partially open door reveals what's behind)
+  ctx.fillStyle = carHere ? '#1b2a2a' : '#1f1a1a';
+  ctx.fillRect(x, y, w, h);
+  if (st.open > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, st.open * 1.2);
+    ctx.font = `${Math.floor(w * 0.55)}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(carHere ? '🚗' : '🐐', x + w / 2, y + h / 2);
+    ctx.restore();
+  }
+
+  // Draw the door panel itself, hinged on the LEFT, swinging open to the LEFT
+  // Foreshortening: visible width = doorW * cos(angle)
+  const angle = st.open * (Math.PI * 0.55);
+  const visibleW = w * Math.cos(angle);
+  if (visibleW > 1) {
+    // Wood gradient
+    const grad = ctx.createLinearGradient(x, y, x + visibleW, y);
+    if (isPicked && game.phase !== 'done') {
+      grad.addColorStop(0, '#1a3d52');
+      grad.addColorStop(0.3, '#0f5772');
+      grad.addColorStop(0.6, '#1a4358');
+      grad.addColorStop(1, '#0d3242');
+    } else {
+      grad.addColorStop(0, '#6b3f1f');
+      grad.addColorStop(0.2, '#8a5128');
+      grad.addColorStop(0.4, '#7a4521');
+      grad.addColorStop(0.6, '#5e3417');
+      grad.addColorStop(0.8, '#8a5128');
+      grad.addColorStop(1, '#5e3417');
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, visibleW, h);
+
+    // Wood grain lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.20)';
+    ctx.lineWidth = 1;
+    for (let g = 0; g < 6; g++) {
+      const gx = x + visibleW * (0.1 + g * 0.15);
+      ctx.beginPath(); ctx.moveTo(gx, y + 4); ctx.lineTo(gx, y + h - 4); ctx.stroke();
+    }
+
+    // Door number
+    ctx.fillStyle = isPicked ? 'rgba(34,211,238,0.95)' : 'rgba(255,235,200,0.9)';
+    ctx.font = `600 ${Math.floor(w * 0.18)}px Inter`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (visibleW > 30) ctx.fillText(String(i + 1), x + visibleW / 2, y + h * 0.45);
+
+    // Knob
+    if (visibleW > 30) {
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(x + visibleW * 0.85, y + h * 0.55, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Highlight border for picked door
+    if (isPicked && game.phase !== 'done') {
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, visibleW, h);
+    }
+  }
+
+  // Number label below door
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  let lbl = `Door ${i + 1}`;
+  if (isPicked) lbl += '  • your pick';
+  if (isRevealed) lbl += '  • opened by host';
+  if (game.phase === 'done' && game.finalDoor === i) lbl += '  • final choice';
+  ctx.fillText(lbl, x + w / 2, y + h + 10);
+}
+
+// Animation loop for doors — eased exponential approach, dt-aware for consistent speed.
+let doorAnimReq = null;
+let lastDoorTs = 0;
+function animateDoors(ts) {
+  if (!lastDoorTs) lastDoorTs = ts || performance.now();
+  const now = ts || performance.now();
+  const dt = Math.min(64, now - lastDoorTs);
+  lastDoorTs = now;
+  // tau ~ 110ms → smooth swing in ~350ms (3 tau to ~95%)
+  const k = 1 - Math.exp(-dt / 110);
+  let anyDelta = false;
+  for (const d of game.doorState) {
+    const diff = d.target - d.open;
+    if (Math.abs(diff) > 0.0008) {
+      d.open += diff * k;
+      anyDelta = true;
+    } else {
+      d.open = d.target;
+    }
+  }
+  drawDoors();
+  if (anyDelta) doorAnimReq = requestAnimationFrame(animateDoors);
+  else { doorAnimReq = null; lastDoorTs = 0; }
+}
+function kickAnim() { if (!doorAnimReq) { lastDoorTs = 0; doorAnimReq = requestAnimationFrame(animateDoors); } }
+
+// ---- Game logic ----
+function newRound() {
+  game.carDoor = Math.floor(Math.random() * 3);
+  game.pickDoor = -1;
+  game.revealedDoor = -1;
+  game.finalDoor = -1;
+  game.phase = 'pick';
+  for (const d of game.doorState) d.target = 0;
+  $('statusText').innerHTML = 'Pick a door to start.';
+  $('stayBtn').disabled = true;
+  $('switchBtn').disabled = true;
+  $('resultBanner').classList.remove('show', 'win', 'loss');
+  doors.classList.remove('locked');
+  kickAnim();
+}
+
+function pickDoor(i) {
+  if (game.phase !== 'pick') return;
+  game.pickDoor = i;
+  // Host reveals
+  let reveal;
+  if (montyDoesntKnow) {
+    // Host picks one of the other two doors at random
+    const others = [0,1,2].filter(d => d !== i);
+    reveal = others[Math.floor(Math.random() * 2)];
+    if (reveal === game.carDoor) {
+      // Host revealed the car — round is voided (and counted in the discarded tally so
+      // the stats panel reflects manually-played void rounds, not just bulk sims).
+      stats.discarded++;
+      game.revealedDoor = reveal;
+      game.doorState[reveal].target = 1;
+      game.phase = 'done';
+      game.finalDoor = -1;
+      doors.classList.add('locked');
+      $('statusText').innerHTML = '<strong style="color: var(--rose)">Host revealed the car</strong> — round voided.';
+      $('stayBtn').disabled = true;
+      $('switchBtn').disabled = true;
+      const banner = $('resultBanner');
+      banner.classList.add('show', 'loss');
+      $('resultHead').textContent = 'Round voided';
+      $('resultHead').className = 'head loss';
+      $('resultSub').textContent = 'When Monty doesn\'t know, sometimes he reveals the car — those rounds are discarded. The remaining trials end up 50/50 on stay vs switch.';
+      updateReadouts();
+      kickAnim();
+      return;
+    }
+  } else {
+    // Host always reveals a goat from the non-picked doors
+    const candidates = [0,1,2].filter(d => d !== i && d !== game.carDoor);
+    reveal = candidates[Math.floor(Math.random() * candidates.length)];
+  }
+  game.revealedDoor = reveal;
+  game.doorState[reveal].target = 1;
+  game.phase = 'revealed';
+  doors.classList.add('locked');
+  $('statusText').innerHTML = `You picked <strong>Door ${i + 1}</strong>. Host opened <strong>Door ${reveal + 1}</strong> — goat. Stay or switch?`;
+  $('stayBtn').disabled = false;
+  $('switchBtn').disabled = false;
+  kickAnim();
+}
+
+function finish(strategy) {
+  if (game.phase !== 'revealed') return;
+  let final;
+  if (strategy === 'stay') {
+    final = game.pickDoor;
+  } else {
+    final = [0,1,2].find(d => d !== game.pickDoor && d !== game.revealedDoor);
+  }
+  game.finalDoor = final;
+  game.phase = 'done';
+  // Open all doors
+  for (let i = 0; i < 3; i++) game.doorState[i].target = 1;
+  const won = (final === game.carDoor);
+  // Record
+  if (strategy === 'stay') won ? stats.stayWins++ : stats.stayLosses++;
+  else won ? stats.swtWins++ : stats.swtLosses++;
+  updateReadouts();
+  drawBarChart();
+
+  const banner = $('resultBanner');
+  banner.classList.add('show');
+  banner.classList.toggle('win', won);
+  banner.classList.toggle('loss', !won);
+  $('resultHead').textContent = won ? `You won the car! 🚗` : `Goat. 🐐`;
+  $('resultHead').className = 'head ' + (won ? 'win' : 'loss');
+  $('resultSub').textContent = `You ${strategy === 'stay' ? 'stayed with' : 'switched to'} Door ${final + 1}. The car was behind Door ${game.carDoor + 1}.`;
+  $('stayBtn').disabled = true;
+  $('switchBtn').disabled = true;
+  $('statusText').innerHTML = 'Round complete — press Reset for a new game.';
+  kickAnim();
+}
+
+// Click handling for doors
+doors.addEventListener('click', (e) => {
+  if (game.phase !== 'pick') return;
+  const r = doors.getBoundingClientRect();
+  const x = e.clientX - r.left;
+  const w = r.width, h = r.height;
+  const doorW = Math.min(160, (w - 80) / 3 - 10);
+  const gap = (w - doorW * 3) / 4;
+  for (let i = 0; i < 3; i++) {
+    const dx = gap + i * (doorW + gap);
+    if (x >= dx && x <= dx + doorW) { pickDoor(i); return; }
+  }
+});
+
+$('stayBtn').onclick = () => finish('stay');
+$('switchBtn').onclick = () => finish('switch');
+$('resetBtn').onclick = () => newRound();
+
+// ---- Bulk simulation ----
+let simRunning = false;
+let simCancel = false;
+function simulateOne() {
+  const car = Math.floor(Math.random() * 3);
+  const pick = Math.floor(Math.random() * 3);
+  let reveal;
+  if (montyDoesntKnow) {
+    const others = [0,1,2].filter(d => d !== pick);
+    reveal = others[Math.floor(Math.random() * 2)];
+    if (reveal === car) return { void: true };
+  } else {
+    const candidates = [0,1,2].filter(d => d !== pick && d !== car);
+    reveal = candidates[Math.floor(Math.random() * candidates.length)];
+  }
+  const switchTo = [0,1,2].find(d => d !== pick && d !== reveal);
+  // Both strategies recorded for the same setup (counterfactual)
+  return {
+    stayWon: pick === car,
+    switchWon: switchTo === car,
+    void: false,
+  };
+}
+
+async function runBulk(n) {
+  if (simRunning) { simCancel = true; await new Promise(r => setTimeout(r, 60)); }
+  simRunning = true; simCancel = false;
+  const speed = +$('speed').value;
+  // Speed 0..100 maps to batch sizes
+  // Higher speed = bigger batch & smaller delay
+  const batch = Math.max(1, Math.floor(Math.pow(10, speed / 33)));
+  const delay = Math.max(0, 20 - speed / 6);
+  let i = 0;
+  while (i < n && !simCancel) {
+    const b = Math.min(batch, n - i);
+    for (let k = 0; k < b; k++) {
+      const r = simulateOne();
+      if (r.void) { stats.discarded++; continue; }
+      if (r.stayWon) stats.stayWins++; else stats.stayLosses++;
+      if (r.switchWon) stats.swtWins++; else stats.swtLosses++;
+    }
+    i += b;
+    updateReadouts();
+    drawBarChart();
+    if (delay > 0) await new Promise(r => setTimeout(r, delay));
+    else await new Promise(r => requestAnimationFrame(r));
+  }
+  simRunning = false;
+}
+
+$('run100').onclick = () => runBulk(100);
+$('run1k').onclick = () => runBulk(1000);
+$('run10k').onclick = () => runBulk(10000);
+$('speed').addEventListener('input', (e) => {
+  const v = +e.target.value;
+  let label = 'Fast';
+  if (v < 25) label = 'Slow';
+  else if (v < 60) label = 'Medium';
+  else if (v < 90) label = 'Fast';
+  else label = 'Instant';
+  $('speedV').textContent = label;
+});
+$('resetSim').onclick = () => {
+  simCancel = true;
+  stats.stayWins = stats.stayLosses = stats.swtWins = stats.swtLosses = stats.discarded = 0;
+  updateReadouts();
+  drawBarChart();
+};
+
+$('montyDoesntKnow').addEventListener('change', (e) => {
+  montyDoesntKnow = e.target.checked;
+  newRound();
+  drawTree();
+});
+
+$('whyBtn').addEventListener('click', () => {
+  $('explainPanel').classList.toggle('show');
+  if ($('explainPanel').classList.contains('show')) {
+    drawTree();
+    $('whyBtn').textContent = 'Hide explanation';
+  } else {
+    $('whyBtn').textContent = 'Why? — show probability tree';
+  }
+});
+
+// Readouts
+function updateReadouts() {
+  const sT = stats.stayWins + stats.stayLosses;
+  const wT = stats.swtWins + stats.swtLosses;
+  const tot = sT + wT;
+  $('rStayW').textContent = stats.stayWins;
+  $('rStayL').textContent = stats.stayLosses;
+  $('rSwtW').textContent = stats.swtWins;
+  $('rSwtL').textContent = stats.swtLosses;
+  $('rStayP').textContent = sT ? (stats.stayWins / sT * 100).toFixed(1) + '%' : '0.0%';
+  $('rSwtP').textContent = wT ? (stats.swtWins / wT * 100).toFixed(1) + '%' : '0.0%';
+  if (montyDoesntKnow && stats.discarded > 0) {
+    $('rTot').textContent = `${tot.toLocaleString()} (+${stats.discarded.toLocaleString()} void)`;
+  } else {
+    $('rTot').textContent = tot.toLocaleString();
+  }
+  // Convergence
+  if (tot < 30) {
+    $('rConv').textContent = '—';
+    $('rConv').style.color = 'var(--text-dim)';
+  } else {
+    const stayRate = stats.stayWins / Math.max(1, sT);
+    const swtRate = stats.swtWins / Math.max(1, wT);
+    const target1 = montyDoesntKnow ? 0.5 : 1/3;
+    const target2 = montyDoesntKnow ? 0.5 : 2/3;
+    const err = Math.abs(stayRate - target1) + Math.abs(swtRate - target2);
+    let txt, col;
+    if (err < 0.02) { txt = 'Converged'; col = 'var(--green)'; }
+    else if (err < 0.06) { txt = 'Converging'; col = 'var(--amber)'; }
+    else { txt = 'Noisy'; col = 'var(--rose)'; }
+    $('rConv').textContent = txt;
+    $('rConv').style.color = col;
+  }
+}
+
+// ---- Bar chart ----
+let barAnim = { stay: 0, swt: 0 };
+let barAnimReq = null;
+function drawBarChart() {
+  const ctx = barCtx;
+  const w = bar.clientWidth, h = bar.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  const padL = 90, padR = 80, padT = 22, padB = 28;
+  const cw = w - padL - padR;
+  const barH = 40;
+  const gap = 28;
+
+  const sT = stats.stayWins + stats.stayLosses;
+  const wT = stats.swtWins + stats.swtLosses;
+  const stayRate = sT ? stats.stayWins / sT : 0;
+  const swtRate = wT ? stats.swtWins / wT : 0;
+
+  // Animate toward
+  barAnim.stay += (stayRate - barAnim.stay) * 0.25;
+  barAnim.swt += (swtRate - barAnim.swt) * 0.25;
+  const needsAnim = Math.abs(barAnim.stay - stayRate) > 0.001 || Math.abs(barAnim.swt - swtRate) > 0.001;
+
+  // Theoretical line targets
+  const targetStay = montyDoesntKnow ? 0.5 : 1/3;
+  const targetSwt = montyDoesntKnow ? 0.5 : 2/3;
+
+  function drawRow(y, label, val, color, target) {
+    // Track
+    ctx.fillStyle = '#0f1620';
+    ctx.fillRect(padL, y, cw, barH);
+    // Fill
+    ctx.fillStyle = color;
+    const fw = cw * val;
+    ctx.fillRect(padL, y, fw, barH);
+    // Theoretical line
+    const tx = padL + cw * target;
+    ctx.strokeStyle = '#fbbf24';
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(tx, y - 4); ctx.lineTo(tx, y + barH + 4); ctx.stroke();
+    ctx.setLineDash([]);
+    // Theoretical label
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText((target * 100).toFixed(1) + '%', tx, y - 8);
+    // Label
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '600 12px Inter';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, padL - 10, y + barH / 2);
+    // Value
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '500 13px JetBrains Mono';
+    ctx.textAlign = 'left';
+    ctx.fillText((val * 100).toFixed(1) + '%', padL + cw + 8, y + barH / 2);
+  }
+
+  drawRow(padT, 'Stay win rate', barAnim.stay, '#f59e0b', targetStay);
+  drawRow(padT + barH + gap, 'Switch win rate', barAnim.swt, '#22d3ee', targetSwt);
+
+  // x-axis 0-100%
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  for (let p = 0; p <= 1.0001; p += 0.1) {
+    const x = padL + cw * p;
+    ctx.beginPath(); ctx.moveTo(x, padT + barH * 2 + gap + 4); ctx.lineTo(x, padT + barH * 2 + gap + 8); ctx.stroke();
+    ctx.fillStyle = '#5b6573';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText((p * 100).toFixed(0) + '%', x, padT + barH * 2 + gap + 18);
+  }
+  // Only schedule one rAF at a time to avoid stutter during bulk sims that call
+  // drawBarChart many times per frame.
+  if (needsAnim) {
+    if (!barAnimReq) {
+      barAnimReq = requestAnimationFrame(() => { barAnimReq = null; drawBarChart(); });
+    }
+  } else {
+    barAnimReq = null;
+  }
+}
+
+// ---- Tree ----
+function drawTree() {
+  const ctx = treeCtx;
+  const w = tree.clientWidth, h = tree.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  // Two-level binary tree, two strategies labeled
+  // Root: initial pick — 1/3 right, 2/3 wrong
+  // Then: Stay or Switch outcome
+  const x0 = 30;
+  const x1 = 240;
+  const x2 = w - 220;
+  const rootY = h / 2;
+  const topY = h * 0.25;
+  const botY = h * 0.75;
+
+  // Title note above
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '12px Inter';
+  ctx.textAlign = 'left';
+  ctx.fillText(montyDoesntKnow ? 'Variant: Monty picks at random (50/50 emerges)' : 'Standard: Monty knows where the car is', 30, 18);
+
+  // Branches
+  drawBranch(ctx, x0 + 20, rootY, x1, topY, 'P(initial pick correct) = 1/3', '#22d3ee');
+  drawBranch(ctx, x0 + 20, rootY, x1, botY, 'P(initial pick wrong) = 2/3', '#f59e0b');
+
+  // From "correct": Stay wins (1/3), Switch loses (1/3) — but conditional
+  // Strategy branches:
+  const leafGap = 50;
+  const leafYs = [topY - leafGap/2, topY + leafGap/2, botY - leafGap/2, botY + leafGap/2];
+
+  if (!montyDoesntKnow) {
+    // Standard — strategy outcomes are deterministic per branch.
+    drawBranch(ctx, x1 + 90, topY, x2, leafYs[0], 'Stay → WIN', '#34d399', true);
+    drawBranch(ctx, x1 + 90, topY, x2, leafYs[1], 'Switch → LOSE', '#f43f5e');
+    drawBranch(ctx, x1 + 90, botY, x2, leafYs[2], 'Stay → LOSE', '#f43f5e');
+    drawBranch(ctx, x1 + 90, botY, x2, leafYs[3], 'Switch → WIN', '#34d399', true);
+  } else {
+    // Monty random: the upper branch (picked car) ALWAYS has the host reveal a goat (the other goat),
+    // so those rounds are never void. The lower branch (picked goat) has the host reveal the car
+    // half the time — those half are voided. Conditioning on valid rounds, the four outcomes
+    // become equally likely (1/4 each), so Stay and Switch both win 1/2.
+    drawBranch(ctx, x1 + 90, topY, x2, leafYs[0], 'Stay → WIN', '#34d399');
+    drawBranch(ctx, x1 + 90, topY, x2, leafYs[1], 'Switch → LOSE', '#f43f5e');
+    drawBranch(ctx, x1 + 90, botY, x2, leafYs[2], 'Stay → LOSE (host avoided car)', '#f43f5e');
+    drawBranch(ctx, x1 + 90, botY, x2, leafYs[3], 'Switch → WIN (host avoided car)', '#34d399');
+  }
+
+  // Nodes
+  drawNode(ctx, x0, rootY, 'Pick a door', '', '#1f2937', '#e6edf3');
+  drawNode(ctx, x1, topY, 'Picked car (1/3)', '', '#1f3640', '#22d3ee');
+  drawNode(ctx, x1, botY, 'Picked goat (2/3)', '', '#3a2a18', '#f59e0b');
+
+  // Leaves with probability of outcome (joint, before any conditioning).
+  let probs;
+  if (!montyDoesntKnow) {
+    probs = ['1/3', '1/3', '2/3', '2/3'];
+  } else {
+    // In Monty-random, half of the "picked goat" branch is voided; remaining mass is 1/3 each.
+    probs = ['1/3', '1/3', '1/3', '1/3'];
+  }
+  drawLeaf(ctx, x2, leafYs[0], 'WIN', probs[0], '#34d399');
+  drawLeaf(ctx, x2, leafYs[1], 'LOSE', probs[1], '#f43f5e');
+  drawLeaf(ctx, x2, leafYs[2], 'LOSE', probs[2], '#f43f5e');
+  drawLeaf(ctx, x2, leafYs[3], 'WIN', probs[3], '#34d399');
+
+  // Summary bracket
+  ctx.fillStyle = '#e6edf3';
+  ctx.font = '600 12px Inter';
+  ctx.textAlign = 'left';
+  if (!montyDoesntKnow) {
+    ctx.fillText('Stay wins: 1/3   |   Switch wins: 2/3', x0, h - 14);
+  } else {
+    ctx.fillText('Of valid rounds (1/3 voided): Stay 1/2   |   Switch 1/2', x0, h - 14);
+  }
+
+  // Update explainer text
+  if (!montyDoesntKnow) {
+    $('treeExplainer').innerHTML = `Initial pick is right <strong>1/3</strong> and wrong <strong>2/3</strong>. Because the host <em>knows</em> the car's location and always opens a goat, the <strong>2/3</strong> probability your pick was wrong now sits entirely on the one remaining unopened door. Switching wins iff you initially picked a goat — which is <strong>2/3</strong> of the time.`;
+  } else {
+    $('treeExplainer').innerHTML = `When the host opens at random, sometimes he reveals the car and the round is void. Conditioning on the rounds where he happens to open a goat, both your original door and the other unopened door are equally likely to hide the car — <strong>50/50</strong>. The host's <em>knowledge</em>, not the act of opening a door, is what makes switching strictly better in the standard problem.`;
+  }
+}
+
+function drawBranch(ctx, x1, y1, x2, y2, label, color, highlight) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = highlight ? 2.5 : 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  const cpx = (x1 + x2) / 2;
+  ctx.bezierCurveTo(cpx, y1, cpx, y2, x2 - 6, y2);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.font = highlight ? '600 11px Inter' : '11px Inter';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, (x1 + x2) / 2, (y1 + y2) / 2 - 8);
+}
+
+function drawNode(ctx, x, y, label, count, bg, fg) {
+  const w = 150, h = 36;
+  ctx.fillStyle = bg;
+  roundRect(ctx, x, y - h/2, w, h, 6); ctx.fill();
+  ctx.fillStyle = fg;
+  ctx.font = '600 12px Inter';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + 10, y);
+}
+function drawLeaf(ctx, x, y, label, prob, color) {
+  const w = 170, h = 36;
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  roundRect(ctx, x, y - h/2, w, h, 6); ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  roundRect(ctx, x, y - h/2, w, h, 6); ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.font = '600 12px Inter';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + 10, y - 7);
+  ctx.fillStyle = '#e6edf3';
+  ctx.font = '500 11px JetBrains Mono';
+  ctx.fillText('P = ' + prob, x + 10, y + 9);
+}
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Init
+function init() {
+  doorsCtx = fitCanvas(doors);
+  barCtx = fitCanvas(bar);
+  treeCtx = fitCanvas(tree);
+  newRound();
+  drawBarChart();
+}
+window.addEventListener('resize', () => {
+  doorsCtx = fitCanvas(doors);
+  barCtx = fitCanvas(bar);
+  treeCtx = fitCanvas(tree);
+  drawDoors();
+  drawBarChart();
+  if ($('explainPanel').classList.contains('show')) drawTree();
+});
+init();
+
+// "Try this" presets — set inputs, dispatch events, and trigger the relevant sim.
+const TRY_NOTES = {
+  run1k: "Watch the Switch bar climb toward 2/3 and Stay toward 1/3 — exactly the theoretical odds.",
+  noKnow: "Now Monty might reveal the car by accident. Of the games that don't void, Stay and Switch both win 50%.",
+  run10k: "More trials = tighter convergence to the theoretical probabilities.",
+};
+function applyTry(id) {
+  const note = $('tryNote');
+  note.textContent = TRY_NOTES[id] || '';
+  note.classList.add('show');
+  if (id === 'run1k') {
+    $('run1k').click();
+  } else if (id === 'noKnow') {
+    if (!$('montyDoesntKnow').checked) {
+      $('montyDoesntKnow').checked = true;
+      $('montyDoesntKnow').dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    $('run1k').click();
+  } else if (id === 'run10k') {
+    // Push speed slider up so it runs fast
+    $('speed').value = 95;
+    $('speed').dispatchEvent(new Event('input', { bubbles: true }));
+    $('run10k').click();
+  }
+}
+document.querySelectorAll('.try-panel [data-try]').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  document.getElementById('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === '1' || e.key === '2' || e.key === '3') {
+      pickDoor(parseInt(e.key, 10) - 1);
+    } else if (k === 's') {
+      const btn = $('stayBtn'); if (!btn.disabled) btn.click();
+    } else if (k === 'w') {
+      const btn = $('switchBtn'); if (!btn.disabled) btn.click();
+    } else if (k === 'r') {
+      $('resetBtn').click();
+    }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="bayes_visualiser.html">
+      <div class="related-title">Bayes' Theorem</div>
+      <div class="related-desc">Why a rare disease + accurate test still means most positives are false</div>
+    </a>
+    <a class="related-card" href="game_theory.html">
+      <div class="related-title">Prisoner's Dilemma</div>
+      <div class="related-desc">TfT, Pavlov, and the whole strategy tournament</div>
+    </a>
+    <a class="related-card" href="p_hacking.html">
+      <div class="related-title">p-Hacking</div>
+      <div class="related-desc">Run enough experiments and a fair coin will look loaded</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supply & Demand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.panel + .panel { margin-top: 16px; }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+button.toggle.active { background: var(--cyan-soft); color: var(--cyan); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.canvas-wrap { position: relative; width: 100%; }
+canvas { width: 100%; display: block; cursor: default; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.violet { color: var(--violet); }
+.readout .val.small { font-size: 14px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.subhead { font-size: 12px; color: var(--text-dim); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+.legend .sw { display: inline-block; width: 12px; height: 4px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.insight { font-style: italic; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 0 0 0 8px; font-size: 13px; margin: 6px 0 0; }
+.insight-banner { padding: 10px 16px 10px 14px; border-left: 2px solid var(--cyan); color: var(--text-dim); font-size: 13px; font-style: italic; margin: 14px 24px 0; max-width: 1352px; background: rgba(34,211,238,0.04); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.try-panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px; box-shadow: var(--shadow); }
+.try-panel .try-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+.try-panel .try-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.try-panel .try-row button { font-size: 12px; padding: 6px 12px; }
+.try-panel .try-row button:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-2); }
+.try-panel .try-note { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin: 4px 0 0; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; border-radius: 999px; }
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+.readout { transition: border-color 120ms ease; }
+.readout:hover { border-color: var(--panel-border); }
+button.toggle { transition: all 120ms ease; }
+button.toggle:hover:not(.active) { color: var(--cyan); border-color: var(--cyan); }
+.actions button:hover { color: var(--cyan); border-color: var(--cyan); }
+@media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .wrap { padding: 16px; gap: 16px; } }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Supply & Demand</h1>
+    <p class="sub">Drag curves, simulate shocks, and quantify surplus, taxes, and deadweight loss</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+<div class="insight-banner">Where supply meets demand sets the price. Taxes and price controls move the equilibrium — and create deadweight loss.</div>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">T</span><span>Toggle tax overlay</span>
+      <span class="kbd-key">C</span><span>Toggle ceiling overlay</span>
+      <span class="kbd-key">F</span><span>Toggle floor overlay</span>
+      <span class="kbd-key">S</span><span>Toggle subsidy overlay</span>
+      <span class="kbd-key">1</span><span>Apply tax preset</span>
+      <span class="kbd-key">2</span><span>Inelastic + tax preset</span>
+      <span class="kbd-key">3</span><span>Ceiling preset</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Market diagram</h3>
+        <span style="font-size: 11px; color: var(--text-dim);">drag any curve endpoint</span>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background: var(--amber)"></span>Supply</span>
+        <span><span class="sw" style="background: var(--cyan)"></span>Demand</span>
+        <span><span class="sw" style="background: var(--cyan-soft)"></span>Consumer surplus</span>
+        <span><span class="sw" style="background: var(--amber-soft)"></span>Producer surplus</span>
+        <span><span class="sw" style="background: var(--rose-soft)"></span>Deadweight loss</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="market" style="height: 520px;"></canvas></div>
+      <div class="explainer" id="explainer">Drag the four endpoints to reshape supply and demand. Use the overlay toggles to add a price ceiling, floor, tax, or subsidy.</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="section-label">Overlays</div>
+      <div class="row" style="margin-bottom: 10px;">
+        <button class="toggle" id="tCeiling">Price ceiling</button>
+        <button class="toggle" id="tFloor">Price floor</button>
+        <button class="toggle" id="tTax">Per-unit tax</button>
+        <button class="toggle" id="tSubsidy">Subsidy</button>
+      </div>
+      <div id="overlayControls"></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-label">Shocks</div>
+      <div class="actions">
+        <button id="shockTech">Technology improves</button>
+        <button id="shockCost">Input costs rise</button>
+        <button id="shockIncome">Consumer income rises</button>
+        <button id="shockSub">Substitute cheaper</button>
+        <button id="shockReset">Reset curves</button>
+      </div>
+    </div>
+
+    <div class="try-panel" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-row">
+        <button id="tryTax">Apply a £10 per-unit tax</button>
+      </div>
+      <p class="try-note">Buyers pay more, sellers receive less, and a triangle of deadweight loss appears.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryInelastic">Inelastic demand + tax</button>
+      </div>
+      <p class="try-note">When demand is inelastic, buyers bear more of the tax — the curve barely shifts in quantity.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryCeiling">Price ceiling below equilibrium</button>
+      </div>
+      <p class="try-note">A binding ceiling creates a shortage — Q_demanded exceeds Q_supplied.</p>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <div class="section-label">Equilibrium</div>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">P*</div><div class="val cyan" id="rEqP">—</div></div>
+        <div class="readout"><div class="lbl">Q*</div><div class="val cyan" id="rEqQ">—</div></div>
+        <div class="readout"><div class="lbl" title="Consumer surplus: total value to buyers minus what they actually paid.">Consumer surplus</div><div class="val cyan small" id="rCS">—</div></div>
+        <div class="readout"><div class="lbl" title="Producer surplus: total revenue to sellers minus their costs of production.">Producer surplus</div><div class="val amber small" id="rPS">—</div></div>
+        <div class="readout"><div class="lbl" title="Total surplus: consumer surplus plus producer surplus — the overall gains from trade in this market.">Total surplus</div><div class="val green small" id="rTS">—</div></div>
+        <div class="readout"><div class="lbl" title="Deadweight loss: lost surplus from a market intervention or inefficiency — surplus that no one gets.">Deadweight loss</div><div class="val rose small" id="rDWL">—</div></div>
+        <div class="readout"><div class="lbl" title="Price elasticity of demand: percentage change in quantity demanded divided by percentage change in price.">PED at P*</div><div class="val violet small" id="rPED">—</div></div>
+        <div class="readout"><div class="lbl" title="Price elasticity of supply: percentage change in quantity supplied divided by percentage change in price.">PES at P*</div><div class="val violet small" id="rPES">—</div></div>
+      </div>
+      <div class="subhead" id="incidenceHead" style="display:none;">Tax incidence</div>
+      <div class="readouts" id="incidenceBlock" style="display:none;">
+        <div class="readout"><div class="lbl" title="The share of a tax (or subsidy) borne by consumers, determined by relative elasticities of demand and supply.">Consumer share</div><div class="val cyan small" id="rIncC">—</div></div>
+        <div class="readout"><div class="lbl" title="The share of a tax (or subsidy) borne by producers, determined by relative elasticities of demand and supply.">Producer share</div><div class="val amber small" id="rIncP">—</div></div>
+        <div class="readout"><div class="lbl">Tax revenue</div><div class="val small" id="rRev">—</div></div>
+        <div class="readout"><div class="lbl">Effective P consumer</div><div class="val small" id="rPc">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = (id) => document.getElementById(id);
+const fmt = (x, d=2) => (isFinite(x) ? x.toFixed(d) : '—');
+const gbp = new Intl.NumberFormat('en-GB', { style:'currency', currency:'GBP', maximumFractionDigits: 0 });
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// Curves represented as P = a + b*Q  (Supply: b > 0; Demand: b < 0)
+// Stored via two endpoints in (Q,P) space.
+const state = {
+  // demand: high at Q=0, low at Q=Qmax
+  dP0: 90, dPmax: 10,   // P at Q=0 and at Q=100
+  // supply: low at Q=0, high at Q=Qmax
+  sP0: 10, sPmax: 90,
+  Qmax: 100, Pmax: 100,
+  overlays: { ceiling:false, floor:false, tax:false, subsidy:false },
+  ceiling: 35,
+  floor: 60,
+  tax: 15,
+  subsidy: 10,
+  // animation
+  anim: null,
+  glow: 0,
+  pulseUntil: 0,
+};
+function pulse(ms=1500) {
+  state.pulseUntil = performance.now() + ms;
+  if (!loopRunning) { loopRunning = true; requestAnimationFrame(loop); }
+}
+
+// Linear demand: P_d(Q) = dP0 + (dPmax - dP0) * Q/Qmax
+// Linear supply: P_s(Q) = sP0 + (sPmax - sP0) * Q/Qmax
+function demandP(Q){ return state.dP0 + (state.dPmax - state.dP0) * (Q/state.Qmax); }
+function supplyP(Q){ return state.sP0 + (state.sPmax - state.sP0) * (Q/state.Qmax); }
+function demandQ(P){ // inverse
+  const m = (state.dPmax - state.dP0)/state.Qmax;
+  if (Math.abs(m) < 1e-9) return state.Qmax/2;
+  return (P - state.dP0)/m;
+}
+function supplyQ(P){
+  const m = (state.sPmax - state.sP0)/state.Qmax;
+  if (Math.abs(m) < 1e-9) return state.Qmax/2;
+  return (P - state.sP0)/m;
+}
+
+function equilibrium() {
+  // dP0 + md*Q = sP0 + ms*Q
+  const md = (state.dPmax - state.dP0)/state.Qmax;
+  const ms = (state.sPmax - state.sP0)/state.Qmax;
+  if (Math.abs(md - ms) < 1e-9) return null;
+  const Q = (state.sP0 - state.dP0)/(md - ms);
+  const P = state.dP0 + md*Q;
+  if (Q < 0 || Q > state.Qmax) return null;
+  return { Q, P };
+}
+
+// Geometry
+const margin = { l: 60, t: 24, r: 28, b: 50 };
+function plotBox(c) {
+  const w = c.clientWidth, h = c.clientHeight;
+  return { x: margin.l, y: margin.t, w: w - margin.l - margin.r, h: h - margin.t - margin.b };
+}
+function qToX(Q, box){ return box.x + (Q/state.Qmax) * box.w; }
+function pToY(P, box){ return box.y + box.h - (P/state.Pmax) * box.h; }
+function xToQ(x, box){ return ((x - box.x)/box.w) * state.Qmax; }
+function yToP(y, box){ return ((box.y + box.h - y)/box.h) * state.Pmax; }
+
+// ---- Drawing ----
+const canvas = $('market');
+let ctx = fitCanvas(canvas);
+
+function drawGrid(box) {
+  ctx.save();
+  ctx.strokeStyle = getCss('--grid');
+  ctx.lineWidth = 1;
+  ctx.fillStyle = getCss('--text-dim');
+  ctx.font = "11px 'JetBrains Mono', monospace";
+  // gridlines and labels
+  for (let q = 0; q <= 100; q += 10) {
+    const x = qToX(q, box);
+    ctx.globalAlpha = (q % 20 === 0) ? 1 : 0.55;
+    ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, box.y + box.h); ctx.stroke();
+    if (q % 20 === 0) ctx.fillText(String(q), x - 8, box.y + box.h + 16);
+  }
+  for (let p = 0; p <= 100; p += 10) {
+    const y = pToY(p, box);
+    ctx.globalAlpha = (p % 20 === 0) ? 1 : 0.55;
+    ctx.beginPath(); ctx.moveTo(box.x, y); ctx.lineTo(box.x + box.w, y); ctx.stroke();
+    if (p % 20 === 0) {
+      ctx.textAlign = 'right'; ctx.fillText(String(p), box.x - 8, y + 4); ctx.textAlign = 'start';
+    }
+  }
+  ctx.globalAlpha = 1;
+  // axes
+  ctx.strokeStyle = getCss('--text-faint');
+  ctx.beginPath();
+  ctx.moveTo(box.x, box.y); ctx.lineTo(box.x, box.y + box.h); ctx.lineTo(box.x + box.w, box.y + box.h);
+  ctx.stroke();
+  // axis labels
+  ctx.fillStyle = getCss('--text-dim');
+  ctx.font = "12px 'Inter', sans-serif";
+  ctx.fillText('Quantity (Q)', box.x + box.w/2 - 30, box.y + box.h + 36);
+  ctx.save();
+  ctx.translate(box.x - 38, box.y + box.h/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Price (P)', -20, 0);
+  ctx.restore();
+  ctx.restore();
+}
+
+function getCss(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function fillTriangle(pts, color, alpha=1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i=1; i<pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function strokeLine(p1, p2, color, w=2, dash=null, glow=false) {
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = w;
+  if (dash) ctx.setLineDash(dash);
+  if (glow) { ctx.shadowColor = color; ctx.shadowBlur = 12; }
+  ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
+  ctx.restore();
+}
+
+function drawDot(x, y, color, r=6, glow=false) {
+  ctx.save();
+  if (glow) { ctx.shadowColor = color; ctx.shadowBlur = 16; }
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawHandle(x, y, color, hovered=false) {
+  ctx.save();
+  ctx.fillStyle = getCss('--bg');
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y, hovered ? 8 : 6, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+function draw() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  // backdrop
+  ctx.fillStyle = getCss('--bg-elev-1');
+  roundRect(0, 0, w, h, 10);
+  ctx.fill();
+
+  const box = plotBox(canvas);
+  drawGrid(box);
+
+  const eq = equilibrium();
+  const cyan = getCss('--cyan');
+  const amber = getCss('--amber');
+  const rose = getCss('--rose');
+  const green = getCss('--green');
+
+  // Endpoints in screen coords
+  const dLeft = [qToX(0, box), pToY(state.dP0, box)];
+  const dRight = [qToX(state.Qmax, box), pToY(state.dPmax, box)];
+  const sLeft = [qToX(0, box), pToY(state.sP0, box)];
+  const sRight = [qToX(state.Qmax, box), pToY(state.sPmax, box)];
+
+  // Surplus fills (if eq exists and no overlay distorts market)
+  if (eq) {
+    const eqX = qToX(eq.Q, box);
+    const eqY = pToY(eq.P, box);
+
+    // Determine effective market state for fills
+    let activeQ = eq.Q;
+    let activeP = eq.P;
+    let consPayP = eq.P;  // price consumer pays
+    let prodGetP = eq.P;  // price producer gets
+    let ceilActive = false, floorActive = false, taxActive = false, subActive = false;
+    let dwlPts = null;
+    let shortagePts = null, surplusPts = null, revRect = null;
+
+    if (state.overlays.ceiling && state.ceiling < eq.P) {
+      ceilActive = true;
+      activeP = state.ceiling;
+      activeQ = supplyQ(activeP);
+      consPayP = activeP;
+      prodGetP = activeP;
+      const qd = demandQ(activeP);
+      // DWL triangle: (Qs, Ps@Qs), (Qs, Pd@Qs), (Q*, P*)
+      dwlPts = [
+        [qToX(activeQ, box), pToY(supplyP(activeQ), box)],
+        [qToX(activeQ, box), pToY(demandP(activeQ), box)],
+        [eqX, eqY]
+      ];
+      // shortage region (between supply Q and demand Q at ceiling)
+      shortagePts = [
+        [qToX(activeQ, box), pToY(activeP, box)],
+        [qToX(qd, box), pToY(activeP, box)]
+      ];
+    }
+    if (state.overlays.floor && state.floor > eq.P) {
+      floorActive = true;
+      activeP = state.floor;
+      activeQ = demandQ(activeP);
+      consPayP = activeP;
+      prodGetP = activeP;
+      const qs = supplyQ(activeP);
+      dwlPts = [
+        [qToX(activeQ, box), pToY(demandP(activeQ), box)],
+        [qToX(activeQ, box), pToY(supplyP(activeQ), box)],
+        [eqX, eqY]
+      ];
+      surplusPts = [
+        [qToX(activeQ, box), pToY(activeP, box)],
+        [qToX(qs, box), pToY(activeP, box)]
+      ];
+    }
+    if (state.overlays.tax && !ceilActive && !floorActive) {
+      taxActive = true;
+      // P_d(Q) = P_s(Q) + tax  -> shift supply curve up by tax
+      // new equilibrium with shifted supply
+      const md = (state.dPmax - state.dP0)/state.Qmax;
+      const ms = (state.sPmax - state.sP0)/state.Qmax;
+      const Q = (state.sP0 + state.tax - state.dP0)/(md - ms);
+      if (Q > 0 && Q < state.Qmax) {
+        activeQ = Q;
+        consPayP = demandP(Q);
+        prodGetP = supplyP(Q);
+        activeP = consPayP;
+        dwlPts = [
+          [qToX(activeQ, box), pToY(consPayP, box)],
+          [qToX(activeQ, box), pToY(prodGetP, box)],
+          [eqX, eqY]
+        ];
+        revRect = {
+          x: box.x, y: pToY(consPayP, box),
+          w: qToX(activeQ, box) - box.x, h: pToY(prodGetP, box) - pToY(consPayP, box)
+        };
+      }
+    }
+    if (state.overlays.subsidy && !ceilActive && !floorActive && !taxActive) {
+      subActive = true;
+      // subsidy lowers supply curve by s -> P_d(Q) = P_s(Q) - sub
+      const md = (state.dPmax - state.dP0)/state.Qmax;
+      const ms = (state.sPmax - state.sP0)/state.Qmax;
+      const Q = (state.sP0 - state.subsidy - state.dP0)/(md - ms);
+      if (Q > 0 && Q < state.Qmax) {
+        activeQ = Q;
+        consPayP = demandP(Q);
+        prodGetP = supplyP(Q);
+        activeP = consPayP;
+        // DWL from over-production
+        dwlPts = [
+          [eqX, eqY],
+          [qToX(activeQ, box), pToY(consPayP, box)],
+          [qToX(activeQ, box), pToY(prodGetP, box)]
+        ];
+        revRect = {
+          x: box.x, y: pToY(prodGetP, box),
+          w: qToX(activeQ, box) - box.x, h: pToY(consPayP, box) - pToY(prodGetP, box)
+        };
+      }
+    }
+
+    // Consumer surplus = area between demand curve and consPayP from Q=0 to activeQ
+    const csTopL = [box.x, pToY(state.dP0, box)];
+    const csTopR = [qToX(activeQ, box), pToY(demandP(activeQ), box)];
+    const csBotR = [qToX(activeQ, box), pToY(consPayP, box)];
+    const csBotL = [box.x, pToY(consPayP, box)];
+    fillTriangle([csTopL, csTopR, csBotR, csBotL], cyan, 0.18);
+    ctx.strokeStyle = cyan; ctx.lineWidth = 1; ctx.globalAlpha = 0.4;
+    ctx.beginPath();
+    ctx.moveTo(csTopL[0], csTopL[1]); ctx.lineTo(csTopR[0], csTopR[1]);
+    ctx.lineTo(csBotR[0], csBotR[1]); ctx.lineTo(csBotL[0], csBotL[1]); ctx.closePath();
+    ctx.stroke(); ctx.globalAlpha = 1;
+
+    // Producer surplus = area between prodGetP and supply curve from Q=0 to activeQ
+    const psTopL = [box.x, pToY(prodGetP, box)];
+    const psTopR = [qToX(activeQ, box), pToY(prodGetP, box)];
+    const psBotR = [qToX(activeQ, box), pToY(supplyP(activeQ), box)];
+    const psBotL = [box.x, pToY(state.sP0, box)];
+    fillTriangle([psTopL, psTopR, psBotR, psBotL], amber, 0.18);
+
+    // Tax revenue rectangle
+    if (revRect) {
+      ctx.save();
+      ctx.fillStyle = state.overlays.subsidy ? 'rgba(167,139,250,0.22)' : 'rgba(150,160,175,0.30)';
+      ctx.fillRect(revRect.x, revRect.y, revRect.w, revRect.h);
+      ctx.strokeStyle = state.overlays.subsidy ? getCss('--violet') : getCss('--text-faint');
+      ctx.lineWidth = 1;
+      ctx.strokeRect(revRect.x, revRect.y, revRect.w, revRect.h);
+      ctx.restore();
+    }
+
+    // DWL triangle
+    if (dwlPts) fillTriangle(dwlPts, rose, 0.5);
+
+    // shortage / surplus markers
+    if (shortagePts) {
+      ctx.save();
+      ctx.strokeStyle = rose; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(shortagePts[0][0], shortagePts[0][1]); ctx.lineTo(shortagePts[1][0], shortagePts[1][1]); ctx.stroke();
+      ctx.fillStyle = rose; ctx.font = "11px 'JetBrains Mono', monospace";
+      ctx.fillText('shortage', (shortagePts[0][0]+shortagePts[1][0])/2 - 24, shortagePts[0][1] - 8);
+      ctx.restore();
+    }
+    if (surplusPts) {
+      ctx.save();
+      ctx.strokeStyle = green; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(surplusPts[0][0], surplusPts[0][1]); ctx.lineTo(surplusPts[1][0], surplusPts[1][1]); ctx.stroke();
+      ctx.fillStyle = green; ctx.font = "11px 'JetBrains Mono', monospace";
+      ctx.fillText('surplus', (surplusPts[0][0]+surplusPts[1][0])/2 - 20, surplusPts[0][1] - 8);
+      ctx.restore();
+    }
+  }
+
+  // Supply line
+  strokeLine(sLeft, sRight, amber, 2.5);
+  // Demand line
+  strokeLine(dLeft, dRight, cyan, 2.5);
+
+  // Labels for curves
+  ctx.save();
+  ctx.fillStyle = amber; ctx.font = "12px 'Inter', sans-serif";
+  ctx.fillText('S', sRight[0] - 16, sRight[1] - 8);
+  ctx.fillStyle = cyan;
+  ctx.fillText('D', dRight[0] - 16, dRight[1] + 16);
+  ctx.restore();
+
+  // Endpoint handles
+  for (const [p, color] of [[dLeft, cyan], [dRight, cyan], [sLeft, amber], [sRight, amber]]) {
+    drawHandle(p[0], p[1], color, false);
+  }
+
+  // Overlay lines
+  if (state.overlays.ceiling) {
+    const y = pToY(state.ceiling, box);
+    strokeLine([box.x, y], [box.x + box.w, y], rose, 2, [6,4]);
+    ctx.fillStyle = rose; ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText('ceiling P=' + fmt(state.ceiling, 1), box.x + box.w - 110, y - 6);
+    drawHandle(box.x + box.w - 12, y, rose, false);
+  }
+  if (state.overlays.floor) {
+    const y = pToY(state.floor, box);
+    strokeLine([box.x, y], [box.x + box.w, y], green, 2, [6,4]);
+    ctx.fillStyle = green; ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText('floor P=' + fmt(state.floor, 1), box.x + box.w - 110, y - 6);
+    drawHandle(box.x + box.w - 12, y, green, false);
+  }
+
+  // Equilibrium dropdowns + glowing dot
+  if (eq) {
+    const eqX = qToX(eq.Q, box);
+    const eqY = pToY(eq.P, box);
+    ctx.save();
+    ctx.setLineDash([4,4]); ctx.strokeStyle = getCss('--text-faint'); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(eqX, eqY); ctx.lineTo(eqX, box.y + box.h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(eqX, eqY); ctx.lineTo(box.x, eqY); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = getCss('--text-dim'); ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText('Q* ' + fmt(eq.Q,1), eqX + 6, box.y + box.h - 6);
+    ctx.fillText('P* ' + fmt(eq.P,1), box.x + 4, eqY - 6);
+    // glow — only while pulsing
+    const pulsing = performance.now() < state.pulseUntil;
+    const g = pulsing ? (0.6 + 0.4 * Math.sin(performance.now()/420)) : 0;
+    ctx.save();
+    ctx.shadowColor = getCss('--gold'); ctx.shadowBlur = pulsing ? 16 + 6*g : 10;
+    ctx.fillStyle = getCss('--gold');
+    ctx.beginPath(); ctx.arc(eqX, eqY, 6, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+// ---- Calculations / readouts ----
+function calcAreas() {
+  const eq = equilibrium();
+  if (!eq) return null;
+  let activeQ = eq.Q, consPayP = eq.P, prodGetP = eq.P;
+  let dwl = 0, revenue = 0, taxIncidence = null, mode = 'free';
+
+  if (state.overlays.ceiling && state.ceiling < eq.P) {
+    consPayP = state.ceiling; prodGetP = state.ceiling;
+    activeQ = supplyQ(state.ceiling);
+    const eqDeficit = eq.Q - activeQ;
+    dwl = 0.5 * eqDeficit * (demandP(activeQ) - supplyP(activeQ));
+    mode = 'ceiling';
+  } else if (state.overlays.floor && state.floor > eq.P) {
+    consPayP = state.floor; prodGetP = state.floor;
+    activeQ = demandQ(state.floor);
+    const eqDelta = eq.Q - activeQ;
+    dwl = 0.5 * eqDelta * (demandP(activeQ) - supplyP(activeQ));
+    mode = 'floor';
+  } else if (state.overlays.tax) {
+    const md = (state.dPmax - state.dP0)/state.Qmax;
+    const ms = (state.sPmax - state.sP0)/state.Qmax;
+    const Q = (state.sP0 + state.tax - state.dP0)/(md - ms);
+    if (Q > 0 && Q < state.Qmax) {
+      activeQ = Q;
+      consPayP = demandP(Q);
+      prodGetP = supplyP(Q);
+      dwl = 0.5 * (eq.Q - Q) * state.tax;
+      revenue = state.tax * Q;
+      const consBurden = consPayP - eq.P;
+      const prodBurden = eq.P - prodGetP;
+      taxIncidence = { consumer: consBurden, producer: prodBurden };
+      mode = 'tax';
+    }
+  } else if (state.overlays.subsidy) {
+    const md = (state.dPmax - state.dP0)/state.Qmax;
+    const ms = (state.sPmax - state.sP0)/state.Qmax;
+    const Q = (state.sP0 - state.subsidy - state.dP0)/(md - ms);
+    if (Q > 0 && Q < state.Qmax) {
+      activeQ = Q;
+      consPayP = demandP(Q);
+      prodGetP = supplyP(Q);
+      dwl = 0.5 * (Q - eq.Q) * state.subsidy;
+      revenue = state.subsidy * Q; // cost
+      mode = 'subsidy';
+    }
+  }
+
+  // Consumer surplus: trapezoid between demand and consPayP from 0..activeQ
+  const cs = 0.5 * activeQ * ((state.dP0 - consPayP) + (demandP(activeQ) - consPayP));
+  // Producer surplus
+  const ps = 0.5 * activeQ * ((prodGetP - state.sP0) + (prodGetP - supplyP(activeQ)));
+  const ts = cs + ps - (mode === 'subsidy' ? revenue : 0) + (mode === 'tax' ? revenue : 0);
+  // elasticity at eq
+  const md = (state.dPmax - state.dP0)/state.Qmax;
+  const ms = (state.sPmax - state.sP0)/state.Qmax;
+  const ped = (1/md) * (eq.P/eq.Q);   // dQ/dP * P/Q  ; dQ/dP = 1/slope
+  const pes = (1/ms) * (eq.P/eq.Q);
+
+  return { eq, activeQ, consPayP, prodGetP, cs, ps, ts, dwl, revenue, taxIncidence, mode, ped, pes };
+}
+
+function updateReadouts() {
+  const c = calcAreas();
+  if (!c) {
+    $('rEqP').textContent = '—'; $('rEqQ').textContent = '—';
+    return;
+  }
+  $('rEqP').textContent = gbp.format(c.eq.P);
+  $('rEqQ').textContent = fmt(c.eq.Q, 1);
+  $('rCS').textContent = gbp.format(c.cs);
+  $('rPS').textContent = gbp.format(c.ps);
+  $('rTS').textContent = gbp.format(c.ts);
+  $('rDWL').textContent = c.dwl > 0.01 ? gbp.format(c.dwl) : '—';
+  // PED comes out negative because demand slopes down — convention is to report magnitude
+  $('rPED').textContent = fmt(Math.abs(c.ped), 2) + (Math.abs(c.ped) > 1 ? ' (elastic)' : ' (inelastic)');
+  $('rPES').textContent = fmt(c.pes, 2) + (c.pes > 1 ? ' (elastic)' : ' (inelastic)');
+
+  const setLbl = (id, txt) => { const el = $(id).previousElementSibling; if (el) el.textContent = txt; };
+  if (c.mode === 'tax' && c.taxIncidence) {
+    $('incidenceHead').style.display = 'block';
+    $('incidenceHead').textContent = 'Tax incidence';
+    $('incidenceBlock').style.display = 'grid';
+    setLbl('rIncC','Consumer share');
+    setLbl('rIncP','Producer share');
+    setLbl('rRev','Tax revenue');
+    setLbl('rPc','P paid by consumer');
+    const total = Math.max(c.taxIncidence.consumer + c.taxIncidence.producer, 1e-9);
+    $('rIncC').textContent = ((c.taxIncidence.consumer/total)*100).toFixed(1) + '%';
+    $('rIncP').textContent = ((c.taxIncidence.producer/total)*100).toFixed(1) + '%';
+    $('rRev').textContent = gbp.format(c.revenue);
+    $('rPc').textContent = gbp.format(c.consPayP);
+  } else if (c.mode === 'subsidy') {
+    $('incidenceHead').style.display = 'block'; $('incidenceHead').textContent = 'Subsidy';
+    $('incidenceBlock').style.display = 'grid';
+    setLbl('rIncC','P paid by consumer');
+    setLbl('rIncP','P received by seller');
+    setLbl('rRev','Total subsidy cost');
+    setLbl('rPc','DWL');
+    $('rIncC').textContent = gbp.format(c.consPayP);
+    $('rIncP').textContent = gbp.format(c.prodGetP);
+    $('rRev').textContent = gbp.format(c.revenue);
+    $('rPc').textContent = gbp.format(c.dwl);
+  } else {
+    $('incidenceHead').style.display = 'none';
+    $('incidenceBlock').style.display = 'none';
+  }
+
+  // explainer
+  let txt = '';
+  if (c.mode === 'free') {
+    txt = `At equilibrium P* = <span class="k">${gbp.format(c.eq.P)}</span>, Q* = <span class="k">${fmt(c.eq.Q,1)}</span>. Total surplus is <span class="k">${gbp.format(c.ts)}</span>. |PED| = <span class="k">${fmt(Math.abs(c.ped),2)}</span> ${Math.abs(c.ped) > 1 ? '(elastic)' : '(inelastic)'} — at this price, a small price change ${Math.abs(c.ped) > 1 ? 'causes a larger' : 'causes a smaller'} percentage quantity response.`;
+  } else if (c.mode === 'ceiling') {
+    txt = `Price ceiling at <span class="k">${fmt(state.ceiling,1)}</span> below equilibrium <span class="k">${fmt(c.eq.P,1)}</span> creates a shortage of <span class="k">${fmt(demandQ(state.ceiling) - supplyQ(state.ceiling),1)}</span> units. Deadweight loss is <span class="k">${gbp.format(c.dwl)}</span>.`;
+  } else if (c.mode === 'floor') {
+    txt = `Price floor at <span class="k">${fmt(state.floor,1)}</span> above equilibrium creates a surplus of <span class="k">${fmt(supplyQ(state.floor) - demandQ(state.floor),1)}</span> units. Deadweight loss is <span class="k">${gbp.format(c.dwl)}</span>.`;
+  } else if (c.mode === 'tax') {
+    const total = c.taxIncidence.consumer + c.taxIncidence.producer || 1;
+    const consPct = (c.taxIncidence.consumer/total*100).toFixed(0);
+    txt = `Tax of <span class="k">${fmt(state.tax,1)}</span> per unit. Consumers bear <span class="k">${consPct}%</span>, producers <span class="k">${100-consPct}%</span>. The more inelastic side carries more burden. Revenue <span class="k">${gbp.format(c.revenue)}</span>; DWL <span class="k">${gbp.format(c.dwl)}</span>.`;
+  } else if (c.mode === 'subsidy') {
+    txt = `Subsidy of <span class="k">${fmt(state.subsidy,1)}</span> raises output to <span class="k">${fmt(c.activeQ,1)}</span> but costs <span class="k">${gbp.format(c.revenue)}</span> and creates DWL <span class="k">${gbp.format(c.dwl)}</span> from overproduction beyond the efficient quantity.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+// ---- Interaction ----
+let dragging = null; // 'dL','dR','sL','sR','ceiling','floor'
+let hoverTarget = null;
+
+function endpoint(box) {
+  return {
+    dL: [qToX(0, box), pToY(state.dP0, box)],
+    dR: [qToX(state.Qmax, box), pToY(state.dPmax, box)],
+    sL: [qToX(0, box), pToY(state.sP0, box)],
+    sR: [qToX(state.Qmax, box), pToY(state.sPmax, box)],
+  };
+}
+
+function getMouse(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  const m = getMouse(e);
+  const box = plotBox(canvas);
+  const eps = endpoint(box);
+  for (const k of Object.keys(eps)) {
+    const [x,y] = eps[k];
+    if ((m.x-x)**2 + (m.y-y)**2 < 144) { dragging = k; canvas.style.cursor = 'grabbing'; return; }
+  }
+  if (state.overlays.ceiling) {
+    const y = pToY(state.ceiling, box);
+    if (Math.abs(m.y - y) < 8) { dragging = 'ceiling'; canvas.style.cursor = 'grabbing'; return; }
+  }
+  if (state.overlays.floor) {
+    const y = pToY(state.floor, box);
+    if (Math.abs(m.y - y) < 8) { dragging = 'floor'; canvas.style.cursor = 'grabbing'; return; }
+  }
+});
+canvas.addEventListener('mousemove', (e) => {
+  const m = getMouse(e);
+  const box = plotBox(canvas);
+  if (dragging) {
+    canvas.style.cursor = 'grabbing';
+    if (dragging === 'dL') state.dP0 = clamp(yToP(m.y, box), 0, state.Pmax);
+    if (dragging === 'dR') state.dPmax = clamp(yToP(m.y, box), 0, state.Pmax);
+    if (dragging === 'sL') state.sP0 = clamp(yToP(m.y, box), 0, state.Pmax);
+    if (dragging === 'sR') state.sPmax = clamp(yToP(m.y, box), 0, state.Pmax);
+    if (dragging === 'ceiling') { state.ceiling = clamp(yToP(m.y, box), 0, state.Pmax); $('vCeil').textContent = fmt(state.ceiling,1); $('sCeil').value = state.ceiling; }
+    if (dragging === 'floor') { state.floor = clamp(yToP(m.y, box), 0, state.Pmax); $('vFloor').textContent = fmt(state.floor,1); $('sFloor').value = state.floor; }
+    updateReadouts();
+    pulse();
+  } else {
+    // hover detection — endpoints and any active price line
+    const eps = endpoint(box);
+    let h = null;
+    for (const k of Object.keys(eps)) {
+      const [x,y] = eps[k];
+      if ((m.x-x)**2 + (m.y-y)**2 < 144) { h = k; break; }
+    }
+    if (!h && state.overlays.ceiling) {
+      const y = pToY(state.ceiling, box);
+      if (Math.abs(m.y - y) < 8) h = 'ceiling';
+    }
+    if (!h && state.overlays.floor) {
+      const y = pToY(state.floor, box);
+      if (Math.abs(m.y - y) < 8) h = 'floor';
+    }
+    canvas.style.cursor = h ? 'grab' : 'default';
+  }
+});
+canvas.addEventListener('mouseup', () => { dragging = null; canvas.style.cursor = 'grab'; });
+canvas.addEventListener('mouseleave', () => { dragging = null; canvas.style.cursor = 'default'; });
+
+function clamp(x, a, b) { return Math.min(b, Math.max(a, x)); }
+
+// ---- Animation ----
+function animateTo(target, ms=600) {
+  const start = {
+    dP0: state.dP0, dPmax: state.dPmax, sP0: state.sP0, sPmax: state.sPmax
+  };
+  const t0 = performance.now();
+  state.anim = (now) => {
+    const t = Math.min(1, (now - t0)/ms);
+    const k = easeOutCubic(t);
+    for (const key of Object.keys(target)) {
+      state[key] = start[key] + (target[key] - start[key]) * k;
+    }
+    updateReadouts();
+    if (t >= 1) state.anim = null;
+  };
+  pulse(ms + 1500);
+}
+
+let loopRunning = false;
+function loop(now) {
+  if (state.anim) state.anim(now);
+  draw();
+  if (state.anim || performance.now() < state.pulseUntil) {
+    requestAnimationFrame(loop);
+  } else {
+    loopRunning = false;
+    // final still draw to ensure non-pulsed equilibrium dot is clean
+  }
+}
+function kick() {
+  if (!loopRunning) { loopRunning = true; requestAnimationFrame(loop); }
+}
+
+// ---- Buttons ----
+function setToggle(key, btn) {
+  state.overlays[key] = !state.overlays[key];
+  // tax & subsidy mutually exclusive
+  if (key === 'tax' && state.overlays.tax) state.overlays.subsidy = false;
+  if (key === 'subsidy' && state.overlays.subsidy) state.overlays.tax = false;
+  if (key === 'ceiling' && state.overlays.ceiling) state.overlays.floor = false;
+  if (key === 'floor' && state.overlays.floor) state.overlays.ceiling = false;
+  syncToggleUI();
+  buildOverlayControls();
+  updateReadouts();
+  pulse();
+}
+
+function syncToggleUI() {
+  $('tCeiling').classList.toggle('active', state.overlays.ceiling);
+  $('tFloor').classList.toggle('active', state.overlays.floor);
+  $('tTax').classList.toggle('active', state.overlays.tax);
+  $('tSubsidy').classList.toggle('active', state.overlays.subsidy);
+}
+
+function buildOverlayControls() {
+  const root = $('overlayControls');
+  root.innerHTML = '';
+  if (state.overlays.ceiling) root.appendChild(slider('Price ceiling', 'sCeil', 'vCeil', state.ceiling, 0, 100, 0.5, (v) => state.ceiling = v));
+  if (state.overlays.floor)   root.appendChild(slider('Price floor', 'sFloor', 'vFloor', state.floor, 0, 100, 0.5, (v) => state.floor = v));
+  if (state.overlays.tax)     root.appendChild(slider('Tax per unit', 'sTax', 'vTax', state.tax, 0, 60, 0.5, (v) => state.tax = v));
+  if (state.overlays.subsidy) root.appendChild(slider('Subsidy per unit', 'sSub', 'vSub', state.subsidy, 0, 60, 0.5, (v) => state.subsidy = v));
+}
+
+function slider(label, sid, vid, value, min, max, step, onChange) {
+  const w = document.createElement('div');
+  w.style.marginTop = '8px';
+  w.innerHTML = `<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:4px;">
+                   <span>${label}</span><span class="mono" id="${vid}" style="color:var(--text)">${fmt(value,1)}</span>
+                 </div>
+                 <input type="range" id="${sid}" min="${min}" max="${max}" step="${step}" value="${value}">`;
+  setTimeout(() => {
+    const s = w.querySelector('input');
+    s.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      onChange(v);
+      w.querySelector('#' + vid).textContent = fmt(v,1);
+      updateReadouts();
+      pulse();
+    });
+  }, 0);
+  return w;
+}
+
+$('tCeiling').addEventListener('click', () => setToggle('ceiling'));
+$('tFloor').addEventListener('click', () => setToggle('floor'));
+$('tTax').addEventListener('click', () => setToggle('tax'));
+$('tSubsidy').addEventListener('click', () => setToggle('subsidy'));
+
+$('shockTech').addEventListener('click', () => {
+  animateTo({ sP0: clamp(state.sP0 - 8, 0, 100), sPmax: clamp(state.sPmax - 8, 0, 100) });
+});
+$('shockCost').addEventListener('click', () => {
+  animateTo({ sP0: clamp(state.sP0 + 8, 0, 100), sPmax: clamp(state.sPmax + 8, 0, 100) });
+});
+$('shockIncome').addEventListener('click', () => {
+  animateTo({ dP0: clamp(state.dP0 + 10, 0, 100), dPmax: clamp(state.dPmax + 10, 0, 100) });
+});
+$('shockSub').addEventListener('click', () => {
+  animateTo({ dP0: clamp(state.dP0 - 10, 0, 100), dPmax: clamp(state.dPmax - 10, 0, 100) });
+});
+$('shockReset').addEventListener('click', () => {
+  animateTo({ dP0: 90, dPmax: 10, sP0: 10, sPmax: 90 });
+});
+
+// ---- Try this experiments ----
+function ensureOverlay(key, on) {
+  if (state.overlays[key] === on) return;
+  setToggle(key);
+}
+$('tryTax').addEventListener('click', () => {
+  // reset shape and turn on tax = 10
+  state.dP0 = 90; state.dPmax = 10; state.sP0 = 10; state.sPmax = 90;
+  if (state.overlays.subsidy) setToggle('subsidy');
+  if (state.overlays.ceiling) setToggle('ceiling');
+  if (state.overlays.floor) setToggle('floor');
+  if (!state.overlays.tax) setToggle('tax');
+  state.tax = 10;
+  buildOverlayControls();
+  syncToggleUI();
+  updateReadouts();
+  pulse();
+});
+$('tryInelastic').addEventListener('click', () => {
+  // steep demand curve = inelastic (small change in Q for change in P): dP0 high, dPmax also high
+  state.dP0 = 95; state.dPmax = 55;
+  state.sP0 = 10; state.sPmax = 90;
+  if (state.overlays.subsidy) setToggle('subsidy');
+  if (state.overlays.ceiling) setToggle('ceiling');
+  if (state.overlays.floor) setToggle('floor');
+  if (!state.overlays.tax) setToggle('tax');
+  state.tax = 15;
+  buildOverlayControls();
+  syncToggleUI();
+  updateReadouts();
+  pulse();
+});
+$('tryCeiling').addEventListener('click', () => {
+  state.dP0 = 90; state.dPmax = 10; state.sP0 = 10; state.sPmax = 90;
+  if (state.overlays.tax) setToggle('tax');
+  if (state.overlays.subsidy) setToggle('subsidy');
+  if (state.overlays.floor) setToggle('floor');
+  if (!state.overlays.ceiling) setToggle('ceiling');
+  const eq = equilibrium();
+  state.ceiling = eq ? eq.P * 0.7 : 35;
+  buildOverlayControls();
+  syncToggleUI();
+  updateReadouts();
+  pulse();
+});
+
+window.addEventListener('resize', () => { ctx = fitCanvas(canvas); draw(); pulse(); });
+
+ctx = fitCanvas(canvas);
+buildOverlayControls();
+syncToggleUI();
+updateReadouts();
+draw();
+pulse();
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const btn = document.getElementById('kbdHelpBtn');
+  if (!modal || !btn) return;
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  btn.addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 't') { $('tTax').click(); }
+    else if (k === 'c') { $('tCeiling').click(); }
+    else if (k === 'f') { $('tFloor').click(); }
+    else if (k === 's') { $('tSubsidy').click(); }
+    else if (e.key === '1') { $('tryTax').click(); }
+    else if (e.key === '2') { $('tryInelastic').click(); }
+    else if (e.key === '3') { $('tryCeiling').click(); }
+  });
+})();
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="is_lm.html">
+      <div class="related-title">IS-LM Model</div>
+      <div class="related-desc">Fiscal vs monetary policy, with liquidity-trap mode</div>
+    </a>
+    <a class="related-card" href="hotelling.html">
+      <div class="related-title">Hotelling's Law</div>
+      <div class="related-desc">Why competitors converge to the median voter</div>
+    </a>
+    <a class="related-card" href="lorenz_curve.html">
+      <div class="related-title">Gini Coefficient</div>
+      <div class="related-desc">Inequality from Norway to South Africa</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phoneme Space — IPA Vowel Chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.ipa { font-family: 'Noto Sans', 'Inter', sans-serif; }
+
+.topbar { display: flex; align-items: center; gap: 24px; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; transition: color 120ms ease; }
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+.back:hover { color: var(--cyan); }
+
+main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.panel + .panel { margin-top: 24px; }
+.panel-title { font-size: 14px; font-weight: 600; margin: 0 0 4px; color: var(--text); }
+.panel-sub { font-size: 11px; color: var(--text-dim); margin: 0 0 12px; }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+
+canvas { display: block; width: 100%; }
+
+button {
+  font-family: inherit; font-size: 13px;
+  color: var(--text);
+  background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button:active { transform: translateY(0.5px); }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 12px; transition: color 120ms ease, background 120ms ease;}
+.seg button:hover:not(.active) { color: var(--text); }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  font-size: 12px;
+  box-shadow: var(--shadow);
+  max-width: 280px;
+  opacity: 0;
+  transition: opacity 140ms ease, transform 140ms ease;
+  transform: translateY(2px);
+  z-index: 10;
+}
+.tooltip.visible { opacity: 1; transform: translateY(0); }
+.tooltip .symbol { font-size: 28px; font-weight: 600; margin-right: 8px; color: var(--cyan); }
+.tooltip .name { color: var(--text); font-weight: 500; margin-bottom: 6px; }
+.tooltip .formants { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-bottom: 8px; }
+.tooltip .ex { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.tooltip .ex b { color: var(--text); }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readout .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+.readout .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .value { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 22px; color: var(--text); }
+.readout .value.cyan { color: var(--cyan); }
+.readout .value.amber { color: var(--amber); }
+
+.explainer {
+  background: var(--bg-elev-1);
+  border-left: 2px solid var(--cyan);
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 14px;
+  line-height: 1.55;
+}
+.explainer strong { color: var(--text); font-weight: 600; }
+
+.control-group { margin-bottom: 14px; }
+.control-group .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.control-group label { font-size: 12px; color: var(--text-dim); }
+.control-group .val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--cyan); }
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; border-radius: 999px;
+  background: var(--grid); outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(34,211,238,0.12);
+  cursor: pointer; border: none;
+  transition: box-shadow 120ms ease;
+}
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range] { cursor: ew-resize; }
+
+.canvas-wrap { position: relative; }
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.minimal-list { max-height: 220px; overflow-y: auto; font-size: 12px; }
+.minimal-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; padding: 6px 4px; border-bottom: 1px solid var(--panel-border); }
+.minimal-row:last-child { border-bottom: none; }
+.minimal-row .vs { color: var(--text-faint); }
+.minimal-row b { color: var(--text); }
+
+.legend-row { display:flex; align-items:center; gap: 14px; font-size: 11px; color: var(--text-dim); margin-top: 6px; flex-wrap: wrap; }
+.legend-row .dot { width: 8px; height: 8px; border-radius: 50%; display:inline-block; margin-right: 5px; }
+
+.insight-banner {
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 1400px;
+  margin: 14px auto 0;
+  box-sizing: border-box;
+  padding: 4px 24px;
+}
+.insight-banner > span {
+  border-left: 2px solid var(--cyan);
+  padding-left: 10px;
+  display: inline-block;
+}
+.try-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-bottom: 24px;
+}
+.try-panel .try-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.try-panel .try-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.try-panel .try-pills button { font-size: 12px; padding: 7px 12px; }
+.try-panel .try-note {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  min-height: 1.5em;
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Phoneme Space</h1>
+    <p class="sub">The IPA vowel chart with interactive formant synthesis</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="insight-banner"><span>Every vowel is a resonance pattern — your tongue shapes two filter frequencies and your ears decode them as 'ee' or 'ah' or 'oo'.</span></div>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>Play /i/ vs /u/</span>
+      <span class="kbd-key">2</span><span>Switch to English (RP)</span>
+      <span class="kbd-key">3</span><span>Minimal pair: bit vs beat</span>
+      <span class="kbd-key">F</span><span>Toggle F1/F2 (formant) view</span>
+      <span class="kbd-key">T</span><span>Toggle trapezoid view</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="try-panel">
+    <div class="try-label">Try this</div>
+    <div class="try-pills">
+      <button id="tryIuBtn">Hear /i/ vs /u/</button>
+      <button id="tryRpBtn">Switch to English (RP)</button>
+      <button id="tryMpBtn">Minimal pair: bit vs beat</button>
+    </div>
+    <div class="try-note" id="tryNote">Quick experiments to feel how F1, F2, and inventory shape the vowel space.</div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="panel">
+        <div style="display:flex; align-items:center; justify-content: space-between; margin-bottom: 6px;">
+          <div>
+            <div class="panel-title">Vowel chart</div>
+            <p class="panel-sub" id="chartSub">Articulatory view — click a vowel to hear it</p>
+          </div>
+          <div class="seg" id="viewSeg">
+            <button data-view="ipa" class="active">IPA trapezoid</button>
+            <button data-view="formant">F1 / F2 acoustic</button>
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="vowelCanvas" style="height: 540px;"></canvas>
+          <div class="tooltip" id="tooltip"></div>
+        </div>
+        <div class="legend-row">
+          <span><span class="dot" style="background: var(--cyan);"></span>active language</span>
+          <span><span class="dot" style="background: var(--text-faint);"></span>not in inventory</span>
+          <span><span class="dot" style="background: var(--amber);"></span>your guess (drag)</span>
+          <span style="margin-left: auto; color: var(--text-faint);">Filled = rounded · Open = unrounded</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="panel-title">Language inventory</div>
+        <p class="panel-sub">Highlight vowels present in a language</p>
+        <div class="seg" id="langSeg" style="display:flex; flex-wrap: wrap;">
+          <button data-lang="all" class="active">All IPA</button>
+          <button data-lang="en-rp">English (RP)</button>
+          <button data-lang="en-ga">English (GA)</button>
+          <button data-lang="fr">French</button>
+          <button data-lang="es">Spanish</button>
+          <button data-lang="zh">Mandarin</button>
+          <button data-lang="ja">Japanese</button>
+          <button data-lang="ar">Arabic</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Synthesis</div>
+        <p class="panel-sub">Two-formant approximation via bandpass filters</p>
+        <div class="control-group">
+          <div class="row"><label>Fundamental F0</label><span class="val" id="f0Val">130 Hz</span></div>
+          <input type="range" id="f0Slider" min="80" max="240" step="1" value="130">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Duration</label><span class="val" id="durVal">450 ms</span></div>
+          <input type="range" id="durSlider" min="150" max="1200" step="10" value="450">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Voice</label></div>
+          <div class="seg" id="voiceSeg">
+            <button data-v="male" class="active">Male</button>
+            <button data-v="female">Female</button>
+            <button data-v="child">Child</button>
+          </div>
+        </div>
+        <div class="readouts" style="margin-top: 6px;">
+          <div class="readout"><div class="label" title="First formant frequency (Hz). Roughly tracks vowel height — low F1 = close vowel, high F1 = open vowel.">F1 (selected)</div><div class="value cyan mono" id="rF1">—</div></div>
+          <div class="readout"><div class="label" title="Second formant frequency (Hz). Roughly tracks frontness — high F2 = front vowel, low F2 = back vowel.">F2 (selected)</div><div class="value cyan mono" id="rF2">—</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Minimal pairs</div>
+        <p class="panel-sub" id="mpSub">Click two vowels to see contrasting words</p>
+        <div class="minimal-list" id="minimalList">
+          <div style="color: var(--text-faint); padding: 6px;">Select a first vowel…</div>
+        </div>
+        <div class="button-row" style="margin-top: 10px;">
+          <button id="clearPairBtn">Clear selection</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Your guess</div>
+        <p class="panel-sub">Drag the amber dot. Pick a target vowel to compare.</p>
+        <div class="seg" id="targetSeg" style="flex-wrap: wrap; max-height: 120px; overflow-y: auto;"></div>
+        <div class="readouts" style="margin-top: 12px;">
+          <div class="readout"><div class="label">Distance</div><div class="value amber mono" id="rDist">—</div></div>
+          <div class="readout"><div class="label">Target</div><div class="value ipa" id="rTarget" style="font-size: 22px;">—</div></div>
+        </div>
+        <div class="explainer" id="guessExplainer">Drag the amber dot to where you think the target vowel lives. The chart shows your error in normalised units.</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// -----------------------------------------------------------------------------
+// IPA vowel data with F1/F2 (Hz) — based on standard published values
+// -----------------------------------------------------------------------------
+
+// height: 0 = close, 1 = near-close, 2 = close-mid, 3 = mid, 4 = open-mid, 5 = near-open, 6 = open
+// back:   0 = front, 1 = central, 2 = back
+// rounded: true/false
+const VOWELS = [
+  // Close
+  { s:'i',  name:'Close front unrounded',       h:0, b:0, r:false, f1:280, f2:2250 },
+  { s:'y',  name:'Close front rounded',         h:0, b:0, r:true,  f1:285, f2:2030 },
+  { s:'ɨ',  name:'Close central unrounded',     h:0, b:1, r:false, f1:315, f2:1700 },
+  { s:'ʉ',  name:'Close central rounded',       h:0, b:1, r:true,  f1:300, f2:1500 },
+  { s:'ɯ',  name:'Close back unrounded',        h:0, b:2, r:false, f1:300, f2:1390 },
+  { s:'u',  name:'Close back rounded',          h:0, b:2, r:true,  f1:295, f2:750 },
+  // Near-close
+  { s:'ɪ',  name:'Near-close near-front unrounded', h:1, b:0, r:false, f1:400, f2:1920 },
+  { s:'ʏ',  name:'Near-close near-front rounded',   h:1, b:0, r:true,  f1:380, f2:1810 },
+  { s:'ʊ',  name:'Near-close near-back rounded',    h:1, b:2, r:true,  f1:380, f2:950 },
+  // Close-mid
+  { s:'e',  name:'Close-mid front unrounded',   h:2, b:0, r:false, f1:400, f2:2200 },
+  { s:'ø',  name:'Close-mid front rounded',     h:2, b:0, r:true,  f1:420, f2:1700 },
+  { s:'ɘ',  name:'Close-mid central unrounded', h:2, b:1, r:false, f1:450, f2:1600 },
+  { s:'ɵ',  name:'Close-mid central rounded',   h:2, b:1, r:true,  f1:460, f2:1380 },
+  { s:'ɤ',  name:'Close-mid back unrounded',    h:2, b:2, r:false, f1:480, f2:1100 },
+  { s:'o',  name:'Close-mid back rounded',      h:2, b:2, r:true,  f1:430, f2:740 },
+  // Mid
+  { s:'ə',  name:'Mid central (schwa)',         h:3, b:1, r:false, f1:500, f2:1500 },
+  // Open-mid
+  { s:'ɛ',  name:'Open-mid front unrounded',    h:4, b:0, r:false, f1:600, f2:1930 },
+  { s:'œ',  name:'Open-mid front rounded',      h:4, b:0, r:true,  f1:580, f2:1600 },
+  { s:'ɜ',  name:'Open-mid central unrounded',  h:4, b:1, r:false, f1:580, f2:1400 },
+  { s:'ɞ',  name:'Open-mid central rounded',    h:4, b:1, r:true,  f1:580, f2:1300 },
+  { s:'ʌ',  name:'Open-mid back unrounded',     h:4, b:2, r:false, f1:620, f2:1200 },
+  { s:'ɔ',  name:'Open-mid back rounded',       h:4, b:2, r:true,  f1:570, f2:840 },
+  // Near-open
+  { s:'æ',  name:'Near-open front unrounded',   h:5, b:0, r:false, f1:730, f2:1810 },
+  { s:'ɐ',  name:'Near-open central',           h:5, b:1, r:false, f1:680, f2:1450 },
+  // Open
+  { s:'a',  name:'Open front unrounded',        h:6, b:0, r:false, f1:850, f2:1610 },
+  { s:'ɶ',  name:'Open front rounded',          h:6, b:0, r:true,  f1:800, f2:1500 },
+  { s:'ɑ',  name:'Open back unrounded',         h:6, b:2, r:false, f1:750, f2:940 },
+  { s:'ɒ',  name:'Open back rounded',           h:6, b:2, r:true,  f1:700, f2:760 },
+];
+
+// Example words by language for each vowel
+const EXAMPLES = {
+  'i':  { en:'machine', fr:'si',  es:'sí',  zh:'yī (一)' },
+  'y':  { fr:'tu',      de:'über' },
+  'ɨ':  { ru:'мы',      pl:'syn' },
+  'ʉ':  { en:'food (Aus.)', sv:'hus' },
+  'ɯ':  { tr:'kız',     ja:'fuyu (冬)' },
+  'u':  { en:'food',    fr:'tout',es:'tú',  zh:'wū (屋)' },
+  'ɪ':  { en:'bit',     de:'mit' },
+  'ʏ':  { de:'müssen',  fr:'-' },
+  'ʊ':  { en:'foot',    de:'Mutter' },
+  'e':  { fr:'thé',     es:'mesa',zh:'ye (耶)', ja:'e (絵)' },
+  'ø':  { fr:'feu',     de:'Söhne' },
+  'ɘ':  { en:'(rare)' },
+  'ɵ':  { sv:'kust' },
+  'ɤ':  { zh:'gē (歌)' },
+  'o':  { fr:'beau',    es:'no',  zh:'wǒ (我)', ja:'o (尾)' },
+  'ə':  { en:'about',   fr:'le' },
+  'ɛ':  { en:'bed',     fr:'père',es:'(reg.)' },
+  'œ':  { fr:'sœur',    de:'Götter' },
+  'ɜ':  { en:'bird (RP)' },
+  'ɞ':  { en:'(rare)' },
+  'ʌ':  { en:'cup',     zh:'-' },
+  'ɔ':  { en:'thought (RP)', fr:'porte', zh:'gòu (够)' },
+  'æ':  { en:'cat',     ar:'تَ' },
+  'ɐ':  { en:'butter (Aus.)', de:'-' },
+  'a':  { fr:'patte',   es:'pan', ja:'a (亜)', ar:'بَ' },
+  'ɶ':  { en:'(theoretical)' },
+  'ɑ':  { en:'father',  fr:'pâte' },
+  'ɒ':  { en:'lot (RP)' },
+};
+
+// Language inventories (which IPA symbols appear)
+const LANGUAGES = {
+  'all':   VOWELS.map(v => v.s),
+  'en-rp': ['i','ɪ','e','ɛ','æ','ə','ɜ','ʌ','ɑ','ɒ','ɔ','ʊ','u'],
+  'en-ga': ['i','ɪ','ɛ','æ','ə','ʌ','ɑ','ɔ','ʊ','u'],
+  'fr':    ['i','y','e','ø','ɛ','œ','ə','a','ɑ','ɔ','o','u'],
+  'es':    ['i','e','a','o','u'],
+  'zh':    ['i','y','ɤ','ə','a','o','u','ʊ','ɛ'],
+  'ja':    ['i','e','a','o','ɯ'],
+  'ar':    ['i','a','u','ɑ'],
+};
+
+// Minimal pairs database keyed by sorted "a|b"
+const MINIMAL_PAIRS = {
+  'i|ɪ':  [['beat','bit'],['seat','sit'],['feel','fill'],['sheep','ship']],
+  'ɛ|æ':  [['bed','bad'],['set','sat'],['said','sad']],
+  'ʌ|ɑ':  [['cut','cot'],['nut','not'],['luck','lock']],
+  'ɔ|ɑ':  [['caught','cot'],['bought','bot'],['dawn','don']],
+  'ʊ|u':  [['full','fool'],['pull','pool'],['look','Luke']],
+  'e|ɛ':  [['(Fr.) thé','(Fr.) taie'],['(Sp.) mesa','—']],
+  'i|y':  [['(Fr.) si','(Fr.) su'],['(Fr.) dit','(Fr.) du']],
+  'u|y':  [['(Fr.) tout','(Fr.) tu'],['(Fr.) loup','(Fr.) lu']],
+  'o|u':  [['(Sp.) hombre','(Sp.) humo']],
+  'a|ɑ':  [['(Fr.) patte','(Fr.) pâte']],
+  'æ|ɛ':  [['bad','bed'],['mat','met']],
+  'ʌ|æ':  [['cup','cap'],['cut','cat']],
+  'i|ɛ':  [['beat','bet'],['seat','set']],
+  'ɪ|ɛ':  [['bit','bet'],['sit','set']],
+  'e|i':  [['(Sp.) pena','(Sp.) pina']],
+};
+function pairKey(a, b) { return [a,b].sort().join('|'); }
+
+// -----------------------------------------------------------------------------
+// State
+// -----------------------------------------------------------------------------
+
+const state = {
+  view: 'ipa',                 // 'ipa' or 'formant'
+  language: 'all',
+  hovered: null,
+  selected: [],                // up to 2 vowels for minimal pairs
+  guess: { x: 0.5, y: 0.5 },   // normalised position in the chart space
+  target: null,                // vowel.s
+  draggingGuess: false,
+  f0: 130,
+  duration: 450,
+  voice: 'male',
+};
+
+// -----------------------------------------------------------------------------
+// Canvas / coordinate mapping
+// -----------------------------------------------------------------------------
+
+const canvas = document.getElementById('vowelCanvas');
+const tooltip = document.getElementById('tooltip');
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return { ctx, w: r.width, h: r.height };
+}
+
+// Pad inside the canvas
+const PAD = { l: 60, r: 60, t: 50, b: 50 };
+
+// IPA trapezoid corners (normalised height/back coordinates -> screen)
+function ipaToXY(h, b, w, hgt) {
+  // height: 0..6 -> top to bottom
+  // back:   0..2 -> left to right
+  const yT = PAD.t;
+  const yB = hgt - PAD.b;
+  const plotH = yB - yT;
+  const fy = h / 6;                  // 0 top, 1 bottom
+  const y = yT + fy * plotH;
+  // top edge wider (front 0 .. back 2), bottom edge narrower (trapezoid)
+  // Standard IPA trapezoid: top edge spans full width, bottom edge inset on left
+  const xLtop = PAD.l;
+  const xRtop = w - PAD.r;
+  const xLbot = PAD.l + (w - PAD.l - PAD.r) * 0.22;
+  const xRbot = w - PAD.r;
+  const xL = xLtop + (xLbot - xLtop) * fy;
+  const xR = xRtop + (xRbot - xRtop) * fy;
+  const fb = b / 2;
+  const x = xL + (xR - xL) * fb;
+  return { x, y };
+}
+
+function formantToXY(f1, f2, w, hgt) {
+  // x: F2 inverted (high F2 = front = left). Standard range ~ 600..2500 Hz
+  // y: F1 inverted (low F1 = close = top). Range ~ 200..900 Hz
+  const f2min = 600, f2max = 2500;
+  const f1min = 200, f1max = 900;
+  const xL = PAD.l, xR = w - PAD.r;
+  const yT = PAD.t, yB = hgt - PAD.b;
+  // invert F2: large F2 -> left
+  const x = xL + (f2max - f2) / (f2max - f2min) * (xR - xL);
+  const y = yT + (f1 - f1min) / (f1max - f1min) * (yB - yT);
+  return { x, y };
+}
+
+function vowelXY(v, w, h) {
+  if (state.view === 'ipa') return ipaToXY(v.h, v.b, w, h);
+  return formantToXY(v.f1, v.f2, w, h);
+}
+
+function getDotRadius(v) {
+  return state.hovered && state.hovered === v.s ? 12 : 9;
+}
+
+// -----------------------------------------------------------------------------
+// Draw
+// -----------------------------------------------------------------------------
+
+function draw() {
+  const { ctx, w, h } = fitCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+
+  if (state.view === 'ipa') drawTrapezoid(ctx, w, h);
+  else drawFormantAxes(ctx, w, h);
+
+  // dots
+  const langSet = new Set(LANGUAGES[state.language]);
+  for (const v of VOWELS) {
+    const { x, y } = vowelXY(v, w, h);
+    const inLang = langSet.has(v.s);
+    const isHover = state.hovered === v.s;
+    const isSelected = state.selected.includes(v.s);
+    const isTarget = state.target === v.s;
+    const alpha = state.language === 'all' ? 1 : (inLang ? 1 : 0.25);
+
+    // glow ring if in active language
+    if (inLang && state.language !== 'all') {
+      ctx.beginPath();
+      ctx.arc(x, y, 14, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(34,211,238,0.12)';
+      ctx.fill();
+    }
+    if (isSelected) {
+      ctx.beginPath();
+      ctx.arc(x, y, 16, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(245,158,11,0.7)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    if (isTarget) {
+      ctx.beginPath();
+      ctx.arc(x, y, 18, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(251,191,36,0.8)';
+      ctx.setLineDash([4,3]);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.globalAlpha = alpha;
+    // Faded vowels (not in active inventory) render as smaller dim dots without labels
+    const showLabel = (state.language === 'all') || inLang || isHover || isSelected || isTarget;
+    const baseR = getDotRadius(v);
+    const r = (showLabel) ? baseR : Math.max(3, baseR - 5);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    if (v.r) {
+      // rounded = filled
+      ctx.fillStyle = isHover ? '#22d3ee' : (inLang ? '#22d3ee' : '#5b6573');
+      ctx.fill();
+    } else {
+      // unrounded = open
+      ctx.fillStyle = '#0a0e14';
+      ctx.fill();
+      ctx.strokeStyle = isHover ? '#22d3ee' : (inLang ? '#22d3ee' : '#5b6573');
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // label — only for in-inventory vowels (or "all" view, or hover/selected/target)
+    if (showLabel) {
+      ctx.font = '15px "Noto Sans", sans-serif';
+      ctx.fillStyle = isHover ? '#fff' : (inLang ? '#e6edf3' : '#5b6573');
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // offset labels to avoid overlap
+      const lx = x + r + 8;
+      const ly = y;
+      ctx.fillText(v.s, lx, ly);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // user guess dot
+  if (state.target) {
+    const gp = guessScreen(w, h);
+    ctx.beginPath();
+    ctx.arc(gp.x, gp.y, 12, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(245,158,11,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.font = '11px Inter, sans-serif';
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText('?', gp.x, gp.y);
+
+    // line to target
+    const v = VOWELS.find(x => x.s === state.target);
+    if (v) {
+      const tp = vowelXY(v, w, h);
+      ctx.beginPath();
+      ctx.moveTo(gp.x, gp.y);
+      ctx.lineTo(tp.x, tp.y);
+      ctx.setLineDash([3,4]);
+      ctx.strokeStyle = 'rgba(245,158,11,0.6)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+function drawTrapezoid(ctx, w, h) {
+  // corners
+  const tl = ipaToXY(0,0,w,h);
+  const tr = ipaToXY(0,2,w,h);
+  const bl = ipaToXY(6,0,w,h);
+  const br = ipaToXY(6,2,w,h);
+
+  // fill
+  ctx.fillStyle = '#0d131c';
+  ctx.beginPath();
+  ctx.moveTo(tl.x, tl.y);
+  ctx.lineTo(tr.x, tr.y);
+  ctx.lineTo(br.x, br.y);
+  ctx.lineTo(bl.x, bl.y);
+  ctx.closePath();
+  ctx.fill();
+  // outline (subtle, helps the trapezoid stand out against the dark background)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(151,161,176,0.35)';
+  ctx.lineWidth = 1.25;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(tl.x, tl.y);
+  ctx.lineTo(tr.x, tr.y);
+  ctx.lineTo(br.x, br.y);
+  ctx.lineTo(bl.x, bl.y);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+
+  // horizontal lines for height
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  for (let hh = 0; hh <= 6; hh++) {
+    const a = ipaToXY(hh,0,w,h);
+    const b = ipaToXY(hh,2,w,h);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    if (hh === 0 || hh === 6) ctx.strokeStyle = '#2a3850';
+    else ctx.strokeStyle = '#1a2230';
+    ctx.stroke();
+  }
+  // verticals
+  for (let bb = 0; bb <= 2; bb++) {
+    const a = ipaToXY(0,bb,w,h);
+    const b = ipaToXY(6,bb,w,h);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = bb === 0 || bb === 2 ? '#2a3850' : '#1a2230';
+    ctx.stroke();
+  }
+
+  // labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  // x labels (front / central / back) - along top
+  const labelY = PAD.t - 18;
+  const t0 = ipaToXY(0,0,w,h), t1 = ipaToXY(0,1,w,h), t2 = ipaToXY(0,2,w,h);
+  ctx.fillText('FRONT', t0.x, labelY);
+  ctx.fillText('CENTRAL', t1.x, labelY);
+  ctx.fillText('BACK', t2.x, labelY);
+  // y labels along right side
+  ctx.textAlign = 'left';
+  const heights = ['Close','Near-close','Close-mid','Mid','Open-mid','Near-open','Open'];
+  for (let hh = 0; hh < 7; hh++) {
+    const p = ipaToXY(hh, 2, w, h);
+    ctx.fillStyle = '#5b6573';
+    ctx.fillText(heights[hh], p.x + 14, p.y + 3);
+  }
+}
+
+function drawFormantAxes(ctx, w, h) {
+  // background
+  ctx.fillStyle = '#0d131c';
+  ctx.fillRect(PAD.l, PAD.t, w - PAD.l - PAD.r, h - PAD.t - PAD.b);
+
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px JetBrains Mono, monospace';
+
+  // F2 ticks (x axis, inverted)
+  const f2ticks = [2400, 2000, 1600, 1200, 800];
+  ctx.textAlign = 'center';
+  for (const f of f2ticks) {
+    const p = formantToXY(500, f, w, h);
+    ctx.beginPath();
+    ctx.moveTo(p.x, PAD.t); ctx.lineTo(p.x, h - PAD.b);
+    ctx.stroke();
+    ctx.fillText(f, p.x, PAD.t - 8);
+  }
+  // F1 ticks (y axis)
+  const f1ticks = [300, 400, 500, 600, 700, 800];
+  ctx.textAlign = 'right';
+  for (const f of f1ticks) {
+    const p = formantToXY(f, 1500, w, h);
+    ctx.beginPath();
+    ctx.moveTo(PAD.l, p.y); ctx.lineTo(w - PAD.r, p.y);
+    ctx.stroke();
+    ctx.fillText(f, PAD.l - 8, p.y + 3);
+  }
+
+  // border
+  ctx.strokeStyle = '#2a3850';
+  ctx.strokeRect(PAD.l, PAD.t, w - PAD.l - PAD.r, h - PAD.t - PAD.b);
+
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('F2 (Hz, inverted) →', PAD.l + (w - PAD.l - PAD.r)/2, h - PAD.b + 30);
+  ctx.save();
+  ctx.translate(20, PAD.t + (h - PAD.t - PAD.b)/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('F1 (Hz) →', 0, 0);
+  ctx.restore();
+}
+
+function guessScreen(w, h) {
+  // guess.x, guess.y are normalised to plot area
+  return {
+    x: PAD.l + state.guess.x * (w - PAD.l - PAD.r),
+    y: PAD.t + state.guess.y * (h - PAD.t - PAD.b),
+  };
+}
+
+function screenToGuess(x, y, w, h) {
+  return {
+    x: Math.max(0, Math.min(1, (x - PAD.l) / (w - PAD.l - PAD.r))),
+    y: Math.max(0, Math.min(1, (y - PAD.t) / (h - PAD.t - PAD.b))),
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Hover and click
+// -----------------------------------------------------------------------------
+
+function findVowelAt(x, y) {
+  const r = canvas.getBoundingClientRect();
+  for (const v of VOWELS) {
+    const { x: vx, y: vy } = vowelXY(v, r.width, r.height);
+    const dx = vx - x, dy = vy - y;
+    if (dx*dx + dy*dy < 14*14) return v;
+  }
+  return null;
+}
+
+let tooltipHideTimer = null;
+function hideTooltip(delay = 0) {
+  if (tooltipHideTimer) clearTimeout(tooltipHideTimer);
+  if (delay <= 0) {
+    tooltip.classList.remove('visible');
+  } else {
+    tooltipHideTimer = setTimeout(() => tooltip.classList.remove('visible'), delay);
+  }
+}
+canvas.addEventListener('mousemove', (e) => {
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+
+  if (state.draggingGuess) {
+    state.guess = screenToGuess(x, y, r.width, r.height);
+    updateGuessReadouts();
+    draw();
+    return;
+  }
+
+  // guess dot hover takes priority
+  const gp = guessScreen(r.width, r.height);
+  const dgx = gp.x - x, dgy = gp.y - y;
+  if (state.target && dgx*dgx + dgy*dgy < 14*14) {
+    canvas.style.cursor = 'grab';
+    state.hovered = null;
+    hideTooltip(0);
+    draw();
+    return;
+  }
+
+  const v = findVowelAt(x, y);
+  if (v) {
+    state.hovered = v.s;
+    canvas.style.cursor = 'pointer';
+    if (tooltipHideTimer) { clearTimeout(tooltipHideTimer); tooltipHideTimer = null; }
+    showTooltip(v, e.clientX, e.clientY);
+  } else {
+    state.hovered = null;
+    canvas.style.cursor = 'default';
+    hideTooltip(80);
+  }
+  draw();
+});
+
+canvas.addEventListener('mousedown', (e) => {
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  if (state.target) {
+    const gp = guessScreen(r.width, r.height);
+    const dgx = gp.x - x, dgy = gp.y - y;
+    if (dgx*dgx + dgy*dgy < 14*14) {
+      state.draggingGuess = true;
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+  }
+});
+canvas.addEventListener('mouseup', () => {
+  if (state.draggingGuess) { state.draggingGuess = false; canvas.style.cursor = 'grab'; }
+});
+canvas.addEventListener('mouseleave', () => {
+  state.hovered = null;
+  hideTooltip(0);
+  state.draggingGuess = false;
+  draw();
+});
+
+canvas.addEventListener('click', (e) => {
+  const r = canvas.getBoundingClientRect();
+  const v = findVowelAt(e.clientX - r.left, e.clientY - r.top);
+  if (!v) return;
+  playVowel(v);
+  // update selected list for minimal pairs (up to 2)
+  if (state.selected.length === 2) state.selected = [v.s];
+  else if (state.selected.includes(v.s)) state.selected = state.selected.filter(s => s !== v.s);
+  else state.selected.push(v.s);
+  updateMinimalPairs();
+  updateF1F2(v);
+  draw();
+});
+
+function showTooltip(v, cx, cy) {
+  const ex = EXAMPLES[v.s] || {};
+  const exLines = [];
+  if (ex.en) exLines.push(`<b>EN</b> ${ex.en}`);
+  if (ex.fr) exLines.push(`<b>FR</b> ${ex.fr}`);
+  if (ex.es) exLines.push(`<b>ES</b> ${ex.es}`);
+  if (ex.zh) exLines.push(`<b>ZH</b> ${ex.zh}`);
+  if (ex.ja) exLines.push(`<b>JA</b> ${ex.ja}`);
+  if (ex.de) exLines.push(`<b>DE</b> ${ex.de}`);
+  if (ex.ar) exLines.push(`<b>AR</b> ${ex.ar}`);
+  tooltip.innerHTML = `
+    <div style="display:flex; align-items:center;">
+      <span class="symbol ipa">${v.s}</span>
+      <span class="name">${v.name}</span>
+    </div>
+    <div class="formants">F1 ${v.f1} Hz · F2 ${v.f2} Hz · ${v.r ? 'rounded' : 'unrounded'}</div>
+    ${exLines.length ? `<div class="ex">${exLines.join(' &nbsp; ')}</div>` : ''}
+    <div class="ex" style="margin-top: 6px; color: var(--text-faint);">Click to hear · adds to minimal-pair selection</div>
+  `;
+  tooltip.classList.add('visible');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const tw = tooltip.offsetWidth || 240;
+  const th = tooltip.offsetHeight || 80;
+  let tx = cx - rect.left + 14;
+  let ty = cy - rect.top + 14;
+  if (tx + tw > rect.width) tx = cx - rect.left - tw - 14;
+  if (ty + th > rect.height) ty = cy - rect.top - th - 14;
+  tooltip.style.left = tx + 'px';
+  tooltip.style.top = ty + 'px';
+}
+
+// -----------------------------------------------------------------------------
+// Audio: simple two-formant synthesis
+// -----------------------------------------------------------------------------
+
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playVowel(v) {
+  const ctx = getAudio();
+  if (ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime;
+  const dur = state.duration / 1000;
+
+  // Voice-scale formants and F0
+  const voiceScale = state.voice === 'female' ? 1.12 : state.voice === 'child' ? 1.25 : 1.0;
+  const F1 = v.f1 * voiceScale;
+  const F2 = v.f2 * voiceScale;
+  const f0 = state.f0 * (state.voice === 'female' ? 1.5 : state.voice === 'child' ? 1.9 : 1.0);
+
+  // Source: a sawtooth-like glottal pulse approximated by a sawtooth oscillator
+  const src = ctx.createOscillator();
+  src.type = 'sawtooth';
+  src.frequency.setValueAtTime(f0, now);
+  // slight pitch contour for naturalness
+  src.frequency.linearRampToValueAtTime(f0 * 0.96, now + dur);
+
+  // Two bandpass filters for F1 and F2
+  const bp1 = ctx.createBiquadFilter();
+  bp1.type = 'bandpass';
+  bp1.frequency.value = F1;
+  bp1.Q.value = 8;
+  const bp2 = ctx.createBiquadFilter();
+  bp2.type = 'bandpass';
+  bp2.frequency.value = F2;
+  bp2.Q.value = 12;
+
+  // gain envelope (attack, sustain, release)
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0, now);
+  env.gain.linearRampToValueAtTime(0.25, now + 0.04);
+  env.gain.linearRampToValueAtTime(0.25, now + dur - 0.07);
+  env.gain.linearRampToValueAtTime(0, now + dur);
+
+  // Mix paths: F1 + F2 + a small amount of raw source for spectral richness
+  const mix = ctx.createGain();
+  mix.gain.value = 0.7;
+
+  // F1 path
+  const g1 = ctx.createGain(); g1.gain.value = 1.0;
+  src.connect(bp1).connect(g1).connect(mix);
+  // F2 path
+  const g2 = ctx.createGain(); g2.gain.value = 0.7;
+  src.connect(bp2).connect(g2).connect(mix);
+  // dry tiny bit for energy
+  const dry = ctx.createGain(); dry.gain.value = 0.05;
+  src.connect(dry).connect(mix);
+
+  mix.connect(env).connect(ctx.destination);
+
+  src.start(now);
+  src.stop(now + dur + 0.05);
+}
+
+// -----------------------------------------------------------------------------
+// Side panels
+// -----------------------------------------------------------------------------
+
+function updateMinimalPairs() {
+  const sub = document.getElementById('mpSub');
+  const list = document.getElementById('minimalList');
+  if (state.selected.length === 0) {
+    sub.textContent = 'Click two vowels to see contrasting words';
+    list.innerHTML = `<div style="color: var(--text-faint); padding: 6px;">Select a first vowel…</div>`;
+    return;
+  }
+  if (state.selected.length === 1) {
+    sub.innerHTML = `Selected <span class="ipa" style="color: var(--cyan); font-size: 18px;">${state.selected[0]}</span> — pick a second to contrast`;
+    list.innerHTML = `<div style="color: var(--text-faint); padding: 6px;">Waiting for second vowel…</div>`;
+    return;
+  }
+  const a = state.selected[0], b = state.selected[1];
+  sub.innerHTML = `Contrast <span class="ipa" style="color: var(--cyan); font-size: 16px;">${a}</span> ↔ <span class="ipa" style="color: var(--amber); font-size: 16px;">${b}</span>`;
+  const key = pairKey(a, b);
+  const pairs = MINIMAL_PAIRS[key];
+  if (!pairs) {
+    list.innerHTML = `<div style="color: var(--text-faint); padding: 6px; line-height: 1.6;">
+      No standard minimal pair on file for this contrast.<br>
+      <span style="font-size:11px;">Try contrasts like /i/↔/ɪ/, /ɛ/↔/æ/, /ʌ/↔/ɑ/, /ʊ/↔/u/.</span>
+    </div>`;
+    return;
+  }
+  list.innerHTML = pairs.map(p =>
+    `<div class="minimal-row">
+      <div><b>${p[0]}</b> /…${a}…/</div>
+      <div class="vs">↔</div>
+      <div><b>${p[1]}</b> /…${b}…/</div>
+    </div>`
+  ).join('');
+}
+
+function updateF1F2(v) {
+  document.getElementById('rF1').textContent = v.f1 + ' Hz';
+  document.getElementById('rF2').textContent = v.f2 + ' Hz';
+}
+
+function updateGuessReadouts() {
+  if (!state.target) {
+    document.getElementById('rDist').textContent = '—';
+    document.getElementById('rTarget').textContent = '—';
+    return;
+  }
+  const v = VOWELS.find(x => x.s === state.target);
+  const r = canvas.getBoundingClientRect();
+  const gp = guessScreen(r.width, r.height);
+  const tp = vowelXY(v, r.width, r.height);
+  const dx = (gp.x - tp.x);
+  const dy = (gp.y - tp.y);
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  document.getElementById('rDist').textContent = Math.round(dist) + ' px';
+  document.getElementById('rTarget').textContent = v.s;
+  const ex = document.getElementById('guessExplainer');
+  if (dist < 20) ex.innerHTML = `<strong>Excellent.</strong> Your placement is within ${Math.round(dist)} px of <span class="ipa" style="color: var(--cyan);">${v.s}</span>.`;
+  else if (dist < 60) ex.innerHTML = `Close. Your placement is ${Math.round(dist)} px from the standard position of <span class="ipa" style="color: var(--cyan);">${v.s}</span>.`;
+  else ex.innerHTML = `Your placement is <strong>${Math.round(dist)} px</strong> away from <span class="ipa" style="color: var(--cyan);">${v.s}</span>. Move it ${dx < 0 ? 'right' : 'left'} and ${dy < 0 ? 'down' : 'up'}.`;
+}
+
+// -----------------------------------------------------------------------------
+// Wiring
+// -----------------------------------------------------------------------------
+
+document.querySelectorAll('#viewSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#viewSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.view = b.dataset.view;
+    document.getElementById('chartSub').textContent =
+      state.view === 'ipa' ? 'Articulatory view — click a vowel to hear it'
+                            : 'Acoustic view: F1 vs F2 (Hz, inverted)';
+    draw();
+    updateGuessReadouts();
+  });
+});
+
+document.querySelectorAll('#langSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#langSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.language = b.dataset.lang;
+    draw();
+  });
+});
+
+document.querySelectorAll('#voiceSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#voiceSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.voice = b.dataset.v;
+  });
+});
+
+document.getElementById('f0Slider').addEventListener('input', (e) => {
+  state.f0 = +e.target.value;
+  document.getElementById('f0Val').textContent = state.f0 + ' Hz';
+});
+document.getElementById('durSlider').addEventListener('input', (e) => {
+  state.duration = +e.target.value;
+  document.getElementById('durVal').textContent = state.duration + ' ms';
+});
+
+document.getElementById('clearPairBtn').addEventListener('click', () => {
+  state.selected = [];
+  updateMinimalPairs();
+  draw();
+});
+
+// Build target list
+const targetSeg = document.getElementById('targetSeg');
+targetSeg.innerHTML = VOWELS.map(v => `<button data-s="${v.s}" class="ipa" style="font-size: 14px;">${v.s}</button>`).join('');
+targetSeg.querySelectorAll('button').forEach(b => {
+  b.addEventListener('click', () => {
+    targetSeg.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.target = b.dataset.s;
+    // initialise guess at chart centre
+    state.guess = { x: 0.5, y: 0.5 };
+    updateGuessReadouts();
+    draw();
+  });
+});
+
+window.addEventListener('resize', () => { draw(); updateGuessReadouts(); });
+
+// -----------------------------------------------------------------------------
+// Try-this wiring
+// -----------------------------------------------------------------------------
+
+const TRY_NOTES = {
+  iu: "Same height (close), opposite frontness. Listen to how F2 changes the perceived vowel.",
+  rp: "RP has 13 monophthongs — you can see them light up across the chart. Some, like ʌ, are unique to English.",
+  mp: "Same place, different length and tension. Try saying both — the chart shows where they sit.",
+};
+function setTryNote(key) {
+  const el = document.getElementById('tryNote');
+  if (el && TRY_NOTES[key]) el.textContent = TRY_NOTES[key];
+}
+
+document.getElementById('tryIuBtn').addEventListener('click', () => {
+  setTryNote('iu');
+  const vi = VOWELS.find(v => v.s === 'i');
+  const vu = VOWELS.find(v => v.s === 'u');
+  if (vi) playVowel(vi);
+  setTimeout(() => { if (vu) playVowel(vu); }, (state.duration + 250));
+});
+
+document.getElementById('tryRpBtn').addEventListener('click', () => {
+  setTryNote('rp');
+  const langButtons = document.querySelectorAll('#langSeg button');
+  langButtons.forEach(x => x.classList.remove('active'));
+  const rpBtn = document.querySelector('#langSeg button[data-lang="en-rp"]');
+  if (rpBtn) {
+    rpBtn.classList.add('active');
+    state.language = 'en-rp';
+    draw();
+    rpBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+});
+
+document.getElementById('tryMpBtn').addEventListener('click', () => {
+  setTryNote('mp');
+  state.selected = ['ɪ', 'i'];
+  updateMinimalPairs();
+  draw();
+  const list = document.getElementById('minimalList');
+  if (list) list.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+draw();
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const btn = document.getElementById('kbdHelpBtn');
+  if (!modal || !btn) return;
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  btn.addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === '1') { document.getElementById('tryIuBtn').click(); }
+    else if (e.key === '2') { document.getElementById('tryRpBtn').click(); }
+    else if (e.key === '3') { document.getElementById('tryMpBtn').click(); }
+    else if (k === 'f') {
+      const tgt = document.querySelector('#viewSeg button[data-view="formant"]');
+      if (tgt) tgt.click();
+    }
+    else if (k === 't') {
+      const tgt = document.querySelector('#viewSeg button[data-view="ipa"]');
+      if (tgt) tgt.click();
+    }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="fourier_builder.html">
+      <div class="related-title">Fourier Series</div>
+      <div class="related-desc">Build any waveform from sines, or watch the epicycles spin</div>
+    </a>
+    <a class="related-card" href="stroop_effect.html">
+      <div class="related-title">Stroop Effect</div>
+      <div class="related-desc">Measure your own interference score across blocks</div>
+    </a>
+    <a class="related-card" href="signal_detection.html">
+      <div class="related-title">Signal Detection</div>
+      <div class="related-desc">Sensitivity (d′) vs criterion (β), with full ROC</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

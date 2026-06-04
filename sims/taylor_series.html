@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taylor Series Approximation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+
+* { box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.num, .mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+
+/* Keyboard help indicator + modal */
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+}
+
+.canvas-area { display: flex; flex-direction: column; gap: 16px; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.panel h2 { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
+
+.section-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.plot-wrap {
+  position: relative;
+  width: 100%;
+  background: var(--bg-elev-1);
+  border-radius: var(--r-md);
+  border: 1px solid var(--panel-border);
+  overflow: hidden;
+  cursor: crosshair;
+}
+.plot-wrap canvas { display: block; width: 100%; height: 100%; }
+
+#main-wrap { aspect-ratio: 2.1 / 1; }
+#err-wrap { aspect-ratio: 3.5 / 1; }
+
+.controls .row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.controls .row:last-child { margin-bottom: 0; }
+.controls .lbl { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-dim); }
+.controls .lbl .val { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%;
+  height: 4px; border-radius: 999px; background: var(--grid); outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none;
+}
+input[type=range]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none;
+}
+button {
+  font-family: inherit; font-size: 13px; color: var(--text);
+  background: var(--bg-elev-1); border: 1px solid var(--panel-border);
+  border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease;
+}
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+button.ghost:hover { border-color: var(--text-dim); background: var(--bg-elev-2); }
+
+.seg {
+  display: inline-flex; background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px;
+  flex-wrap: wrap;
+}
+.seg button {
+  border: none; background: transparent; padding: 6px 12px; border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+}
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readout .k {
+  text-transform: uppercase; letter-spacing: 0.07em; font-size: 10px; color: var(--text-dim);
+}
+.readout .k[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .v { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--text); }
+.readout .v.cyan { color: var(--cyan); }
+.readout .v.rose { color: var(--rose); }
+.readout .v.amber { color: var(--amber); }
+.readout .v.green { color: var(--green); }
+.readout .v.small { font-size: 14px; }
+
+.explainer {
+  background: var(--bg-elev-1);
+  border-left: 2px solid var(--cyan);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  line-height: 1.55;
+}
+.explainer .hi { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+
+.formula-box {
+  background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.formula-box .lbl { color: var(--text-dim); margin-right: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.formula-box sub, .formula-box sup { font-size: 0.75em; }
+.formula-box .term-pos { color: var(--cyan); }
+.formula-box .term-neg { color: var(--violet); }
+.formula-box .ellipsis { color: var(--text-dim); }
+
+.func-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-dim); }
+.legend .item { display: flex; align-items: center; gap: 6px; }
+.legend .sw { width: 14px; height: 3px; border-radius: 2px; }
+
+.insight-banner { padding: 10px 16px 10px 14px; border-left: 2px solid var(--cyan); color: var(--text-dim); font-size: 13px; font-style: italic; margin: 14px 24px 0; max-width: 1352px; background: rgba(34,211,238,0.04); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.try-panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px; box-shadow: var(--shadow); }
+.try-panel .try-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); font-weight: 600; margin-bottom: 10px; }
+.try-panel .try-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.try-panel .try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-panel .try-buttons button:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-2); }
+.try-panel .try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; min-height: 1em; transition: color 200ms ease, opacity 200ms ease; opacity: 0.6; }
+.try-panel .try-note.show { color: var(--text); opacity: 1; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; border-radius: 999px; }
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+#main-wrap { cursor: grab; }
+#main-wrap.dragging { cursor: grabbing; }
+.plot-wrap canvas { transition: filter 120ms ease; }
+
+@media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { main { padding: 16px; gap: 16px; } .insight-banner { margin: 12px 16px 0; } }
+@media (max-width: 768px) {
+  .formula-box { white-space: normal; word-break: break-word; overflow-x: visible; }
+}
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">&larr; All simulations</a>
+  <div class="title-block">
+    <h1>Taylor Series Approximation</h1>
+    <p class="sub">Polynomial approximations that agree with a function and its first n derivatives at a chosen point</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>sin(x)</span>
+      <span class="kbd-key">2</span><span>cos(x)</span>
+      <span class="kbd-key">3</span><span>e^x</span>
+      <span class="kbd-key">4</span><span>ln(1+x)</span>
+      <span class="kbd-key">5</span><span>1/(1−x)</span>
+      <span class="kbd-key">6</span><span>arctan(x)</span>
+      <span class="kbd-key">+ / −</span><span>Increase / decrease number of terms</span>
+      <span class="kbd-key">← / →</span><span>Move expansion point ±0.1</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+<div class="insight-banner">A polynomial centred on one point can mimic almost any function — but only near that point. Move away and the approximation breaks down.</div>
+
+<main>
+  <div class="canvas-area">
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+        <h2 style="margin:0;">f(x) and T<sub>n</sub>(x)</h2>
+        <div class="legend">
+          <div class="item"><span class="sw" style="background:#e6edf3"></span> f(x)</div>
+          <div class="item"><span class="sw" style="background:var(--cyan)"></span> T<sub>n</sub>(x)</div>
+          <div class="item"><span class="sw" style="background:var(--amber)"></span> drag: expansion point a</div>
+          <div class="item"><span class="sw" style="background:var(--violet)"></span> individual terms</div>
+        </div>
+      </div>
+      <div class="plot-wrap" id="main-wrap">
+        <canvas id="main"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Polynomial</h2>
+      <div class="formula-box" id="formula">T<sub>n</sub>(x) = …</div>
+    </div>
+
+    <div class="panel">
+      <h2>Error |f(x) − T<sub>n</sub>(x)|  (log scale)</h2>
+      <div class="plot-wrap" id="err-wrap" style="cursor:default;">
+        <canvas id="err"></canvas>
+      </div>
+    </div>
+
+    <div class="try-panel">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="sin3">sin(x), 3 terms</button>
+        <button data-try="sin11">sin(x), 11 terms</button>
+        <button data-try="geoDiv">1/(1−x), divergence</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+
+    <div class="panel explainer" id="explainer">Loading…</div>
+  </div>
+
+  <aside class="controls">
+    <div class="panel">
+      <div class="section-label">Target function</div>
+      <div class="seg" id="func-seg">
+        <button data-fn="sin" class="active">sin(x)</button>
+        <button data-fn="cos">cos(x)</button>
+        <button data-fn="exp">e^x</button>
+        <button data-fn="ln">ln(1+x)</button>
+        <button data-fn="geo">1/(1−x)</button>
+        <button data-fn="atan">arctan(x)</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="section-label">Approximation</div>
+      <div class="row">
+        <div class="lbl"><span>Terms n</span><span class="val" id="n-val">5</span></div>
+        <input type="range" id="n" min="1" max="20" value="5">
+      </div>
+      <div class="row">
+        <div class="lbl"><span>Expansion point a</span><span class="val" id="a-val">0.00</span></div>
+        <input type="range" id="a" min="-600" max="600" value="0" step="1">
+      </div>
+      <div class="button-row">
+        <button id="reset" class="ghost">Reset a = 0</button>
+        <button id="show-terms" class="primary">Show individual terms</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="section-label">Live readouts</div>
+      <div class="readouts">
+        <div class="readout"><span class="k">Terms n</span><span class="v cyan" id="n-r">5</span></div>
+        <div class="readout"><span class="k" title="Centre a: the point around which the Taylor series is expanded — the approximation is best near here.">Centre a</span><span class="v" id="a-r">0.00</span></div>
+        <div class="readout"><span class="k" title="The x-value at which the approximation is being evaluated and compared to the true function.">Test point x*</span><span class="v" id="tp-r">π</span></div>
+        <div class="readout"><span class="k" title="The exact value of the original function at the test point x*.">f(x*)</span><span class="v small" id="fx-r">—</span></div>
+        <div class="readout"><span class="k" title="The value of the degree-n Taylor polynomial evaluated at the test point x*.">T<sub>n</sub>(x*)</span><span class="v small cyan" id="tn-r">—</span></div>
+        <div class="readout"><span class="k" title="The absolute difference between the true value f(x*) and the Taylor approximation T_n(x*).">|error|</span><span class="v small rose" id="err-r">—</span></div>
+        <div class="readout"><span class="k" title="Lagrange remainder bound: a theoretical upper bound on the error of the truncated Taylor series.">Lagrange bound</span><span class="v small amber" id="lag-r">—</span></div>
+        <div class="readout"><span class="k" title="Radius of convergence: the distance from the centre a within which the infinite Taylor series converges to f.">Radius of conv.</span><span class="v small green" id="roc-r">∞</span></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+'use strict';
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = Math.max(1, Math.round(r.width * dpr));
+  c.height = Math.max(1, Math.round(r.height * dpr));
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return { ctx, w: r.width, h: r.height };
+}
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+// ---------- function library ----------
+// Each: f(x), nth derivative at a value, max |f^(k)(xi)| bound estimate over [a,x]
+const FUNCS = {
+  sin: {
+    label: 'sin(x)',
+    f: (x) => Math.sin(x),
+    // f^(k)(a) = sin(a + k*pi/2)
+    deriv: (k, a) => Math.sin(a + k * Math.PI / 2),
+    bound: (k, a, x) => 1,
+    roc: Infinity,
+    range: [-8, 8],
+    yRange: [-2.5, 2.5],
+    testPoint: () => Math.PI,
+    testLabel: 'π',
+  },
+  cos: {
+    label: 'cos(x)',
+    f: (x) => Math.cos(x),
+    deriv: (k, a) => Math.cos(a + k * Math.PI / 2),
+    bound: (k, a, x) => 1,
+    roc: Infinity,
+    range: [-8, 8],
+    yRange: [-2.5, 2.5],
+    testPoint: () => Math.PI,
+    testLabel: 'π',
+  },
+  exp: {
+    label: 'e^x',
+    f: (x) => Math.exp(x),
+    deriv: (k, a) => Math.exp(a),
+    bound: (k, a, x) => Math.exp(Math.max(a, x)),
+    roc: Infinity,
+    range: [-4, 4],
+    yRange: [-2, 30],
+    testPoint: () => 2,
+    testLabel: '2',
+  },
+  ln: {
+    label: 'ln(1+x)',
+    f: (x) => x > -1 ? Math.log(1 + x) : NaN,
+    // d^k/dx^k ln(1+x) at a: (-1)^(k-1) * (k-1)! / (1+a)^k for k>=1
+    deriv: (k, a) => {
+      if (k === 0) return Math.log(1 + a);
+      const sign = ((k - 1) % 2 === 0) ? 1 : -1;
+      let fact = 1;
+      for (let i = 1; i < k; i++) fact *= i;
+      return sign * fact / Math.pow(1 + a, k);
+    },
+    bound: (k, a, x) => {
+      const base = Math.min(1 + a, 1 + x);
+      if (base <= 0) return Infinity;
+      let fact = 1; for (let i = 1; i <= k; i++) fact *= i;
+      return fact / Math.pow(base, k + 1);
+    },
+    roc: 1, // converges for |x - a| < 1+a, but classically |x| < 1 at a=0
+    rocCenter: (a) => 1 + a,  // radius equals 1+a from centre a (since singular at x=-1)
+    range: [-1.5, 3],
+    yRange: [-3, 2],
+    testPoint: () => 1,
+    testLabel: '1',
+  },
+  geo: {
+    label: '1/(1−x)',
+    f: (x) => x < 1 ? 1 / (1 - x) : NaN,
+    // d^k/dx^k 1/(1-x) = k! / (1-x)^(k+1)
+    deriv: (k, a) => {
+      let fact = 1; for (let i = 1; i <= k; i++) fact *= i;
+      return fact / Math.pow(1 - a, k + 1);
+    },
+    bound: (k, a, x) => {
+      let fact = 1; for (let i = 1; i <= k + 1; i++) fact *= i;
+      const base = Math.min(1 - a, 1 - x);
+      if (base <= 0) return Infinity;
+      return fact / Math.pow(base, k + 2);
+    },
+    roc: 1,
+    rocCenter: (a) => 1 - a,
+    range: [-2, 1.6],
+    yRange: [-4, 8],
+    testPoint: () => 0.9,
+    testLabel: '0.9',
+  },
+  atan: {
+    label: 'arctan(x)',
+    f: (x) => Math.atan(x),
+    // hard to write analytic kth derivative in closed form for general a; numerical fallback at a
+    deriv: (k, a) => {
+      // use central difference on (k-1)th derivative recursively
+      // For performance, use direct formula when a=0: 0, 1, 0, -2!, 0, 4!, 0, -6!, ... (for odd k, (-1)^((k-1)/2) (k-1)!)
+      if (Math.abs(a) < 1e-9) {
+        if (k === 0) return 0;
+        if (k % 2 === 0) return 0;
+        const m = (k - 1) / 2;
+        let fact = 1; for (let i = 1; i <= k - 1; i++) fact *= i;
+        return (m % 2 === 0 ? 1 : -1) * fact;
+      }
+      // Numeric kth derivative via finite differences
+      return numericDeriv((x) => Math.atan(x), k, a);
+    },
+    bound: (k, a, x) => {
+      // |arctan^(k)(x)| ≤ (k−1)! for k ≥ 1 (loose but principled); the true sup over R is attained near ±i.
+      if (k <= 0) return Math.PI / 2;
+      let fact = 1; for (let i = 1; i < k; i++) fact *= i;
+      return fact;
+    },
+    roc: 1,
+    // Singularities at ±i; distance from real a to nearest is √(1+a²).
+    rocCenter: (a) => Math.sqrt(1 + a*a),
+    range: [-4, 4],
+    yRange: [-2, 2],
+    testPoint: () => 1,
+    testLabel: '1',
+  },
+};
+
+// Numeric kth derivative using central differences (works only for low k due to noise)
+function numericDeriv(f, k, x0) {
+  if (k === 0) return f(x0);
+  const h = 1e-2;
+  if (k === 1) return (f(x0+h) - f(x0-h)) / (2*h);
+  if (k === 2) return (f(x0+h) - 2*f(x0) + f(x0-h)) / (h*h);
+  // higher: forward repeated difference
+  let coeff = [];
+  // binomial weights
+  for (let i = 0; i <= k; i++) {
+    let c = 1; for (let j = 0; j < i; j++) c = c * (k - j) / (j + 1);
+    coeff.push(((k - i) % 2 === 0 ? 1 : -1) * c);
+  }
+  let sum = 0;
+  for (let i = 0; i <= k; i++) sum += coeff[i] * f(x0 + (k/2 - i) * h);
+  return sum / Math.pow(h, k);
+}
+
+// ---------- state ----------
+const state = {
+  fn: 'sin',
+  n: 5,
+  a: 0,
+  showTerms: false,
+  dragging: false,
+  termAnimStart: 0,
+  termAnimDuration: 400,
+  prevN: 5,
+};
+
+// ---------- taylor evaluation ----------
+function taylorTerms(fn, a, N) {
+  // Returns array of coefficients c_k for (x-a)^k terms
+  const F = FUNCS[fn];
+  const terms = [];
+  let fact = 1;
+  for (let k = 0; k < N; k++) {
+    if (k > 0) fact *= k;
+    const dk = F.deriv(k, a);
+    terms.push(dk / fact);
+  }
+  return terms;
+}
+
+function evalTaylor(terms, a, x) {
+  let s = 0;
+  const dx = x - a;
+  let pw = 1;
+  for (let k = 0; k < terms.length; k++) {
+    s += terms[k] * pw;
+    pw *= dx;
+  }
+  return s;
+}
+
+function evalTaylorTerm(terms, a, x, k) {
+  return terms[k] * Math.pow(x - a, k);
+}
+
+// ---------- formula formatting ----------
+function formatTaylorFormula() {
+  const F = FUNCS[state.fn];
+  const a = state.a;
+  const N = state.n;
+  const terms = taylorTerms(state.fn, a, N);
+
+  // Decide how many terms to display
+  const maxShow = 8;
+  const showAll = N <= maxShow;
+  const showCount = showAll ? N : maxShow;
+
+  function fmtCoef(c, k) {
+    if (!isFinite(c) || Math.abs(c) < 1e-14) return null;
+    const abs = Math.abs(c);
+    // Clean rationals 1/k! when expanding around 0 for sin/cos/exp/atan
+    if (Math.abs(a) < 1e-9 && (state.fn === 'sin' || state.fn === 'cos' || state.fn === 'exp' || state.fn === 'atan')) {
+      const facts = [1,1,2,6,24,120,720,5040,40320,362880,3628800,39916800,479001600,6227020800,87178291200,1307674368000];
+      for (let denom = 0; denom < facts.length; denom++) {
+        if (Math.abs(abs - 1/facts[denom]) < 1e-9 * Math.max(abs, 1)) {
+          if (denom === 0) return { sign: c > 0 ? '+' : '−', body: '1' };
+          if (denom === 1) return { sign: c > 0 ? '+' : '−', body: '' };
+          return { sign: c > 0 ? '+' : '−', body: '/' + facts[denom] };
+        }
+      }
+    }
+    // Geometric series around 0: all coeffs = 1
+    if (Math.abs(a) < 1e-9 && state.fn === 'geo' && Math.abs(abs - 1) < 1e-9) {
+      return { sign: c > 0 ? '+' : '−', body: '' };
+    }
+    // ln(1+x) around 0: ±1/k for k≥1
+    if (Math.abs(a) < 1e-9 && state.fn === 'ln' && k >= 1) {
+      const target = 1 / k;
+      if (Math.abs(abs - target) < 1e-9) {
+        return { sign: c > 0 ? '+' : '−', body: '/' + k };
+      }
+    }
+    // Generic: format the multiplier nicely
+    let body;
+    if (abs >= 0.01 && abs < 1000) {
+      body = '·' + abs.toFixed(4).replace(/\.?0+$/, '');
+    } else {
+      body = '·' + abs.toExponential(2);
+    }
+    return { sign: c > 0 ? '+' : '−', body };
+  }
+
+  function powStr(k) {
+    if (k === 0) return '';
+    const base = Math.abs(a) < 1e-9 ? 'x' : '(x' + (a >= 0 ? '−' : '+') + Math.abs(a).toFixed(2) + ')';
+    if (k === 1) return base;
+    return base + '<sup>' + k + '</sup>';
+  }
+
+  const F2 = FUNCS[state.fn];
+  let html = `<span class="lbl">T<sub>${N-1}</sub>(x) =</span> `;
+  let first = true;
+  let printed = 0;
+  for (let k = 0; k < showCount && k < terms.length; k++) {
+    const c = terms[k];
+    const f = fmtCoef(c, k);
+    if (!f) continue;
+    const cls = c > 0 ? 'term-pos' : 'term-neg';
+    let piece;
+    if (first) {
+      piece = `<span class="${cls}">${f.sign === '−' ? '−' : ''}${powStr(k) || '1'}${f.body}</span>`;
+    } else {
+      piece = ` <span class="${cls}">${f.sign} ${powStr(k) || '1'}${f.body}</span>`;
+    }
+    // simplify for nicely
+    html += piece;
+    first = false;
+    printed++;
+  }
+  if (!showAll && N > maxShow) {
+    html += ` <span class="ellipsis">+ … (${N - maxShow} more)</span>`;
+  }
+  if (printed === 0) html += '<span class="ellipsis">0</span>';
+  document.getElementById('formula').innerHTML = html;
+}
+
+// ---------- main plot ----------
+const mainCanvas = document.getElementById('main');
+const errCanvas = document.getElementById('err');
+
+let mainBounds = null;
+
+function drawMain() {
+  const { ctx, w, h } = fitCanvas(mainCanvas);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#0d131c';
+  ctx.fillRect(0, 0, w, h);
+
+  const F = FUNCS[state.fn];
+  const pad = { l: 50, r: 22, t: 18, b: 36 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+  const [xmin, xmax] = F.range;
+  const [ymin, ymax] = F.yRange;
+
+  function tx(x) { return pad.l + ((x - xmin) / (xmax - xmin)) * pw; }
+  function ty(y) { return pad.t + (1 - (y - ymin) / (ymax - ymin)) * ph; }
+
+  mainBounds = { pad, pw, ph, xmin, xmax, ymin, ymax, tx, ty };
+
+  // grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  const xstep = niceStep(xmax - xmin);
+  for (let x = Math.ceil(xmin / xstep) * xstep; x <= xmax; x += xstep) {
+    ctx.moveTo(tx(x), pad.t); ctx.lineTo(tx(x), pad.t + ph);
+  }
+  const ystep = niceStep(ymax - ymin);
+  for (let y = Math.ceil(ymin / ystep) * ystep; y <= ymax; y += ystep) {
+    ctx.moveTo(pad.l, ty(y)); ctx.lineTo(pad.l + pw, ty(y));
+  }
+  ctx.stroke();
+
+  // axes 0
+  ctx.strokeStyle = 'rgba(151,161,176,0.4)';
+  ctx.beginPath();
+  if (0 >= xmin && 0 <= xmax) { ctx.moveTo(tx(0), pad.t); ctx.lineTo(tx(0), pad.t + ph); }
+  if (0 >= ymin && 0 <= ymax) { ctx.moveTo(pad.l, ty(0)); ctx.lineTo(pad.l + pw, ty(0)); }
+  ctx.stroke();
+
+  // tick labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  for (let x = Math.ceil(xmin / xstep) * xstep; x <= xmax; x += xstep) {
+    ctx.fillText(fmtNum(x), tx(x), pad.t + ph + 16);
+  }
+  ctx.textAlign = 'right';
+  for (let y = Math.ceil(ymin / ystep) * ystep; y <= ymax; y += ystep) {
+    ctx.fillText(fmtNum(y), pad.l - 8, ty(y) + 4);
+  }
+
+  // radius of convergence shading
+  let roc = F.roc;
+  let rocLeft = -Infinity, rocRight = Infinity;
+  if (roc !== Infinity) {
+    let radius = roc;
+    if (F.rocCenter) radius = F.rocCenter(state.a);
+    rocLeft = state.a - radius;
+    rocRight = state.a + radius;
+    ctx.fillStyle = 'rgba(52,211,153,0.05)';
+    const lpx = Math.max(pad.l, tx(rocLeft));
+    const rpx = Math.min(pad.l + pw, tx(rocRight));
+    ctx.fillRect(lpx, pad.t, rpx - lpx, ph);
+
+    // edges
+    ctx.strokeStyle = 'rgba(52,211,153,0.35)';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    if (rocLeft > xmin) { ctx.moveTo(tx(rocLeft), pad.t); ctx.lineTo(tx(rocLeft), pad.t + ph); }
+    if (rocRight < xmax) { ctx.moveTo(tx(rocRight), pad.t); ctx.lineTo(tx(rocRight), pad.t + ph); }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#34d399';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    if (rocLeft > xmin && rocRight < xmax) {
+      ctx.fillText('radius of convergence', (tx(rocLeft) + tx(rocRight)) / 2, pad.t + 12);
+    } else if (rocRight < xmax) {
+      ctx.textAlign = 'right';
+      ctx.fillText('radius of convergence →', tx(rocRight) - 6, pad.t + 12);
+    } else if (rocLeft > xmin) {
+      ctx.textAlign = 'left';
+      ctx.fillText('← radius of convergence', tx(rocLeft) + 6, pad.t + 12);
+    }
+  }
+
+  // compute samples
+  const SAMPLES = 720;
+  const xs = new Array(SAMPLES);
+  const fvals = new Array(SAMPLES);
+  for (let i = 0; i < SAMPLES; i++) {
+    const x = xmin + (i / (SAMPLES - 1)) * (xmax - xmin);
+    xs[i] = x;
+    fvals[i] = F.f(x);
+  }
+  const terms = taylorTerms(state.fn, state.a, state.n);
+
+  // individual term curves (faint)
+  if (state.showTerms) {
+    for (let k = 0; k < terms.length; k++) {
+      const hue = (k * 31) % 360;
+      ctx.strokeStyle = `hsla(${hue}, 60%, 70%, 0.32)`;
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < SAMPLES; i++) {
+        const v = evalTaylorTerm(terms, state.a, xs[i], k);
+        const py = ty(clamp(v, ymin - 20, ymax + 20));
+        if (!isFinite(v)) { started = false; continue; }
+        if (!started) { ctx.moveTo(tx(xs[i]), py); started = true; }
+        else ctx.lineTo(tx(xs[i]), py);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // target function (white)
+  ctx.strokeStyle = '#e6edf3';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i < SAMPLES; i++) {
+    const v = fvals[i];
+    if (!isFinite(v) || Math.abs(v) > 1e6) { started = false; continue; }
+    const py = ty(clamp(v, ymin - 50, ymax + 50));
+    if (!started) { ctx.moveTo(tx(xs[i]), py); started = true; }
+    else ctx.lineTo(tx(xs[i]), py);
+  }
+  ctx.stroke();
+
+  // Taylor approx (cyan)
+  ctx.strokeStyle = '#22d3ee';
+  ctx.shadowColor = 'rgba(34,211,238,0.55)';
+  ctx.shadowBlur = 8;
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  started = false;
+  for (let i = 0; i < SAMPLES; i++) {
+    const v = evalTaylor(terms, state.a, xs[i]);
+    if (!isFinite(v)) { started = false; continue; }
+    const py = ty(clamp(v, ymin - 50, ymax + 50));
+    if (!started) { ctx.moveTo(tx(xs[i]), py); started = true; }
+    else ctx.lineTo(tx(xs[i]), py);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // expansion point a vertical line (amber, draggable)
+  ctx.strokeStyle = 'rgba(245,158,11,0.85)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(tx(state.a), pad.t);
+  ctx.lineTo(tx(state.a), pad.t + ph);
+  ctx.stroke();
+  // handle
+  const handleY = ty(F.f(state.a) || 0);
+  ctx.fillStyle = '#f59e0b';
+  ctx.shadowColor = 'rgba(245,158,11,0.7)';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.arc(tx(state.a), isFinite(handleY) ? handleY : (pad.t + ph / 2), 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = '11px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('a = ' + state.a.toFixed(2), tx(state.a) + 10, pad.t + 14);
+
+  // flash on n change — re-stroke the Taylor curve with an extra outer halo that fades.
+  const tElapsed = performance.now() - state.termAnimStart;
+  if (tElapsed < state.termAnimDuration) {
+    const k = 1 - tElapsed / state.termAnimDuration;
+    const eased = k * k;
+    ctx.save();
+    ctx.strokeStyle = `rgba(34,211,238,${0.42 * eased})`;
+    ctx.shadowColor = 'rgba(34,211,238,0.7)';
+    ctx.shadowBlur = 18 * eased;
+    ctx.lineWidth = 2.2 + 4 * eased;
+    ctx.beginPath();
+    let st = false;
+    for (let i = 0; i < SAMPLES; i++) {
+      const v = evalTaylor(terms, state.a, xs[i]);
+      if (!isFinite(v)) { st = false; continue; }
+      const py = ty(clamp(v, ymin - 50, ymax + 50));
+      if (!st) { ctx.moveTo(tx(xs[i]), py); st = true; }
+      else ctx.lineTo(tx(xs[i]), py);
+    }
+    ctx.stroke();
+    ctx.restore();
+    // schedule continuation via existing loop
+  }
+}
+
+function niceStep(span) {
+  if (span <= 1) return 0.2;
+  if (span <= 3) return 0.5;
+  if (span <= 8) return 1;
+  if (span <= 20) return 2;
+  if (span <= 60) return 5;
+  return 10;
+}
+
+function fmtNum(v) {
+  if (Math.abs(v) < 1e-9) return '0';
+  const a = Math.abs(v);
+  if (a >= 100) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  return v.toFixed(1);
+}
+
+// ---------- error plot ----------
+function drawErr() {
+  const { ctx, w, h } = fitCanvas(errCanvas);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#0d131c';
+  ctx.fillRect(0, 0, w, h);
+
+  const F = FUNCS[state.fn];
+  const pad = { l: 50, r: 22, t: 18, b: 28 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+  const [xmin, xmax] = F.range;
+
+  // log error: from 1e-12 to 1e3
+  const yMinLog = -12, yMaxLog = 3;
+
+  function tx(x) { return pad.l + ((x - xmin) / (xmax - xmin)) * pw; }
+  function ty(yl) { return pad.t + (1 - (yl - yMinLog) / (yMaxLog - yMinLog)) * ph; }
+
+  // grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let yl = yMinLog; yl <= yMaxLog; yl += 3) {
+    ctx.moveTo(pad.l, ty(yl)); ctx.lineTo(pad.l + pw, ty(yl));
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  for (let yl = yMinLog; yl <= yMaxLog; yl += 3) {
+    ctx.fillText('1e' + yl, pad.l - 6, ty(yl) + 4);
+  }
+  ctx.textAlign = 'center';
+  ctx.fillText('x', pad.l + pw / 2, pad.t + ph + 20);
+
+  // threshold line at 1e-2
+  const thresh = ty(-2);
+  ctx.strokeStyle = 'rgba(244,63,94,0.4)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(pad.l, thresh); ctx.lineTo(pad.l + pw, thresh);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // compute error
+  const SAMPLES = 600;
+  const terms = taylorTerms(state.fn, state.a, state.n);
+  const errs = [];
+  const xs = [];
+  for (let i = 0; i < SAMPLES; i++) {
+    const x = xmin + (i / (SAMPLES - 1)) * (xmax - xmin);
+    xs.push(x);
+    const v1 = F.f(x);
+    const v2 = evalTaylor(terms, state.a, x);
+    let err = Math.abs(v1 - v2);
+    if (!isFinite(v1) || !isFinite(v2)) err = 1e3;
+    errs.push(err);
+  }
+
+  // shade red region where err > 0.01
+  ctx.fillStyle = 'rgba(244,63,94,0.10)';
+  let inRed = false, redStart = 0;
+  for (let i = 0; i < SAMPLES; i++) {
+    const over = errs[i] > 0.01;
+    if (over && !inRed) { inRed = true; redStart = xs[i]; }
+    else if (!over && inRed) {
+      inRed = false;
+      ctx.fillRect(tx(redStart), pad.t, tx(xs[i]) - tx(redStart), ph);
+    }
+  }
+  if (inRed) {
+    ctx.fillRect(tx(redStart), pad.t, tx(xs[SAMPLES-1]) - tx(redStart), ph);
+  }
+
+  // error curve — clip extreme-low (≈0) errors to yMinLog so the curve dives smoothly into the floor at a
+  ctx.strokeStyle = '#f43f5e';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i < SAMPLES; i++) {
+    const e = errs[i];
+    const yl = e > 0 ? Math.log10(e) : yMinLog;   // log10(0) → clip at floor
+    const py = ty(clamp(yl, yMinLog, yMaxLog));
+    if (!started) { ctx.moveTo(tx(xs[i]), py); started = true; }
+    else ctx.lineTo(tx(xs[i]), py);
+  }
+  ctx.stroke();
+
+  // a marker
+  ctx.strokeStyle = 'rgba(245,158,11,0.65)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(tx(state.a), pad.t); ctx.lineTo(tx(state.a), pad.t + ph);
+  ctx.stroke();
+
+  // label
+  ctx.fillStyle = 'rgba(244,63,94,0.9)';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('error > 0.01', pad.l + 6, thresh - 4);
+}
+
+// ---------- readouts ----------
+function updateReadouts() {
+  const F = FUNCS[state.fn];
+  const xt = F.testPoint();
+  const terms = taylorTerms(state.fn, state.a, state.n);
+  const fx = F.f(xt);
+  const tx = evalTaylor(terms, state.a, xt);
+  const err = Math.abs(fx - tx);
+
+  // Lagrange remainder bound estimate
+  let fact = 1;
+  for (let i = 1; i <= state.n; i++) fact *= i;
+  const dx = xt - state.a;
+  const M = F.bound(state.n, state.a, xt);
+  const lag = (M * Math.pow(Math.abs(dx), state.n)) / fact;
+
+  // ROC
+  let rocStr;
+  if (F.roc === Infinity) rocStr = '∞';
+  else if (F.rocCenter) rocStr = F.rocCenter(state.a).toFixed(2);
+  else rocStr = F.roc.toFixed(2);
+
+  document.getElementById('n-r').textContent = String(state.n);
+  document.getElementById('a-r').textContent = state.a.toFixed(2);
+  document.getElementById('tp-r').textContent = F.testLabel;
+  document.getElementById('fx-r').textContent = isFinite(fx) ? fx.toExponential(3) : '—';
+  document.getElementById('tn-r').textContent = isFinite(tx) ? tx.toExponential(3) : '—';
+  document.getElementById('err-r').textContent = isFinite(err) ? err.toExponential(2) : '—';
+  document.getElementById('lag-r').textContent = isFinite(lag) ? lag.toExponential(2) : '—';
+  document.getElementById('roc-r').textContent = rocStr;
+
+  document.getElementById('n-val').textContent = String(state.n);
+  document.getElementById('a-val').textContent = state.a.toFixed(2);
+
+  // explainer
+  const expl = document.getElementById('explainer');
+  let html;
+  const fname = F.label;
+  if (state.fn === 'geo') {
+    if (Math.abs(xt - state.a) >= (F.rocCenter ? F.rocCenter(state.a) : 1)) {
+      html = `<span class="hi">${fname}</span> has a singularity at <span class="hi">x = 1</span>. The geometric series 1 + x + x² + x³ + … converges only for |x − a| &lt; <span class="hi">${(F.rocCenter ? F.rocCenter(state.a) : 1).toFixed(2)}</span>. Outside that band the error grows without bound no matter how many terms you add — adding more terms makes it worse.`;
+    } else {
+      html = `Inside the radius of convergence, every extra term divides the residual error roughly by |x − a|. Outside |x − a| &lt; <span class="hi">${(F.rocCenter ? F.rocCenter(state.a) : 1).toFixed(2)}</span>, the series diverges — visible in the error plot as a curve shooting upward.`;
+    }
+  } else if (state.fn === 'ln') {
+    html = `<span class="hi">ln(1+x)</span> is singular at <span class="hi">x = −1</span>. Around a = ${state.a.toFixed(2)} the series converges for |x − a| &lt; <span class="hi">${(1 + state.a).toFixed(2)}</span>. The Taylor series only "knows" what is happening near a; the singularity bounds how far it can reach.`;
+  } else if (state.fn === 'atan') {
+    html = `<span class="hi">arctan(x)</span> has poles at <span class="hi">x = ±i</span> in the complex plane, capping the real-axis radius of convergence at <span class="hi">${rocStr}</span>. Each new term only buys exponential improvement <em>inside</em> that disk.`;
+  } else {
+    html = `<span class="hi">${fname}</span> is entire — its Taylor series converges everywhere. With <span class="hi">${state.n}</span> terms centred at a = <span class="hi">${state.a.toFixed(2)}</span>, the error at x = ${F.testLabel} is <span class="hi">${err.toExponential(2)}</span>, well within the Lagrange bound of <span class="hi">${lag.toExponential(2)}</span>. Adding terms makes the approximation converge fastest right at a and decays outward.`;
+  }
+  expl.innerHTML = html;
+}
+
+// ---------- formula ----------
+function refreshFormula() { formatTaylorFormula(); }
+
+// ---------- interactions ----------
+function bindControls() {
+  const nEl = document.getElementById('n');
+  const aEl = document.getElementById('a');
+  nEl.addEventListener('input', () => {
+    state.prevN = state.n;
+    state.n = parseInt(nEl.value, 10);
+    document.getElementById('n-val').textContent = String(state.n);
+    state.termAnimStart = performance.now();
+    updateReadouts(); refreshFormula(); drawMain(); drawErr();
+  });
+  aEl.addEventListener('input', () => {
+    // map slider -600..600 to functional range based on current func
+    const F = FUNCS[state.fn];
+    const [xmin, xmax] = F.range;
+    const t = (parseInt(aEl.value, 10) + 600) / 1200;
+    const raw = xmin + t * (xmax - xmin);
+    const [lo, hi] = aDomain(state.fn);
+    state.a = clamp(raw, lo, hi);
+    document.getElementById('a-val').textContent = state.a.toFixed(2);
+    updateReadouts(); refreshFormula(); drawMain(); drawErr();
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    state.a = 0;
+    aEl.value = sliderForA(0);
+    document.getElementById('a-val').textContent = '0.00';
+    updateReadouts(); refreshFormula(); drawMain(); drawErr();
+  });
+  document.getElementById('show-terms').addEventListener('click', (ev) => {
+    state.showTerms = !state.showTerms;
+    ev.currentTarget.classList.toggle('active', state.showTerms);
+    drawMain();
+  });
+
+  // function selector
+  document.querySelectorAll('#func-seg button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#func-seg button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      state.fn = b.dataset.fn;
+      // clamp a to function's effective domain
+      const [lo, hi] = aDomain(state.fn);
+      state.a = clamp(state.a, lo, hi);
+      aEl.value = sliderForA(state.a);
+      document.getElementById('a-val').textContent = state.a.toFixed(2);
+      state.termAnimStart = performance.now();
+      updateReadouts(); refreshFormula(); drawMain(); drawErr();
+    });
+  });
+
+  // drag on main canvas
+  const wrap = document.getElementById('main-wrap');
+  function pxToX(e) {
+    const r = wrap.getBoundingClientRect();
+    const px = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    const F = FUNCS[state.fn];
+    if (!mainBounds) return state.a;
+    const t = (px - mainBounds.pad.l) / mainBounds.pw;
+    return mainBounds.xmin + t * (mainBounds.xmax - mainBounds.xmin);
+  }
+  function startDrag(e) {
+    state.dragging = true;
+    wrap.classList.add('dragging');
+    const xv = pxToX(e);
+    setA(xv);
+    e.preventDefault();
+  }
+  function moveDrag(e) {
+    if (!state.dragging) return;
+    setA(pxToX(e));
+    e.preventDefault();
+  }
+  function endDrag() { state.dragging = false; wrap.classList.remove('dragging'); }
+  wrap.addEventListener('mousedown', startDrag);
+  window.addEventListener('mousemove', moveDrag);
+  window.addEventListener('mouseup', endDrag);
+  wrap.addEventListener('touchstart', startDrag, { passive: false });
+  window.addEventListener('touchmove', moveDrag, { passive: false });
+  window.addEventListener('touchend', endDrag);
+}
+
+function sliderForA(a) {
+  const F = FUNCS[state.fn];
+  const t = (a - F.range[0]) / (F.range[1] - F.range[0]);
+  return Math.round(-600 + t * 1200);
+}
+
+// Domain bounds: a must lie strictly inside the function's domain.
+function aDomain(fn) {
+  const F = FUNCS[fn];
+  let lo = F.range[0] + 0.05;
+  let hi = F.range[1] - 0.05;
+  if (fn === 'ln') lo = Math.max(lo, -0.95);       // need 1+a > 0
+  if (fn === 'geo') hi = Math.min(hi, 0.95);        // need 1-a > 0
+  return [lo, hi];
+}
+
+function setA(a) {
+  const [lo, hi] = aDomain(state.fn);
+  state.a = clamp(a, lo, hi);
+  document.getElementById('a').value = sliderForA(state.a);
+  document.getElementById('a-val').textContent = state.a.toFixed(2);
+  updateReadouts(); refreshFormula(); drawMain(); drawErr();
+}
+
+window.addEventListener('resize', () => { drawMain(); drawErr(); });
+
+bindControls();
+// Sync slider position with initial state.a (slider default 0 maps to midpoint for asymmetric ranges)
+document.getElementById('a').value = sliderForA(state.a);
+updateReadouts();
+refreshFormula();
+drawMain();
+drawErr();
+
+// keep flash anim alive when needed
+function loop() {
+  if (performance.now() - state.termAnimStart < state.termAnimDuration) {
+    drawMain();
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// "Try this" presets — select function, set terms n and centre a, dispatch input events.
+const TRY_NOTES = {
+  sin3: "Three terms (x − x³/6 + x⁵/120) approximate sin well near 0 but drift away further out.",
+  sin11: "Eleven terms match sin almost perfectly across the visible range.",
+  geoDiv: "Inside |x|<1 the series converges. Outside, it diverges — even with many terms the error explodes.",
+};
+function selectFn(fn) {
+  const btn = document.querySelector(`#func-seg button[data-fn="${fn}"]`);
+  if (btn && !btn.classList.contains('active')) btn.click();
+}
+function setN(n) {
+  const nEl = document.getElementById('n');
+  nEl.value = n;
+  nEl.dispatchEvent(new Event('input', { bubbles: true }));
+}
+function tryApplyA(aVal) {
+  state.a = aVal;
+  const aEl = document.getElementById('a');
+  aEl.value = sliderForA(aVal);
+  document.getElementById('a-val').textContent = aVal.toFixed(2);
+  updateReadouts(); refreshFormula(); drawMain(); drawErr();
+}
+function applyTry(id) {
+  const note = document.getElementById('tryNote');
+  note.textContent = TRY_NOTES[id] || '';
+  note.classList.add('show');
+  if (id === 'sin3') {
+    selectFn('sin'); tryApplyA(0); setN(3);
+  } else if (id === 'sin11') {
+    selectFn('sin'); tryApplyA(0); setN(11);
+  } else if (id === 'geoDiv') {
+    selectFn('geo'); tryApplyA(0); setN(15);
+  }
+}
+document.querySelectorAll('.try-panel [data-try]').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  document.getElementById('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  const fnMap = { '1': 'sin', '2': 'cos', '3': 'exp', '4': 'ln', '5': 'geo', '6': 'atan' };
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (fnMap[e.key]) {
+      selectFn(fnMap[e.key]);
+    } else if (e.key === '+' || e.key === '=') {
+      setN(Math.min(20, state.n + 1));
+    } else if (e.key === '-' || e.key === '_') {
+      setN(Math.max(1, state.n - 1));
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault(); setA(state.a - 0.1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault(); setA(state.a + 0.1);
+    }
+  });
+})();
+
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="fourier_builder.html">
+      <div class="related-title">Fourier Series</div>
+      <div class="related-desc">Build any waveform from sines, or watch the epicycles spin</div>
+    </a>
+    <a class="related-card" href="eigenvalue_vis.html">
+      <div class="related-title">Eigenvalues</div>
+      <div class="related-desc">Directions a matrix can stretch but cannot rotate</div>
+    </a>
+    <a class="related-card" href="fractal_explorer.html">
+      <div class="related-title">Mandelbrot & Julia</div>
+      <div class="related-desc">Zoom 10¹⁴ into the boundary that contains everything</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

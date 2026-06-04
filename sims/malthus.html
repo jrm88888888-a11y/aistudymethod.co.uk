@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Malthus — Population &amp; Demographic Transition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.topbar { display: flex; align-items: center; gap: 24px; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; transition: color 120ms ease; }
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+.back:hover { color: var(--cyan); }
+
+main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.tabs { display: inline-flex; gap: 4px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; margin-bottom: 16px; }
+.tabs button { border: none; background: transparent; padding: 8px 16px; border-radius: 999px; font-size: 13px; color: var(--text-dim); cursor: pointer; transition: color 120ms ease, background 160ms ease; }
+.tabs button:hover:not(.active) { color: var(--text); }
+.tabs button.active { background: var(--cyan-soft); color: var(--cyan); }
+#tab-malthus, #tab-dtm { animation: fadeIn 240ms ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.controls-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.panel-title { font-size: 14px; font-weight: 600; margin: 0 0 4px; color: var(--text); }
+.panel-sub { font-size: 11px; color: var(--text-dim); margin: 0 0 12px; }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+
+canvas { display: block; width: 100%; }
+#popCanvas, #dtmCanvas { cursor: crosshair; }
+#phaseCanvas { cursor: default; }
+
+button {
+  font-family: inherit; font-size: 13px;
+  color: var(--text);
+  background: var(--bg-elev-1);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button:active { transform: translateY(0.5px); }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 12px;}
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; border-radius: 999px;
+  background: var(--grid); outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(34,211,238,0.12);
+  cursor: pointer; border: none;
+  transition: box-shadow 120ms ease;
+}
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range] { cursor: ew-resize; }
+
+.control-group { margin-bottom: 14px; }
+.control-group .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.control-group label { font-size: 12px; color: var(--text-dim); }
+.control-group .val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--cyan); }
+
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.readouts.three { grid-template-columns: 1fr 1fr 1fr; }
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readout .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+.readout .value { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 20px; color: var(--text); }
+.readout .value.cyan { color: var(--cyan); }
+.readout .value.amber { color: var(--amber); }
+.readout .value.green { color: var(--green); }
+.readout .value.rose { color: var(--rose); }
+
+.legend { display: inline-flex; gap: 14px; font-size: 11px; flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--text-dim); }
+.legend .dot { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+.legend .dot.dashed { background: transparent; border-top: 2px dashed #e6edf3; height: 0; }
+
+.explainer {
+  background: var(--bg-elev-1);
+  border-left: 2px solid var(--cyan);
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 14px;
+  line-height: 1.55;
+}
+.explainer strong { color: var(--text); font-weight: 600; }
+
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.canvas-title { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+.crisis-banner {
+  display: none;
+  background: var(--rose-soft);
+  border: 1px solid var(--rose);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  color: var(--rose);
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+.crisis-banner.show { display: block; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+.insight-banner {
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 1400px;
+  margin: 14px auto 0;
+  box-sizing: border-box;
+  padding: 4px 24px;
+}
+.insight-banner > span {
+  border-left: 2px solid var(--cyan);
+  padding-left: 10px;
+  display: inline-block;
+}
+.try-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-bottom: 24px;
+}
+.try-panel .try-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.try-panel .try-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.try-panel .try-pills button { font-size: 12px; padding: 7px 12px; }
+.try-panel .try-note {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  min-height: 1.5em;
+}
+
+@media (max-width: 900px) {
+  .grid, .controls-row { grid-template-columns: 1fr; }
+}
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Malthus &amp; the Demographic Transition</h1>
+    <p class="sub">Logistic growth, food-limited crises, and why industrialisation broke the trap</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="insight-banner"><span>Population grows exponentially; food grows linearly. Malthus said the gap must crash — until the Industrial Revolution proved him wrong.</span></div>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>Malthusian crisis preset</span>
+      <span class="kbd-key">2</span><span>Industrial Revolution shock</span>
+      <span class="kbd-key">3</span><span>Demographic transition tab</span>
+      <span class="kbd-key">M</span><span>Switch to Malthus tab</span>
+      <span class="kbd-key">D</span><span>Switch to DTM tab</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="try-panel">
+    <div class="try-label">Try this</div>
+    <div class="try-pills">
+      <button id="tryCrisisBtn">Classic Malthusian crisis</button>
+      <button id="tryShockBtn">Fire the Industrial Revolution</button>
+      <button id="tryDtmBtn">Demographic transition</button>
+    </div>
+    <div class="try-note" id="tryNote">Quick experiments to see Malthusian dynamics and the demographic transition that broke them.</div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button data-tab="malthus" class="active">Malthusian dynamics</button>
+    <button data-tab="dtm">Demographic transition</button>
+  </div>
+
+  <section id="tab-malthus">
+    <div class="crisis-banner" id="crisisBanner">Malthusian crisis — food deficit triggers mortality spike</div>
+    <div class="grid">
+      <div class="panel">
+        <div class="canvas-title">
+          <span><strong style="color:var(--text)">Population &amp; food supply</strong> — millions over time</span>
+          <span class="legend">
+            <span><span class="dot" style="background: var(--cyan);"></span>population</span>
+            <span><span class="dot" style="background: var(--amber);"></span>food supply</span>
+            <span><span class="dot dashed"></span>carrying capacity</span>
+          </span>
+        </div>
+        <canvas id="popCanvas" style="height: 380px;"></canvas>
+      </div>
+      <div class="panel">
+        <div class="canvas-title">
+          <span><strong style="color:var(--text)">Phase portrait</strong> — dP/dt vs P</span>
+          <span class="legend">
+            <span><span class="dot" style="background: var(--cyan);"></span>trajectory</span>
+            <span><span class="dot" style="background: var(--amber);"></span>current state</span>
+          </span>
+        </div>
+        <canvas id="phaseCanvas" style="height: 380px;"></canvas>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="panel">
+        <div class="panel-title">Model parameters</div>
+        <p class="panel-sub">Drive the logistic system</p>
+        <div class="control-group">
+          <div class="row"><label>Initial population P₀</label><span class="val" id="vP0">200 M</span></div>
+          <input type="range" id="p0Slider" min="10" max="2000" step="10" value="200">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Intrinsic growth rate r</label><span class="val" id="vR">2.0 %</span></div>
+          <input type="range" id="rSlider" min="0.5" max="5" step="0.1" value="2.0">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Food supply growth</label><span class="val" id="vG">0.5 %</span></div>
+          <input type="range" id="gSlider" min="0" max="3" step="0.05" value="0.5">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Capacity &amp; shocks</div>
+        <p class="panel-sub">Initial carrying capacity and crisis severity</p>
+        <div class="control-group">
+          <div class="row"><label>Initial carrying capacity K</label><span class="val" id="vK">1000 M</span></div>
+          <input type="range" id="kSlider" min="200" max="5000" step="50" value="1000">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Malthusian check severity</label><span class="val" id="vM">1.50</span></div>
+          <input type="range" id="mSlider" min="0.1" max="4" step="0.05" value="1.5">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Industrial Revolution year</label><span class="val" id="vY">1800</span></div>
+          <input type="range" id="ySlider" min="1500" max="2000" step="10" value="1800">
+        </div>
+        <div class="button-row">
+          <button class="primary" id="shockBtn">Trigger Industrial Revolution</button>
+          <button id="resetBtn">Reset</button>
+          <button id="playBtn" class="primary">Play / Pause</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Live readouts</div>
+        <p class="panel-sub">System state at simulation cursor</p>
+        <div class="readouts">
+          <div class="readout"><div class="label">Year</div><div class="value mono" id="rYear">—</div></div>
+          <div class="readout"><div class="label">Population</div><div class="value cyan mono" id="rPop">—</div></div>
+          <div class="readout"><div class="label">Food supply</div><div class="value amber mono" id="rFood">—</div></div>
+          <div class="readout"><div class="label">Surplus / Deficit</div><div class="value mono" id="rSurplus">—</div></div>
+          <div class="readout"><div class="label">Growth rate</div><div class="value mono" id="rRate">—</div></div>
+          <div class="readout"><div class="label">Doubling time</div><div class="value mono" id="rDouble">—</div></div>
+          <div class="readout" style="grid-column: 1 / 3;"><div class="label">Years until next crisis</div><div class="value rose mono" id="rNext">—</div></div>
+        </div>
+        <div class="explainer" id="malthusEx">
+          The classic Malthusian trap: population grows geometrically while food grows arithmetically. Hit the threshold and a crisis trims population back below the food line.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-dtm" style="display:none;">
+    <div class="grid">
+      <div class="panel" style="grid-column: 1 / 3;">
+        <div class="canvas-title">
+          <span><strong style="color:var(--text)">Demographic transition model</strong> — birth &amp; death rates per 1000</span>
+          <span class="legend">
+            <span><span class="dot" style="background: var(--cyan);"></span>birth rate</span>
+            <span><span class="dot" style="background: var(--rose);"></span>death rate</span>
+            <span><span class="dot" style="background: var(--amber);"></span>population</span>
+          </span>
+        </div>
+        <canvas id="dtmCanvas" style="height: 420px;"></canvas>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="panel">
+        <div class="panel-title">Development speed</div>
+        <p class="panel-sub">How quickly the country moves through the four stages</p>
+        <div class="control-group">
+          <div class="row"><label>Speed</label><span class="val" id="vSpd">1.00 ×</span></div>
+          <input type="range" id="spdSlider" min="0.25" max="3" step="0.05" value="1.0">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Stage 1 birth/death</label><span class="val" id="vS1">40 / 38</span></div>
+          <input type="range" id="s1Slider" min="30" max="50" step="1" value="40">
+        </div>
+        <div class="control-group">
+          <div class="row"><label>Stage 4 birth/death</label><span class="val" id="vS4">10 / 10</span></div>
+          <input type="range" id="s4Slider" min="7" max="14" step="1" value="10">
+        </div>
+        <div class="button-row">
+          <button id="dtmResetBtn">Reset</button>
+          <button id="dtmPlayBtn" class="primary">Play / Pause</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Current stage</div>
+        <p class="panel-sub">Where the country sits on its transition</p>
+        <div class="readouts">
+          <div class="readout"><div class="label">Stage</div><div class="value cyan mono" id="rStage">1</div></div>
+          <div class="readout"><div class="label">Year (sim)</div><div class="value mono" id="rDYear">0</div></div>
+          <div class="readout"><div class="label">Birth rate</div><div class="value cyan mono" id="rBirth">—</div></div>
+          <div class="readout"><div class="label">Death rate</div><div class="value rose mono" id="rDeath">—</div></div>
+          <div class="readout" style="grid-column: 1 / 3;"><div class="label">Population (index)</div><div class="value amber mono" id="rDPop">—</div></div>
+        </div>
+        <div class="explainer" id="dtmEx">Pre-industrial: high birth, high death, slow growth. Then sanitation drives death rates down before contraception drops birth rates. That gap is the population explosion.</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Stages of the DTM</div>
+        <p class="panel-sub">A four-stage canonical model</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
+          <div><span class="mono" style="color: var(--cyan);">Stage 1</span> <span style="color: var(--text-dim);">— Pre-industrial. High BR, high DR. Population stable, slow.</span></div>
+          <div><span class="mono" style="color: var(--green);">Stage 2</span> <span style="color: var(--text-dim);">— Death rates fall (sanitation, vaccines). BR still high. <strong style="color: var(--text);">Population explodes.</strong></span></div>
+          <div><span class="mono" style="color: var(--amber);">Stage 3</span> <span style="color: var(--text-dim);">— BR falls (contraception, urbanisation). Growth slows.</span></div>
+          <div><span class="mono" style="color: var(--violet);">Stage 4</span> <span style="color: var(--text-dim);">— Low BR ≈ low DR. Stable, sometimes shrinking.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+// =============================================================================
+// MALTHUSIAN DYNAMICS TAB
+// =============================================================================
+
+const params = {
+  P0: 200,        // millions
+  r: 0.02,        // intrinsic growth rate (per year)
+  g: 0.005,       // food growth rate
+  K: 1000,        // carrying capacity (millions)
+  m: 1.5,         // mortality multiplier for deficit
+  shockYear: 1800,
+  startYear: 1500,
+  endYear: 2100,
+  dt: 0.5,        // years
+};
+
+let sim = {
+  data: [],       // {t, P, F, K, dPdt, crisis}
+  shockApplied: false,
+  shockTime: null,
+  playing: true,
+  cursor: 0,      // index into data
+  rafId: null,
+};
+
+function runSimulation() {
+  const data = [];
+  let P = params.P0;
+  let F = P * 1.5;         // start with a comfortable surplus
+  let K = params.K;
+  let shockApplied = false;
+  let shockTime = null;
+  const nSteps = Math.floor((params.endYear - params.startYear) / params.dt) + 1;
+  let inCrisis = false;
+  let recentCrisisAt = null;
+  const crisisTimes = [];
+
+  for (let i = 0; i < nSteps; i++) {
+    const t = params.startYear + i * params.dt;
+    // Industrial revolution shock: food supply growth boosts and capacity doubles over 80 years
+    let gNow = params.g;
+    let kFactor = 1;
+    if (t >= params.shockYear && params.shockEnabled) {
+      const yrsIn = t - params.shockYear;
+      const ramp = Math.min(1, yrsIn / 80);
+      gNow = params.g + 0.025 * ramp;   // food growth lifts toward ~3%
+      kFactor = 1 + 4 * ramp;           // K grows up to 5x
+      if (!shockApplied) { shockApplied = true; shockTime = t; }
+    }
+    K = params.K * kFactor;
+
+    // Logistic growth with food limitation
+    const deficit = Math.max(0, P - F);
+    const surplus = Math.max(0, F - P);
+    // Carrying-capacity-limited Verhulst term
+    const logistic = params.r * P * (1 - P / K);
+    // Malthusian check: deficit creates mortality
+    const mortality = params.m * deficit * 0.05;
+    const dPdt = logistic - mortality;
+
+    P += dPdt * params.dt;
+    F += gNow * F * params.dt;
+    if (P < 1) P = 1;
+
+    // crisis = significant excess mortality due to food deficit (> 2% pop / yr)
+    const crisisNow = deficit > 0 && mortality > 0.02 * P;
+    if (crisisNow && !inCrisis) {
+      crisisTimes.push(t);
+      recentCrisisAt = t;
+    }
+    inCrisis = crisisNow;
+
+    data.push({ t, P, F, K, dPdt, deficit, surplus, crisis: crisisNow });
+  }
+  sim.data = data;
+  sim.shockApplied = shockApplied;
+  sim.shockTime = shockTime;
+  sim.crisisTimes = crisisTimes;
+}
+
+// -----------------------------------------------------------------------------
+// Animation loop
+// -----------------------------------------------------------------------------
+
+function animateLoop() {
+  if (sim.playing) {
+    sim.cursor += 3;  // years per frame ~ depends on data resolution; 3 indices = 1.5 yrs
+    if (sim.cursor >= sim.data.length) sim.cursor = sim.data.length - 1;
+  }
+  drawPop();
+  drawPhase();
+  updateLiveReadouts();
+  sim.rafId = requestAnimationFrame(animateLoop);
+}
+
+// -----------------------------------------------------------------------------
+// Population/time plot
+// -----------------------------------------------------------------------------
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return { ctx, w: r.width, h: r.height };
+}
+
+const popCanvas = document.getElementById('popCanvas');
+const phaseCanvas = document.getElementById('phaseCanvas');
+const popPad = { l: 56, r: 16, t: 24, b: 36 };
+
+function drawPop() {
+  const { ctx, w, h } = fitCanvas(popCanvas);
+  ctx.clearRect(0,0,w,h);
+  if (!sim.data.length) return;
+
+  const data = sim.data;
+  const xMin = params.startYear, xMax = params.endYear;
+  let yMax = 0;
+  for (const d of data) yMax = Math.max(yMax, d.P, d.F, d.K);
+  yMax *= 1.05;
+  const plotL = popPad.l, plotR = w - popPad.r;
+  const plotT = popPad.t, plotB = h - popPad.b;
+  const xScale = (x) => plotL + (x - xMin)/(xMax - xMin) * (plotR - plotL);
+  const yScale = (y) => plotB - y/yMax * (plotB - plotT);
+
+  // grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  for (let y = xMin; y <= xMax; y += 100) {
+    const x = xScale(y);
+    ctx.beginPath(); ctx.moveTo(x, plotT); ctx.lineTo(x, plotB); ctx.stroke();
+    ctx.fillText(y, x, plotB + 14);
+  }
+  ctx.textAlign = 'right';
+  const yTicks = 6;
+  for (let i = 0; i <= yTicks; i++) {
+    const v = (i/yTicks) * yMax;
+    const yy = yScale(v);
+    ctx.beginPath(); ctx.moveTo(plotL, yy); ctx.lineTo(plotR, yy); ctx.stroke();
+    ctx.fillText(Math.round(v), plotL - 6, yy + 3);
+  }
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Year', (plotL + plotR)/2, h - 8);
+  ctx.save();
+  ctx.translate(14, (plotT + plotB)/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Millions', 0, 0);
+  ctx.restore();
+
+  // crisis bands (vertical light strokes at crisis times)
+  if (sim.crisisTimes) {
+    ctx.fillStyle = 'rgba(244,63,94,0.12)';
+    for (const ct of sim.crisisTimes) {
+      if (ct > data[sim.cursor].t) continue;
+      ctx.fillRect(xScale(ct) - 1, plotT, 2, plotB - plotT);
+    }
+  }
+
+  // shock marker
+  if (sim.shockApplied && sim.shockTime != null) {
+    if (sim.shockTime <= data[sim.cursor].t) {
+      ctx.strokeStyle = '#fbbf24';
+      ctx.setLineDash([4,4]);
+      ctx.beginPath();
+      ctx.moveTo(xScale(sim.shockTime), plotT);
+      ctx.lineTo(xScale(sim.shockTime), plotB);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = '10px Inter, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Industrial Revolution', xScale(sim.shockTime) + 4, plotT + 12);
+    }
+  }
+
+  // K dashed
+  ctx.strokeStyle = '#e6edf3';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5,5]);
+  ctx.beginPath();
+  for (let i = 0; i <= sim.cursor; i++) {
+    const px = xScale(data[i].t), py = yScale(data[i].K);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // food
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= sim.cursor; i++) {
+    const px = xScale(data[i].t), py = yScale(data[i].F);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  // fill area under food
+  ctx.fillStyle = 'rgba(245,158,11,0.10)';
+  ctx.lineTo(xScale(data[sim.cursor].t), plotB);
+  ctx.lineTo(xScale(data[0].t), plotB);
+  ctx.closePath();
+  ctx.fill();
+
+  // population
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i <= sim.cursor; i++) {
+    const px = xScale(data[i].t), py = yScale(data[i].P);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  // glow at current point
+  const cur = data[sim.cursor];
+  const cpx = xScale(cur.t), cpy = yScale(cur.P);
+  const grad = ctx.createRadialGradient(cpx, cpy, 0, cpx, cpy, 18);
+  grad.addColorStop(0, 'rgba(34,211,238,0.6)');
+  grad.addColorStop(1, 'rgba(34,211,238,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cpx, cpy, 18, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#22d3ee';
+  ctx.beginPath();
+  ctx.arc(cpx, cpy, 4, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// -----------------------------------------------------------------------------
+// Phase portrait
+// -----------------------------------------------------------------------------
+
+function drawPhase() {
+  const { ctx, w, h } = fitCanvas(phaseCanvas);
+  ctx.clearRect(0,0,w,h);
+  if (!sim.data.length) return;
+
+  const data = sim.data;
+  const pad = { l: 64, r: 28, t: 24, b: 40 };
+  // x: P, y: dP/dt
+  let pMax = 0, dpMin = 0, dpMax = 0;
+  for (const d of data) {
+    pMax = Math.max(pMax, d.P);
+  }
+  pMax = Math.max(pMax, params.K) * 1.05;
+
+  // theoretical dP/dt curve at current K (if industrial, use K at cursor)
+  const Kc = data[sim.cursor].K;
+  const r = params.r;
+  // compute theoretical f(P) range
+  let theoretical = [];
+  for (let i = 0; i <= 200; i++) {
+    const p = (i/200) * pMax;
+    const v = r * p * (1 - p / Kc);
+    theoretical.push({ p, v });
+  }
+  for (const t of theoretical) { dpMin = Math.min(dpMin, t.v); dpMax = Math.max(dpMax, t.v); }
+  // also include actual trajectory
+  for (let i = 0; i <= sim.cursor; i++) {
+    dpMin = Math.min(dpMin, data[i].dPdt);
+    dpMax = Math.max(dpMax, data[i].dPdt);
+  }
+  const span = Math.max(Math.abs(dpMin), Math.abs(dpMax)) * 1.15;
+  dpMin = -span; dpMax = span;
+
+  const plotL = pad.l, plotR = w - pad.r;
+  const plotT = pad.t, plotB = h - pad.b;
+  const xScale = (p) => plotL + (p / pMax) * (plotR - plotL);
+  const yScale = (v) => plotT + (1 - (v - dpMin)/(dpMax - dpMin)) * (plotB - plotT);
+
+  // grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  const xTicks = 6;
+  for (let i = 0; i <= xTicks; i++) {
+    const v = (i/xTicks) * pMax;
+    const x = xScale(v);
+    ctx.beginPath(); ctx.moveTo(x, plotT); ctx.lineTo(x, plotB); ctx.stroke();
+    ctx.fillText(Math.round(v), x, plotB + 14);
+  }
+  ctx.textAlign = 'right';
+  const yTicks = 5;
+  for (let i = 0; i <= yTicks; i++) {
+    const v = dpMin + (i/yTicks) * (dpMax - dpMin);
+    const y = yScale(v);
+    ctx.beginPath(); ctx.moveTo(plotL, y); ctx.lineTo(plotR, y); ctx.stroke();
+    ctx.fillText(v.toFixed(1), plotL - 6, y + 3);
+  }
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Population P (millions)', (plotL + plotR)/2, h - 8);
+  ctx.save();
+  ctx.translate(14, (plotT + plotB)/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('dP/dt', 0, 0);
+  ctx.restore();
+
+  // zero line
+  ctx.strokeStyle = '#2a3850';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(plotL, yScale(0)); ctx.lineTo(plotR, yScale(0));
+  ctx.stroke();
+
+  // theoretical curve (logistic-only, no Malthusian check)
+  ctx.strokeStyle = '#5b6573';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath();
+  for (let i = 0; i < theoretical.length; i++) {
+    const t = theoretical[i];
+    const px = xScale(t.p), py = yScale(t.v);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // fixed points
+  // P = 0 (unstable) and P = K (stable)
+  ctx.fillStyle = '#f43f5e';
+  ctx.beginPath();
+  ctx.arc(xScale(0), yScale(0), 5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = '#34d399';
+  ctx.beginPath();
+  ctx.arc(xScale(Kc), yScale(0), 5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#f43f5e';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('P=0 (unstable)', xScale(0) + 8, yScale(0) - 8);
+  ctx.fillStyle = '#34d399';
+  ctx.textAlign = 'right';
+  ctx.fillText(`P=K=${Math.round(Kc)} (stable)`, xScale(Kc) - 8, yScale(0) - 8);
+
+  // actual trajectory through state space
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= sim.cursor; i++) {
+    const d = data[i];
+    const px = xScale(d.P), py = yScale(d.dPdt);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // current state dot
+  const cur = data[sim.cursor];
+  const cpx = xScale(cur.P), cpy = yScale(cur.dPdt);
+  const grad = ctx.createRadialGradient(cpx, cpy, 0, cpx, cpy, 22);
+  grad.addColorStop(0, 'rgba(245,158,11,0.6)');
+  grad.addColorStop(1, 'rgba(245,158,11,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cpx, cpy, 22, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath();
+  ctx.arc(cpx, cpy, 5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+// -----------------------------------------------------------------------------
+// Readouts
+// -----------------------------------------------------------------------------
+
+function updateLiveReadouts() {
+  if (!sim.data.length) return;
+  const d = sim.data[sim.cursor];
+  document.getElementById('rYear').textContent = Math.round(d.t);
+  document.getElementById('rPop').textContent = formatM(d.P);
+  document.getElementById('rFood').textContent = formatM(d.F);
+  const surplus = d.F - d.P;
+  const surplusEl = document.getElementById('rSurplus');
+  surplusEl.textContent = (surplus >= 0 ? '+' : '') + formatM(surplus);
+  surplusEl.style.color = surplus >= 0 ? 'var(--green)' : 'var(--rose)';
+
+  // growth rate over last step
+  let rate = 0;
+  if (sim.cursor > 0) {
+    const prev = sim.data[sim.cursor - 1];
+    rate = (d.P - prev.P) / prev.P / params.dt;
+  }
+  document.getElementById('rRate').textContent = (rate*100).toFixed(2) + ' %/yr';
+  const doubling = rate > 1e-6 ? Math.log(2)/rate : Infinity;
+  document.getElementById('rDouble').textContent = isFinite(doubling) ? Math.round(doubling) + ' yr' : '∞';
+
+  // years until next crisis
+  let next = null;
+  if (sim.crisisTimes) {
+    for (const ct of sim.crisisTimes) if (ct > d.t) { next = ct; break; }
+  }
+  document.getElementById('rNext').textContent = next != null ? Math.round(next - d.t) + ' yr (year ' + Math.round(next) + ')' : '—';
+
+  // crisis banner
+  const banner = document.getElementById('crisisBanner');
+  if (d.crisis) banner.classList.add('show'); else banner.classList.remove('show');
+
+  // explainer
+  const ex = document.getElementById('malthusEx');
+  if (sim.shockApplied && d.t >= sim.shockTime) {
+    ex.innerHTML = `Since the <strong>Industrial Revolution at year ${Math.round(sim.shockTime)}</strong>, carrying capacity has expanded to <strong>${formatM(d.K)}</strong>, lifting the population well above its old Malthusian ceiling. This is why Malthus' prediction of perpetual misery proved wrong for industrialised societies.`;
+  } else if (d.crisis) {
+    ex.innerHTML = `A <strong style="color: var(--rose);">Malthusian crisis</strong> is unfolding at year ${Math.round(d.t)}: population <strong>${formatM(d.P)}</strong> exceeds food supply <strong>${formatM(d.F)}</strong>. Mortality rises in proportion to the deficit until the system rebalances.`;
+  } else {
+    ex.innerHTML = `Population <strong>${formatM(d.P)}</strong> sits ${surplus >= 0 ? 'below' : 'above'} food supply <strong>${formatM(d.F)}</strong>. Growth rate <strong>${(rate*100).toFixed(2)}%/yr</strong>; doubling in <strong>${isFinite(doubling) ? Math.round(doubling) + ' years' : '∞'}</strong>.`;
+  }
+}
+
+function formatM(x) {
+  const v = Math.round(x);
+  if (Math.abs(v) >= 1000) return (x/1000).toFixed(2) + ' B';
+  return v + ' M';
+}
+
+// -----------------------------------------------------------------------------
+// Controls
+// -----------------------------------------------------------------------------
+
+function rebuild() {
+  sim.cursor = 0;
+  runSimulation();
+}
+
+document.getElementById('p0Slider').addEventListener('input', (e) => {
+  params.P0 = +e.target.value;
+  document.getElementById('vP0').textContent = params.P0 + ' M';
+  rebuild();
+});
+document.getElementById('rSlider').addEventListener('input', (e) => {
+  params.r = +e.target.value / 100;
+  document.getElementById('vR').textContent = (+e.target.value).toFixed(1) + ' %';
+  rebuild();
+});
+document.getElementById('gSlider').addEventListener('input', (e) => {
+  params.g = +e.target.value / 100;
+  document.getElementById('vG').textContent = (+e.target.value).toFixed(2) + ' %';
+  rebuild();
+});
+document.getElementById('kSlider').addEventListener('input', (e) => {
+  params.K = +e.target.value;
+  document.getElementById('vK').textContent = params.K + ' M';
+  rebuild();
+});
+document.getElementById('mSlider').addEventListener('input', (e) => {
+  params.m = +e.target.value;
+  document.getElementById('vM').textContent = params.m.toFixed(2);
+  rebuild();
+});
+document.getElementById('ySlider').addEventListener('input', (e) => {
+  params.shockYear = +e.target.value;
+  document.getElementById('vY').textContent = params.shockYear;
+  if (params.shockEnabled) rebuild();
+});
+document.getElementById('shockBtn').addEventListener('click', () => {
+  params.shockEnabled = !params.shockEnabled;
+  const b = document.getElementById('shockBtn');
+  b.classList.toggle('active');
+  b.textContent = params.shockEnabled ? 'Disable Industrial Revolution' : 'Trigger Industrial Revolution';
+  rebuild();
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  params.shockEnabled = false;
+  document.getElementById('shockBtn').classList.remove('active');
+  document.getElementById('shockBtn').textContent = 'Trigger Industrial Revolution';
+  rebuild();
+});
+document.getElementById('playBtn').addEventListener('click', () => {
+  sim.playing = !sim.playing;
+  const b = document.getElementById('playBtn');
+  b.classList.toggle('active', !sim.playing);
+});
+
+// Allow clicking on the pop canvas to scrub
+popCanvas.addEventListener('click', (e) => {
+  const r = popCanvas.getBoundingClientRect();
+  const x = e.clientX - r.left;
+  const plotL = popPad.l, plotR = r.width - popPad.r;
+  const t = params.startYear + (x - plotL)/(plotR - plotL) * (params.endYear - params.startYear);
+  const idx = Math.max(0, Math.min(sim.data.length - 1, Math.round((t - params.startYear)/params.dt)));
+  sim.cursor = idx;
+  sim.playing = false;
+});
+
+// =============================================================================
+// DEMOGRAPHIC TRANSITION TAB
+// =============================================================================
+
+const dtm = {
+  playing: true,
+  cursor: 0,       // 0 .. 1 (proportion through transition)
+  speed: 1,
+  s1: 40,
+  s4: 10,
+};
+
+const dtmCanvas = document.getElementById('dtmCanvas');
+
+function drawDtm() {
+  const { ctx, w, h } = fitCanvas(dtmCanvas);
+  ctx.clearRect(0,0,w,h);
+  const pad = { l: 60, r: 60, t: 30, b: 40 };
+  const plotL = pad.l, plotR = w - pad.r;
+  const plotT = pad.t, plotB = h - pad.b;
+  const xScale = (t) => plotL + t * (plotR - plotL);     // t in [0,1]
+  const yMax = 55;
+  const yScale = (y) => plotB - y/yMax * (plotB - plotT);
+
+  // stage shading
+  const stages = [
+    { from: 0.00, to: 0.18, color: 'rgba(34,211,238,0.06)', label: 'Stage 1' },
+    { from: 0.18, to: 0.42, color: 'rgba(52,211,153,0.08)', label: 'Stage 2' },
+    { from: 0.42, to: 0.72, color: 'rgba(245,158,11,0.08)', label: 'Stage 3' },
+    { from: 0.72, to: 1.00, color: 'rgba(167,139,250,0.06)', label: 'Stage 4' },
+  ];
+  for (const s of stages) {
+    ctx.fillStyle = s.color;
+    ctx.fillRect(xScale(s.from), plotT, xScale(s.to) - xScale(s.from), plotB - plotT);
+    // separator line
+    ctx.strokeStyle = '#1a2230';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(xScale(s.from), plotT); ctx.lineTo(xScale(s.from), plotB);
+    ctx.stroke();
+    // label
+    ctx.fillStyle = '#5b6573';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(s.label, xScale((s.from+s.to)/2), plotT + 16);
+  }
+  // right border
+  ctx.strokeStyle = '#1a2230';
+  ctx.beginPath();
+  ctx.moveTo(xScale(1), plotT); ctx.lineTo(xScale(1), plotB);
+  ctx.stroke();
+
+  // grid lines
+  ctx.strokeStyle = '#131a25';
+  for (let v = 0; v <= yMax; v += 10) {
+    ctx.beginPath();
+    ctx.moveTo(plotL, yScale(v)); ctx.lineTo(plotR, yScale(v));
+    ctx.stroke();
+  }
+
+  // y axis labels
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  for (let v = 0; v <= yMax; v += 10) {
+    ctx.fillText(v, plotL - 6, yScale(v) + 3);
+  }
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Development time →', (plotL+plotR)/2, h - 8);
+  ctx.save();
+  ctx.translate(14, (plotT+plotB)/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Rate per 1000 population', 0, 0);
+  ctx.restore();
+
+  // generate birth/death curves
+  const N = 240;
+  const births = [], deaths = [], pops = [];
+  let pop = 100;
+  const popHistory = [pop];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const br = birthRate(t);
+    const dr = deathRate(t);
+    births.push({ t, v: br });
+    deaths.push({ t, v: dr });
+    // accumulate pop relative
+    if (i > 0) {
+      const dr2 = deathRate((i-1)/N);
+      const br2 = birthRate((i-1)/N);
+      pop *= 1 + (br2 - dr2)/1000 * 0.5; // 0.5 "years" per step (scaling for visual)
+    }
+    popHistory.push(pop);
+  }
+
+  // population (right axis)
+  const popMax = Math.max(...popHistory) * 1.05;
+  const popMin = Math.min(...popHistory) * 0.95;
+  const yPopScale = (y) => plotB - (y - popMin)/(popMax - popMin) * (plotB - plotT);
+  // right axis ticks
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  for (let i = 0; i <= 4; i++) {
+    const v = popMin + (i/4)*(popMax - popMin);
+    const y = yPopScale(v);
+    ctx.fillText(Math.round(v), plotR + 6, y + 3);
+  }
+  // right axis label
+  ctx.fillStyle = '#f59e0b';
+  ctx.save();
+  ctx.translate(w - 14, (plotT+plotB)/2);
+  ctx.rotate(Math.PI/2);
+  ctx.textAlign = 'center';
+  ctx.fillText('Population (index)', 0, 0);
+  ctx.restore();
+
+  // pop area
+  const cIdx = Math.min(N, Math.round(dtm.cursor * N));
+  ctx.fillStyle = 'rgba(245,158,11,0.10)';
+  ctx.beginPath();
+  ctx.moveTo(xScale(0), plotB);
+  for (let i = 0; i <= cIdx; i++) {
+    const t = i / N;
+    ctx.lineTo(xScale(t), yPopScale(popHistory[i]));
+  }
+  ctx.lineTo(xScale(cIdx/N), plotB);
+  ctx.closePath();
+  ctx.fill();
+  // pop line
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= cIdx; i++) {
+    const t = i / N;
+    const px = xScale(t), py = yPopScale(popHistory[i]);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // shade gap between curves
+  ctx.fillStyle = 'rgba(34,211,238,0.10)';
+  ctx.beginPath();
+  for (let i = 0; i <= cIdx; i++) {
+    const t = i / N;
+    ctx.lineTo(xScale(t), yScale(births[i].v));
+  }
+  for (let i = cIdx; i >= 0; i--) {
+    const t = i / N;
+    ctx.lineTo(xScale(t), yScale(deaths[i].v));
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // death rate
+  ctx.strokeStyle = '#f43f5e';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i <= cIdx; i++) {
+    const px = xScale(deaths[i].t), py = yScale(deaths[i].v);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // birth rate
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i <= cIdx; i++) {
+    const px = xScale(births[i].t), py = yScale(births[i].v);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // current marker
+  const ct = dtm.cursor;
+  const cBr = birthRate(ct), cDr = deathRate(ct);
+  const cPop = popHistory[Math.min(N, Math.round(ct*N))];
+
+  ctx.strokeStyle = 'rgba(230,237,243,0.5)';
+  ctx.setLineDash([3,3]);
+  ctx.beginPath();
+  ctx.moveTo(xScale(ct), plotT); ctx.lineTo(xScale(ct), plotB);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // dots
+  ctx.fillStyle = '#22d3ee';
+  ctx.beginPath();
+  ctx.arc(xScale(ct), yScale(cBr), 5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#f43f5e';
+  ctx.beginPath();
+  ctx.arc(xScale(ct), yScale(cDr), 5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath();
+  ctx.arc(xScale(ct), yPopScale(cPop), 5, 0, Math.PI*2);
+  ctx.fill();
+
+  // stash
+  dtm._cBr = cBr; dtm._cDr = cDr; dtm._cPop = cPop;
+}
+
+// Birth rate function over t ∈ [0,1]
+function birthRate(t) {
+  const high = dtm.s1;
+  const low = dtm.s4;
+  // High in stage 1+2, falls during stage 3, low in stage 4
+  // Use a smooth sigmoid-ish transition centred at t=0.55
+  const k = 12;
+  const mid = 0.55;
+  const frac = 1 / (1 + Math.exp(k * (t - mid)));
+  return low + (high - low) * frac;
+}
+
+// Death rate function over t ∈ [0,1]
+function deathRate(t) {
+  // Death starts slightly below birth in stage 1 (so very slow pre-industrial growth),
+  // then falls *earlier* than birth rate during stage 2 (the population spike),
+  // and converges to s4 in stage 4.
+  const high = dtm.s1 - 2;
+  const low = dtm.s4;
+  const k = 14;
+  const mid = 0.27;   // death-rate inflection ~ early stage 2
+  const frac = 1 / (1 + Math.exp(k * (t - mid)));
+  return low + (high - low) * frac;
+}
+
+function dtmLoop() {
+  if (dtm.playing) {
+    dtm.cursor += 0.0015 * dtm.speed;
+    if (dtm.cursor > 1) dtm.cursor = 1;
+  }
+  drawDtm();
+  updateDtmReadouts();
+  requestAnimationFrame(dtmLoop);
+}
+
+function updateDtmReadouts() {
+  const t = dtm.cursor;
+  let stage = 1;
+  if (t >= 0.18 && t < 0.42) stage = 2;
+  else if (t >= 0.42 && t < 0.72) stage = 3;
+  else if (t >= 0.72) stage = 4;
+
+  document.getElementById('rStage').textContent = stage;
+  document.getElementById('rDYear').textContent = Math.round(t * 200);
+  document.getElementById('rBirth').textContent = dtm._cBr.toFixed(1);
+  document.getElementById('rDeath').textContent = dtm._cDr.toFixed(1);
+  document.getElementById('rDPop').textContent = Math.round(dtm._cPop);
+
+  const ex = document.getElementById('dtmEx');
+  const stageText = [
+    'Pre-industrial. Birth rates and death rates are both high — disease and famine offset large families. Population growth is slow and unstable.',
+    'Sanitation, vaccination and food security drive <strong style="color: var(--text);">death rates down sharply</strong>, while birth rates remain high. The gap between the two curves is the population explosion.',
+    'Birth rates begin to fall as contraception, urbanisation and women\'s education spread. <strong style="color: var(--text);">Population growth slows</strong> but remains positive.',
+    'Birth rates ≈ death rates at low levels. <strong style="color: var(--text);">Population stabilises</strong>; in many countries it has begun to shrink.'
+  ];
+  ex.innerHTML = `<strong>Stage ${stage}.</strong> ${stageText[stage-1]}`;
+}
+
+// DTM controls
+document.getElementById('spdSlider').addEventListener('input', (e) => {
+  dtm.speed = +e.target.value;
+  document.getElementById('vSpd').textContent = dtm.speed.toFixed(2) + ' ×';
+});
+document.getElementById('s1Slider').addEventListener('input', (e) => {
+  dtm.s1 = +e.target.value;
+  document.getElementById('vS1').textContent = dtm.s1 + ' / ' + (dtm.s1 - 2);
+});
+document.getElementById('s4Slider').addEventListener('input', (e) => {
+  dtm.s4 = +e.target.value;
+  document.getElementById('vS4').textContent = dtm.s4 + ' / ' + dtm.s4;
+});
+document.getElementById('dtmPlayBtn').addEventListener('click', () => {
+  dtm.playing = !dtm.playing;
+});
+document.getElementById('dtmResetBtn').addEventListener('click', () => {
+  dtm.cursor = 0;
+  dtm.playing = true;
+});
+
+dtmCanvas.addEventListener('click', (e) => {
+  const r = dtmCanvas.getBoundingClientRect();
+  const pad = { l: 60, r: 60 };
+  const t = Math.max(0, Math.min(1, (e.clientX - r.left - pad.l) / (r.width - pad.l - pad.r)));
+  dtm.cursor = t;
+  dtm.playing = false;
+});
+
+// =============================================================================
+// TAB SWITCHING
+// =============================================================================
+
+document.querySelectorAll('#tabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tab-malthus').style.display = b.dataset.tab === 'malthus' ? 'block' : 'none';
+    document.getElementById('tab-dtm').style.display = b.dataset.tab === 'dtm' ? 'block' : 'none';
+  });
+});
+
+// =============================================================================
+// TRY-THIS WIRING
+// =============================================================================
+
+const TRY_NOTES = {
+  crisis: "Population overshoots food supply. Each crisis spike is mortality from the gap.",
+  shock:  "Food supply jumps. Population catches up rapidly — the equilibrium resets.",
+  dtm:    "Death rates fall before birth rates. The middle stage is when populations spike most.",
+};
+function setTryNote(key) {
+  const el = document.getElementById('tryNote');
+  if (el && TRY_NOTES[key]) el.textContent = TRY_NOTES[key];
+}
+
+document.getElementById('tryCrisisBtn').addEventListener('click', () => {
+  setTryNote('crisis');
+  // Switch to Malthus tab
+  const malthusTab = document.querySelector('#tabs button[data-tab="malthus"]');
+  if (malthusTab && !malthusTab.classList.contains('active')) malthusTab.click();
+  // r = 3%, food-growth = 1%, P0 near K
+  params.r = 0.03;
+  params.g = 0.01;
+  params.P0 = Math.max(10, Math.round(params.K * 0.9 / 10) * 10);
+  // Ensure no industrial-revolution shock
+  params.shockEnabled = false;
+  const sb = document.getElementById('shockBtn');
+  sb.classList.remove('active');
+  sb.textContent = 'Trigger Industrial Revolution';
+  // Sync UI sliders + labels
+  document.getElementById('rSlider').value = 3.0;
+  document.getElementById('vR').textContent = '3.0 %';
+  document.getElementById('gSlider').value = 1.0;
+  document.getElementById('vG').textContent = '1.00 %';
+  document.getElementById('p0Slider').value = params.P0;
+  document.getElementById('vP0').textContent = params.P0 + ' M';
+  sim.playing = true;
+  rebuild();
+});
+
+document.getElementById('tryShockBtn').addEventListener('click', () => {
+  setTryNote('shock');
+  const malthusTab = document.querySelector('#tabs button[data-tab="malthus"]');
+  if (malthusTab && !malthusTab.classList.contains('active')) malthusTab.click();
+  // Enable the industrial-revolution shock
+  if (!params.shockEnabled) {
+    document.getElementById('shockBtn').click();
+  }
+  sim.playing = true;
+});
+
+document.getElementById('tryDtmBtn').addEventListener('click', () => {
+  setTryNote('dtm');
+  const dtmTab = document.querySelector('#tabs button[data-tab="dtm"]');
+  if (dtmTab) dtmTab.click();
+  dtm.cursor = 0;
+  dtm.playing = true;
+});
+
+// Init
+params.shockEnabled = false;
+rebuild();
+animateLoop();
+dtmLoop();
+
+window.addEventListener('resize', () => {
+  drawPop(); drawPhase(); drawDtm();
+});
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const btn = document.getElementById('kbdHelpBtn');
+  if (!modal || !btn) return;
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  btn.addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  function pickTab(name) {
+    const tgt = document.querySelector(`#tabs button[data-tab="${name}"]`);
+    if (tgt) tgt.click();
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === '1') { document.getElementById('tryCrisisBtn').click(); }
+    else if (e.key === '2') { document.getElementById('tryShockBtn').click(); }
+    else if (e.key === '3') { document.getElementById('tryDtmBtn').click(); }
+    else if (k === 'm') { pickTab('malthus'); }
+    else if (k === 'd') { pickTab('dtm'); }
+  });
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="sir_model.html">
+      <div class="related-title">SEIR Model</div>
+      <div class="related-desc">Epidemic curves, R₀, and herd-immunity thresholds</div>
+    </a>
+    <a class="related-card" href="compound_interest.html">
+      <div class="related-title">Compound Interest</div>
+      <div class="related-desc">How nominal vs real returns play out over 50 years</div>
+    </a>
+    <a class="related-card" href="lorenz_curve.html">
+      <div class="related-title">Gini Coefficient</div>
+      <div class="related-desc">Inequality from Norway to South Africa</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hotelling's Law</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.kbd-indicator { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.panel + .panel { margin-top: 16px; }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.canvas-wrap { position: relative; width: 100%; }
+canvas { width: 100%; display: block; cursor: default; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.readout .val.gold { color: var(--gold); }
+.readout .val.small { font-size: 14px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.subhead { font-size: 12px; color: var(--text-dim); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.dist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.dist-grid button { padding: 8px 4px; font-size: 12px; }
+.nashbadge { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.insight { font-style: italic; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 0 0 0 8px; font-size: 13px; margin: 6px 0 0; }
+.try-panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px; box-shadow: var(--shadow); }
+.try-panel .try-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+.try-panel .try-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.try-panel .try-row button { font-size: 12px; padding: 6px 12px; }
+.try-panel .try-row button:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-2); }
+.try-panel .try-note { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin: 4px 0 0; }
+.insight-banner { padding: 10px 16px 10px 14px; border-left: 2px solid var(--cyan); color: var(--text-dim); font-size: 13px; font-style: italic; margin: 14px 24px 0; max-width: 1352px; background: rgba(34,211,238,0.04); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; border-radius: 999px; }
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+.actions button:hover { color: var(--cyan); border-color: var(--cyan); }
+.readout { transition: border-color 120ms ease; }
+.dist-grid button { transition: all 120ms ease; }
+.dist-grid button:hover:not(.active) { color: var(--cyan); border-color: var(--cyan); }
+.dist-grid button.active { background: var(--cyan-soft); border-color: var(--cyan); color: var(--cyan); }
+.seg button:hover:not(.active) { color: var(--cyan); }
+@media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .wrap { padding: 16px; gap: 16px; } .insight-banner { margin: 12px 16px 0; } }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Hotelling's Law</h1>
+    <p class="sub">Spatial competition, centrist convergence, and the inefficiency of Nash equilibrium</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+<div class="insight-banner">Two competitors converge to the median voter. Both ignore the extremes — even when most people live there.</div>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Run Compete</span>
+      <span class="kbd-key">3</span><span>Toggle three-vendor</span>
+      <span class="kbd-key">B</span><span>Bimodal preset</span>
+      <span class="kbd-key">U</span><span>Uniform distribution</span>
+      <span class="kbd-key">N</span><span>Normal distribution</span>
+      <span class="kbd-key">P</span><span>Toggle political tab</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Spatial market</h3>
+        <div class="seg" id="modeSeg">
+          <button data-mode="vendor" class="active">Vendors</button>
+          <button data-mode="political">Political</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="main" style="height: 460px;"></canvas></div>
+      <div class="explainer" id="explainer">Drag the two coloured dots to position vendors on the line. Each customer goes to the closer vendor — the dashed vertical line is the indifferent midpoint.</div>
+    </div>
+
+    <div class="panel">
+      <div class="title-row">
+        <h3 id="threeTitle">Three-vendor extension</h3>
+        <span style="font-size: 11px; color: var(--text-dim);">no pure Nash equilibrium</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="three" style="height: 240px;"></canvas></div>
+      <div class="row" style="margin-top: 10px;">
+        <button id="threeStart" class="primary">Start oscillation</button>
+        <button id="threeStop">Pause</button>
+        <button id="threeReset">Reset positions</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="section-label">Customer distribution</div>
+      <div class="dist-grid" id="distGrid">
+        <button data-d="uniform">Uniform</button>
+        <button data-d="normal">Normal</button>
+        <button data-d="bimodal" class="active">Bimodal</button>
+        <button data-d="left">Left-skewed</button>
+        <button data-d="right">Right-skewed</button>
+        <button data-d="trimodal">Trimodal</button>
+      </div>
+      <div id="polWrap" style="display:none; margin-top: 14px;">
+        <div class="control-row"><span class="label">Polarisation (bimodal hump separation)</span><span class="value" id="polVal">25</span></div>
+        <input type="range" id="polSlider" min="5" max="45" step="1" value="25">
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-label">Competition</div>
+      <div class="actions">
+        <button id="compete" class="primary">Compete (race to centre)</button>
+        <button id="resetPos">Reset positions</button>
+        <button id="toggleSocial" class="primary">Social planner overlay</button>
+      </div>
+    </div>
+
+    <div class="try-panel" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-row">
+        <button id="tryRunCompete">Run Compete</button>
+      </div>
+      <p class="try-note">Both vendors march to the median. Stable, but socially inefficient — average travel distance is maximised.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryBimodal">Bimodal voters</button>
+      </div>
+      <p class="try-note">Even with two voter clusters, the parties still converge to the centre — abandoning their bases.</p>
+      <div class="try-row" style="margin-top: 10px;">
+        <button id="tryThree">Three vendors</button>
+      </div>
+      <p class="try-note">No stable equilibrium exists — three vendors oscillate, leapfrogging each other.</p>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <div class="section-label">Readouts</div>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" id="lblA">Vendor A position</div><div class="val cyan" id="rA">—</div></div>
+        <div class="readout"><div class="lbl" id="lblAS">A market share</div><div class="val cyan small" id="rAS">—</div></div>
+        <div class="readout"><div class="lbl" id="lblB">Vendor B position</div><div class="val amber" id="rB">—</div></div>
+        <div class="readout"><div class="lbl" id="lblBS">B market share</div><div class="val amber small" id="rBS">—</div></div>
+        <div class="readout"><div class="lbl">Distance between</div><div class="val violet small" id="rDist">—</div></div>
+        <div class="readout"><div class="lbl">Total travel</div><div class="val rose small" id="rTravel">—</div></div>
+        <div class="readout"><div class="lbl" title="How far the current positions are from the Nash equilibrium — where no vendor can improve share by moving alone.">Nash gap</div><div class="val gold small" id="rNash">—</div></div>
+        <div class="readout"><div class="lbl" title="The extra distance customers must travel compared to the socially optimal placement.">Welfare loss</div><div class="val rose small" id="rWelfare">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = (id) => document.getElementById(id);
+const $$ = (sel) => document.querySelectorAll(sel);
+const clamp = (x,a,b) => Math.min(b, Math.max(a, x));
+const fmt = (x, d=1) => (isFinite(x) ? x.toFixed(d) : '—');
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+function getCss(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const state = {
+  mode: 'vendor', // or 'political'
+  dist: 'bimodal',
+  polarisation: 25, // distance from centre for bimodal humps
+  vendors: [30, 70], // A, B positions on 0..100
+  showSocial: false,
+  competing: false,
+  competeTimer: null,
+  // three-vendor
+  three: [25, 50, 75],
+  threeRunning: false,
+  threeRaf: null,
+  threeT: 0,
+  // animation
+  anim: null,
+};
+
+// ---- Distribution PDFs ----
+function pdf(x) {
+  switch(state.dist) {
+    case 'uniform': return 1/100;
+    case 'normal': {
+      const mu = 50, sig = 14;
+      return Math.exp(-((x-mu)*(x-mu))/(2*sig*sig)) / (sig*Math.sqrt(2*Math.PI));
+    }
+    case 'bimodal': {
+      const c = 50, p = state.polarisation;
+      const m1 = c - p, m2 = c + p, sig = 10;
+      const a = Math.exp(-((x-m1)*(x-m1))/(2*sig*sig));
+      const b = Math.exp(-((x-m2)*(x-m2))/(2*sig*sig));
+      return (a + b) / (2 * sig * Math.sqrt(2*Math.PI));
+    }
+    case 'trimodal': {
+      const sig = 8;
+      const a = Math.exp(-((x-20)*(x-20))/(2*sig*sig));
+      const b = Math.exp(-((x-50)*(x-50))/(2*sig*sig));
+      const c = Math.exp(-((x-80)*(x-80))/(2*sig*sig));
+      return (a + b + c) / (3 * sig * Math.sqrt(2*Math.PI));
+    }
+    case 'left': {
+      // skewed left (mass on right)
+      const a = 6, b = 2;
+      return betaPdf(x/100, a, b) / 100;
+    }
+    case 'right': {
+      const a = 2, b = 6;
+      return betaPdf(x/100, a, b) / 100;
+    }
+  }
+  return 1/100;
+}
+
+function logGamma(z) {
+  const g = [76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.001208650973866179,-5.395239384953e-6];
+  let x = z, y = z, tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  let ser = 1.000000000190015;
+  for (let j=0; j<6; j++) { y++; ser += g[j]/y; }
+  return -tmp + Math.log(2.5066282746310005*ser/x);
+}
+function betaPdf(x, a, b) {
+  if (x <= 0 || x >= 1) return 0;
+  const logB = logGamma(a) + logGamma(b) - logGamma(a + b);
+  return Math.exp((a-1)*Math.log(x) + (b-1)*Math.log(1-x) - logB);
+}
+
+// Normalised PDF samples for plotting and integration
+const SAMPLES = 401; // 0..100 step 0.25
+function pdfArray() {
+  const arr = new Float64Array(SAMPLES);
+  let s = 0;
+  for (let i=0; i<SAMPLES; i++) {
+    const x = i * 100 / (SAMPLES - 1);
+    arr[i] = pdf(x);
+    s += arr[i];
+  }
+  // normalise so trapezoid integral over 0..100 = 1
+  const dx = 100/(SAMPLES-1);
+  const total = s*dx;
+  for (let i=0; i<SAMPLES; i++) arr[i] /= total;
+  return arr;
+}
+
+function pdfAt(arr, x) {
+  if (x <= 0) return arr[0];
+  if (x >= 100) return arr[SAMPLES-1];
+  const t = x/100 * (SAMPLES-1);
+  const i = Math.floor(t);
+  const f = t - i;
+  return arr[i] * (1-f) + arr[i+1] * f;
+}
+
+// Market share of vendor at position p, with competitors (sorted ascending)
+function shareOf(pdfA, sortedPositions, idx) {
+  const p = sortedPositions[idx];
+  let lo = idx === 0 ? 0 : (p + sortedPositions[idx-1])/2;
+  let hi = idx === sortedPositions.length-1 ? 100 : (p + sortedPositions[idx+1])/2;
+  return integratePdf(pdfA, lo, hi);
+}
+
+function integratePdf(arr, a, b) {
+  if (a >= b) return 0;
+  const dx = 100/(SAMPLES-1);
+  let s = 0;
+  const ia = clamp(a/100 * (SAMPLES-1), 0, SAMPLES-1);
+  const ib = clamp(b/100 * (SAMPLES-1), 0, SAMPLES-1);
+  const i0 = Math.floor(ia), i1 = Math.ceil(ib);
+  for (let i = i0; i < i1; i++) {
+    const x0 = i*dx, x1 = (i+1)*dx;
+    const lo = Math.max(x0, a), hi = Math.min(x1, b);
+    if (lo >= hi) continue;
+    const w = hi - lo;
+    const t0 = (lo - x0)/dx, t1 = (hi - x0)/dx;
+    const y0 = arr[i] + (arr[i+1]-arr[i])*t0;
+    const y1 = arr[i] + (arr[i+1]-arr[i])*t1;
+    s += 0.5 * (y0 + y1) * w;
+  }
+  return s;
+}
+
+// Total customer travel distance for given positions
+function totalTravel(arr, positions) {
+  const sorted = positions.slice().sort((a,b)=>a-b);
+  const dx = 100/(SAMPLES-1);
+  let s = 0;
+  for (let i=0; i<SAMPLES; i++) {
+    const x = i*dx;
+    let minD = Infinity;
+    for (const p of sorted) { const d = Math.abs(x-p); if (d < minD) minD = d; }
+    s += minD * arr[i] * dx;
+  }
+  return s;
+}
+
+// Social optimum for n vendors with given pdf: positions at quantiles (2i-1)/(2n)
+function socialOptimum(arr, n) {
+  // Compute CDF and invert
+  const dx = 100/(SAMPLES-1);
+  const cdf = new Float64Array(SAMPLES);
+  cdf[0] = 0;
+  for (let i=1; i<SAMPLES; i++) cdf[i] = cdf[i-1] + 0.5*(arr[i-1]+arr[i])*dx;
+  // normalise (should already be 1)
+  const total = cdf[SAMPLES-1] || 1;
+  function quantile(q) {
+    const target = q * total;
+    for (let i=1; i<SAMPLES; i++) {
+      if (cdf[i] >= target) {
+        const t = (target - cdf[i-1])/(cdf[i]-cdf[i-1] || 1);
+        return (i-1)*dx + t*dx;
+      }
+    }
+    return 100;
+  }
+  const res = [];
+  for (let i=1; i<=n; i++) res.push(quantile((2*i-1)/(2*n)));
+  return res;
+}
+
+function nashEqMedian(arr) {
+  // median of distribution
+  const dx = 100/(SAMPLES-1);
+  let cum = 0;
+  for (let i=0; i<SAMPLES; i++) {
+    cum += arr[i]*dx;
+    if (cum >= 0.5) return i*dx;
+  }
+  return 50;
+}
+
+// ---- Drawing main canvas ----
+const canvas = $('main');
+let ctx = fitCanvas(canvas);
+const margin = { l: 40, t: 30, r: 30, b: 40 };
+
+function plotBox(c) {
+  const w = c.clientWidth, h = c.clientHeight;
+  return { x: margin.l, y: margin.t, w: w - margin.l - margin.r, h: h - margin.t - margin.b };
+}
+function xToScreen(x, box){ return box.x + (x/100)*box.w; }
+function screenToX(sx, box){ return ((sx - box.x)/box.w)*100; }
+
+let pdfArr = pdfArray();
+
+function drawDist(box, arr) {
+  // Density curve area at top
+  const distH = box.h * 0.55;
+  const lineY = box.y + box.h - 6;
+  let maxV = 0;
+  for (let i=0; i<SAMPLES; i++) if (arr[i] > maxV) maxV = arr[i];
+  const scale = distH / (maxV * 1.1);
+
+  // Compute midpoint splits (sorted vendor positions in current canvas)
+  const positions = state.vendors.slice().sort((a,b) => a-b);
+  const midpoints = [];
+  for (let i=0; i<positions.length-1; i++) midpoints.push((positions[i] + positions[i+1])/2);
+  // segments: [0..mid0], [mid0..mid1], ... [midN..100]
+  const segs = [0, ...midpoints, 100];
+
+  // Determine fill color per segment (which vendor)
+  function segColor(segIdx) {
+    const pos = positions[segIdx];
+    if (state.vendors[0] === pos) return 'rgba(34,211,238,0.30)';
+    return 'rgba(245,158,11,0.30)';
+  }
+
+  for (let s = 0; s < segs.length - 1; s++) {
+    const segLo = segs[s], segHi = segs[s+1];
+    if (segHi - segLo < 1e-6) continue;
+    ctx.save();
+    ctx.fillStyle = segColor(s);
+    ctx.beginPath();
+    ctx.moveTo(xToScreen(segLo, box), lineY);
+    // start exactly at segLo
+    ctx.lineTo(xToScreen(segLo, box), lineY - pdfAt(arr, segLo) * scale);
+    for (let i=0; i<SAMPLES; i++) {
+      const x = i*100/(SAMPLES-1);
+      if (x <= segLo || x >= segHi) continue;
+      const y = lineY - arr[i] * scale;
+      ctx.lineTo(xToScreen(x, box), y);
+    }
+    // end exactly at segHi
+    ctx.lineTo(xToScreen(segHi, box), lineY - pdfAt(arr, segHi) * scale);
+    ctx.lineTo(xToScreen(segHi, box), lineY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Density curve outline
+  ctx.save();
+  ctx.strokeStyle = getCss('--text-dim');
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i=0; i<SAMPLES; i++) {
+    const x = i*100/(SAMPLES-1);
+    const y = lineY - arr[i] * scale;
+    if (i === 0) ctx.moveTo(xToScreen(x, box), y);
+    else ctx.lineTo(xToScreen(x, box), y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // Midpoint dashed lines
+  ctx.save();
+  ctx.setLineDash([4,4]);
+  ctx.strokeStyle = getCss('--text-faint');
+  for (const m of midpoints) {
+    const x = xToScreen(m, box);
+    ctx.beginPath(); ctx.moveTo(x, box.y); ctx.lineTo(x, lineY); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Spectrum line
+  ctx.save();
+  ctx.strokeStyle = getCss('--text');
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(box.x, lineY); ctx.lineTo(box.x + box.w, lineY); ctx.stroke();
+  ctx.restore();
+
+  // Tick marks
+  ctx.save();
+  ctx.fillStyle = getCss('--text-dim');
+  ctx.font = "11px 'JetBrains Mono', monospace";
+  for (let x = 0; x <= 100; x += 10) {
+    const sx = xToScreen(x, box);
+    ctx.beginPath();
+    ctx.strokeStyle = getCss('--text-faint');
+    ctx.moveTo(sx, lineY); ctx.lineTo(sx, lineY + 5); ctx.stroke();
+    if (x % 20 === 0) ctx.fillText(String(x), sx - 6, lineY + 18);
+  }
+  ctx.restore();
+
+  // Axis label
+  ctx.fillStyle = getCss('--text-dim');
+  ctx.font = "11px 'Inter', sans-serif";
+  const axisName = state.mode === 'political' ? 'Policy position (left → right)' : 'Position (beach)';
+  ctx.fillText(axisName, box.x + box.w/2 - 60, lineY + 32);
+}
+
+function drawVendor(box, pos, color, label) {
+  const lineY = box.y + box.h - 6;
+  const sx = xToScreen(pos, box);
+  ctx.save();
+  ctx.shadowColor = color; ctx.shadowBlur = 14;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(sx, lineY, 9, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  // tick from label down to dot
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  ctx.setLineDash([2,3]);
+  ctx.beginPath(); ctx.moveTo(sx, box.y + 18); ctx.lineTo(sx, lineY - 12); ctx.stroke();
+  ctx.restore();
+  // crisp label above
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font = "600 12px 'Inter', sans-serif";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, sx, box.y + 10);
+  ctx.restore();
+}
+
+function drawSocialMarker(box, pos) {
+  const lineY = box.y + box.h - 6;
+  const sx = xToScreen(pos, box);
+  ctx.save();
+  ctx.strokeStyle = getCss('--gold'); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(sx, lineY, 8, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = getCss('--gold'); ctx.font = "10px 'JetBrains Mono', monospace";
+  ctx.fillText('soc', sx - 10, lineY + 22);
+  ctx.restore();
+}
+
+function drawMain() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = getCss('--bg-elev-1');
+  roundRect(ctx, 0, 0, w, h, 10); ctx.fill();
+  const box = plotBox(canvas);
+
+  drawDist(box, pdfArr);
+
+  // Social optimum overlay
+  if (state.showSocial) {
+    const soc = socialOptimum(pdfArr, 2);
+    for (const s of soc) drawSocialMarker(box, s);
+  }
+
+  const aLabel = state.mode === 'political' ? 'Party A' : 'A';
+  const bLabel = state.mode === 'political' ? 'Party B' : 'B';
+  drawVendor(box, state.vendors[0], getCss('--cyan'), aLabel);
+  drawVendor(box, state.vendors[1], getCss('--amber'), bLabel);
+
+  // Nash median marker
+  const med = nashEqMedian(pdfArr);
+  ctx.save();
+  ctx.strokeStyle = getCss('--gold');
+  ctx.setLineDash([1,3]);
+  ctx.beginPath();
+  ctx.moveTo(xToScreen(med, box), box.y + 4);
+  ctx.lineTo(xToScreen(med, box), box.y + box.h - 6);
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = getCss('--gold'); ctx.font = "10px 'JetBrains Mono', monospace";
+  ctx.fillText('median', xToScreen(med, box) + 4, box.y + 12);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+// ---- Three vendor canvas ----
+const threeCanvas = $('three');
+let threeCtx = fitCanvas(threeCanvas);
+
+function drawThree() {
+  const c = threeCanvas;
+  const w = c.clientWidth, h = c.clientHeight;
+  threeCtx.clearRect(0, 0, w, h);
+  threeCtx.fillStyle = getCss('--bg-elev-1');
+  roundRect(threeCtx, 0, 0, w, h, 10); threeCtx.fill();
+
+  const box = { x: 40, y: 30, w: w - 70, h: h - 60 };
+  const lineY = box.y + box.h - 6;
+
+  // density backdrop
+  let maxV = 0;
+  for (let i=0; i<SAMPLES; i++) if (pdfArr[i] > maxV) maxV = pdfArr[i];
+  const distH = box.h * 0.45;
+  const scale = distH / (maxV * 1.1);
+  threeCtx.save();
+  threeCtx.strokeStyle = getCss('--text-faint');
+  threeCtx.lineWidth = 1;
+  threeCtx.beginPath();
+  for (let i=0; i<SAMPLES; i++) {
+    const x = i*100/(SAMPLES-1);
+    const y = lineY - pdfArr[i] * scale;
+    const sx = box.x + (x/100)*box.w;
+    if (i===0) threeCtx.moveTo(sx, y); else threeCtx.lineTo(sx, y);
+  }
+  threeCtx.stroke();
+  threeCtx.restore();
+
+  // spectrum line
+  threeCtx.strokeStyle = getCss('--text');
+  threeCtx.lineWidth = 2;
+  threeCtx.beginPath(); threeCtx.moveTo(box.x, lineY); threeCtx.lineTo(box.x + box.w, lineY); threeCtx.stroke();
+
+  const colors = [getCss('--cyan'), getCss('--amber'), getCss('--rose')];
+  const sorted = state.three.slice().sort((a,b)=>a-b);
+
+  // midpoints
+  const mids = [];
+  for (let i=0; i<sorted.length-1; i++) mids.push((sorted[i]+sorted[i+1])/2);
+  threeCtx.save();
+  threeCtx.setLineDash([3,3]);
+  threeCtx.strokeStyle = getCss('--text-faint');
+  for (const m of mids) {
+    const x = box.x + (m/100)*box.w;
+    threeCtx.beginPath(); threeCtx.moveTo(x, box.y); threeCtx.lineTo(x, lineY); threeCtx.stroke();
+  }
+  threeCtx.restore();
+
+  for (let i=0; i<3; i++) {
+    const p = state.three[i];
+    const sx = box.x + (p/100)*box.w;
+    // connector tick from label to dot
+    threeCtx.save();
+    threeCtx.strokeStyle = colors[i]; threeCtx.lineWidth = 1; threeCtx.globalAlpha = 0.4;
+    threeCtx.setLineDash([2,3]);
+    threeCtx.beginPath(); threeCtx.moveTo(sx, lineY - 12); threeCtx.lineTo(sx, box.y + 18); threeCtx.stroke();
+    threeCtx.restore();
+    // dot
+    threeCtx.save();
+    threeCtx.shadowColor = colors[i]; threeCtx.shadowBlur = 12;
+    threeCtx.fillStyle = colors[i];
+    threeCtx.beginPath(); threeCtx.arc(sx, lineY, 8, 0, Math.PI*2); threeCtx.fill();
+    threeCtx.restore();
+    // crisp letter label above the dot
+    threeCtx.save();
+    threeCtx.fillStyle = colors[i];
+    threeCtx.font = "600 12px 'Inter', sans-serif";
+    threeCtx.textAlign = 'center';
+    threeCtx.textBaseline = 'middle';
+    threeCtx.fillText(['A','B','C'][i], sx, box.y + 12);
+    threeCtx.restore();
+  }
+
+  threeCtx.fillStyle = getCss('--text-dim');
+  threeCtx.font = "11px 'JetBrains Mono', monospace";
+  threeCtx.fillText('A=' + fmt(state.three[0],0) + '  B=' + fmt(state.three[1],0) + '  C=' + fmt(state.three[2],0), box.x, lineY + 22);
+}
+
+// ---- Interaction ----
+let dragIdx = -1;
+canvas.addEventListener('mousedown', (e) => {
+  const r = canvas.getBoundingClientRect();
+  const m = { x: e.clientX - r.left, y: e.clientY - r.top };
+  const box = plotBox(canvas);
+  const lineY = box.y + box.h - 6;
+  for (let i=0; i<2; i++) {
+    const sx = xToScreen(state.vendors[i], box);
+    if ((m.x-sx)**2 + (m.y-lineY)**2 < 200) { dragIdx = i; canvas.style.cursor = 'grabbing'; return; }
+  }
+});
+canvas.addEventListener('mousemove', (e) => {
+  const r = canvas.getBoundingClientRect();
+  const m = { x: e.clientX - r.left, y: e.clientY - r.top };
+  const box = plotBox(canvas);
+  if (dragIdx >= 0) {
+    state.vendors[dragIdx] = clamp(screenToX(m.x, box), 0, 100);
+    updateReadouts();
+  } else {
+    const lineY = box.y + box.h - 6;
+    let hit = false;
+    for (let i=0; i<2; i++) {
+      const sx = xToScreen(state.vendors[i], box);
+      if ((m.x-sx)**2 + (m.y-lineY)**2 < 200) { hit = true; break; }
+    }
+    canvas.style.cursor = hit ? 'grab' : 'default';
+  }
+});
+canvas.addEventListener('mouseup', () => { dragIdx = -1; canvas.style.cursor = 'default'; });
+canvas.addEventListener('mouseleave', () => { dragIdx = -1; });
+
+// ---- Compete (best-response) ----
+// Best response against opponent at `other`: pick the side with more mass and
+// place yourself just inside the opponent. The chosen-side market share is the
+// integral of pdf from 0..other (left) or other..100 (right). The infinitesimal
+// best response is to sit ε on the opponent's heavy side; we use ε = 0.5.
+function bestResponse(other, pdfArr) {
+  const massLeft = integratePdf(pdfArr, 0, other);
+  const massRight = 1 - massLeft;
+  const eps = 0.5;
+  if (massLeft > massRight + 1e-6) return Math.max(0, other - eps);
+  if (massRight > massLeft + 1e-6) return Math.min(100, other + eps);
+  // ties: stay on current side of opponent, but inch toward median
+  return other;
+}
+
+function computeStep() {
+  // Each vendor takes a step toward its best response against the *current* opponent.
+  // With both following this rule and the heavier-mass side flipping as they cross
+  // each other, the iteration drifts to the median.
+  const stepSize = 2.5;
+  const targetA = bestResponse(state.vendors[1], pdfArr);
+  const targetB = bestResponse(state.vendors[0], pdfArr);
+  const newA = state.vendors[0] + clamp(targetA - state.vendors[0], -stepSize, stepSize);
+  const newB = state.vendors[1] + clamp(targetB - state.vendors[1], -stepSize, stepSize);
+  state.vendors[0] = clamp(newA, 0, 100);
+  state.vendors[1] = clamp(newB, 0, 100);
+}
+
+function stopCompete() {
+  state.competing = false;
+  if (state.competeTimer) { clearInterval(state.competeTimer); state.competeTimer = null; }
+  $('compete').classList.remove('active');
+  $('compete').textContent = 'Compete (race to centre)';
+}
+
+$('compete').addEventListener('click', () => {
+  if (state.competing) { stopCompete(); return; }
+  state.competing = true;
+  $('compete').classList.add('active');
+  $('compete').textContent = 'Stop competing';
+  kickAnim();
+  state.competeTimer = setInterval(() => {
+    computeStep();
+    updateReadouts();
+    // stop when converged
+    const med = nashEqMedian(pdfArr);
+    if (Math.abs(state.vendors[0] - med) < 0.5 && Math.abs(state.vendors[1] - med) < 0.5) {
+      stopCompete();
+    }
+  }, 200);
+});
+
+$('resetPos').addEventListener('click', () => {
+  stopCompete();
+  state.vendors = [30, 70];
+  updateReadouts();
+});
+
+$('toggleSocial').addEventListener('click', () => {
+  state.showSocial = !state.showSocial;
+  $('toggleSocial').classList.toggle('active', state.showSocial);
+  drawMain();
+});
+
+function syncPolWrap() {
+  $('polWrap').style.display = (state.dist === 'bimodal') ? 'block' : 'none';
+}
+
+// ---- Mode toggle ----
+$$('#modeSeg button').forEach(b => b.addEventListener('click', (e) => {
+  state.mode = e.target.dataset.mode;
+  $$('#modeSeg button').forEach(x => x.classList.toggle('active', x.dataset.mode === state.mode));
+  syncPolWrap();
+  // Relabel readouts and headings
+  const isPol = state.mode === 'political';
+  $('lblA').textContent = isPol ? 'Party A position' : 'Vendor A position';
+  $('lblAS').textContent = isPol ? 'A vote share' : 'A market share';
+  $('lblB').textContent = isPol ? 'Party B position' : 'Vendor B position';
+  $('lblBS').textContent = isPol ? 'B vote share' : 'B market share';
+  const tt = $('threeTitle');
+  if (tt) tt.textContent = isPol ? 'Three-party extension' : 'Three-vendor extension';
+  updateReadouts();
+}));
+
+// ---- Distribution buttons ----
+$$('#distGrid button').forEach(b => b.addEventListener('click', (e) => {
+  state.dist = e.target.dataset.d;
+  $$('#distGrid button').forEach(x => x.classList.toggle('active', x.dataset.d === state.dist));
+  pdfArr = pdfArray();
+  syncPolWrap();
+  updateReadouts();
+  drawThree();
+}));
+
+$('polSlider').addEventListener('input', (e) => {
+  state.polarisation = parseFloat(e.target.value);
+  $('polVal').textContent = state.polarisation;
+  if (state.dist === 'bimodal') pdfArr = pdfArray();
+  updateReadouts();
+  drawThree();
+});
+
+// ---- Three vendor logic ----
+$('threeStart').addEventListener('click', () => {
+  state.threeRunning = true;
+  $('threeStart').classList.add('active');
+  kickAnim();
+});
+$('threeStop').addEventListener('click', () => {
+  state.threeRunning = false;
+  $('threeStart').classList.remove('active');
+});
+$('threeReset').addEventListener('click', () => {
+  state.three = [25, 50, 75];
+  drawThree();
+});
+
+// ---- Try this experiments ----
+$('tryRunCompete').addEventListener('click', () => {
+  if (!state.competing) $('compete').click();
+});
+$('tryBimodal').addEventListener('click', () => {
+  state.dist = 'bimodal';
+  state.polarisation = 40;
+  $$('#distGrid button').forEach(x => x.classList.toggle('active', x.dataset.d === 'bimodal'));
+  $('polSlider').value = 40;
+  $('polVal').textContent = '40';
+  pdfArr = pdfArray();
+  syncPolWrap();
+  // start compete if not running
+  state.vendors = [30, 70];
+  if (!state.competing) $('compete').click();
+  updateReadouts();
+});
+$('tryThree').addEventListener('click', () => {
+  state.three = [25, 50, 75];
+  if (!state.threeRunning) $('threeStart').click();
+  // scroll three-vendor canvas into view
+  $('three').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+function threeStep(dt) {
+  // For each vendor k, fix the other two at positions (l, r) with l<=r and
+  // evaluate three candidate locations:
+  //   • just left of l → captures all mass in [0, l-ε)
+  //   • between l and r at the median of [l,r] → captures (l-l_midpoint, midpoint-r_midpoint)
+  //   • just right of r → captures (r+ε, 100]
+  // Pick the candidate with the largest captured mass and step toward it.
+  // This produces the classic 3-vendor non-convergence (leapfrog) dynamic.
+  const newPositions = state.three.slice();
+  for (let k=0; k<3; k++) {
+    const p = state.three[k];
+    const others = [0,1,2].filter(i => i !== k).map(i => state.three[i]).sort((a,b)=>a-b);
+    const [l, r] = others;
+    const eps = 0.5;
+    const leftCap = integratePdf(pdfArr, 0, l - eps);
+    const rightCap = integratePdf(pdfArr, r + eps, 100);
+    // best position between l and r is at the median of that interval's mass
+    // approximate: midpoint of l and r captures from (l + mid)/2 to (mid + r)/2
+    const mid = (l + r) / 2;
+    const midCap = integratePdf(pdfArr, (l + mid)/2, (mid + r)/2);
+    let target;
+    if (leftCap >= rightCap && leftCap >= midCap) target = Math.max(0, l - eps);
+    else if (rightCap >= leftCap && rightCap >= midCap) target = Math.min(100, r + eps);
+    else target = mid;
+    const step = 1.5;
+    newPositions[k] = clamp(p + clamp(target - p, -step, step), 0, 100);
+  }
+  state.three = newPositions;
+}
+
+let _animRunning = false;
+function animLoop(now) {
+  // Tick three-vendor sim
+  if (state.threeRunning) {
+    if (!state._lastT) state._lastT = now;
+    const dt = (now - state._lastT)/1000;
+    if (dt > 0.06) {
+      threeStep(dt);
+      state._lastT = now;
+    }
+    drawThree();
+  } else {
+    state._lastT = now;
+  }
+  if (state.competing) {
+    drawMain();
+  }
+  if (state.competing || state.threeRunning) {
+    requestAnimationFrame(animLoop);
+  } else {
+    _animRunning = false;
+  }
+}
+function kickAnim() {
+  if (!_animRunning && (state.competing || state.threeRunning)) {
+    _animRunning = true;
+    state._lastT = 0;
+    requestAnimationFrame(animLoop);
+  }
+}
+
+// ---- Readouts ----
+function updateReadouts() {
+  const sorted = state.vendors.slice().sort((a,b)=>a-b);
+  const aFirst = state.vendors[0] <= state.vendors[1];
+  const midpoint = (state.vendors[0] + state.vendors[1])/2;
+  let aShare, bShare;
+  if (aFirst) {
+    aShare = integratePdf(pdfArr, 0, midpoint);
+    bShare = integratePdf(pdfArr, midpoint, 100);
+  } else {
+    bShare = integratePdf(pdfArr, 0, midpoint);
+    aShare = integratePdf(pdfArr, midpoint, 100);
+  }
+  const dist = Math.abs(state.vendors[0] - state.vendors[1]);
+  const travel = totalTravel(pdfArr, state.vendors);
+  const social = socialOptimum(pdfArr, 2);
+  const socialTravel = totalTravel(pdfArr, social);
+  const med = nashEqMedian(pdfArr);
+  const nashGap = (Math.abs(state.vendors[0] - med) + Math.abs(state.vendors[1] - med));
+
+  $('rA').textContent = fmt(state.vendors[0], 1);
+  $('rB').textContent = fmt(state.vendors[1], 1);
+  $('rAS').textContent = (aShare*100).toFixed(1) + '%';
+  $('rBS').textContent = (bShare*100).toFixed(1) + '%';
+  $('rDist').textContent = fmt(dist, 1);
+  $('rTravel').textContent = fmt(travel, 2);
+  $('rNash').textContent = fmt(nashGap, 1);
+  $('rWelfare').textContent = fmt(Math.max(0, travel - socialTravel), 2);
+
+  // explainer
+  let txt;
+  const atNash = nashGap < 2;
+  if (state.mode === 'political') {
+    if (atNash) {
+      txt = `Both parties have converged on the median voter at <span class="k">${fmt(med,1)}</span>. This is the Nash equilibrium — any party deviating loses votes. But voters at the extremes are poorly served, and a third party staying at the fringe could potentially win those votes if the distribution is bimodal enough.`;
+    } else {
+      txt = `Each party will iterate toward the median voter: any move closer to the centre steals votes from the opponent. Click <span class="k">Compete</span> to see the race converge. Note: maximising vote share is privately rational but distance-from-voter is maximised, not minimised.`;
+    }
+  } else {
+    if (atNash) {
+      txt = `Both vendors at the median. This minimises competitive risk (each captures 50% of customers) but maximises total customer travel — the social optimum (gold rings) places vendors at the quartiles. The classic Hotelling inefficiency.`;
+    } else {
+      txt = `Move either vendor closer to the centre to steal more customers. The dashed midpoint splits the market. Click <span class="k">Compete</span> to watch both race to the centre, even though the socially optimal placement is at the quartiles.`;
+    }
+  }
+  $('explainer').innerHTML = txt;
+
+  // Style: when at nash, glow more
+  drawMain();
+}
+
+window.addEventListener('resize', () => {
+  ctx = fitCanvas(canvas);
+  threeCtx = fitCanvas(threeCanvas);
+  drawMain();
+  drawThree();
+});
+
+ctx = fitCanvas(canvas);
+threeCtx = fitCanvas(threeCanvas);
+syncPolWrap();
+
+// initial render — no continuous loop; redraw happens on user input
+drawMain();
+drawThree();
+updateReadouts();
+
+// ---------- Keyboard shortcuts ----------
+(function setupKbd() {
+  const modal = document.getElementById('kbdModal');
+  const btn = document.getElementById('kbdHelpBtn');
+  if (!modal || !btn) return;
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  btn.addEventListener('click', openModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  function pickDist(d) {
+    const tgt = document.querySelector(`#distGrid button[data-d="${d}"]`);
+    if (tgt) tgt.click();
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); $('compete').click(); }
+    else if (e.key === '3') { $('threeStart').click(); }
+    else if (k === 'b') { pickDist('bimodal'); }
+    else if (k === 'u') { pickDist('uniform'); }
+    else if (k === 'n') { pickDist('normal'); }
+    else if (k === 'p') {
+      const isPol = state.mode === 'political';
+      const target = isPol ? 'vendor' : 'political';
+      const tgt = document.querySelector(`#modeSeg button[data-mode="${target}"]`);
+      if (tgt) tgt.click();
+    }
+  });
+})();
+})();
+</script>
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="game_theory.html">
+      <div class="related-title">Prisoner's Dilemma</div>
+      <div class="related-desc">TfT, Pavlov, and the whole strategy tournament</div>
+    </a>
+    <a class="related-card" href="supply_demand.html">
+      <div class="related-title">Supply & Demand</div>
+      <div class="related-desc">Curves, surpluses, taxes, ceilings, and deadweight loss</div>
+    </a>
+    <a class="related-card" href="lorenz_curve.html">
+      <div class="related-title">Gini Coefficient</div>
+      <div class="related-desc">Inequality from Norway to South Africa</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>
