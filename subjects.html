@@ -842,6 +842,7 @@ a.resource-card:focus-visible { outline: 2px solid var(--accent); outline-offset
  <button class="format-pill" data-format="mini-lesson"    onclick="setFormat('mini-lesson')">Mini-Lessons</button>
  <button class="format-pill" data-format="concept-map"    onclick="setFormat('concept-map')">Concept Maps</button>
  <button class="format-pill" data-format="quiz-game"      onclick="setFormat('quiz-game')">Quiz Games</button>
+ <button class="format-pill" data-format="evaluate-tool"  onclick="setFormat('evaluate-tool')">Evaluate Tools</button>
  <button class="format-pill" data-format="simulation"     onclick="setFormat('simulation')">Simulations</button>
  <button class="format-pill" data-format="roleplay"       onclick="setFormat('roleplay')">Roleplay Stories</button>
  <button class="format-pill" data-format="competition"    onclick="setFormat('competition')">Competitions</button>
@@ -1158,6 +1159,7 @@ a.resource-card:focus-visible { outline: 2px solid var(--accent); outline-offset
 </footer>
 
 <script src="script.js"></script>
+<script src="classcraft/evaluate/misconception-ready.js"></script>
 <script src="resources.js"></script>
 <script>
 // ============================================
@@ -1177,6 +1179,7 @@ const FORMAT_LABELS = {
  'mini-lesson':    'Mini-Lessons',
  'concept-map':    'Concept Maps',
  'quiz-game':      'Quiz Games',
+ 'evaluate-tool':  'Evaluate Tools',
  'simulation':     'Simulations',
  'roleplay':       'Roleplay Stories',
  'competition':    'Competitions',
@@ -2983,6 +2986,13 @@ function showFilteredView() {
      state.board === 'all' ||
      boardList.includes(state.board) ||
      (state.board !== 'general' && boardList.includes('general'));
+   // Hide Misconception Detector cards whose bank quality is too low to be useful.
+   // The bank file still exists on disk and the engine still serves it if directly visited,
+   // but we don't surface it in browse — irrelevant misconceptions are worse than none.
+   if (r.typeDisplay === 'Misconception Detector' && window.MISCONCEPTION_READY) {
+     const stem = (r.id || '').replace(/-misconception$/, '');
+     if (!window.MISCONCEPTION_READY.has(stem)) return false;
+   }
    return (state.subject  === 'all' || r.subject  === state.subject)
        && (state.level    === 'all' || r.level    === state.level)
        && (state.stage    === 'all' || r.stage    === state.stage)

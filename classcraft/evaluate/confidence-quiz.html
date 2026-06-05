@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confidence Quiz — AI Study Method</title>
+<meta name="description" content="A confidence-calibrated quiz: answer + rate how sure you are. The gap between confidence and accuracy is your study target.">
+<link rel="stylesheet" href="../../style.css">
+<style>
+  .eq-wrap { max-width: 760px; margin: 0 auto; padding: calc(var(--nav-h) + 36px) 1.5rem 80px; }
+  .eq-badge { display:inline-flex; align-items:center; gap:8px; background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; padding:4px 12px; border-radius:30px; font-family:'DM Mono',monospace; margin-bottom:14px; }
+  .eq-title { font-family:'Playfair Display',serif; font-size:clamp(1.7rem,3vw,2.4rem); line-height:1.15; margin:0 0 10px; }
+  .eq-sub { color:var(--text-secondary); font-size:15px; margin:0 0 22px; line-height:1.55; max-width:60ch; }
+  .eq-meta { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:24px; }
+  .eq-card { background:var(--bg-card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:14px; padding:24px 26px; box-shadow:0 4px 14px rgba(10,107,94,0.06); margin-bottom:18px; }
+  .eq-q-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:8px; }
+  .eq-q { font-size:17px; font-weight:600; color:var(--text-primary); margin:0 0 18px; line-height:1.4; }
+  .eq-options { display:flex; flex-direction:column; gap:10px; margin-bottom:22px; }
+  .eq-opt { background:var(--bg-primary); border:1.5px solid var(--border); border-radius:10px; padding:14px 16px; cursor:pointer; font-size:15px; transition:all 0.15s ease; text-align:left; font-family:inherit; color:var(--text-primary); }
+  .eq-opt:hover { border-color:var(--accent); background:var(--accent-soft); }
+  .eq-opt.selected { border-color:var(--accent); background:var(--accent-soft); }
+  .eq-opt.correct { border-color:#0a6b5e; background:rgba(10,107,94,0.12); }
+  .eq-opt.wrong { border-color:#c2410c; background:rgba(194,65,12,0.10); }
+  .eq-confidence { margin-top:18px; }
+  .eq-conf-label { display:flex; justify-content:space-between; align-items:baseline; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+  .eq-conf-label strong { color:var(--accent); font-weight:600; font-size:14px; }
+  .eq-conf-slider { width:100%; -webkit-appearance:none; height:6px; border-radius:3px; background:var(--border); outline:none; cursor:pointer; }
+  .eq-conf-slider::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--velvet-gradient); box-shadow:0 2px 8px var(--accent-glow); cursor:pointer; }
+  .eq-conf-slider::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:#0a6b5e; cursor:pointer; border:none; }
+  .eq-text-input { width:100%; padding:12px 14px; background:var(--bg-primary); border:1.5px solid var(--border); border-radius:10px; font-size:15px; font-family:inherit; color:var(--text-primary); box-sizing:border-box; }
+  .eq-text-input:focus { outline:none; border-color:var(--accent); }
+  .eq-btn { background:var(--velvet-gradient); color:#fff; border:none; padding:14px 24px; border-radius:10px; font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer; box-shadow:0 4px 12px var(--accent-glow); transition:transform 0.15s; }
+  .eq-btn:hover { transform:translateY(-1px); }
+  .eq-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+  .eq-feedback { margin-top:14px; padding:12px 14px; border-radius:10px; font-size:14px; font-family:inherit; }
+  .eq-feedback.ok { background:rgba(10,107,94,0.08); color:var(--accent); border:1px solid var(--border-accent); }
+  .eq-feedback.no { background:rgba(194,65,12,0.08); color:#c2410c; border:1px solid rgba(194,65,12,0.25); }
+  .eq-summary { margin-top:24px; padding:28px; background:var(--bg-card); border:1px solid var(--border); border-radius:14px; }
+  .eq-summary h2 { font-family:'Playfair Display',serif; font-size:1.5rem; margin:0 0 16px; }
+  .eq-metric-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+  .eq-metric { background:var(--bg-primary); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center; }
+  .eq-metric-num { font-family:'Playfair Display',serif; font-size:28px; font-weight:700; line-height:1; }
+  .eq-metric-num.gap-good { color:#0a6b5e; }
+  .eq-metric-num.gap-bad { color:#c2410c; }
+  .eq-metric-lbl { font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); margin-top:5px; }
+  .eq-row-table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  .eq-row-table th { text-align:left; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); padding:10px 8px; }
+  .eq-row-table td { padding:10px 8px; border-bottom:1px solid var(--border); }
+  .eq-row-table td.q-snip { max-width:280px; }
+  .eq-row-table tr.priority { background:rgba(194,65,12,0.06); }
+  .eq-row-table tr.priority td { color:#c2410c; font-weight:600; }
+  .eq-insight { font-style:italic; font-size:14px; color:var(--text-secondary); margin-top:16px; padding:14px 16px; background:var(--bg-primary); border-radius:10px; border-left:3px solid var(--accent); }
+  .eq-back { color:var(--accent); text-decoration:none; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; display:inline-block; margin-top:24px; }
+  .eq-back:hover { text-decoration:underline; }
+  .eq-error { padding:20px; background:rgba(194,65,12,0.05); border:1px solid rgba(194,65,12,0.2); border-radius:10px; color:#c2410c; font-size:14px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="eq-wrap" id="root">
+  <div class="eq-error">Loading…</div>
+</div>
+
+<script>
+(async function() {
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+
+  if (!stem) {
+    root.innerHTML = '<div class="eq-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  // Try plain stem, then every possible colon-insertion before a dash
+  const candidates = [`../adventures/_specs/${stem}.json`];
+  for (let i = 0; i < stem.length; i++) {
+    if (stem[i] === '-') candidates.push(`../adventures/_specs/${stem.slice(0,i)}:${stem.slice(i)}.json`);
+  }
+  let spec = null;
+  for (const url of candidates) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) { spec = await r.json(); break; }
+    } catch(e) {}
+  }
+  if (!spec) {
+    root.innerHTML = `<div class="eq-error">Couldn't load the question bank for <code>${stem}</code>.</div>`;
+    return;
+  }
+
+  // Build the question list: 2 MCQs + 1 numerical + 1 free-text from the spec
+  const questions = [];
+  (spec.mcqs || []).slice(0, 2).forEach(m => {
+    if (!m.options) return;
+    const opts = m.options.map(o => Array.isArray(o) ? { text: o[0], correct: !!o[1] } : o);
+    const correctIdx = opts.findIndex(o => o.correct);
+    questions.push({ kind: 'mcq', q: m.q, options: opts, correctIdx });
+  });
+  (spec.numericals || []).slice(0, 1).forEach(n => {
+    questions.push({ kind: 'num', q: n.q, answer: n.answer, tolerance: n.tolerance || 0, unit: n.unit || '' });
+  });
+  (spec.free_texts || []).slice(0, 1).forEach(f => {
+    questions.push({ kind: 'text', q: f.q, answer: String(f.answer || '').toLowerCase() });
+  });
+
+  if (questions.length === 0) {
+    root.innerHTML = '<div class="eq-error">No questions found in this spec.</div>';
+    return;
+  }
+
+  const state = { idx: 0, answers: [] };
+
+  const topic = spec.topic_display || spec.title || 'this topic';
+  const level = (spec.level || '').toUpperCase().replace('A-LEVEL','A-Level').replace('IBDP','IBDP').replace('GCSE','GCSE').replace('KS3','KS3');
+  const subj  = (spec.subject || '').replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+
+  function renderHeader() {
+    return `
+      <div class="eq-badge">E · Evaluate · Confidence Quiz</div>
+      <h1 class="eq-title">${escapeHtml(topic)}</h1>
+      <p class="eq-sub">Answer four short questions. After each one, rate how confident you are. The point isn't just to get answers right — it's to find out where your confidence outpaces your accuracy.</p>
+      <div class="eq-meta">${escapeHtml(level)} · ${escapeHtml(subj)} · Q ${state.idx + 1} of ${questions.length}</div>
+    `;
+  }
+
+  function renderQuestion() {
+    const q = questions[state.idx];
+    let body = '';
+    if (q.kind === 'mcq') {
+      body = `<div class="eq-options">` +
+        q.options.map((o, i) => `<button class="eq-opt" data-idx="${i}">${escapeHtml(o.text)}</button>`).join('') +
+        `</div>`;
+    } else if (q.kind === 'num') {
+      body = `<input type="number" step="any" class="eq-text-input" id="ans" placeholder="${q.unit ? 'Answer in '+escapeHtml(q.unit) : 'Type your answer'}">`;
+    } else {
+      body = `<input type="text" class="eq-text-input" id="ans" placeholder="Type your answer">`;
+    }
+
+    root.innerHTML = `
+      ${renderHeader()}
+      <div class="eq-card">
+        <div class="eq-q-label">Question ${state.idx + 1}</div>
+        <div class="eq-q">${escapeHtml(q.q)}</div>
+        ${body}
+        <div class="eq-confidence">
+          <div class="eq-conf-label"><span>How confident are you?</span><strong id="confDisp">60%</strong></div>
+          <input type="range" min="0" max="100" step="5" value="60" class="eq-conf-slider" id="conf">
+        </div>
+        <div style="margin-top:18px"><button class="eq-btn" id="submit" disabled>Submit answer →</button></div>
+        <div id="fb"></div>
+      </div>
+    `;
+
+    const submit = document.getElementById('submit');
+    const conf = document.getElementById('conf');
+    const confDisp = document.getElementById('confDisp');
+    conf.addEventListener('input', () => confDisp.textContent = conf.value + '%');
+
+    let chosen = null;
+    if (q.kind === 'mcq') {
+      root.querySelectorAll('.eq-opt').forEach(b => {
+        b.addEventListener('click', () => {
+          root.querySelectorAll('.eq-opt').forEach(x => x.classList.remove('selected'));
+          b.classList.add('selected');
+          chosen = parseInt(b.dataset.idx);
+          submit.disabled = false;
+        });
+      });
+    } else {
+      const ans = document.getElementById('ans');
+      ans.addEventListener('input', () => {
+        chosen = ans.value;
+        submit.disabled = !ans.value.trim();
+      });
+    }
+
+    submit.addEventListener('click', () => {
+      let correct = false;
+      let userText = '';
+      if (q.kind === 'mcq') {
+        correct = chosen === q.correctIdx;
+        userText = q.options[chosen]?.text || '';
+        root.querySelectorAll('.eq-opt').forEach((b, i) => {
+          b.style.pointerEvents = 'none';
+          if (i === q.correctIdx) b.classList.add('correct');
+          else if (i === chosen) b.classList.add('wrong');
+        });
+      } else if (q.kind === 'num') {
+        const v = parseFloat(chosen);
+        correct = !isNaN(v) && Math.abs(v - q.answer) <= (q.tolerance || 0.0001);
+        userText = String(chosen);
+      } else {
+        const u = String(chosen || '').trim().toLowerCase();
+        const ans = String(q.answer || '').toLowerCase();
+        // Exact match, or whole-word match for answers >= 4 chars (avoid "h" matching "the")
+        let wordMatch = false;
+        if (ans.length >= 4) {
+          const safe = ans.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          wordMatch = new RegExp(`\\b${safe}\\b`).test(u);
+        }
+        correct = u === ans || wordMatch;
+        userText = String(chosen);
+      }
+      const confidence = parseInt(conf.value);
+      state.answers.push({ q: q.q, correct, confidence, userText, kind: q.kind });
+
+      const fb = document.getElementById('fb');
+      fb.className = 'eq-feedback ' + (correct ? 'ok' : 'no');
+      const right = q.kind === 'mcq' ? q.options[q.correctIdx].text : String(q.answer);
+      fb.innerHTML = correct
+        ? `<strong>Correct.</strong> You said you were ${confidence}% sure.`
+        : `<strong>Not quite.</strong> Correct answer: <em>${escapeHtml(right)}</em>. You said you were ${confidence}% sure.`;
+
+      submit.textContent = state.idx + 1 < questions.length ? 'Next →' : 'See calibration report →';
+      submit.disabled = false;
+      const nextStep = () => {
+        if (state.idx + 1 < questions.length) {
+          state.idx++; renderQuestion();
+        } else {
+          renderSummary();
+        }
+      };
+      submit.onclick = nextStep;
+    });
+  }
+
+  function renderSummary() {
+    const total = state.answers.length;
+    const correct = state.answers.filter(a => a.correct).length;
+    const accuracy = total ? Math.round((correct / total) * 100) : 0;
+    const meanConf = total ? Math.round(state.answers.reduce((s,a)=>s+a.confidence,0) / total) : 0;
+    const gap = meanConf - accuracy;
+    const gapClass = gap > 15 ? 'gap-bad' : 'gap-good';
+    const gapWord = gap > 15 ? 'Overconfident' : gap < -15 ? 'Underconfident' : 'Well-calibrated';
+
+    const rows = state.answers.map((a, i) => {
+      const isPriority = !a.correct && a.confidence >= 60;
+      const tickCross = a.correct ? '✓' : '✗';
+      const tickColor = a.correct ? '#0a6b5e' : '#c2410c';
+      return `
+        <tr${isPriority ? ' class="priority"' : ''}>
+          <td>Q${i+1}</td>
+          <td class="q-snip">${escapeHtml(a.q).slice(0,120)}${a.q.length>120?'…':''}</td>
+          <td style="color:${tickColor};font-weight:600">${tickCross}</td>
+          <td>${a.confidence}%</td>
+          <td>${isPriority ? 'High-confidence wrong — study first' : a.correct ? '' : 'Review'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    let insight = '';
+    if (gap > 25) insight = "You're confident on items you're actually getting wrong. The faster you trust that gap, the faster you'll fix it — start with the high-confidence wrongs.";
+    else if (gap > 10) insight = 'Mild overconfidence. Look at the items you rated above 60% but missed.';
+    else if (gap < -15) insight = "You know more than you think. Your confidence is dragging down what you actually got right.";
+    else insight = 'Well-calibrated. You know what you know and what you don\'t — the most useful trait a student can have at this stage.';
+
+    root.innerHTML = `
+      ${renderHeader().replace(/Q \d+ of \d+/, 'Report')}
+      <div class="eq-summary">
+        <h2>Calibration report</h2>
+        <div class="eq-metric-row">
+          <div class="eq-metric"><div class="eq-metric-num">${accuracy}%</div><div class="eq-metric-lbl">Accuracy</div></div>
+          <div class="eq-metric"><div class="eq-metric-num">${meanConf}%</div><div class="eq-metric-lbl">Mean confidence</div></div>
+          <div class="eq-metric"><div class="eq-metric-num ${gapClass}">${gap>0?'+':''}${gap}</div><div class="eq-metric-lbl">${gapWord}</div></div>
+        </div>
+        <table class="eq-row-table">
+          <thead><tr><th>#</th><th>Question</th><th>Result</th><th>Confidence</th><th>Priority</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="eq-insight">${insight}</div>
+        <a href="../../subjects.html" class="eq-back">← Back to subjects</a>
+      </div>
+    `;
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  renderQuestion();
+})();
+</script>
+
+</body>
+</html>

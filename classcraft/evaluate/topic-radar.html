@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topic Radar — AI Study Method</title>
+<meta name="description" content="Six quick questions across the six key concepts of a topic. The radar reveals which concepts you're strong on and which to revisit.">
+<link rel="stylesheet" href="../../style.css">
+<style>
+  .er-wrap { max-width: 760px; margin: 0 auto; padding: calc(var(--nav-h) + 36px) 1.5rem 80px; }
+  .er-badge { display:inline-flex; align-items:center; gap:8px; background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; padding:4px 12px; border-radius:30px; font-family:'DM Mono',monospace; margin-bottom:14px; }
+  .er-title { font-family:'Playfair Display',serif; font-size:clamp(1.7rem,3vw,2.4rem); line-height:1.15; margin:0 0 10px; }
+  .er-sub { color:var(--text-secondary); font-size:15px; margin:0 0 22px; line-height:1.55; max-width:60ch; }
+  .er-meta { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:24px; }
+  .er-card { background:var(--bg-card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:14px; padding:24px 26px; box-shadow:0 4px 14px rgba(10,107,94,0.06); margin-bottom:18px; }
+  .er-axis-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:8px; }
+  .er-q { font-size:17px; font-weight:600; color:var(--text-primary); margin:0 0 18px; line-height:1.4; }
+  .er-options { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+  .er-opt { background:var(--bg-primary); border:1.5px solid var(--border); border-radius:10px; padding:14px 16px; cursor:pointer; font-size:15px; transition:all 0.15s ease; text-align:left; font-family:inherit; color:var(--text-primary); }
+  .er-opt:hover { border-color:var(--accent); background:var(--accent-soft); }
+  .er-opt.selected { border-color:var(--accent); background:var(--accent-soft); }
+  .er-opt.correct { border-color:#0a6b5e; background:rgba(10,107,94,0.12); }
+  .er-opt.wrong { border-color:#c2410c; background:rgba(194,65,12,0.10); }
+  .er-self { margin-top:16px; padding:14px 16px; background:var(--bg-primary); border-radius:10px; }
+  .er-self-label { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; display:flex; justify-content:space-between; }
+  .er-self-label strong { color:var(--accent); font-weight:600; font-size:14px; }
+  .er-self-slider { width:100%; -webkit-appearance:none; height:6px; border-radius:3px; background:var(--border); outline:none; cursor:pointer; }
+  .er-self-slider::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--velvet-gradient); box-shadow:0 2px 8px var(--accent-glow); cursor:pointer; }
+  .er-self-slider::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:#0a6b5e; cursor:pointer; border:none; }
+  .er-btn { background:var(--velvet-gradient); color:#fff; border:none; padding:14px 24px; border-radius:10px; font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer; box-shadow:0 4px 12px var(--accent-glow); margin-top:18px; }
+  .er-btn:disabled { opacity:0.45; cursor:not-allowed; }
+  .er-summary { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:28px; }
+  .er-summary h2 { font-family:'Playfair Display',serif; font-size:1.5rem; margin:0 0 20px; }
+  .er-radar-wrap { display:flex; justify-content:center; margin:24px 0; }
+  svg.er-radar { width:100%; max-width:520px; height:auto; }
+  .er-axis { stroke:var(--border); stroke-width:1; fill:none; }
+  .er-grid-poly { stroke:var(--border); stroke-width:1; fill:none; opacity:0.5; }
+  .er-data-poly { fill:rgba(10,107,94,0.22); stroke:var(--accent); stroke-width:2.5; }
+  .er-data-pt { fill:var(--accent); }
+  .er-axis-text { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; fill:var(--text-primary); }
+  .er-axis-num { font-family:'JetBrains Mono','DM Mono',monospace; font-size:9px; fill:var(--text-muted); }
+  .er-legend { display:flex; flex-direction:column; gap:8px; margin-top:18px; }
+  .er-leg-row { display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:8px 12px; background:var(--bg-primary); border-radius:8px; border-left:3px solid var(--border); }
+  .er-leg-row.strong { border-left-color:#0a6b5e; }
+  .er-leg-row.weak { border-left-color:#c2410c; }
+  .er-leg-name { font-weight:600; color:var(--text-primary); }
+  .er-leg-score { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-secondary); }
+  .er-insight { font-style:italic; font-size:14px; color:var(--text-secondary); margin-top:16px; padding:14px 16px; background:var(--bg-primary); border-radius:10px; border-left:3px solid var(--accent); }
+  .er-back { color:var(--accent); text-decoration:none; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; display:inline-block; margin-top:24px; }
+  .er-back:hover { text-decoration:underline; }
+  .er-error { padding:20px; background:rgba(194,65,12,0.05); border:1px solid rgba(194,65,12,0.2); border-radius:10px; color:#c2410c; font-size:14px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="er-wrap" id="root">
+  <div class="er-error">Loading…</div>
+</div>
+
+<script>
+(async function() {
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+
+  if (!stem) {
+    root.innerHTML = '<div class="er-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  const candidates = [`../adventures/_specs/${stem}.json`];
+  for (let i = 0; i < stem.length; i++) {
+    if (stem[i] === '-') candidates.push(`../adventures/_specs/${stem.slice(0,i)}:${stem.slice(i)}.json`);
+  }
+  let spec = null;
+  for (const url of candidates) {
+    try { const r = await fetch(url); if (r.ok) { spec = await r.json(); break; } } catch(e){}
+  }
+  if (!spec) {
+    root.innerHTML = `<div class="er-error">Couldn't load the question bank for <code>${stem}</code>.</div>`;
+    return;
+  }
+
+  const concepts = (spec.concepts || []).slice(0, 6);
+  if (concepts.length < 4) {
+    root.innerHTML = '<div class="er-error">Not enough concepts in this spec to build a radar.</div>';
+    return;
+  }
+
+  const topic = spec.topic_display || spec.title || 'this topic';
+  const level = (spec.level || '').toUpperCase().replace('A-LEVEL','A-Level');
+  const subj  = (spec.subject || '').replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+
+  // For each concept, build one 4-option MCQ: pick the matching definition for this term.
+  // Distractors = defs from the other 3-5 concepts.
+  const allDefs = concepts.map(c => c.def);
+  const questions = concepts.map((c, i) => {
+    // Shuffle other defs deterministically, take first 3 — different axes get different distractors
+    const others = allDefs.filter((_, j) => j !== i);
+    const shuffled = others.map((d, k) => ({ d, h: hashStr(c.term + d + ':' + k) })).sort((a,b) => a.h - b.h).map(x => x.d);
+    const distractors = shuffled.slice(0, 3);
+    const options = [{ text: c.def, correct: true }, ...distractors.map(d => ({ text: d, correct: false }))];
+    options.sort((a,b) => (hashStr(c.term + a.text) - hashStr(c.term + b.text)));
+    return {
+      concept: c.term,
+      q: `Which definition matches "${c.term}"?`,
+      options,
+      correctIdx: options.findIndex(o => o.correct),
+    };
+  });
+
+  const state = { idx: 0, scores: [], selfRatings: [] };
+
+  function renderHeader(stage) {
+    return `
+      <div class="er-badge">E · Evaluate · Topic Radar</div>
+      <h1 class="er-title">${escapeHtml(topic)}</h1>
+      <p class="er-sub">Six axes — one per key concept. Answer one quick question on each, plus rate how confident you feel. The radar shows where your understanding is solid and where to revisit.</p>
+      <div class="er-meta">${escapeHtml(level)} · ${escapeHtml(subj)} · ${stage}</div>
+    `;
+  }
+
+  function renderQuestion() {
+    const q = questions[state.idx];
+    root.innerHTML = `
+      ${renderHeader(`Axis ${state.idx + 1} of ${questions.length}: ${escapeHtml(q.concept)}`)}
+      <div class="er-card">
+        <div class="er-axis-label">Concept ${state.idx + 1} · ${escapeHtml(q.concept)}</div>
+        <div class="er-q">${escapeHtml(q.q)}</div>
+        <div class="er-options">
+          ${q.options.map((o, i) => `<button class="er-opt" data-idx="${i}">${escapeHtml(o.text)}</button>`).join('')}
+        </div>
+        <div class="er-self">
+          <div class="er-self-label"><span>How well do you feel you know ${escapeHtml(q.concept)}?</span><strong id="selfDisp">3 / 5</strong></div>
+          <input type="range" min="0" max="5" step="1" value="3" class="er-self-slider" id="self">
+        </div>
+        <button class="er-btn" id="submit" disabled>Submit →</button>
+      </div>
+    `;
+    const submit = document.getElementById('submit');
+    const self = document.getElementById('self');
+    const selfDisp = document.getElementById('selfDisp');
+    self.addEventListener('input', () => selfDisp.textContent = self.value + ' / 5');
+
+    let chosen = null;
+    root.querySelectorAll('.er-opt').forEach(b => {
+      b.addEventListener('click', () => {
+        root.querySelectorAll('.er-opt').forEach(x => x.classList.remove('selected'));
+        b.classList.add('selected');
+        chosen = parseInt(b.dataset.idx);
+        submit.disabled = false;
+      });
+    });
+
+    submit.addEventListener('click', () => {
+      const correct = chosen === q.correctIdx;
+      root.querySelectorAll('.er-opt').forEach((b, i) => {
+        b.style.pointerEvents = 'none';
+        if (i === q.correctIdx) b.classList.add('correct');
+        else if (i === chosen) b.classList.add('wrong');
+      });
+      state.scores.push(correct ? 1 : 0);
+      state.selfRatings.push(parseInt(self.value));
+      submit.textContent = state.idx + 1 < questions.length ? 'Next →' : 'See the radar →';
+      submit.onclick = () => {
+        if (state.idx + 1 < questions.length) {
+          state.idx++; renderQuestion();
+        } else {
+          renderSummary();
+        }
+      };
+    });
+  }
+
+  function renderSummary() {
+    // Combine question-correct (0/1) and self-rating (0–5) into a 0–5 score per axis.
+    // Knowledge dominates: if you got it wrong, self-rating can lift the axis to at most 1/5.
+    const axisScores = state.scores.map((s, i) => {
+      const objective = s * 4;                          // correct = +4
+      const selfCap = s ? 1 : 0.25;                     // self-rating multiplier
+      const subjective = (state.selfRatings[i] / 5) * selfCap; // wrong+confident → 0.25; right+confident → +1
+      return Math.min(5, objective + subjective);
+    });
+    const N = questions.length;
+    const center = 240, R = 170;
+    const angles = Array.from({length:N}, (_, i) => -Math.PI/2 + i * (2*Math.PI/N));
+
+    // Axes + grid (5 levels)
+    const gridLevels = [1,2,3,4,5];
+    const gridSvg = gridLevels.map(L => {
+      const pts = angles.map(a => `${center + R*(L/5)*Math.cos(a)},${center + R*(L/5)*Math.sin(a)}`).join(' ');
+      return `<polygon class="er-grid-poly" points="${pts}" />`;
+    }).join('');
+    const axisLines = angles.map(a => `<line class="er-axis" x1="${center}" y1="${center}" x2="${center + R*Math.cos(a)}" y2="${center + R*Math.sin(a)}" />`).join('');
+
+    // Axis labels (positioned outside)
+    const labelSvg = angles.map((a, i) => {
+      const lx = center + (R + 28) * Math.cos(a);
+      const ly = center + (R + 28) * Math.sin(a);
+      const anchor = Math.abs(Math.cos(a)) < 0.3 ? 'middle' : (Math.cos(a) > 0 ? 'start' : 'end');
+      const dy = Math.sin(a) > 0.3 ? 12 : (Math.sin(a) < -0.3 ? -4 : 4);
+      return `<text class="er-axis-text" x="${lx}" y="${ly + dy}" text-anchor="${anchor}">${escapeHtml(truncate(questions[i].concept, 18))}</text>`;
+    }).join('');
+
+    // Data polygon
+    const dataPts = angles.map((a, i) => `${center + R*(axisScores[i]/5)*Math.cos(a)},${center + R*(axisScores[i]/5)*Math.sin(a)}`).join(' ');
+    const dataDots = angles.map((a, i) => `<circle class="er-data-pt" cx="${center + R*(axisScores[i]/5)*Math.cos(a)}" cy="${center + R*(axisScores[i]/5)*Math.sin(a)}" r="4" />`).join('');
+
+    const totalScore = (axisScores.reduce((s,v)=>s+v,0) / (N*5) * 100).toFixed(0);
+    const weakest = axisScores.indexOf(Math.min(...axisScores));
+    const strongest = axisScores.indexOf(Math.max(...axisScores));
+
+    const rows = questions.map((q, i) => {
+      const s = axisScores[i];
+      const cls = s >= 4 ? 'strong' : s <= 2 ? 'weak' : '';
+      return `<div class="er-leg-row ${cls}"><span class="er-leg-name">${escapeHtml(q.concept)}</span><span class="er-leg-score">${s.toFixed(1)} / 5</span></div>`;
+    }).join('');
+
+    const insight = `Strongest: <strong>${escapeHtml(questions[strongest].concept)}</strong>. Weakest: <strong>${escapeHtml(questions[weakest].concept)}</strong>. Spend your next study session on the bottom two before revisiting the rest.`;
+
+    root.innerHTML = `
+      ${renderHeader('Report')}
+      <div class="er-summary">
+        <h2>Topic radar</h2>
+        <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;">Overall mastery: <strong style="color:var(--accent);font-size:18px">${totalScore}%</strong></div>
+        <div class="er-radar-wrap">
+          <svg class="er-radar" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg">
+            ${gridSvg}
+            ${axisLines}
+            <polygon class="er-data-poly" points="${dataPts}" />
+            ${dataDots}
+            ${labelSvg}
+          </svg>
+        </div>
+        <div class="er-legend">${rows}</div>
+        <div class="er-insight">${insight}</div>
+        <a href="../../subjects.html" class="er-back">← Back to subjects</a>
+      </div>
+    `;
+  }
+
+  function escapeHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function truncate(s, n) { return s.length > n ? s.slice(0, n-1) + '…' : s; }
+  function hashStr(s) { let h=0; for (let i=0;i<s.length;i++) h = ((h<<5)-h + s.charCodeAt(i)) | 0; return h; }
+
+  renderQuestion();
+})();
+</script>
+
+</body>
+</html>

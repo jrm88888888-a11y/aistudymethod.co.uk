@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Misconception Detector — AI Study Method</title>
+<meta name="description" content="Three candidate answers. One is right, one is the classic misconception, one is randomly wrong. Spot the misconception — the most useful diagnostic move you can practise.">
+<link rel="stylesheet" href="../../style.css">
+<style>
+  .em-wrap { max-width: 760px; margin: 0 auto; padding: calc(var(--nav-h) + 36px) 1.5rem 80px; }
+  .em-badge { display:inline-flex; align-items:center; gap:8px; background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; padding:4px 12px; border-radius:30px; font-family:'DM Mono',monospace; margin-bottom:14px; }
+  .em-title { font-family:'Playfair Display',serif; font-size:clamp(1.7rem,3vw,2.4rem); line-height:1.15; margin:0 0 10px; }
+  .em-sub { color:var(--text-secondary); font-size:15px; margin:0 0 22px; line-height:1.55; max-width:60ch; }
+  .em-meta { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:24px; }
+  .em-card { background:var(--bg-card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:14px; padding:24px 26px; box-shadow:0 4px 14px rgba(10,107,94,0.06); margin-bottom:18px; }
+  .em-prompt-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:8px; }
+  .em-prompt { font-size:17px; font-weight:600; color:var(--text-primary); margin:0 0 6px; line-height:1.4; }
+  .em-task { font-size:14px; color:var(--text-secondary); margin:0 0 18px; font-style:italic; }
+  .em-options { display:flex; flex-direction:column; gap:12px; margin-bottom:18px; }
+  .em-opt { background:var(--bg-primary); border:1.5px solid var(--border); border-radius:10px; padding:16px 18px; cursor:pointer; font-size:15px; transition:all 0.15s ease; text-align:left; font-family:inherit; color:var(--text-primary); line-height:1.45; position:relative; }
+  .em-opt-letter { display:inline-block; font-family:'DM Mono',monospace; font-size:11px; font-weight:700; color:var(--accent); margin-right:10px; letter-spacing:1px; }
+  .em-opt:hover { border-color:var(--accent); background:var(--accent-soft); }
+  .em-opt.selected { border-color:var(--accent); background:var(--accent-soft); }
+  .em-opt.correct-mc { border-color:#0a6b5e; background:rgba(10,107,94,0.12); }
+  .em-opt.wrong-pick { border-color:#c2410c; background:rgba(194,65,12,0.10); }
+  .em-tag { display:inline-block; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.2px; text-transform:uppercase; font-weight:700; padding:2px 8px; border-radius:4px; margin-left:8px; vertical-align:middle; }
+  .em-tag-correct { background:#0a6b5e; color:#fff; }
+  .em-tag-misconception { background:#c2410c; color:#fff; }
+  .em-tag-random { background:var(--text-muted); color:#fff; }
+  .em-btn { background:var(--velvet-gradient); color:#fff; border:none; padding:14px 24px; border-radius:10px; font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer; box-shadow:0 4px 12px var(--accent-glow); }
+  .em-btn:disabled { opacity:0.45; cursor:not-allowed; }
+  .em-feedback { margin-top:16px; padding:14px 16px; border-radius:10px; font-size:14px; line-height:1.55; }
+  .em-feedback.ok { background:rgba(10,107,94,0.08); color:var(--text-primary); border:1px solid var(--border-accent); }
+  .em-feedback.no { background:rgba(194,65,12,0.08); color:var(--text-primary); border:1px solid rgba(194,65,12,0.25); }
+  .em-feedback strong { color:var(--accent); }
+  .em-feedback.no strong { color:#c2410c; }
+  .em-why { font-style:italic; color:var(--text-secondary); margin-top:8px; font-size:13.5px; }
+  .em-summary { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:28px; }
+  .em-summary h2 { font-family:'Playfair Display',serif; font-size:1.5rem; margin:0 0 18px; }
+  .em-score-row { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:22px; }
+  .em-score { background:var(--bg-primary); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:center; }
+  .em-score-num { font-family:'Playfair Display',serif; font-size:32px; font-weight:700; color:var(--accent); line-height:1; }
+  .em-score-lbl { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); margin-top:6px; }
+  .em-list { display:flex; flex-direction:column; gap:10px; }
+  .em-mc-row { padding:14px; background:var(--bg-primary); border-radius:10px; border-left:3px solid var(--accent); }
+  .em-mc-row-bad { border-left-color:#c2410c; }
+  .em-mc-row-name { font-weight:600; font-size:14px; color:var(--text-primary); margin-bottom:6px; }
+  .em-mc-row-why { font-size:13px; color:var(--text-secondary); font-style:italic; }
+  .em-insight { font-style:italic; font-size:14px; color:var(--text-secondary); margin-top:18px; padding:14px 16px; background:var(--bg-primary); border-radius:10px; border-left:3px solid var(--accent); }
+  .em-back { color:var(--accent); text-decoration:none; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; display:inline-block; margin-top:24px; }
+  .em-back:hover { text-decoration:underline; }
+  .em-error, .em-pending { padding:20px; border-radius:10px; font-size:14px; }
+  .em-error { background:rgba(194,65,12,0.05); border:1px solid rgba(194,65,12,0.2); color:#c2410c; }
+  .em-pending { background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="em-wrap" id="root">
+  <div class="em-pending">Loading…</div>
+</div>
+
+<script>
+(async function() {
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+
+  if (!stem) {
+    root.innerHTML = '<div class="em-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  // Load spec (for title + level/subject context)
+  const specCandidates = [`../adventures/_specs/${stem}.json`];
+  for (let i = 0; i < stem.length; i++) {
+    if (stem[i] === '-') specCandidates.push(`../adventures/_specs/${stem.slice(0,i)}:${stem.slice(i)}.json`);
+  }
+  let spec = null;
+  for (const u of specCandidates) { try { const r = await fetch(u); if (r.ok) { spec = await r.json(); break; } } catch(e){} }
+
+  // Load misconception bank
+  let bank = null;
+  try { const r = await fetch(`./misconception-banks/${stem}.json`); if (r.ok) bank = await r.json(); } catch(e){}
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = (spec && spec.level || '').toUpperCase().replace('A-LEVEL','A-Level');
+  const subj  = (spec && spec.subject || '').replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+
+  function header(stage) {
+    return `
+      <div class="em-badge">E · Evaluate · Misconception Detector</div>
+      <h1 class="em-title">${escapeHtml(topic)}</h1>
+      <p class="em-sub">Three candidate answers. One is correct, one is a classic misconception, one is just randomly wrong. Your job is to spot <strong>the misconception</strong> — the answer a confused student would plausibly write.</p>
+      <div class="em-meta">${escapeHtml(level)} · ${escapeHtml(subj)} · ${stage}</div>
+    `;
+  }
+
+  // Show "in production" if the bank is missing OR the topic-match quality is low —
+  // serving irrelevant misconceptions is worse than serving none.
+  const lowQuality = bank && bank.quality === 'low';
+  if (!bank || !Array.isArray(bank.items) || bank.items.length === 0 || lowQuality) {
+    root.innerHTML = `
+      ${header('In production')}
+      <div class="em-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">⏳</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;margin:0 0 8px">Misconceptions in production</h2>
+        <p style="color:var(--text-secondary);margin:0 0 18px;font-size:15px;">A topic-specific misconception bank for this exact topic is still being authored. Misconceptions are written by hand per topic so they reflect the real traps students fall into here — generic fallbacks would do more harm than good.</p>
+        <p style="font-size:13px;color:var(--text-muted);">In the meantime, try the <a href="confidence-quiz.html?spec=${encodeURIComponent(stem)}" style="color:var(--accent);">Confidence Quiz</a> or <a href="topic-radar.html?spec=${encodeURIComponent(stem)}" style="color:var(--accent);">Topic Radar</a> for this topic.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const items = bank.items;
+  const state = { idx: 0, results: [] };
+
+  function renderItem() {
+    const item = items[state.idx];
+    // Build 3 options with semantic role; shuffle deterministically by hash.
+    const labeled = [
+      { text: item.correct, role: 'correct' },
+      { text: item.misconception, role: 'misconception' },
+      { text: item.random_wrong, role: 'random' },
+    ].sort((a,b) => hashStr(item.q + a.text) - hashStr(item.q + b.text));
+
+    root.innerHTML = `
+      ${header(`Item ${state.idx + 1} of ${items.length}`)}
+      <div class="em-card">
+        <div class="em-prompt-label">Item ${state.idx + 1}</div>
+        <p class="em-prompt">${escapeHtml(item.q)}</p>
+        <p class="em-task">Which of these answers is the classic <em>misconception</em>?</p>
+        <div class="em-options">
+          ${labeled.map((o, i) => `<button class="em-opt" data-role="${o.role}" data-idx="${i}"><span class="em-opt-letter">${'ABC'[i]}.</span>${escapeHtml(o.text)}</button>`).join('')}
+        </div>
+        <button class="em-btn" id="submit" disabled>Submit →</button>
+        <div id="fb"></div>
+      </div>
+    `;
+
+    const submit = document.getElementById('submit');
+    let picked = null;
+    root.querySelectorAll('.em-opt').forEach(b => {
+      b.addEventListener('click', () => {
+        root.querySelectorAll('.em-opt').forEach(x => x.classList.remove('selected'));
+        b.classList.add('selected');
+        picked = b.dataset.role;
+        submit.disabled = false;
+      });
+    });
+
+    submit.addEventListener('click', () => {
+      const correct = picked === 'misconception';
+      // Reveal: tag each option (disable both pointer + keyboard activation)
+      root.querySelectorAll('.em-opt').forEach(b => {
+        b.style.pointerEvents = 'none';
+        b.disabled = true;
+        const role = b.dataset.role;
+        if (role === 'misconception') b.classList.add('correct-mc');
+        else if (role === picked) b.classList.add('wrong-pick');
+        const tag = role === 'misconception' ? 'misconception' : role === 'correct' ? 'correct' : 'random wrong';
+        const cls = role === 'misconception' ? 'em-tag-misconception' : role === 'correct' ? 'em-tag-correct' : 'em-tag-random';
+        b.insertAdjacentHTML('beforeend', `<span class="em-tag ${cls}">${tag}</span>`);
+      });
+
+      state.results.push({ q: item.q, correct, misconception: item.misconception, why: item.why || '' });
+
+      const fb = document.getElementById('fb');
+      fb.className = 'em-feedback ' + (correct ? 'ok' : 'no');
+      fb.innerHTML = correct
+        ? `<strong>You spotted it.</strong> ${item.why ? `<div class="em-why">${escapeHtml(item.why)}</div>` : ''}`
+        : `<strong>Not quite.</strong> The classic misconception was: <em>${escapeHtml(item.misconception)}</em>. ${item.why ? `<div class="em-why">${escapeHtml(item.why)}</div>` : ''}`;
+
+      submit.textContent = state.idx + 1 < items.length ? 'Next →' : 'See summary →';
+      submit.disabled = false;
+      submit.onclick = () => {
+        if (state.idx + 1 < items.length) { state.idx++; renderItem(); }
+        else renderSummary();
+      };
+    });
+  }
+
+  function renderSummary() {
+    const total = state.results.length;
+    const correct = state.results.filter(r => r.correct).length;
+    const pct = Math.round((correct / total) * 100);
+
+    const mcRows = state.results.map(r => `
+      <div class="em-mc-row ${r.correct ? '' : 'em-mc-row-bad'}">
+        <div class="em-mc-row-name">"${escapeHtml(r.misconception)}"</div>
+        ${r.why ? `<div class="em-mc-row-why">${escapeHtml(r.why)}</div>` : ''}
+      </div>
+    `).join('');
+
+    const insight = pct >= 80
+      ? 'Strong misconception-spotting. You can recognise the answer a confused student would write — which is exactly what you need to do to your own answers under exam pressure.'
+      : pct >= 50
+      ? 'Mixed. Re-read the misconceptions below and the reasoning behind each one. Identifying these in your own thinking is half the battle.'
+      : 'These misconceptions caught you out — which means they were doing their job. Read them and the explanations carefully. The whole point of this exercise is to make these traps obvious.';
+
+    root.innerHTML = `
+      ${header('Report')}
+      <div class="em-summary">
+        <h2>Misconception report</h2>
+        <div class="em-score-row">
+          <div class="em-score"><div class="em-score-num">${correct} / ${total}</div><div class="em-score-lbl">Misconceptions spotted</div></div>
+          <div class="em-score"><div class="em-score-num">${pct}%</div><div class="em-score-lbl">Detection rate</div></div>
+        </div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.15rem;margin:18px 0 12px;">The misconceptions to remember</h3>
+        <div class="em-list">${mcRows}</div>
+        <div class="em-insight">${insight}</div>
+        <a href="../../subjects.html" class="em-back">← Back to subjects</a>
+      </div>
+    `;
+  }
+
+  function escapeHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function hashStr(s) { let h=0; for (let i=0;i<s.length;i++) h = ((h<<5)-h + s.charCodeAt(i)) | 0; return h; }
+
+  renderItem();
+})();
+</script>
+
+</body>
+</html>
