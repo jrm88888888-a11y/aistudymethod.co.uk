@@ -260,14 +260,17 @@ const state = {
 function iResistor(v, r) { return v / r; }
 
 // Filament lamp: resistance increases with temperature.
-// Model: R(T) ∝ T, and temperature determined by power balance.
-// Simplified curve: R_lamp(V) = R0 * (1 + k*|V|^1.5) — mimics heating effect.
-// At low V, R ≈ R0 (cold). At high V, R >> R0 (hot, steeper V, less I increase).
-// R0 ~ 8Ω (cold filament), at 12V room V it reaches ~200Ω.
+// Model: R = Rcold + (Rhot - Rcold) * (|V|/Vmax)^alpha
+// At low V, R ≈ Rcold (cold filament, steep slope).
+// At high V, R → Rhot (hot filament, shallow slope).
+// alpha < 1 guarantees dI/dV > 0 for all V (monotonically increasing current).
+// This gives the characteristic bending S-curve through the origin.
 function iLamp(v) {
-  const R0 = 6;       // cold resistance (Ω)
-  const k = 0.18;
-  const R = R0 * (1 + k * Math.pow(Math.abs(v), 1.8));
+  const Rcold = 6;    // cold resistance (Ω)
+  const Rhot = 90;    // hot resistance at 12 V (Ω) — ~15× cold, realistic for tungsten
+  const Vmax = 12;
+  const alpha = 0.5;  // shape exponent; < 1 ensures monotonic increase
+  const R = Rcold + (Rhot - Rcold) * Math.pow(Math.abs(v) / Vmax, alpha);
   return v / R;
 }
 
@@ -332,7 +335,7 @@ function drawIV() {
     I_max = Math.max(iAtMax * 1.2, 0.05);
     I_min = -I_max;
   }
-  if (state.comp === 'lamp') { I_min = -1.5; I_max = 1.5; }
+  if (state.comp === 'lamp') { I_min = -0.35; I_max = 0.35; }
 
   const xAt = v => pad.l + ((v - vMin) / (vMax - vMin)) * pw;
   const yAt = i => pad.t + ((I_max - i) / (I_max - I_min)) * ph;

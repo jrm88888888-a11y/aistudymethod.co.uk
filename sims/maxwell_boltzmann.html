@@ -331,39 +331,6 @@ function drawChart() {
   ctx.save(); ctx.translate(13, pad.t+ph/2); ctx.rotate(-Math.PI/2);
   ctx.fillText('Probability density', 0, 0); ctx.restore();
 
-  // --- Filled reacting fraction (area beyond Ea for curve1) ---
-  const roseGrad = ctx.createLinearGradient(xAt(Ea_J), 0, W-pad.r, 0);
-  roseGrad.addColorStop(0, 'rgba(244,63,94,0.55)');
-  roseGrad.addColorStop(1, 'rgba(244,63,94,0.05)');
-  ctx.beginPath();
-  ctx.moveTo(xAt(Ea_J), yAt(0));
-  for (let i = 0; i < curve1.length; i++) {
-    if (curve1[i].E < Ea_J) continue;
-    ctx.lineTo(xAt(curve1[i].E), yAt(curve1[i].f));
-  }
-  ctx.lineTo(xAt(Emax), yAt(0));
-  ctx.closePath();
-  ctx.fillStyle = roseGrad;
-  ctx.fill();
-
-  // Catalyst reacting fraction
-  if (params.catalystOn && EaCat_J < Ea_J) {
-    const greenGrad = ctx.createLinearGradient(xAt(EaCat_J), 0, xAt(Ea_J), 0);
-    greenGrad.addColorStop(0, 'rgba(52,211,153,0.3)');
-    greenGrad.addColorStop(1, 'rgba(52,211,153,0.1)');
-    ctx.beginPath();
-    ctx.moveTo(xAt(EaCat_J), yAt(0));
-    for (let i = 0; i < curve1.length; i++) {
-      if (curve1[i].E < EaCat_J) continue;
-      if (curve1[i].E > Ea_J) break;
-      ctx.lineTo(xAt(curve1[i].E), yAt(curve1[i].f));
-    }
-    ctx.lineTo(xAt(Ea_J), yAt(0));
-    ctx.closePath();
-    ctx.fillStyle = greenGrad;
-    ctx.fill();
-  }
-
   // Comparison curve (T2) - filled semi-transparent
   if (params.compareOn && curve2.length > 0) {
     ctx.beginPath();
@@ -395,6 +362,45 @@ function drawChart() {
     if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
   }
   ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // --- Filled reacting fraction (area beyond Ea for curve1) — drawn on top so always visible ---
+  // minH ensures at least a sliver is shown even when tail probability is near zero
+  const minH = 4;
+  const roseGrad = ctx.createLinearGradient(xAt(Ea_J), 0, W-pad.r, 0);
+  roseGrad.addColorStop(0, 'rgba(244,63,94,0.65)');
+  roseGrad.addColorStop(1, 'rgba(244,63,94,0.08)');
+  ctx.beginPath();
+  ctx.moveTo(xAt(Ea_J), H - pad.b);
+  for (let i = 0; i < curve1.length; i++) {
+    if (curve1[i].E < Ea_J) continue;
+    const yc = Math.min(yAt(curve1[i].f), H - pad.b - minH);
+    ctx.lineTo(xAt(curve1[i].E), yc);
+  }
+  ctx.lineTo(xAt(Emax), H - pad.b - minH);
+  ctx.lineTo(xAt(Emax), H - pad.b);
+  ctx.closePath();
+  ctx.fillStyle = roseGrad;
+  ctx.fill();
+
+  // Catalyst reacting fraction — green band between EaCat and Ea
+  if (params.catalystOn && EaCat_J < Ea_J) {
+    const greenGrad = ctx.createLinearGradient(xAt(EaCat_J), 0, xAt(Ea_J), 0);
+    greenGrad.addColorStop(0, 'rgba(52,211,153,0.55)');
+    greenGrad.addColorStop(1, 'rgba(52,211,153,0.15)');
+    ctx.beginPath();
+    ctx.moveTo(xAt(EaCat_J), H - pad.b);
+    for (let i = 0; i < curve1.length; i++) {
+      if (curve1[i].E < EaCat_J) continue;
+      if (curve1[i].E > Ea_J) break;
+      const yc = Math.min(yAt(curve1[i].f), H - pad.b - minH);
+      ctx.lineTo(xAt(curve1[i].E), yc);
+    }
+    ctx.lineTo(xAt(Ea_J), H - pad.b - minH);
+    ctx.lineTo(xAt(Ea_J), H - pad.b);
+    ctx.closePath();
+    ctx.fillStyle = greenGrad;
+    ctx.fill();
+  }
 
   // Ea vertical line
   if (Ea_J < Emax) {

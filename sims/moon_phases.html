@@ -458,130 +458,48 @@ function drawPhase() {
   ctx.fillStyle = '#1a1820';
   ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
 
-  // Draw lit portion using terminator geometry
-  // The terminator is an ellipse: major axis = R (vertical), minor axis = R * |cos(elongation)|
-  // elongation = θ from new moon
-  // When waxing: lit portion is on right (from 3 o'clock side)
-  // terminator x-offset from centre (rightward) = R * cos(π - θ) = -R*cos(θ) [elongation from full]
-  // Actually: illuminated fraction f = (1 - cos θ)/2
-  // The terminator is at x = R*(1 - 2f) from right = R*cos(θ) from centre (left side for new, right for full)
-  // Simpler: draw two half-ellipses
-  // Right semicircle always present on waxing (lit), left on waning
-  // Terminator ellipse x-scale = cos(theta mod π) but with sign change
+  // Draw the lit portion using correct terminator geometry.
+  //
+  // Illuminated fraction f = (1 - cosθ)/2:  θ=0 new (f=0), θ=π full (f=1), θ=π/2 or 3π/2 quarter (f=0.5).
+  // Waxing (Sun-lit limb on the RIGHT, N-hemisphere convention) for θ in (0,π) i.e. sinθ>0; waning on the LEFT.
+  // The terminator (day/night boundary) projects to a half-ellipse with vertical semi-axis R and
+  // horizontal semi-axis rx = R·|cosθ|. It bulges AWAY from the lit limb for a crescent (f<0.5, cosθ>0)
+  // and TOWARD the lit limb for a gibbous (f>0.5, cosθ<0). The lit region is the limb semicircle on the
+  // sunlit side closed by that terminator half-ellipse.
+  const cosT = Math.cos(theta);
+  const wax = Math.sin(theta) > 0;           // true while waxing
+  const rx = Math.abs(R * cosT);             // terminator horizontal semi-axis
 
-  // phase_angle to terminator:
-  // At θ: lit fraction = (1 - cosθ)/2
-  // x_terminator = R * cosθ (this goes from R [new moon, terminator at right edge = moon dark] to -R [full, = left edge = fully lit])
-  // Wait: cos(0)=1 → x_term = R (right edge, lit fraction = 0 — dark) ✓
-  // cos(π)=-1 → x_term = -R (left edge, lit fraction = 1 — fully lit) ✓
-  // At quarter (θ=π/2): cos=0 → x_term = 0 (central), lit fraction = 0.5 ✓
-
-  const xTerm = R * Math.cos(theta);
-  // Right half (x > xTerm) is lit when waxing; left half (x < xTerm) is lit when waning.
-  // Actually: the sunlit side is always toward the Sun.
-  // From Earth's view: Sun is always to the right of a waxing moon (conventional N hemisphere view)
-  // At new moon: no lit side visible (θ=0, xTerm=R → only a sliver at very right edge visible = none)
-  // At waxing crescent: thin crescent on right
-  // At first quarter: right half lit
-  // At full: whole disc lit
-  // At waning gibbous: left portion lost
-  // At last quarter: left half lit
-  // At waning crescent: thin crescent on left
-
-  // Draw lit region:
-  ctx.save();
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.clip();
-
-  if (waxing) {
-    // Lit on right side of terminator
-    // Draw right semicircle (lit base) + replace terminator side
+  if (illum > 0.004) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
     ctx.fillStyle = '#ddd4b8';
-    // Right semicircle
     ctx.beginPath();
-    ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2); // right half
-    ctx.closePath();
-    ctx.fill();
-    // Now cover back from terminator to left (dark side of right half when crescent)
-    if (xTerm > -R) {
-      // terminator ellipse semi-minor = abs(xTerm)
-      const termA = Math.abs(xTerm);
-      ctx.fillStyle = '#1a1820'; // dark
-      if (xTerm >= 0) {
-        // crescent — dark covers right half except thin rim
-        ctx.beginPath();
-        ctx.arc(cx, cy, R, -Math.PI/2, Math.PI/2); // right semicircle
-        ctx.closePath();
-        ctx.fill();
-        // draw lit crescent sliver
-        ctx.fillStyle = '#ddd4b8';
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - R);
-        // outer arc: right half
-        for (let a = -Math.PI/2; a <= Math.PI/2; a += 0.05) {
-          ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
-        }
-        // inner arc: terminator ellipse (concave toward centre)
-        for (let a = Math.PI/2; a >= -Math.PI/2; a -= 0.05) {
-          ctx.lineTo(cx + termA * Math.cos(a), cy + R * Math.sin(a));
-        }
-        ctx.closePath(); ctx.fill();
+    if (wax) {
+      // Lit limb on the right: trace top → right → bottom.
+      ctx.arc(cx, cy, R, -Math.PI / 2, Math.PI / 2, false);
+      if (cosT >= 0) {
+        // Crescent: terminator bulges right (toward the lit limb) → thin sliver.
+        ctx.ellipse(cx, cy, rx, R, 0, Math.PI / 2, -Math.PI / 2, true);
       } else {
-        // gibbous waxing: xTerm < 0, terminator to the LEFT of centre
-        // right half lit + extra strip from terminator to centre
-        ctx.fillStyle = '#ddd4b8';
-        // fill left half between terminator and centre
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - R);
-        for (let a = -Math.PI/2; a >= -Math.PI * 1.5; a -= 0.05) {
-          ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
-        }
-        // terminator
-        for (let a = Math.PI/2; a <= Math.PI * 1.5; a += 0.05) {
-          ctx.lineTo(cx + termA * Math.cos(a - Math.PI), cy + R * Math.sin(a - Math.PI));
-        }
-        ctx.closePath(); ctx.fill();
+        // Gibbous: terminator bulges left → most of the disc lit.
+        ctx.ellipse(cx, cy, rx, R, 0, Math.PI / 2, 3 * Math.PI / 2, false);
+      }
+    } else {
+      // Lit limb on the left: trace top → left → bottom.
+      ctx.arc(cx, cy, R, -Math.PI / 2, Math.PI / 2, true);
+      if (cosT >= 0) {
+        // Waning crescent: terminator bulges left.
+        ctx.ellipse(cx, cy, rx, R, 0, Math.PI / 2, 3 * Math.PI / 2, false);
+      } else {
+        // Waning gibbous: terminator bulges right.
+        ctx.ellipse(cx, cy, rx, R, 0, Math.PI / 2, -Math.PI / 2, true);
       }
     }
-  } else {
-    // Waning — lit on left side
-    ctx.fillStyle = '#ddd4b8';
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, Math.PI/2, -Math.PI/2); // left half
     ctx.closePath();
     ctx.fill();
-    const termA = Math.abs(xTerm);
-    if (xTerm <= 0) {
-      // crescent waning — only thin left sliver
-      ctx.fillStyle = '#1a1820';
-      ctx.beginPath();
-      ctx.arc(cx, cy, R, Math.PI/2, -Math.PI/2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#ddd4b8';
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - R);
-      for (let a = Math.PI/2; a <= Math.PI * 1.5; a += 0.05) {
-        ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
-      }
-      for (let a = -Math.PI/2; a >= -Math.PI * 1.5; a -= 0.05) {
-        ctx.lineTo(cx - termA * Math.cos(a + Math.PI), cy + R * Math.sin(a + Math.PI));
-      }
-      ctx.closePath(); ctx.fill();
-    } else {
-      // waning gibbous — left half + extra on right
-      ctx.fillStyle = '#ddd4b8';
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - R);
-      for (let a = Math.PI/2; a <= Math.PI * 1.5; a += 0.05) {
-        ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
-      }
-      for (let a = -Math.PI/2; a <= Math.PI/2; a += 0.05) {
-        ctx.lineTo(cx + termA * Math.cos(a), cy + R * Math.sin(a));
-      }
-      ctx.closePath(); ctx.fill();
-    }
+    ctx.restore();
   }
-  ctx.restore();
 
   // Moon surface details (subtle craters on lit portion)
   ctx.save();

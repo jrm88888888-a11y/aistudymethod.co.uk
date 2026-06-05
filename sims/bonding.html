@@ -363,22 +363,22 @@ function drawNaCl(ctx, W, H, step, prog) {
   const naX = cx - sep / 2;
   const clX = cx + sep / 2;
 
-  // Na atom: 1 outer electron (on shell of radius 30)
-  const naR = 22, naShellR = 40;
-  // Cl atom: 7 outer electrons (on shell of radius 38)
-  const clR = 26, clShellR = 44;
+  // Na atom: shells K(2), L(8), M(1)
+  const naR = 20, naShellR = 46; // naShellR = M shell radius
+  // Cl atom: shells K(2), L(8), M(7/8)
+  const clR = 20, clShellR = 46; // clShellR = M shell radius
 
   if (step === 0) {
-    // Separate atoms
+    // Separate atoms — Na: 2,8,1; Cl: 2,8,7
     drawNucleus(ctx, naX, cy, naR, 'Na', '#a78bfa');
-    // Inner shell (2 electrons)
-    drawShell(ctx, naX, cy, 28, ['x','x'], '#a78bfa');
-    // Outer shell (1 electron)
-    drawShell(ctx, naX, cy, naShellR, ['x', null, null, null, null, null, null, null], '#a78bfa');
+    drawShell(ctx, naX, cy, 26, ['x','x'], '#a78bfa');                                            // K shell: 2e
+    drawShell(ctx, naX, cy, 36, ['x','x','x','x','x','x','x','x'], '#a78bfa');                    // L shell: 8e
+    drawShell(ctx, naX, cy, naShellR, ['x', null, null, null, null, null, null, null], '#a78bfa'); // M shell: 1e
 
     drawNucleus(ctx, clX, cy, clR, 'Cl', '#22d3ee');
-    drawShell(ctx, clX, cy, 30, ['o','o'], '#22d3ee');
-    drawShell(ctx, clX, cy, clShellR, ['o','o','o','o','o','o','o',null], '#22d3ee');
+    drawShell(ctx, clX, cy, 26, ['o','o'], '#22d3ee');                                             // K shell: 2e
+    drawShell(ctx, clX, cy, 36, ['o','o','o','o','o','o','o','o'], '#22d3ee');                     // L shell: 8e
+    drawShell(ctx, clX, cy, clShellR, ['o','o','o','o','o','o','o',null], '#22d3ee');              // M shell: 7e
 
     // Config labels
     ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
@@ -387,7 +387,6 @@ function drawNaCl(ctx, W, H, step, prog) {
 
   } else if (step === 1) {
     // Arrow showing electron transfer
-    const arrowX = cx;
     ctx.beginPath();
     ctx.moveTo(naX + naShellR - 5, cy);
     ctx.lineTo(clX - clShellR + 5, cy);
@@ -410,9 +409,10 @@ function drawNaCl(ctx, W, H, step, prog) {
     ctx.fillStyle = '#f43f5e'; ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center';
     ctx.fillText('e⁻', cx, cy - 10);
 
-    // Na (losing electron)
+    // Na (losing its M-shell electron)
     drawNucleus(ctx, naX, cy, naR, 'Na', '#a78bfa');
-    drawShell(ctx, naX, cy, 28, ['x','x'], '#a78bfa');
+    drawShell(ctx, naX, cy, 26, ['x','x'], '#a78bfa');
+    drawShell(ctx, naX, cy, 36, ['x','x','x','x','x','x','x','x'], '#a78bfa');
     // Outer electron moving away
     const moveX = naX + naShellR + (clX - naX - naShellR - clShellR) * prog;
     ctx.beginPath();
@@ -422,20 +422,22 @@ function drawNaCl(ctx, W, H, step, prog) {
 
     // Cl gaining electron
     drawNucleus(ctx, clX, cy, clR, 'Cl', '#22d3ee');
-    drawShell(ctx, clX, cy, 30, ['o','o'], '#22d3ee');
+    drawShell(ctx, clX, cy, 26, ['o','o'], '#22d3ee');
+    drawShell(ctx, clX, cy, 36, ['o','o','o','o','o','o','o','o'], '#22d3ee');
     drawShell(ctx, clX, cy, clShellR, ['o','o','o','o','o','o','o', prog > 0.8 ? 'x' : null], '#22d3ee');
 
   } else {
     // Ions formed
-    // Na+: config 2,8 — show inner shell (2e) and full outer shell (8e, now outermost)
+    // Na+: config 2,8 — K shell (2e) and L shell (8e); M electron lost
     drawNucleus(ctx, naX, cy, naR, 'Na⁺', '#a78bfa');
-    drawShell(ctx, naX, cy, 28, ['x','x'], '#a78bfa');
-    drawShell(ctx, naX, cy, naShellR, ['x','x','x','x','x','x','x','x'], '#a78bfa');
+    drawShell(ctx, naX, cy, 26, ['x','x'], '#a78bfa');
+    drawShell(ctx, naX, cy, 36, ['x','x','x','x','x','x','x','x'], '#a78bfa');
     ctx.fillStyle = '#a78bfa'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-    ctx.fillText('2,8 (full)', naX, cy + naShellR + 14);
-    // Cl-
+    ctx.fillText('2,8 (full)', naX, cy + 36 + 14);
+    // Cl-: config 2,8,8 — K(2) + L(8) + M(8)
     drawNucleus(ctx, clX, cy, clR, 'Cl⁻', '#22d3ee');
-    drawShell(ctx, clX, cy, 30, ['o','o'], '#22d3ee');
+    drawShell(ctx, clX, cy, 26, ['o','o'], '#22d3ee');
+    drawShell(ctx, clX, cy, 36, ['o','o','o','o','o','o','o','o'], '#22d3ee');
     drawShell(ctx, clX, cy, clShellR, ['o','o','o','o','o','o','o','x'], '#22d3ee');
     ctx.fillStyle = '#22d3ee'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
     ctx.fillText('2,8,8 (full)', clX, cy + clShellR + 20);
@@ -456,32 +458,35 @@ function drawNaCl(ctx, W, H, step, prog) {
 
 function drawMgO(ctx, W, H, step, prog) {
   const cx = W / 2, cy = H / 2;
-  const sep = step === 0 ? 200 : 165;
+  const sep = step === 0 ? 210 : 170;
   const mgX = cx - sep / 2, oX = cx + sep / 2;
 
   if (step === 0) {
-    // Mg: 2 outer electrons, O: 6 outer electrons
-    drawNucleus(ctx, mgX, cy, 22, 'Mg', '#f59e0b');
-    drawShell(ctx, mgX, cy, 28, ['x','x'], '#f59e0b');
-    drawShell(ctx, mgX, cy, 42, ['x','x', null, null, null, null, null, null], '#f59e0b');
+    // Mg: 2,8,2 (3 shells); O: 2,6 (2 shells)
+    drawNucleus(ctx, mgX, cy, 20, 'Mg', '#f59e0b');
+    drawShell(ctx, mgX, cy, 26, ['x','x'], '#f59e0b');                                             // K: 2e
+    drawShell(ctx, mgX, cy, 36, ['x','x','x','x','x','x','x','x'], '#f59e0b');                    // L: 8e
+    drawShell(ctx, mgX, cy, 46, ['x','x', null, null, null, null, null, null], '#f59e0b');         // M: 2e
     ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-    ctx.fillText('2,8,2', mgX, cy + 60);
+    ctx.fillText('2,8,2', mgX, cy + 62);
 
     drawNucleus(ctx, oX, cy, 20, 'O', '#34d399');
-    drawShell(ctx, oX, cy, 28, ['o','o'], '#34d399');
-    drawShell(ctx, oX, cy, 42, ['o','o','o','o','o','o',null,null], '#34d399');
+    drawShell(ctx, oX, cy, 28, ['o','o'], '#34d399');                                              // K: 2e
+    drawShell(ctx, oX, cy, 42, ['o','o','o','o','o','o',null,null], '#34d399');                    // L: 6e
     ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-    ctx.fillText('2,6', oX, cy + 60);
+    ctx.fillText('2,6', oX, cy + 58);
 
   } else if (step === 1) {
-    drawNucleus(ctx, mgX, cy, 22, 'Mg', '#f59e0b');
-    drawShell(ctx, mgX, cy, 28, ['x','x'], '#f59e0b');
-    // 2 electrons moving
+    // Mg loses its 2 M-shell electrons
+    drawNucleus(ctx, mgX, cy, 20, 'Mg', '#f59e0b');
+    drawShell(ctx, mgX, cy, 26, ['x','x'], '#f59e0b');
+    drawShell(ctx, mgX, cy, 36, ['x','x','x','x','x','x','x','x'], '#f59e0b');
+    // 2 electrons moving from Mg M-shell toward O
     const t = prog;
     for (let i = 0; i < 2; i++) {
       const angle = (i === 0) ? -0.2 : 0.2;
-      const ex = mgX + 42 * Math.cos(angle) + (oX - mgX - 84) * t;
-      const ey = cy + 42 * Math.sin(angle) * (1 - t);
+      const ex = mgX + 46 * Math.cos(angle) + (oX - mgX - 88) * t;
+      const ey = cy + 46 * Math.sin(angle) * (1 - t);
       ctx.beginPath();
       ctx.arc(ex, ey, 4, 0, Math.PI * 2);
       ctx.fillStyle = '#f59e0b';
@@ -492,18 +497,19 @@ function drawMgO(ctx, W, H, step, prog) {
     drawShell(ctx, oX, cy, 42, ['o','o','o','o','o','o', t > 0.7 ? 'x' : null, t > 0.85 ? 'x' : null], '#34d399');
 
   } else {
-    // Mg2+: config 2,8 — show inner shell (2e) and full outer shell (8e, now outermost)
-    drawNucleus(ctx, mgX, cy, 22, 'Mg²⁺', '#f59e0b');
-    drawShell(ctx, mgX, cy, 28, ['x','x'], '#f59e0b');
-    drawShell(ctx, mgX, cy, 42, ['x','x','x','x','x','x','x','x'], '#f59e0b');
+    // Mg²⁺: config 2,8 — K(2) + L(8); both M electrons transferred
+    drawNucleus(ctx, mgX, cy, 20, 'Mg²⁺', '#f59e0b');
+    drawShell(ctx, mgX, cy, 26, ['x','x'], '#f59e0b');
+    drawShell(ctx, mgX, cy, 36, ['x','x','x','x','x','x','x','x'], '#f59e0b');
     ctx.fillStyle = '#f59e0b'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-    ctx.fillText('2,8 — loses 2e⁻', mgX, cy + 56);
+    ctx.fillText('2,8 — loses 2e⁻', mgX, cy + 50);
 
+    // O²⁻: config 2,8 — K(2) + L(8); gains 2 electrons
     drawNucleus(ctx, oX, cy, 20, 'O²⁻', '#34d399');
     drawShell(ctx, oX, cy, 28, ['o','o'], '#34d399');
     drawShell(ctx, oX, cy, 42, ['o','o','o','o','o','o','x','x'], '#34d399');
     ctx.fillStyle = '#34d399'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-    ctx.fillText('2,8 — gains 2e⁻', oX, cy + 60);
+    ctx.fillText('2,8 — gains 2e⁻', oX, cy + 58);
 
     ctx.fillStyle = '#f43f5e'; ctx.font = 'bold 12px Inter'; ctx.textAlign = 'center';
     ctx.fillText('Mg²⁺ ←→ O²⁻ (ionic bond)', cx, cy - H * 0.35);
@@ -633,12 +639,12 @@ function drawCO2(ctx, W, H, step, prog) {
         ctx.fillStyle = col; ctx.fill();
       }
     };
-    // O1 (left, green): 2 lone pairs pointing left (away from C)
-    drawLonePair(o1x, cy, -Math.PI / 4, '#34d399');       // upper-left pair
-    drawLonePair(o1x, cy,  Math.PI / 4, '#34d399');       // lower-left pair (mirror)
-    // O2 (right, cyan): 2 lone pairs pointing right (away from C)
-    drawLonePair(o2x, cy, Math.PI - Math.PI / 4, '#22d3ee'); // upper-right pair
-    drawLonePair(o2x, cy, Math.PI + Math.PI / 4, '#22d3ee'); // lower-right pair
+    // O1 (left, green): 2 lone pairs pointing away from C (upper-left and lower-left)
+    drawLonePair(o1x, cy,  Math.PI - Math.PI / 4, '#34d399'); // upper-left pair (135°)
+    drawLonePair(o1x, cy,  Math.PI + Math.PI / 4, '#34d399'); // lower-left pair (225°)
+    // O2 (right, cyan): 2 lone pairs pointing away from C (upper-right and lower-right)
+    drawLonePair(o2x, cy, -Math.PI / 4, '#22d3ee'); // upper-right pair (−45°)
+    drawLonePair(o2x, cy,  Math.PI / 4, '#22d3ee'); // lower-right pair (45°)
 
     ctx.fillStyle = '#22d3ee'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
     ctx.fillText('O=C=O  (linear, no net dipole)', cx, cy + 60);
