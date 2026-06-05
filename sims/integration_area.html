@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integration: Area Under a Curve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.readout .val.rose { color: var(--rose); }
+.canvas-wrap { position: relative; width: 100%; height: 400px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Integration: Area Under a Curve</h1>
+    <p class="sub">Riemann sums, definite integrals, and the Fundamental Theorem of Calculus</p>
+    <p class="insight-banner">As the number of rectangles n → ∞, any Riemann sum converges to the exact integral F(b) − F(a), linking area with the antiderivative.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">↑ ↓</span><span>Increase / decrease n (rectangles)</span>
+      <span class="kbd-key">F</span><span>Cycle function</span>
+      <span class="kbd-key">M</span><span>Cycle Riemann rule (left/right/midpoint)</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3 id="mainTitle">∫ sin(x) dx from a to b</h3>
+        <div class="seg" id="ruleToggle">
+          <button data-rule="left" class="active">Left</button>
+          <button data-rule="mid">Mid</button>
+          <button data-rule="right">Right</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="main"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>f(x)</span>
+        <span class="legend-item"><span class="swatch" style="background:rgba(34,211,238,0.35)"></span>Riemann rectangles</span>
+        <span class="legend-item"><span class="swatch" style="background:rgba(52,211,153,0.5)"></span>Exact area F(b)−F(a)</span>
+      </div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Function</p>
+      <div class="control">
+        <div class="seg" id="fnToggle" style="flex-wrap:wrap;width:100%;border-radius:10px;padding:4px;">
+          <button data-fn="sin" class="active" style="border-radius:8px;">sin x</button>
+          <button data-fn="x2" style="border-radius:8px;">x²</button>
+          <button data-fn="x3" style="border-radius:8px;">x³</button>
+          <button data-fn="cos" style="border-radius:8px;">cos x</button>
+          <button data-fn="exp" style="border-radius:8px;">eˣ</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Integration limits & rectangles</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Lower limit of integration">Lower limit a</span>
+          <span class="value num" id="vA">0.00</span>
+        </div>
+        <input type="range" id="sliderA" min="-4" max="4" step="0.1" value="0">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Upper limit of integration">Upper limit b</span>
+          <span class="value num" id="vB">3.14</span>
+        </div>
+        <input type="range" id="sliderB" min="-4" max="4" step="0.1" value="3.14">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="n: number of rectangles in the Riemann sum">Rectangles n</span>
+          <span class="value num" id="vN">8</span>
+        </div>
+        <input type="range" id="sliderN" min="1" max="200" step="1" value="8">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Results</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="Riemann sum approximation">Riemann sum</div><div class="val cyan" id="rRiemann">—</div></div>
+        <div class="readout"><div class="lbl" title="Exact definite integral F(b)−F(a)">Exact integral</div><div class="val green" id="rExact">—</div></div>
+        <div class="readout"><div class="lbl" title="Absolute error |Riemann sum − exact|">Error |Δ|</div><div class="val amber" id="rError">—</div></div>
+        <div class="readout"><div class="lbl" title="Width of each rectangle">Δx (width)</div><div class="val violet" id="rDx">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="half_sine">Half-sine arch</button>
+        <button data-try="x2_exact">x² exact comparison</button>
+        <button data-try="exp_growth">eˣ over [0, 1]</button>
+        <button data-try="high_n">n = 200 convergence</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// ---- Function definitions (with exact antiderivatives) ----
+const FN_DEFS = {
+  sin: {
+    label: 'sin(x)', Flabel: '−cos(x)',
+    f: x => Math.sin(x),
+    F: x => -Math.cos(x),  // antiderivative (+ C)
+    xmin: -4, xmax: 4
+  },
+  x2: {
+    label: 'x²', Flabel: 'x³/3',
+    f: x => x * x,
+    F: x => x * x * x / 3,
+    xmin: -3, xmax: 3
+  },
+  x3: {
+    label: 'x³', Flabel: 'x⁴/4',
+    f: x => x * x * x,
+    F: x => x * x * x * x / 4,
+    xmin: -2.5, xmax: 2.5
+  },
+  cos: {
+    label: 'cos(x)', Flabel: 'sin(x)',
+    f: x => Math.cos(x),
+    F: x => Math.sin(x),
+    xmin: -4, xmax: 4
+  },
+  exp: {
+    label: 'eˣ', Flabel: 'eˣ',
+    f: x => Math.exp(x),
+    F: x => Math.exp(x),
+    xmin: -3, xmax: 3
+  }
+};
+
+const state = {
+  fn: 'sin',
+  a: 0,
+  b: Math.PI,
+  n: 8,
+  rule: 'left'
+};
+
+function getFn() { return FN_DEFS[state.fn]; }
+
+function fmt3(v) {
+  if (!isFinite(v)) return '—';
+  return v.toFixed(4);
+}
+function fmt2(v) {
+  if (Math.abs(v) >= 100) return v.toFixed(0);
+  if (Math.abs(v) >= 10) return v.toFixed(1);
+  if (Math.abs(v) >= 1) return v.toFixed(2);
+  return v.toFixed(2);
+}
+
+function niceStep(range, target) {
+  const raw = range / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-10))));
+  const norm = raw / mag;
+  let nice = norm < 1.5 ? 1 : norm < 3.5 ? 2 : norm < 7.5 ? 5 : 10;
+  return nice * mag;
+}
+
+function worldToCanvas(wx, wy, pad, W, H, xmin, xmax, ymin, ymax) {
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const cx = pad.l + (wx - xmin) / (xmax - xmin) * pw;
+  const cy = pad.t + (1 - (wy - ymin) / (ymax - ymin)) * ph;
+  return [cx, cy];
+}
+
+// Compute Riemann sum
+function riemannSum(f, a, b, n, rule) {
+  if (n < 1 || !isFinite(a) || !isFinite(b)) return 0;
+  const dx = (b - a) / n;
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    let xi;
+    if (rule === 'left') xi = a + i * dx;
+    else if (rule === 'right') xi = a + (i + 1) * dx;
+    else xi = a + (i + 0.5) * dx; // midpoint
+    sum += f(xi) * dx;
+  }
+  return sum;
+}
+
+// ---- Draw ----
+function draw() {
+  const c = $('main');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const d = getFn();
+  const { xmin, xmax } = d;
+  const a = Math.min(state.a, state.b);
+  const b = Math.max(state.a, state.b);
+
+  // Auto y range from function over [xmin, xmax]
+  const NP = 400;
+  let ymin = 0, ymax = 0;
+  for (let i = 0; i <= NP; i++) {
+    const x = xmin + (xmax - xmin) * i / NP;
+    const y = d.f(x);
+    if (!isFinite(y)) continue;
+    ymin = Math.min(ymin, y);
+    ymax = Math.max(ymax, y);
+  }
+  const ypad = Math.max((ymax - ymin) * 0.18, 0.3);
+  ymin -= ypad; ymax += ypad;
+
+  const pad = { l: 56, r: 16, t: 20, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const toC = (wx, wy) => worldToCanvas(wx, wy, pad, W, H, xmin, xmax, ymin, ymax);
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  const ys = niceStep(ymax - ymin, 5);
+  for (let yv = Math.ceil(ymin / ys) * ys; yv <= ymax + 1e-9; yv += ys) {
+    const [, cy] = toC(0, yv);
+    ctx.beginPath(); ctx.moveTo(pad.l, cy); ctx.lineTo(W - pad.r, cy); ctx.stroke();
+    ctx.fillStyle = '#5b6573'; ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(fmt2(yv), pad.l - 5, cy);
+  }
+  const xs = niceStep(xmax - xmin, 7);
+  for (let xv = Math.ceil(xmin / xs) * xs; xv <= xmax + 1e-9; xv += xs) {
+    const [cx] = toC(xv, 0);
+    ctx.beginPath(); ctx.moveTo(cx, pad.t); ctx.lineTo(cx, H - pad.b); ctx.stroke();
+    ctx.fillStyle = '#5b6573'; ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(fmt2(xv), cx, H - pad.b + 4);
+  }
+  // Axes
+  ctx.strokeStyle = '#2a3748'; ctx.lineWidth = 1.2;
+  if (xmin < 0 && xmax > 0) {
+    const [ax] = toC(0, 0); ctx.beginPath(); ctx.moveTo(ax, pad.t); ctx.lineTo(ax, H - pad.b); ctx.stroke();
+  }
+  if (ymin < 0 && ymax > 0) {
+    const [, ay] = toC(0, 0); ctx.beginPath(); ctx.moveTo(pad.l, ay); ctx.lineTo(W - pad.r, ay); ctx.stroke();
+  }
+
+  // Draw exact shaded area F(b) - F(a) as filled region under curve
+  if (a !== b) {
+    ctx.beginPath();
+    const [ax0, ay0] = toC(a, 0);
+    ctx.moveTo(ax0, ay0);
+    const Nshade = 300;
+    for (let i = 0; i <= Nshade; i++) {
+      const xv = a + (b - a) * i / Nshade;
+      const yv = d.f(xv);
+      if (!isFinite(yv)) continue;
+      ctx.lineTo(...toC(xv, yv));
+    }
+    ctx.lineTo(...toC(b, 0));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(52,211,153,0.18)';
+    ctx.fill();
+  }
+
+  // Draw Riemann rectangles
+  if (state.n >= 1 && a !== b) {
+    const dx = (b - a) / state.n;
+    const [, zeroY] = toC(0, 0);
+
+    for (let i = 0; i < state.n; i++) {
+      let xi;
+      if (state.rule === 'left') xi = a + i * dx;
+      else if (state.rule === 'right') xi = a + (i + 1) * dx;
+      else xi = a + (i + 0.5) * dx;
+
+      const fi = d.f(xi);
+      if (!isFinite(fi)) continue;
+
+      const [rx, ry] = toC(a + i * dx, fi);
+      const [rx2, ry2] = toC(a + (i + 1) * dx, 0);
+      const rectW = rx2 - rx;
+      const rectH = ry2 - ry;
+
+      ctx.fillStyle = fi >= 0 ? 'rgba(34,211,238,0.28)' : 'rgba(244,63,94,0.25)';
+      ctx.fillRect(rx, ry, rectW, rectH);
+      ctx.strokeStyle = fi >= 0 ? 'rgba(34,211,238,0.6)' : 'rgba(244,63,94,0.6)';
+      ctx.lineWidth = state.n <= 50 ? 0.8 : 0.3;
+      ctx.strokeRect(rx, ry, rectW, rectH);
+    }
+  }
+
+  // Draw f(x) curve on top
+  ctx.beginPath();
+  let first = true;
+  for (let i = 0; i <= NP; i++) {
+    const xv = xmin + (xmax - xmin) * i / NP;
+    const yv = d.f(xv);
+    if (!isFinite(yv)) { first = true; continue; }
+    const [cx, cy] = toC(xv, yv);
+    if (first) { ctx.moveTo(cx, cy); first = false; } else ctx.lineTo(cx, cy);
+  }
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Draw limit markers a, b
+  if (isFinite(a) && isFinite(b)) {
+    [[a, 'a', '#f59e0b'], [b, 'b', '#a78bfa']].forEach(([xv, lbl, col]) => {
+      const [cx] = toC(xv, 0);
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(cx, pad.t); ctx.lineTo(cx, H - pad.b); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = col; ctx.font = 'bold 12px JetBrains Mono';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(lbl + ' = ' + xv.toFixed(2), cx, pad.t + 4);
+    });
+  }
+
+  // Border
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateReadouts() {
+  const d = getFn();
+  const a = Math.min(state.a, state.b);
+  const b = Math.max(state.a, state.b);
+  const n = state.n;
+  const riemann = riemannSum(d.f, a, b, n, state.rule);
+  const exact = d.F(b) - d.F(a);
+  const err = Math.abs(riemann - exact);
+  const dx = n > 0 ? (b - a) / n : 0;
+
+  $('rRiemann').textContent = fmt3(riemann);
+  $('rExact').textContent = fmt3(exact);
+  $('rError').textContent = fmt3(err);
+  $('rDx').textContent = fmt3(dx);
+
+  const ruleName = state.rule === 'left' ? 'Left Riemann' : state.rule === 'right' ? 'Right Riemann' : 'Midpoint Riemann';
+  let txt = `Using <span class="k">${ruleName} sum</span> with <span class="k">n = ${n}</span> rectangles, each of width <span class="k">Δx = ${fmt3(dx)}</span>. `;
+  txt += `Sum = <span class="k">${fmt3(riemann)}</span> vs exact ∫<sub>a</sub><sup>b</sup>${d.label} dx = <span class="k">[${d.Flabel}]</span> = <span class="k">${fmt3(exact)}</span>. `;
+  if (n > 1) {
+    txt += `Error = <span class="k">${fmt3(err)}</span>. `;
+    if (err < 0.001) txt += 'The approximation is <span class="k">very accurate</span> — the rectangles almost perfectly fill the area.';
+    else if (err < 0.1) txt += 'Good agreement — increase n further to reduce the error.';
+    else txt += 'Significant error: add more rectangles (drag n right) to see convergence.';
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() {
+  draw();
+  updateReadouts();
+}
+
+// ---- Controls ----
+$('sliderA').addEventListener('input', e => {
+  state.a = parseFloat(e.target.value);
+  $('vA').textContent = state.a.toFixed(2);
+  redraw();
+});
+$('sliderB').addEventListener('input', e => {
+  state.b = parseFloat(e.target.value);
+  $('vB').textContent = state.b.toFixed(2);
+  redraw();
+});
+$('sliderN').addEventListener('input', e => {
+  state.n = parseInt(e.target.value);
+  $('vN').textContent = state.n;
+  redraw();
+});
+
+document.querySelectorAll('#ruleToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('active')) return;
+    document.querySelectorAll('#ruleToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.rule = b.dataset.rule;
+    redraw();
+  });
+});
+
+document.querySelectorAll('#fnToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#fnToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.fn = b.dataset.fn;
+    const d = getFn();
+    $('mainTitle').textContent = `∫ ${d.label} dx from a to b`;
+    redraw();
+  });
+});
+
+// ---- Try this ----
+const tryPresets = {
+  half_sine: {
+    fn: 'sin', a: 0, b: Math.PI, n: 8, rule: 'left',
+    note: '<strong>∫₀^π sin(x) dx = 2</strong> exactly. The arch of the sine curve has a beautiful integer area. Watch the sum converge as you increase n.'
+  },
+  x2_exact: {
+    fn: 'x2', a: 0, b: 3, n: 6, rule: 'mid',
+    note: '<strong>∫₀³ x² dx = 9</strong> exactly (= 3³/3). The midpoint rule is more accurate than left or right for smooth functions.'
+  },
+  exp_growth: {
+    fn: 'exp', a: 0, b: 1, n: 10, rule: 'mid',
+    note: '<strong>∫₀¹ eˣ dx = e − 1 ≈ 1.7183</strong>. The antiderivative of eˣ is eˣ itself — the only function equal to its own derivative.'
+  },
+  high_n: {
+    fn: 'sin', a: 0, b: Math.PI, n: 200, rule: 'left',
+    note: 'With <strong>n = 200</strong>, the Riemann sum error falls below 0.001. The error halves each time you double n for the left/right rule, or quarters for midpoint (it\'s order 2).'
+  }
+};
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = tryPresets[b.dataset.try];
+    if (!cfg) return;
+    // Apply fn
+    document.querySelectorAll('#fnToggle button').forEach(x => x.classList.toggle('active', x.dataset.fn === cfg.fn));
+    state.fn = cfg.fn;
+    // Apply limits
+    state.a = cfg.a; $('sliderA').value = cfg.a; $('vA').textContent = cfg.a.toFixed(2);
+    state.b = cfg.b; $('sliderB').value = cfg.b; $('vB').textContent = cfg.b.toFixed(2);
+    state.n = cfg.n; $('sliderN').value = cfg.n; $('vN').textContent = cfg.n;
+    state.rule = cfg.rule;
+    document.querySelectorAll('#ruleToggle button').forEach(x => x.classList.toggle('active', x.dataset.rule === cfg.rule));
+    const d = getFn();
+    $('mainTitle').textContent = `∫ ${d.label} dx from a to b`;
+    redraw();
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+// ---- Keyboard ----
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  const fnOrder = ['sin', 'x2', 'x3', 'cos', 'exp'];
+  const ruleOrder = ['left', 'mid', 'right'];
+
+  function resetDefaults() {
+    document.querySelectorAll('#fnToggle button').forEach(x => x.classList.toggle('active', x.dataset.fn === 'sin'));
+    state.fn = 'sin';
+    state.a = 0; $('sliderA').value = 0; $('vA').textContent = '0.00';
+    state.b = Math.PI; $('sliderB').value = Math.PI; $('vB').textContent = Math.PI.toFixed(2);
+    state.n = 8; $('sliderN').value = 8; $('vN').textContent = '8';
+    state.rule = 'left';
+    document.querySelectorAll('#ruleToggle button').forEach(x => x.classList.toggle('active', x.dataset.rule === 'left'));
+    $('mainTitle').textContent = `∫ sin(x) dx from a to b`;
+    redraw();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (k === 'ArrowUp') {
+      e.preventDefault();
+      state.n = Math.min(200, state.n + (state.n < 20 ? 1 : state.n < 50 ? 5 : 10));
+      $('sliderN').value = state.n; $('vN').textContent = state.n;
+      redraw();
+    } else if (k === 'ArrowDown') {
+      e.preventDefault();
+      state.n = Math.max(1, state.n - (state.n <= 20 ? 1 : state.n <= 50 ? 5 : 10));
+      $('sliderN').value = state.n; $('vN').textContent = state.n;
+      redraw();
+    } else if (k.toLowerCase() === 'f') {
+      const idx = fnOrder.indexOf(state.fn);
+      const next = fnOrder[(idx + 1) % fnOrder.length];
+      document.querySelector(`#fnToggle button[data-fn="${next}"]`).click();
+    } else if (k.toLowerCase() === 'm') {
+      const idx = ruleOrder.indexOf(state.rule);
+      const next = ruleOrder[(idx + 1) % ruleOrder.length];
+      document.querySelector(`#ruleToggle button[data-rule="${next}"]`).click();
+    } else if (k.toLowerCase() === 'r') {
+      resetDefaults();
+    }
+  });
+})();
+
+window.addEventListener('resize', redraw);
+
+// ---- Init ----
+(function init() {
+  state.b = Math.PI;
+  $('sliderB').value = Math.PI;
+  $('vB').textContent = Math.PI.toFixed(2);
+  redraw();
+})();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="derivative_slope.html">
+      <div class="related-title">Differentiation: The Slope of a Curve</div>
+      <div class="related-desc">Tangent lines, gradients, and first principles — the inverse of integration</div>
+    </a>
+    <a class="related-card" href="binomial_distribution.html">
+      <div class="related-title">Binomial & Normal Distributions</div>
+      <div class="related-desc">Discrete probability distributions and the normal approximation</div>
+    </a>
+    <a class="related-card" href="taylor_series.html">
+      <div class="related-title">Taylor Series</div>
+      <div class="related-desc">Approximating functions with polynomials — built on repeated differentiation</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

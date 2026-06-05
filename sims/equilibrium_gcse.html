@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reversible Reactions &amp; Equilibrium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 300px; }
+canvas { width: 100%; height: 100%; display: block; }
+.chart-wrap { position: relative; width: 100%; height: 220px; margin-top: 12px; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.eq-display { background: var(--bg-elev-2); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); text-align: center; margin-bottom: 10px; letter-spacing: 0.03em; }
+.shift-badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; margin-left: 8px; }
+.shift-right { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+.shift-left  { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+.shift-none  { background: var(--bg-elev-1); color: var(--text-dim); border: 1px solid var(--panel-border); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Reversible Reactions &amp; Equilibrium</h1>
+    <p class="sub">Dynamic equilibrium and Le Chatelier's principle — N₂ + 3H₂ ⇌ 2NH₃</p>
+    <p class="insight-banner">At dynamic equilibrium the forward and reverse reaction rates are equal and concentrations remain constant — but both reactions are still occurring. Le Chatelier's principle predicts which direction the system shifts to oppose a change.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset to default conditions</span>
+      <span class="kbd-key">T</span><span>Increase temperature +20°C</span>
+      <span class="kbd-key">P</span><span>Increase pressure</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Equilibrium dynamics</h3>
+        <span id="shiftBadge" class="shift-badge shift-none">At equilibrium</span>
+      </div>
+      <div class="eq-display">N₂(g) + 3H₂(g) ⇌ 2NH₃(g) &nbsp;&nbsp; ΔH = −92 kJ mol⁻¹ (exothermic forward)</div>
+      <div class="canvas-wrap"><canvas id="barCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>N₂ (reactant)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>H₂ (reactant)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>NH₃ (product)</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="title-row">
+        <h3>Forward and reverse rates over time</h3>
+        <span style="font-size:11px;color:var(--text-dim)">rates equalise at equilibrium</span>
+      </div>
+      <div class="chart-wrap"><canvas id="rateChart"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Forward rate (→ NH₃)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Reverse rate (← N₂ + H₂)</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer">Adjust the sliders to apply Le Chatelier's principle and observe the shift in equilibrium position.</div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Conditions</p>
+
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="The Haber process runs at ~450°C — a compromise between rate (faster at high T) and yield (higher at low T, since forward reaction is exothermic).">Temperature (°C)</span>
+          <span class="value num" id="vTemp">300</span>
+        </div>
+        <input type="range" id="slTemp" min="100" max="600" step="10" value="300">
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--bg-elev-2);color:var(--text-dim);border:1px solid var(--panel-border);cursor:pointer;" class="ref-chip" data-temp="200">200°C</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--bg-elev-2);color:var(--text-dim);border:1px solid var(--panel-border);cursor:pointer;" class="ref-chip" data-temp="450">Haber 450°C</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--bg-elev-2);color:var(--text-dim);border:1px solid var(--panel-border);cursor:pointer;" class="ref-chip" data-temp="600">600°C</span>
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Increasing pressure favours the side with fewer moles of gas. N₂ + 3H₂ → 2NH₃ reduces from 4 mol gas to 2 mol gas, so high pressure shifts equilibrium right.">Pressure (atm)</span>
+          <span class="value num" id="vPressure">100</span>
+        </div>
+        <input type="range" id="slPressure" min="10" max="400" step="10" value="100">
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--bg-elev-2);color:var(--text-dim);border:1px solid var(--panel-border);cursor:pointer;" class="ref-chip" data-pressure="10">Low 10 atm</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--bg-elev-2);color:var(--text-dim);border:1px solid var(--panel-border);cursor:pointer;" class="ref-chip" data-pressure="200">Haber 200 atm</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--bg-elev-2);color:var(--text-dim);border:1px solid var(--panel-border);cursor:pointer;" class="ref-chip" data-pressure="400">High 400 atm</span>
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="N₂ feed ratio — increasing N₂ concentration shifts equilibrium right to consume the added reactant.">N₂ feed (relative)</span>
+          <span class="value num" id="vN2Feed">1.0</span>
+        </div>
+        <input type="range" id="slN2" min="0.2" max="3.0" step="0.1" value="1.0">
+      </div>
+
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Catalyst (iron with promoters) lowers activation energy of both forward and reverse reactions equally — it does not change Kc or equilibrium yield.">Catalyst (iron)</span>
+          <span class="value num" id="vCat">OFF</span>
+        </div>
+        <button id="btnCat" style="border-radius:var(--r-sm);padding:7px 12px;font-size:12px;">Toggle catalyst</button>
+        <div style="margin-top:6px;font-size:11px;color:var(--text-faint);">Speeds up equilibration — does not shift position</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Equilibrium readouts</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Equilibrium constant Kc — depends only on temperature, not concentration or pressure.">Kc (approx.)</div>
+          <div class="val cyan" id="oKc">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">NH₃ yield %</div>
+          <div class="val green" id="oYield">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">[N₂] at eq.</div>
+          <div class="val" id="oN2">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">[NH₃] at eq.</div>
+          <div class="val amber" id="oNH3">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="haberoptimal">Haber optimum</button>
+        <button data-try="hightemp">Raise temperature</button>
+        <button data-try="highpressure">Maximise pressure</button>
+        <button data-try="addN2">Add more N₂</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="reaction_rates.html">
+      <div class="related-title">Rates of Reaction</div>
+      <div class="related-desc">Collision theory — how temperature, concentration, surface area and catalysts affect reaction rate.</div>
+    </a>
+    <a class="related-card" href="bonding.html">
+      <div class="related-title">Ionic &amp; Covalent Bonding</div>
+      <div class="related-desc">Electron transfer and sharing — dot-and-cross diagrams and compound formulae.</div>
+    </a>
+    <a class="related-card" href="ph_scale.html">
+      <div class="related-title">The pH Scale</div>
+      <div class="related-desc">What pH really means and how it relates to [H⁺] concentration.</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr;
+  c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const state = {
+  temp: 300,       // °C
+  pressure: 100,   // atm
+  n2Feed: 1.0,
+  catalyst: false
+};
+
+// Thermodynamic model for N₂ + 3H₂ ⇌ 2NH₃
+// ΔH° = -92 kJ/mol, ΔS° ≈ -198 J/mol/K
+// Kp = exp(-ΔG°/RT) where ΔG° = ΔH° - TΔS°
+const DH = -92000;   // J/mol
+const DS = -198;     // J/mol/K
+const R  = 8.314;
+
+function computeKp(T_K) {
+  const DG = DH - T_K * DS;
+  return Math.exp(-DG / (R * T_K));
+}
+
+// For N₂ + 3H₂ ⇌ 2NH₃, using 1:3 stoich feed plus n2Feed modifier
+// Kp = p_NH3^2 / (p_N2 * p_H2^3)  where p = mole fraction * P
+// We find equilibrium mole fraction of NH₃ numerically
+function computeEquilibrium() {
+  const T_K = state.temp + 273.15;
+  const P   = state.pressure;
+  const Kp  = computeKp(T_K);
+
+  // Stoichiometric feed ratio 1:3 (N₂:H₂) scaled by n2Feed
+  // Let total initial moles = 1*n2Feed + 3 (normalised)
+  const n2i = state.n2Feed;
+  const h2i = 3.0; // keep H₂ at 3 for 1:3 ratio
+  const nh3i = 0.0;
+  const total_i = n2i + h2i;
+
+  // At extent of reaction ξ: n(N₂) = n2i - ξ, n(H₂) = h2i - 3ξ, n(NH₃) = 2ξ
+  // Total = total_i - 2ξ
+  // Solve numerically: bisection on f(ξ) = Kp - p_NH3^2/(p_N2 * p_H2^3)
+  const xiMax = Math.min(n2i, h2i / 3) * 0.9999;
+  function Qp(xi) {
+    const nN2  = n2i - xi;
+    const nH2  = h2i - 3 * xi;
+    const nNH3 = 2 * xi;
+    const ntot = nN2 + nH2 + nNH3;
+    if (nN2 <= 0 || nH2 <= 0 || ntot <= 0) return Infinity;
+    const yN2  = nN2  / ntot;
+    const yH2  = nH2  / ntot;
+    const yNH3 = nNH3 / ntot;
+    const pN2  = yN2  * P;
+    const pH2  = yH2  * P;
+    const pNH3 = yNH3 * P;
+    if (pN2 <= 0 || pH2 <= 0) return Infinity;
+    return (pNH3 * pNH3) / (pN2 * Math.pow(pH2, 3));
+  }
+
+  // Bisection
+  let lo = 0, hi = xiMax;
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2;
+    const Qmid = Qp(mid);
+    if (Qmid < Kp) lo = mid; else hi = mid;
+    if (hi - lo < 1e-9) break;
+  }
+  const xi = (lo + hi) / 2;
+
+  const nN2  = n2i - xi;
+  const nH2  = h2i - 3 * xi;
+  const nNH3 = 2 * xi;
+  const ntot = nN2 + nH2 + nNH3;
+  const yNH3 = nNH3 / ntot;
+
+  return { nN2, nH2, nNH3, ntot, yNH3, Kp, xi };
+}
+
+// ── Chart history ─────────────────────────────────────────────────────────────
+// We simulate the kinetic approach to equilibrium dynamically
+let timeHistory = [];
+let fwdHistory  = [];
+let revHistory  = [];
+const MAX_HIST  = 300;
+let currentN2  = 1.0, currentH2 = 3.0, currentNH3 = 0.0;
+let targetEq   = null;
+let eqTime     = 0;
+const EQ_STEPS = 200;
+let prevEq     = null;
+let shiftState = 'none'; // 'right','left','none'
+
+function resetDynamics() {
+  const eq = computeEquilibrium();
+  targetEq  = eq;
+  prevEq    = null;
+  eqTime    = 0;
+  currentN2  = state.n2Feed;
+  currentH2  = 3.0;
+  currentNH3 = 0.0;
+  timeHistory = [];
+  fwdHistory  = [];
+  revHistory  = [];
+  shiftState = 'none';
+}
+
+function stepDynamics() {
+  const eq = targetEq;
+  if (!eq) return;
+  const catFactor = state.catalyst ? 3 : 1;
+  const speed = (catFactor * 0.01);
+  // exponential approach to equilibrium
+  const alpha = 1 - Math.exp(-speed * catFactor);
+  currentN2  += (eq.nN2  - currentN2)  * alpha;
+  currentH2  += (eq.nH2  - currentH2)  * alpha;
+  currentNH3 += (eq.nNH3 - currentNH3) * alpha;
+
+  // Rates: forward ∝ [N2][H2]^3, reverse ∝ [NH3]^2
+  const kf = 1.0 * catFactor;
+  const kr = 1.0 * catFactor;
+  const fwd = kf * currentN2 * Math.pow(Math.max(0, currentH2), 3) / 27;
+  const rev = kr * Math.pow(Math.max(0, currentNH3), 2) / 4;
+
+  fwdHistory.push(fwd);
+  revHistory.push(rev);
+  if (fwdHistory.length > MAX_HIST) { fwdHistory.shift(); revHistory.shift(); }
+  eqTime++;
+
+  // Detect equilibrium approach
+  if (eqTime > 30) {
+    const df = Math.abs(fwd - rev) / (fwd + rev + 1e-10);
+    if (df < 0.02) shiftState = 'none';
+  }
+}
+
+// ── Drawing ───────────────────────────────────────────────────────────────────
+function drawBars() {
+  const c = $('barCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d1219';
+  ctx.fillRect(0, 0, W, H);
+
+  const eq = targetEq;
+  if (!eq) return;
+
+  const ntot = currentN2 + currentH2 + currentNH3;
+  const max  = Math.max(currentN2, currentH2, currentNH3, 0.01);
+  const bars = [
+    { label: 'N₂', val: currentN2, color: '#22d3ee', eq: eq.nN2 },
+    { label: 'H₂', val: currentH2, color: '#f59e0b', eq: eq.nH2 },
+    { label: 'NH₃', val: currentNH3, color: '#34d399', eq: eq.nNH3 }
+  ];
+
+  const bw = 60, gap = 40;
+  const totalW = bars.length * (bw + gap);
+  const startX = (W - totalW) / 2 + gap / 2;
+  const maxH = H - 80;
+  const baseY = H - 40;
+
+  for (let i = 0; i < bars.length; i++) {
+    const b = bars[i];
+    const x = startX + i * (bw + gap);
+    const bh = (b.val / (Math.max(...bars.map(x => x.eq)) * 1.1)) * maxH;
+    const eqH = (b.eq / (Math.max(...bars.map(x => x.eq)) * 1.1)) * maxH;
+
+    // Bar background
+    ctx.fillStyle = b.color + '15';
+    ctx.fillRect(x, baseY - maxH, bw, maxH);
+
+    // Current bar
+    ctx.fillStyle = b.color + 'cc';
+    ctx.fillRect(x, baseY - bh, bw, bh);
+
+    // Equilibrium marker
+    ctx.beginPath();
+    ctx.moveTo(x - 4, baseY - eqH);
+    ctx.lineTo(x + bw + 4, baseY - eqH);
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Label
+    ctx.fillStyle = b.color;
+    ctx.font = 'bold 13px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(b.label, x + bw / 2, baseY + 16);
+    ctx.fillStyle = '#97a1b0';
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillText(b.val.toFixed(3), x + bw / 2, baseY + 30);
+
+    // Eq line label (first bar only)
+    if (i === 0) {
+      ctx.fillStyle = 'rgba(151,161,176,0.7)';
+      ctx.font = '10px JetBrains Mono';
+      ctx.textAlign = 'left';
+      ctx.fillText('── eq', x + bw + 6, baseY - eqH - 2);
+    }
+  }
+
+  // Heading
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText('Moles (normalised to initial feed)', 12, 16);
+}
+
+function drawRateChart() {
+  const c = $('rateChart');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 48, r: 16, t: 12, b: 28 };
+  const pw  = W - pad.l - pad.r;
+  const ph  = H - pad.t - pad.b;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  if (fwdHistory.length < 2) {
+    ctx.fillStyle = '#5b6573';
+    ctx.font = '12px Inter';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Initialising…', pad.l + pw / 2, pad.t + ph / 2);
+    ctx.textBaseline = 'alphabetic';
+    return;
+  }
+
+  const allVals = [...fwdHistory, ...revHistory];
+  const maxV = Math.max(...allVals, 0.001);
+  const xAt  = i => pad.l + (i / (MAX_HIST - 1)) * pw;
+  const yAt  = v => pad.t + ph * (1 - v / maxV);
+
+  const drawLine = (hist, color) => {
+    ctx.beginPath();
+    for (let i = 0; i < hist.length; i++) {
+      const x = xAt(i + MAX_HIST - hist.length);
+      const y = yAt(hist[i]);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  };
+
+  drawLine(fwdHistory, '#22d3ee');
+  drawLine(revHistory, '#f43f5e');
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('0', pad.l - 4, pad.t + ph);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Time →', pad.l + pw / 2, H - pad.b + 6);
+
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+  ctx.textBaseline = 'alphabetic';
+}
+
+// ── Update readouts ───────────────────────────────────────────────────────────
+function updateReadouts() {
+  const eq = targetEq;
+  if (!eq) return;
+  const yNH3 = eq.nNH3 / (eq.nN2 + eq.nH2 + eq.nNH3);
+  $('oKc').textContent = eq.Kp > 1e6 ? eq.Kp.toExponential(1) : eq.Kp > 0.001 ? eq.Kp.toFixed(4) : eq.Kp.toExponential(1);
+  $('oYield').textContent = (yNH3 * 100).toFixed(1) + '%';
+  $('oN2').textContent = eq.nN2.toFixed(3);
+  $('oNH3').textContent = eq.nNH3.toFixed(3);
+
+  // Shift badge
+  const badge = $('shiftBadge');
+  if (shiftState === 'right') {
+    badge.textContent = 'Shifting → (more NH₃)';
+    badge.className = 'shift-badge shift-right';
+  } else if (shiftState === 'left') {
+    badge.textContent = 'Shifting ← (less NH₃)';
+    badge.className = 'shift-badge shift-left';
+  } else {
+    badge.textContent = 'At equilibrium';
+    badge.className = 'shift-badge shift-none';
+  }
+
+  // Explainer
+  const T = state.temp;
+  const P = state.pressure;
+  let txt = `At <span class="k">${T}°C</span> and <span class="k">${P} atm</span>, Kp ≈ <span class="k">${eq.Kp.toExponential(2)}</span>. `;
+  txt += `Equilibrium yield of NH₃ is <span class="k">${(yNH3 * 100).toFixed(1)}%</span>. `;
+  if (T > 400) txt += `High temperature increases reaction rate but shifts equilibrium <span class="k">left</span> (Le Chatelier — forward reaction is exothermic, so cooling favours products). `;
+  else txt += `Lower temperature gives higher yield but slower rate — hence the Haber compromise at ~450°C with a catalyst. `;
+  if (P > 150) txt += `High pressure shifts equilibrium <span class="k">right</span> (4 mol gas → 2 mol gas, so high pressure favours NH₃). `;
+  if (state.catalyst) txt += `The iron catalyst does not shift the equilibrium position — it only speeds up equilibration.`;
+  $('explainer').innerHTML = txt;
+}
+
+// ── Animation loop ────────────────────────────────────────────────────────────
+let frameCount = 0;
+function loop() {
+  stepDynamics();
+  frameCount++;
+  if (frameCount % 2 === 0) {
+    drawBars();
+    drawRateChart();
+    updateReadouts();
+  }
+  requestAnimationFrame(loop);
+}
+
+// ── Control wiring ────────────────────────────────────────────────────────────
+function applyChange(deltaRight) {
+  shiftState = deltaRight > 0 ? 'right' : deltaRight < 0 ? 'left' : 'none';
+  prevEq = targetEq;
+  targetEq = computeEquilibrium();
+  eqTime = 0;
+}
+
+$('slTemp').addEventListener('input', e => {
+  const old = state.temp;
+  state.temp = parseInt(e.target.value);
+  $('vTemp').textContent = state.temp;
+  // T increase → Kp decreases (exothermic) → less NH3 → shift left
+  applyChange(state.temp < old ? 1 : -1);
+});
+$('slPressure').addEventListener('input', e => {
+  const old = state.pressure;
+  state.pressure = parseInt(e.target.value);
+  $('vPressure').textContent = state.pressure;
+  // P increase → fewer moles of gas favoured → shift right
+  applyChange(state.pressure > old ? 1 : -1);
+});
+$('slN2').addEventListener('input', e => {
+  const old = state.n2Feed;
+  state.n2Feed = parseFloat(e.target.value);
+  $('vN2Feed').textContent = state.n2Feed.toFixed(1);
+  applyChange(state.n2Feed > old ? 1 : -1);
+});
+$('btnCat').addEventListener('click', () => {
+  state.catalyst = !state.catalyst;
+  $('vCat').textContent = state.catalyst ? 'ON' : 'OFF';
+  $('btnCat').style.color = state.catalyst ? 'var(--green)' : '';
+  $('btnCat').style.borderColor = state.catalyst ? 'var(--green)' : '';
+});
+
+document.querySelectorAll('.ref-chip[data-temp]').forEach(c =>
+  c.addEventListener('click', () => { $('slTemp').value = c.dataset.temp; $('slTemp').dispatchEvent(new Event('input')); }));
+document.querySelectorAll('.ref-chip[data-pressure]').forEach(c =>
+  c.addEventListener('click', () => { $('slPressure').value = c.dataset.pressure; $('slPressure').dispatchEvent(new Event('input')); }));
+
+// ── Try this ──────────────────────────────────────────────────────────────────
+const tryNotes = {
+  haberoptimal: { temp: 450, pressure: 200, n2Feed: 1.0, cat: true,
+    note: '<strong>Industrial Haber process:</strong> 450°C is a compromise — fast enough with catalyst, yet not too hot (which would reduce equilibrium yield). 200 atm gives good yield without prohibitive engineering cost.' },
+  hightemp: { temp: 550, pressure: 100, n2Feed: 1.0, cat: false,
+    note: '<strong>Le Chatelier — temperature:</strong> raising temperature shifts equilibrium left (backward reaction is endothermic, absorbing the extra heat). NH₃ yield falls even though rate increases.' },
+  highpressure: { temp: 300, pressure: 400, n2Feed: 1.0, cat: false,
+    note: '<strong>Le Chatelier — pressure:</strong> high pressure favours the side with fewer moles of gas. N₂ + 3H₂ (4 mol) → 2NH₃ (2 mol), so equilibrium shifts right — yield increases significantly.' },
+  addN2: { temp: 300, pressure: 100, n2Feed: 2.5, cat: false,
+    note: '<strong>Le Chatelier — concentration:</strong> adding extra N₂ shifts equilibrium right to consume some of the added reactant, producing more NH₃ until a new equilibrium is reached.' }
+};
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = tryNotes[b.dataset.try];
+    if (!cfg) return;
+    state.temp = cfg.temp; $('slTemp').value = cfg.temp; $('vTemp').textContent = cfg.temp;
+    state.pressure = cfg.pressure; $('slPressure').value = cfg.pressure; $('vPressure').textContent = cfg.pressure;
+    state.n2Feed = cfg.n2Feed; $('slN2').value = cfg.n2Feed; $('vN2Feed').textContent = cfg.n2Feed.toFixed(1);
+    state.catalyst = cfg.cat; $('vCat').textContent = cfg.cat ? 'ON' : 'OFF';
+    $('btnCat').style.color = cfg.cat ? 'var(--green)' : '';
+    $('btnCat').style.borderColor = cfg.cat ? 'var(--green)' : '';
+    resetDynamics();
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+window.addEventListener('resize', () => { drawBars(); drawRateChart(); });
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'r') {
+      state.temp = 300; $('slTemp').value = 300; $('vTemp').textContent = 300;
+      state.pressure = 100; $('slPressure').value = 100; $('vPressure').textContent = 100;
+      state.n2Feed = 1.0; $('slN2').value = 1.0; $('vN2Feed').textContent = '1.0';
+      state.catalyst = false; $('vCat').textContent = 'OFF';
+      resetDynamics();
+    } else if (k === 't') {
+      const newT = Math.min(600, state.temp + 20);
+      $('slTemp').value = newT; $('slTemp').dispatchEvent(new Event('input'));
+    } else if (k === 'p') {
+      const newP = Math.min(400, state.pressure + 50);
+      $('slPressure').value = newP; $('slPressure').dispatchEvent(new Event('input'));
+    }
+  });
+})();
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+resetDynamics();
+loop();
+</script>
+</body>
+</html>

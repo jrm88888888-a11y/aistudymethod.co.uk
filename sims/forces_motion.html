@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forces &amp; Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 300px; }
+.graph-wrap { position: relative; width: 100%; height: 220px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.balance-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.balance-badge.balanced { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+.balance-badge.unbalanced { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Forces &amp; Motion</h1>
+    <p class="sub">Newton's Second Law · Free-body diagrams · F = ma</p>
+    <p class="insight-banner">A resultant (net) force causes acceleration. When forces are balanced the resultant is zero and the object moves at constant velocity — or stays still. F = ma links force (N), mass (kg), and acceleration (m/s²).</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Play / pause animation</span>
+      <span class="kbd-key">R</span><span>Reset position and velocity to zero</span>
+      <span class="kbd-key">F</span><span>Toggle friction on / off</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Free-body diagram &amp; motion</h3>
+        <div id="balanceBadge" class="balance-badge balanced">BALANCED</div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Velocity–time graph</h3>
+        <span style="font-size:11px;color:var(--text-dim)">v (m/s) vs t (s)</span>
+      </div>
+      <div class="graph-wrap"><canvas id="graphCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Velocity (m/s)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Applied force arrow</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Friction force arrow</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>Resultant force arrow</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Block &amp; surface parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Mass of the block in kilograms.">Mass m (kg)</span>
+          <span class="value num" id="vMass">10.0</span>
+        </div>
+        <input type="range" id="slMass" min="1" max="50" step="0.5" value="10">
+        <div class="refs">
+          <span class="ref-chip" data-mass="2">Bag of flour 2 kg</span>
+          <span class="ref-chip" data-mass="10">Crate 10 kg</span>
+          <span class="ref-chip" data-mass="40">Person 40 kg</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Applied (push/pull) force in newtons. Negative = pulling left.">Applied force F (N)</span>
+          <span class="value num" id="vApplied">20.0</span>
+        </div>
+        <input type="range" id="slApplied" min="-100" max="100" step="0.5" value="20">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Coefficient of kinetic friction μ between block and surface.">Friction coeff μ</span>
+          <span class="value num" id="vMu">0.30</span>
+        </div>
+        <input type="range" id="slMu" min="0" max="1" step="0.01" value="0.30">
+        <div class="refs">
+          <span class="ref-chip" data-mu="0.04">Ice μ≈0.04</span>
+          <span class="ref-chip" data-mu="0.3">Wood μ≈0.3</span>
+          <span class="ref-chip" data-mu="0.7">Rubber μ≈0.7</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label">Friction</span>
+          <div class="seg" id="frictionToggle">
+            <button data-mode="on" class="active">On</button>
+            <button data-mode="off">Off</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Force readouts</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Applied force in newtons.">Applied F</div>
+          <div class="val amber" id="oApplied">0 N</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Friction force opposing motion (kinetic: μmg).">Friction f</div>
+          <div class="val rose" id="oFriction">0 N</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Resultant (net) force = Applied − Friction.">Resultant F_net</div>
+          <div class="val green" id="oResultant">0 N</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Acceleration from Newton's 2nd law: a = F_net / m.">Acceleration a</div>
+          <div class="val cyan" id="oAccel">0.00 m/s²</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Velocity v</div>
+          <div class="val" id="oVelocity">0.00 m/s</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Normal reaction force N = mg (horizontal surface).">Normal N</div>
+          <div class="val" id="oNormal">0 N</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Simulation</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="btnPlayPause" class="primary active">Pause</button>
+        <button id="btnReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="balanced">Balanced forces</button>
+        <button data-try="friction_stop">Friction stops the block</button>
+        <button data-try="ice">Frictionless ice</button>
+        <button data-try="heavy_push">Heavy crate, big push</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const g = 9.81; // m/s²
+
+const state = {
+  mass: 10,
+  applied: 20,
+  mu: 0.30,
+  frictionOn: true,
+  velocity: 0,
+  position: 0,
+  running: true,
+  vtHistory: [], // {t, v}
+  simTime: 0
+};
+
+const DEFAULTS = { mass: 10, applied: 20, mu: 0.30, frictionOn: true };
+
+function frictionForce() {
+  if (!state.frictionOn) return 0;
+  const fMax = state.mu * state.mass * g;
+  // Kinetic friction: opposes velocity direction (or applied if at rest about to move)
+  if (Math.abs(state.velocity) > 1e-4) {
+    return -Math.sign(state.velocity) * fMax;
+  }
+  // Static: block stationary — friction balances applied up to fMax
+  if (Math.abs(state.applied) <= fMax) {
+    return -state.applied; // perfectly balances applied force → net = 0
+  }
+  // About to move — kinetic friction kicks in
+  return -Math.sign(state.applied) * fMax;
+}
+
+function computeAccel() {
+  const ff = frictionForce();
+  const fnet = state.applied + ff;
+  // If block stationary and net = 0, accel = 0
+  if (Math.abs(state.velocity) < 1e-6 && Math.abs(fnet) < 1e-6) return 0;
+  return fnet / state.mass;
+}
+
+let lastTime = null;
+let animId = null;
+
+function loop(ts) {
+  if (!state.running) { animId = requestAnimationFrame(loop); return; }
+  if (lastTime === null) lastTime = ts;
+  const dtRaw = (ts - lastTime) / 1000;
+  lastTime = ts;
+  const dt = Math.min(dtRaw, 0.05); // cap at 50 ms
+
+  const a = computeAccel();
+  state.velocity += a * dt;
+
+  // Prevent creep past zero when friction is decelerating
+  if (!state.frictionOn === false) {
+    const ff = frictionForce();
+    const fnet = state.applied + ff;
+    // If block was moving and net force is decelerating, clamp velocity to zero
+    if (Math.abs(state.velocity) < 0.01 && Math.abs(fnet) < Math.abs(state.mu * state.mass * g) + 0.01) {
+      const fMaxS = state.mu * state.mass * g;
+      if (Math.abs(state.applied) <= fMaxS) state.velocity = 0;
+    }
+  }
+
+  state.position += state.velocity * dt;
+  state.simTime += dt;
+
+  // Record v-t history (max 600 samples)
+  state.vtHistory.push({ t: state.simTime, v: state.velocity });
+  if (state.vtHistory.length > 600) state.vtHistory.shift();
+
+  draw();
+  animId = requestAnimationFrame(loop);
+}
+
+// ---------- Canvas drawing ----------
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+function drawArrow(ctx, x, y, length, color, label, above) {
+  if (Math.abs(length) < 0.5) return;
+  const headLen = 10;
+  const endX = x + length;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(endX, y);
+  ctx.stroke();
+  // arrowhead
+  ctx.beginPath();
+  const dir = Math.sign(length);
+  ctx.moveTo(endX, y);
+  ctx.lineTo(endX - dir * headLen, y - 6);
+  ctx.lineTo(endX - dir * headLen, y + 6);
+  ctx.closePath();
+  ctx.fill();
+  // label
+  ctx.fillStyle = color;
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = above ? 'bottom' : 'top';
+  ctx.fillText(label, (x + endX) / 2, above ? y - 8 : y + 8);
+  ctx.restore();
+}
+
+function drawMain() {
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#0a0e14';
+  ctx.fillRect(0, 0, W, H);
+
+  // Surface
+  const surfY = H * 0.62;
+  const surfH = 20;
+  // Surface gradient texture
+  ctx.fillStyle = '#1a2230';
+  ctx.fillRect(0, surfY, W, surfH);
+  // surface line
+  ctx.strokeStyle = '#2d3f55';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, surfY); ctx.lineTo(W, surfY); ctx.stroke();
+
+  // Hatch marks on surface
+  ctx.strokeStyle = '#1f2e40';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 18) {
+    ctx.beginPath();
+    ctx.moveTo(x, surfY);
+    ctx.lineTo(x - 10, surfY + surfH);
+    ctx.stroke();
+  }
+
+  // Block dimensions
+  const blockW = 70 + state.mass * 1.5;
+  const blockH = 50 + state.mass * 0.8;
+  const blockW2 = Math.min(blockW, 130);
+  const blockH2 = Math.min(blockH, 90);
+
+  // Block position: wrap with modulo so it loops on screen
+  const centerX = W / 2;
+  const rawOffset = (state.position * 40) % W;
+  const bx = centerX + rawOffset - blockW2 / 2;
+  const by = surfY - blockH2;
+
+  // Block shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(bx + blockW2 / 2, surfY + 4, blockW2 * 0.5, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Block body
+  const blockGrad = ctx.createLinearGradient(bx, by, bx, by + blockH2);
+  blockGrad.addColorStop(0, '#2a3a50');
+  blockGrad.addColorStop(1, '#1a2535');
+  ctx.fillStyle = blockGrad;
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, blockW2, blockH2, 6);
+  ctx.fill();
+  ctx.stroke();
+
+  // Mass label on block
+  ctx.fillStyle = '#e6edf3';
+  ctx.font = `bold ${Math.min(14, 10 + state.mass * 0.15)}px Inter`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(state.mass.toFixed(0) + ' kg', bx + blockW2 / 2, by + blockH2 / 2);
+
+  const arrowY = by + blockH2 / 2;
+  const arrowScale = 1.2; // pixels per newton
+
+  // Applied force arrow (amber)
+  const appPx = state.applied * arrowScale;
+  const appStart = state.applied >= 0 ? bx : bx + blockW2;
+  drawArrow(ctx, appStart, arrowY, appPx, '#f59e0b', 'F_app', true);
+
+  // Friction arrow (rose)
+  const ff = frictionForce();
+  if (Math.abs(ff) > 0.1) {
+    const ffPx = ff * arrowScale;
+    const ffStart = ff >= 0 ? bx : bx + blockW2;
+    drawArrow(ctx, ffStart, arrowY + 18, ffPx, '#f43f5e', 'f', false);
+  }
+
+  // Resultant arrow (green)
+  const fnet = state.applied + ff;
+  if (Math.abs(fnet) > 0.2) {
+    const fnetPx = fnet * arrowScale;
+    const fnetStart = fnet >= 0 ? bx : bx + blockW2;
+    drawArrow(ctx, fnetStart, arrowY - 18, fnetPx, '#34d399', 'F_net', true);
+  }
+
+  // Normal force arrow (violet, upward)
+  const normalF = state.mass * g;
+  const normLen = Math.min(80, normalF * 0.4);
+  ctx.save();
+  ctx.strokeStyle = '#a78bfa';
+  ctx.fillStyle = '#a78bfa';
+  ctx.lineWidth = 2;
+  const nx = bx + blockW2 / 2;
+  ctx.beginPath();
+  ctx.moveTo(nx, surfY);
+  ctx.lineTo(nx, surfY - normLen);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(nx, surfY - normLen);
+  ctx.lineTo(nx - 5, surfY - normLen + 10);
+  ctx.lineTo(nx + 5, surfY - normLen + 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#a78bfa';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('N', nx + 14, surfY - normLen + 2);
+  ctx.restore();
+
+  // Weight arrow (downward, from centre)
+  const wLen = Math.min(60, normalF * 0.35);
+  ctx.save();
+  ctx.strokeStyle = '#fbbf24';
+  ctx.fillStyle = '#fbbf24';
+  ctx.lineWidth = 2;
+  const wx = bx + blockW2 / 2 + 20;
+  ctx.beginPath();
+  ctx.moveTo(wx, by + blockH2);
+  ctx.lineTo(wx, by + blockH2 + wLen);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(wx, by + blockH2 + wLen);
+  ctx.lineTo(wx - 5, by + blockH2 + wLen - 10);
+  ctx.lineTo(wx + 5, by + blockH2 + wLen - 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('W', wx + 14, by + blockH2 + wLen - 4);
+  ctx.restore();
+
+  // Velocity indicator at top
+  ctx.fillStyle = '#22d3ee';
+  ctx.font = '12px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('v = ' + state.velocity.toFixed(2) + ' m/s', 16, 12);
+  const a = computeAccel();
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillText('a = ' + a.toFixed(2) + ' m/s²', 16, 30);
+}
+
+function drawGraph() {
+  const c = $('graphCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 52, r: 16, t: 12, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const hist = state.vtHistory;
+  const tWindow = 20; // show last 20 seconds
+  const tNow = state.simTime;
+  const tStart = Math.max(0, tNow - tWindow);
+
+  // find v range
+  let vMax = 5;
+  for (const pt of hist) {
+    if (Math.abs(pt.v) > vMax) vMax = Math.abs(pt.v);
+  }
+  vMax = Math.ceil(vMax * 1.2);
+  const vMin = -vMax;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const y = pad.t + ph * i / yTicks;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  for (let t = 0; t <= tWindow; t += 5) {
+    const x = pad.l + (t / tWindow) * pw;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+
+  // Zero line
+  const y0 = pad.t + ph * (1 - (0 - vMin) / (vMax - vMin));
+  ctx.strokeStyle = '#2d3f55';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l, y0); ctx.lineTo(W - pad.r, y0); ctx.stroke();
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= yTicks; i++) {
+    const y = pad.t + ph * i / yTicks;
+    const val = vMax - (vMax - vMin) * i / yTicks;
+    ctx.fillText(val.toFixed(1), pad.l - 6, y);
+  }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let t = 0; t <= tWindow; t += 5) {
+    const x = pad.l + (t / tWindow) * pw;
+    const label = (tStart + t).toFixed(0) + 's';
+    ctx.fillText(label, x, H - pad.b + 4);
+  }
+  // Axis name
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText('time (s)', pad.l + pw / 2, H - 2);
+  ctx.save();
+  ctx.translate(10, pad.t + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillText('v (m/s)', 0, 0);
+  ctx.restore();
+
+  // V-t curve
+  if (hist.length > 1) {
+    const xAt = t => pad.l + ((t - tStart) / tWindow) * pw;
+    const yAt = v => pad.t + ph * (1 - (v - vMin) / (vMax - vMin));
+    ctx.beginPath();
+    let first = true;
+    for (const pt of hist) {
+      if (pt.t < tStart) { first = true; continue; }
+      const x = xAt(pt.t);
+      const y = yAt(pt.v);
+      if (first) { ctx.moveTo(x, y); first = false; } else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateReadouts() {
+  const ff = frictionForce();
+  const fnet = state.applied + ff;
+  const a = state.mass > 0 ? fnet / state.mass : 0;
+  const balanced = Math.abs(fnet) < 0.05;
+
+  $('oApplied').textContent = state.applied.toFixed(1) + ' N';
+  $('oFriction').textContent = ff.toFixed(1) + ' N';
+  $('oResultant').textContent = fnet.toFixed(1) + ' N';
+  $('oAccel').textContent = a.toFixed(2) + ' m/s²';
+  $('oVelocity').textContent = state.velocity.toFixed(2) + ' m/s';
+  $('oNormal').textContent = (state.mass * g).toFixed(1) + ' N';
+
+  const badge = $('balanceBadge');
+  badge.textContent = balanced ? 'BALANCED' : 'UNBALANCED';
+  badge.className = 'balance-badge ' + (balanced ? 'balanced' : 'unbalanced');
+
+  // Explainer
+  const btnText = state.running ? 'running' : 'paused';
+  let txt = `Applied force <span class="k">F = ${state.applied.toFixed(1)} N</span>. `;
+  if (state.frictionOn) {
+    txt += `Friction <span class="k">f = μmg = ${ff.toFixed(1)} N</span> (μ = ${state.mu.toFixed(2)}, m = ${state.mass.toFixed(1)} kg). `;
+  } else {
+    txt += `Friction is <span class="k">off</span> (frictionless surface). `;
+  }
+  txt += `Resultant <span class="k">F_net = ${fnet.toFixed(1)} N</span> → acceleration <span class="k">a = F/m = ${a.toFixed(2)} m/s²</span>. `;
+  if (balanced) {
+    txt += 'Forces are <span class="k">balanced</span>: the block moves at constant velocity (or remains stationary).';
+  } else {
+    txt += `Forces are <span class="k">unbalanced</span>: the block ${a > 0 ? 'accelerates to the right' : 'accelerates to the left'}.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function draw() {
+  drawMain();
+  drawGraph();
+  updateReadouts();
+}
+
+// Wire sliders
+function syncSlider(id, param, fmt, displayId) {
+  $(id).addEventListener('input', e => {
+    state[param] = parseFloat(e.target.value);
+    $(displayId).textContent = fmt(state[param]);
+  });
+}
+syncSlider('slMass', 'mass', v => v.toFixed(1), 'vMass');
+syncSlider('slApplied', 'applied', v => v.toFixed(1), 'vApplied');
+syncSlider('slMu', 'mu', v => v.toFixed(2), 'vMu');
+
+document.querySelectorAll('.ref-chip[data-mass]').forEach(c =>
+  c.addEventListener('click', () => {
+    state.mass = parseFloat(c.dataset.mass);
+    $('slMass').value = state.mass;
+    $('vMass').textContent = state.mass.toFixed(1);
+  })
+);
+document.querySelectorAll('.ref-chip[data-mu]').forEach(c =>
+  c.addEventListener('click', () => {
+    state.mu = parseFloat(c.dataset.mu);
+    $('slMu').value = state.mu;
+    $('vMu').textContent = state.mu.toFixed(2);
+  })
+);
+
+document.querySelectorAll('#frictionToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#frictionToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.frictionOn = b.dataset.mode === 'on';
+  });
+});
+
+$('btnPlayPause').addEventListener('click', () => {
+  state.running = !state.running;
+  lastTime = null;
+  $('btnPlayPause').textContent = state.running ? 'Pause' : 'Play';
+});
+
+$('btnReset').addEventListener('click', resetMotion);
+
+function resetMotion() {
+  state.velocity = 0;
+  state.position = 0;
+  state.simTime = 0;
+  state.vtHistory = [];
+  lastTime = null;
+}
+
+// Try this
+const tryPresets = {
+  balanced: {
+    mass: 10, applied: 29.4, mu: 0.30, frictionOn: true,
+    note: '<strong>Applied force exactly equals friction (F = μmg = 29.4 N)</strong>. Resultant is zero — no acceleration. The block moves at constant velocity if already moving, or stays still.'
+  },
+  friction_stop: {
+    mass: 8, applied: 0, mu: 0.4, frictionOn: true,
+    note: '<strong>No applied force, friction alone decelerates the block.</strong> Push the block with the applied force slider, then set it back to zero — watch friction bring it to a halt.'
+  },
+  ice: {
+    mass: 15, applied: 10, mu: 0.02, frictionOn: true,
+    note: '<strong>Very low friction (μ = 0.02, like ice)</strong>. Almost all the applied force goes to accelerating the block — it builds speed rapidly.'
+  },
+  heavy_push: {
+    mass: 40, applied: 80, mu: 0.30, frictionOn: true,
+    note: '<strong>Heavy 40 kg crate with a large push (80 N)</strong>. Friction is μmg = 118 N, so even this large force cannot overcome friction alone — the crate stays put!'
+  }
+};
+
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = tryPresets[b.dataset.try];
+    if (!cfg) return;
+    state.mass = cfg.mass; $('slMass').value = cfg.mass; $('vMass').textContent = cfg.mass.toFixed(1);
+    state.applied = cfg.applied; $('slApplied').value = cfg.applied; $('vApplied').textContent = cfg.applied.toFixed(1);
+    state.mu = cfg.mu; $('slMu').value = cfg.mu; $('vMu').textContent = cfg.mu.toFixed(2);
+    state.frictionOn = cfg.frictionOn;
+    document.querySelectorAll('#frictionToggle button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === (cfg.frictionOn ? 'on' : 'off'));
+    });
+    resetMotion();
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+window.addEventListener('resize', draw);
+
+// Keyboard shortcuts
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') {
+      e.preventDefault();
+      $('btnPlayPause').click();
+    } else if (k === 'r') {
+      resetMotion();
+    } else if (k === 'f') {
+      state.frictionOn = !state.frictionOn;
+      document.querySelectorAll('#frictionToggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === (state.frictionOn ? 'on' : 'off'));
+      });
+    }
+  });
+})();
+
+// Start
+animId = requestAnimationFrame(loop);
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="energy_skate.html">
+      <div class="related-title">Energy Skate Park</div>
+      <div class="related-desc">Conservation of energy, kinetic and potential, with friction losses on a curved track</div>
+    </a>
+    <a class="related-card" href="density_float.html">
+      <div class="related-title">Density: Float or Sink?</div>
+      <div class="related-desc">Upthrust, displaced fluid, and why objects float or sink</div>
+    </a>
+    <a class="related-card" href="states_matter.html">
+      <div class="related-title">States of Matter</div>
+      <div class="related-desc">Particles, pressure, and temperature at the molecular level</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

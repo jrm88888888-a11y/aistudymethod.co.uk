@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chromatography Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 500px; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.rf-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+.rf-table th { text-align: left; color: var(--text-dim); font-weight: 500; padding: 4px 6px; border-bottom: 1px solid var(--panel-border); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+.rf-table td { padding: 6px 6px; border-bottom: 1px solid rgba(31,41,55,0.5); vertical-align: middle; }
+.colour-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.run-btn-row { display: flex; gap: 8px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Chromatography</h1>
+    <p class="sub">Paper chromatography · Separation of dyes · Rf values</p>
+    <p class="insight-banner">Rf = distance moved by spot ÷ distance moved by solvent. Each compound has a unique Rf value that can be used to identify it.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Run / pause chromatography</span>
+      <span class="kbd-key">R</span><span>Reset / clear paper</span>
+      <span class="kbd-key">1–4</span><span>Select ink preset 1–4</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Chromatography paper</h3>
+        <span style="font-size:11px;color:var(--text-dim);">solvent rising through paper</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="chromCanvas"></canvas></div>
+      <div class="run-btn-row">
+        <button class="primary" id="btnRun">▶ Run</button>
+        <button id="btnReset">Reset</button>
+      </div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Ink / mixture selection</p>
+      <div style="display:flex;flex-direction:column;gap:8px;" id="inkSelector"></div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Solvent front</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Distance the solvent front has travelled from the baseline.">Solvent distance</div>
+          <div class="val cyan" id="oSolvent">0.0 cm</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Progress</div>
+          <div class="val amber" id="oProgress">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Rf values</p>
+      <table class="rf-table" id="rfTable">
+        <thead><tr><th>Colour</th><th>Component</th><th>Spot dist.</th><th>Rf</th></tr></thead>
+        <tbody id="rfBody"></tbody>
+      </table>
+      <div style="margin-top:8px;font-size:11px;color:var(--text-faint);">
+        Rf = spot distance ÷ solvent distance
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="blackink">Black ink (4 dyes)</button>
+        <button data-try="fooddye">Food dye mix</button>
+        <button data-try="pure">Pure single dye</button>
+        <button data-try="compare">Compare two inks</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr;
+  c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+// Ink definitions: each ink is a mixture of component dyes with defined Rf values
+// Rf values are fixed properties — they depend on the dye and solvent system
+const INKS = [
+  {
+    id: 'blackink',
+    label: 'Black pen ink',
+    spotColor: '#1a1a2e',
+    components: [
+      { name: 'Cyan dye',    rf: 0.83, color: '#22d3ee', radius: 7 },
+      { name: 'Magenta dye', rf: 0.61, color: '#f43f5e', radius: 7 },
+      { name: 'Yellow dye',  rf: 0.45, color: '#fbbf24', radius: 7 },
+      { name: 'Indigo dye',  rf: 0.22, color: '#818cf8', radius: 7 },
+    ]
+  },
+  {
+    id: 'fooddye',
+    label: 'Food colouring mix',
+    spotColor: '#7c3aed',
+    components: [
+      { name: 'Tartrazine (E102)', rf: 0.78, color: '#f59e0b', radius: 8 },
+      { name: 'Quinoline (E104)',  rf: 0.60, color: '#84cc16', radius: 7 },
+      { name: 'Allura Red (E129)', rf: 0.38, color: '#f43f5e', radius: 8 },
+      { name: 'Indigo carmine',    rf: 0.18, color: '#3b82f6', radius: 7 },
+    ]
+  },
+  {
+    id: 'greenink',
+    label: 'Green felt-tip',
+    spotColor: '#15803d',
+    components: [
+      { name: 'Yellow pigment', rf: 0.88, color: '#fde047', radius: 8 },
+      { name: 'Blue pigment',   rf: 0.52, color: '#60a5fa', radius: 7 },
+    ]
+  },
+  {
+    id: 'puredye',
+    label: 'Pure red dye (single)',
+    spotColor: '#dc2626',
+    components: [
+      { name: 'Red dye A', rf: 0.65, color: '#f43f5e', radius: 9 },
+    ]
+  },
+];
+
+// Active ink index
+let activeInkIdx = 0;
+let running = false;
+let solventFrac = 0; // 0–1 fraction of paper height travelled
+let animId = null;
+let lastTime = null;
+const RUN_SPEED = 0.07; // fraction per second
+
+// Layout constants (in canvas coordinates, will be mapped)
+// Paper fills most of canvas; solvent at bottom, 10cm effective height
+const PAPER_CM = 10.0; // total paper height
+const BASELINE_CM = 1.5; // baseline from bottom
+
+function getLayout(W, H) {
+  const paperW = Math.min(W - 60, 400);
+  const paperX = (W - paperW) / 2;
+  const paperTop = 30;
+  const paperBot = H - 30;
+  const paperH = paperBot - paperTop;
+  const baselineY = paperBot - (BASELINE_CM / PAPER_CM) * paperH;
+  const pxPerCm = paperH / PAPER_CM;
+  return { paperX, paperW, paperTop, paperBot, paperH, baselineY, pxPerCm, W, H };
+}
+
+function cmToY(cm, layout) {
+  return layout.paperBot - (cm / PAPER_CM) * layout.paperH;
+}
+
+function drawChrom() {
+  const c = $('chromCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const lay = getLayout(W, H);
+  const ink = INKS[activeInkIdx];
+
+  // ----- Paper -----
+  // Paper background (cream/white)
+  const paperGrad = ctx.createLinearGradient(lay.paperX, lay.paperTop, lay.paperX, lay.paperBot);
+  paperGrad.addColorStop(0, '#f5f0e8');
+  paperGrad.addColorStop(1, '#e8e0cc');
+  ctx.fillStyle = paperGrad;
+  ctx.fillRect(lay.paperX, lay.paperTop, lay.paperW, lay.paperH);
+
+  // Solvent-wetted region (below solvent front, slightly darker/transparent)
+  const solventFrontCm = BASELINE_CM + solventFrac * (PAPER_CM - BASELINE_CM);
+  const solventFrontY = cmToY(solventFrontCm, lay);
+  if (solventFrac > 0) {
+    ctx.fillStyle = 'rgba(180,220,240,0.22)';
+    ctx.fillRect(lay.paperX, solventFrontY, lay.paperW, lay.paperBot - solventFrontY);
+    // Solvent front line
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 3]);
+    ctx.beginPath(); ctx.moveTo(lay.paperX, solventFrontY); ctx.lineTo(lay.paperX + lay.paperW, solventFrontY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#60a5fa'; ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('Solvent front', lay.paperX + lay.paperW + 4, solventFrontY + 2);
+  }
+
+  // Solvent reservoir at bottom
+  ctx.fillStyle = 'rgba(96,165,250,0.25)';
+  ctx.fillRect(lay.paperX - 10, lay.paperBot, lay.paperW + 20, 15);
+  ctx.strokeStyle = 'rgba(96,165,250,0.6)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(lay.paperX - 10, lay.paperBot, lay.paperW + 20, 15);
+  ctx.fillStyle = '#60a5fa'; ctx.font = '10px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('Solvent (mobile phase)', lay.paperX + lay.paperW / 2, lay.paperBot + 8);
+
+  // Baseline
+  ctx.strokeStyle = '#aaa';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(lay.paperX, lay.baselineY); ctx.lineTo(lay.paperX + lay.paperW, lay.baselineY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#888'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('baseline', lay.paperX - 4, lay.baselineY);
+
+  // Ruler (left side)
+  ctx.fillStyle = '#97a1b0'; ctx.font = '9px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let cm = 0; cm <= PAPER_CM; cm++) {
+    const y = cmToY(cm, lay);
+    ctx.fillStyle = 'rgba(150,160,180,0.4)';
+    ctx.fillRect(lay.paperX - 18, y - 0.5, 14, 1);
+    ctx.fillStyle = '#5b6573';
+    ctx.fillText(cm + ' cm', lay.paperX - 22, y);
+  }
+
+  // Original spot at baseline (merged colour)
+  const spotX = lay.paperX + lay.paperW / 2;
+  const spotY = lay.baselineY;
+  ctx.fillStyle = ink.spotColor;
+  ctx.globalAlpha = 0.8;
+  ctx.beginPath(); ctx.ellipse(spotX, spotY, 14, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Draw separated spots
+  const travelableCm = PAPER_CM - BASELINE_CM;
+  ink.components.forEach((comp, i) => {
+    // Spot position: baseline + rf * solventFrac * travelable range
+    const spotCm = BASELINE_CM + comp.rf * solventFrac * travelableCm;
+    const sY = cmToY(spotCm, lay);
+
+    // Only show if within paper
+    if (sY > lay.paperTop - 5 && sY < lay.paperBot + 5) {
+      // Glow
+      const glow = ctx.createRadialGradient(spotX, sY, 0, spotX, sY, comp.radius * 3);
+      const rgb = hexToRgb(comp.color);
+      glow.addColorStop(0, `rgba(${rgb},0.5)`);
+      glow.addColorStop(1, `rgba(${rgb},0)`);
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.ellipse(spotX, sY, comp.radius * 3, comp.radius * 1.5, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Spot ellipse (wider than tall — realistic chromatography spot)
+      ctx.fillStyle = comp.color;
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.ellipse(spotX, sY, comp.radius + 4, comp.radius - 2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.beginPath(); ctx.arc(spotX - 2, sY - 2, 3, 0, Math.PI * 2); ctx.fill();
+
+      // Label with Rf
+      if (solventFrac > 0.05) {
+        const rf = comp.rf;
+        ctx.fillStyle = comp.color; ctx.font = '10px JetBrains Mono';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(comp.name + '  Rf=' + rf.toFixed(2), lay.paperX + lay.paperW + 8, sY);
+
+        // Distance line
+        ctx.strokeStyle = 'rgba(150,160,180,0.2)';
+        ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+        ctx.beginPath(); ctx.moveTo(spotX + comp.radius + 4, sY); ctx.lineTo(lay.paperX + lay.paperW + 6, sY); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  });
+
+  // Distance annotations (vertical lines from baseline to spot and to solvent front)
+  if (solventFrac > 0.1) {
+    const annoX = lay.paperX + lay.paperW - 20;
+    // Solvent front distance line
+    ctx.strokeStyle = 'rgba(96,165,250,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(annoX, lay.baselineY);
+    ctx.lineTo(annoX, solventFrontY);
+    ctx.stroke();
+    // Arrow heads
+    ['top', 'bot'].forEach(end => {
+      const y = end === 'top' ? solventFrontY : lay.baselineY;
+      const dir = end === 'top' ? -1 : 1;
+      ctx.fillStyle = 'rgba(96,165,250,0.7)';
+      ctx.beginPath();
+      ctx.moveTo(annoX, y);
+      ctx.lineTo(annoX - 4, y + dir * 8);
+      ctx.lineTo(annoX + 4, y + dir * 8);
+      ctx.closePath(); ctx.fill();
+    });
+    ctx.fillStyle = 'rgba(96,165,250,0.9)'; ctx.font = '9px JetBrains Mono';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const solventDistCm = solventFrac * travelableCm;
+    ctx.save(); ctx.translate(annoX - 10, (lay.baselineY + solventFrontY) / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillText(solventDistCm.toFixed(1) + ' cm', 0, 0);
+    ctx.restore();
+  }
+
+  // Paper border
+  ctx.strokeStyle = 'rgba(150,140,120,0.7)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(lay.paperX, lay.paperTop, lay.paperW, lay.paperH);
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r},${g},${b}`;
+}
+
+function updateReadouts() {
+  const ink = INKS[activeInkIdx];
+  const travelable = PAPER_CM - BASELINE_CM;
+  const solventDist = solventFrac * travelable;
+  $('oSolvent').textContent = solventDist.toFixed(1) + ' cm';
+  $('oProgress').textContent = Math.round(solventFrac * 100) + '%';
+
+  // Rf table
+  const tbody = $('rfBody');
+  tbody.innerHTML = '';
+  ink.components.forEach(comp => {
+    const spotDist = comp.rf * solventDist;
+    const rf = solventDist > 0 ? (spotDist / solventDist).toFixed(2) : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="colour-dot" style="background:${comp.color}"></span></td>
+      <td style="color:var(--text-dim);font-size:11px;">${comp.name}</td>
+      <td class="mono" style="color:var(--text-dim);font-size:11px;">${solventDist > 0 ? spotDist.toFixed(1) + ' cm' : '—'}</td>
+      <td class="mono" style="color:${comp.color};font-weight:600;">${rf}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Explainer
+  const solventDistCm = (solventFrac * travelable).toFixed(1);
+  let rfLines = ink.components.map(c => {
+    const sd = (c.rf * solventFrac * travelable).toFixed(1);
+    return `<span class="k" style="color:${c.color}">${c.name}</span>: spot at ${sd} cm → Rf = <span class="k">${c.rf.toFixed(2)}</span>`;
+  }).join('; ');
+
+  $('explainer').innerHTML =
+    `Solvent (mobile phase) travels up the paper (stationary phase), carrying the dissolved dye components with it. ` +
+    `Components that are more soluble in the solvent, or less attracted to the paper, travel further. ` +
+    (solventFrac > 0.05 ?
+      `Solvent front is at <span class="k">${solventDistCm} cm</span> above the baseline. ` + rfLines + `. ` :
+      `Click <strong>Run</strong> to begin. `) +
+    `Rf = distance moved by spot ÷ distance moved by solvent front. Rf values are characteristic of a substance in a given solvent system.`;
+}
+
+function buildInkSelector() {
+  const el = $('inkSelector');
+  el.innerHTML = '';
+  INKS.forEach((ink, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid var(--panel-border);background:var(--bg-elev-1);transition:all 120ms;';
+    if (i === activeInkIdx) row.style.borderColor = 'var(--cyan)';
+
+    const dot = document.createElement('div');
+    dot.style.cssText = `width:14px;height:14px;border-radius:50%;background:${ink.spotColor};flex-shrink:0;`;
+
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1;';
+    info.innerHTML = `<div style="font-size:13px;color:var(--text)">${ink.label}</div>
+      <div style="font-size:10px;color:var(--text-faint);margin-top:2px;">${ink.components.length} component${ink.components.length > 1 ? 's' : ''}</div>`;
+
+    row.appendChild(dot); row.appendChild(info);
+    row.addEventListener('click', () => { selectInk(i); });
+    el.appendChild(row);
+  });
+}
+
+function selectInk(idx) {
+  activeInkIdx = idx;
+  resetSim();
+  buildInkSelector();
+}
+
+function resetSim() {
+  running = false;
+  solventFrac = 0;
+  lastTime = null;
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  $('btnRun').textContent = '▶ Run';
+  $('btnRun').classList.remove('active');
+  drawChrom();
+  updateReadouts();
+}
+
+function startSim() {
+  if (solventFrac >= 1) { resetSim(); return; }
+  running = true;
+  lastTime = null;
+  $('btnRun').textContent = '⏸ Pause';
+  $('btnRun').classList.add('active');
+  animId = requestAnimationFrame(tick);
+}
+
+function pauseSim() {
+  running = false;
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  $('btnRun').textContent = '▶ Run';
+  $('btnRun').classList.remove('active');
+}
+
+function tick(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+  lastTime = timestamp;
+
+  if (running) {
+    solventFrac = Math.min(1, solventFrac + RUN_SPEED * dt);
+    drawChrom();
+    updateReadouts();
+    if (solventFrac >= 1) {
+      running = false;
+      $('btnRun').textContent = '▶ Run again';
+      $('btnRun').classList.remove('active');
+      return;
+    }
+    animId = requestAnimationFrame(tick);
+  }
+}
+
+$('btnRun').addEventListener('click', () => {
+  if (running) pauseSim();
+  else startSim();
+});
+$('btnReset').addEventListener('click', resetSim);
+
+// Try this
+const TRIES = {
+  blackink: { idx: 0, note: '<strong>Black pen ink</strong> separates into its component pigments — cyan, magenta, yellow and indigo. Note how they travel to different heights due to different Rf values.' },
+  fooddye: { idx: 1, note: '<strong>Food colouring</strong> often contains multiple E-number dyes. Chromatography is used by food scientists to identify and quantify them.' },
+  pure: { idx: 3, note: '<strong>Pure red dye</strong> — a pure substance produces a single spot. Its Rf value can be compared against known standards to identify it.' },
+  compare: { idx: 0, note: '<strong>Comparing inks</strong>: run the black pen, then reset and run another ink. If two samples share a spot at the same Rf value, they likely contain the same compound.' }
+};
+
+document.querySelectorAll('.try-buttons button[data-try]').forEach(b => {
+  b.addEventListener('click', () => {
+    const t = TRIES[b.dataset.try]; if (!t) return;
+    selectInk(t.idx);
+    $('tryNote').innerHTML = t.note;
+  });
+});
+
+window.addEventListener('resize', () => { drawChrom(); });
+
+// Keyboard
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ' ') { e.preventDefault(); if (running) pauseSim(); else startSim(); }
+    else if (e.key === 'r' || e.key === 'R') { resetSim(); }
+    else if (e.key === '1') { selectInk(0); }
+    else if (e.key === '2') { selectInk(1); }
+    else if (e.key === '3') { selectInk(2); }
+    else if (e.key === '4') { selectInk(3); }
+  });
+})();
+
+// Init
+buildInkSelector();
+drawChrom();
+updateReadouts();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="ph_scale.html">
+      <div class="related-title">The pH Scale</div>
+      <div class="related-desc">Acids, alkalis, H⁺ and OH⁻ concentration, and the logarithmic pH scale</div>
+    </a>
+    <a class="related-card" href="periodic_basic.html">
+      <div class="related-title">Periodic Table Explorer</div>
+      <div class="related-desc">Click any element for electron shells, group, period, and classification</div>
+    </a>
+    <a class="related-card" href="fractions_viz.html">
+      <div class="related-title">Fractions Visualiser</div>
+      <div class="related-desc">Visual representations of fractions, equivalence and operations</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

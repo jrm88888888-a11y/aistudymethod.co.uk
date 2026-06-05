@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gravitational Fields &amp; Orbits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 440px; }
+.field-wrap { position: relative; width: 100%; height: 200px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.badge.circ { background: var(--cyan-soft); color: var(--cyan); border: 1px solid var(--cyan); }
+.badge.ellip { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); }
+.badge.escape { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Gravitational Fields &amp; Orbits</h1>
+    <p class="sub">g = GM/r² · v<sub>orb</sub> = √(GM/r) · T² ∝ r³ (Kepler's Third Law)</p>
+    <p class="insight-banner">Increasing orbital radius slows a satellite — it takes longer to complete each orbit. Double the radius and the period grows by a factor of 2√2. The speed required to escape gravity entirely is √2 times orbital speed at the same radius.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Toggle animation pause/play</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">↑ / ↓</span><span>Increase / decrease orbital radius</span>
+      <span class="kbd-key">←  / →</span><span>Decrease / increase velocity ratio</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Orbital simulation</h3>
+        <span id="orbitBadge" class="badge circ">CIRCULAR</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="orbitCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Central mass</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Orbiting body</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Escape trajectory</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--grid)"></span>Field lines (g)</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Field strength g vs distance r</h3>
+        <span style="font-size:11px;color:var(--text-dim);">g = GM/r² (inverse-square law)</span>
+      </div>
+      <div class="field-wrap"><canvas id="fieldCanvas"></canvas></div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Central body</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Mass of the central body. G = 6.67×10⁻¹¹ N m² kg⁻²">Mass M (×10²⁴ kg)</span>
+          <span class="value num" id="vMass">5.97</span>
+        </div>
+        <input type="range" id="slMass" min="0.1" max="20" step="0.1" value="5.97">
+        <div class="refs">
+          <span class="ref-chip" data-mass="0.642" data-label="Mars">Mars</span>
+          <span class="ref-chip" data-mass="5.972" data-label="Earth">Earth</span>
+          <span class="ref-chip" data-mass="14.54" data-label="Neptune">Neptune</span>
+          <span class="ref-chip" data-mass="1898" data-label="Jupiter" data-massraw="1898e24">Jupiter</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Orbit parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Orbital radius from the centre of the central body. Real satellites orbit above ~200 km altitude above Earth's surface (R_Earth ≈ 6.4×10⁶ m).">Orbital radius r (×10⁶ m)</span>
+          <span class="value num" id="vRadius">10.0</span>
+        </div>
+        <input type="range" id="slRadius" min="2" max="80" step="0.5" value="10">
+        <div class="refs">
+          <span class="ref-chip" data-r="6.8">LEO ~400 km</span>
+          <span class="ref-chip" data-r="42.2">GEO 35 786 km</span>
+          <span class="ref-chip" data-r="60.3">L2 ~1.5M km</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Ratio of actual speed to circular orbital speed at this radius. 1.00 = circular, >1 = elliptical, ≥√2 = escape.">Speed / v<sub>circ</sub></span>
+          <span class="value num" id="vSpeedRatio">1.00</span>
+        </div>
+        <input type="range" id="slSpeed" min="0.3" max="1.60" step="0.01" value="1.00">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Orbital readouts</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="g = GM/r²: gravitational field strength at orbital radius">g at orbit</div>
+          <div class="val cyan" id="oG">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Circular orbital speed: v = √(GM/r)">v<sub>circ</sub></div>
+          <div class="val green" id="oVcirc">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Orbital period from Kepler's third law: T = 2πr/v = 2π√(r³/GM)">Period T</div>
+          <div class="val amber" id="oPeriod">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Escape velocity: v_esc = √(2GM/r) = √2 × v_circ">v<sub>escape</sub></div>
+          <div class="val rose" id="oVesc">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Gravitational potential energy: U = −GMm/r (takes m = 1 kg)">Pot. energy U/m</div>
+          <div class="val violet" id="oU">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="T²/r³ should be constant for all orbits around the same central mass (Kepler's third law)">T²/r³ (const.)</div>
+          <div class="val" id="oKepler">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="geo">Geostationary orbit</button>
+        <button data-try="ellipse">Elliptical orbit</button>
+        <button data-try="escape">Escape velocity</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const G = 6.674e-11; // N m² kg⁻²
+
+const params = {
+  M: 5.972e24,     // kg
+  r: 10e6,         // m
+  speedRatio: 1.0  // multiple of circular speed
+};
+
+let paused = false;
+
+// Simulation state (in scaled coordinates)
+// We run a real Newtonian integrator in physical units but scale for display
+let simState = null;
+
+function circularSpeed(M, r) { return Math.sqrt(G * M / r); }
+function escapeSpeed(M, r) { return Math.sqrt(2 * G * M / r); }
+function period(M, r) { return 2 * Math.PI * Math.sqrt(r * r * r / (G * M)); }
+function fieldStrength(M, r) { return G * M / (r * r); }
+
+function resetSim() {
+  const r = params.r;
+  const vc = circularSpeed(params.M, r);
+  const v = vc * params.speedRatio;
+  // Start at (r, 0), velocity perpendicular (0, v)
+  simState = {
+    x: r, y: 0,
+    vx: 0, vy: v,
+    trail: [],
+    t: 0
+  };
+}
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  c.width = rect.width * dpr; c.height = rect.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// RK4 step for 2-body Newtonian gravity
+function rk4Step(state, M, dt) {
+  const deriv = (x, y, vx, vy) => {
+    const r2 = x * x + y * y;
+    const r = Math.sqrt(r2);
+    const acc = -G * M / r2;
+    return { vx, vy, ax: acc * x / r, ay: acc * y / r };
+  };
+  const { x, y, vx, vy } = state;
+  const k1 = deriv(x, y, vx, vy);
+  const k2 = deriv(x + 0.5*dt*k1.vx, y + 0.5*dt*k1.vy, vx + 0.5*dt*k1.ax, vy + 0.5*dt*k1.ay);
+  const k3 = deriv(x + 0.5*dt*k2.vx, y + 0.5*dt*k2.vy, vx + 0.5*dt*k2.ax, vy + 0.5*dt*k2.ay);
+  const k4 = deriv(x + dt*k3.vx, y + dt*k3.vy, vx + dt*k3.ax, vy + dt*k3.ay);
+  return {
+    x:  x  + dt/6*(k1.vx + 2*k2.vx + 2*k3.vx + k4.vx),
+    y:  y  + dt/6*(k1.vy + 2*k2.vy + 2*k3.vy + k4.vy),
+    vx: vx + dt/6*(k1.ax + 2*k2.ax + 2*k3.ax + k4.ax),
+    vy: vy + dt/6*(k1.ay + 2*k2.ay + 2*k3.ay + k4.ay),
+  };
+}
+
+let animFrame = null;
+let lastRAF = null;
+// Time acceleration: 1 animation second = T_orbit / 8 physical seconds
+let timeScale = 1;
+
+function getTimeScale() {
+  // Want one visual orbit in ~6 seconds; T_orbit can be seconds to years
+  const T = period(params.M, params.r);
+  return T / 6;
+}
+
+function drawOrbit(now) {
+  const c = $('orbitCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.fillStyle = '#0a0e14';
+  ctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2, cy = H / 2;
+  // Scale: fit r * 2.5 into half the canvas
+  const scale = Math.min(W, H) * 0.4 / (params.r * 2.5);
+
+  // Stars (static seed)
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  const starSeed = [0.12, 0.87, 0.33, 0.65, 0.22, 0.78, 0.45, 0.91, 0.07, 0.55,
+                    0.3,  0.7,  0.15, 0.8,  0.4,  0.6,  0.25, 0.75, 0.5,  0.95];
+  for (let i = 0; i < 20; i++) {
+    const sx = starSeed[i] * W;
+    const sy = starSeed[(i + 7) % 20] * H;
+    ctx.beginPath(); ctx.arc(sx, sy, 0.8, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Gravitational field lines (radial)
+  const numLines = 12;
+  for (let i = 0; i < numLines; i++) {
+    const angle = (i / numLines) * Math.PI * 2;
+    const r0 = 18 * scale; // surface of central body display
+    const r1 = Math.min(W, H) * 0.48;
+    ctx.strokeStyle = 'rgba(26,34,48,0.9)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * r0, cy + Math.sin(angle) * r0);
+    ctx.lineTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
+    ctx.stroke();
+  }
+
+  // Circular reference orbit (dashed)
+  const rPx = params.r * scale;
+  ctx.save(); ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = 'rgba(34,211,238,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, rPx, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+
+  // Escape velocity circle
+  if (params.speedRatio < Math.sqrt(2) * 0.99) {
+    const vesc = escapeSpeed(params.M, params.r);
+    // Just draw label on current radius since v_esc depends on r not a fixed orbit
+  }
+
+  // Advance simulation
+  if (!paused && simState) {
+    timeScale = getTimeScale();
+    const wallDt = lastRAF ? Math.min((now - lastRAF) / 1000, 0.05) : 0.016;
+    const physDt = wallDt * timeScale;
+    // Sub-step for accuracy
+    const substeps = 20;
+    const dt = physDt / substeps;
+    for (let s = 0; s < substeps; s++) {
+      const ns = rk4Step(simState, params.M, dt);
+      simState.x = ns.x; simState.y = ns.y;
+      simState.vx = ns.vx; simState.vy = ns.vy;
+      simState.t += dt;
+    }
+    // Record trail point every few frames
+    simState.trail.push({ x: simState.x, y: simState.y });
+    // Trim trail to 1 orbit worth of points ~300
+    if (simState.trail.length > 400) simState.trail.shift();
+
+    // Reset if escaped far or crashed
+    const dist = Math.sqrt(simState.x ** 2 + simState.y ** 2);
+    if (dist > params.r * 12 || dist < 1e5) { resetSim(); }
+  }
+  lastRAF = now;
+
+  // Draw trail
+  if (simState && simState.trail.length > 1) {
+    ctx.beginPath();
+    for (let i = 0; i < simState.trail.length; i++) {
+      const tp = simState.trail[i];
+      const tx = cx + tp.x * scale;
+      const ty = cy - tp.y * scale;
+      const a = i / simState.trail.length;
+      if (i === 0) { ctx.moveTo(tx, ty); }
+      else { ctx.lineTo(tx, ty); }
+    }
+    // Use gradient-like approach: just a single stroke with partial alpha
+    const isEscaping = params.speedRatio >= Math.SQRT2 * 0.98;
+    ctx.strokeStyle = isEscaping ? 'rgba(244,63,94,0.5)' : 'rgba(34,211,238,0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Radius indicator
+  if (simState) {
+    const bx = cx + simState.x * scale;
+    const by = cy - simState.y * scale;
+    ctx.strokeStyle = 'rgba(245,158,11,0.35)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(bx, by); ctx.stroke();
+    ctx.setLineDash([]);
+    // r label
+    const mx = (cx + bx) / 2, my = (cy + by) / 2;
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('r = ' + (params.r / 1e6).toFixed(1) + ' ×10⁶ m', mx, my - 8);
+  }
+
+  // Central mass
+  const massRadius = Math.max(10, Math.min(22, 5 + Math.log10(params.M / 1e24) * 6));
+  const massGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, massRadius);
+  massGrad.addColorStop(0, '#fbbf24');
+  massGrad.addColorStop(0.6, '#f59e0b');
+  massGrad.addColorStop(1, 'rgba(245,158,11,0.3)');
+  ctx.fillStyle = massGrad;
+  ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 20;
+  ctx.beginPath(); ctx.arc(cx, cy, massRadius, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Orbiting body
+  if (simState) {
+    const bx = cx + simState.x * scale;
+    const by = cy - simState.y * scale;
+    const isEscaping = params.speedRatio >= Math.SQRT2 * 0.98;
+    ctx.fillStyle = isEscaping ? '#f43f5e' : '#22d3ee';
+    ctx.shadowColor = isEscaping ? '#f43f5e' : '#22d3ee';
+    ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Velocity arrow
+    const speed = Math.sqrt(simState.vx ** 2 + simState.vy ** 2);
+    const arrowLen = 30 * (speed / circularSpeed(params.M, params.r));
+    const vxN = simState.vx / speed, vyN = simState.vy / speed;
+    ctx.strokeStyle = 'rgba(167,139,250,0.7)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.lineTo(bx + vxN * arrowLen, by - vyN * arrowLen);
+    ctx.stroke();
+    // Arrowhead
+    const ax = bx + vxN * arrowLen, ay = by - vyN * arrowLen;
+    const perp = { x: -vyN, y: -vxN }; // in screen coords, y is flipped
+    ctx.fillStyle = '#a78bfa';
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(ax - vxN * 8 + perp.x * 4, ay + vyN * 8 + perp.y * 4);
+    ctx.lineTo(ax - vxN * 8 - perp.x * 4, ay + vyN * 8 - perp.y * 4);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // Orbit badge update
+  const ratio = params.speedRatio;
+  const badge = $('orbitBadge');
+  if (ratio >= Math.SQRT2 * 0.98) {
+    badge.textContent = 'ESCAPE'; badge.className = 'badge escape';
+  } else if (Math.abs(ratio - 1.0) < 0.03) {
+    badge.textContent = 'CIRCULAR'; badge.className = 'badge circ';
+  } else {
+    badge.textContent = 'ELLIPTICAL'; badge.className = 'badge ellip';
+  }
+
+  animFrame = requestAnimationFrame(t => drawOrbit(t));
+}
+
+function drawField() {
+  const c = $('fieldCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 64, r: 16, t: 16, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const rMin = 1e6, rMax = 100e6;
+  const gAtRmin = fieldStrength(params.M, rMin);
+  const gAtRmax = fieldStrength(params.M, rMax);
+  const gMax = gAtRmin;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const y = pad.t + ph * i / yTicks;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  const xTicks = 5;
+  for (let i = 0; i <= xTicks; i++) {
+    const x = pad.l + pw * i / xTicks;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+
+  // Labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= yTicks; i++) {
+    const frac = (yTicks - i) / yTicks;
+    const g = gMax * frac;
+    const y = pad.t + ph * i / yTicks;
+    ctx.fillText(g.toFixed(1), pad.l - 6, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i <= xTicks; i++) {
+    const r = rMin + (rMax - rMin) * i / xTicks;
+    const x = pad.l + pw * i / xTicks;
+    ctx.fillText((r / 1e6).toFixed(0), x, H - pad.b + 4);
+  }
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText('r / ×10⁶ m', pad.l + pw / 2, H - 4);
+  ctx.save(); ctx.translate(12, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('g / m s⁻²', 0, 0); ctx.restore();
+
+  // 1/r² curve
+  const xAt = r => pad.l + pw * (r - rMin) / (rMax - rMin);
+  const yAt = g => pad.t + ph * (1 - g / gMax);
+
+  // Fill under curve
+  ctx.beginPath();
+  ctx.moveTo(xAt(rMin), yAt(gAtRmin));
+  for (let i = 0; i <= 200; i++) {
+    const r = rMin + (rMax - rMin) * i / 200;
+    const g = fieldStrength(params.M, r);
+    ctx.lineTo(xAt(r), yAt(Math.min(g, gMax)));
+  }
+  ctx.lineTo(xAt(rMax), H - pad.b);
+  ctx.lineTo(xAt(rMin), H - pad.b);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(34,211,238,0.06)'; ctx.fill();
+
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const r = rMin + (rMax - rMin) * i / 200;
+    const g = fieldStrength(params.M, r);
+    const y = yAt(Math.min(g, gMax));
+    const x = xAt(r);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Current orbit radius marker
+  const curR = params.r;
+  if (curR >= rMin && curR <= rMax) {
+    const xr = xAt(curR);
+    const gr = fieldStrength(params.M, curR);
+    ctx.save(); ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(xr, pad.t); ctx.lineTo(xr, H - pad.b); ctx.stroke();
+    ctx.restore();
+    const yr = yAt(Math.min(gr, gMax));
+    ctx.fillStyle = '#f59e0b';
+    ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(xr, yr, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#f59e0b'; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'left';
+    ctx.fillText('g = ' + gr.toFixed(2) + ' m s⁻²', xr + 6, yr - 10);
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function fmtTime(T) {
+  if (T < 3600) return (T / 60).toFixed(1) + ' min';
+  if (T < 86400) return (T / 3600).toFixed(2) + ' hr';
+  if (T < 365.25 * 86400) return (T / 86400).toFixed(2) + ' days';
+  return (T / (365.25 * 86400)).toFixed(3) + ' yr';
+}
+function fmtSpeed(v) {
+  if (v >= 1000) return (v / 1000).toFixed(2) + ' km s⁻¹';
+  return v.toFixed(1) + ' m s⁻¹';
+}
+
+function updateReadouts() {
+  const M = params.M, r = params.r;
+  const g = fieldStrength(M, r);
+  const vc = circularSpeed(M, r);
+  const T = period(M, r);
+  const vesc = escapeSpeed(M, r);
+  const U = -G * M / r; // per unit mass
+  const keplerConst = T * T / (r * r * r);
+
+  $('oG').textContent = g.toFixed(3) + ' m s⁻²';
+  $('oVcirc').textContent = fmtSpeed(vc);
+  $('oPeriod').textContent = fmtTime(T);
+  $('oVesc').textContent = fmtSpeed(vesc);
+  $('oU').textContent = (U / 1e6).toFixed(2) + ' MJ kg⁻¹';
+  $('oKepler').textContent = (keplerConst * 1e18).toFixed(3) + '×10⁻¹⁸';
+
+  const ratio = params.speedRatio;
+  const vc_str = fmtSpeed(vc);
+  const vact = fmtSpeed(vc * ratio);
+  const isEscaping = ratio >= Math.SQRT2 * 0.98;
+  const isCircular = Math.abs(ratio - 1.0) < 0.03;
+
+  let txt = `At <span class="k">r = ${(r / 1e6).toFixed(1)} × 10⁶ m</span>, field strength <span class="k">g = GM/r² = ${g.toFixed(3)} m s⁻²</span>. `;
+  txt += `Circular orbital speed <span class="k">v = √(GM/r) = ${vc_str}</span>, period <span class="k">T = ${fmtTime(T)}</span>. `;
+  if (isEscaping) {
+    txt += `At <span class="k">v = ${vact}</span> (≥ v<sub>esc</sub>) the body has enough energy to escape gravitational capture — the orbit is hyperbolic.`;
+  } else if (isCircular) {
+    txt += `At exactly <span class="k">v<sub>circ</sub></span> the net centripetal force equals gravity and the orbit is circular. Kepler's third law: <span class="k">T² ∝ r³</span>, constant = ${(keplerConst * 1e18).toFixed(3)} × 10⁻¹⁸ s² m⁻³.`;
+  } else {
+    txt += `At <span class="k">v = ${vact}</span> (${(ratio * 100).toFixed(0)}% of v<sub>circ</sub>) the orbit is elliptical. At apoapsis the body slows; at periapsis it speeds up (conservation of angular momentum).`;
+  }
+  $('explainer').innerHTML = txt;
+
+  drawField();
+}
+
+function setRadius(r) {
+  params.r = r;
+  $('slRadius').value = (r / 1e6).toFixed(1);
+  $('vRadius').textContent = (r / 1e6).toFixed(1);
+  resetSim(); updateReadouts();
+}
+function setMass(M) {
+  params.M = M;
+  $('slMass').value = (M / 1e24).toFixed(3);
+  $('vMass').textContent = (M / 1e24).toFixed(2);
+  resetSim(); updateReadouts();
+}
+function setSpeed(ratio) {
+  params.speedRatio = ratio;
+  $('slSpeed').value = ratio.toFixed(2);
+  $('vSpeedRatio').textContent = ratio.toFixed(2);
+  resetSim(); updateReadouts();
+}
+
+$('slMass').addEventListener('input', e => {
+  setMass(parseFloat(e.target.value) * 1e24);
+});
+$('slRadius').addEventListener('input', e => {
+  setRadius(parseFloat(e.target.value) * 1e6);
+});
+$('slSpeed').addEventListener('input', e => {
+  setSpeed(parseFloat(e.target.value));
+});
+document.querySelectorAll('.ref-chip[data-r]').forEach(c => {
+  c.addEventListener('click', () => setRadius(parseFloat(c.dataset.r) * 1e6));
+});
+document.querySelectorAll('.ref-chip[data-mass]').forEach(c => {
+  c.addEventListener('click', () => {
+    const raw = c.dataset.massraw ? parseFloat(c.dataset.massraw) : parseFloat(c.dataset.mass) * 1e24;
+    // Cap to slider range for display
+    const capped = Math.min(raw, 20e24);
+    setMass(capped);
+  });
+});
+
+window.addEventListener('resize', () => { drawField(); });
+
+// Try this
+function applyTry(name) {
+  const presets = {
+    geo: {
+      r: 42.164e6, ratio: 1.00, M: 5.972e24,
+      note: '<strong>Geostationary orbit</strong>: T ≈ 24 hours, so the satellite stays fixed above one point on Earth\'s equator. Used for TV broadcast and weather satellites.'
+    },
+    ellipse: {
+      r: 10e6, ratio: 0.75, M: 5.972e24,
+      note: '<strong>Elliptical orbit</strong>: speed below v<sub>circ</sub> gives an ellipse. The starting point becomes the apoapsis (furthest point). Watch how the body accelerates as it swings through periapsis — angular momentum is conserved.'
+    },
+    escape: {
+      r: 10e6, ratio: 1.42, M: 5.972e24,
+      note: '<strong>Escape velocity</strong>: at v ≥ √2 × v<sub>circ</sub> ≈ 1.414 × v<sub>circ</sub>, total mechanical energy becomes ≥ 0 and the body escapes. The trajectory becomes hyperbolic.'
+    }
+  };
+  const cfg = presets[name];
+  if (!cfg) return;
+  setMass(cfg.M);
+  setRadius(cfg.r);
+  setSpeed(cfg.ratio);
+  $('tryNote').innerHTML = cfg.note;
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+// Keyboard shortcuts
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  const DEFAULTS = { M: 5.972e24, r: 10e6, speedRatio: 1.0 };
+  function resetDefaults() {
+    setMass(DEFAULTS.M); setRadius(DEFAULTS.r); setSpeed(DEFAULTS.speedRatio);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); paused = !paused; }
+    else if (k === 'r') { resetDefaults(); }
+    else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setRadius(Math.min(80e6, params.r + 1e6));
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setRadius(Math.max(2e6, params.r - 1e6));
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setSpeed(Math.min(1.6, params.speedRatio + 0.05));
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      setSpeed(Math.max(0.3, params.speedRatio - 0.05));
+    }
+  });
+})();
+
+resetSim();
+updateReadouts();
+requestAnimationFrame(t => { lastRAF = t; drawOrbit(t); });
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="photoelectric.html">
+      <div class="related-title">The Photoelectric Effect</div>
+      <div class="related-desc">How light frequency — not intensity — determines electron emission from metals</div>
+    </a>
+    <a class="related-card" href="magnetic_field.html">
+      <div class="related-title">Magnetic Fields &amp; the Motor Effect</div>
+      <div class="related-desc">F = BIL, Fleming's left-hand rule, and field lines around wires and solenoids</div>
+    </a>
+    <a class="related-card" href="circular_motion.html">
+      <div class="related-title">Circular Motion</div>
+      <div class="related-desc">Centripetal force, banked tracks, and the link between angular and linear velocity</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

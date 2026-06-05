@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Harmonic Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; }
+canvas { width: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.play-btn { min-width: 80px; }
+.play-btn.active { background: var(--cyan); color: #04121a; border-color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Simple Harmonic Motion</h1>
+    <p class="sub">Mass–spring oscillator · displacement, velocity, acceleration and energy</p>
+    <p class="insight-banner">In SHM the period T = 2π√(m/k) depends only on mass and spring constant — not on amplitude. Velocity leads displacement by 90°, acceleration opposes displacement by 180°.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Play / pause</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">E</span><span>Toggle energy panel</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <!-- Spring animation -->
+    <div class="panel">
+      <div class="title-row">
+        <h3>Mass–spring oscillator</h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="playBtn" class="primary play-btn active">Pause</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" style="height:160px;">
+        <canvas id="springCanvas" style="height:160px;"></canvas>
+      </div>
+    </div>
+
+    <!-- Displacement / velocity / acceleration graphs -->
+    <div class="panel" style="margin-top:16px;">
+      <div class="title-row">
+        <h3>x, v, a versus time</h3>
+        <span style="font-size:11px;color:var(--text-dim);">last 2 periods shown</span>
+      </div>
+      <div class="canvas-wrap" style="height:260px;">
+        <canvas id="graphCanvas" style="height:260px;"></canvas>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>x = A cos(ωt) / m</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>v = −Aω sin(ωt) / (m s⁻¹)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>a = −ω²x / (m s⁻²)</span>
+      </div>
+    </div>
+
+    <!-- Energy bar -->
+    <div class="panel" id="energyPanel" style="margin-top:16px;">
+      <div class="title-row">
+        <h3>Energy interchange</h3>
+        <span style="font-size:11px;color:var(--text-dim);">KE + PE = E<sub>total</sub> (no friction)</span>
+      </div>
+      <div class="canvas-wrap" style="height:160px;">
+        <canvas id="energyCanvas" style="height:160px;"></canvas>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>KE = ½mv²</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--violet)"></span>PE = ½kx²</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Total E = ½kA²</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Oscillator parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Amplitude: maximum displacement from equilibrium.">Amplitude A (m)</span>
+          <span class="value num" id="vA">0.20</span>
+        </div>
+        <input type="range" id="slA" min="0.05" max="0.50" step="0.01" value="0.20">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Mass of the oscillating object.">Mass m (kg)</span>
+          <span class="value num" id="vM">0.50</span>
+        </div>
+        <input type="range" id="slM" min="0.10" max="5.00" step="0.05" value="0.50">
+        <div class="refs">
+          <span class="ref-chip" data-m="0.10">100 g</span>
+          <span class="ref-chip" data-m="0.50">500 g</span>
+          <span class="ref-chip" data-m="2.00">2 kg</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Spring constant: stiffness of the spring (N m⁻¹).">Spring constant k (N m⁻¹)</span>
+          <span class="value num" id="vK">10.0</span>
+        </div>
+        <input type="range" id="slK" min="1" max="100" step="1" value="10">
+        <div class="refs">
+          <span class="ref-chip" data-k="5">Soft 5</span>
+          <span class="ref-chip" data-k="10">Medium 10</span>
+          <span class="ref-chip" data-k="50">Stiff 50</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Derived quantities</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Period: time for one complete oscillation.">Period T</div>
+          <div class="val cyan" id="oT">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Frequency: oscillations per second.">Frequency f</div>
+          <div class="val" id="oF">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Angular frequency ω = 2πf = √(k/m).">ω (rad s⁻¹)</div>
+          <div class="val amber" id="oOmega">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Max speed v_max</div>
+          <div class="val" id="oVmax">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Max accel a_max</div>
+          <div class="val rose" id="oAmax">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Total energy E</div>
+          <div class="val green" id="oE">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Live state</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl">x (m)</div>
+          <div class="val cyan" id="oX">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">v (m s⁻¹)</div>
+          <div class="val amber" id="oV">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">a (m s⁻²)</div>
+          <div class="val rose" id="oAcc">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">KE (J)</div>
+          <div class="val green" id="oKE">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="heavy">Heavy mass, soft spring</button>
+        <button data-try="light">Light mass, stiff spring</button>
+        <button data-try="sameperiod">Same period, double amplitude</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr;
+  c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+const params = { A: 0.20, m: 0.50, k: 10.0 };
+let running = true;
+let tSim = 0; // simulation time in seconds
+let lastRaf = null;
+
+function omega()  { return Math.sqrt(params.k / params.m); }
+function period() { return 2 * Math.PI / omega(); }
+function freq()   { return omega() / (2 * Math.PI); }
+function vmax()   { return params.A * omega(); }
+function amax()   { return params.A * omega() * omega(); }
+function Etotal() { return 0.5 * params.k * params.A * params.A; }
+
+function xAt(t)   { return params.A * Math.cos(omega() * t); }
+function vAt(t)   { return -params.A * omega() * Math.sin(omega() * t); }
+function aAt(t)   { return -omega() * omega() * xAt(t); }
+function KE(t)    { const v = vAt(t); return 0.5 * params.m * v * v; }
+function PE(t)    { const x = xAt(t); return 0.5 * params.k * x * x; }
+
+// --- Spring canvas ---
+function drawSpring(t) {
+  const c = $('springCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const x = xAt(t);
+  const A = params.A;
+  // Map: leftWall at 60px, natural length 200px, amplitude in px
+  const pxPerM = 180; // pixels per metre for amplitude visualisation
+  // Centre of oscillation in canvas x
+  const cx = W * 0.55;
+  const massR = 22;
+  const yCentre = H / 2;
+  const massX = cx + x * pxPerM;
+  const wallX = 40;
+
+  // Wall
+  ctx.fillStyle = '#1f2937';
+  ctx.fillRect(wallX - 12, yCentre - 40, 12, 80);
+  // Hatch
+  ctx.strokeStyle = '#2d3b4f';
+  ctx.lineWidth = 1;
+  for (let i = -40; i <= 80; i += 12) {
+    ctx.beginPath();
+    ctx.moveTo(wallX - 12, yCentre - 40 + i);
+    ctx.lineTo(wallX, yCentre - 40 + i + 12);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#2d3b4f';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(wallX, yCentre - 40); ctx.lineTo(wallX, yCentre + 40); ctx.stroke();
+
+  // Spring zigzag
+  const springStart = wallX;
+  const springEnd = massX - massR;
+  const coils = 10;
+  const amplitude = 10;
+  ctx.beginPath();
+  ctx.moveTo(springStart, yCentre);
+  const segLen = (springEnd - springStart) / coils;
+  for (let i = 0; i < coils; i++) {
+    const xBase = springStart + (i + 0.5) * segLen;
+    const dir = (i % 2 === 0) ? 1 : -1;
+    ctx.lineTo(xBase, yCentre + dir * amplitude);
+  }
+  ctx.lineTo(springEnd, yCentre);
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Equilibrium dashed line
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(151,161,176,0.35)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx, yCentre - 45);
+  ctx.lineTo(cx, yCentre + 45);
+  ctx.stroke();
+  ctx.restore();
+
+  // Amplitude markers
+  ctx.fillStyle = 'rgba(151,161,176,0.5)';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('+A', cx + A * pxPerM, yCentre - 38);
+  ctx.fillText('−A', cx - A * pxPerM, yCentre - 38);
+  ctx.setLineDash && (ctx.setLineDash([]));
+  ctx.strokeStyle = 'rgba(151,161,176,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx + A * pxPerM, yCentre - 30); ctx.lineTo(cx + A * pxPerM, yCentre + 30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx - A * pxPerM, yCentre - 30); ctx.lineTo(cx - A * pxPerM, yCentre + 30); ctx.stroke();
+
+  // Velocity arrow
+  const v = vAt(t);
+  const vScale = 60; // px per (m/s)
+  const arrowLen = v * vScale;
+  if (Math.abs(arrowLen) > 3) {
+    ctx.save();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.fillStyle = '#f59e0b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(massX, yCentre - massR - 8);
+    ctx.lineTo(massX + arrowLen, yCentre - massR - 8);
+    ctx.stroke();
+    const sign = arrowLen > 0 ? 1 : -1;
+    ctx.beginPath();
+    ctx.moveTo(massX + arrowLen, yCentre - massR - 8);
+    ctx.lineTo(massX + arrowLen - sign * 8, yCentre - massR - 13);
+    ctx.lineTo(massX + arrowLen - sign * 8, yCentre - massR - 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Acceleration arrow
+  const a = aAt(t);
+  const aArrow = a * 4; // scale
+  if (Math.abs(aArrow) > 2) {
+    ctx.save();
+    ctx.strokeStyle = '#f43f5e';
+    ctx.fillStyle = '#f43f5e';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(massX, yCentre + massR + 8);
+    ctx.lineTo(massX + aArrow, yCentre + massR + 8);
+    ctx.stroke();
+    const sign = aArrow > 0 ? 1 : -1;
+    ctx.beginPath();
+    ctx.moveTo(massX + aArrow, yCentre + massR + 8);
+    ctx.lineTo(massX + aArrow - sign * 8, yCentre + massR + 3);
+    ctx.lineTo(massX + aArrow - sign * 8, yCentre + massR + 13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Mass circle
+  const grad = ctx.createRadialGradient(massX - 5, yCentre - 5, 2, massX, yCentre, massR);
+  grad.addColorStop(0, '#2a3f5a');
+  grad.addColorStop(1, '#11161f');
+  ctx.beginPath();
+  ctx.arc(massX, yCentre, massR, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText('v', massX + arrowLen / 2, yCentre - massR - 18);
+  ctx.fillText('a', massX + aArrow / 2, yCentre + massR + 22);
+}
+
+// --- Graph canvas ---
+function drawGraph(t) {
+  const c = $('graphCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 54, r: 16, t: 16, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const T = period();
+  const displayPeriods = 2;
+  const tWindow = displayPeriods * T;
+  const tStart = t - tWindow;
+  const nSamples = 400;
+  const dt = tWindow / nSamples;
+
+  const A = params.A;
+  const w = omega();
+
+  // y-scale: show all three, normalised to [-1,1] per lane or overlaid
+  // Overlaid, each clamped to their own max for visual clarity
+  const xMax = A;
+  const vMaxV = A * w;
+  const aMaxV = A * w * w;
+
+  // grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const y = pad.t + ph * i / yTicks;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  // Zero line
+  const y0 = pad.t + ph * 0.5;
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.beginPath(); ctx.moveTo(pad.l, y0); ctx.lineTo(W - pad.r, y0); ctx.stroke();
+
+  // Period tick marks on x-axis
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= displayPeriods * 2; i++) {
+    const xp = pad.l + pw * i / (displayPeriods * 2);
+    ctx.beginPath(); ctx.moveTo(xp, pad.t); ctx.lineTo(xp, H - pad.b); ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('+A', pad.l - 6, pad.t + 4);
+  ctx.fillText('0', pad.l - 6, y0);
+  ctx.fillText('−A', pad.l - 6, H - pad.b - 4);
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let i = 0; i <= displayPeriods * 2; i++) {
+    const xp = pad.l + pw * i / (displayPeriods * 2);
+    ctx.fillText(i % 2 === 0 ? `${i / 2}T` : `T/2`, xp, H - pad.b + 4);
+  }
+
+  // Helper: normalise a value to canvas y
+  const yNorm = (val, maxVal) => y0 - (val / maxVal) * (ph * 0.45);
+
+  // Draw displacement x
+  ctx.beginPath();
+  for (let i = 0; i <= nSamples; i++) {
+    const ti = tStart + i * dt;
+    const xi = A * Math.cos(w * ti);
+    const xp = pad.l + pw * i / nSamples;
+    const yp = yNorm(xi, xMax);
+    if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
+  }
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw velocity v (scaled so vMax maps to ±A visually)
+  ctx.beginPath();
+  for (let i = 0; i <= nSamples; i++) {
+    const ti = tStart + i * dt;
+    const vi = -A * w * Math.sin(w * ti);
+    const xp = pad.l + pw * i / nSamples;
+    const yp = yNorm(vi, vMaxV);
+    if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
+  }
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw acceleration a
+  ctx.beginPath();
+  for (let i = 0; i <= nSamples; i++) {
+    const ti = tStart + i * dt;
+    const ai = -w * w * A * Math.cos(w * ti);
+    const xp = pad.l + pw * i / nSamples;
+    const yp = yNorm(ai, aMaxV);
+    if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
+  }
+  ctx.strokeStyle = '#f43f5e';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Current time marker
+  const xCur = pad.l + pw;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(xCur, pad.t); ctx.lineTo(xCur, H - pad.b); ctx.stroke();
+  ctx.restore();
+
+  // Axis border
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+// --- Energy canvas ---
+function drawEnergy(t) {
+  const c = $('energyCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 54, r: 16, t: 16, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const T = period();
+  const tWindow = 2 * T;
+  const tStart = t - tWindow;
+  const nSamples = 400;
+  const dt = tWindow / nSamples;
+  const Etot = Etotal();
+
+  // grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  // y labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    const e = Etot * (1 - i / 4);
+    ctx.fillText(e.toFixed(3), pad.l - 6, y);
+  }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let i = 0; i <= 4; i++) {
+    const xp = pad.l + pw * i / 4;
+    ctx.fillText(`${i * 0.5}T`, xp, H - pad.b + 4);
+  }
+
+  const yE = (e) => pad.t + ph * (1 - e / Etot);
+
+  // Total energy line
+  ctx.beginPath();
+  ctx.moveTo(pad.l, yE(Etot));
+  ctx.lineTo(W - pad.r, yE(Etot));
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // KE
+  ctx.beginPath();
+  for (let i = 0; i <= nSamples; i++) {
+    const ti = tStart + i * dt;
+    const ke = KE(ti);
+    const xp = pad.l + pw * i / nSamples;
+    const yp = yE(ke);
+    if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
+  }
+  ctx.strokeStyle = '#34d399';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // PE
+  ctx.beginPath();
+  for (let i = 0; i <= nSamples; i++) {
+    const ti = tStart + i * dt;
+    const pe = PE(ti);
+    const xp = pad.l + pw * i / nSamples;
+    const yp = yE(pe);
+    if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
+  }
+  ctx.strokeStyle = '#a78bfa';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+// --- Readouts ---
+function updateReadouts(t) {
+  const T = period();
+  const f = freq();
+  const w = omega();
+  $('oT').textContent = T.toFixed(3) + ' s';
+  $('oF').textContent = f.toFixed(3) + ' Hz';
+  $('oOmega').textContent = w.toFixed(3);
+  $('oVmax').textContent = vmax().toFixed(3) + ' m s⁻¹';
+  $('oAmax').textContent = amax().toFixed(3) + ' m s⁻²';
+  $('oE').textContent = Etotal().toFixed(4) + ' J';
+
+  const x = xAt(t);
+  const v = vAt(t);
+  const a = aAt(t);
+  $('oX').textContent = x.toFixed(4);
+  $('oV').textContent = v.toFixed(4);
+  $('oAcc').textContent = a.toFixed(3);
+  $('oKE').textContent = KE(t).toFixed(4);
+
+  // Explainer
+  const phaseAngle = (omega() * t) % (2 * Math.PI);
+  const phaseDeg = (phaseAngle * 180 / Math.PI).toFixed(0);
+  $('explainer').innerHTML =
+    `Period <span class="k">T = 2π√(m/k) = ${T.toFixed(3)} s</span>, independent of amplitude. ` +
+    `At this instant: displacement <span class="k">x = ${x.toFixed(3)} m</span>, ` +
+    `velocity <span class="k">v = ${v.toFixed(3)} m s⁻¹</span> (90° ahead in phase), ` +
+    `acceleration <span class="k">a = −ω²x = ${a.toFixed(3)} m s⁻²</span> (always opposing x). ` +
+    `Total energy <span class="k">E = ½kA² = ${Etotal().toFixed(4)} J</span> — ` +
+    `conserved, splitting between KE and PE twice per cycle.`;
+}
+
+// --- Animation loop ---
+let rafId = null;
+
+function loop(ts) {
+  if (lastRaf === null) lastRaf = ts;
+  const dt = (ts - lastRaf) / 1000;
+  lastRaf = ts;
+  if (running) tSim += dt;
+  drawSpring(tSim);
+  drawGraph(tSim);
+  drawEnergy(tSim);
+  updateReadouts(tSim);
+  rafId = requestAnimationFrame(loop);
+}
+
+function startLoop() {
+  if (rafId) cancelAnimationFrame(rafId);
+  lastRaf = null;
+  rafId = requestAnimationFrame(loop);
+}
+
+// --- Controls ---
+$('slA').addEventListener('input', e => {
+  params.A = parseFloat(e.target.value);
+  $('vA').textContent = params.A.toFixed(2);
+});
+$('slM').addEventListener('input', e => {
+  params.m = parseFloat(e.target.value);
+  $('vM').textContent = params.m.toFixed(2);
+});
+$('slK').addEventListener('input', e => {
+  params.k = parseFloat(e.target.value);
+  $('vK').textContent = params.k.toFixed(1);
+});
+
+document.querySelectorAll('[data-m]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.m = parseFloat(c.dataset.m);
+    $('slM').value = params.m;
+    $('vM').textContent = params.m.toFixed(2);
+  });
+});
+document.querySelectorAll('[data-k]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.k = parseFloat(c.dataset.k);
+    $('slK').value = params.k;
+    $('vK').textContent = params.k.toFixed(1);
+  });
+});
+
+$('playBtn').addEventListener('click', () => {
+  running = !running;
+  lastRaf = null;
+  $('playBtn').textContent = running ? 'Pause' : 'Play';
+  $('playBtn').classList.toggle('active', running);
+});
+
+// --- Try this ---
+const presets = {
+  heavy: { A: 0.20, m: 4.0, k: 5.0,
+    note: '<strong>Long period (T ≈ 5.6 s):</strong> large mass and soft spring both slow the oscillation. Note how the spring stretches further at the same amplitude.' },
+  light: { A: 0.15, m: 0.10, k: 80.0,
+    note: '<strong>Short period (T ≈ 0.22 s):</strong> small mass with stiff spring gives rapid oscillations. Peak acceleration is very large even at modest amplitude.' },
+  sameperiod: { A: 0.40, m: 0.50, k: 10.0,
+    note: '<strong>Double amplitude, same period:</strong> T is unchanged because k and m are unchanged, but total energy E = ½kA² quadruples.' }
+};
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = presets[b.dataset.try];
+    if (!cfg) return;
+    params.A = cfg.A; $('slA').value = cfg.A; $('vA').textContent = cfg.A.toFixed(2);
+    params.m = cfg.m; $('slM').value = cfg.m; $('vM').textContent = cfg.m.toFixed(2);
+    params.k = cfg.k; $('slK').value = cfg.k; $('vK').textContent = cfg.k.toFixed(1);
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+// --- Resize ---
+window.addEventListener('resize', () => {
+  drawSpring(tSim);
+  drawGraph(tSim);
+  drawEnergy(tSim);
+});
+
+// --- Keyboard ---
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  const DEFAULTS = { A: 0.20, m: 0.50, k: 10.0 };
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ' ') {
+      e.preventDefault();
+      $('playBtn').click();
+    } else if (e.key.toLowerCase() === 'r') {
+      params.A = DEFAULTS.A; $('slA').value = DEFAULTS.A; $('vA').textContent = DEFAULTS.A.toFixed(2);
+      params.m = DEFAULTS.m; $('slM').value = DEFAULTS.m; $('vM').textContent = DEFAULTS.m.toFixed(2);
+      params.k = DEFAULTS.k; $('slK').value = DEFAULTS.k; $('vK').textContent = DEFAULTS.k.toFixed(1);
+      tSim = 0;
+    } else if (e.key.toLowerCase() === 'e') {
+      const ep = $('energyPanel');
+      ep.style.display = ep.style.display === 'none' ? '' : 'none';
+    }
+  });
+})();
+
+startLoop();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="circular_motion.html">
+      <div class="related-title">Circular Motion</div>
+      <div class="related-desc">Centripetal force, angular velocity, and what happens when the string snaps</div>
+    </a>
+    <a class="related-card" href="capacitor.html">
+      <div class="related-title">Capacitor Charge &amp; Discharge</div>
+      <div class="related-desc">Exponential RC curves, the time constant τ, and the 5τ rule</div>
+    </a>
+    <a class="related-card" href="fourier_builder.html">
+      <div class="related-title">Fourier Builder</div>
+      <div class="related-desc">Build any periodic wave from sine harmonics — the mathematics behind SHM superposition</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

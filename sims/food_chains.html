@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food Chains &amp; Energy Pyramids</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 460px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.species-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.species-btn { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: var(--r-md); cursor: pointer; transition: all 120ms ease; border: 1px solid var(--panel-border); background: var(--bg-elev-1); font-size: 12px; text-align: left; width: 100%; }
+.species-btn.removed { opacity: 0.4; border-color: var(--rose); }
+.species-btn .sp-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.species-btn .sp-name { font-weight: 600; }
+.species-btn .sp-level { font-size: 10px; color: var(--text-faint); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Food Chains &amp; Energy Pyramids</h1>
+    <p class="sub">Trophic levels · 10% energy transfer rule · Population knock-on effects</p>
+    <p class="insight-banner">Only ~10% of energy passes between each trophic level — the rest is lost as heat through respiration. This is why food chains rarely exceed four or five links.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset all species to present</span>
+      <span class="kbd-key">1–4</span><span>Toggle each trophic level species</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Energy Pyramid &amp; Food Chain</h3>
+        <div class="seg" id="viewSeg">
+          <button data-v="pyramid" class="active">Energy pyramid</button>
+          <button data-v="chain">Chain view</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:#34d399"></span>Producer</span>
+        <span class="legend-item"><span class="swatch" style="background:#22d3ee"></span>Primary consumer</span>
+        <span class="legend-item"><span class="swatch" style="background:#f59e0b"></span>Secondary consumer</span>
+        <span class="legend-item"><span class="swatch" style="background:#f43f5e"></span>Tertiary consumer</span>
+      </div>
+    </div>
+    <div class="explainer" id="explainer">Adjust the starting energy and remove species to see how energy flows — and collapses — through the food chain.</div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Chain configuration</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Energy available to producers (plants) from sunlight, in kilojoules.">Producer energy input (kJ)</span>
+          <span class="value num" id="vBaseEnergy">10,000</span>
+        </div>
+        <input type="range" id="baseEnergy" min="1000" max="100000" step="1000" value="10000">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Percentage of energy transferred from one trophic level to the next. Real ecosystems: 5–20%.">Transfer efficiency (%)</span>
+          <span class="value num" id="vEfficiency">10</span>
+        </div>
+        <input type="range" id="efficiency" min="5" max="20" step="1" value="10">
+      </div>
+      <p class="section-label" style="margin-top:12px;">Toggle species (click to remove)</p>
+      <div class="species-grid" id="speciesGrid">
+        <button class="species-btn" data-level="0" id="spBtn0">
+          <span class="sp-dot" style="background:#34d399"></span>
+          <div><div class="sp-name" id="spName0">Grass</div><div class="sp-level">Producer (T1)</div></div>
+        </button>
+        <button class="species-btn" data-level="1" id="spBtn1">
+          <span class="sp-dot" style="background:#22d3ee"></span>
+          <div><div class="sp-name" id="spName1">Rabbit</div><div class="sp-level">Primary consumer (T2)</div></div>
+        </button>
+        <button class="species-btn" data-level="2" id="spBtn2">
+          <span class="sp-dot" style="background:#f59e0b"></span>
+          <div><div class="sp-name" id="spName2">Fox</div><div class="sp-level">Secondary consumer (T3)</div></div>
+        </button>
+        <button class="species-btn" data-level="3" id="spBtn3">
+          <span class="sp-dot" style="background:#f43f5e"></span>
+          <div><div class="sp-name" id="spName3">Eagle</div><div class="sp-level">Tertiary consumer (T4)</div></div>
+        </button>
+      </div>
+      <div id="removalNote" style="font-size:11px; color:var(--text-dim); margin-top:6px; line-height:1.5;"></div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Energy at each level</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Producer (T1)</div><div class="val green" id="rE0">—</div></div>
+        <div class="readout"><div class="lbl">Primary (T2)</div><div class="val cyan" id="rE1">—</div></div>
+        <div class="readout"><div class="lbl">Secondary (T3)</div><div class="val amber" id="rE2">—</div></div>
+        <div class="readout"><div class="lbl">Tertiary (T4)</div><div class="val rose" id="rE3">—</div></div>
+        <div class="readout"><div class="lbl" title="Energy wasted as heat through respiration at each level">Lost to heat</div><div class="val" id="rLost">—</div></div>
+        <div class="readout"><div class="lbl">Chain length</div><div class="val" id="rChainLen">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="ocean">Ocean chain</button>
+        <button data-try="woodland">Woodland chain</button>
+        <button data-try="remove_fox">Remove the fox</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const CHAIN_PRESETS = {
+  meadow: { names: ['Grass','Rabbit','Fox','Eagle'], base: 10000, eff: 10 },
+  ocean: { names: ['Phytoplankton','Zooplankton','Herring','Seal'], base: 50000, eff: 12 },
+  woodland: { names: ['Oak leaves','Caterpillar','Blue tit','Sparrowhawk'], base: 20000, eff: 8 }
+};
+
+const TROPHIC_COLORS = ['#34d399','#22d3ee','#f59e0b','#f43f5e'];
+const TROPHIC_SOFT   = ['rgba(52,211,153,0.22)','rgba(34,211,238,0.22)','rgba(245,158,11,0.22)','rgba(244,63,94,0.22)'];
+
+const state = {
+  names: [...CHAIN_PRESETS.meadow.names],
+  base: 10000,
+  eff: 10,
+  present: [true, true, true, true],
+  view: 'pyramid'
+};
+
+function calcEnergies() {
+  const E = [];
+  for (let i = 0; i < 4; i++) {
+    if (!state.present[i]) { E.push(null); continue; }
+    if (i === 0) { E.push(state.base); continue; }
+    // energy flows from the nearest present level below
+    let prevE = null;
+    for (let j = i - 1; j >= 0; j--) {
+      if (state.present[j]) { prevE = E[j]; break; }
+    }
+    E.push(prevE !== null ? prevE * (state.eff / 100) : null);
+  }
+  return E;
+}
+
+// Population ratio relative to equilibrium — when a predator is removed the prey population grows
+function calcPops(E) {
+  // Approximate relative carrying capacity proportional to available energy
+  const base = E[0] !== null ? E[0] : state.base;
+  return E.map((e, i) => {
+    if (e === null) return null;
+    // Normalised log scale for visual representation
+    return e / base;
+  });
+}
+
+function fmtKJ(v) {
+  if (v === null) return '—';
+  if (v >= 1000) return (v / 1000).toFixed(1) + ' MJ';
+  return Math.round(v) + ' kJ';
+}
+
+function drawPyramid(ctx, W, H, E) {
+  const pad = { l: 60, r: 60, t: 30, b: 30 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // background grid lines
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const x = pad.l + pw * i / 5;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+
+  const present = E.map(e => e !== null);
+  const activeCount = present.filter(Boolean).length;
+  if (activeCount === 0) return;
+
+  const maxE = E.find(e => e !== null) || 1;
+  const rowH = Math.floor(ph / 4) - 6;
+  const barPad = 4;
+
+  for (let i = 0; i < 4; i++) {
+    const row = 3 - i; // T1 (Producer) at bottom row, T4 (Tertiary) at top row — correct pyramid orientation
+    const y = pad.t + row * (ph / 4) + barPad;
+    const bh = rowH;
+    const fraction = E[i] !== null ? E[i] / maxE : 0;
+    const barW = pw * fraction;
+    const barX = pad.l + (pw - barW) / 2;
+
+    // ghost bar showing "full" width context
+    ctx.fillStyle = '#1a2230';
+    ctx.fillRect(pad.l, y, pw, bh);
+
+    if (E[i] !== null) {
+      // filled bar
+      ctx.fillStyle = TROPHIC_SOFT[i];
+      ctx.fillRect(barX, y, barW, bh);
+      ctx.strokeStyle = TROPHIC_COLORS[i];
+      ctx.lineWidth = 2;
+      ctx.strokeRect(barX, y, barW, bh);
+
+      // species name label
+      ctx.fillStyle = TROPHIC_COLORS[i];
+      ctx.font = '600 13px Inter';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(state.names[i], pad.l + 6, y + bh / 2);
+
+      // energy label
+      ctx.fillStyle = '#e6edf3';
+      ctx.font = '12px JetBrains Mono';
+      ctx.textAlign = 'right';
+      ctx.fillText(fmtKJ(E[i]), W - pad.r + 50, y + bh / 2);
+
+      // heat loss arrow between levels
+      if (i > 0) {
+        const prevE = E[i - 1] !== null ? E[i - 1] : null;
+        if (prevE !== null) {
+          const lostPct = (100 - state.eff).toFixed(0);
+          ctx.fillStyle = '#5b6573';
+          ctx.font = '10px JetBrains Mono';
+          ctx.textAlign = 'center';
+          ctx.fillText(`↑ ${lostPct}% heat`, W - pad.r + 26, y - 8);
+        }
+      }
+    } else {
+      // removed species — show dashed ghost
+      ctx.strokeStyle = '#2a3344';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(pad.l, y, pw, bh);
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#2a3344';
+      ctx.font = '12px Inter';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(state.names[i] + ' (removed)', pad.l + pw / 2, y + bh / 2);
+    }
+  }
+
+  // Trophic level labels on left
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right';
+  const tlLabels = ['T1 Producer','T2 Primary','T3 Secondary','T4 Tertiary'];
+  for (let i = 0; i < 4; i++) {
+    const row = 3 - i;
+    const y = pad.t + row * (ph / 4) + barPad + rowH / 2;
+    ctx.fillText(tlLabels[i], pad.l - 6, y);
+  }
+
+  // x-axis label
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('← Energy (kJ) — bar width proportional →', pad.l + pw / 2, H - 2);
+}
+
+function drawChain(ctx, W, H, E) {
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l: 30, r: 30, t: 40, b: 30 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const nodeR = 48;
+  const present = [0,1,2,3].filter(i => E[i] !== null);
+  if (present.length === 0) return;
+
+  const spacing = pw / (present.length + 1);
+
+  // Draw population bubbles sized by relative energy
+  const maxE = E.find(e => e !== null) || 1;
+  const cx = [];
+  const cy = H / 2 + 10;
+
+  present.forEach((lvl, idx) => {
+    const x = pad.l + spacing * (idx + 1);
+    cx.push({ x, lvl });
+    const frac = Math.sqrt(E[lvl] / maxE);
+    const r = Math.max(18, nodeR * frac);
+
+    // glow
+    const grd = ctx.createRadialGradient(x, cy, 0, x, cy, r * 1.4);
+    grd.addColorStop(0, TROPHIC_SOFT[lvl]);
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(x, cy, r * 1.4, 0, Math.PI*2); ctx.fill();
+
+    // circle
+    ctx.fillStyle = TROPHIC_SOFT[lvl];
+    ctx.strokeStyle = TROPHIC_COLORS[lvl];
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(x, cy, r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+
+    // species name
+    ctx.fillStyle = TROPHIC_COLORS[lvl];
+    ctx.font = '700 12px Inter';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(state.names[lvl], x, cy - 4);
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillText(fmtKJ(E[lvl]), x, cy + 12);
+
+    // trophic label above
+    ctx.fillStyle = TROPHIC_COLORS[lvl];
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillText(['T1','T2','T3','T4'][lvl], x, cy - r - 8);
+  });
+
+  // arrows between nodes
+  for (let i = 0; i < cx.length - 1; i++) {
+    const from = cx[i], to = cx[i+1];
+    const frac = Math.sqrt(E[from.lvl] / maxE);
+    const fromR = Math.max(18, nodeR * frac);
+    const frac2 = Math.sqrt(E[to.lvl] / maxE);
+    const toR = Math.max(18, nodeR * frac2);
+
+    const ax = from.x + fromR + 4;
+    const bx = to.x - toR - 4;
+    const mid = (ax + bx) / 2;
+
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(ax, cy); ctx.lineTo(bx, cy); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // arrow tip
+    ctx.fillStyle = '#22d3ee';
+    ctx.beginPath();
+    ctx.moveTo(bx, cy);
+    ctx.lineTo(bx - 8, cy - 5);
+    ctx.lineTo(bx - 8, cy + 5);
+    ctx.closePath(); ctx.fill();
+
+    // efficiency label
+    ctx.fillStyle = '#5b6573';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(state.eff + '%', mid, cy - 8);
+
+    // heat loss
+    ctx.fillStyle = '#f43f5e';
+    ctx.font = '10px Inter';
+    ctx.textBaseline = 'top';
+    ctx.fillText((100 - state.eff) + '% heat', mid, cy + 8);
+  }
+
+  // title
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px Inter';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('Circle size ∝ √(available energy)', pad.l, 8);
+}
+
+function draw() {
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  const E = calcEnergies();
+  if (state.view === 'pyramid') drawPyramid(ctx, W, H, E);
+  else drawChain(ctx, W, H, E);
+}
+
+function updateReadouts() {
+  const E = calcEnergies();
+  ['rE0','rE1','rE2','rE3'].forEach((id, i) => {
+    $(id).textContent = fmtKJ(E[i]);
+    $(id).style.opacity = E[i] !== null ? '1' : '0.3';
+  });
+  const totalIn = E[0] !== null ? E[0] : 0;
+  const topE = [...E].reverse().find(e => e !== null) || 0;
+  const lost = totalIn - topE;
+  $('rLost').textContent = fmtKJ(lost);
+  const chainLen = E.filter(e => e !== null).length;
+  $('rChainLen').textContent = chainLen + ' link' + (chainLen !== 1 ? 's' : '');
+}
+
+function buildRemovalNote() {
+  const missing = [0,1,2,3].filter(i => !state.present[i]);
+  if (missing.length === 0) { $('removalNote').textContent = 'All species present. Click a species to remove it from the chain.'; return; }
+
+  let notes = [];
+  missing.forEach(m => {
+    const name = state.names[m];
+    if (m === 0) {
+      notes.push(`Without the producer (${name}) the entire chain collapses — no energy enters the ecosystem.`);
+    } else if (m === 1) {
+      const prey = state.names[0];
+      const pred = state.names[2] || 'secondary consumer';
+      notes.push(`Removing ${name} (primary consumer): ${prey} population rises unchecked; ${pred} loses its food source and declines.`);
+    } else if (m === 2) {
+      const prey = state.names[1] || 'primary consumer';
+      const pred = state.names[3] || 'tertiary consumer';
+      notes.push(`Removing ${name} (secondary consumer): ${prey} population rises; ${pred} loses food and declines.`);
+    } else if (m === 3) {
+      const prey = state.names[2] || 'secondary consumer';
+      notes.push(`Removing ${name} (top predator): ${prey} population rises unchecked — a trophic cascade.`);
+    }
+  });
+  $('removalNote').textContent = notes.join(' ');
+}
+
+function updateExplainer() {
+  const E = calcEnergies();
+  const present = [0,1,2,3].filter(i => E[i] !== null);
+  if (present.length === 0) {
+    $('explainer').textContent = 'No species present — the ecosystem has collapsed.'; return;
+  }
+  const topIdx = present[present.length - 1];
+  const topE = E[topIdx];
+  const pct = (topE / state.base * 100).toFixed(2);
+  let txt = `With a transfer efficiency of <span class="k">${state.eff}%</span>, only <span class="k">${pct}%</span> of the original <span class="k">${fmtKJ(state.base)}</span> reaches the ${state.names[topIdx]}. `;
+  if (present.length === 4) {
+    txt += `Across four trophic levels: ${state.base.toLocaleString()} → ${Math.round(E[1]).toLocaleString()} → ${Math.round(E[2]).toLocaleString()} → ${Math.round(E[3]).toLocaleString()} kJ. `;
+    txt += `The <span class="k">${(100-state.eff)}%</span> lost at each level is dissipated as heat via cellular respiration — a consequence of the second law of thermodynamics.`;
+  } else {
+    txt += `Removing species from the chain reduces total chain length and disrupts energy flow to upper levels.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function refresh() {
+  draw();
+  updateReadouts();
+  buildRemovalNote();
+  updateExplainer();
+}
+
+// Species toggle buttons
+[0,1,2,3].forEach(i => {
+  $('spBtn' + i).addEventListener('click', () => {
+    state.present[i] = !state.present[i];
+    $('spBtn' + i).classList.toggle('removed', !state.present[i]);
+    $('tryNote').textContent = '';
+    refresh();
+  });
+});
+
+// Sliders
+$('baseEnergy').addEventListener('input', e => {
+  state.base = parseInt(e.target.value);
+  $('vBaseEnergy').textContent = state.base.toLocaleString('en-GB');
+  refresh();
+});
+$('efficiency').addEventListener('input', e => {
+  state.eff = parseInt(e.target.value);
+  $('vEfficiency').textContent = state.eff;
+  refresh();
+});
+
+// View toggle
+document.querySelectorAll('#viewSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#viewSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.view = b.dataset.v;
+    draw();
+  });
+});
+
+function applyChain(preset) {
+  const p = CHAIN_PRESETS[preset] || CHAIN_PRESETS.meadow;
+  state.names = [...p.names];
+  state.base = p.base;
+  state.eff = p.eff;
+  state.present = [true, true, true, true];
+  $('baseEnergy').value = p.base;
+  $('vBaseEnergy').textContent = p.base.toLocaleString('en-GB');
+  $('efficiency').value = p.eff;
+  $('vEfficiency').textContent = p.eff;
+  [0,1,2,3].forEach(i => {
+    $('spName' + i).textContent = state.names[i];
+    $('spBtn' + i).classList.remove('removed');
+  });
+}
+
+function applyTry(name) {
+  const notes = {
+    ocean: '<strong>Phytoplankton → Zooplankton → Herring → Seal.</strong> Phytoplankton are the ocean\'s primary producers, fixing solar energy via photosynthesis. Higher efficiency (12%) reflects shorter digestion times in aquatic chains.',
+    woodland: '<strong>Oak leaves → Caterpillar → Blue tit → Sparrowhawk.</strong> Lower efficiency (8%) is typical for terrestrial insects. Notice how little energy reaches the hawk.',
+    remove_fox: 'Removing the <strong>secondary consumer</strong> (fox) causes rabbit populations to surge — overgrazing then damages the producer level. This is a classic <strong>trophic cascade</strong>.'
+  };
+  if (name === 'ocean') { applyChain('ocean'); }
+  else if (name === 'woodland') { applyChain('woodland'); }
+  else if (name === 'remove_fox') {
+    applyChain('meadow');
+    state.present[2] = false;
+    $('spBtn2').classList.add('removed');
+  }
+  $('tryNote').innerHTML = notes[name] || '';
+  refresh();
+}
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', draw);
+
+// Keyboard shortcuts
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'r') {
+      applyChain('meadow');
+      state.present = [true, true, true, true];
+      [0,1,2,3].forEach(i => $('spBtn' + i).classList.remove('removed'));
+      refresh();
+    } else if (e.key === '1') { $('spBtn0').click(); }
+    else if (e.key === '2') { $('spBtn1').click(); }
+    else if (e.key === '3') { $('spBtn2').click(); }
+    else if (e.key === '4') { $('spBtn3').click(); }
+  });
+})();
+
+// Initial draw
+refresh();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="photosynthesis_ks3.html">
+      <div class="related-title">Rate of Photosynthesis</div>
+      <div class="related-desc">See how light, CO₂, and temperature limit the rate of energy capture at the base of every food chain.</div>
+    </a>
+    <a class="related-card" href="natural_selection_ks3.html">
+      <div class="related-title">Natural Selection: Peppered Moths</div>
+      <div class="related-desc">Predation pressure drives allele-frequency change across generations — evolution in action.</div>
+    </a>
+    <a class="related-card" href="sir_model.html">
+      <div class="related-title">Epidemic Model (SEIR)</div>
+      <div class="related-desc">How disease spreads through populations — another example of cascade effects in biology.</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

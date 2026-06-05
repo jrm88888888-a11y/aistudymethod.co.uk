@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maxwell–Boltzmann Distribution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14; --bg-elev-1: #11161f; --bg-elev-2: #161d28;
+  --panel: #131923; --panel-border: #1f2937; --grid: #1a2230;
+  --text: #e6edf3; --text-dim: #97a1b0; --text-faint: #5b6573;
+  --cyan: #22d3ee; --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b; --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e; --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399; --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa; --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 17px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 420px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.catalyst-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: var(--green-soft); color: var(--green); border: 1px solid var(--green); margin-left: 6px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Maxwell–Boltzmann Distribution</h1>
+    <p class="sub">Molecular energy distribution · Activation energy · Effect of temperature &amp; catalyst</p>
+    <p class="insight-banner">The reacting fraction rises exponentially with temperature — even a 10 K rise can double the rate — because the tail of the distribution grows disproportionately when the curve shifts right and flattens.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">C</span><span>Toggle catalyst on/off</span>
+      <span class="kbd-key">↑ / ↓</span><span>Increase / decrease temperature by 25 K</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Energy Distribution of Molecules</h3>
+        <span id="catalystBadge" style="display:none;" class="catalyst-badge">Catalyst active</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Distribution at T</span>
+        <span class="legend-item"><span class="swatch" style="background:rgba(34,211,238,0.25)"></span>Compare T₂ (if shown)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Molecules with E ≥ Eₐ (reacting fraction)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>Eₐ (catalyst) — lowered barrier</span>
+      </div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Gas parameters</p>
+      <div class="control">
+        <div class="control-row"><span class="label" title="Molar mass M in g/mol — determines speed but not the energy fraction above Ea.">Molar mass M (g mol⁻¹)</span><span class="value num" id="vM">28</span></div>
+        <input type="range" id="sM" min="2" max="200" step="1" value="28">
+        <div class="refs">
+          <span class="ref-chip" data-m="2">H₂ (2)</span>
+          <span class="ref-chip" data-m="28">N₂ (28)</span>
+          <span class="ref-chip" data-m="32">O₂ (32)</span>
+          <span class="ref-chip" data-m="44">CO₂ (44)</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">Temperature T (K)</span><span class="value num" id="vT">298</span></div>
+        <input type="range" id="sT" min="100" max="1000" step="5" value="298">
+        <div class="refs">
+          <span class="ref-chip" data-t="298">298 K (25°C)</span>
+          <span class="ref-chip" data-t="373">373 K (100°C)</span>
+          <span class="ref-chip" data-t="500">500 K</span>
+          <span class="ref-chip" data-t="1000">1000 K</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label" title="Activation energy — minimum energy a collision must have for the reaction to occur.">Activation energy Eₐ (kJ mol⁻¹)</span><span class="value num" id="vEa">50</span></div>
+        <input type="range" id="sEa" min="5" max="150" step="1" value="50">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Catalyst</p>
+      <div class="control">
+        <div class="control-row"><span class="label">Catalyst active</span>
+          <div class="seg" id="catToggle">
+            <button data-cat="off" class="active">Off</button>
+            <button data-cat="on">On</button>
+          </div>
+        </div>
+      </div>
+      <div class="control" id="catEaControl" style="display:none;">
+        <div class="control-row"><span class="label" title="Lowered activation energy when catalyst is present.">Eₐ (with catalyst) (kJ mol⁻¹)</span><span class="value num" id="vEaCat">30</span></div>
+        <input type="range" id="sEaCat" min="1" max="100" step="1" value="30">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label" title="Show a second curve at a higher temperature for direct comparison.">Compare T₂</span>
+          <div class="seg" id="compareToggle">
+            <button data-cmp="off" class="active">Off</button>
+            <button data-cmp="on">On</button>
+          </div>
+        </div>
+      </div>
+      <div class="control" id="compareT2Control" style="display:none;">
+        <div class="control-row"><span class="label">T₂ (K)</span><span class="value num" id="vT2">400</span></div>
+        <input type="range" id="sT2" min="100" max="1200" step="5" value="400">
+      </div>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="Most probable energy — the peak of the distribution, = RT/2 per mole but expressed as kT per molecule.">Most probable E</div><div class="val cyan" id="oEmp">—</div></div>
+        <div class="readout"><div class="lbl" title="Mean energy of molecules = 3/2 RT.">Mean energy</div><div class="val amber" id="oEmean">—</div></div>
+        <div class="readout"><div class="lbl" title="Fraction of molecules with energy ≥ Ea — numerically proportional to rate.">Reacting fraction</div><div class="val rose" id="oFrac">—</div></div>
+        <div class="readout"><div class="lbl">Fraction (catalyst)</div><div class="val green" id="oFracCat">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="temprise">Raise T: 298 → 308 K</button>
+        <button data-try="catalyst">Add a catalyst (lower Eₐ)</button>
+        <button data-try="highEa">High Eₐ — slow reaction</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const R = 8.314; // J mol⁻¹ K⁻¹
+
+const params = {
+  M: 28,    // g/mol
+  T: 298,   // K
+  Ea: 50,   // kJ/mol
+  catalystOn: false,
+  EaCat: 30, // kJ/mol
+  compareOn: false,
+  T2: 400
+};
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// Maxwell-Boltzmann speed distribution → energy distribution
+// f(E) = 2π (1/πRT)^(3/2) * sqrt(E) * exp(-E/RT)  [per mole, per J/mol]
+// Normalised: the distribution of energy per mole
+// E in J/mol, T in K
+function mbEnergy(E, T) {
+  if (E < 0) return 0;
+  const kT = R * T; // J/mol
+  // f(E) = 2 * sqrt(E/π) * (1/kT)^(3/2) * exp(-E/kT)
+  const coeff = 2 * Math.sqrt(E / Math.PI) * Math.pow(1/kT, 1.5);
+  return coeff * Math.exp(-E / kT);
+}
+
+// Fraction of molecules with E >= Ea (numerical integration)
+function fractionAbove(Ea_J, T) {
+  // Emax for integration — go to 10*kT
+  const kT = R * T;
+  const Emax = Math.max(Ea_J * 3, kT * 10);
+  const N = 2000;
+  const dE = Emax / N;
+  let total = 0, above = 0;
+  for (let i = 0; i <= N; i++) {
+    const E = i * dE;
+    const f = mbEnergy(E, T);
+    const w = (i === 0 || i === N) ? 0.5 : 1;
+    total += w * f * dE;
+    if (E >= Ea_J) above += w * f * dE;
+  }
+  return total > 0 ? above / total : 0;
+}
+
+function mostProbableE(T) { return 0.5 * R * T; } // = RT/2 per mole
+function meanE(T) { return 1.5 * R * T; } // = 3RT/2 per mole
+
+function drawChart() {
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l:58, r:20, t:20, b:36 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  // Determine x-axis range: include the distribution peak (8×kT) AND the Ea line
+  const Tmax = params.compareOn ? Math.max(params.T, params.T2) : params.T;
+  const kT = R * Tmax;
+  const Ea_J = params.Ea * 1000;
+  const EaCat_J = params.EaCat * 1000;
+  // Extend x-axis to 1.25×Ea so the Ea line is always visible on screen
+  const Emax = Math.max(kT * 8, Ea_J * 1.25);
+
+  // Sample the curve
+  const N = 600;
+  const curve1 = [], curve2 = [];
+  let yMax1 = 0, yMax2 = 0;
+  for (let i = 0; i <= N; i++) {
+    const E = (i / N) * Emax;
+    const f1 = mbEnergy(E, params.T);
+    curve1.push({ E, f: f1 });
+    yMax1 = Math.max(yMax1, f1);
+    if (params.compareOn) {
+      const f2 = mbEnergy(E, params.T2);
+      curve2.push({ E, f: f2 });
+      yMax2 = Math.max(yMax2, f2);
+    }
+  }
+  const yMax = Math.max(yMax1, yMax2) * 1.15 || 1e-5;
+
+  const xAt = E => pad.l + (E / Emax) * pw;
+  const yAt = f => pad.t + ph * (1 - f / yMax);
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph*i/4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
+    const x = pad.l + pw*i/4;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H-pad.b); ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i <= 4; i++) {
+    const x = pad.l + pw*i/4;
+    const E = (i/4) * Emax / 1000; // kJ/mol
+    ctx.fillText(E.toFixed(0)+' kJ', x, H-pad.b+5);
+  }
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('Molecular energy / kJ mol⁻¹', pad.l+pw/2, H-8);
+  ctx.save(); ctx.translate(13, pad.t+ph/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Probability density', 0, 0); ctx.restore();
+
+  // --- Filled reacting fraction (area beyond Ea for curve1) ---
+  const roseGrad = ctx.createLinearGradient(xAt(Ea_J), 0, W-pad.r, 0);
+  roseGrad.addColorStop(0, 'rgba(244,63,94,0.55)');
+  roseGrad.addColorStop(1, 'rgba(244,63,94,0.05)');
+  ctx.beginPath();
+  ctx.moveTo(xAt(Ea_J), yAt(0));
+  for (let i = 0; i < curve1.length; i++) {
+    if (curve1[i].E < Ea_J) continue;
+    ctx.lineTo(xAt(curve1[i].E), yAt(curve1[i].f));
+  }
+  ctx.lineTo(xAt(Emax), yAt(0));
+  ctx.closePath();
+  ctx.fillStyle = roseGrad;
+  ctx.fill();
+
+  // Catalyst reacting fraction
+  if (params.catalystOn && EaCat_J < Ea_J) {
+    const greenGrad = ctx.createLinearGradient(xAt(EaCat_J), 0, xAt(Ea_J), 0);
+    greenGrad.addColorStop(0, 'rgba(52,211,153,0.3)');
+    greenGrad.addColorStop(1, 'rgba(52,211,153,0.1)');
+    ctx.beginPath();
+    ctx.moveTo(xAt(EaCat_J), yAt(0));
+    for (let i = 0; i < curve1.length; i++) {
+      if (curve1[i].E < EaCat_J) continue;
+      if (curve1[i].E > Ea_J) break;
+      ctx.lineTo(xAt(curve1[i].E), yAt(curve1[i].f));
+    }
+    ctx.lineTo(xAt(Ea_J), yAt(0));
+    ctx.closePath();
+    ctx.fillStyle = greenGrad;
+    ctx.fill();
+  }
+
+  // Comparison curve (T2) - filled semi-transparent
+  if (params.compareOn && curve2.length > 0) {
+    ctx.beginPath();
+    for (let i = 0; i < curve2.length; i++) {
+      const x = xAt(curve2[i].E), y = yAt(curve2[i].f);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.lineTo(xAt(Emax), yAt(0)); ctx.lineTo(xAt(0), yAt(0)); ctx.closePath();
+    ctx.fillStyle = 'rgba(34,211,238,0.07)'; ctx.fill();
+    ctx.beginPath();
+    for (let i = 0; i < curve2.length; i++) {
+      const x = xAt(curve2[i].E), y = yAt(curve2[i].f);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = 'rgba(34,211,238,0.4)'; ctx.lineWidth = 2; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // Main curve (filled below)
+  ctx.beginPath();
+  for (let i = 0; i < curve1.length; i++) {
+    const x = xAt(curve1[i].E), y = yAt(curve1[i].f);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.lineTo(xAt(Emax), yAt(0)); ctx.lineTo(xAt(0), yAt(0)); ctx.closePath();
+  ctx.fillStyle = 'rgba(34,211,238,0.10)'; ctx.fill();
+  ctx.beginPath();
+  for (let i = 0; i < curve1.length; i++) {
+    const x = xAt(curve1[i].E), y = yAt(curve1[i].f);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Ea vertical line
+  if (Ea_J < Emax) {
+    const xEa = xAt(Ea_J);
+    ctx.save(); ctx.setLineDash([5,4]);
+    ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(xEa, pad.t); ctx.lineTo(xEa, H-pad.b); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#f43f5e'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(`Eₐ = ${params.Ea} kJ`, xEa, pad.t + 6);
+  }
+
+  // Catalyst Ea line
+  if (params.catalystOn && EaCat_J < Ea_J) {
+    const xCat = xAt(EaCat_J);
+    ctx.save(); ctx.setLineDash([4,3]);
+    ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(xCat, pad.t); ctx.lineTo(xCat, H-pad.b); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#34d399'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(`Eₐ(cat) = ${params.EaCat} kJ`, xCat, pad.t + 20);
+  }
+
+  // Most probable and mean energy markers
+  const Emp = mostProbableE(params.T);
+  const Emean = meanE(params.T);
+  for (const [E, col, lbl] of [[Emp,'#fbbf24','Emp'],[Emean,'#f59e0b','Emean']]) {
+    if (E < Emax) {
+      const x = xAt(E);
+      ctx.save(); ctx.setLineDash([2,3]);
+      ctx.strokeStyle = col; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H-pad.b); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = col; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'center';
+      ctx.fillText(lbl, x, H - pad.b - 14);
+    }
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateReadouts() {
+  const T = params.T;
+  const Ea_J = params.Ea * 1000;
+  const EaCat_J = params.EaCat * 1000;
+
+  const Emp = mostProbableE(T) / 1000;
+  const Emean = meanE(T) / 1000;
+  const frac = fractionAbove(Ea_J, T);
+  const fracCat = params.catalystOn ? fractionAbove(EaCat_J, T) : null;
+
+  $('oEmp').textContent = Emp.toFixed(1) + ' kJ';
+  $('oEmean').textContent = Emean.toFixed(1) + ' kJ';
+  $('oFrac').textContent = frac < 1e-4 ? frac.toExponential(2) : (frac * 100).toFixed(3) + '%';
+  if (fracCat !== null) {
+    const fc = fracCat < 1e-4 ? fracCat.toExponential(2) : (fracCat * 100).toFixed(3) + '%';
+    $('oFracCat').textContent = fc;
+  } else {
+    $('oFracCat').textContent = '—';
+  }
+}
+
+function updateExplainer() {
+  const T = params.T, Ea = params.Ea;
+  const Ea_J = Ea * 1000;
+  const frac = fractionAbove(Ea_J, T);
+  const fracPct = frac < 1e-6 ? frac.toExponential(2) : (frac * 100).toFixed(4) + '%';
+
+  let txt = `At <span class="k">T = ${T} K</span>, the most probable molecular energy is <span class="k">${(mostProbableE(T)/1000).toFixed(1)} kJ mol⁻¹</span> and the mean is <span class="k">${(meanE(T)/1000).toFixed(1)} kJ mol⁻¹</span>. `;
+  txt += `With Eₐ = <span class="k">${Ea} kJ mol⁻¹</span>, the fraction of molecules able to react is <span class="k">${fracPct}</span>. `;
+
+  if (params.catalystOn) {
+    const fracCat = fractionAbove(params.EaCat * 1000, T);
+    const ratio = frac > 0 ? (fracCat / frac).toFixed(0) : '—';
+    txt += `A catalyst lowers Eₐ to <span class="k">${params.EaCat} kJ mol⁻¹</span>, making the reacting fraction <span class="k">${ratio}×</span> larger — same distribution, lower barrier.`;
+  } else if (params.compareOn) {
+    const frac2 = fractionAbove(Ea_J, params.T2);
+    const ratio2 = frac > 0 ? (frac2 / frac).toFixed(1) : '—';
+    txt += `At the comparison temperature T₂ = <span class="k">${params.T2} K</span>, the reacting fraction is <span class="k">${ratio2}×</span> larger — the curve shifts right and flattens, so the tail beyond Eₐ grows dramatically.`;
+  } else {
+    txt += `The <span class="k">shape</span> of the curve: starts at zero (no molecules with zero energy), rises to a peak at Emp = RT/2, then falls asymptotically. Raising T shifts the peak right, flattens the curve, and exponentially grows the area beyond Eₐ.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() {
+  updateReadouts();
+  drawChart();
+  updateExplainer();
+}
+
+// Controls
+$('sM').addEventListener('input', e => { params.M = parseInt(e.target.value); $('vM').textContent = params.M; redraw(); });
+$('sT').addEventListener('input', e => { params.T = parseInt(e.target.value); $('vT').textContent = params.T; redraw(); });
+$('sEa').addEventListener('input', e => { params.Ea = parseInt(e.target.value); $('vEa').textContent = params.Ea; redraw(); });
+$('sEaCat').addEventListener('input', e => { params.EaCat = parseInt(e.target.value); $('vEaCat').textContent = params.EaCat; redraw(); });
+$('sT2').addEventListener('input', e => { params.T2 = parseInt(e.target.value); $('vT2').textContent = params.T2; redraw(); });
+
+document.querySelectorAll('.ref-chip[data-m]').forEach(c => {
+  c.addEventListener('click', () => { params.M = parseInt(c.dataset.m); $('sM').value = params.M; $('vM').textContent = params.M; redraw(); });
+});
+document.querySelectorAll('.ref-chip[data-t]').forEach(c => {
+  c.addEventListener('click', () => { params.T = parseInt(c.dataset.t); $('sT').value = params.T; $('vT').textContent = params.T; redraw(); });
+});
+
+document.querySelectorAll('#catToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#catToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.catalystOn = b.dataset.cat === 'on';
+    $('catEaControl').style.display = params.catalystOn ? '' : 'none';
+    $('catalystBadge').style.display = params.catalystOn ? '' : 'none';
+    redraw();
+  });
+});
+document.querySelectorAll('#compareToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#compareToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.compareOn = b.dataset.cmp === 'on';
+    $('compareT2Control').style.display = params.compareOn ? '' : 'none';
+    redraw();
+  });
+});
+
+// Try this
+function applyTry(name) {
+  const presets = {
+    temprise: {
+      fn: () => { params.T=298; params.T2=308; params.compareOn=true; params.catalystOn=false; params.Ea=50; },
+      note: '<strong>298 K → 308 K:</strong> a mere 10 K rise in temperature (roughly the "doubling the rate" rule). With Eₐ = 50 kJ/mol, the reacting fraction increases by a factor of ~1.7. Watch the tail beyond Eₐ grow — the curve barely moves but the area beyond Eₐ grows disproportionately.'
+    },
+    catalyst: {
+      fn: () => { params.T=298; params.catalystOn=true; params.EaCat=30; params.compareOn=false; params.Ea=50; },
+      note: '<strong>Catalyst effect:</strong> same temperature, same distribution — but the barrier drops from 50 to 30 kJ/mol. The green shaded region shows the extra fraction now able to react. The catalyst provides an alternative mechanism with a lower Eₐ; it is unchanged at the end.'
+    },
+    highEa: {
+      fn: () => { params.T=298; params.Ea=120; params.catalystOn=false; params.compareOn=true; params.T2=1000; },
+      note: '<strong>High Eₐ = 120 kJ/mol:</strong> almost no molecules at room temperature have enough energy — the reaction is negligibly slow. At 1000 K the fraction rises dramatically. This mimics reactions like N₂ + O₂ → 2NO which need very high temperatures.'
+    }
+  };
+  const p = presets[name];
+  if (!p) return;
+  p.fn();
+  $('sT').value = params.T; $('vT').textContent = params.T;
+  $('sEa').value = params.Ea; $('vEa').textContent = params.Ea;
+  $('sEaCat').value = params.EaCat; $('vEaCat').textContent = params.EaCat;
+  $('sT2').value = params.T2; $('vT2').textContent = params.T2;
+  // Update catalyst toggle
+  document.querySelectorAll('#catToggle button').forEach(b => b.classList.toggle('active', (b.dataset.cat==='on') === params.catalystOn));
+  $('catEaControl').style.display = params.catalystOn ? '' : 'none';
+  $('catalystBadge').style.display = params.catalystOn ? '' : 'none';
+  // Update compare toggle
+  document.querySelectorAll('#compareToggle button').forEach(b => b.classList.toggle('active', (b.dataset.cmp==='on') === params.compareOn));
+  $('compareT2Control').style.display = params.compareOn ? '' : 'none';
+  redraw();
+  $('tryNote').innerHTML = p.note;
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', redraw);
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  const DEFAULTS = { M:28, T:298, Ea:50, catalystOn:false, EaCat:30, compareOn:false, T2:400 };
+  function resetAll() {
+    Object.assign(params, DEFAULTS);
+    $('sM').value=28; $('vM').textContent=28;
+    $('sT').value=298; $('vT').textContent=298;
+    $('sEa').value=50; $('vEa').textContent=50;
+    $('sEaCat').value=30; $('vEaCat').textContent=30;
+    $('sT2').value=400; $('vT2').textContent=400;
+    document.querySelectorAll('#catToggle button').forEach(b => b.classList.toggle('active', b.dataset.cat==='off'));
+    document.querySelectorAll('#compareToggle button').forEach(b => b.classList.toggle('active', b.dataset.cmp==='off'));
+    $('catEaControl').style.display='none'; $('catalystBadge').style.display='none';
+    $('compareT2Control').style.display='none';
+    redraw();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+    if (e.key==='Escape') { close(); return; }
+    if (e.key==='?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey||e.ctrlKey||e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k==='r') resetAll();
+    else if (k==='c') {
+      params.catalystOn = !params.catalystOn;
+      document.querySelectorAll('#catToggle button').forEach(b => b.classList.toggle('active', (b.dataset.cat==='on') === params.catalystOn));
+      $('catEaControl').style.display = params.catalystOn ? '' : 'none';
+      $('catalystBadge').style.display = params.catalystOn ? '' : 'none';
+      redraw();
+    }
+    else if (e.key==='ArrowUp') { params.T = Math.min(1000, params.T+25); $('sT').value=params.T; $('vT').textContent=params.T; redraw(); }
+    else if (e.key==='ArrowDown') { params.T = Math.max(100, params.T-25); $('sT').value=params.T; $('vT').textContent=params.T; redraw(); }
+  });
+})();
+
+redraw();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="kinetics.html">
+      <div class="related-title">Reaction Kinetics &amp; Rate Equations</div>
+      <div class="related-desc">Rate equations, half-lives and the Arrhenius temperature dependence of k — quantifying what the MB distribution shows qualitatively</div>
+    </a>
+    <a class="related-card" href="gibbs_free_energy.html">
+      <div class="related-title">Gibbs Free Energy &amp; Feasibility</div>
+      <div class="related-desc">ΔG = ΔH − TΔS — thermodynamic feasibility and how temperature determines reaction direction</div>
+    </a>
+    <a class="related-card" href="reaction_rates.html">
+      <div class="related-title">Reaction Rates (GCSE)</div>
+      <div class="related-desc">Collision theory and the factors that affect how quickly reactions happen</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

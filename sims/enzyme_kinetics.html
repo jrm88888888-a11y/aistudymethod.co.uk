@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enzyme Kinetics (Michaelis–Menten)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 320px; }
+.lb-wrap { position: relative; width: 100%; height: 240px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Enzyme Kinetics</h1>
+    <p class="sub">Michaelis–Menten: v = Vmax[S] / (Km + [S])</p>
+    <p class="insight-banner">Km is the substrate concentration giving half-maximal rate — a lower Km means the enzyme is more efficient at low substrate. Inhibitors shift Km or Vmax in characteristic, distinguishable ways.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">1</span><span>No inhibitor</span>
+      <span class="kbd-key">2</span><span>Competitive inhibition</span>
+      <span class="kbd-key">3</span><span>Non-competitive inhibition</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Rate vs substrate concentration</h3>
+        <div class="seg" id="inhibToggle">
+          <button data-inhib="none" class="active">No inhibitor</button>
+          <button data-inhib="competitive">Competitive</button>
+          <button data-inhib="noncompetitive">Non-competitive</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mmChart"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Control (no inhibitor)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>With inhibitor</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber); opacity:0.5"></span>Vmax / ½Vmax reference</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green); opacity:0.5"></span>Km marker</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Lineweaver–Burk plot (double-reciprocal)</h3>
+        <span style="font-size:11px;color:var(--text-dim)">1/v vs 1/[S]</span>
+      </div>
+      <div class="lb-wrap"><canvas id="lbChart"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Control</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Inhibited</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Enzyme parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Vmax: maximum reaction rate, achieved when all enzyme active sites are saturated with substrate (units: µmol/min)">Vmax (µmol/min)</span>
+          <span class="value num" id="vVmax">10.0</span>
+        </div>
+        <input type="range" id="slVmax" min="1" max="30" step="0.5" value="10">
+        <div class="refs">
+          <span class="ref-chip" data-vmax="5">Low (5)</span>
+          <span class="ref-chip" data-vmax="10">Default (10)</span>
+          <span class="ref-chip" data-vmax="20">High (20)</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Km: Michaelis constant — substrate concentration at which reaction rate is ½Vmax. Related to enzyme–substrate affinity.">Km (mM)</span>
+          <span class="value num" id="vKm">2.0</span>
+        </div>
+        <input type="range" id="slKm" min="0.1" max="20" step="0.1" value="2.0">
+        <div class="refs">
+          <span class="ref-chip" data-km="0.5">High affinity (0.5)</span>
+          <span class="ref-chip" data-km="2">Default (2)</span>
+          <span class="ref-chip" data-km="10">Low affinity (10)</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label">Max [S] shown (mM)</span>
+          <span class="value num" id="vSmax">20</span>
+        </div>
+        <input type="range" id="slSmax" min="5" max="100" step="5" value="20">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;" id="inhibPanel">
+      <p class="section-label">Inhibitor</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Inhibitor concentration [I] in mM">[I] concentration (mM)</span>
+          <span class="value num" id="vI">2.0</span>
+        </div>
+        <input type="range" id="slI" min="0" max="20" step="0.5" value="2.0">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Ki: inhibitor dissociation constant. Lower Ki = tighter binding (more potent inhibitor).">Ki (mM)</span>
+          <span class="value num" id="vKi">1.0</span>
+        </div>
+        <input type="range" id="slKi" min="0.1" max="20" step="0.1" value="1.0">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <p class="section-label">At current [S] = Km</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Control v at Km</div><div class="val cyan" id="oVatKm">—</div></div>
+        <div class="readout"><div class="lbl">Inhibited v at Km</div><div class="val rose" id="oVatKmI">—</div></div>
+        <div class="readout"><div class="lbl" title="Apparent Km under competitive inhibition: Km(1 + [I]/Ki)">App. Km (inhib)</div><div class="val amber" id="oAppKm">—</div></div>
+        <div class="readout"><div class="lbl" title="Apparent Vmax under non-competitive inhibition: Vmax/(1 + [I]/Ki)">App. Vmax (inhib)</div><div class="val violet" id="oAppVmax">—</div></div>
+        <div class="readout"><div class="lbl">LB x-intercept (ctrl)</div><div class="val" id="oLBx">—</div></div>
+        <div class="readout"><div class="lbl">LB y-intercept (ctrl)</div><div class="val" id="oLBy">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:14px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="noInhib">Baseline MM curve</button>
+        <button data-try="compInhib">Competitive inhibition</button>
+        <button data-try="noncompInhib">Non-competitive inhibition</button>
+        <button data-try="highAffinity">High-affinity enzyme</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="hardy_weinberg.html">
+      <div class="related-title">Hardy–Weinberg Equilibrium</div>
+      <div class="related-desc">Allele frequencies and evolutionary forces: selection, mutation, drift</div>
+    </a>
+    <a class="related-card" href="action_potential.html">
+      <div class="related-title">Neuron Action Potential</div>
+      <div class="related-desc">Ion channels, depolarisation, and the all-or-nothing firing rule</div>
+    </a>
+    <a class="related-card" href="enzyme_activity.html">
+      <div class="related-title">Enzyme Activity</div>
+      <div class="related-desc">Temperature, pH, and substrate concentration effects on enzyme activity</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const DEFAULTS = { Vmax:10, Km:2, I:2, Ki:1, Smax:20, inhibMode:'none' };
+const params = { ...DEFAULTS };
+
+function mmRate(S, Vmax, Km) {
+  if (S < 0) return 0;
+  return Vmax * S / (Km + S);
+}
+
+function appKm(mode) {
+  if (mode === 'competitive') return params.Km * (1 + params.I / params.Ki);
+  return params.Km; // non-competitive: same Km
+}
+
+function appVmax(mode) {
+  if (mode === 'noncompetitive') return params.Vmax / (1 + params.I / params.Ki);
+  return params.Vmax; // competitive: same Vmax
+}
+
+function drawMM() {
+  const c = $('mmChart');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+
+  const pad = {l:60,r:20,t:20,b:40};
+  const pw = W-pad.l-pad.r, ph = H-pad.t-pad.b;
+  const Smax = params.Smax;
+  const Vmax = params.Vmax;
+  const Km = params.Km;
+  const mode = params.inhibMode;
+
+  // Y axis goes to Vmax * 1.1
+  const yMax = Vmax * 1.15;
+
+  // grid
+  ctx.strokeStyle='#1a2230'; ctx.lineWidth=1;
+  for (let i=0;i<=5;i++) {
+    const y=pad.t+ph*i/5;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+  }
+  for (let i=0;i<=5;i++) {
+    const x=pad.l+pw*i/5;
+    ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,H-pad.b); ctx.stroke();
+  }
+  ctx.fillStyle='#97a1b0'; ctx.font='11px JetBrains Mono';
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for (let i=0;i<=5;i++) ctx.fillText(((5-i)/5*yMax).toFixed(1), pad.l-6, pad.t+ph*i/5);
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for (let i=0;i<=5;i++) ctx.fillText((i/5*Smax).toFixed(0), pad.l+pw*i/5, H-pad.b+5);
+  ctx.fillStyle='#5b6573'; ctx.font='10px Inter';
+  ctx.fillText('[S] (mM)', pad.l+pw/2, H-6);
+  ctx.save(); ctx.translate(12,pad.t+ph/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.fillText('v (µmol/min)',0,0); ctx.restore();
+
+  const xAt = S => pad.l + (S/Smax)*pw;
+  const yAt = v => pad.t + ph*(1 - v/yMax);
+  const N_POINTS = 300;
+
+  // Vmax reference line
+  ctx.save(); ctx.setLineDash([6,4]);
+  ctx.strokeStyle='rgba(245,158,11,0.5)'; ctx.lineWidth=1;
+  const yVmax = yAt(Vmax);
+  ctx.beginPath(); ctx.moveTo(pad.l,yVmax); ctx.lineTo(W-pad.r,yVmax); ctx.stroke();
+  ctx.fillStyle='rgba(245,158,11,0.9)'; ctx.font='10px JetBrains Mono'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+  ctx.fillText('Vmax = '+Vmax.toFixed(1), pad.l+4, yVmax-3);
+
+  // ½ Vmax line
+  const yHalf = yAt(Vmax/2);
+  ctx.strokeStyle='rgba(245,158,11,0.25)';
+  ctx.beginPath(); ctx.moveTo(pad.l,yHalf); ctx.lineTo(W-pad.r,yHalf); ctx.stroke();
+  ctx.fillStyle='rgba(245,158,11,0.6)'; ctx.font='10px JetBrains Mono';
+  ctx.fillText('½Vmax', pad.l+4, yHalf-3);
+  ctx.restore();
+
+  // Km vertical line
+  ctx.save(); ctx.setLineDash([4,4]);
+  ctx.strokeStyle='rgba(52,211,153,0.5)'; ctx.lineWidth=1;
+  const xKm = xAt(Km);
+  ctx.beginPath(); ctx.moveTo(xKm,pad.t); ctx.lineTo(xKm,H-pad.b); ctx.stroke();
+  ctx.fillStyle='rgba(52,211,153,0.85)'; ctx.font='10px JetBrains Mono'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillText('Km='+Km.toFixed(1), xKm, H-pad.b-2);
+  ctx.restore();
+
+  // Inhibited curve
+  if (mode !== 'none') {
+    const aKm = appKm(mode);
+    const aVmax = appVmax(mode);
+    ctx.beginPath();
+    for (let i=0;i<=N_POINTS;i++) {
+      const S = i/N_POINTS*Smax;
+      const v = mmRate(S, aVmax, aKm);
+      const x = xAt(S), y = yAt(v);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle='#f43f5e'; ctx.lineWidth=2.5; ctx.stroke();
+
+    // apparent Km marker for competitive
+    if (mode==='competitive') {
+      ctx.save(); ctx.setLineDash([3,3]);
+      ctx.strokeStyle='rgba(244,63,94,0.5)'; ctx.lineWidth=1;
+      const xAKm = xAt(aKm);
+      if (xAKm < W-pad.r) {
+        ctx.beginPath(); ctx.moveTo(xAKm,pad.t); ctx.lineTo(xAKm,H-pad.b); ctx.stroke();
+        ctx.fillStyle='rgba(244,63,94,0.85)'; ctx.font='10px JetBrains Mono'; ctx.textAlign='center'; ctx.textBaseline='top';
+        ctx.fillText("Km'="+aKm.toFixed(1), xAKm, pad.t+4);
+      }
+      ctx.restore();
+    }
+    // apparent Vmax for non-competitive
+    if (mode==='noncompetitive') {
+      ctx.save(); ctx.setLineDash([6,4]);
+      ctx.strokeStyle='rgba(244,63,94,0.4)'; ctx.lineWidth=1;
+      const yAVmax = yAt(aVmax);
+      ctx.beginPath(); ctx.moveTo(pad.l,yAVmax); ctx.lineTo(W-pad.r,yAVmax); ctx.stroke();
+      ctx.fillStyle='rgba(244,63,94,0.85)'; ctx.font='10px JetBrains Mono'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText("Vmax'="+aVmax.toFixed(1), pad.l+4, yAVmax-3);
+      ctx.restore();
+    }
+  }
+
+  // Control curve
+  ctx.beginPath();
+  for (let i=0;i<=N_POINTS;i++) {
+    const S = i/N_POINTS*Smax;
+    const v = mmRate(S, Vmax, Km);
+    const x = xAt(S), y = yAt(v);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle='#22d3ee'; ctx.lineWidth=2.5; ctx.stroke();
+
+  // Km dot on control curve
+  const vAtKm = mmRate(Km, Vmax, Km);
+  ctx.fillStyle='#34d399';
+  ctx.beginPath(); ctx.arc(xAt(Km), yAt(vAtKm), 5, 0, Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.strokeRect(pad.l,pad.t,pw,ph);
+}
+
+function drawLB() {
+  const c = $('lbChart');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+
+  // Lineweaver-Burk: 1/v = (Km/Vmax)*(1/[S]) + 1/Vmax
+  // x-axis: 1/[S] from -1/Km (x-intercept = -1/Km) to some positive max
+  // We plot from 1/S_low to 1/S_min where S_min ~ 0.1
+  const pad = {l:60,r:20,t:20,b:40};
+  const pw = W-pad.l-pad.r, ph = H-pad.t-pad.b;
+  const Vmax = params.Vmax;
+  const Km = params.Km;
+  const mode = params.inhibMode;
+  const Smax = params.Smax;
+
+  // LB x range: from negative x-intercept to 1/S_min
+  const xIntercept_ctrl = -1/Km;
+  const xMax_lb = 1/Math.max(0.2, Smax/20); // 1/S_min
+  const xMin_lb = Math.min(-2/Km, xIntercept_ctrl - 0.2);
+  const yIntercept_ctrl = 1/Vmax;
+  const yMax_lb = yIntercept_ctrl * 4;
+  const yMin_lb = Math.min(0, -yMax_lb * 0.1);
+
+  const xAtLB = x => pad.l + ((x-xMin_lb)/(xMax_lb-xMin_lb))*pw;
+  const yAtLB = y => pad.t + ph*(1 - (y-yMin_lb)/(yMax_lb-yMin_lb));
+
+  // grid
+  ctx.strokeStyle='#1a2230'; ctx.lineWidth=1;
+  for (let i=0;i<=5;i++) {
+    const y=pad.t+ph*i/5;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+  }
+  for (let i=0;i<=5;i++) {
+    const x=pad.l+pw*i/5;
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,H-pad.b);ctx.stroke();
+  }
+
+  // axes at x=0 and y=0
+  ctx.strokeStyle='rgba(91,101,115,0.6)'; ctx.lineWidth=1;
+  const xZero = xAtLB(0);
+  if (xZero>pad.l && xZero<W-pad.r) {
+    ctx.beginPath();ctx.moveTo(xZero,pad.t);ctx.lineTo(xZero,H-pad.b);ctx.stroke();
+  }
+  const yZero = yAtLB(0);
+  if (yZero>pad.t && yZero<H-pad.b) {
+    ctx.beginPath();ctx.moveTo(pad.l,yZero);ctx.lineTo(W-pad.r,yZero);ctx.stroke();
+  }
+
+  ctx.fillStyle='#97a1b0'; ctx.font='11px JetBrains Mono';
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for (let i=0;i<=5;i++) {
+    const yv = yMin_lb + (yMax_lb-yMin_lb)*(5-i)/5;
+    ctx.fillText(yv.toFixed(3), pad.l-4, pad.t+ph*i/5);
+  }
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for (let i=0;i<=5;i++) {
+    const xv = xMin_lb + (xMax_lb-xMin_lb)*i/5;
+    ctx.fillText(xv.toFixed(2), pad.l+pw*i/5, H-pad.b+5);
+  }
+  ctx.fillStyle='#5b6573'; ctx.font='10px Inter';
+  ctx.fillText('1/[S] (mM⁻¹)', pad.l+pw/2, H-5);
+  ctx.save();ctx.translate(12,pad.t+ph/2);ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center';ctx.fillText('1/v (min/µmol)',0,0);ctx.restore();
+
+  // Draw LB line for given Km and Vmax: 1/v = (Km/Vmax)*(1/[S]) + 1/Vmax
+  function drawLBLine(Km2, Vmax2, color, label) {
+    const slope = Km2/Vmax2;
+    const yInt = 1/Vmax2;
+    // line: y = slope*x + yInt
+    const x1 = xMin_lb, y1 = slope*x1 + yInt;
+    const x2 = xMax_lb, y2 = slope*x2 + yInt;
+    ctx.beginPath();
+    ctx.moveTo(xAtLB(x1), yAtLB(y1));
+    ctx.lineTo(xAtLB(x2), yAtLB(y2));
+    ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.stroke();
+
+    // x-intercept dot: x = -1/Km
+    const xi = -1/Km2;
+    const yi = 0;
+    ctx.fillStyle=color;
+    ctx.beginPath();ctx.arc(xAtLB(xi),yAtLB(yi),4,0,Math.PI*2);ctx.fill();
+
+    // y-intercept dot: x=0, y=1/Vmax
+    ctx.beginPath();ctx.arc(xAtLB(0),yAtLB(yInt),4,0,Math.PI*2);ctx.fill();
+  }
+
+  // Control
+  drawLBLine(Km, Vmax, '#22d3ee', 'control');
+
+  // Inhibited
+  if (mode !== 'none') {
+    const aKm = appKm(mode);
+    const aVmax = appVmax(mode);
+    drawLBLine(aKm, aVmax, '#f43f5e', 'inhibited');
+  }
+
+  // Labels
+  ctx.fillStyle='rgba(34,211,238,0.8)'; ctx.font='11px JetBrains Mono';
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('slope = Km/Vmax', pad.l+6, pad.t+6);
+  ctx.fillStyle='rgba(34,211,238,0.6)';
+  ctx.fillText('x-int = −1/Km', pad.l+6, pad.t+20);
+  ctx.fillText('y-int = 1/Vmax', pad.l+6, pad.t+34);
+
+  ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.strokeRect(pad.l,pad.t,pw,ph);
+}
+
+function updateReadouts() {
+  const Vmax=params.Vmax, Km=params.Km, mode=params.inhibMode;
+  const aKm = appKm(mode);
+  const aVmax = appVmax(mode);
+  const vControl = mmRate(Km, Vmax, Km); // v at [S]=Km = Vmax/2
+  const vInhib = mmRate(Km, aVmax, aKm);
+  $('oVatKm').textContent = vControl.toFixed(3);
+  $('oVatKmI').textContent = mode==='none' ? '—' : vInhib.toFixed(3);
+  $('oAppKm').textContent = mode==='competitive' ? aKm.toFixed(3)+' mM' : mode==='none' ? '—' : Km.toFixed(3)+' mM';
+  $('oAppVmax').textContent = mode==='noncompetitive' ? aVmax.toFixed(3) : mode==='none' ? '—' : Vmax.toFixed(3);
+  $('oLBx').textContent = (-1/Km).toFixed(3)+' mM⁻¹';
+  $('oLBy').textContent = (1/Vmax).toFixed(4)+' min/µmol';
+
+  let txt = `The Michaelis–Menten equation <span class="k">v = Vmax[S]/(Km+[S])</span> gives the initial reaction rate at a given substrate concentration. `;
+  txt += `With <span class="k">Vmax = ${Vmax.toFixed(1)} µmol/min</span> and <span class="k">Km = ${Km.toFixed(1)} mM</span>, the rate at <span class="k">[S] = Km</span> is exactly <span class="k">½Vmax = ${(Vmax/2).toFixed(2)}</span>. `;
+  if (mode==='none') {
+    txt += `No inhibitor is present. As [S] → ∞, v asymptotically approaches Vmax — the curve never actually reaches it.`;
+  } else if (mode==='competitive') {
+    txt += `<strong>Competitive inhibitor</strong> (reversible): the inhibitor competes for the active site. Km appears to rise to <span class="k">Km' = Km(1+[I]/Ki) = ${aKm.toFixed(2)} mM</span>, but Vmax is <strong>unchanged</strong> — excess substrate outcompetes the inhibitor. On the Lineweaver–Burk plot, lines intersect on the y-axis.`;
+  } else if (mode==='noncompetitive') {
+    txt += `<strong>Non-competitive inhibitor</strong>: binds equally to free enzyme and ES complex (allosteric site). Vmax falls to <span class="k">Vmax' = Vmax/(1+[I]/Ki) = ${aVmax.toFixed(2)}</span>, but Km is <strong>unchanged</strong>. Adding more substrate cannot overcome non-competitive inhibition. Lineweaver–Burk lines share the same x-intercept (−1/Km).`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() {
+  drawMM();
+  drawLB();
+  updateReadouts();
+}
+
+// Inhibitor mode toggle
+document.querySelectorAll('#inhibToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#inhibToggle button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    params.inhibMode = b.dataset.inhib;
+    $('inhibPanel').style.opacity = params.inhibMode==='none' ? '0.4' : '1';
+    redraw();
+  });
+});
+
+// Sliders
+$('slVmax').addEventListener('input', e => { params.Vmax=parseFloat(e.target.value); $('vVmax').textContent=params.Vmax.toFixed(1); redraw(); });
+$('slKm').addEventListener('input', e => { params.Km=parseFloat(e.target.value); $('vKm').textContent=params.Km.toFixed(1); redraw(); });
+$('slSmax').addEventListener('input', e => { params.Smax=parseInt(e.target.value); $('vSmax').textContent=params.Smax; redraw(); });
+$('slI').addEventListener('input', e => { params.I=parseFloat(e.target.value); $('vI').textContent=params.I.toFixed(1); redraw(); });
+$('slKi').addEventListener('input', e => { params.Ki=parseFloat(e.target.value); $('vKi').textContent=params.Ki.toFixed(1); redraw(); });
+
+// Ref chips
+document.querySelectorAll('.ref-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    if (chip.dataset.vmax) { params.Vmax=parseFloat(chip.dataset.vmax); $('slVmax').value=params.Vmax; $('vVmax').textContent=params.Vmax.toFixed(1); }
+    if (chip.dataset.km) { params.Km=parseFloat(chip.dataset.km); $('slKm').value=params.Km; $('vKm').textContent=params.Km.toFixed(1); }
+    redraw();
+  });
+});
+
+// Try presets
+function applyTry(name) {
+  const presets = {
+    noInhib: { Vmax:10, Km:2, I:2, Ki:1, Smax:20, inhibMode:'none',
+      note:'Pure Michaelis–Menten curve. The reaction rate approaches Vmax asymptotically — <strong>saturation kinetics</strong>. At [S] = Km the rate is exactly ½Vmax.' },
+    compInhib: { Vmax:10, Km:2, I:4, Ki:1, Smax:20, inhibMode:'competitive',
+      note:'Competitive inhibitor with [I]/Ki = 4. Apparent Km <strong>more than doubles</strong> but Vmax is unchanged. On the Lineweaver–Burk plot the two lines cross on the y-axis.' },
+    noncompInhib: { Vmax:10, Km:2, I:4, Ki:1, Smax:20, inhibMode:'noncompetitive',
+      note:'Non-competitive inhibitor with [I]/Ki = 4. Vmax <strong>drops to one-fifth</strong> but Km is unchanged. Adding more substrate cannot recover the rate — the inhibitor does not compete.' },
+    highAffinity: { Vmax:10, Km:0.3, I:2, Ki:1, Smax:5, inhibMode:'none',
+      note:'A high-affinity enzyme (Km = 0.3 mM) — the curve plateaus very quickly. Even at low [S] the enzyme is near saturation.' }
+  };
+  const cfg=presets[name]; if(!cfg) return;
+  Object.assign(params,cfg);
+  $('slVmax').value=cfg.Vmax; $('vVmax').textContent=cfg.Vmax.toFixed(1);
+  $('slKm').value=cfg.Km; $('vKm').textContent=cfg.Km.toFixed(1);
+  $('slSmax').value=cfg.Smax; $('vSmax').textContent=cfg.Smax;
+  $('slI').value=cfg.I; $('vI').textContent=cfg.I.toFixed(1);
+  $('slKi').value=cfg.Ki; $('vKi').textContent=cfg.Ki.toFixed(1);
+  document.querySelectorAll('#inhibToggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.inhib===cfg.inhibMode);
+  });
+  $('inhibPanel').style.opacity = cfg.inhibMode==='none'?'0.4':'1';
+  $('tryNote').innerHTML=cfg.note;
+  redraw();
+}
+document.querySelectorAll('.try-buttons button').forEach(b=>b.addEventListener('click',()=>applyTry(b.dataset.try)));
+
+window.addEventListener('resize', redraw);
+
+// Keyboard
+(function setupKbd(){
+  const modal=$('kbdModal');
+  const open=()=>modal.classList.add('open');
+  const close=()=>modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click',open);
+  modal.addEventListener('click',e=>{if(e.target===modal)close();});
+  document.addEventListener('keydown',e=>{
+    if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))return;
+    if(e.key==='Escape'){close();return;}
+    if(e.key==='?'){e.preventDefault();open();return;}
+    if(modal.classList.contains('open'))return;
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    const k=e.key;
+    if(k==='r'||k==='R'){
+      Object.assign(params,DEFAULTS);
+      $('slVmax').value=DEFAULTS.Vmax;$('vVmax').textContent=DEFAULTS.Vmax.toFixed(1);
+      $('slKm').value=DEFAULTS.Km;$('vKm').textContent=DEFAULTS.Km.toFixed(1);
+      $('slSmax').value=DEFAULTS.Smax;$('vSmax').textContent=DEFAULTS.Smax;
+      $('slI').value=DEFAULTS.I;$('vI').textContent=DEFAULTS.I.toFixed(1);
+      $('slKi').value=DEFAULTS.Ki;$('vKi').textContent=DEFAULTS.Ki.toFixed(1);
+      document.querySelectorAll('#inhibToggle button').forEach(b=>b.classList.toggle('active',b.dataset.inhib==='none'));
+      $('inhibPanel').style.opacity='0.4';
+      redraw();
+    } else if(k==='1'){
+      document.querySelector('#inhibToggle button[data-inhib="none"]').click();
+    } else if(k==='2'){
+      document.querySelector('#inhibToggle button[data-inhib="competitive"]').click();
+    } else if(k==='3'){
+      document.querySelector('#inhibToggle button[data-inhib="noncompetitive"]').click();
+    }
+  });
+})();
+
+// Init
+$('inhibPanel').style.opacity='0.4';
+redraw();
+</script>
+</body>
+</html>

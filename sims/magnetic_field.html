@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magnetic Fields &amp; the Motor Effect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 360px; }
+.wire-wrap { position: relative; width: 100%; height: 220px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Magnetic Fields &amp; the Motor Effect</h1>
+    <p class="sub">F = BIL · Fleming's left-hand rule · Field patterns around wires and solenoids</p>
+    <p class="insight-banner">The force on a current-carrying conductor in a magnetic field is perpendicular to both the current and the field direction. Doubling B, I, or L each doubles the force F = BIL.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">C</span><span>Reverse current direction</span>
+      <span class="kbd-key">B</span><span>Reverse field direction</span>
+      <span class="kbd-key">W</span><span>Switch wire / solenoid view</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Motor effect — conductor in uniform field</h3>
+        <div class="seg" id="viewToggle">
+          <button data-mode="motor" class="active">Motor effect</button>
+          <button data-mode="wire">Wire field</button>
+          <button data-mode="solenoid">Solenoid</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>
+      <div class="legend" id="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Magnetic field B (into page = ⊗, out = ⊙)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Current I</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Force F</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Field &amp; conductor</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Magnetic flux density in tesla (T). Earth's field ≈ 50 μT; strong lab magnets ≈ 1–2 T.">Field strength B (T)</span>
+          <span class="value num" id="vB">0.50</span>
+        </div>
+        <input type="range" id="slB" min="0.05" max="2.0" step="0.05" value="0.50">
+        <div class="refs">
+          <span class="ref-chip" data-b="0.05">Earth ≈ 50 μT (×1000)</span>
+          <span class="ref-chip" data-b="0.5">Lab magnet</span>
+          <span class="ref-chip" data-b="1.5">MRI ≈ 1.5 T</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Current through the conductor in amperes.">Current I (A)</span>
+          <span class="value num" id="vI">5.0</span>
+        </div>
+        <input type="range" id="slI" min="0.5" max="20" step="0.5" value="5.0">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Length of conductor inside the field region.">Length L (m)</span>
+          <span class="value num" id="vL">0.20</span>
+        </div>
+        <input type="range" id="slL" min="0.05" max="1.0" step="0.05" value="0.20">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Directions</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Direction of conventional current (positive charge flow).">Current direction</span>
+          <span class="value num" id="vCurrentDir">→ Right</span>
+        </div>
+        <div class="seg" id="currentToggle" style="margin-top:4px;">
+          <button data-dir="1" class="active">→ Right</button>
+          <button data-dir="-1">← Left</button>
+        </div>
+      </div>
+      <div class="control" style="margin-top:12px;">
+        <div class="control-row">
+          <span class="label" title="Direction of external magnetic field B.">Field B direction</span>
+          <span class="value num" id="vFieldDir">⊗ Into page</span>
+        </div>
+        <div class="seg" id="fieldToggle" style="margin-top:4px;">
+          <button data-bdir="into" class="active">⊗ Into page</button>
+          <button data-bdir="out">⊙ Out of page</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Readouts</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="F = BIL: force on the conductor in newtons">Force F = BIL</div>
+          <div class="val rose" id="oF">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Direction of force determined by Fleming's left-hand rule">Force direction</div>
+          <div class="val cyan" id="oDir">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Magnetic field strength B in tesla">B</div>
+          <div class="val amber" id="oB">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Current × Length product">IL</div>
+          <div class="val green" id="oIL">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="reverse">Reverse both directions</button>
+        <button data-try="strong">Strong MRI field</button>
+        <button data-try="solenoid_demo">Solenoid field pattern</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const params = {
+  B: 0.50,
+  I: 5.0,
+  L: 0.20,
+  currentDir: 1,    // +1 = right, -1 = left
+  fieldDir: 'into', // 'into' or 'out'
+  viewMode: 'motor'
+};
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  c.width = rect.width * dpr; c.height = rect.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// Derived: force direction from Fleming's left-hand rule
+// Left hand: First finger = B, Second finger = I, Thumb = F
+// B into page (−z), I right (+x): F = I×B cross product
+// F = IL × B; with I in +x, B in −z: F = I_vec × B_vec
+// î × (−k̂) = −(î × k̂) = −(−ĵ) = +ĵ (upward) → F upward when I right, B into page
+function forceDir() {
+  // I direction: +x if right, -x if left
+  // B direction: -z if into, +z if out
+  // F = I * L * (I_hat × B_hat)
+  // î × (−k̂) = ĵ; î × (+k̂) = −ĵ; (−î) × (−k̂) = −ĵ; (−î) × (+k̂) = ĵ
+  const Ix = params.currentDir; // +1 or -1 (x component of unit vector)
+  const Bz = params.fieldDir === 'into' ? -1 : 1; // z component of B unit vector
+  // F_y = Ix * (−Bz) in our right-hand coordinate (y up on screen)
+  // Cross product (Ix, 0, 0) × (0, 0, Bz) = (0*Bz - 0*0, 0*0 - Ix*Bz, Ix*0 - 0*0) = (0, -Ix*Bz, 0)
+  // So F is in -Ix*Bz direction in y
+  const Fy = -Ix * Bz;
+  return Fy; // +1 = up, -1 = down on screen
+}
+
+function forceLabel() {
+  const fd = forceDir();
+  return fd > 0 ? '↑ Up' : '↓ Down';
+}
+
+function forceMagnitude() {
+  return params.B * params.I * params.L;
+}
+
+// Animation time for conductor displacement
+let conductorOffset = 0;
+let animDir = 0;
+
+function drawMotorEffect(ctx, W, H) {
+  ctx.fillStyle = '#0a0e14'; ctx.fillRect(0, 0, W, H);
+
+  const pad = { l: 40, r: 40, t: 50, b: 50 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const cx = pad.l + pw / 2;
+  const cy = pad.t + ph / 2;
+
+  const fd = forceDir();
+  const Fmag = forceMagnitude();
+
+  // Background field region
+  ctx.fillStyle = params.fieldDir === 'into' ? 'rgba(34,211,238,0.04)' : 'rgba(167,139,250,0.04)';
+  ctx.fillRect(pad.l, pad.t, pw, ph);
+
+  // Border of field region
+  ctx.strokeStyle = 'rgba(34,211,238,0.25)'; ctx.lineWidth = 1.5;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+  ctx.fillStyle = '#22d3ee'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'left'; ctx.fillText('Uniform field region', pad.l + 6, pad.t + 14);
+
+  // Field symbols (dots or crosses) on a grid
+  const cols = 10, rows = 6;
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const fx = pad.l + pw * (col + 0.5) / cols;
+      const fy = pad.t + ph * (row + 0.5) / rows;
+      const color = params.fieldDir === 'into' ? '#22d3ee' : '#a78bfa';
+      ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineWidth = 1.2;
+      if (params.fieldDir === 'into') {
+        // ⊗ — cross inside circle
+        const r = 5;
+        ctx.beginPath(); ctx.arc(fx, fy, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(fx - r * 0.6, fy - r * 0.6); ctx.lineTo(fx + r * 0.6, fy + r * 0.6);
+        ctx.moveTo(fx + r * 0.6, fy - r * 0.6); ctx.lineTo(fx - r * 0.6, fy + r * 0.6);
+        ctx.stroke();
+      } else {
+        // ⊙ — dot inside circle
+        const r = 5;
+        ctx.beginPath(); ctx.arc(fx, fy, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(fx, fy, 1.8, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  // Conductor — horizontal bar at centre with offset due to force
+  const maxOffset = ph * 0.25;
+  const targetOffset = fd * maxOffset * Math.min(1, Fmag * 2);
+  conductorOffset += (targetOffset - conductorOffset) * 0.06;
+
+  const wireY = cy + conductorOffset;
+  const wireLen = pw * 0.55;
+  const wireX0 = cx - wireLen / 2;
+  const wireX1 = cx + wireLen / 2;
+
+  // Wire glow
+  ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 18;
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(wireX0, wireY); ctx.lineTo(wireX1, wireY); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Wire connections (vertical lines to rails)
+  ctx.strokeStyle = 'rgba(245,158,11,0.3)'; ctx.lineWidth = 2; ctx.setLineDash([4,4]);
+  ctx.beginPath();
+  ctx.moveTo(wireX0, wireY); ctx.lineTo(wireX0, H - pad.b + 8);
+  ctx.moveTo(wireX1, wireY); ctx.lineTo(wireX1, H - pad.b + 8);
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // Current arrows on wire
+  const numArrows = Math.max(2, Math.round(params.I / 3));
+  for (let i = 0; i < numArrows; i++) {
+    const ax = wireX0 + wireLen * (i + 0.5) / numArrows;
+    const ay = wireY;
+    const arrowDir = params.currentDir;
+    const al = 10;
+    ctx.fillStyle = '#fbbf24'; ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ax + arrowDir * al, ay);
+    ctx.lineTo(ax + arrowDir * al - arrowDir * 8, ay - 4);
+    ctx.lineTo(ax + arrowDir * al - arrowDir * 8, ay + 4);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // Current direction label
+  ctx.fillStyle = '#f59e0b'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('I = ' + params.I.toFixed(1) + ' A ' + (params.currentDir > 0 ? '→' : '←'), cx, wireY - 14);
+
+  // Force arrow (vertical)
+  if (Fmag > 0) {
+    const arrowLen = Math.min(60, 20 + Fmag * 40);
+    const arrowX = cx + wireLen / 2 + 30;
+    const arrowY0 = wireY;
+    const arrowY1 = wireY - fd * arrowLen;
+
+    ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    ctx.shadowColor = '#f43f5e'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(arrowX, arrowY0); ctx.lineTo(arrowX, arrowY1); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Arrowhead
+    ctx.fillStyle = '#f43f5e';
+    ctx.beginPath();
+    ctx.moveTo(arrowX, arrowY1);
+    ctx.lineTo(arrowX - 5, arrowY1 + fd * 10);
+    ctx.lineTo(arrowX + 5, arrowY1 + fd * 10);
+    ctx.closePath(); ctx.fill();
+
+    ctx.fillStyle = '#f43f5e'; ctx.font = 'bold 11px JetBrains Mono'; ctx.textAlign = 'left';
+    ctx.fillText('F = ' + Fmag.toFixed(3) + ' N', arrowX + 10, (arrowY0 + arrowY1) / 2);
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillText(forceLabel(), arrowX + 10, (arrowY0 + arrowY1) / 2 + 14);
+  }
+
+  // Fleming's left-hand rule diagram (small, top-left of panel)
+  drawFlemingHand(ctx, pad.l + 8, pad.t + 24);
+
+  // L dimension
+  ctx.strokeStyle = 'rgba(52,211,153,0.5)'; ctx.lineWidth = 1;
+  const dimY = wireY + 20;
+  ctx.beginPath();
+  ctx.moveTo(wireX0, dimY); ctx.lineTo(wireX1, dimY); ctx.stroke();
+  ctx.fillStyle = '#34d399'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('L = ' + params.L.toFixed(2) + ' m', cx, dimY + 12);
+}
+
+function drawFlemingHand(ctx, x, y) {
+  // Compact legend box
+  const w = 130, h = 56;
+  ctx.fillStyle = 'rgba(17,22,31,0.88)';
+  ctx.strokeStyle = 'rgba(31,41,55,0.9)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 6);
+  ctx.fill(); ctx.stroke();
+
+  ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+  const fd = forceDir();
+  const bDir = params.fieldDir === 'into' ? '⊗ into page' : '⊙ out of page';
+  const iDir = params.currentDir > 0 ? '→ right' : '← left';
+  const fDir = fd > 0 ? '↑ up' : '↓ down';
+  ctx.fillStyle = '#22d3ee'; ctx.fillText('B: ' + bDir, x + 8, y + 16);
+  ctx.fillStyle = '#f59e0b'; ctx.fillText('I: ' + iDir, x + 8, y + 30);
+  ctx.fillStyle = '#f43f5e'; ctx.fillText('F: ' + fDir, x + 8, y + 44);
+}
+
+// ---- Wire cross-section field ----
+function drawWireField(ctx, W, H) {
+  ctx.fillStyle = '#0a0e14'; ctx.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = H / 2;
+
+  // Field circles around wire
+  const numCircles = 7;
+  const maxR = Math.min(W, H) * 0.44;
+  for (let i = 1; i <= numCircles; i++) {
+    const r = (i / numCircles) * maxR;
+    const alpha = Math.max(0.05, 0.5 - i * 0.06);
+    ctx.strokeStyle = `rgba(34,211,238,${alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+
+    // Arrows on each circle (tangential, direction based on current)
+    const numArrows = 4 + i;
+    for (let j = 0; j < numArrows; j++) {
+      const angle = (j / numArrows) * Math.PI * 2;
+      const ax = cx + r * Math.cos(angle);
+      const ay = cy + r * Math.sin(angle);
+      // Tangent direction (perpendicular to radius, CCW for current out of page)
+      // Right-hand rule: current out of page → B field circles CCW when viewed from front
+      // current into page → B field circles CW
+      const tangDir = params.currentDir; // +1 out, -1 into page for this view
+      const tx = -Math.sin(angle) * tangDir;
+      const ty =  Math.cos(angle) * tangDir;
+      const al = 7;
+      ctx.fillStyle = `rgba(34,211,238,${alpha * 2})`;
+      ctx.beginPath();
+      ctx.moveTo(ax + tx * al, ay + ty * al);
+      ctx.lineTo(ax + tx * al - tx * 9 - ty * 4, ay + ty * al - ty * 9 + tx * 4);
+      ctx.lineTo(ax + tx * al - tx * 9 + ty * 4, ay + ty * al - ty * 9 - tx * 4);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+
+  // Wire cross-section
+  const wireR = 14;
+  const wireGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, wireR);
+  wireGrad.addColorStop(0, '#fbbf24');
+  wireGrad.addColorStop(1, 'rgba(245,158,11,0.5)');
+  ctx.fillStyle = wireGrad;
+  ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 16;
+  ctx.beginPath(); ctx.arc(cx, cy, wireR, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Current symbol
+  ctx.fillStyle = '#0a0e14'; ctx.font = 'bold 16px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(params.currentDir > 0 ? '⊙' : '⊗', cx, cy);
+  ctx.textBaseline = 'alphabetic';
+
+  // Labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '12px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('Magnetic field around a straight conductor', cx, H - 16);
+  ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono';
+  ctx.fillText('I = ' + params.I.toFixed(1) + ' A ' + (params.currentDir > 0 ? '(out of page ⊙)' : '(into page ⊗)'), cx, H - 4);
+
+  // B field strength at a radius (Ampere's law: B = μ₀I / 2πr)
+  const mu0 = 4 * Math.PI * 1e-7;
+  const r_sample = 0.05; // 5 cm from wire
+  const B_sample = mu0 * params.I / (2 * Math.PI * r_sample);
+  ctx.fillStyle = '#22d3ee'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillText('B at 5 cm: ' + (B_sample * 1e6).toFixed(2) + ' μT', 14, 20);
+  ctx.fillText('μ₀ = 4π×10⁻⁷ T m A⁻¹', 14, 34);
+}
+
+// ---- Solenoid field ----
+function drawSolenoid(ctx, W, H) {
+  ctx.fillStyle = '#0a0e14'; ctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2, cy = H / 2;
+  const solenoidW = W * 0.55, solenoidH = H * 0.38;
+  const x0 = cx - solenoidW / 2, y0 = cy - solenoidH / 2;
+  const x1 = cx + solenoidW / 2, y1 = cy + solenoidH / 2;
+  const numCoils = 10;
+
+  // Internal field lines (straight, through solenoid)
+  const numInternal = 6;
+  for (let i = 0; i < numInternal; i++) {
+    const fy = y0 + solenoidH * (i + 0.5) / numInternal;
+    const fieldColor = params.currentDir > 0 ? '#22d3ee' : '#a78bfa';
+    ctx.strokeStyle = fieldColor.replace(')', ',0.6)').replace('rgb', 'rgba');
+    ctx.strokeStyle = params.currentDir > 0 ? 'rgba(34,211,238,0.5)' : 'rgba(167,139,250,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x0, fy); ctx.lineTo(x1, fy); ctx.stroke();
+    // Arrow on internal field
+    const axPos = cx;
+    const arrowDir = params.currentDir > 0 ? 1 : -1;
+    ctx.fillStyle = params.currentDir > 0 ? 'rgba(34,211,238,0.7)' : 'rgba(167,139,250,0.7)';
+    ctx.beginPath();
+    ctx.moveTo(axPos + arrowDir * 8, fy);
+    ctx.lineTo(axPos - arrowDir * 4, fy - 4);
+    ctx.lineTo(axPos - arrowDir * 4, fy + 4);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // External field lines (curved, looping outside)
+  const numExternal = 4;
+  for (let i = 0; i < numExternal; i++) {
+    const spread = (i + 1) * solenoidH * 0.28;
+    const yTop = y0 - spread;
+    const yBot = y1 + spread;
+    const curveX = solenoidW * 0.38 + i * solenoidH * 0.22;
+    const fieldCol = params.currentDir > 0 ? 'rgba(34,211,238,' : 'rgba(167,139,250,';
+    const alpha = 0.12 - i * 0.025;
+    ctx.strokeStyle = fieldCol + Math.max(0.03, alpha) + ')';
+    ctx.lineWidth = 1;
+    // Right side
+    ctx.beginPath();
+    ctx.moveTo(x1, cy);
+    ctx.bezierCurveTo(x1 + curveX, yTop, x1 + curveX, yBot, x1, cy);
+    ctx.stroke();
+    // Left side
+    ctx.beginPath();
+    ctx.moveTo(x0, cy);
+    ctx.bezierCurveTo(x0 - curveX, yTop, x0 - curveX, yBot, x0, cy);
+    ctx.stroke();
+    // Top arc
+    ctx.beginPath();
+    ctx.moveTo(x0, cy);
+    ctx.bezierCurveTo(x0 + solenoidW * 0.25, yTop, x1 - solenoidW * 0.25, yTop, x1, cy);
+    ctx.stroke();
+    // Bottom arc
+    ctx.beginPath();
+    ctx.moveTo(x0, cy);
+    ctx.bezierCurveTo(x0 + solenoidW * 0.25, yBot, x1 - solenoidW * 0.25, yBot, x1, cy);
+    ctx.stroke();
+  }
+
+  // Draw solenoid coils
+  const coilColor = '#f59e0b';
+  ctx.strokeStyle = coilColor; ctx.lineWidth = 2.5;
+  for (let i = 0; i < numCoils; i++) {
+    const coilX = x0 + solenoidW * (i + 0.5) / numCoils;
+    const halfH = solenoidH / 2;
+    // Front half of coil (solid)
+    ctx.globalAlpha = 1.0;
+    ctx.beginPath();
+    ctx.ellipse(coilX, cy, solenoidW / numCoils * 0.35, halfH * 0.9, 0, -Math.PI / 2, Math.PI / 2);
+    ctx.stroke();
+    // Back half (dashed, dimmer)
+    ctx.globalAlpha = 0.35;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.ellipse(coilX, cy, solenoidW / numCoils * 0.35, halfH * 0.9, 0, Math.PI / 2, 3 * Math.PI / 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1.0;
+
+    // Current direction on coil top
+    const topY = cy - halfH * 0.9;
+    const botY = cy + halfH * 0.9;
+    const sym = params.currentDir > 0 ? '⊙' : '⊗';
+    const sym2 = params.currentDir > 0 ? '⊗' : '⊙';
+    if (i % 2 === 0) {
+      ctx.fillStyle = '#fbbf24'; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'center';
+      ctx.fillText(sym, coilX, topY - 2);
+      ctx.fillText(sym2, coilX, botY + 10);
+    }
+  }
+
+  // N and S poles
+  const poleFont = 'bold 16px Inter';
+  ctx.font = poleFont; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (params.currentDir > 0) {
+    ctx.fillStyle = '#f43f5e'; ctx.fillText('S', x0 - 20, cy);
+    ctx.fillStyle = '#22d3ee'; ctx.fillText('N', x1 + 20, cy);
+  } else {
+    ctx.fillStyle = '#22d3ee'; ctx.fillText('N', x0 - 20, cy);
+    ctx.fillStyle = '#f43f5e'; ctx.fillText('S', x1 + 20, cy);
+  }
+  ctx.textBaseline = 'alphabetic';
+
+  // Label
+  ctx.fillStyle = '#97a1b0'; ctx.font = '12px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('Magnetic field inside and around a solenoid', cx, H - 16);
+
+  // Right-hand rule note
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px JetBrains Mono';
+  ctx.fillText('Right-hand rule: curl fingers with current → thumb points to N pole', cx, H - 4);
+
+  // B inside solenoid (approximate: B = μ₀nI for infinite solenoid, n = numCoils / length)
+  const mu0 = 4 * Math.PI * 1e-7;
+  const length = params.L; // using L as solenoid length
+  const n = numCoils / length; // turns per metre
+  const B_sol = mu0 * n * params.I;
+  ctx.fillStyle = params.currentDir > 0 ? '#22d3ee' : '#a78bfa';
+  ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillText('B inside ≈ μ₀nI = ' + B_sol.toFixed(3) + ' T', x0, y0 - 8);
+  ctx.fillStyle = '#5b6573';
+  ctx.fillText('(n = ' + numCoils + ' turns, L = ' + params.L.toFixed(2) + ' m)', x0, y0 - 20);
+}
+
+function drawMain() {
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  if (params.viewMode === 'motor') drawMotorEffect(ctx, W, H);
+  else if (params.viewMode === 'wire') drawWireField(ctx, W, H);
+  else drawSolenoid(ctx, W, H);
+}
+
+function updateReadouts() {
+  const F = forceMagnitude();
+  const dir = forceLabel();
+  $('oF').textContent = F.toFixed(4) + ' N';
+  $('oDir').textContent = params.viewMode === 'motor' ? dir : '—';
+  $('oB').textContent = params.B.toFixed(2) + ' T';
+  $('oIL').textContent = (params.I * params.L).toFixed(3) + ' A m';
+
+  // Legend update for view mode
+  const legend = $('legend');
+  if (params.viewMode === 'wire') {
+    legend.innerHTML = `<span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Magnetic field circles (Ampere's law: B = μ₀I/2πr)</span><span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Wire cross-section</span>`;
+  } else if (params.viewMode === 'solenoid') {
+    legend.innerHTML = `<span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Field inside (uniform)</span><span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Coil windings</span><span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>N pole</span><span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>S pole</span>`;
+  } else {
+    legend.innerHTML = `<span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Magnetic field B (⊗ into page / ⊙ out)</span><span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Current I</span><span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Force F</span>`;
+  }
+
+  // Explainer
+  const F_str = F.toFixed(4);
+  const bDirStr = params.fieldDir === 'into' ? 'into the page' : 'out of the page';
+  const iDirStr = params.currentDir > 0 ? 'to the right' : 'to the left';
+  let txt;
+  if (params.viewMode === 'motor') {
+    txt = `With current <span class="k">I = ${params.I.toFixed(1)} A</span> (flowing ${iDirStr}) and field <span class="k">B = ${params.B.toFixed(2)} T</span> (directed ${bDirStr}), the force is <span class="k">F = BIL = ${params.B.toFixed(2)} × ${params.I.toFixed(1)} × ${params.L.toFixed(2)} = ${F_str} N</span> acting <strong style="color:var(--rose)">${dir}</strong>. `;
+    txt += `Fleming's left-hand rule: point your <strong style="color:var(--cyan)">first finger</strong> along B, <strong style="color:var(--amber)">second finger</strong> along conventional current — your <strong style="color:var(--rose)">thumb</strong> gives the force direction. Reversing either B or I reverses the force; reversing both leaves it unchanged.`;
+  } else if (params.viewMode === 'wire') {
+    const mu0 = 4 * Math.PI * 1e-7;
+    const B5cm = mu0 * params.I / (2 * Math.PI * 0.05);
+    txt = `Ampere's law gives <span class="k">B = μ₀I / 2πr</span> for a long straight conductor. At 5 cm from a wire carrying <span class="k">I = ${params.I.toFixed(1)} A</span>, <span class="k">B = ${(B5cm * 1e6).toFixed(2)} μT</span>. `;
+    txt += `The field circles are closer together near the wire — field strength falls as 1/r. Use the right-hand rule: point your thumb along the current; your fingers curl in the direction of B.`;
+  } else {
+    const mu0 = 4 * Math.PI * 1e-7;
+    const n = 10 / params.L;
+    const B_in = mu0 * n * params.I;
+    txt = `Inside a solenoid, field lines are parallel and uniform: <span class="k">B = μ₀nI = ${B_in.toFixed(3)} T</span> (n = ${n.toFixed(1)} turns m⁻¹, I = ${params.I.toFixed(1)} A). `;
+    txt += `This uniform field is why solenoids are used in MRI machines and electromagnets. Outside, the field pattern resembles a bar magnet. Reversing the current swaps N and S poles.`;
+  }
+  $('explainer').innerHTML = txt;
+
+  drawMain();
+}
+
+// Controls
+$('slB').addEventListener('input', e => {
+  params.B = parseFloat(e.target.value);
+  $('vB').textContent = params.B.toFixed(2);
+  updateReadouts();
+});
+$('slI').addEventListener('input', e => {
+  params.I = parseFloat(e.target.value);
+  $('vI').textContent = params.I.toFixed(1);
+  updateReadouts();
+});
+$('slL').addEventListener('input', e => {
+  params.L = parseFloat(e.target.value);
+  $('vL').textContent = params.L.toFixed(2);
+  updateReadouts();
+});
+
+document.querySelectorAll('#currentToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#currentToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.currentDir = parseInt(b.dataset.dir);
+    $('vCurrentDir').textContent = params.currentDir > 0 ? '→ Right' : '← Left';
+    updateReadouts();
+  });
+});
+document.querySelectorAll('#fieldToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#fieldToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.fieldDir = b.dataset.bdir;
+    $('vFieldDir').textContent = params.fieldDir === 'into' ? '⊗ Into page' : '⊙ Out of page';
+    updateReadouts();
+  });
+});
+document.querySelectorAll('.ref-chip[data-b]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.B = parseFloat(c.dataset.b);
+    $('slB').value = params.B;
+    $('vB').textContent = params.B.toFixed(2);
+    updateReadouts();
+  });
+});
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.viewMode = b.dataset.mode;
+    conductorOffset = 0;
+    updateReadouts();
+  });
+});
+
+window.addEventListener('resize', () => { updateReadouts(); });
+
+// Try this
+function applyTry(name) {
+  const presets = {
+    reverse: {
+      B: 0.5, I: 5.0, L: 0.20, currentDir: -1, fieldDir: 'out', mode: 'motor',
+      note: '<strong>Both current and field reversed</strong>: each reversal flips the force, but two reversals cancel — the force direction is unchanged. Try reversing only one at a time to see the difference.'
+    },
+    strong: {
+      B: 1.5, I: 10.0, L: 0.5, currentDir: 1, fieldDir: 'into', mode: 'motor',
+      note: '<strong>MRI-strength field with large current</strong>: F = BIL = 1.5 × 10 × 0.5 = <strong>7.5 N</strong>. This is why metallic objects near MRI machines are extremely dangerous.'
+    },
+    solenoid_demo: {
+      B: 0.5, I: 8.0, L: 0.30, currentDir: 1, fieldDir: 'into', mode: 'solenoid',
+      note: 'Switch to <strong>solenoid view</strong> — see how winding a conductor into a coil creates a strong, uniform interior field. The field strength inside is B = μ₀nI, independent of the cross-sectional area.'
+    }
+  };
+  const cfg = presets[name];
+  if (!cfg) return;
+  params.B = cfg.B; $('slB').value = cfg.B; $('vB').textContent = cfg.B.toFixed(2);
+  params.I = cfg.I; $('slI').value = cfg.I; $('vI').textContent = cfg.I.toFixed(1);
+  params.L = cfg.L; $('slL').value = cfg.L; $('vL').textContent = cfg.L.toFixed(2);
+  params.currentDir = cfg.currentDir;
+  params.fieldDir = cfg.fieldDir;
+  params.viewMode = cfg.mode;
+  // Update toggle buttons
+  document.querySelectorAll('#currentToggle button').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.dir) === cfg.currentDir);
+  });
+  document.querySelectorAll('#fieldToggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.bdir === cfg.fieldDir);
+  });
+  document.querySelectorAll('#viewToggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === cfg.mode);
+  });
+  $('vCurrentDir').textContent = cfg.currentDir > 0 ? '→ Right' : '← Left';
+  $('vFieldDir').textContent = cfg.fieldDir === 'into' ? '⊗ Into page' : '⊙ Out of page';
+  conductorOffset = 0;
+  $('tryNote').innerHTML = cfg.note;
+  updateReadouts();
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+// Keyboard shortcuts
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  const DEFAULTS = { B: 0.50, I: 5.0, L: 0.20, currentDir: 1, fieldDir: 'into', viewMode: 'motor' };
+  function resetDefaults() {
+    params.B = DEFAULTS.B; $('slB').value = DEFAULTS.B; $('vB').textContent = DEFAULTS.B.toFixed(2);
+    params.I = DEFAULTS.I; $('slI').value = DEFAULTS.I; $('vI').textContent = DEFAULTS.I.toFixed(1);
+    params.L = DEFAULTS.L; $('slL').value = DEFAULTS.L; $('vL').textContent = DEFAULTS.L.toFixed(2);
+    params.currentDir = DEFAULTS.currentDir;
+    params.fieldDir = DEFAULTS.fieldDir;
+    params.viewMode = DEFAULTS.viewMode;
+    document.querySelectorAll('#currentToggle button').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.dir) === 1);
+    });
+    document.querySelectorAll('#fieldToggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.bdir === 'into');
+    });
+    document.querySelectorAll('#viewToggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === 'motor');
+    });
+    $('vCurrentDir').textContent = '→ Right';
+    $('vFieldDir').textContent = '⊗ Into page';
+    conductorOffset = 0;
+    updateReadouts();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'r') { resetDefaults(); }
+    else if (k === 'c') {
+      params.currentDir *= -1;
+      document.querySelectorAll('#currentToggle button').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.dir) === params.currentDir);
+      });
+      $('vCurrentDir').textContent = params.currentDir > 0 ? '→ Right' : '← Left';
+      conductorOffset = 0;
+      updateReadouts();
+    } else if (k === 'b') {
+      params.fieldDir = params.fieldDir === 'into' ? 'out' : 'into';
+      document.querySelectorAll('#fieldToggle button').forEach(b => {
+        b.classList.toggle('active', b.dataset.bdir === params.fieldDir);
+      });
+      $('vFieldDir').textContent = params.fieldDir === 'into' ? '⊗ Into page' : '⊙ Out of page';
+      conductorOffset = 0;
+      updateReadouts();
+    } else if (k === 'w') {
+      const modes = ['motor', 'wire', 'solenoid'];
+      const idx = (modes.indexOf(params.viewMode) + 1) % modes.length;
+      params.viewMode = modes[idx];
+      document.querySelectorAll('#viewToggle button').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === params.viewMode);
+      });
+      conductorOffset = 0;
+      updateReadouts();
+    }
+  });
+})();
+
+// Animation loop for smooth conductor displacement
+let animRaf = null;
+function animLoop() {
+  if (params.viewMode === 'motor') drawMain();
+  animRaf = requestAnimationFrame(animLoop);
+}
+
+updateReadouts();
+animLoop();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="photoelectric.html">
+      <div class="related-title">The Photoelectric Effect</div>
+      <div class="related-desc">How frequency — not intensity — determines whether light can eject electrons from metals</div>
+    </a>
+    <a class="related-card" href="gravity_orbits.html">
+      <div class="related-title">Gravitational Fields &amp; Orbits</div>
+      <div class="related-desc">Kepler's third law, orbital speed, field strength, and escape velocity</div>
+    </a>
+    <a class="related-card" href="shm.html">
+      <div class="related-title">Simple Harmonic Motion</div>
+      <div class="related-desc">Springs, pendulums, energy exchange, and phase space in oscillating systems</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

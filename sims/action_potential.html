@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Neuron Action Potential</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 340px; }
+.membrane-wrap { position: relative; width: 100%; height: 180px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.phase-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.phase-badge.resting { background: rgba(34,211,238,0.15); color: var(--cyan); border: 1px solid var(--cyan); }
+.phase-badge.depol { background: rgba(244,63,94,0.15); color: var(--rose); border: 1px solid var(--rose); }
+.phase-badge.repol { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid var(--amber); }
+.phase-badge.hyper { background: rgba(167,139,250,0.15); color: var(--violet); border: 1px solid var(--violet); }
+.phase-badge.refrac { background: rgba(52,211,153,0.15); color: var(--green); border: 1px solid var(--green); }
+.phase-badge.sub { background: rgba(91,101,115,0.25); color: var(--text-dim); border: 1px solid var(--text-faint); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>The Neuron Action Potential</h1>
+    <p class="sub">Membrane potential, voltage-gated Na⁺ and K⁺ channels, refractory period</p>
+    <p class="insight-banner">The action potential is all-or-nothing: a stimulus either crosses threshold (−55 mV) and triggers a full spike to +40 mV, or nothing happens at all — regardless of stimulus strength.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Fire / animate stimulus</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">↑ ↓</span><span>Increase / decrease stimulus strength</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Membrane potential vs time</h3>
+        <span id="phaseBadge" class="phase-badge resting">RESTING</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="apChart"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Membrane potential Vm (mV)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Na⁺ conductance gNa</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>K⁺ conductance gK</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--text-faint); opacity:0.6"></span>Threshold (−55 mV)</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Membrane ion animation</h3>
+        <span style="font-size:11px;color:var(--text-dim)">cross-section of axon membrane</span>
+      </div>
+      <div class="membrane-wrap"><canvas id="membraneCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Na⁺ influx (outside → in)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>K⁺ efflux (inside → out)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Na⁺ channel (open)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--violet)"></span>K⁺ channel (open)</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer">Adjust the stimulus strength and click <strong>Fire stimulus</strong> to trigger the action potential. A stimulus below threshold (−55 mV) produces no spike — this is the all-or-nothing principle.</div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Stimulus</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Amount of depolarisation applied to the resting membrane (−70 mV). Threshold is at −55 mV, requiring ≥ 15 mV depolarisation.">Stimulus strength (mV)</span>
+          <span class="value num" id="vStim">20</span>
+        </div>
+        <input type="range" id="slStim" min="1" max="40" step="1" value="20">
+        <div style="margin-top:8px; font-size:11px; color:var(--text-faint);">
+          Threshold requires ≥ <span class="num" style="color:var(--amber)">15 mV</span> depolarisation
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Refractory period: minimum time between successive action potentials. During absolute refractory period no second AP is possible; during relative refractory period a larger stimulus is needed.">Refractory period (ms)</span>
+          <span class="value num" id="vRefrac">2.0</span>
+        </div>
+        <input type="range" id="slRefrac" min="0.5" max="10" step="0.5" value="2.0">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+        <button id="btnFire" class="primary">Fire stimulus</button>
+        <button id="btnDouble">Fire twice (2×)</button>
+        <button id="btnReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <p class="section-label">Membrane properties</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Resting membrane potential, maintained by the Na⁺/K⁺-ATPase pump and differential permeability. Typical value −70 mV.">Resting potential (mV)</span>
+          <span class="value num" id="vVrest">−70</span>
+        </div>
+        <input type="range" id="slVrest" min="-80" max="-60" step="1" value="-70">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Peak membrane potential reached during depolarisation. Typically +30 to +40 mV, determined by the Na⁺ equilibrium potential.">Peak potential (mV)</span>
+          <span class="value num" id="vVpeak">+40</span>
+        </div>
+        <input type="range" id="slVpeak" min="20" max="55" step="1" value="40">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <p class="section-label">Current state</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Vm (mV)</div><div class="val cyan" id="oVm">−70.0</div></div>
+        <div class="readout"><div class="lbl">Phase</div><div class="val" id="oPhase">Resting</div></div>
+        <div class="readout"><div class="lbl" title="Normalised Na⁺ conductance (0–1)">gNa (rel.)</div><div class="val rose" id="oGna">0.00</div></div>
+        <div class="readout"><div class="lbl" title="Normalised K⁺ conductance (0–1)">gK (rel.)</div><div class="val amber" id="oGk">0.00</div></div>
+        <div class="readout"><div class="lbl">Threshold</div><div class="val" id="oThresh">−55 mV</div></div>
+        <div class="readout"><div class="lbl">Fired?</div><div class="val" id="oFired">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:14px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="subThreshold">Sub-threshold stimulus</button>
+        <button data-try="justThreshold">Just above threshold</button>
+        <button data-try="strongStimulus">Strong stimulus</button>
+        <button data-try="doubleSpike">Rapid-fire (refractory demo)</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="enzyme_kinetics.html">
+      <div class="related-title">Enzyme Kinetics</div>
+      <div class="related-desc">Michaelis–Menten, Km, Vmax, and how inhibitors reshape the rate curve</div>
+    </a>
+    <a class="related-card" href="hardy_weinberg.html">
+      <div class="related-title">Hardy–Weinberg Equilibrium</div>
+      <div class="related-desc">Allele frequencies across generations — when do they change, and by how much?</div>
+    </a>
+    <a class="related-card" href="sir_model.html">
+      <div class="related-title">Epidemic Model (SEIR)</div>
+      <div class="related-desc">Threshold effects and propagation at a population scale</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// ---- Action Potential Model ----
+// We generate a time-series for Vm, gNa, gK based on the Hodgkin-Huxley-inspired
+// parametric shape. All values in mV and ms.
+// Phases: resting → depolarisation → repolarisation → hyperpolarisation → recovery
+
+const DEFAULTS = { stim: 20, refrac: 2.0, Vrest: -70, Vpeak: 40 };
+const params = { ...DEFAULTS };
+
+// Threshold is Vrest + 15 mV
+function threshold() { return params.Vrest + 15; }
+
+// Generate a single AP trace (200 ms total, dt = 0.05 ms)
+// Returns array of {t, Vm, gNa, gK} objects
+function generateAP(stimStrength, Vrest, Vpeak, stimStart = 5) {
+  const TMAX = 200, DT = 0.05;
+  const steps = Math.round(TMAX / DT);
+  const thresh = Vrest + 15;
+  const fired = stimStrength + Vrest >= thresh;
+
+  const trace = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i * DT;
+    let Vm, gNa, gK;
+
+    if (!fired) {
+      // Sub-threshold: small hump then return to rest
+      const stimDur = 1.0;
+      if (t < stimStart) {
+        Vm = Vrest;
+      } else if (t < stimStart + stimDur) {
+        const frac = (t - stimStart) / stimDur;
+        Vm = Vrest + stimStrength * Math.sin(Math.PI * frac) * 0.9;
+      } else {
+        const decay = Math.exp(-(t - stimStart - stimDur) / 5);
+        Vm = Vrest + (stimStrength * 0.9) * decay * Math.max(0, 1 - (t - stimStart - stimDur)/20);
+        Vm = Math.max(Vrest, Vm);
+      }
+      gNa = 0; gK = 0;
+    } else {
+      // Full AP
+      const t0 = stimStart; // AP start
+      const dt = t - t0;
+      if (dt < 0) {
+        Vm = Vrest; gNa = 0; gK = 0;
+      } else if (dt < 0.5) {
+        // Stimulus depolarisation phase
+        Vm = Vrest + (thresh - Vrest) * (dt / 0.5);
+        gNa = 0; gK = 0;
+      } else if (dt < 1.0) {
+        // Rapid depolarisation (Na+ channels open)
+        const frac = (dt - 0.5) / 0.5;
+        Vm = thresh + (Vpeak - thresh) * frac;
+        gNa = frac;
+        gK = 0;
+      } else if (dt < 2.5) {
+        // Peak & start of repolarisation
+        const frac = (dt - 1.0) / 1.5;
+        Vm = Vpeak - (Vpeak - Vrest - 15) * frac; // descend past Vrest
+        gNa = Math.max(0, 1 - frac * 1.5); // Na+ channels inactivating
+        gK = Math.min(1, frac * 1.2); // K+ channels opening
+      } else if (dt < 4.5) {
+        // Repolarisation & hyperpolarisation
+        const frac = (dt - 2.5) / 2.0;
+        const hyperPeak = Vrest - 15; // hyperpolarisation to about −85 mV
+        Vm = (Vrest + 15) + (hyperPeak - (Vrest + 15)) * frac; // from ~Vrest to hyperPeak
+        gNa = 0;
+        gK = Math.max(0, 1 - frac);
+      } else if (dt < 8.0) {
+        // Recovery (relative refractory period)
+        const frac = (dt - 4.5) / 3.5;
+        const hyperPeak = Vrest - 15;
+        Vm = hyperPeak + (Vrest - hyperPeak) * frac;
+        gNa = 0;
+        gK = Math.max(0, (1 - frac) * 0.3);
+      } else {
+        Vm = Vrest; gNa = 0; gK = 0;
+      }
+    }
+    trace.push({ t, Vm, gNa, gK });
+  }
+  return { trace, fired };
+}
+
+// Generate double AP (for refractory demo)
+function generateDoubleAP(stimStrength, Vrest, Vpeak, refrac) {
+  const TMAX = 200, DT = 0.05;
+  const steps = Math.round(TMAX / DT);
+  const thresh = Vrest + 15;
+  const fired1 = stimStrength + Vrest >= thresh;
+  const stim1 = 5, stim2 = stim1 + 8; // second stimulus 8ms after first
+  const fired2 = fired1 && (stim2 - stim1) >= refrac;
+
+  const trace = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i * DT;
+    let Vm, gNa, gK;
+
+    const ap1 = computeAPAtTime(t - stim1, fired1, Vrest, Vpeak);
+    const ap2 = computeAPAtTime(t - stim2, fired2, Vrest, Vpeak);
+
+    // Superimpose (dominant whichever is further from rest)
+    if (Math.abs(ap2.Vm - Vrest) > Math.abs(ap1.Vm - Vrest)) {
+      Vm = ap2.Vm; gNa = ap2.gNa; gK = ap2.gK;
+    } else {
+      Vm = ap1.Vm; gNa = ap1.gNa; gK = ap1.gK;
+    }
+
+    trace.push({ t, Vm, gNa, gK });
+  }
+  return { trace, fired: fired1, fired2 };
+}
+
+function computeAPAtTime(dt, fired, Vrest, Vpeak) {
+  const thresh = Vrest + 15;
+  if (!fired || dt < 0) return { Vm: Vrest, gNa: 0, gK: 0 };
+  let Vm, gNa, gK;
+  if (dt < 0.5) {
+    Vm = Vrest + (thresh - Vrest) * (dt / 0.5); gNa = 0; gK = 0;
+  } else if (dt < 1.0) {
+    const f = (dt - 0.5) / 0.5;
+    Vm = thresh + (Vpeak - thresh) * f; gNa = f; gK = 0;
+  } else if (dt < 2.5) {
+    const f = (dt - 1.0) / 1.5;
+    Vm = Vpeak - (Vpeak - Vrest - 15) * f;
+    gNa = Math.max(0, 1 - f * 1.5); gK = Math.min(1, f * 1.2);
+  } else if (dt < 4.5) {
+    const f = (dt - 2.5) / 2.0;
+    const hp = Vrest - 15;
+    Vm = (Vrest + 15) + (hp - (Vrest + 15)) * f; gNa = 0; gK = Math.max(0, 1 - f);
+  } else if (dt < 8.0) {
+    const f = (dt - 4.5) / 3.5;
+    const hp = Vrest - 15;
+    Vm = hp + (Vrest - hp) * f; gNa = 0; gK = Math.max(0, (1 - f) * 0.3);
+  } else {
+    Vm = Vrest; gNa = 0; gK = 0;
+  }
+  return { Vm, gNa, gK };
+}
+
+let currentTrace = null;
+let animIdx = 0;
+let animRunning = false;
+let animAF = null;
+let animLastTs = null;
+let isDouble = false;
+
+function buildTrace() {
+  currentTrace = generateAP(params.stim, params.Vrest, params.Vpeak);
+  isDouble = false;
+}
+
+function buildDoubleTrace() {
+  const res = generateDoubleAP(params.stim, params.Vrest, params.Vpeak, params.refrac);
+  currentTrace = res;
+  isDouble = true;
+}
+
+// ---- Drawing ----
+function drawAP(headIdx) {
+  const c = $('apChart');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+
+  const pad = {l:56,r:20,t:16,b:36};
+  const pw = W-pad.l-pad.r, ph = H-pad.t-pad.b;
+  if (!currentTrace) return;
+  const tr = currentTrace.trace;
+  const n = tr.length;
+  const end = Math.min(headIdx ?? n-1, n-1);
+
+  const Vmin = params.Vrest - 20;
+  const Vmax2 = params.Vpeak + 15;
+  const TMAX = tr[n-1].t;
+
+  // grid
+  ctx.strokeStyle='#1a2230'; ctx.lineWidth=1;
+  for (let i=0;i<=5;i++) {
+    const y=pad.t+ph*i/5;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+  }
+  const tStep = 20;
+  for (let t=0;t<=TMAX;t+=tStep) {
+    const x=pad.l+(t/TMAX)*pw;
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,H-pad.b);ctx.stroke();
+  }
+  ctx.fillStyle='#97a1b0'; ctx.font='11px JetBrains Mono';
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for (let i=0;i<=5;i++) {
+    const Vv = Vmin + (Vmax2-Vmin)*(5-i)/5;
+    ctx.fillText(Vv.toFixed(0)+' mV', pad.l-4, pad.t+ph*i/5);
+  }
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for (let t=0;t<=TMAX;t+=tStep) {
+    const x=pad.l+(t/TMAX)*pw;
+    ctx.fillText(t+' ms', x, H-pad.b+5);
+  }
+  ctx.fillStyle='#5b6573'; ctx.font='10px Inter';
+  ctx.fillText('Time (ms)', pad.l+pw/2, H-5);
+
+  const xAt = t => pad.l+(t/TMAX)*pw;
+  const yAt = v => pad.t+ph*(1-(v-Vmin)/(Vmax2-Vmin));
+
+  // Resting potential line
+  ctx.save(); ctx.setLineDash([4,4]);
+  ctx.strokeStyle='rgba(34,211,238,0.25)'; ctx.lineWidth=1;
+  const yRest = yAt(params.Vrest);
+  ctx.beginPath();ctx.moveTo(pad.l,yRest);ctx.lineTo(W-pad.r,yRest);ctx.stroke();
+  ctx.fillStyle='rgba(34,211,238,0.6)';ctx.font='10px JetBrains Mono';ctx.textAlign='right';ctx.textBaseline='middle';
+  ctx.fillText('Vrest='+params.Vrest+' mV', pad.l-4, yRest);
+
+  // Threshold line
+  const yThresh = yAt(threshold());
+  ctx.strokeStyle='rgba(91,101,115,0.7)';
+  ctx.beginPath();ctx.moveTo(pad.l,yThresh);ctx.lineTo(W-pad.r,yThresh);ctx.stroke();
+  ctx.fillStyle='rgba(151,161,176,0.8)';ctx.font='10px JetBrains Mono';ctx.textAlign='left';ctx.textBaseline='bottom';
+  ctx.fillText('threshold='+threshold().toFixed(0)+' mV', pad.l+4, yThresh-3);
+
+  // 0 mV line
+  const y0 = yAt(0);
+  if (y0 > pad.t && y0 < H-pad.b) {
+    ctx.strokeStyle='rgba(91,101,115,0.35)';
+    ctx.beginPath();ctx.moveTo(pad.l,y0);ctx.lineTo(W-pad.r,y0);ctx.stroke();
+    ctx.fillStyle='rgba(91,101,115,0.6)';ctx.font='10px JetBrains Mono';ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.fillText('0 mV', pad.l+4, y0+2);
+  }
+  ctx.restore();
+
+  // Phase regions (colour fills)
+  if (currentTrace.fired && end > 0) {
+    const stim0 = 5, phases = [
+      {name:'depol', t0:stim0+0.5, t1:stim0+1.0, col:'rgba(244,63,94,0.07)'},
+      {name:'repol', t0:stim0+1.0, t1:stim0+2.5, col:'rgba(245,158,11,0.07)'},
+      {name:'hyper', t0:stim0+2.5, t1:stim0+4.5, col:'rgba(167,139,250,0.07)'},
+      {name:'refrac', t0:stim0+4.5, t1:stim0+8.0, col:'rgba(52,211,153,0.05)'},
+    ];
+    for (const phaseRegion of phases) {
+      const x0=Math.max(pad.l,xAt(phaseRegion.t0)), x1=Math.min(W-pad.r,xAt(phaseRegion.t1));
+      if (x1>x0) { ctx.fillStyle=phaseRegion.col; ctx.fillRect(x0,pad.t,x1-x0,ph); }
+    }
+    // Phase labels
+    ctx.font='9px JetBrains Mono';
+    const pLabels=[
+      {txt:'depol', t:stim0+0.75, col:'rgba(244,63,94,0.7)'},
+      {txt:'repol', t:stim0+1.75, col:'rgba(245,158,11,0.7)'},
+      {txt:'hyper', t:stim0+3.5, col:'rgba(167,139,250,0.7)'},
+      {txt:'refrac', t:stim0+6.0, col:'rgba(52,211,153,0.6)'},
+    ];
+    for (const pl of pLabels) {
+      const x=xAt(pl.t);
+      if (x>pad.l && x<W-pad.r) {
+        ctx.fillStyle=pl.col; ctx.textAlign='center'; ctx.textBaseline='top';
+        ctx.fillText(pl.txt, x, pad.t+3);
+      }
+    }
+  }
+
+  // gNa (scaled to voltage range, drawn lightly)
+  const gRange = Vmax2-Vmin;
+  ctx.beginPath();
+  for (let i=0;i<=end;i++) {
+    const d=tr[i];
+    const x=xAt(d.t), y=pad.t+ph*(1 - d.gNa);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle='rgba(244,63,94,0.55)'; ctx.lineWidth=1.8; ctx.stroke();
+
+  // gK
+  ctx.beginPath();
+  for (let i=0;i<=end;i++) {
+    const d=tr[i];
+    const x=xAt(d.t), y=pad.t+ph*(1 - d.gK);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle='rgba(245,158,11,0.55)'; ctx.lineWidth=1.8; ctx.stroke();
+
+  // Right-side gNa/gK label
+  ctx.fillStyle='rgba(91,101,115,0.8)'; ctx.font='9px JetBrains Mono';
+  ctx.textAlign='right'; ctx.textBaseline='top';
+  ctx.fillText('gNa/gK (0→1 rel.)', W-pad.r-4, pad.t+4);
+
+  // Vm line
+  ctx.beginPath();
+  for (let i=0;i<=end;i++) {
+    const d=tr[i];
+    const x=xAt(d.t), y=yAt(d.Vm);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle='#22d3ee'; ctx.lineWidth=2.5; ctx.stroke();
+
+  // Head dot
+  const hd = tr[end];
+  ctx.fillStyle='#22d3ee';
+  ctx.beginPath(); ctx.arc(xAt(hd.t), yAt(hd.Vm), 4, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(34,211,238,0.2)';
+  ctx.beginPath(); ctx.arc(xAt(hd.t), yAt(hd.Vm), 9, 0, Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.strokeRect(pad.l,pad.t,pw,ph);
+
+  // Live readouts from head
+  updateLiveReadouts(hd);
+}
+
+function getPhase(d) {
+  const Vrest = params.Vrest;
+  const thresh = threshold();
+  const Vpeak = params.Vpeak;
+  if (!currentTrace.fired) return 'sub';
+  if (d.gNa > 0.05 && d.Vm > thresh) return 'depol';
+  if (d.gK > 0.05 && d.Vm > Vrest - 5 && d.Vm < Vpeak) return 'repol';
+  if (d.Vm < Vrest - 2) return 'hyper';
+  if (d.Vm < Vrest + 2 && d.gK > 0.01) return 'refrac';
+  if (d.Vm <= Vrest + 1 && d.gNa < 0.01 && d.gK < 0.01) return 'resting';
+  return 'resting';
+}
+
+function updateLiveReadouts(d) {
+  $('oVm').textContent = d.Vm.toFixed(1) + ' mV';
+  $('oGna').textContent = d.gNa.toFixed(3);
+  $('oGk').textContent = d.gK.toFixed(3);
+  $('oThresh').textContent = threshold().toFixed(0) + ' mV';
+
+  const phase = getPhase(d);
+  const phaseNames = { resting:'Resting', depol:'Depolarisation', repol:'Repolarisation', hyper:'Hyperpolarisation', refrac:'Refractory', sub:'Sub-threshold' };
+  const phaseCols = { resting:'cyan', depol:'rose', repol:'amber', hyper:'violet', refrac:'green', sub:'' };
+  $('oPhase').textContent = phaseNames[phase] || 'Resting';
+  $('oPhase').className = 'val ' + (phaseCols[phase] || '');
+
+  const badge = $('phaseBadge');
+  badge.textContent = (phaseNames[phase]||'Resting').toUpperCase();
+  badge.className = 'phase-badge ' + phase;
+
+  $('oFired').textContent = currentTrace.fired ? 'YES' : 'NO';
+  $('oFired').className = 'val ' + (currentTrace.fired ? 'green' : 'rose');
+}
+
+// Membrane animation canvas
+function drawMembrane(headIdx) {
+  const c = $('membraneCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+  if (!currentTrace) return;
+
+  const tr = currentTrace.trace;
+  const n = tr.length;
+  const d = tr[Math.min(headIdx ?? n-1, n-1)];
+
+  const memY = H / 2;
+  const memThick = 20;
+
+  // Background (extracellular top, intracellular bottom)
+  ctx.fillStyle = '#0d1520';
+  ctx.fillRect(0, 0, W, memY - memThick/2);
+  ctx.fillStyle = '#0a1118';
+  ctx.fillRect(0, memY + memThick/2, W, H - memY - memThick/2);
+
+  // Labels
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('Extracellular (high Na⁺, low K⁺)', 8, 4);
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('Intracellular (low Na⁺, high K⁺)', 8, H-4);
+
+  // Membrane lipid bilayer
+  const grad = ctx.createLinearGradient(0, memY-memThick/2, 0, memY+memThick/2);
+  grad.addColorStop(0,'#1a2a3a'); grad.addColorStop(0.5,'#243040'); grad.addColorStop(1,'#1a2a3a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, memY-memThick/2, W, memThick);
+
+  // Draw ion channels (Na+ and K+)
+  const N_CHANNELS = 10;
+  const spacing = W / (N_CHANNELS + 1);
+  for (let i = 0; i < N_CHANNELS; i++) {
+    const cx = (i + 1) * spacing;
+    const isNa = i < 6; // first 6 = Na+, last 4 = K+
+    const open = isNa ? d.gNa > 0.1 : d.gK > 0.1;
+    const color = isNa ? (open ? '#22d3ee' : '#1a3a45') : (open ? '#a78bfa' : '#2a1a4a');
+    const poreW = open ? 8 : 3;
+    // channel protein shape
+    ctx.fillStyle = color;
+    ctx.fillRect(cx-6, memY-memThick/2-2, 12, memThick+4);
+    // pore
+    ctx.fillStyle = open ? '#0a1018' : '#131923';
+    ctx.fillRect(cx-poreW/2, memY-memThick/2-1, poreW, memThick+2);
+    // label
+    ctx.fillStyle = open ? color : '#2a3a50';
+    ctx.font = '9px JetBrains Mono';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(isNa ? 'Na⁺' : 'K⁺', cx, memY-memThick/2-4);
+  }
+
+  // Animate ions moving through open channels
+  const time = Date.now() / 1000;
+  const n_ions = 20;
+
+  if (d.gNa > 0.05) {
+    // Na+ ions rushing IN (extracellular → intracellular)
+    ctx.fillStyle = '#f43f5e';
+    for (let i = 0; i < n_ions; i++) {
+      const phase = (time * 3 + i * 0.5) % 1;
+      const xPos = (i * 47 + 30) % W;
+      const yPos = (memY - memThick/2) + (memThick + 50) * phase - 15;
+      if (yPos > memY-memThick/2-5 && yPos < memY+memThick/2+5) continue; // inside membrane
+      ctx.globalAlpha = d.gNa * 0.9;
+      ctx.beginPath(); ctx.arc(xPos, yPos, 3.5, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  if (d.gK > 0.05) {
+    // K+ ions rushing OUT (intracellular → extracellular)
+    ctx.fillStyle = '#f59e0b';
+    for (let i = 0; i < n_ions; i++) {
+      const phase = (time * 2.5 + i * 0.5) % 1;
+      const xPos = (i * 43 + 60) % W;
+      const yPos = (memY + memThick/2) - (memThick + 50) * phase + 15;
+      if (yPos > memY-memThick/2-5 && yPos < memY+memThick/2+5) continue;
+      ctx.globalAlpha = d.gK * 0.9;
+      ctx.beginPath(); ctx.arc(xPos, yPos, 3.5, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // Voltage indicator
+  const Vmin = params.Vrest - 20, Vmax2 = params.Vpeak + 15;
+  const vmFrac = (d.Vm - Vmin) / (Vmax2 - Vmin);
+  const vmColor = d.Vm > threshold() ? '#f43f5e' : d.Vm < params.Vrest - 2 ? '#a78bfa' : '#22d3ee';
+  ctx.fillStyle = vmColor;
+  ctx.font = '13px JetBrains Mono'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('Vm = ' + d.Vm.toFixed(1) + ' mV', W - 8, memY);
+}
+
+function updateExplainer() {
+  if (!currentTrace) return;
+  const fired = currentTrace.fired;
+  const stim = params.stim;
+  const thresh = threshold();
+  let txt;
+  if (!fired) {
+    txt = `Stimulus of <span class="k">+${stim} mV</span> brings Vm to <span class="k">${(params.Vrest+stim).toFixed(0)} mV</span>, which is <strong>below threshold</strong> (${thresh.toFixed(0)} mV). `;
+    txt += `No voltage-gated Na⁺ channels open — the membrane returns passively to resting potential (<span class="k">${params.Vrest} mV</span>). This is the <strong>all-or-nothing law</strong> in action.`;
+  } else {
+    txt = `Stimulus of <span class="k">+${stim} mV</span> exceeds the threshold (<span class="k">${thresh.toFixed(0)} mV</span>). `;
+    txt += `Voltage-gated <span style="color:var(--rose)">Na⁺ channels</span> open rapidly — the membrane depolarises to peak <span class="k">+${params.Vpeak} mV</span>. `;
+    txt += `Na⁺ channels then <strong>inactivate</strong> while delayed <span style="color:var(--amber)">K⁺ channels</span> open, driving rapid repolarisation below resting potential (<strong>hyperpolarisation</strong> to ~${params.Vrest-15} mV). `;
+    txt += `The <strong>absolute refractory period</strong> (~2 ms) prevents re-firing — Na⁺ channels are inactivated and cannot re-open.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+// Animation
+let animLoopRunning = false;
+
+function startAnimation() {
+  if (!currentTrace) return;
+  animIdx = 0;
+  animRunning = true;
+  animLastTs = null;
+  $('btnFire').textContent = 'Stop';
+  $('btnDouble').disabled = true;
+  requestAnimationFrame(animLoop);
+}
+
+function animLoop(ts) {
+  if (!animRunning) return;
+  if (!animLastTs) animLastTs = ts;
+  const dt = ts - animLastTs; animLastTs = ts;
+  const tr = currentTrace.trace;
+  const n = tr.length;
+  // Advance ~5ms per real second (speed: 1ms trace time per real 0.2s)
+  const speed = 40; // trace indices per second of real time
+  animIdx = Math.min(n-1, animIdx + Math.max(1, Math.round(dt/1000 * speed)));
+  drawAP(animIdx);
+  drawMembrane(animIdx);
+  if (animIdx >= n-1) {
+    animRunning = false;
+    $('btnFire').textContent = 'Fire stimulus';
+    $('btnDouble').disabled = false;
+    updateExplainer();
+    return;
+  }
+  requestAnimationFrame(animLoop);
+}
+
+function stopAnimation() {
+  animRunning = false;
+  $('btnFire').textContent = 'Fire stimulus';
+  $('btnDouble').disabled = false;
+}
+
+// ---- Redraw without animation ----
+function redrawStatic() {
+  buildTrace();
+  drawAP(currentTrace.trace.length - 1);
+  drawMembrane(currentTrace.trace.length - 1);
+  updateExplainer();
+}
+
+// Controls
+$('slStim').addEventListener('input', e => {
+  params.stim = parseInt(e.target.value);
+  $('vStim').textContent = params.stim;
+  if (!animRunning) redrawStatic();
+});
+$('slRefrac').addEventListener('input', e => {
+  params.refrac = parseFloat(e.target.value);
+  $('vRefrac').textContent = params.refrac.toFixed(1);
+});
+$('slVrest').addEventListener('input', e => {
+  params.Vrest = parseInt(e.target.value);
+  $('vVrest').textContent = (params.Vrest < 0 ? '−' : '+') + Math.abs(params.Vrest);
+  $('oThresh').textContent = threshold().toFixed(0) + ' mV';
+  if (!animRunning) redrawStatic();
+});
+$('slVpeak').addEventListener('input', e => {
+  params.Vpeak = parseInt(e.target.value);
+  $('vVpeak').textContent = '+' + params.Vpeak;
+  if (!animRunning) redrawStatic();
+});
+
+$('btnFire').addEventListener('click', () => {
+  if (animRunning) { stopAnimation(); return; }
+  buildTrace();
+  startAnimation();
+});
+
+$('btnDouble').addEventListener('click', () => {
+  if (animRunning) return;
+  buildDoubleTrace();
+  startAnimation();
+});
+
+function resetDefaults() {
+  stopAnimation();
+  Object.assign(params, DEFAULTS);
+  $('slStim').value=DEFAULTS.stim; $('vStim').textContent=DEFAULTS.stim;
+  $('slRefrac').value=DEFAULTS.refrac; $('vRefrac').textContent=DEFAULTS.refrac.toFixed(1);
+  $('slVrest').value=DEFAULTS.Vrest; $('vVrest').textContent='−70';
+  $('slVpeak').value=DEFAULTS.Vpeak; $('vVpeak').textContent='+40';
+  redrawStatic();
+}
+$('btnReset').addEventListener('click', resetDefaults);
+
+// Try presets
+function applyTry(name) {
+  stopAnimation();
+  const presets = {
+    subThreshold: { stim:10, Vrest:-70, Vpeak:40, refrac:2.0,
+      note:'A stimulus of only <strong>+10 mV</strong> brings the membrane to −60 mV — still below threshold (−55 mV). No Na⁺ channels open. The membrane deflects and returns: <strong>no action potential fires</strong>.' },
+    justThreshold: { stim:15, Vrest:-70, Vpeak:40, refrac:2.0,
+      note:'Exactly <strong>+15 mV</strong> reaches threshold. A full action potential is triggered — the same height as a stimulus of +40 mV. This demonstrates <strong>all-or-nothing</strong> behaviour.' },
+    strongStimulus: { stim:40, Vrest:-70, Vpeak:40, refrac:2.0,
+      note:'The strongest possible stimulus — but the action potential peak is <strong>identical</strong> to just-threshold. Above threshold, stimulus strength is irrelevant. Only frequency of firing changes.' },
+    doubleSpike: { stim:25, Vrest:-70, Vpeak:40, refrac:2.0,
+      note:'Click <strong>"Fire twice"</strong> after applying this preset to see a rapid double stimulus 8 ms apart. The refractory period (2 ms) allows the second spike — reduce refrac below 8 ms to block it.' }
+  };
+  const cfg=presets[name]; if(!cfg) return;
+  Object.assign(params,cfg);
+  $('slStim').value=cfg.stim; $('vStim').textContent=cfg.stim;
+  $('slRefrac').value=cfg.refrac; $('vRefrac').textContent=cfg.refrac.toFixed(1);
+  $('slVrest').value=cfg.Vrest; $('vVrest').textContent=(cfg.Vrest<0?'−':'+')+Math.abs(cfg.Vrest);
+  $('slVpeak').value=cfg.Vpeak; $('vVpeak').textContent='+'+cfg.Vpeak;
+  $('tryNote').innerHTML=cfg.note;
+  redrawStatic();
+}
+document.querySelectorAll('.try-buttons button').forEach(b=>b.addEventListener('click',()=>applyTry(b.dataset.try)));
+
+window.addEventListener('resize', () => {
+  if (!animRunning) redrawStatic();
+});
+
+// Keyboard
+(function setupKbd(){
+  const modal=$('kbdModal');
+  const open=()=>modal.classList.add('open');
+  const close=()=>modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click',open);
+  modal.addEventListener('click',e=>{if(e.target===modal)close();});
+  document.addEventListener('keydown',e=>{
+    if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))return;
+    if(e.key==='Escape'){close();return;}
+    if(e.key==='?'){e.preventDefault();open();return;}
+    if(modal.classList.contains('open'))return;
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    const k=e.key;
+    if(k===' '){e.preventDefault();$('btnFire').click();}
+    else if(k==='r'||k==='R'){resetDefaults();}
+    else if(k==='ArrowUp'){
+      params.stim=Math.min(40,params.stim+1);
+      $('slStim').value=params.stim; $('vStim').textContent=params.stim;
+      if(!animRunning) redrawStatic();
+    } else if(k==='ArrowDown'){
+      params.stim=Math.max(1,params.stim-1);
+      $('slStim').value=params.stim; $('vStim').textContent=params.stim;
+      if(!animRunning) redrawStatic();
+    }
+  });
+})();
+
+// Continuous membrane animation when idle
+let memAnimAF = null;
+function memLoop() {
+  if (animRunning) { memAnimAF = requestAnimationFrame(memLoop); return; }
+  if (currentTrace) {
+    drawMembrane(currentTrace.trace.length - 1);
+  }
+  memAnimAF = requestAnimationFrame(memLoop);
+}
+
+// Init
+redrawStatic();
+requestAnimationFrame(memLoop);
+</script>
+</body>
+</html>

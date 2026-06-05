@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scatter Graphs &amp; Correlation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 16px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.readout-full { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); margin-top: 12px; }
+.readout-full .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.readout-full .val { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); line-height: 1.7; }
+.canvas-wrap { position: relative; width: 100%; height: 460px; cursor: crosshair; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.hint-text { font-size: 11px; color: var(--text-faint); margin-top: 8px; }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Scatter Graphs &amp; Correlation</h1>
+    <p class="sub">Drag points · least-squares line of best fit · Pearson r</p>
+    <p class="insight-banner">The correlation coefficient r always lies between −1 and +1. Correlation measures the strength and direction of a linear relationship — not causation.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset to default dataset</span>
+      <span class="kbd-key">U</span><span>Undo last added point</span>
+      <span class="kbd-key">P</span><span>Toggle prediction line</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Scatter graph</h3>
+        <span style="font-size:11px;color:var(--text-dim)">Click to add · drag to move · right-click to remove</span>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap"><canvas id="main"></canvas></div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--text-dim);flex-wrap:wrap;">
+        <span><span style="color:var(--cyan)">●</span> Data point</span>
+        <span><span style="color:var(--amber)">—</span> Line of best fit</span>
+        <span><span style="color:var(--rose)">----</span> Prediction / extrapolation</span>
+        <span><span style="color:var(--violet)">|</span> Residuals</span>
+      </div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Dataset controls</p>
+      <div class="btn-row">
+        <button id="btnReset">Reset</button>
+        <button id="btnUndo">Undo</button>
+        <button id="btnTogglePred" class="primary">Show prediction</button>
+      </div>
+      <p class="hint-text">Click anywhere on the graph to add a point. Drag existing points. Right-click to remove.</p>
+
+      <div class="control" style="margin-top:14px;">
+        <div class="control-row"><span class="label">Predict at x =</span><span class="value num" id="vPredX">—</span></div>
+        <input type="range" id="slPredX" min="0" max="100" step="1" value="50">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Correlation summary</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Pearson correlation coefficient. r=+1 perfect positive, r=0 none, r=−1 perfect negative.">r (Pearson)</div>
+          <div class="val cyan" id="oR">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">r² (explained var.)</div>
+          <div class="val amber" id="oR2">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">n (points)</div>
+          <div class="val" id="oN">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Strength</div>
+          <div class="val" id="oStrength">—</div>
+        </div>
+      </div>
+      <div class="readout-full">
+        <div class="lbl">Line of best fit</div>
+        <div class="val" id="oLine">—</div>
+      </div>
+      <div class="readout-full">
+        <div class="lbl">Prediction</div>
+        <div class="val" id="oPred">—</div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="strong_pos">Strong positive</button>
+        <button data-try="strong_neg">Strong negative</button>
+        <button data-try="none">No correlation</button>
+        <button data-try="outlier">One outlier</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const PAD = { l: 52, r: 30, t: 24, b: 40 };
+
+// Default dataset — moderate positive correlation
+let points = [
+  {x:10,y:18},{x:15,y:22},{x:20,y:28},{x:25,y:30},{x:30,y:35},
+  {x:35,y:38},{x:40,y:45},{x:45,y:42},{x:50,y:50},{x:55,y:55},
+  {x:60,y:58},{x:65,y:63},{x:70,y:68},{x:75,y:72},{x:80,y:80}
+];
+
+let showPred = true;
+let predX = 50;
+let dragging = null;
+let dragOffX = 0, dragOffY = 0;
+let history = [];
+
+const X_RANGE = [0, 100], Y_RANGE = [0, 100];
+
+function getCtxDims() {
+  const c = $('main');
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  const pw = W - PAD.l - PAD.r;
+  const ph = H - PAD.t - PAD.b;
+  return { W, H, pw, ph };
+}
+
+function toCanvas(x, y) {
+  const { W, H, pw, ph } = getCtxDims();
+  return {
+    cx: PAD.l + (x - X_RANGE[0]) / (X_RANGE[1] - X_RANGE[0]) * pw,
+    cy: PAD.t + (1 - (y - Y_RANGE[0]) / (Y_RANGE[1] - Y_RANGE[0])) * ph
+  };
+}
+
+function fromCanvas(cx, cy) {
+  const { W, H, pw, ph } = getCtxDims();
+  return {
+    x: (cx - PAD.l) / pw * (X_RANGE[1] - X_RANGE[0]) + X_RANGE[0],
+    y: (1 - (cy - PAD.t) / ph) * (Y_RANGE[1] - Y_RANGE[0]) + Y_RANGE[0]
+  };
+}
+
+function stats(pts) {
+  const n = pts.length;
+  if (n < 2) return null;
+  const mx = pts.reduce((a, p) => a + p.x, 0) / n;
+  const my = pts.reduce((a, p) => a + p.y, 0) / n;
+  const sxx = pts.reduce((a, p) => a + (p.x - mx)**2, 0);
+  const syy = pts.reduce((a, p) => a + (p.y - my)**2, 0);
+  const sxy = pts.reduce((a, p) => a + (p.x - mx) * (p.y - my), 0);
+  const m = sxy / sxx;
+  const c = my - m * mx;
+  const r = sxy / Math.sqrt(sxx * syy);
+  return { m, c, r, mx, my, n };
+}
+
+function fmt(n, dp=3) { return isFinite(n) ? parseFloat(n.toFixed(dp)).toString() : '—'; }
+
+function correlationLabel(r) {
+  const a = Math.abs(r);
+  const dir = r > 0 ? 'positive' : 'negative';
+  if (a >= 0.8) return `Strong ${dir}`;
+  if (a >= 0.5) return `Moderate ${dir}`;
+  if (a >= 0.2) return `Weak ${dir}`;
+  return 'None / very weak';
+}
+
+function draw() {
+  const c = $('main');
+  const ctx = fitCanvas(c);
+  const { W, H, pw, ph } = getCtxDims();
+  ctx.clearRect(0, 0, W, H);
+
+  const st = stats(points);
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let x = 0; x <= 100; x += 10) {
+    const cx = PAD.l + (x / 100) * pw;
+    ctx.beginPath(); ctx.moveTo(cx, PAD.t); ctx.lineTo(cx, PAD.t + ph); ctx.stroke();
+  }
+  for (let y = 0; y <= 100; y += 10) {
+    const cy = PAD.t + (1 - y / 100) * ph;
+    ctx.beginPath(); ctx.moveTo(PAD.l, cy); ctx.lineTo(PAD.l + pw, cy); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = '#2a3a50'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(PAD.l, PAD.t + ph); ctx.lineTo(PAD.l + pw, PAD.t + ph); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l, PAD.t); ctx.lineTo(PAD.l, PAD.t + ph); ctx.stroke();
+
+  // Tick labels
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let x = 0; x <= 100; x += 20) {
+    const cx = PAD.l + (x / 100) * pw;
+    ctx.fillText(x, cx, PAD.t + ph + 5);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let y = 0; y <= 100; y += 20) {
+    const cy = PAD.t + (1 - y / 100) * ph;
+    ctx.fillText(y, PAD.l - 6, cy);
+  }
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('x', PAD.l + pw / 2, PAD.t + ph + 20);
+  ctx.save(); ctx.translate(14, PAD.t + ph / 2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText('y', 0, 0); ctx.restore();
+
+  if (st) {
+    // Residual lines
+    for (const p of points) {
+      const fitted = st.m * p.x + st.c;
+      const { cx, cy } = toCanvas(p.x, p.y);
+      const { cx: cx2, cy: cy2 } = toCanvas(p.x, fitted);
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx2, cy2);
+      ctx.strokeStyle = 'rgba(167,139,250,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    // Line of best fit (solid within data range)
+    const xMin = Math.max(X_RANGE[0], Math.min(...points.map(p=>p.x)) - 5);
+    const xMax = Math.min(X_RANGE[1], Math.max(...points.map(p=>p.x)) + 5);
+    const { cx: lx1, cy: ly1 } = toCanvas(xMin, st.m * xMin + st.c);
+    const { cx: lx2, cy: ly2 } = toCanvas(xMax, st.m * xMax + st.c);
+    ctx.beginPath(); ctx.moveTo(lx1, ly1); ctx.lineTo(lx2, ly2);
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2.2; ctx.stroke();
+
+    // Extrapolation zones (dashed rose)
+    if (showPred) {
+      ctx.save(); ctx.setLineDash([6, 5]);
+      ctx.strokeStyle = 'rgba(244,63,94,0.55)'; ctx.lineWidth = 1.5;
+      if (xMin > X_RANGE[0]) {
+        const { cx: ex1 } = toCanvas(X_RANGE[0], st.m * X_RANGE[0] + st.c);
+        const { cy: ey1 } = toCanvas(X_RANGE[0], st.m * X_RANGE[0] + st.c);
+        ctx.beginPath(); ctx.moveTo(ex1, ey1); ctx.lineTo(lx1, ly1); ctx.stroke();
+      }
+      if (xMax < X_RANGE[1]) {
+        const { cx: ex2, cy: ey2 } = toCanvas(X_RANGE[1], st.m * X_RANGE[1] + st.c);
+        ctx.beginPath(); ctx.moveTo(lx2, ly2); ctx.lineTo(ex2, ey2); ctx.stroke();
+      }
+      ctx.restore();
+
+      // Prediction vertical line
+      const predY = st.m * predX + st.c;
+      const { cx: pvx, cy: pvy } = toCanvas(predX, predY);
+      const { cy: axisY } = toCanvas(predX, Y_RANGE[0]);
+      ctx.save(); ctx.setLineDash([4,3]);
+      ctx.strokeStyle = 'rgba(244,63,94,0.6)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(pvx, axisY); ctx.lineTo(pvx, pvy); ctx.stroke();
+      ctx.restore();
+      // Dot on LOBF
+      ctx.fillStyle = '#f43f5e';
+      ctx.beginPath(); ctx.arc(pvx, pvy, 5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(244,63,94,0.2)';
+      ctx.beginPath(); ctx.arc(pvx, pvy, 10, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#f43f5e'; ctx.font = '11px JetBrains Mono';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+      const xDataMin = Math.min(...points.map(p=>p.x));
+      const xDataMax = Math.max(...points.map(p=>p.x));
+      const interp = predX >= xDataMin && predX <= xDataMax;
+      ctx.fillText(`${interp ? 'Interpolation' : 'Extrapolation'}: ŷ=${fmt(predY,2)}`, pvx + 8, pvy - 4);
+    }
+
+    // Mean point cross
+    const { cx: mcx, cy: mcy } = toCanvas(st.mx, st.my);
+    ctx.strokeStyle = 'rgba(34,211,238,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(mcx - 8, mcy); ctx.lineTo(mcx + 8, mcy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mcx, mcy - 8); ctx.lineTo(mcx, mcy + 8); ctx.stroke();
+  }
+
+  // Data points
+  for (const p of points) {
+    const { cx, cy } = toCanvas(p.x, p.y);
+    ctx.fillStyle = 'rgba(34,211,238,0.18)';
+    ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#22d3ee';
+    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill();
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(PAD.l, PAD.t, pw, ph);
+}
+
+function updateReadouts() {
+  const st = stats(points);
+  $('oN').textContent = points.length;
+  if (!st) {
+    $('oR').textContent = '—'; $('oR2').textContent = '—'; $('oStrength').textContent = '—';
+    $('oLine').textContent = 'Need ≥ 2 points'; $('oPred').textContent = '—';
+    $('explainer').innerHTML = 'Add at least 2 points to compute correlation.';
+    return;
+  }
+  const r = st.r;
+  $('oR').textContent = fmt(r, 4);
+  $('oR2').textContent = fmt(r*r, 4);
+  $('oStrength').textContent = correlationLabel(r);
+
+  const mSign = st.m >= 0 ? '' : '−';
+  const mAbs = Math.abs(st.m);
+  const cSign = st.c >= 0 ? '+ ' : '− ';
+  const cAbs = Math.abs(st.c);
+  $('oLine').textContent = `ŷ = ${fmt(st.m,3)}x ${cSign}${fmt(cAbs,3)}`;
+
+  const predY = st.m * predX + st.c;
+  const xDataMin = Math.min(...points.map(p=>p.x));
+  const xDataMax = Math.max(...points.map(p=>p.x));
+  const interp = predX >= xDataMin && predX <= xDataMax;
+  $('oPred').textContent = `x=${predX} → ŷ=${fmt(predY,3)} (${interp?'interpolation':'extrapolation'})`;
+  $('vPredX').textContent = predX;
+
+  const rAbs = Math.abs(r);
+  let txt = `With <span class="k">n = ${st.n}</span> points, <span class="k">r = ${fmt(r,4)}</span> — `;
+  txt += `<strong>${correlationLabel(r)}</strong> correlation. `;
+  txt += `r² = <span class="k">${fmt(r*r,4)}</span>: the line of best fit explains ${fmt(r*r*100,1)}% of the variance in y. `;
+  txt += `The least-squares line passes through the mean point <span class="k">(${fmt(st.mx,2)}, ${fmt(st.my,2)})</span> and has gradient <span class="k">${fmt(st.m,3)}</span>. `;
+  if (!interp && showPred) txt += `<span style="color:var(--rose)">Warning: x=${predX} is outside the data range — the prediction is an <strong>extrapolation</strong> and may be unreliable.</span>`;
+  $('explainer').innerHTML = txt;
+}
+
+function update() { draw(); updateReadouts(); }
+
+// Canvas interaction
+const canvas = $('main');
+const wrap = $('canvasWrap');
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX ?? e.touches[0].clientX) - rect.left;
+  const y = (e.clientY ?? e.touches[0].clientY) - rect.top;
+  return { cx: x, cy: y };
+}
+
+function nearestPoint(cx, cy, radius = 12) {
+  for (let i = points.length - 1; i >= 0; i--) {
+    const { cx: px, cy: py } = toCanvas(points[i].x, points[i].y);
+    if (Math.hypot(cx - px, cy - py) <= radius) return i;
+  }
+  return -1;
+}
+
+function clampPoint(p) {
+  return { x: Math.max(X_RANGE[0], Math.min(X_RANGE[1], p.x)), y: Math.max(Y_RANGE[0], Math.min(Y_RANGE[1], p.y)) };
+}
+
+canvas.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const { cx, cy } = getCanvasPos(e);
+  const idx = nearestPoint(cx, cy);
+  if (e.button === 2) {
+    // Right click: remove
+    if (idx >= 0) { history.push([...points]); points.splice(idx, 1); update(); }
+    return;
+  }
+  if (idx >= 0) {
+    dragging = idx;
+  } else {
+    // Add point
+    const np = clampPoint(fromCanvas(cx, cy));
+    history.push([...points]);
+    points.push(np);
+    dragging = points.length - 1;
+    update();
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (dragging === null) return;
+  const { cx, cy } = getCanvasPos(e);
+  points[dragging] = clampPoint(fromCanvas(cx, cy));
+  update();
+});
+
+canvas.addEventListener('mouseup', () => { dragging = null; });
+canvas.addEventListener('mouseleave', () => { dragging = null; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// Prediction slider
+$('slPredX').addEventListener('input', e => {
+  predX = parseInt(e.target.value);
+  $('vPredX').textContent = predX;
+  update();
+});
+
+// Buttons
+$('btnReset').addEventListener('click', () => {
+  history.push([...points]);
+  points = [
+    {x:10,y:18},{x:15,y:22},{x:20,y:28},{x:25,y:30},{x:30,y:35},
+    {x:35,y:38},{x:40,y:45},{x:45,y:42},{x:50,y:50},{x:55,y:55},
+    {x:60,y:58},{x:65,y:63},{x:70,y:68},{x:75,y:72},{x:80,y:80}
+  ];
+  $('tryNote').textContent = ''; update();
+});
+$('btnUndo').addEventListener('click', () => {
+  if (history.length > 0) { points = history.pop(); update(); }
+});
+$('btnTogglePred').addEventListener('click', () => {
+  showPred = !showPred;
+  $('btnTogglePred').textContent = showPred ? 'Hide prediction' : 'Show prediction';
+  update();
+});
+
+window.addEventListener('resize', update);
+
+// Try this datasets
+const PRESETS = {
+  strong_pos: {
+    pts: [{x:10,y:12},{x:20,y:22},{x:30,y:29},{x:40,y:41},{x:50,y:51},{x:60,y:62},{x:70,y:68},{x:80,y:81},{x:90,y:89}],
+    note: '<strong>Strong positive correlation</strong>: as x increases, y increases closely. r ≈ +0.998. The points cluster tightly around the line.'
+  },
+  strong_neg: {
+    pts: [{x:10,y:88},{x:20,y:78},{x:30,y:68},{x:40,y:60},{x:50,y:50},{x:60,y:42},{x:70,y:30},{x:80,y:20},{x:90,y:12}],
+    note: '<strong>Strong negative correlation</strong>: as x increases, y decreases. r ≈ −0.998. Gradient of LOBF is negative.'
+  },
+  none: {
+    pts: [{x:10,y:50},{x:20,y:30},{x:30,y:70},{x:40,y:40},{x:50,y:60},{x:60,y:20},{x:70,y:80},{x:80,y:45},{x:90,y:55}],
+    note: '<strong>No correlation</strong>: r ≈ 0. Knowing x tells you nothing about y. The line of best fit is nearly horizontal.'
+  },
+  outlier: {
+    pts: [{x:10,y:12},{x:20,y:22},{x:30,y:29},{x:40,y:41},{x:50,y:51},{x:60,y:62},{x:70,y:68},{x:90,y:20}],
+    note: '<strong>One outlier</strong> at (90,20) drags the line of best fit downward and weakens r significantly. Outliers can be very influential — always investigate them.'
+  }
+};
+
+document.querySelectorAll('.try-buttons button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = PRESETS[btn.dataset.try];
+    if (!p) return;
+    history.push([...points]);
+    points = p.pts.map(pt => ({...pt}));
+    $('tryNote').innerHTML = p.note;
+    update();
+  });
+});
+
+// Keyboard
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'r') $('btnReset').click();
+    else if (k === 'u') $('btnUndo').click();
+    else if (k === 'p') $('btnTogglePred').click();
+  });
+})();
+
+$('vPredX').textContent = predX;
+update();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="simultaneous_eqns.html">
+      <div class="related-title">Simultaneous Equations</div>
+      <div class="related-desc">Two straight lines — find the intersection graphically and algebraically</div>
+    </a>
+    <a class="related-card" href="quadratics.html">
+      <div class="related-title">Quadratic Graphs</div>
+      <div class="related-desc">y = ax² + bx + c — roots, vertex, discriminant</div>
+    </a>
+    <a class="related-card" href="index.html">
+      <div class="related-title">All Simulations</div>
+      <div class="related-desc">Browse the full library of interactive GCSE and A-level tools</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waves: Frequency, Wavelength &amp; Speed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 260px; }
+.canvas-wrap-sm { position: relative; width: 100%; height: 180px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.em-spectrum { display: flex; width: 100%; height: 28px; border-radius: 6px; overflow: hidden; margin: 10px 0 4px; }
+.em-band { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 9px; font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.85); cursor: pointer; transition: opacity 120ms; font-weight: 600; }
+.em-band:hover { opacity: 0.8; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Waves: Frequency, Wavelength &amp; Speed</h1>
+    <p class="sub">Transverse waves · v = fλ · period and amplitude · EM spectrum</p>
+    <p class="insight-banner">Wave speed depends on the medium, not on frequency. Doubling frequency halves wavelength — the wave travels just as fast but oscillates twice as many times per second.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Pause / resume animation</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">+</span><span>Increase frequency</span>
+      <span class="kbd-key">−</span><span>Decrease frequency</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Transverse wave animation</h3>
+        <button id="btnPause" style="font-size:12px;padding:5px 12px;">⏸ Pause</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="waveCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Displacement</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Amplitude A</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Wavelength λ</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>Wave speed v</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Displacement–time graph (fixed point)</h3>
+        <span style="font-size:11px;color:var(--text-dim);">period T = 1/f</span>
+      </div>
+      <div class="canvas-wrap-sm"><canvas id="dtCanvas"></canvas></div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <p class="section-label">Electromagnetic spectrum reference</p>
+      <div class="em-spectrum" id="emSpectrum">
+        <div class="em-band" style="background:#6d0f8e;" data-f="3e17" data-l="1e-9" title="Gamma rays: λ < 0.01 nm, f > 3×10¹⁹ Hz">γ</div>
+        <div class="em-band" style="background:#3b1ab0;" data-f="3e16" data-l="1e-8" title="X-rays: 0.01–10 nm">X</div>
+        <div class="em-band" style="background:#4040e0;" data-f="1e15" data-l="3e-7" title="UV: 10–400 nm">UV</div>
+        <div class="em-band" style="background:linear-gradient(90deg,#6600cc,#0000ff,#00aa00,#ffff00,#ff7700,#ff0000);" data-f="6e14" data-l="5e-7" title="Visible: 400–700 nm">VIS</div>
+        <div class="em-band" style="background:#8b3a00;" data-f="3e13" data-l="1e-5" title="Infrared: 700 nm–1 mm">IR</div>
+        <div class="em-band" style="background:#3a3a00;" data-f="1e10" data-l="0.03" title="Microwaves: 1 mm–10 cm">μW</div>
+        <div class="em-band" style="background:#002244;" data-f="1e8" data-l="3" title="Radio: > 10 cm">Radio</div>
+      </div>
+      <div style="font-size:10px;color:var(--text-faint);margin-top:2px;">Click a band to load a reference wavelength (scaled to display)</div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Wave parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Number of complete oscillations per second, in hertz (Hz).">Frequency f (Hz)</span>
+          <span class="value num" id="vFreq">2.0</span>
+        </div>
+        <input type="range" id="sliderF" min="0.5" max="8" step="0.1" value="2">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Distance between two consecutive crests (or troughs), in metres.">Wavelength λ (m)</span>
+          <span class="value num" id="vLambda">3.0</span>
+        </div>
+        <input type="range" id="sliderL" min="0.5" max="8" step="0.1" value="3">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Maximum displacement from the equilibrium position, in metres.">Amplitude A (m)</span>
+          <span class="value num" id="vAmp">1.0</span>
+        </div>
+        <input type="range" id="sliderA" min="0.1" max="2" step="0.05" value="1">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Calculated values</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="v = f × λ">Wave speed v</div><div class="val cyan" id="oSpeed">6.0 m/s</div></div>
+        <div class="readout"><div class="lbl" title="T = 1/f — time for one complete oscillation.">Period T</div><div class="val amber" id="oPeriod">0.50 s</div></div>
+        <div class="readout"><div class="lbl">Frequency f</div><div class="val rose" id="oFreq">2.0 Hz</div></div>
+        <div class="readout"><div class="lbl">Wavelength λ</div><div class="val green" id="oLambda">3.0 m</div></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">EM spectrum presets</p>
+      <div class="refs" style="margin-top:0;">
+        <span class="ref-chip" data-f="101.5e6" title="FM radio: f ≈ 100 MHz, λ ≈ 3 m">FM radio 101.5 MHz</span>
+        <span class="ref-chip" data-f="2.45e9" title="Microwave oven: f ≈ 2.45 GHz">Microwave 2.45 GHz</span>
+        <span class="ref-chip" data-f="6e14" title="Green light: f ≈ 6×10¹⁴ Hz, λ ≈ 500 nm">Green light 600 THz</span>
+        <span class="ref-chip" data-f="3e17" title="X-ray: f ≈ 3×10¹⁷ Hz">X-ray</span>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="doubleF">Double the frequency</button>
+        <button data-try="halfL">Halve the wavelength</button>
+        <button data-try="bigA">Large amplitude</button>
+        <button data-try="slow">Slow wave</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const state = {
+  f: 2.0,
+  lambda: 3.0,
+  A: 1.0,
+  paused: false,
+  t: 0
+};
+
+let lastTs = 0;
+let animId = null;
+
+function waveSpeed() { return state.f * state.lambda; }
+function period() { return 1 / state.f; }
+
+// Displacement-time history buffer (for d-t plot)
+const dtHistory = [];
+const DT_HISTORY_LEN = 300;
+
+function drawWave(ts) {
+  if (!state.paused) {
+    const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0;
+    lastTs = ts;
+    state.t += dt;
+    // Wave is y(x,t) = A sin(kx − ωt). At x = 0: y = A sin(−ωt) = −A sin(ωt).
+    // Record the actual displacement at x = 0 so the d–t graph matches the green dot on the wave.
+    dtHistory.push({ t: state.t, y: -state.A * Math.sin(2 * Math.PI * state.f * state.t) });
+    if (dtHistory.length > DT_HISTORY_LEN) dtHistory.shift();
+  } else {
+    lastTs = 0;
+  }
+
+  const c = $('waveCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 48, r: 24, t: 28, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const cy = pad.t + ph / 2;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  // Horizontal grid lines
+  for (let i = -2; i <= 2; i++) {
+    const y = cy + (i / 2) * (ph / 2);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  // Vertical grid lines (one per wavelength visible)
+  const numWaves = pw / (state.lambda * 40);
+  const wPx = pw / Math.ceil(numWaves + 1); // pixels per wavelength
+  const displayLambdaPx = Math.min(pw / 1.5, pw * state.lambda / (waveSpeed() / state.f * 2));
+  // Show 3 wavelengths across the canvas
+  const lambdaPx = pw / 3;
+  for (let i = 0; i <= 3; i++) {
+    const x = pad.l + i * lambdaPx;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+
+  // Axis
+  ctx.strokeStyle = '#5b6573'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, cy); ctx.lineTo(W - pad.r, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b); ctx.stroke();
+
+  // Y axis labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('+A', pad.l - 4, pad.t + 8);
+  ctx.fillText('0', pad.l - 4, cy);
+  ctx.fillText('−A', pad.l - 4, H - pad.b - 8);
+
+  // Axis labels
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Position x', pad.l + pw / 2, H - 12);
+  ctx.save(); ctx.translate(13, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Displacement y', 0, 0); ctx.restore();
+
+  // Amplitude scale: ph/2 corresponds to A
+  const yScale = (ph / 2) / Math.max(state.A, 0.01);
+
+  // Wave: y(x,t) = A sin(2π(x/λ - ft))
+  const omega = 2 * Math.PI * state.f;
+  const k = 2 * Math.PI / state.lambda;
+  // Map: x pixels → real x in metres. 3 wavelengths fill the canvas.
+  const xRealMax = 3 * state.lambda;
+
+  // Filled wave area (gradient)
+  const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+  grad.addColorStop(0, 'rgba(34,211,238,0.18)');
+  grad.addColorStop(0.5, 'rgba(34,211,238,0.05)');
+  grad.addColorStop(1, 'rgba(34,211,238,0.18)');
+
+  ctx.beginPath();
+  for (let px = 0; px <= pw; px++) {
+    const xR = (px / pw) * xRealMax;
+    const y = state.A * Math.sin(k * xR - omega * state.t);
+    const py = cy - y * yScale;
+    if (px === 0) ctx.moveTo(pad.l + px, py); else ctx.lineTo(pad.l + px, py);
+  }
+  ctx.lineTo(W - pad.r, cy); ctx.lineTo(pad.l, cy); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Wave line
+  ctx.beginPath();
+  for (let px = 0; px <= pw; px++) {
+    const xR = (px / pw) * xRealMax;
+    const y = state.A * Math.sin(k * xR - omega * state.t);
+    const py = cy - y * yScale;
+    if (px === 0) ctx.moveTo(pad.l + px, py); else ctx.lineTo(pad.l + px, py);
+  }
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.2; ctx.stroke();
+
+  // Wavelength annotation (first full crest-to-crest)
+  // Find phase = 0 point (first crest in visible window)
+  const phase0 = (omega * state.t) % (2 * Math.PI);
+  const xCrest1R = (phase0 < Math.PI) ? (2 * Math.PI - phase0) / k : (phase0 - 0) / k;
+  // Just annotate the first wavelength bracket starting at x=0
+  const lambdaPxReal = (state.lambda / xRealMax) * pw;
+  const x1 = pad.l;
+  const x2 = pad.l + lambdaPxReal;
+  if (x2 < W - pad.r) {
+    ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 1.5;
+    const annotY = pad.t + 10;
+    ctx.beginPath(); ctx.moveTo(x1, annotY); ctx.lineTo(x2, annotY); ctx.stroke();
+    // end ticks
+    ctx.beginPath(); ctx.moveTo(x1, annotY - 5); ctx.lineTo(x1, annotY + 5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2, annotY - 5); ctx.lineTo(x2, annotY + 5); ctx.stroke();
+    ctx.fillStyle = '#f43f5e'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('λ = ' + state.lambda.toFixed(1) + ' m', (x1 + x2) / 2, annotY - 2);
+  }
+
+  // Amplitude annotation
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.5;
+  const xAnnotA = W - pad.r - 20;
+  ctx.beginPath(); ctx.moveTo(xAnnotA, cy); ctx.lineTo(xAnnotA, cy - state.A * yScale); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(xAnnotA - 4, cy); ctx.lineTo(xAnnotA + 4, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(xAnnotA - 4, cy - state.A * yScale); ctx.lineTo(xAnnotA + 4, cy - state.A * yScale); ctx.stroke();
+  ctx.fillStyle = '#f59e0b'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('A=' + state.A.toFixed(2) + 'm', xAnnotA + 6, cy - state.A * yScale / 2);
+
+  // Travelling dot at x=0
+  const yDot = state.A * Math.sin(-omega * state.t);
+  ctx.fillStyle = '#34d399';
+  ctx.beginPath(); ctx.arc(pad.l + 0, cy - yDot * yScale, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(52,211,153,0.3)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(pad.l + 0, cy - yDot * yScale, 10, 0, Math.PI * 2); ctx.stroke();
+
+  // Speed annotation at top right
+  ctx.fillStyle = '#34d399'; ctx.font = '12px JetBrains Mono'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText('v = ' + waveSpeed().toFixed(2) + ' m/s', W - pad.r - 4, pad.t + 2);
+
+  // Box
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+  drawDT();
+}
+
+function drawDT() {
+  const c = $('dtCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 48, r: 16, t: 16, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const cy = pad.t + ph / 2;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, cy); ctx.lineTo(W - pad.r, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b); ctx.stroke();
+
+  // Draw history
+  const yScale = (ph / 2) / Math.max(state.A, 0.01);
+  const tWindow = Math.max(4 / state.f, 0.1); // show 4 periods
+
+  if (dtHistory.length > 1) {
+    const tEnd = dtHistory[dtHistory.length - 1].t;
+    const tStart = tEnd - tWindow;
+
+    ctx.beginPath();
+    let first = true;
+    for (const pt of dtHistory) {
+      if (pt.t < tStart) continue;
+      const px = pad.l + ((pt.t - tStart) / tWindow) * pw;
+      const py = cy - pt.y * yScale;
+      if (first) { ctx.moveTo(px, py); first = false; } else { ctx.lineTo(px, py); }
+    }
+    ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2; ctx.stroke();
+
+    // Period annotation
+    const periodPx = (period() / tWindow) * pw;
+    if (periodPx > 30 && periodPx < pw * 0.9) {
+      const annotX = pad.l + 4;
+      const annotX2 = annotX + periodPx;
+      if (annotX2 < W - pad.r) {
+        ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1;
+        const annotY = pad.t + 8;
+        ctx.beginPath(); ctx.moveTo(annotX, annotY); ctx.lineTo(annotX2, annotY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(annotX, annotY - 4); ctx.lineTo(annotX, annotY + 4); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(annotX2, annotY - 4); ctx.lineTo(annotX2, annotY + 4); ctx.stroke();
+        ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText('T = ' + period().toFixed(2) + ' s', (annotX + annotX2) / 2, annotY - 1);
+      }
+    }
+  }
+
+  // Labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('+A', pad.l - 4, pad.t + 6);
+  ctx.fillText('0', pad.l - 4, cy);
+  ctx.fillText('−A', pad.l - 4, H - pad.b - 6);
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Time t / s', pad.l + pw / 2, H - 14);
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateReadouts() {
+  const v = waveSpeed();
+  const T = period();
+  $('oSpeed').textContent = v.toFixed(2) + ' m/s';
+  $('oPeriod').textContent = T.toFixed(3) + ' s';
+  $('oFreq').textContent = state.f.toFixed(1) + ' Hz';
+  $('oLambda').textContent = state.lambda.toFixed(1) + ' m';
+  $('vFreq').textContent = state.f.toFixed(1);
+  $('vLambda').textContent = state.lambda.toFixed(1);
+  $('vAmp').textContent = state.A.toFixed(2);
+
+  let txt = `Wave equation: <span class="k">v = fλ</span>. With f = <span class="k">${state.f.toFixed(1)} Hz</span> and λ = <span class="k">${state.lambda.toFixed(1)} m</span>, `;
+  txt += `wave speed <span class="k">v = ${v.toFixed(2)} m s⁻¹</span>. `;
+  txt += `Period <span class="k">T = 1/f = ${T.toFixed(3)} s</span> — each point on the medium completes one oscillation in this time. `;
+  txt += `Amplitude <span class="k">A = ${state.A.toFixed(2)} m</span> determines the energy carried (E ∝ A²) but does not affect wave speed or wavelength.`;
+  $('explainer').innerHTML = txt;
+}
+
+function loop(ts) {
+  drawWave(ts);
+  updateReadouts();
+  animId = requestAnimationFrame(loop);
+}
+
+$('btnPause').addEventListener('click', () => {
+  state.paused = !state.paused;
+  $('btnPause').textContent = state.paused ? '▶ Resume' : '⏸ Pause';
+});
+
+$('sliderF').addEventListener('input', e => {
+  state.f = parseFloat(e.target.value);
+  dtHistory.length = 0;
+  updateReadouts();
+});
+$('sliderL').addEventListener('input', e => {
+  state.lambda = parseFloat(e.target.value);
+  dtHistory.length = 0;
+  updateReadouts();
+});
+$('sliderA').addEventListener('input', e => {
+  state.A = parseFloat(e.target.value);
+  updateReadouts();
+});
+
+// EM spectrum band clicks — just load a note, no actual frequency change (values too extreme)
+document.querySelectorAll('.em-band').forEach(b => {
+  b.addEventListener('click', () => {
+    const f = parseFloat(b.dataset.f);
+    const titles = {
+      'γ': 'Gamma rays: extremely short wavelength (< 0.01 nm), produced in nuclear decay. Highest energy EM radiation.',
+      'X': 'X-rays: 0.01–10 nm. Used in medical imaging. Ionising — carry enough energy to remove electrons from atoms.',
+      'UV': 'Ultraviolet: 10–400 nm. Causes fluorescence and sunburn. Mostly absorbed by the ozone layer.',
+      'VIS': 'Visible light: 400–700 nm. The only part of the EM spectrum detectable by the human eye. Speed in vacuum: 3 × 10⁸ m s⁻¹.',
+      'IR': 'Infrared: 700 nm–1 mm. Emitted by warm objects. Used in TV remotes and thermal cameras.',
+      'μW': 'Microwaves: 1 mm–10 cm. Used in microwave ovens (2.45 GHz) and mobile communications.',
+      'Radio': 'Radio waves: > 10 cm. Used in broadcasting, WiFi, and radar. Lowest energy EM waves.'
+    };
+    const key = b.textContent.trim();
+    $('explainer').innerHTML = `<strong style="color:var(--text)">${key}:</strong> ${titles[key] || b.title}`;
+  });
+});
+
+// Ref chips for EM presets — show info (frequencies far outside slider range)
+document.querySelectorAll('.ref-chip[data-f]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const f = parseFloat(chip.dataset.f);
+    const c_light = 3e8;
+    const lambda = c_light / f;
+    let fStr, lStr;
+    if (f >= 1e12) fStr = (f/1e12).toFixed(1) + ' THz';
+    else if (f >= 1e9) fStr = (f/1e9).toFixed(1) + ' GHz';
+    else if (f >= 1e6) fStr = (f/1e6).toFixed(1) + ' MHz';
+    else fStr = f.toExponential(2) + ' Hz';
+    if (lambda < 1e-6) lStr = (lambda*1e9).toFixed(1) + ' nm';
+    else if (lambda < 1e-3) lStr = (lambda*1e6).toFixed(1) + ' µm';
+    else if (lambda < 1) lStr = (lambda*100).toFixed(1) + ' cm';
+    else lStr = lambda.toFixed(2) + ' m';
+    $('explainer').innerHTML = `<strong style="color:var(--text)">${chip.textContent}:</strong> f = <span class="k">${fStr}</span>, λ = <span class="k">${lStr}</span>, v = <span class="k">3 × 10⁸ m s⁻¹</span> (speed of light in vacuum, same for all EM waves).`;
+  });
+});
+
+function applyTry(name) {
+  const presets = {
+    doubleF: { f: 4.0, lambda: 3.0, A: 1.0, note: '<strong>Doubled frequency:</strong> wave speed (v = fλ) doubles too, since λ is unchanged. Each point oscillates twice as fast. Note the d–t graph has twice as many cycles in the same time.' },
+    halfL:   { f: 2.0, lambda: 1.5, A: 1.0, note: '<strong>Halved wavelength:</strong> wave speed halves (v = 2 × 1.5 = 3 m/s). Crests are packed closer together. Frequency unchanged — each point still oscillates at 2 Hz.' },
+    bigA:    { f: 2.0, lambda: 3.0, A: 1.8, note: '<strong>Large amplitude:</strong> more energy is carried by the wave (E ∝ A²), but the speed, frequency and wavelength are unaffected. Amplitude relates to intensity, not speed.' },
+    slow:    { f: 0.8, lambda: 1.0, A: 1.0, note: '<strong>Slow wave (v = 0.8 m/s):</strong> low frequency and short wavelength. In a real medium, changing the medium changes wave speed. For sound in air, speed ≈ 340 m/s regardless of frequency.' }
+  };
+  const p = presets[name]; if (!p) return;
+  state.f = p.f; state.lambda = p.lambda; state.A = p.A;
+  $('sliderF').value = p.f; $('sliderL').value = p.lambda; $('sliderA').value = p.A;
+  dtHistory.length = 0;
+  $('tryNote').innerHTML = p.note;
+  updateReadouts();
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', () => {});
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  const DEFAULTS = { f: 2.0, lambda: 3.0, A: 1.0 };
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (k === ' ') {
+      e.preventDefault();
+      $('btnPause').click();
+    } else if (k.toLowerCase() === 'r') {
+      state.f = DEFAULTS.f; state.lambda = DEFAULTS.lambda; state.A = DEFAULTS.A;
+      $('sliderF').value = DEFAULTS.f; $('sliderL').value = DEFAULTS.lambda; $('sliderA').value = DEFAULTS.A;
+      dtHistory.length = 0; updateReadouts();
+    } else if (k === '+' || k === '=') {
+      state.f = Math.min(8, state.f + 0.5);
+      $('sliderF').value = state.f; dtHistory.length = 0; updateReadouts();
+    } else if (k === '-') {
+      state.f = Math.max(0.5, state.f - 0.5);
+      $('sliderF').value = state.f; dtHistory.length = 0; updateReadouts();
+    }
+  });
+})();
+
+updateReadouts();
+animId = requestAnimationFrame(loop);
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="projectile_motion.html">
+      <div class="related-title">Projectile Motion</div>
+      <div class="related-desc">Parabolic trajectories, velocity components, and the effect of launch angle</div>
+    </a>
+    <a class="related-card" href="half_life.html">
+      <div class="related-title">Radioactive Decay &amp; Half-Life</div>
+      <div class="related-desc">Exponential decay, random nuclear events, and isotope half-lives</div>
+    </a>
+    <a class="related-card" href="index.html">
+      <div class="related-title">All Simulations</div>
+      <div class="related-desc">Browse the full library of interactive GCSE and A-Level simulations</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electrolysis — Ionic Migration &amp; Electrode Reactions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 520px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.active { background: var(--cyan-soft); color: var(--cyan); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: none; background: transparent; padding: 6px 10px; border-radius: 8px; font-size: 12px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 15px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 460px; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.half-eq { background: var(--bg-elev-2); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 12px 14px; margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8; }
+.half-eq .cathode { color: var(--cyan); }
+.half-eq .anode { color: var(--amber); }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Electrolysis</h1>
+    <p class="sub">Ion migration, electrode reactions, and the products formed</p>
+    <p class="insight-banner">Reduction always occurs at the cathode (negative electrode) and oxidation at the anode. In aqueous solutions, the less reactive ion is discharged first — so concentrated brine gives Cl₂ at the anode, not O₂.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>Electrolyte: molten lead bromide</span>
+      <span class="kbd-key">2</span><span>Electrolyte: aqueous copper sulfate</span>
+      <span class="kbd-key">3</span><span>Electrolyte: brine (aq. NaCl)</span>
+      <span class="kbd-key">4</span><span>Electrolyte: aqueous sulfuric acid</span>
+      <span class="kbd-key">R</span><span>Reset animation</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3 id="cellTitle">Electrolytic cell</h3>
+        <span style="font-size:11px;color:var(--text-dim)" id="voltageLabel">Current: ON</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="cellCanvas"></canvas></div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Half-equations at each electrode</p>
+      <div class="half-eq" id="halfEq">
+        <div class="cathode" id="cathodeEq">—</div>
+        <div class="anode" id="anodeEq">—</div>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer">Select an electrolyte to see the electrode reactions.</div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Electrolyte</p>
+      <div class="seg" id="electrolytePicker" style="flex-direction:column;border-radius:var(--r-md);gap:4px;">
+        <button data-el="leadbromide" class="active">Molten lead(II) bromide</button>
+        <button data-el="coppersulfate">Aqueous copper(II) sulfate</button>
+        <button data-el="brine">Brine (aqueous NaCl)</button>
+        <button data-el="sulfuricacid">Dilute sulfuric acid (H₂SO₄)</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Electrode readouts</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl">Cathode product</div>
+          <div class="val cyan" id="oCathode">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Anode product</div>
+          <div class="val amber" id="oAnode">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Reduction: gain of electrons. Occurs at cathode (−).">Cathode rxn</div>
+          <div class="val green" style="font-size:12px;" id="oCathodeType">Reduction</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Oxidation: loss of electrons. Occurs at anode (+).">Anode rxn</div>
+          <div class="val rose" style="font-size:12px;" id="oAnodeType">Oxidation</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Ions present</p>
+      <div id="ionList" style="font-size:12px;color:var(--text-dim);line-height:1.9;"></div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="leadbromide">Molten PbBr₂</button>
+        <button data-try="coppersulfate">CuSO₄ (aq)</button>
+        <button data-try="brine">Brine — chlorine!</button>
+        <button data-try="sulfuricacid">H₂O electrolysis</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="reaction_rates.html">
+      <div class="related-title">Rates of Reaction</div>
+      <div class="related-desc">Collision theory — temperature, concentration, surface area, and catalysts.</div>
+    </a>
+    <a class="related-card" href="atomic_structure.html">
+      <div class="related-title">Atomic Structure &amp; Isotopes</div>
+      <div class="related-desc">Build atoms, explore ions and electron shells, and understand isotopes.</div>
+    </a>
+    <a class="related-card" href="half_life.html">
+      <div class="related-title">Radioactive Decay &amp; Half-life</div>
+      <div class="related-desc">Exponential decay, half-life, and nuclear stability.</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr;
+  c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+// ── Electrolyte data ──────────────────────────────────────────────────────────
+const electrolytes = {
+  leadbromide: {
+    name: 'Molten lead(II) bromide',
+    state: 'molten',
+    ions: [
+      { symbol: 'Pb²⁺', charge: +2, color: '#a78bfa', migrateTo: 'cathode' },
+      { symbol: 'Br⁻',  charge: -1, color: '#f59e0b', migrateTo: 'anode' }
+    ],
+    cathodeProduct: 'Lead (Pb)',
+    anodeProduct: 'Bromine (Br₂)',
+    cathodeEq: 'Cathode (−): Pb²⁺ + 2e⁻ → Pb',
+    anodeEq:   'Anode (+):  2Br⁻ → Br₂ + 2e⁻',
+    explanation: '<span class="k">Molten PbBr₂</span> contains free Pb²⁺ and Br⁻ ions. Pb²⁺ ions migrate to the cathode (−) where they each gain 2 electrons: <span class="k">Pb²⁺ + 2e⁻ → Pb</span> (silvery liquid lead is deposited). Br⁻ ions migrate to the anode (+) and lose electrons: <span class="k">2Br⁻ → Br₂ + 2e⁻</span> (brown bromine vapour is produced). This is reduction and oxidation respectively — redox at electrodes.'
+  },
+  coppersulfate: {
+    name: 'Aqueous copper(II) sulfate',
+    state: 'aqueous',
+    ions: [
+      { symbol: 'Cu²⁺',  charge: +2, color: '#22d3ee', migrateTo: 'cathode' },
+      { symbol: 'SO₄²⁻', charge: -2, color: '#f43f5e', migrateTo: 'anode' },
+      { symbol: 'H⁺',    charge: +1, color: '#fbbf24', migrateTo: 'cathode' },
+      { symbol: 'OH⁻',   charge: -1, color: '#34d399', migrateTo: 'anode' }
+    ],
+    cathodeProduct: 'Copper (Cu)',
+    anodeProduct: 'Oxygen (O₂)',
+    cathodeEq: 'Cathode (−): Cu²⁺ + 2e⁻ → Cu',
+    anodeEq:   'Anode (+):  4OH⁻ → 2H₂O + O₂ + 4e⁻',
+    explanation: 'In <span class="k">aqueous CuSO₄</span>, both Cu²⁺ and H⁺ migrate to the cathode. Cu²⁺ is discharged in preference to H⁺ (copper is less reactive than hydrogen), so copper metal is deposited: <span class="k">Cu²⁺ + 2e⁻ → Cu</span>. At the anode, OH⁻ is discharged in preference to SO₄²⁻ (sulfate is very stable), producing oxygen gas: <span class="k">4OH⁻ → 2H₂O + O₂ + 4e⁻</span>. This principle is used in electroplating.'
+  },
+  brine: {
+    name: 'Brine (concentrated aq. NaCl)',
+    state: 'aqueous',
+    ions: [
+      { symbol: 'Na⁺',  charge: +1, color: '#a78bfa', migrateTo: 'cathode' },
+      { symbol: 'Cl⁻',  charge: -1, color: '#f59e0b', migrateTo: 'anode' },
+      { symbol: 'H⁺',   charge: +1, color: '#fbbf24', migrateTo: 'cathode' },
+      { symbol: 'OH⁻',  charge: -1, color: '#34d399', migrateTo: 'anode' }
+    ],
+    cathodeProduct: 'Hydrogen (H₂)',
+    anodeProduct: 'Chlorine (Cl₂)',
+    cathodeEq: 'Cathode (−): 2H⁺ + 2e⁻ → H₂',
+    anodeEq:   'Anode (+):  2Cl⁻ → Cl₂ + 2e⁻',
+    explanation: '<span class="k">Concentrated brine</span> is a key industrial electrolysis. At the cathode, H⁺ is discharged (Na is too reactive to be deposited from aqueous solution): <span class="k">2H⁺ + 2e⁻ → H₂</span>. At the anode, Cl⁻ is present in much higher concentration than OH⁻, so chlorine is produced rather than oxygen: <span class="k">2Cl⁻ → Cl₂ + 2e⁻</span>. The three products — Cl₂, H₂, and NaOH (remaining in solution) — are all commercially important (chlorine for plastics; NaOH for soap).'
+  },
+  sulfuricacid: {
+    name: 'Dilute sulfuric acid (H₂SO₄)',
+    state: 'aqueous',
+    ions: [
+      { symbol: 'H⁺',    charge: +1, color: '#fbbf24', migrateTo: 'cathode' },
+      { symbol: 'SO₄²⁻', charge: -2, color: '#f43f5e', migrateTo: 'anode' },
+      { symbol: 'OH⁻',   charge: -1, color: '#34d399', migrateTo: 'anode' }
+    ],
+    cathodeProduct: 'Hydrogen (H₂)',
+    anodeProduct: 'Oxygen (O₂)',
+    cathodeEq: 'Cathode (−): 2H⁺ + 2e⁻ → H₂',
+    anodeEq:   'Anode (+):  4OH⁻ → 2H₂O + O₂ + 4e⁻',
+    explanation: '<span class="k">Dilute H₂SO₄</span> effectively electrolyses water. H⁺ ions migrate to the cathode: <span class="k">2H⁺ + 2e⁻ → H₂</span> (hydrogen gas, ratio 2:1 by volume). OH⁻ ions migrate to the anode and discharge in preference to SO₄²⁻: <span class="k">4OH⁻ → 2H₂O + O₂ + 4e⁻</span> (oxygen gas). The overall equation is <span class="k">2H₂O → 2H₂ + O₂</span>. This is used in hydrogen fuel cell research.'
+  }
+};
+
+// ── Simulation state ──────────────────────────────────────────────────────────
+let currentEl = 'leadbromide';
+let ions = [];
+let bubbles = [];
+let deposits = [];
+let frame = 0;
+
+function initIons(W, H) {
+  ions = [];
+  bubbles = [];
+  deposits = [];
+  frame = 0;
+  const el = electrolytes[currentEl];
+  const cellLeft = W * 0.18;
+  const cellRight = W * 0.82;
+  const cellTop = H * 0.12;
+  const cellBot = H * 0.85;
+  const cellW = cellRight - cellLeft;
+  const cellH = cellBot - cellTop;
+
+  const countPerType = 18;
+  el.ions.forEach(ionDef => {
+    for (let i = 0; i < countPerType; i++) {
+      const x = cellLeft + Math.random() * cellW;
+      const y = cellTop + Math.random() * cellH;
+      const speed = 0.5 + Math.random() * 0.5;
+      const dir = ionDef.migrateTo === 'cathode' ? -1 : 1; // cathode on left
+      ions.push({
+        x, y,
+        vx: dir * speed * (0.3 + Math.random() * 0.4),
+        vy: (Math.random() - 0.5) * speed,
+        symbol: ionDef.symbol,
+        charge: ionDef.charge,
+        color: ionDef.color,
+        migrateTo: ionDef.migrateTo,
+        r: 12,
+        arrived: false,
+        cellLeft, cellRight, cellTop, cellBot
+      });
+    }
+  });
+}
+
+function stepIons(W, H) {
+  const cathodeX = W * 0.18 + 10;
+  const anodeX   = W * 0.82 - 10;
+  const cellTop  = H * 0.12;
+  const cellBot  = H * 0.85;
+
+  for (const ion of ions) {
+    if (ion.arrived) continue;
+    ion.x += ion.vx;
+    ion.y += ion.vy;
+    // Brownian motion
+    ion.vx += (Math.random() - 0.5) * 0.15;
+    ion.vy += (Math.random() - 0.5) * 0.15;
+    // Drift bias toward electrode
+    const targetX = ion.migrateTo === 'cathode' ? cathodeX : anodeX;
+    ion.vx += (targetX - ion.x) * 0.0008;
+    // clamp speed
+    const spd = Math.hypot(ion.vx, ion.vy);
+    const maxSpd = 1.8;
+    if (spd > maxSpd) { ion.vx *= maxSpd / spd; ion.vy *= maxSpd / spd; }
+    // vertical bounce inside cell
+    if (ion.y < cellTop + ion.r) { ion.y = cellTop + ion.r; ion.vy = Math.abs(ion.vy); }
+    if (ion.y > cellBot - ion.r) { ion.y = cellBot - ion.r; ion.vy = -Math.abs(ion.vy); }
+    // arrived at electrode?
+    if (ion.migrateTo === 'cathode' && ion.x < cathodeX + ion.r + 4) {
+      ion.arrived = true;
+      // produce deposit or bubble
+      spawnProduct(ion, 'cathode', W, H);
+      // respawn at random x
+      ion.x = W * 0.4 + Math.random() * (W * 0.3);
+      ion.y = cellTop + Math.random() * (cellBot - cellTop);
+      ion.vx = -(0.4 + Math.random() * 0.4);
+      ion.arrived = false;
+    }
+    if (ion.migrateTo === 'anode' && ion.x > anodeX - ion.r - 4) {
+      ion.arrived = true;
+      spawnProduct(ion, 'anode', W, H);
+      ion.x = W * 0.3 + Math.random() * (W * 0.3);
+      ion.y = cellTop + Math.random() * (cellBot - cellTop);
+      ion.vx = 0.4 + Math.random() * 0.4;
+      ion.arrived = false;
+    }
+  }
+
+  // animate bubbles
+  for (const b of bubbles) {
+    b.y -= b.spd;
+    b.x += Math.sin(b.phase + frame * 0.05) * 0.3;
+    b.alpha -= 0.004;
+  }
+  bubbles = bubbles.filter(b => b.alpha > 0 && b.y > H * 0.02);
+  frame++;
+}
+
+function spawnProduct(ion, electrode, W, H) {
+  const el = electrolytes[currentEl];
+  const isGas = electrode === 'anode'
+    ? el.anodeProduct.includes('₂') || el.anodeProduct.includes('gas')
+    : el.cathodeProduct.includes('₂');
+
+  const x = electrode === 'cathode' ? W * 0.18 + 12 : W * 0.82 - 12;
+  const y = H * 0.5 + (Math.random() - 0.5) * H * 0.3;
+  if (isGas || (electrode === 'cathode' && el.cathodeProduct.includes('H₂'))
+            || (electrode === 'anode' && el.anodeProduct.includes('O₂') || el.anodeProduct.includes('Cl₂'))) {
+    bubbles.push({ x, y, r: 4 + Math.random() * 4, spd: 0.8 + Math.random() * 0.5,
+      alpha: 0.9, phase: Math.random() * Math.PI * 2,
+      color: electrode === 'cathode' ? '#22d3ee' : '#f59e0b' });
+  } else {
+    deposits.push({ x, y: H * 0.75 + Math.random() * (H * 0.08), r: 3 + Math.random() * 2,
+      color: '#a78bfa', electrode });
+    if (deposits.length > 80) deposits.shift();
+  }
+}
+
+// ── Drawing ───────────────────────────────────────────────────────────────────
+function drawCell() {
+  const c = $('cellCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d1219';
+  ctx.fillRect(0, 0, W, H);
+
+  const cellLeft  = W * 0.18;
+  const cellRight = W * 0.82;
+  const cellTop   = H * 0.12;
+  const cellBot   = H * 0.85;
+  const cellW = cellRight - cellLeft;
+  const cathodeX = cellLeft;
+  const anodeX   = cellRight;
+  const elDef    = electrolytes[currentEl];
+
+  // External circuit wire
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(cathodeX, cellTop - 20);
+  ctx.lineTo(cathodeX, cellTop - 60);
+  ctx.lineTo(W * 0.5, cellTop - 60);
+  ctx.moveTo(anodeX, cellTop - 20);
+  ctx.lineTo(anodeX, cellTop - 60);
+  ctx.lineTo(W * 0.5, cellTop - 60);
+  ctx.stroke();
+
+  // Battery symbol
+  const bx = W * 0.5, by = cellTop - 60;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2;
+  // long plate (positive)
+  ctx.beginPath(); ctx.moveTo(bx - 16, by - 12); ctx.lineTo(bx - 16, by + 12); ctx.stroke();
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(bx, by - 8); ctx.lineTo(bx, by + 8); ctx.stroke();
+  ctx.lineWidth = 2;
+  ctx.fillStyle = '#f59e0b'; ctx.font = 'bold 13px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('+', bx + 18, by + 5);
+  ctx.fillStyle = '#97a1b0';
+  ctx.fillText('−', bx - 30, by + 5);
+
+  // Electron flow arrows along wire (electrolytic cell):
+  // Battery (−) drives electrons → cathode (left wire: electrons travel leftward toward cathode)
+  // Anode → battery (+) (right wire: electrons travel leftward from anode toward battery centre)
+  ctx.fillStyle = '#22d3ee';
+  ctx.font = '12px Inter';
+  ctx.fillText('← e⁻', cathodeX + 10, cellTop - 68); // electrons from battery (−) toward cathode
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillText('← e⁻', anodeX - 44, cellTop - 68);   // electrons from anode toward battery (+)
+
+  // Electrolyte liquid
+  const el_state = elDef.state;
+  ctx.fillStyle = el_state === 'molten' ? 'rgba(245,158,11,0.07)' : 'rgba(34,211,238,0.06)';
+  ctx.fillRect(cellLeft + 12, cellTop, cellW - 24, cellBot - cellTop);
+
+  // Cell walls
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cellLeft + 12, cellTop);
+  ctx.lineTo(cellLeft + 12, cellBot);
+  ctx.lineTo(cellRight - 12, cellBot);
+  ctx.lineTo(cellRight - 12, cellTop);
+  ctx.stroke();
+
+  // Cathode electrode (−, left)
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillRect(cathodeX, cellTop - 20, 12, cellBot - cellTop + 20);
+  ctx.fillStyle = '#0d1219';
+  ctx.font = 'bold 14px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('−', cathodeX + 6, cellTop - 26);
+  ctx.fillStyle = '#22d3ee';
+  ctx.font = '11px Inter';
+  ctx.fillText('CATHODE', cathodeX + 6, cellBot + 16);
+  ctx.font = '10px Inter';
+  ctx.fillStyle = '#97a1b0';
+  ctx.fillText('reduction', cathodeX + 6, cellBot + 30);
+
+  // Anode electrode (+, right)
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillRect(anodeX - 12, cellTop - 20, 12, cellBot - cellTop + 20);
+  ctx.fillStyle = '#0d1219';
+  ctx.font = 'bold 14px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('+', anodeX - 6, cellTop - 26);
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = '11px Inter';
+  ctx.fillText('ANODE', anodeX - 6, cellBot + 16);
+  ctx.font = '10px Inter';
+  ctx.fillStyle = '#97a1b0';
+  ctx.fillText('oxidation', anodeX - 6, cellBot + 30);
+
+  // Deposits
+  for (const d of deposits) {
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+    ctx.fillStyle = elDef.cathodeProduct.includes('Pb') ? '#a78bfa' : '#22d3ee';
+    ctx.fill();
+  }
+
+  // Bubbles
+  for (const b of bubbles) {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.strokeStyle = b.color.replace(')', `, ${b.alpha})`).replace('rgb', 'rgba').replace('#', '');
+    // simpler:
+    ctx.globalAlpha = b.alpha;
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.globalAlpha = b.alpha * 0.2;
+    ctx.fillStyle = b.color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  // Ions
+  for (const ion of ions) {
+    ctx.beginPath();
+    ctx.arc(ion.x, ion.y, ion.r, 0, Math.PI * 2);
+    ctx.fillStyle = ion.color + '33';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(ion.x, ion.y, ion.r - 3, 0, Math.PI * 2);
+    ctx.fillStyle = ion.color;
+    ctx.fill();
+    ctx.fillStyle = '#0d1219';
+    ctx.font = 'bold 7px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const sym = ion.symbol.length > 4 ? ion.symbol.substring(0,3) : ion.symbol;
+    ctx.fillText(sym, ion.x, ion.y);
+  }
+  ctx.textBaseline = 'alphabetic';
+
+  // Cathode product label
+  ctx.fillStyle = '#22d3ee';
+  ctx.font = '12px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText(elDef.cathodeProduct, cathodeX + 16, cellTop + 24);
+
+  // Anode product label
+  ctx.fillStyle = '#f59e0b';
+  ctx.textAlign = 'right';
+  ctx.fillText(elDef.anodeProduct, anodeX - 16, cellTop + 24);
+
+  // Electrolyte label
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '11px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText(elDef.name, W / 2, cellBot - 10);
+}
+
+// ── Update panel ──────────────────────────────────────────────────────────────
+function updatePanel() {
+  const el = electrolytes[currentEl];
+  $('oCathode').textContent = el.cathodeProduct;
+  $('oAnode').textContent = el.anodeProduct;
+  $('cathodeEq').textContent = el.cathodeEq;
+  $('anodeEq').textContent = el.anodeEq;
+  $('explainer').innerHTML = el.explanation;
+  $('ionList').innerHTML = el.ions.map(i =>
+    `<span style="color:${i.color};font-family:'JetBrains Mono',monospace;font-size:13px;">${i.symbol}</span> &nbsp;(charge ${i.charge > 0 ? '+' + i.charge : i.charge}, migrates to ${i.migrateTo})<br>`
+  ).join('');
+}
+
+// ── Animation loop ────────────────────────────────────────────────────────────
+let animId = null;
+function loop() {
+  const c = $('cellCanvas');
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  if (ions.length === 0) initIons(W, H);
+  stepIons(W, H);
+  drawCell();
+  animId = requestAnimationFrame(loop);
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+function selectElectrolyte(key) {
+  currentEl = key;
+  document.querySelectorAll('#electrolytePicker button').forEach(b => {
+    b.classList.toggle('active', b.dataset.el === key);
+  });
+  const c = $('cellCanvas');
+  initIons(c.getBoundingClientRect().width, c.getBoundingClientRect().height);
+  updatePanel();
+}
+
+document.querySelectorAll('#electrolytePicker button').forEach(b => {
+  b.addEventListener('click', () => selectElectrolyte(b.dataset.el));
+});
+
+const tryNotes = {
+  leadbromide: '<strong>Simplest case:</strong> only two ions present (molten, so no water). Pb²⁺ reduced to liquid lead at cathode; Br⁻ oxidised to brown Br₂ vapour at anode. Classic GCSE example.',
+  coppersulfate: '<strong>Selective discharge:</strong> Cu²⁺ is less reactive than H⁺, so it is preferentially deposited. Used in electroplating — swap to a copper anode and the copper electrode dissolves to replenish Cu²⁺.',
+  brine: '<strong>Industrial chlor-alkali process:</strong> H⁺ discharged (not Na⁺); Cl⁻ discharged at anode because its concentration dominates over OH⁻. Three valuable products: Cl₂, H₂, NaOH.',
+  sulfuricacid: '<strong>Water electrolysis:</strong> H₂SO₄ carries the charge but H₂O is effectively split. Cathode:anode gas volume ratio is 2:1 (H₂:O₂). The overall equation is simply 2H₂O → 2H₂ + O₂.'
+};
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    selectElectrolyte(b.dataset.try);
+    $('tryNote').innerHTML = tryNotes[b.dataset.try] || '';
+  });
+});
+
+window.addEventListener('resize', () => {
+  const c = $('cellCanvas');
+  initIons(c.getBoundingClientRect().width, c.getBoundingClientRect().height);
+});
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  const order = ['leadbromide', 'coppersulfate', 'brine', 'sulfuricacid'];
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (k === '1') selectElectrolyte('leadbromide');
+    else if (k === '2') selectElectrolyte('coppersulfate');
+    else if (k === '3') selectElectrolyte('brine');
+    else if (k === '4') selectElectrolyte('sulfuricacid');
+    else if (k.toLowerCase() === 'r') {
+      const c = $('cellCanvas');
+      initIons(c.getBoundingClientRect().width, c.getBoundingClientRect().height);
+    }
+  });
+})();
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+updatePanel();
+loop();
+</script>
+</body>
+</html>

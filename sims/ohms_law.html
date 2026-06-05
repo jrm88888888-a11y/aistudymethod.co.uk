@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ohm's Law & I–V Characteristics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 440px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+
+/* Circuit diagram panel */
+.circuit-panel { width: 100%; height: 180px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Ohm's Law &amp; I–V Characteristics</h1>
+    <p class="sub">Voltage, current and resistance · V = IR · Ohmic and non-ohmic components</p>
+    <p class="insight-banner">An ohmic conductor has a constant resistance — its I–V graph is a straight line through the origin. A filament lamp and a diode are non-ohmic: resistance changes with conditions.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>Ohmic resistor</span>
+      <span class="kbd-key">2</span><span>Filament lamp</span>
+      <span class="kbd-key">3</span><span>Diode</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>I–V Characteristic curve</h3>
+        <div class="seg" id="compToggle">
+          <button data-comp="resistor" class="active">Resistor</button>
+          <button data-comp="lamp">Filament lamp</button>
+          <button data-comp="diode">Diode</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="ivCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>I–V curve</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Operating point</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Slope = 1/R</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Circuit diagram</h3>
+      </div>
+      <canvas id="circuitCanvas" class="circuit-panel"></canvas>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Circuit controls</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Voltage across the component in volts (V).">Voltage V (V)</span>
+          <span class="value num" id="vVoltage">6.0</span>
+        </div>
+        <input type="range" id="sliderV" min="-12" max="12" step="0.1" value="6">
+      </div>
+      <div class="control" id="rControl">
+        <div class="control-row">
+          <span class="label" title="Resistance in ohms (Ω). For the ohmic resistor, this is constant.">Resistance R (Ω)</span>
+          <span class="value num" id="vResistance">100</span>
+        </div>
+        <input type="range" id="sliderR" min="10" max="500" step="10" value="100">
+        <div class="refs">
+          <span class="ref-chip" data-r="10">10 Ω</span>
+          <span class="ref-chip" data-r="47">47 Ω</span>
+          <span class="ref-chip" data-r="100">100 Ω</span>
+          <span class="ref-chip" data-r="330">330 Ω</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Readouts</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Voltage V</div><div class="val cyan" id="oVoltage">6.0 V</div></div>
+        <div class="readout"><div class="lbl">Current I</div><div class="val amber" id="oCurrent">60.0 mA</div></div>
+        <div class="readout"><div class="lbl" title="Resistance R = V/I at the current operating point.">Resistance R</div><div class="val rose" id="oResistance">100 Ω</div></div>
+        <div class="readout"><div class="lbl" title="Power dissipated: P = IV = V²/R = I²R">Power P</div><div class="val green" id="oPower">0.36 W</div></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Show all curves</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);cursor:pointer;">
+          <input type="checkbox" id="chkResistor" checked style="accent-color:var(--cyan);"> <span style="color:var(--cyan)">Resistor</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);cursor:pointer;">
+          <input type="checkbox" id="chkLamp" style="accent-color:var(--green);"> <span style="color:var(--green)">Filament lamp</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);cursor:pointer;">
+          <input type="checkbox" id="chkDiode" style="accent-color:var(--violet);"> <span style="color:var(--violet)">Diode</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="highR">High resistance wire</button>
+        <button data-try="lampHeat">Lamp heating up</button>
+        <button data-try="diodeFwd">Diode forward bias</button>
+        <button data-try="diodeRev">Diode reverse bias</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const state = {
+  V: 6,
+  R: 100,
+  comp: 'resistor',
+  showResistor: true,
+  showLamp: false,
+  showDiode: false
+};
+
+// --- Physics models ---
+// Ohmic resistor: I = V/R
+function iResistor(v, r) { return v / r; }
+
+// Filament lamp: resistance increases with temperature.
+// Model: R(T) ∝ T, and temperature determined by power balance.
+// Simplified curve: R_lamp(V) = R0 * (1 + k*|V|^1.5) — mimics heating effect.
+// At low V, R ≈ R0 (cold). At high V, R >> R0 (hot, steeper V, less I increase).
+// R0 ~ 8Ω (cold filament), at 12V room V it reaches ~200Ω.
+function iLamp(v) {
+  const R0 = 6;       // cold resistance (Ω)
+  const k = 0.18;
+  const R = R0 * (1 + k * Math.pow(Math.abs(v), 1.8));
+  return v / R;
+}
+
+// Diode: Shockley equation I = Is*(exp(V/Vt) - 1)
+// Is ~ 1e-10 A, Vt = 0.026 V at room temp, but we scale for visual clarity.
+// We'll use a pragmatic model: clamp to avoid overflow.
+function iDiode(v) {
+  const Is = 1e-9;
+  const Vt = 0.026;
+  if (v > 0) {
+    const exp_arg = v / Vt;
+    if (exp_arg > 20) return Is * Math.exp(20) + (exp_arg - 20) * Is * Math.exp(20) * 0.1;
+    return Is * (Math.exp(exp_arg) - 1);
+  } else {
+    // Reverse: tiny leakage current -Is
+    return -Is;
+  }
+}
+
+// Get current for active component
+function getCurrent(v) {
+  if (state.comp === 'resistor') return iResistor(v, state.R);
+  if (state.comp === 'lamp') return iLamp(v);
+  if (state.comp === 'diode') return iDiode(v);
+  return 0;
+}
+
+// For display: clamp diode current to visible range
+function getDisplayCurrent(v) {
+  const i = getCurrent(v);
+  // clamp to ±5A for display
+  return Math.max(-5, Math.min(5, i));
+}
+
+function getResistanceAtPoint(v) {
+  if (Math.abs(v) < 1e-6) return state.R;
+  const i = getCurrent(v);
+  if (Math.abs(i) < 1e-12) return Infinity;
+  return v / i;
+}
+
+function drawIV() {
+  const c = $('ivCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 64, r: 24, t: 24, b: 48 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  // Axis ranges
+  const vMin = -12, vMax = 12;
+  const iMin = -0.25, iMax = 0.25; // ±250 mA for resistor/lamp
+
+  // For diode: use different range
+  let I_min = iMin, I_max = iMax;
+  if (state.comp === 'diode') { I_min = -0.05; I_max = 1.2; }
+  if (state.comp === 'resistor') {
+    const iAtMax = Math.abs(iResistor(vMax, state.R));
+    I_max = Math.max(iAtMax * 1.2, 0.05);
+    I_min = -I_max;
+  }
+  if (state.comp === 'lamp') { I_min = -1.5; I_max = 1.5; }
+
+  const xAt = v => pad.l + ((v - vMin) / (vMax - vMin)) * pw;
+  const yAt = i => pad.t + ((I_max - i) / (I_max - I_min)) * ph;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  const vStep = 4;
+  for (let v = vMin; v <= vMax; v += vStep) {
+    const x = xAt(v);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+  const iSteps = 5;
+  for (let j = 0; j <= iSteps; j++) {
+    const i = I_min + (I_max - I_min) * j / iSteps;
+    const y = yAt(i);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = '#5b6573'; ctx.lineWidth = 1.5;
+  // x-axis (I=0)
+  const y0 = yAt(0);
+  ctx.beginPath(); ctx.moveTo(pad.l, y0); ctx.lineTo(W - pad.r, y0); ctx.stroke();
+  // y-axis (V=0)
+  const x0 = xAt(0);
+  ctx.beginPath(); ctx.moveTo(x0, pad.t); ctx.lineTo(x0, H - pad.b); ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let j = 0; j <= iSteps; j++) {
+    const i = I_min + (I_max - I_min) * j / iSteps;
+    const y = yAt(i);
+    let label;
+    if (Math.abs(I_max) < 0.5) label = (i * 1000).toFixed(0) + 'mA';
+    else label = i.toFixed(2) + 'A';
+    ctx.fillText(label, pad.l - 6, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let v = vMin; v <= vMax; v += vStep) {
+    if (v === 0) continue;
+    ctx.fillText(v + 'V', xAt(v), H - pad.b + 6);
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Voltage V / V', pad.l + pw / 2, H - 12);
+  ctx.save(); ctx.translate(14, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Current I / A', 0, 0); ctx.restore();
+
+  // Helper to draw a curve
+  function drawCurve(iFunc, color, vRangeMin, vRangeMax, iScaleMax) {
+    ctx.beginPath();
+    const steps = 300;
+    let first = true;
+    for (let k = 0; k <= steps; k++) {
+      const v = vRangeMin + (vRangeMax - vRangeMin) * k / steps;
+      let i = iFunc(v);
+      i = Math.max(-iScaleMax * 2, Math.min(iScaleMax * 2, i));
+      const x = xAt(v);
+      const y = yAt(i);
+      if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.stroke();
+  }
+
+  // Overlay curves if checked
+  if (state.showResistor && state.comp !== 'resistor') {
+    drawCurve(v => iResistor(v, state.R), 'rgba(34,211,238,0.45)', vMin, vMax, I_max);
+  }
+  if (state.showLamp && state.comp !== 'lamp') {
+    drawCurve(iLamp, 'rgba(52,211,153,0.45)', vMin, vMax, I_max);
+  }
+  if (state.showDiode && state.comp !== 'diode') {
+    // Diode curve — draw in violet with clamped current
+    const dMax = I_max;
+    ctx.beginPath();
+    let first = true;
+    for (let k = 0; k <= 300; k++) {
+      const v = vMin + (vMax - vMin) * k / 300;
+      let i = iDiode(v);
+      i = Math.max(-dMax * 2, Math.min(dMax * 2, i));
+      const x = xAt(v), y = yAt(i);
+      if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
+    }
+    ctx.strokeStyle = 'rgba(167,139,250,0.45)'; ctx.lineWidth = 2.2; ctx.stroke();
+  }
+
+  // Active component curve
+  if (state.comp === 'resistor') {
+    drawCurve(v => iResistor(v, state.R), '#22d3ee', vMin, vMax, I_max);
+  } else if (state.comp === 'lamp') {
+    drawCurve(iLamp, '#22d3ee', vMin, vMax, I_max);
+  } else if (state.comp === 'diode') {
+    // diode: draw carefully
+    ctx.beginPath();
+    let first = true;
+    for (let k = 0; k <= 400; k++) {
+      const v = vMin + (vMax - vMin) * k / 400;
+      let i = iDiode(v);
+      i = Math.max(I_min * 2, Math.min(I_max * 1.05, i));
+      const x = xAt(v), y = yAt(i);
+      if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
+    }
+    ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.2; ctx.stroke();
+  }
+
+  // Operating point dot
+  const opI = getDisplayCurrent(state.V);
+  const opX = xAt(state.V);
+  const opY = yAt(Math.max(I_min, Math.min(I_max, opI)));
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath(); ctx.arc(opX, opY, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(245,158,11,0.3)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(opX, opY, 11, 0, Math.PI * 2); ctx.stroke();
+
+  // Dashed lines to axes from operating point
+  ctx.save(); ctx.setLineDash([3,3]);
+  ctx.strokeStyle = 'rgba(245,158,11,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(opX, opY); ctx.lineTo(opX, y0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(opX, opY); ctx.lineTo(x0, opY); ctx.stroke();
+  ctx.restore();
+
+  // Box
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function drawCircuit() {
+  const c = $('circuitCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2, cy = H / 2;
+  const bw = Math.min(W * 0.7, 320), bh = Math.min(H * 0.75, 120);
+  const left = cx - bw/2, right = cx + bw/2;
+  const top = cy - bh/2, bottom = cy + bh/2;
+
+  ctx.strokeStyle = '#5b6573'; ctx.lineWidth = 2;
+  // Top wire
+  ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(right, top); ctx.stroke();
+  // Bottom wire
+  ctx.beginPath(); ctx.moveTo(left, bottom); ctx.lineTo(right, bottom); ctx.stroke();
+  // Left wire with battery
+  ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(left, top + bh*0.3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(left, bottom - bh*0.3); ctx.lineTo(left, bottom); ctx.stroke();
+  // Right wire with component
+  ctx.beginPath(); ctx.moveTo(right, top); ctx.lineTo(right, top + bh*0.25); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(right, bottom - bh*0.25); ctx.lineTo(right, bottom); ctx.stroke();
+
+  // Battery on left
+  const batY = cy;
+  const batH = bh * 0.35;
+  // Long plate (+)
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(left - 10, batY - batH*0.45); ctx.lineTo(left + 10, batY - batH*0.45); ctx.stroke();
+  // Short plate (-)
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(left - 6, batY + batH*0.1); ctx.lineTo(left + 6, batY + batH*0.1); ctx.stroke();
+  ctx.fillStyle = '#22d3ee'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillText('+', left + 14, batY - batH*0.4);
+  ctx.fillText('−', left + 14, batY + batH*0.15);
+  ctx.fillStyle = '#97a1b0'; ctx.font = '12px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText(Math.abs(state.V).toFixed(1) + ' V', left, batY - batH*0.65);
+
+  // Component on right
+  const compY = cy;
+  const compH = bh * 0.45;
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
+
+  if (state.comp === 'resistor') {
+    // Zigzag resistor
+    const rw = 22, rh = compH * 0.6;
+    const steps = 6;
+    ctx.beginPath(); ctx.moveTo(right, compY - compH*0.5);
+    ctx.lineTo(right, compY - rh/2);
+    for (let j = 0; j <= steps; j++) {
+      const py = compY - rh/2 + j * rh / steps;
+      const px = right + (j % 2 === 0 ? rw : -rw);
+      ctx.lineTo(px, py);
+    }
+    ctx.lineTo(right, compY + rh/2);
+    ctx.lineTo(right, compY + compH*0.5);
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'left';
+    ctx.fillText(state.R + ' Ω', right + 28, compY - 4);
+    ctx.fillStyle = '#f59e0b'; ctx.font = '12px Inter';
+    ctx.fillText('Resistor', right + 28, compY + 14);
+  } else if (state.comp === 'lamp') {
+    // Circle with cross — lamp symbol
+    const r = compH * 0.28;
+    ctx.beginPath(); ctx.moveTo(right, compY - compH*0.5); ctx.lineTo(right, compY - r); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(right, compY + r); ctx.lineTo(right, compY + compH*0.5); ctx.stroke();
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(right, compY, r, 0, Math.PI*2); ctx.stroke();
+    // Cross inside
+    ctx.beginPath();
+    ctx.moveTo(right - r*0.7, compY - r*0.7); ctx.lineTo(right + r*0.7, compY + r*0.7);
+    ctx.moveTo(right + r*0.7, compY - r*0.7); ctx.lineTo(right - r*0.7, compY + r*0.7);
+    ctx.stroke();
+    ctx.fillStyle = '#f59e0b'; ctx.font = '12px Inter'; ctx.textAlign = 'left';
+    ctx.fillText('Filament lamp', right + r + 8, compY - 6);
+  } else if (state.comp === 'diode') {
+    // Triangle + bar diode symbol
+    const dh = compH * 0.35;
+    ctx.beginPath(); ctx.moveTo(right, compY - compH*0.5); ctx.lineTo(right, compY - dh/2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(right, compY + dh/2); ctx.lineTo(right, compY + compH*0.5); ctx.stroke();
+    // triangle (anode at top, cathode at bottom — current enters top from + terminal = forward bias when V>0)
+    ctx.fillStyle = state.V >= 0 ? '#f59e0b' : '#f43f5e';
+    ctx.beginPath();
+    ctx.moveTo(right, compY + dh/2);
+    ctx.lineTo(right - dh*0.5, compY - dh/2);
+    ctx.lineTo(right + dh*0.5, compY - dh/2);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = state.V >= 0 ? '#f59e0b' : '#f43f5e'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(right - dh*0.55, compY + dh/2); ctx.lineTo(right + dh*0.55, compY + dh/2); ctx.stroke();
+    ctx.fillStyle = '#f59e0b'; ctx.font = '12px Inter'; ctx.textAlign = 'left';
+    ctx.fillText('Diode', right + dh*0.6, compY - 6);
+    const dirText = state.V >= 0 ? 'Forward bias' : 'Reverse bias';
+    ctx.fillStyle = state.V >= 0 ? '#34d399' : '#f43f5e'; ctx.font = '11px Inter';
+    ctx.fillText(dirText, right + dh*0.6, compY + 12);
+  }
+
+  // Ammeter on bottom wire
+  const aMid = (left + right) / 2;
+  ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2;
+  const ar = 14;
+  ctx.beginPath(); ctx.arc(aMid, bottom, ar, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = '#34d399'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('A', aMid, bottom);
+  ctx.textBaseline = 'alphabetic';
+
+  // Current direction arrow on top wire
+  const I = getCurrent(state.V);
+  if (Math.abs(I) > 1e-10) {
+    const arrowDir = I > 0 ? 1 : -1;
+    const ax = cx + arrowDir * 30;
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(ax + arrowDir*10, top);
+    ctx.lineTo(ax - arrowDir*6, top - 7);
+    ctx.lineTo(ax - arrowDir*6, top + 7);
+    ctx.closePath(); ctx.fill();
+  }
+}
+
+function updateReadouts() {
+  const V = state.V;
+  const I = getCurrent(V);
+  const R_op = Math.abs(I) > 1e-10 ? V / I : Infinity;
+  const P = V * I;
+
+  $('vVoltage').textContent = V.toFixed(1);
+  $('oVoltage').textContent = V.toFixed(1) + ' V';
+
+  let Itext;
+  if (Math.abs(I) < 0.001) Itext = (I * 1e6).toFixed(1) + ' µA';
+  else if (Math.abs(I) < 1) Itext = (I * 1000).toFixed(2) + ' mA';
+  else Itext = I.toFixed(4) + ' A';
+  $('oCurrent').textContent = Itext;
+
+  if (!isFinite(R_op) || Math.abs(R_op) > 1e8) $('oResistance').textContent = '∞ Ω';
+  else if (Math.abs(R_op) > 1000) $('oResistance').textContent = (R_op / 1000).toFixed(2) + ' kΩ';
+  else $('oResistance').textContent = R_op.toFixed(1) + ' Ω';
+
+  $('oPower').textContent = Math.abs(P) < 0.001 ? (P * 1000).toFixed(3) + ' mW' : P.toFixed(3) + ' W';
+  $('vResistance').textContent = state.R;
+
+  // Explainer
+  let txt = '';
+  if (state.comp === 'resistor') {
+    txt = `Ohm's Law: <span class="k">V = IR</span>. With V = <span class="k">${V.toFixed(1)} V</span> and R = <span class="k">${state.R} Ω</span>, `;
+    txt += `current I = V/R = <span class="k">${Itext}</span>. `;
+    txt += `The I–V graph is a straight line through the origin — this is an <em>ohmic conductor</em> because resistance stays constant regardless of V.`;
+  } else if (state.comp === 'lamp') {
+    const Rcold = 6, Rhot = state.V !== 0 ? (V / I).toFixed(0) : Rcold;
+    txt = `A filament lamp is <em>non-ohmic</em>. As current flows, the tungsten filament heats up — its resistance rises. `;
+    txt += `Cold resistance ≈ <span class="k">6 Ω</span>; at V = <span class="k">${V.toFixed(1)} V</span>, resistance ≈ <span class="k">${Math.abs(R_op).toFixed(0)} Ω</span>. `;
+    txt += `The I–V curve bends over — equal increases in V give smaller increases in I as R grows. Power dissipated: <span class="k">${Math.abs(P).toFixed(2)} W</span>.`;
+  } else {
+    if (V > 0.6) {
+      txt = `Forward-biased diode. Once voltage exceeds the <em>threshold voltage</em> (~0.6–0.7 V for silicon), current rises steeply. `;
+      txt += `At V = <span class="k">${V.toFixed(1)} V</span>, I ≈ <span class="k">${Itext}</span>. The diode conducts.`;
+    } else if (V >= 0) {
+      txt = `Below the threshold voltage (~0.6 V), the diode is effectively open — negligible current flows (<span class="k">${Itext}</span>). `;
+      txt += `The p-n junction depletion region blocks current until V overcomes the built-in potential.`;
+    } else {
+      txt = `Reverse-biased diode. The depletion region widens and only a tiny <em>leakage current</em> flows (~nA). `;
+      txt += `In a real diode, breakdown occurs at the <em>breakdown voltage</em> (typically −50 V to −200 V). The diode does not normally conduct in reverse.`;
+    }
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() {
+  drawIV();
+  drawCircuit();
+  updateReadouts();
+}
+
+// --- Controls ---
+$('sliderV').addEventListener('input', e => {
+  state.V = parseFloat(e.target.value);
+  redraw();
+});
+$('sliderR').addEventListener('input', e => {
+  state.R = parseInt(e.target.value);
+  redraw();
+});
+document.querySelectorAll('.ref-chip[data-r]').forEach(c => {
+  c.addEventListener('click', () => {
+    state.R = parseInt(c.dataset.r);
+    $('sliderR').value = state.R;
+    redraw();
+  });
+});
+document.querySelectorAll('#compToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('active')) return;
+    document.querySelectorAll('#compToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.comp = b.dataset.comp;
+    // Show/hide R slider relevance
+    $('rControl').style.opacity = state.comp === 'resistor' ? '1' : '0.45';
+    redraw();
+  });
+});
+$('chkResistor').addEventListener('change', e => { state.showResistor = e.target.checked; redraw(); });
+$('chkLamp').addEventListener('change', e => { state.showLamp = e.target.checked; redraw(); });
+$('chkDiode').addEventListener('change', e => { state.showDiode = e.target.checked; redraw(); });
+
+window.addEventListener('resize', redraw);
+
+function applyTry(name) {
+  const presets = {
+    highR:    { comp: 'resistor', V: 12, R: 330, note: '<strong>High resistance (330 Ω):</strong> even at 12 V only ~36 mA flows. Notice how the slope of the I–V line is shallow — a steeper slope means lower resistance.' },
+    lampHeat: { comp: 'lamp', V: 8, R: 100, note: '<strong>Lamp at 8 V:</strong> the filament is hot, so resistance is much higher than when cold. The curve bends away from the linear — this is a classic non-ohmic characteristic.' },
+    diodeFwd: { comp: 'diode', V: 0.7, R: 100, note: '<strong>Forward bias at threshold:</strong> at ~0.7 V a silicon diode switches on rapidly. Tiny changes in V near 0.7 V cause huge changes in I.' },
+    diodeRev: { comp: 'diode', V: -6, R: 100, note: '<strong>Reverse bias:</strong> current is essentially zero (nanowatts of leakage). The diode blocks current — this is the basis of rectifiers in power supplies.' }
+  };
+  const p = presets[name]; if (!p) return;
+  state.comp = p.comp; state.V = p.V; state.R = p.R;
+  $('sliderV').value = p.V; $('sliderR').value = p.R;
+  document.querySelectorAll('#compToggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.comp === p.comp);
+  });
+  $('rControl').style.opacity = state.comp === 'resistor' ? '1' : '0.45';
+  $('tryNote').innerHTML = p.note;
+  redraw();
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+// --- Keyboard ---
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  const DEFAULTS = { comp: 'resistor', V: 6, R: 100 };
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (k === '1') { document.querySelector('#compToggle button[data-comp="resistor"]').click(); }
+    else if (k === '2') { document.querySelector('#compToggle button[data-comp="lamp"]').click(); }
+    else if (k === '3') { document.querySelector('#compToggle button[data-comp="diode"]').click(); }
+    else if (k.toLowerCase() === 'r') {
+      state.comp = DEFAULTS.comp; state.V = DEFAULTS.V; state.R = DEFAULTS.R;
+      $('sliderV').value = DEFAULTS.V; $('sliderR').value = DEFAULTS.R;
+      document.querySelectorAll('#compToggle button').forEach(b => b.classList.toggle('active', b.dataset.comp === DEFAULTS.comp));
+      $('rControl').style.opacity = '1';
+      redraw();
+    }
+  });
+})();
+
+redraw();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="hookes_law.html">
+      <div class="related-title">Hooke's Law</div>
+      <div class="related-desc">Springs, elastic limits, and F = ke — another linear relationship that breaks down under stress</div>
+    </a>
+    <a class="related-card" href="gas_laws.html">
+      <div class="related-title">Gas Laws &amp; the Particle Model</div>
+      <div class="related-desc">Pressure, volume and temperature — Boyle's Law and particle collisions</div>
+    </a>
+    <a class="related-card" href="forces_motion.html">
+      <div class="related-title">Forces &amp; Motion</div>
+      <div class="related-desc">Newton's laws, resultant forces, and acceleration</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

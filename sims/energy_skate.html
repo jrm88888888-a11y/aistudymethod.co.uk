@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energy Skate Park</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 360px; }
+.bars-wrap { position: relative; width: 100%; height: 160px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Energy Skate Park</h1>
+    <p class="sub">Conservation of energy · KE + GPE + Thermal = constant</p>
+    <p class="insight-banner">Without friction, total mechanical energy (KE + GPE) is conserved: the skater converts between them continuously. With friction, energy is lost to heat — the skater's amplitude shrinks with every pass.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Play / pause</span>
+      <span class="kbd-key">R</span><span>Reset skater to start height</span>
+      <span class="kbd-key">F</span><span>Toggle friction on / off</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Skate track</h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:11px;color:var(--text-dim)">Friction:</span>
+          <div class="seg" id="frictionToggle">
+            <button data-mode="off" class="active">Off</button>
+            <button data-mode="on">On</button>
+          </div>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="trackCanvas"></canvas></div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Energy bar chart</h3>
+        <span style="font-size:11px;color:var(--text-dim)">Joules</span>
+      </div>
+      <div class="bars-wrap"><canvas id="barCanvas"></canvas></div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Skater parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Mass of the skater in kilograms.">Skater mass m (kg)</span>
+          <span class="value num" id="vMass">60</span>
+        </div>
+        <input type="range" id="slMass" min="20" max="120" step="1" value="60">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Initial height above the lowest point of the track (h = 0).">Start height h (m)</span>
+          <span class="value num" id="vHeight">3.0</span>
+        </div>
+        <input type="range" id="slHeight" min="0.5" max="8" step="0.1" value="3.0">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Coefficient of rolling friction. Energy lost per unit of track speed.">Friction coeff μ</span>
+          <span class="value num" id="vMu">0.08</span>
+        </div>
+        <input type="range" id="slMu" min="0.01" max="0.4" step="0.01" value="0.08">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Energy readouts</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Kinetic energy: KE = ½mv²">KE (J)</div>
+          <div class="val cyan" id="oKE">0</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Gravitational potential energy: GPE = mgh">GPE (J)</div>
+          <div class="val green" id="oGPE">0</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Energy dissipated as heat by friction so far.">Thermal (J)</div>
+          <div class="val rose" id="oThermal">0</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="KE + GPE + Thermal energy should equal the initial GPE.">Total E (J)</div>
+          <div class="val amber" id="oTotal">0</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Speed v (m/s)</div>
+          <div class="val" id="oSpeed">0.00</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Height h (m)</div>
+          <div class="val" id="oHeightCur">0.00</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button id="btnPlayPause" class="primary">Pause</button>
+        <button id="btnReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="no_friction">Frictionless — perfect conservation</button>
+        <button data-try="heavy_high">Heavy skater, high start</button>
+        <button data-try="lots_friction">High friction — watch energy drain</button>
+        <button data-try="low_start">Low start height — gentle oscillation</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const g = 9.81;
+
+// Track shape: a symmetric U-shaped parabolic half-pipe
+// Track function: h(x) = A * (x/W)^2  where A = track depth, x=0 at centre
+// We parameterise the track in physics space: x in [-trackHalfW .. trackHalfW], h = a*x^2
+
+const TRACK_HALF_W = 5.0;  // m
+const TRACK_A = 0.12;      // curvature: h(x) = A*x^2 — h(5)=3m at edges
+
+function trackH(x) { return TRACK_A * x * x; } // height above bottom in metres
+function trackDH(x) { return 2 * TRACK_A * x; }  // dh/dx
+
+const state = {
+  mass: 60,
+  startHeight: 3.0,
+  mu: 0.08,
+  frictionOn: false,
+  // physics state
+  x: 0,      // position in m
+  v: 0,      // velocity along track (signed)
+  thermalE: 0,
+  totalE: 0, // initial total energy
+  running: true
+};
+
+function initSkater() {
+  // Find x such that trackH(x) = startHeight
+  // h = A*x^2 => x = sqrt(h/A)
+  const xStart = Math.sqrt(state.startHeight / TRACK_A);
+  state.x = xStart;
+  state.v = 0;
+  state.thermalE = 0;
+  state.totalE = state.mass * g * state.startHeight;
+}
+
+function computeEnergies() {
+  const h = trackH(state.x);
+  const KE = 0.5 * state.mass * state.v * state.v;
+  const GPE = state.mass * g * h;
+  return { KE, GPE, h };
+}
+
+let lastTs = null;
+let animId = null;
+
+// Symplectic Euler integration along the track
+// Forces: gravity tangential component - friction
+function step(dt) {
+  if (!state.running) return;
+  const substeps = 8;
+  const dts = dt / substeps;
+  for (let s = 0; s < substeps; s++) {
+    const dhdx = trackDH(state.x);
+    const slope = Math.atan(Math.abs(dhdx));
+    // Tangential gravity component: -g * sin(slope) * sign of slope in direction of x
+    // Slope of track at x: dh/dx = 2Ax. Gravity pulls down (toward x=0).
+    const gTangential = -g * Math.sin(Math.atan(Math.abs(dhdx))) * Math.sign(state.x);
+    // Friction decelerates
+    let friction = 0;
+    if (state.frictionOn && Math.abs(state.v) > 1e-4) {
+      // normal force: N = mg*cos(slope)
+      const cosSlope = Math.cos(slope);
+      friction = -Math.sign(state.v) * state.mu * state.mass * g * cosSlope;
+    }
+
+    const totalForce = state.mass * gTangential + friction;
+    const a = totalForce / state.mass;
+
+    // Energy lost to friction this substep
+    if (state.frictionOn && Math.abs(state.v) > 1e-4) {
+      const dE = Math.abs(friction * state.v * dts);
+      state.thermalE += dE;
+    }
+
+    state.v += a * dts;
+    state.x += state.v * dts;
+
+    // Clamp within track bounds (bounce off walls)
+    if (Math.abs(state.x) >= TRACK_HALF_W) {
+      state.x = Math.sign(state.x) * TRACK_HALF_W;
+      // Energy lost at wall must be credited to thermalE to conserve total energy
+      const keBefore = 0.5 * state.mass * state.v * state.v;
+      state.v = -state.v * 0.5; // inelastic bounce — 75% of KE lost
+      const keAfter = 0.5 * state.mass * state.v * state.v;
+      state.thermalE += (keBefore - keAfter);
+    }
+  }
+}
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+function drawTrack(ts) {
+  if (lastTs !== null) {
+    const dt = Math.min((ts - lastTs) / 1000, 0.04);
+    step(dt);
+  }
+  lastTs = ts;
+
+  const c = $('trackCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0a0e14';
+  ctx.fillRect(0, 0, W, H);
+
+  const pad = { l: 40, r: 20, t: 30, b: 20 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  // Track goes from x=-TRACK_HALF_W to +TRACK_HALF_W
+  // height goes from 0 (bottom) to trackH(TRACK_HALF_W)=TRACK_A*25=3m (top of sidewall shown)
+  const hMax = 9; // max display height in metres
+
+  const toCanvasX = physX => pad.l + (physX + TRACK_HALF_W) / (2 * TRACK_HALF_W) * pw;
+  const toCanvasY = physH => pad.t + ph * (1 - physH / hMax);
+
+  // Grid lines
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  for (let h = 0; h <= hMax; h += 1) {
+    const y = toCanvasY(h);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  // Height axis labels
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let h = 0; h <= hMax; h += 2) {
+    const y = toCanvasY(h);
+    ctx.fillText(h + ' m', pad.l - 4, y);
+  }
+
+  // Track surface (filled parabola)
+  ctx.beginPath();
+  const numPoints = 200;
+  for (let i = 0; i <= numPoints; i++) {
+    const px = -TRACK_HALF_W + (2 * TRACK_HALF_W * i / numPoints);
+    const ph_val = trackH(px);
+    const cx2 = toCanvasX(px);
+    const cy = toCanvasY(ph_val);
+    if (i === 0) ctx.moveTo(cx2, cy); else ctx.lineTo(cx2, cy);
+  }
+  // Close bottom
+  ctx.lineTo(toCanvasX(TRACK_HALF_W), H);
+  ctx.lineTo(toCanvasX(-TRACK_HALF_W), H);
+  ctx.closePath();
+
+  const trackGrad = ctx.createLinearGradient(0, toCanvasY(0), 0, toCanvasY(hMax));
+  trackGrad.addColorStop(0, 'rgba(34,211,238,0.12)');
+  trackGrad.addColorStop(1, 'rgba(34,211,238,0.04)');
+  ctx.fillStyle = trackGrad;
+  ctx.fill();
+
+  // Track line
+  ctx.beginPath();
+  for (let i = 0; i <= numPoints; i++) {
+    const px = -TRACK_HALF_W + (2 * TRACK_HALF_W * i / numPoints);
+    const ph_val = trackH(px);
+    const cx2 = toCanvasX(px);
+    const cy = toCanvasY(ph_val);
+    if (i === 0) ctx.moveTo(cx2, cy); else ctx.lineTo(cx2, cy);
+  }
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Ground line
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, toCanvasY(0));
+  ctx.lineTo(W - pad.r, toCanvasY(0));
+  ctx.stroke();
+
+  // Start height marker (dashed)
+  const startH = state.startHeight;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(52,211,153,0.4)';
+  ctx.setLineDash([5, 4]);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, toCanvasY(startH));
+  ctx.lineTo(W - pad.r, toCanvasY(startH));
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+  ctx.fillStyle = 'rgba(52,211,153,0.7)';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('h₀ = ' + state.startHeight.toFixed(1) + ' m', pad.l + 4, toCanvasY(startH) - 2);
+
+  // Skater
+  const { KE, GPE, h } = computeEnergies();
+  const sx = toCanvasX(state.x);
+  const sy = toCanvasY(h);
+  const skaterR = 12;
+
+  // Skater glow (speed-based)
+  const speed = Math.abs(state.v);
+  if (speed > 0.1) {
+    const grd = ctx.createRadialGradient(sx, sy, 2, sx, sy, skaterR * 2.5);
+    const alpha = Math.min(0.6, speed * 0.04);
+    grd.addColorStop(0, `rgba(245,158,11,${alpha})`);
+    grd.addColorStop(1, 'rgba(245,158,11,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(sx, sy, skaterR * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Body
+  ctx.fillStyle = '#f59e0b';
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(sx, sy - skaterR, skaterR * 0.7, 0, Math.PI * 2); // head
+  ctx.fill();
+  ctx.stroke();
+
+  // Board
+  const dir = Math.sign(state.v) || 1;
+  ctx.fillStyle = '#22d3ee';
+  ctx.beginPath();
+  ctx.roundRect(sx - 14 * dir, sy + 2, 28, 6, 3);
+  ctx.fill();
+
+  // Wheels
+  ctx.fillStyle = '#97a1b0';
+  ctx.beginPath(); ctx.arc(sx - 10 * dir, sy + 10, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(sx + 10 * dir, sy + 10, 4, 0, Math.PI * 2); ctx.fill();
+
+  // KE / GPE labels
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('v = ' + speed.toFixed(2) + ' m/s', sx, sy + 16);
+
+  // Thermal fire particles (when friction on)
+  if (state.frictionOn && speed > 0.5) {
+    ctx.fillStyle = `rgba(244,63,94,${Math.min(0.8, speed * 0.08)})`;
+    for (let i = 0; i < 3; i++) {
+      const px = sx - 10 + Math.random() * 20;
+      const py = sy + 10 + Math.random() * 8;
+      ctx.beginPath();
+      ctx.arc(px, py, 2 + Math.random() * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  drawBars();
+  updateReadouts(KE, GPE, h);
+
+  animId = requestAnimationFrame(drawTrack);
+}
+
+function drawBars() {
+  const c = $('barCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0a0e14';
+  ctx.fillRect(0, 0, W, H);
+
+  const { KE, GPE } = computeEnergies();
+  const thermal = state.thermalE;
+  const total = state.totalE;
+
+  const bars = [
+    { label: 'KE', val: KE, color: '#22d3ee' },
+    { label: 'GPE', val: GPE, color: '#34d399' },
+    { label: 'Thermal', val: thermal, color: '#f43f5e' },
+    { label: 'Total E', val: KE + GPE + thermal, color: '#f59e0b' }
+  ];
+
+  const pad = { l: 60, r: 20, t: 16, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const barW = pw / bars.length * 0.55;
+  const maxE = Math.max(total * 1.1, 1);
+
+  // Grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  // Y axis labels
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    const val = maxE * (4 - i) / 4;
+    ctx.fillText(val.toFixed(0) + 'J', pad.l - 4, y);
+  }
+
+  bars.forEach((b, i) => {
+    const bx = pad.l + pw * (i + 0.5) / bars.length - barW / 2;
+    const bh = Math.max(0, (b.val / maxE) * ph);
+    const by = pad.t + ph - bh;
+
+    // Bar glow
+    ctx.shadowColor = b.color;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = b.color.replace(')', ',0.7)').replace('rgb', 'rgba');
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, barW, bh, 3);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Bar border
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, barW, bh);
+
+    // Label
+    ctx.fillStyle = '#97a1b0';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(b.label, bx + barW / 2, H - pad.b + 4);
+
+    // Value on bar
+    if (bh > 18) {
+      ctx.fillStyle = '#e6edf3';
+      ctx.font = '10px JetBrains Mono';
+      ctx.textBaseline = 'top';
+      ctx.fillText(b.val.toFixed(0), bx + barW / 2, by + 4);
+    }
+  });
+}
+
+function updateReadouts(KE, GPE, h) {
+  $('oKE').textContent = KE.toFixed(1);
+  $('oGPE').textContent = GPE.toFixed(1);
+  $('oThermal').textContent = state.thermalE.toFixed(1);
+  $('oTotal').textContent = (KE + GPE + state.thermalE).toFixed(1);
+  $('oSpeed').textContent = Math.abs(state.v).toFixed(2);
+  $('oHeightCur').textContent = h.toFixed(2);
+
+  let txt = `Skater mass <span class="k">m = ${state.mass} kg</span>, current height <span class="k">h = ${h.toFixed(2)} m</span>. `;
+  txt += `<span class="k">KE = ½mv² = ${KE.toFixed(1)} J</span>, <span class="k">GPE = mgh = ${GPE.toFixed(1)} J</span>. `;
+  if (state.frictionOn) {
+    txt += `Friction is on (μ = ${state.mu.toFixed(2)}): <span class="k">${state.thermalE.toFixed(1)} J</span> has been converted to thermal energy. `;
+    txt += `Total remains <span class="k">KE + GPE + Thermal = ${(KE + GPE + state.thermalE).toFixed(1)} J</span> (conserved).`;
+  } else {
+    txt += `No friction: <span class="k">KE + GPE = ${(KE + GPE).toFixed(1)} J</span> stays constant — the skater oscillates indefinitely.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+// Wire controls
+$('slMass').addEventListener('input', e => {
+  state.mass = parseInt(e.target.value);
+  $('vMass').textContent = state.mass;
+  initSkater();
+});
+$('slHeight').addEventListener('input', e => {
+  state.startHeight = parseFloat(e.target.value);
+  $('vHeight').textContent = state.startHeight.toFixed(1);
+  initSkater();
+});
+$('slMu').addEventListener('input', e => {
+  state.mu = parseFloat(e.target.value);
+  $('vMu').textContent = state.mu.toFixed(2);
+});
+
+document.querySelectorAll('#frictionToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#frictionToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.frictionOn = b.dataset.mode === 'on';
+  });
+});
+
+$('btnPlayPause').addEventListener('click', () => {
+  state.running = !state.running;
+  lastTs = null;
+  $('btnPlayPause').textContent = state.running ? 'Pause' : 'Play';
+});
+
+$('btnReset').addEventListener('click', () => { initSkater(); lastTs = null; });
+
+// Try this
+const tryPresets = {
+  no_friction: { mass: 60, startHeight: 4, mu: 0.08, frictionOn: false,
+    note: '<strong>No friction</strong>: total mechanical energy (KE + GPE) is perfectly conserved. The skater reaches exactly the same height on every pass, oscillating indefinitely.' },
+  heavy_high: { mass: 100, startHeight: 7, mu: 0.08, frictionOn: false,
+    note: '<strong>Heavy skater (100 kg), high start (7 m)</strong>: initial GPE = mgh = 6,867 J. At the bottom, all of this becomes kinetic energy — speed = √(2gh) ≈ 11.7 m/s.' },
+  lots_friction: { mass: 60, startHeight: 4, mu: 0.3, frictionOn: true,
+    note: '<strong>High friction (μ = 0.3)</strong>: energy drains to thermal quickly. Watch the skater\'s amplitude shrink with each pass until it stops at the bottom.' },
+  low_start: { mass: 60, startHeight: 1, mu: 0.05, frictionOn: false,
+    note: '<strong>Low start height (1 m)</strong>: initial GPE = 588 J. The skater oscillates gently — speed at the bottom is just √(2gh) ≈ 4.4 m/s.' }
+};
+
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = tryPresets[b.dataset.try];
+    if (!cfg) return;
+    state.mass = cfg.mass; $('slMass').value = cfg.mass; $('vMass').textContent = cfg.mass;
+    state.startHeight = cfg.startHeight; $('slHeight').value = cfg.startHeight; $('vHeight').textContent = cfg.startHeight.toFixed(1);
+    state.mu = cfg.mu; $('slMu').value = cfg.mu; $('vMu').textContent = cfg.mu.toFixed(2);
+    state.frictionOn = cfg.frictionOn;
+    document.querySelectorAll('#frictionToggle button').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === (cfg.frictionOn ? 'on' : 'off')));
+    initSkater();
+    lastTs = null;
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+window.addEventListener('resize', () => {});
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); $('btnPlayPause').click(); }
+    else if (k === 'r') { initSkater(); lastTs = null; }
+    else if (k === 'f') {
+      state.frictionOn = !state.frictionOn;
+      document.querySelectorAll('#frictionToggle button').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === (state.frictionOn ? 'on' : 'off')));
+    }
+  });
+})();
+
+// Init
+initSkater();
+animId = requestAnimationFrame(drawTrack);
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="forces_motion.html">
+      <div class="related-title">Forces &amp; Motion</div>
+      <div class="related-desc">Newton's Second Law, free-body diagrams, and velocity–time graphs</div>
+    </a>
+    <a class="related-card" href="density_float.html">
+      <div class="related-title">Density: Float or Sink?</div>
+      <div class="related-desc">Upthrust, displaced fluid, and why objects float or sink</div>
+    </a>
+    <a class="related-card" href="states_matter.html">
+      <div class="related-title">States of Matter</div>
+      <div class="related-desc">Particles, temperature, and phase changes in solids, liquids, and gases</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

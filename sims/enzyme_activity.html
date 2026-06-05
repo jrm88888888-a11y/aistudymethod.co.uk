@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enzyme Activity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 340px; }
+.anim-wrap { position: relative; width: 100%; height: 200px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.denatured-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.denatured-badge.yes { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+.denatured-badge.no { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Enzyme Activity</h1>
+    <p class="sub">Rate of reaction vs temperature, pH, and substrate concentration</p>
+    <p class="insight-banner">Enzymes have an optimum temperature (~37 °C for human enzymes) and an optimum pH. Above the optimum temperature, the enzyme denatures — the active site changes shape permanently and the enzyme stops working.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Toggle temperature / pH view</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">T</span><span>Cycle enzyme type (human / stomach / hot spring)</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Rate of reaction</h3>
+        <div class="seg" id="viewToggle">
+          <button data-mode="temp" class="active">vs Temperature</button>
+          <button data-mode="ph">vs pH</button>
+          <button data-mode="sub">vs [Substrate]</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainChart"></canvas></div>
+      <div class="legend" id="chartLegend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Reaction rate</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Denaturation zone</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Current value</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Lock-and-key animation</h3>
+        <span id="animStatus" style="font-size:11px;color:var(--text-dim);">Active site open</span>
+      </div>
+      <div class="anim-wrap"><canvas id="animCanvas"></canvas></div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Enzyme type</p>
+      <div class="seg" id="enzymeToggle" style="margin-bottom:14px;">
+        <button data-enz="human" class="active">Human (salivary amylase)</button>
+        <button data-enz="stomach">Stomach (pepsin)</button>
+        <button data-enz="thermophile">Hot-spring bacterium</button>
+      </div>
+      <p class="section-label">Conditions</p>
+      <div class="control">
+        <div class="control-row"><span class="label" title="Temperature affects enzyme kinetics — higher temperature increases kinetic energy and collision frequency, but above the optimum breaks hydrogen bonds that maintain the active site's shape.">Temperature (°C)</span><span class="value num" id="vTemp">37</span></div>
+        <input type="range" id="slTemp" min="0" max="100" step="1" value="37">
+        <div class="refs">
+          <span class="ref-chip" data-temp="37">Body 37°C</span>
+          <span class="ref-chip" data-temp="2">Fridge 2°C</span>
+          <span class="ref-chip" data-temp="100">Boiling 100°C</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label" title="pH affects the ionisation state of amino acid R-groups that form the active site. A change in pH alters the charge distribution, distorting the active site shape.">pH</span><span class="value num" id="vPH">7.0</span></div>
+        <input type="range" id="slPH" min="0" max="14" step="0.1" value="7.0">
+        <div class="refs">
+          <span class="ref-chip" data-ph="7.0">Neutral 7.0</span>
+          <span class="ref-chip" data-ph="2.0">Stomach 2.0</span>
+          <span class="ref-chip" data-ph="8.0">Intestine 8.0</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label" title="At low substrate concentration the rate rises approximately linearly (Michaelis-Menten kinetics). At high concentration, all active sites are occupied and the rate plateaus — the enzyme is saturated.">Substrate conc. (arbitrary units)</span><span class="value num" id="vSub">50</span></div>
+        <input type="range" id="slSub" min="1" max="200" step="1" value="50">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Live readouts</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="Relative rate as a percentage of the theoretical maximum for this enzyme type.">Relative rate</div><div class="val cyan" id="oRate">—</div></div>
+        <div class="readout"><div class="lbl">Enzyme state</div><div class="val" id="oDenature">—</div></div>
+        <div class="readout"><div class="lbl" title="Michaelis constant Km — substrate concentration at which rate = Vmax/2.">Km (approx.)</div><div class="val amber" id="oKm">—</div></div>
+        <div class="readout"><div class="lbl">Optimum temp.</div><div class="val green" id="oOptTemp">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="denature">Denature human amylase</button>
+        <button data-try="pepsin">Pepsin at optimum</button>
+        <button data-try="thermophile">Hot-spring enzyme at 70°C</button>
+        <button data-try="saturation">Saturate active sites</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// Enzyme definitions: { optTemp, tempWidth, optPH, phWidth, Km, Vmax, name }
+// Gaussian bell shape: rate = Vmax * exp(-0.5*((x-opt)/width)^2)
+// Above denatThresh temperature the enzyme denatures — rate drops steeply further
+const ENZYMES = {
+  human: { optTemp: 37, tempWidth: 10, denatThresh: 45, optPH: 7.0, phWidth: 1.5, Km: 30, Vmax: 1.0, name: 'Salivary amylase (pH 7, 37°C optimum)' },
+  stomach: { optTemp: 37, tempWidth: 10, denatThresh: 45, optPH: 2.0, phWidth: 1.2, Km: 25, Vmax: 0.95, name: 'Pepsin (pH 2 optimum)' },
+  thermophile: { optTemp: 72, tempWidth: 14, denatThresh: 90, optPH: 7.0, phWidth: 2.0, Km: 40, Vmax: 0.90, name: 'Thermophilic DNA polymerase (Taq, 72°C optimum)' }
+};
+
+const params = {
+  temp: 37, ph: 7.0, sub: 50,
+  enzyme: 'human',
+  viewMode: 'temp'
+};
+
+// Compute relative rate (0–1) for given conditions
+function computeRate(temp, ph, sub, enz) {
+  const e = ENZYMES[enz];
+  // Temperature effect: Gaussian up to threshold, then exponential decline (denaturation)
+  let tempFactor;
+  if (temp <= e.denatThresh) {
+    tempFactor = Math.exp(-0.5 * Math.pow((temp - e.optTemp) / e.tempWidth, 2));
+  } else {
+    // Denature: sharp decline above denaturation threshold
+    const atThresh = Math.exp(-0.5 * Math.pow((e.denatThresh - e.optTemp) / e.tempWidth, 2));
+    const denatK = 0.15; // how fast activity drops after threshold
+    tempFactor = atThresh * Math.exp(-denatK * (temp - e.denatThresh));
+  }
+  // pH effect: Gaussian bell
+  const phFactor = Math.exp(-0.5 * Math.pow((ph - e.optPH) / e.phWidth, 2));
+  // Substrate: Michaelis-Menten: v = Vmax * [S] / (Km + [S])
+  const subFactor = sub / (e.Km + sub);
+  return e.Vmax * tempFactor * phFactor * subFactor;
+}
+
+function isDenaturated(temp, ph, enz) {
+  const e = ENZYMES[enz];
+  // Considered denatured if temp >> threshold or pH very far from optimum
+  const tempDenat = temp > e.denatThresh;
+  const phDenat = Math.abs(ph - e.optPH) > e.phWidth * 3;
+  return tempDenat || phDenat;
+}
+
+function drawMainChart() {
+  const c = $('mainChart');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+
+  const pad = { l: 60, r: 20, t: 20, b: 40 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const e = ENZYMES[params.enzyme];
+
+  let xMin, xMax, xLabel, xCurrent, nPoints = 200;
+  if (params.viewMode === 'temp') {
+    xMin = 0; xMax = 100; xLabel = 'Temperature (°C)'; xCurrent = params.temp;
+  } else if (params.viewMode === 'ph') {
+    xMin = 0; xMax = 14; xLabel = 'pH'; xCurrent = params.ph;
+  } else {
+    xMin = 0; xMax = 200; xLabel = 'Substrate concentration (a.u.)'; xCurrent = params.sub;
+  }
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + ph * i / 5;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  const xTicks = params.viewMode === 'ph' ? 7 : 5;
+  for (let i = 0; i <= xTicks; i++) {
+    const x = pad.l + pw * i / xTicks;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + ph * i / 5;
+    ctx.fillText(((5-i)/5*100).toFixed(0) + '%', pad.l - 8, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i <= xTicks; i++) {
+    const x = pad.l + pw * i / xTicks;
+    const val = xMin + (xMax - xMin) * i / xTicks;
+    ctx.fillText(val.toFixed(params.viewMode === 'ph' ? 1 : 0), x, H - pad.b + 6);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+  ctx.fillText(xLabel, pad.l + pw/2, H - 4);
+  ctx.save(); ctx.translate(14, pad.t + ph/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Relative rate (%)', 0, 0); ctx.restore();
+
+  // Denaturation zone (temp only)
+  if (params.viewMode === 'temp') {
+    const xDenat = pad.l + (e.denatThresh / 100) * pw;
+    ctx.fillStyle = 'rgba(244,63,94,0.08)';
+    ctx.fillRect(xDenat, pad.t, W - pad.r - xDenat, ph);
+    ctx.fillStyle = 'rgba(244,63,94,0.5)'; ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('Denaturation zone', xDenat + 4, pad.t + 4);
+  }
+
+  // Curve
+  const pts = [];
+  for (let i = 0; i <= nPoints; i++) {
+    const xVal = xMin + (xMax - xMin) * i / nPoints;
+    let rate;
+    if (params.viewMode === 'temp') {
+      rate = computeRate(xVal, params.ph, params.sub, params.enzyme);
+    } else if (params.viewMode === 'ph') {
+      rate = computeRate(params.temp, xVal, params.sub, params.enzyme);
+    } else {
+      rate = computeRate(params.temp, params.ph, xVal, params.enzyme);
+    }
+    // Normalise by theoretical max of this enzyme at perfect conditions
+    const maxRate = computeRate(e.optTemp, e.optPH, 200, params.enzyme);
+    const normRate = maxRate > 0 ? rate / maxRate : 0;
+    const x = pad.l + (xVal - xMin) / (xMax - xMin) * pw;
+    const y = pad.t + ph * (1 - normRate);
+    pts.push({ x, y });
+  }
+
+  // Fill under curve
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pad.t + ph);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, pad.t + ph);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(34,211,238,0.12)';
+  ctx.fill();
+
+  // Curve line
+  ctx.beginPath();
+  pts.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Current value vertical marker
+  const curX = pad.l + (xCurrent - xMin) / (xMax - xMin) * pw;
+  const curRate = (() => {
+    let r;
+    if (params.viewMode === 'temp') r = computeRate(xCurrent, params.ph, params.sub, params.enzyme);
+    else if (params.viewMode === 'ph') r = computeRate(params.temp, xCurrent, params.sub, params.enzyme);
+    else r = computeRate(params.temp, params.ph, xCurrent, params.enzyme);
+    const mx = computeRate(e.optTemp, e.optPH, 200, params.enzyme);
+    return mx > 0 ? r / mx : 0;
+  })();
+  const curY = pad.t + ph * (1 - curRate);
+
+  ctx.save(); ctx.setLineDash([4,3]);
+  ctx.strokeStyle = 'rgba(245,158,11,0.7)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(curX, pad.t); ctx.lineTo(curX, H - pad.b); ctx.stroke();
+  ctx.restore();
+
+  // Dot at current position
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath(); ctx.arc(curX, curY, 6, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(245,158,11,0.25)';
+  ctx.beginPath(); ctx.arc(curX, curY, 11, 0, Math.PI*2); ctx.fill();
+
+  // Optimum marker
+  let optX;
+  if (params.viewMode === 'temp') optX = pad.l + (e.optTemp / 100) * pw;
+  else if (params.viewMode === 'ph') optX = pad.l + (e.optPH / 14) * pw;
+  else optX = pad.l + (e.Km / 200) * pw; // Km marked for substrate
+  ctx.save(); ctx.setLineDash([2,3]);
+  ctx.strokeStyle = 'rgba(52,211,153,0.6)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(optX, pad.t); ctx.lineTo(optX, H - pad.b); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(52,211,153,0.8)'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText(params.viewMode === 'sub' ? 'Km' : 'Optimum', optX, pad.t + 4);
+
+  // Border
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+// ---- Lock-and-key animation ----
+let animAngle = 0;
+let animFrame = null;
+
+function drawLockKey() {
+  const c = $('animCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+
+  const denatured = isDenaturated(params.temp, params.ph, params.enzyme);
+  const rate = (() => {
+    const e = ENZYMES[params.enzyme];
+    const r = computeRate(params.temp, params.ph, params.sub, params.enzyme);
+    const mx = computeRate(e.optTemp, e.optPH, 200, params.enzyme);
+    return mx > 0 ? r / mx : 0;
+  })();
+
+  // Enzyme body — a C-shape with active site notch
+  const cx = W * 0.4;
+  const cy = H * 0.5;
+  const r = Math.min(W, H) * 0.28;
+  const denatOffset = denatured ? 8 * Math.sin(animAngle * 0.3) : 0; // wobble if denatured
+
+  // Draw enzyme body
+  ctx.save();
+  ctx.translate(cx, cy + denatOffset);
+  if (denatured) {
+    // Distorted shape
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 1.3, r * 0.8, animAngle * 0.02, 0, Math.PI * 2);
+    ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = 'rgba(244,63,94,0.12)'; ctx.fill();
+    // Damaged active site — misshapen notch
+    ctx.beginPath();
+    ctx.arc(r * 0.6, -r * 0.2, r * 0.22, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(244,63,94,0.4)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'rgba(244,63,94,0.08)'; ctx.fill();
+    $('animStatus').textContent = 'Active site denatured — shape lost';
+    $('animStatus').style.color = 'var(--rose)';
+  } else {
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = 'rgba(34,211,238,0.08)'; ctx.fill();
+    // Active site notch (complementary shape)
+    ctx.beginPath();
+    ctx.arc(r * 0.65, 0, r * 0.22, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(34,211,238,0.4)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fill();
+    $('animStatus').textContent = 'Active site open — complementary shape';
+    $('animStatus').style.color = 'var(--cyan)';
+  }
+
+  // Enzyme label
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('Enzyme', 0, 0);
+  ctx.restore();
+
+  if (!denatured) {
+    // Substrate molecules orbiting and entering active site
+    const numSub = Math.min(6, Math.max(1, Math.floor(params.sub / 30)));
+    for (let i = 0; i < numSub; i++) {
+      const angle = animAngle + (i / numSub) * Math.PI * 2;
+      const orbitR = r * 1.7;
+      const sx = cx + Math.cos(angle) * orbitR;
+      const sy = cy + Math.sin(angle) * orbitR;
+      const subR = 10;
+
+      // Draw substrate (hexagonal shape)
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.beginPath();
+      for (let k = 0; k < 6; k++) {
+        const a = k * Math.PI / 3;
+        k === 0 ? ctx.moveTo(Math.cos(a)*subR, Math.sin(a)*subR) : ctx.lineTo(Math.cos(a)*subR, Math.sin(a)*subR);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = 'rgba(245,158,11,0.18)'; ctx.fill();
+      ctx.restore();
+    }
+
+    // One substrate entering the active site (at right of enzyme)
+    const bindProgress = (Math.sin(animAngle * 1.5) + 1) / 2; // 0→1
+    const activeX = cx + r * 0.65;
+    const activeY = cy;
+    const enterX = cx + r * (1.7 + (0.65 - 1.7) * bindProgress);
+    const enterY = cy;
+    ctx.save();
+    ctx.translate(enterX, enterY);
+    const bndR = 10;
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const a = k * Math.PI / 3;
+      k === 0 ? ctx.moveTo(Math.cos(a)*bndR, Math.sin(a)*bndR) : ctx.lineTo(Math.cos(a)*bndR, Math.sin(a)*bndR);
+    }
+    ctx.closePath();
+    const alpha = 0.4 + 0.6 * bindProgress;
+    ctx.strokeStyle = `rgba(34,211,238,${alpha})`; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = `rgba(34,211,238,${alpha * 0.3})`; ctx.fill();
+    ctx.restore();
+
+    // Arrow showing product leaving if rate is high
+    if (rate > 0.3 && bindProgress > 0.7) {
+      ctx.save();
+      ctx.translate(cx + r * 1.4, cy - r * 0.5);
+      ctx.fillStyle = 'rgba(52,211,153,0.7)'; ctx.font = '10px Inter';
+      ctx.textAlign = 'left';
+      ctx.fillText('→ Product', 0, 0);
+      ctx.restore();
+    }
+  }
+
+  // Rate bar
+  const barX = W * 0.82, barY = H * 0.1, barH = H * 0.8, barW = 18;
+  ctx.fillStyle = '#1a2230';
+  ctx.fillRect(barX, barY, barW, barH);
+  const fillH = barH * rate;
+  const barColor = denatured ? '#f43f5e' : rate > 0.6 ? '#34d399' : rate > 0.3 ? '#f59e0b' : '#22d3ee';
+  ctx.fillStyle = barColor;
+  ctx.fillRect(barX, barY + barH - fillH, barW, fillH);
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(barX, barY, barW, barH);
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('Rate', barX + barW/2, barY - 2);
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = barColor;
+  ctx.fillText((rate * 100).toFixed(0) + '%', barX + barW/2, barY + barH + 4);
+}
+
+function animate() {
+  animAngle += 0.025;
+  drawLockKey();
+  animFrame = requestAnimationFrame(animate);
+}
+
+function updateReadouts() {
+  const e = ENZYMES[params.enzyme];
+  const r = computeRate(params.temp, params.ph, params.sub, params.enzyme);
+  const mx = computeRate(e.optTemp, e.optPH, 200, params.enzyme);
+  const relRate = mx > 0 ? r / mx * 100 : 0;
+  const denat = isDenaturated(params.temp, params.ph, params.enzyme);
+
+  $('oRate').textContent = relRate.toFixed(1) + '%';
+  $('oRate').className = 'val ' + (relRate > 70 ? 'green' : relRate > 30 ? 'amber' : 'rose');
+  const el = $('oDenature');
+  el.innerHTML = `<span class="denatured-badge ${denat ? 'yes' : 'no'}">${denat ? 'DENATURED' : 'ACTIVE'}</span>`;
+  $('oKm').textContent = e.Km + ' a.u.';
+  $('oOptTemp').textContent = e.optTemp + ' °C';
+
+  // Explainer
+  let txt = '';
+  if (params.viewMode === 'temp') {
+    if (params.temp < e.optTemp - 5) {
+      txt = `At <span class="k">${params.temp}°C</span>, molecules have low kinetic energy — fewer effective collisions between substrate and active site. The enzyme is working <em>slowly</em> but is not damaged.`;
+    } else if (params.temp <= e.denatThresh) {
+      txt = `At <span class="k">${params.temp}°C</span>, near the optimum of <span class="k">${e.optTemp}°C</span> — kinetic energy is high enough for rapid collisions without breaking the bonds that maintain the active site shape.`;
+    } else {
+      txt = `At <span class="k">${params.temp}°C</span>, above the denaturation threshold of <span class="k">${e.denatThresh}°C</span>. Hydrogen bonds and ionic bonds holding the tertiary structure have broken. The active site can no longer bind substrate. This is irreversible.`;
+    }
+  } else if (params.viewMode === 'ph') {
+    txt = `At pH <span class="k">${params.ph.toFixed(1)}</span>: the optimum for this enzyme is pH <span class="k">${e.optPH.toFixed(1)}</span>. Changes in pH alter the charge on amino acid R-groups in the active site, distorting its shape. Far from the optimum, the enzyme is denatured.`;
+  } else {
+    const satPct = params.sub / (e.Km + params.sub) * 100;
+    txt = `Substrate concentration: <span class="k">${params.sub} a.u.</span> The Michaelis constant Km = <span class="k">${e.Km} a.u.</span> At this concentration, active sites are approximately <span class="k">${satPct.toFixed(0)}%</span> occupied (Michaelis-Menten kinetics). Increasing substrate beyond ~5×Km gives diminishing returns.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() {
+  drawMainChart();
+  updateReadouts();
+}
+
+// Controls
+$('slTemp').addEventListener('input', e => {
+  params.temp = parseFloat(e.target.value);
+  $('vTemp').textContent = params.temp;
+  redraw();
+});
+$('slPH').addEventListener('input', e => {
+  params.ph = parseFloat(e.target.value);
+  $('vPH').textContent = params.ph.toFixed(1);
+  redraw();
+});
+$('slSub').addEventListener('input', e => {
+  params.sub = parseInt(e.target.value);
+  $('vSub').textContent = params.sub;
+  redraw();
+});
+
+document.querySelectorAll('.ref-chip[data-temp]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.temp = parseFloat(c.dataset.temp);
+    $('slTemp').value = params.temp;
+    $('vTemp').textContent = params.temp;
+    redraw();
+  });
+});
+document.querySelectorAll('.ref-chip[data-ph]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.ph = parseFloat(c.dataset.ph);
+    $('slPH').value = params.ph;
+    $('vPH').textContent = params.ph.toFixed(1);
+    redraw();
+  });
+});
+
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.viewMode = b.dataset.mode;
+    redraw();
+  });
+});
+
+document.querySelectorAll('#enzymeToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#enzymeToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.enzyme = b.dataset.enz;
+    const e = ENZYMES[params.enzyme];
+    $('slTemp').value = e.optTemp; params.temp = e.optTemp; $('vTemp').textContent = e.optTemp;
+    $('slPH').value = e.optPH; params.ph = e.optPH; $('vPH').textContent = e.optPH.toFixed(1);
+    redraw();
+  });
+});
+
+// Try this
+function applyTry(name) {
+  const presets = {
+    denature: { enzyme:'human', temp:60, ph:7.0, sub:50, mode:'temp',
+      note:'<strong>Above 45°C</strong>, salivary amylase denatures. The active site\'s tertiary structure is disrupted by broken hydrogen bonds — the enzyme cannot recover even if cooled.' },
+    pepsin: { enzyme:'stomach', temp:37, ph:2.0, sub:80, mode:'ph',
+      note:'Pepsin operates in the <strong>highly acidic stomach</strong> (pH ≈ 2). Most enzymes would denature here, but pepsin\'s structure is adapted to work at low pH.' },
+    thermophile: { enzyme:'thermophile', temp:70, ph:7.0, sub:80, mode:'temp',
+      note:'Taq polymerase (used in PCR) has an optimum near <strong>72°C</strong>. Its tertiary structure uses extra disulfide bonds and hydrophobic cores resistant to high temperatures.' },
+    saturation: { enzyme:'human', temp:37, ph:7.0, sub:200, mode:'sub',
+      note:'At very high substrate concentration, <strong>all active sites are occupied</strong> simultaneously. Adding more substrate cannot increase the rate — the enzyme is saturated. This is Vmax.' }
+  };
+  const cfg = presets[name];
+  if (!cfg) return;
+  params.enzyme = cfg.enzyme;
+  params.temp = cfg.temp; params.ph = cfg.ph; params.sub = cfg.sub;
+  params.viewMode = cfg.mode;
+  $('slTemp').value = cfg.temp; $('vTemp').textContent = cfg.temp;
+  $('slPH').value = cfg.ph; $('vPH').textContent = cfg.ph.toFixed(1);
+  $('slSub').value = cfg.sub; $('vSub').textContent = cfg.sub;
+  document.querySelectorAll('#enzymeToggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.enz === cfg.enzyme);
+  });
+  document.querySelectorAll('#viewToggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === cfg.mode);
+  });
+  redraw();
+  $('tryNote').innerHTML = cfg.note;
+}
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', redraw);
+
+// Keyboard shortcuts
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  const enzCycle = ['human','stomach','thermophile'];
+  const DEFAULTS = { temp:37, ph:7.0, sub:50, enzyme:'human', viewMode:'temp' };
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+    if (e.key==='Escape') { closeModal(); return; }
+    if (e.key==='?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey||e.ctrlKey||e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key===' ') {
+      e.preventDefault();
+      const modes = ['temp','ph','sub'];
+      const ni = (modes.indexOf(params.viewMode)+1) % modes.length;
+      params.viewMode = modes[ni];
+      document.querySelectorAll('#viewToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode===params.viewMode));
+      redraw();
+    } else if (k==='r') {
+      Object.assign(params, DEFAULTS);
+      $('slTemp').value=DEFAULTS.temp; $('vTemp').textContent=DEFAULTS.temp;
+      $('slPH').value=DEFAULTS.ph; $('vPH').textContent=DEFAULTS.ph.toFixed(1);
+      $('slSub').value=DEFAULTS.sub; $('vSub').textContent=DEFAULTS.sub;
+      document.querySelectorAll('#enzymeToggle button').forEach(b=>b.classList.toggle('active',b.dataset.enz==='human'));
+      document.querySelectorAll('#viewToggle button').forEach(b=>b.classList.toggle('active',b.dataset.mode==='temp'));
+      redraw();
+    } else if (k==='t') {
+      const ci = enzCycle.indexOf(params.enzyme);
+      params.enzyme = enzCycle[(ci+1)%enzCycle.length];
+      document.querySelectorAll('#enzymeToggle button').forEach(b=>b.classList.toggle('active',b.dataset.enz===params.enzyme));
+      const ev = ENZYMES[params.enzyme];
+      params.temp=ev.optTemp; params.ph=ev.optPH;
+      $('slTemp').value=ev.optTemp; $('vTemp').textContent=ev.optTemp;
+      $('slPH').value=ev.optPH; $('vPH').textContent=ev.optPH.toFixed(1);
+      redraw();
+    }
+  });
+})();
+
+// Init
+redraw();
+animate();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="osmosis.html">
+      <div class="related-title">Osmosis &amp; Diffusion</div>
+      <div class="related-desc">Water potential, partially permeable membranes, and turgor pressure in plant cells</div>
+    </a>
+    <a class="related-card" href="photosynthesis_ks3.html">
+      <div class="related-title">Photosynthesis</div>
+      <div class="related-desc">Light intensity, CO₂ concentration, and temperature as limiting factors</div>
+    </a>
+    <a class="related-card" href="evolution_gcse.html">
+      <div class="related-title">Evolution by Natural Selection</div>
+      <div class="related-desc">How selection pressure shifts a population's trait distribution over generations</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

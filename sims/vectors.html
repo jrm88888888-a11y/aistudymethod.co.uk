@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vectors: 2D Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 5px 11px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 12px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 8px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 16px; margin-top: 3px; }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.gold { color: var(--gold); }
+.canvas-wrap { position: relative; width: 100%; height: 480px; }
+canvas { width: 100%; height: 100%; display: block; cursor: default; }
+.legend { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Vectors: 2D Operations</h1>
+    <p class="sub">Addition, subtraction, scalar multiplication, dot product, and angle</p>
+    <p class="insight-banner">The dot product a·b = |a||b|cos θ — when it is zero the vectors are perpendicular; when it equals |a||b| they are parallel. Drag the arrowheads to explore.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">1</span><span>Select vector a</span>
+      <span class="kbd-key">2</span><span>Select vector b</span>
+      <span class="kbd-key">← → ↑ ↓</span><span>Move selected vector tip</span>
+      <span class="kbd-key">V</span><span>Cycle view (addition / subtraction / scalar)</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3 id="mainTitle">Vector addition: a + b</h3>
+        <div class="seg" id="viewToggle">
+          <button data-view="add" class="active">a + b</button>
+          <button data-view="sub">a − b</button>
+          <button data-view="scalar">λa</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="main"></canvas></div>
+      <div class="legend" id="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>a</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>b</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>Resultant</span>
+        <span class="legend-item"><span class="swatch" style="background:rgba(167,139,250,0.7)"></span>Parallelogram</span>
+      </div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Vector a (cyan) — drag tip</p>
+      <div class="control">
+        <div class="control-row"><span class="label">aₓ</span><span class="value num" id="vAx">3.00</span></div>
+        <input type="range" id="sliderAx" min="-6" max="6" step="0.25" value="3">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">aᵧ</span><span class="value num" id="vAy">2.00</span></div>
+        <input type="range" id="sliderAy" min="-6" max="6" step="0.25" value="2">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <p class="section-label">Vector b (amber) — drag tip</p>
+      <div class="control">
+        <div class="control-row"><span class="label">bₓ</span><span class="value num" id="vBx">1.00</span></div>
+        <input type="range" id="sliderBx" min="-6" max="6" step="0.25" value="1">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">bᵧ</span><span class="value num" id="vBy">-3.00</span></div>
+        <input type="range" id="sliderBy" min="-6" max="6" step="0.25" value="-3">
+      </div>
+      <div class="control" id="scalarControl" style="display:none">
+        <div class="control-row"><span class="label" title="Scalar multiplier λ">Scalar λ</span><span class="value num" id="vLambda">2.00</span></div>
+        <input type="range" id="sliderLambda" min="-4" max="4" step="0.25" value="2">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <p class="section-label">Measurements</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="|a|: magnitude (length) of vector a">|a|</div><div class="val cyan" id="rMagA">3.606</div></div>
+        <div class="readout"><div class="lbl" title="|b|: magnitude (length) of vector b">|b|</div><div class="val amber" id="rMagB">3.162</div></div>
+        <div class="readout"><div class="lbl" title="Direction of a, measured from positive x-axis, in degrees">∠a (°)</div><div class="val cyan" id="rAngA">33.7°</div></div>
+        <div class="readout"><div class="lbl" title="Direction of b, measured from positive x-axis">∠b (°)</div><div class="val amber" id="rAngB">−71.6°</div></div>
+        <div class="readout"><div class="lbl" title="a·b = aₓbₓ + aᵧbᵧ: dot product">a · b</div><div class="val violet" id="rDot">−3.000</div></div>
+        <div class="readout"><div class="lbl" title="θ: angle between a and b, from the dot product formula">θ between (°)</div><div class="val green" id="rTheta">105.3°</div></div>
+        <div class="readout" style="grid-column:1/-1;"><div class="lbl" id="resultantLbl">|a + b|</div><div class="val rose" id="rResultant" style="font-size:20px;">3.606</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:12px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="perpendicular">Perpendicular vectors</button>
+        <button data-try="parallel">Parallel vectors</button>
+        <button data-try="unit_add">Equal-length diagonal</button>
+        <button data-try="negate">a − a = 0</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const state = {
+  ax: 3, ay: 2,
+  bx: 1, by: -3,
+  lambda: 2,
+  view: 'add',
+  selected: null // 'a' or 'b'
+};
+
+// ---- Vector math ----
+function mag(x, y) { return Math.sqrt(x*x + y*y); }
+function dot(ax, ay, bx, by) { return ax*bx + ay*by; }
+function angleDeg(x, y) { return Math.atan2(y, x) * 180 / Math.PI; }
+function angleBetween(ax, ay, bx, by) {
+  const ma = mag(ax, ay), mb = mag(bx, by);
+  if (ma < 1e-10 || mb < 1e-10) return 0;
+  const cosTheta = Math.max(-1, Math.min(1, dot(ax, ay, bx, by) / (ma * mb)));
+  return Math.acos(cosTheta) * 180 / Math.PI;
+}
+
+function fmt3(v) { return isFinite(v) ? v.toFixed(3) : '—'; }
+function fmt1(v) { return isFinite(v) ? v.toFixed(1) : '—'; }
+function fmtV(x, y) { return `(${x.toFixed(2)}, ${y.toFixed(2)})`; }
+
+// ---- Canvas drawing ----
+const WORLD = 7; // ± WORLD units shown
+
+function worldToCanvas(wx, wy, W, H) {
+  const scale = Math.min(W, H) / (2 * WORLD);
+  const cx = W / 2 + wx * scale;
+  const cy = H / 2 - wy * scale; // y flipped
+  return [cx, cy];
+}
+
+function canvasToWorld(cx, cy, W, H) {
+  const scale = Math.min(W, H) / (2 * WORLD);
+  return [(cx - W/2) / scale, -(cy - H/2) / scale];
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, label, lineW, W, H, labelOffset) {
+  const [cx1, cy1] = worldToCanvas(x1, y1, W, H);
+  const [cx2, cy2] = worldToCanvas(x2, y2, W, H);
+  const dx = cx2 - cx1, dy = cy2 - cy1;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  if (len < 2) return;
+
+  ctx.save();
+  ctx.strokeStyle = color; ctx.fillStyle = color;
+  ctx.lineWidth = lineW || 2.5;
+  ctx.lineCap = 'round';
+
+  // Line
+  ctx.beginPath(); ctx.moveTo(cx1, cy1); ctx.lineTo(cx2, cy2); ctx.stroke();
+
+  // Arrowhead
+  const ux = dx / len, uy = dy / len;
+  const aLen = 12, aWid = 5;
+  ctx.beginPath();
+  ctx.moveTo(cx2, cy2);
+  ctx.lineTo(cx2 - aLen*ux + aWid*uy, cy2 - aLen*uy - aWid*ux);
+  ctx.lineTo(cx2 - aLen*ux - aWid*uy, cy2 - aLen*uy + aWid*ux);
+  ctx.closePath(); ctx.fill();
+
+  // Label
+  if (label) {
+    const lo = labelOffset || 14;
+    const nx = -uy, ny = ux; // perpendicular, but need to be careful with y flip
+    const lx = (cx1 + cx2) / 2 + nx * lo;
+    const ly = (cy1 + cy2) / 2 + ny * lo;
+    ctx.fillStyle = color;
+    ctx.font = 'bold 14px JetBrains Mono';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, lx, ly);
+  }
+  ctx.restore();
+}
+
+function drawDashedArrow(ctx, x1, y1, x2, y2, color, W, H) {
+  const [cx1, cy1] = worldToCanvas(x1, y1, W, H);
+  const [cx2, cy2] = worldToCanvas(x2, y2, W, H);
+  const dx = cx2 - cx1, dy = cy2 - cy1;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  if (len < 2) return;
+  ctx.save();
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = color; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(cx1, cy1); ctx.lineTo(cx2, cy2); ctx.stroke();
+  ctx.setLineDash([]);
+  // small arrowhead
+  const ux = dx/len, uy = dy/len;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(cx2, cy2);
+  ctx.lineTo(cx2 - 8*ux + 3*uy, cy2 - 8*uy - 3*ux);
+  ctx.lineTo(cx2 - 8*ux - 3*uy, cy2 - 8*uy + 3*ux);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function drawAngleArc(ctx, x, y, ax, ay, bx, by, color, W, H) {
+  const [cx, cy] = worldToCanvas(x, y, W, H);
+  const r = 30;
+  const a1 = Math.atan2(-ay, ax); // canvas y is flipped
+  const a2 = Math.atan2(-by, bx);
+  // Choose the arc direction that sweeps the true angle (≤180°) between the vectors
+  const cwSweep = ((a2 - a1) + 2 * Math.PI) % (2 * Math.PI);
+  const anticlockwise = cwSweep > Math.PI;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, a1, a2, anticlockwise);
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function draw() {
+  const c = $('main');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const { ax, ay, bx, by, lambda, view } = state;
+
+  // Grid
+  const scale = Math.min(W, H) / (2 * WORLD);
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let g = -WORLD; g <= WORLD; g++) {
+    const [cx] = worldToCanvas(g, 0, W, H);
+    const [, cy] = worldToCanvas(0, g, W, H);
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+  }
+  // Axes
+  ctx.strokeStyle = '#2a3748'; ctx.lineWidth = 1.5;
+  const [ox, oy] = worldToCanvas(0, 0, W, H);
+  ctx.beginPath(); ctx.moveTo(0, oy); ctx.lineTo(W, oy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ox, 0); ctx.lineTo(ox, H); ctx.stroke();
+
+  // Tick labels
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let g = -WORLD + 1; g < WORLD; g++) {
+    if (g === 0) continue;
+    const [cx] = worldToCanvas(g, 0, W, H);
+    ctx.fillText(g, cx, oy + 4);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let g = -WORLD + 1; g < WORLD; g++) {
+    if (g === 0) continue;
+    const [, cy] = worldToCanvas(0, g, W, H);
+    ctx.fillText(g, ox - 4, cy);
+  }
+
+  // ---- Mode-specific rendering ----
+  if (view === 'add') {
+    // Parallelogram: draw ghost copies of a and b
+    // b translated to tip of a
+    const [abx, aby] = [ax + bx, ay + by];
+    // Parallelogram sides
+    ctx.save();
+    ctx.fillStyle = 'rgba(167,139,250,0.10)';
+    const corners = [[0,0],[ax,ay],[abx,aby],[bx,by]];
+    ctx.beginPath();
+    corners.forEach(([x,y],i) => {
+      const [cx,cy] = worldToCanvas(x,y,W,H);
+      if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy);
+    });
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(167,139,250,0.30)'; ctx.lineWidth = 1; ctx.setLineDash([4,3]);
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+    // Tip-to-tail: b from tip of a
+    drawDashedArrow(ctx, ax, ay, abx, aby, '#f59e0b', W, H);
+    // Tip-to-tail: a from tip of b
+    drawDashedArrow(ctx, bx, by, abx, aby, '#22d3ee', W, H);
+
+    // Main vectors from origin
+    drawArrow(ctx, 0, 0, ax, ay, '#22d3ee', 'a', 2.5, W, H);
+    drawArrow(ctx, 0, 0, bx, by, '#f59e0b', 'b', 2.5, W, H);
+    // Resultant
+    drawArrow(ctx, 0, 0, abx, aby, '#34d399', 'a+b', 2.8, W, H, 18);
+
+    // Draw angle arc between a and b
+    if (mag(ax,ay) > 0.1 && mag(bx,by) > 0.1) {
+      drawAngleArc(ctx, 0, 0, ax, ay, bx, by, '#a78bfa', W, H);
+    }
+
+    // Component lines for a
+    drawDashedArrow(ctx, 0, 0, ax, 0, 'rgba(34,211,238,0.4)', W, H);
+    drawDashedArrow(ctx, ax, 0, ax, ay, 'rgba(34,211,238,0.4)', W, H);
+    drawDashedArrow(ctx, 0, 0, 0, ay, 'rgba(34,211,238,0.4)', W, H);
+
+  } else if (view === 'sub') {
+    const [dif_x, dif_y] = [ax - bx, ay - by];
+    // b from tip of result to tip of a (shows a = b + (a-b))
+    drawDashedArrow(ctx, bx, by, ax, ay, '#34d399', W, H);
+    drawArrow(ctx, 0, 0, ax, ay, '#22d3ee', 'a', 2.5, W, H);
+    drawArrow(ctx, 0, 0, bx, by, '#f59e0b', 'b', 2.5, W, H);
+    drawArrow(ctx, 0, 0, dif_x, dif_y, '#34d399', 'a−b', 2.8, W, H, 18);
+
+    // Show negation: −b
+    drawDashedArrow(ctx, 0, 0, -bx, -by, 'rgba(245,158,11,0.4)', W, H);
+    // Label −b
+    const [cx, cy] = worldToCanvas(-bx, -by, W, H);
+    ctx.fillStyle = 'rgba(245,158,11,0.6)'; ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('−b', cx + 5, cy - 3);
+
+  } else if (view === 'scalar') {
+    const [lax, lay] = [lambda * ax, lambda * ay];
+    // Unit component guides
+    drawDashedArrow(ctx, 0, 0, ax, 0, 'rgba(34,211,238,0.35)', W, H);
+    drawDashedArrow(ctx, ax, 0, ax, ay, 'rgba(34,211,238,0.35)', W, H);
+    drawArrow(ctx, 0, 0, ax, ay, '#22d3ee', 'a', 2.5, W, H);
+    drawArrow(ctx, 0, 0, lax, lay, '#34d399', `${lambda.toFixed(2)}a`, 2.8, W, H, 18);
+  }
+
+  // Draggable handle dots — draw last so always on top
+  [[ax, ay, '#22d3ee', 'a'], [bx, by, '#f59e0b', 'b']].forEach(([vx, vy, col]) => {
+    const [px, py] = worldToCanvas(vx, vy, W, H);
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#0a0e14'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2); ctx.stroke();
+  });
+
+  // Origin dot
+  ctx.fillStyle = '#5b6573';
+  ctx.beginPath(); ctx.arc(ox, oy, 4, 0, Math.PI * 2); ctx.fill();
+
+  // Border
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(0, 0, W, H);
+}
+
+function updateReadouts() {
+  const { ax, ay, bx, by, lambda, view } = state;
+  const ma = mag(ax, ay), mb = mag(bx, by);
+  const dp = dot(ax, ay, bx, by);
+  const theta = angleBetween(ax, ay, bx, by);
+
+  $('rMagA').textContent = fmt3(ma);
+  $('rMagB').textContent = fmt3(mb);
+  $('rAngA').textContent = fmt1(angleDeg(ax, ay)) + '°';
+  $('rAngB').textContent = fmt1(angleDeg(bx, by)) + '°';
+  $('rDot').textContent = fmt3(dp);
+  $('rTheta').textContent = fmt1(theta) + '°';
+
+  const rl = $('resultantLbl');
+  const rv = $('rResultant');
+  if (view === 'add') {
+    const rx = ax + bx, ry = ay + by;
+    rl.textContent = '|a + b|'; rv.textContent = fmt3(mag(rx, ry));
+    $('mainTitle').textContent = 'Vector addition: a + b';
+  } else if (view === 'sub') {
+    const rx = ax - bx, ry = ay - by;
+    rl.textContent = '|a − b|'; rv.textContent = fmt3(mag(rx, ry));
+    $('mainTitle').textContent = 'Vector subtraction: a − b';
+  } else {
+    const rx = lambda * ax, ry = lambda * ay;
+    rl.textContent = '|λa|'; rv.textContent = fmt3(mag(rx, ry));
+    $('mainTitle').textContent = 'Scalar multiplication: λa';
+  }
+
+  // Explainer
+  let txt = `<span class="k">a = ${fmtV(ax,ay)}</span>, |a| = <span class="k">${fmt3(ma)}</span> at <span class="k">${fmt1(angleDeg(ax,ay))}°</span>. `;
+  txt += `<span class="k">b = ${fmtV(bx,by)}</span>, |b| = <span class="k">${fmt3(mb)}</span> at <span class="k">${fmt1(angleDeg(bx,by))}°</span>. `;
+  txt += `Dot product <span class="k">a·b = aₓbₓ + aᵧbᵧ = ${fmt3(dp)}</span>, giving angle <span class="k">θ = cos⁻¹(a·b / |a||b|) = ${fmt1(theta)}°</span>. `;
+  if (Math.abs(theta - 90) < 1) txt += '<span class="k">Vectors are perpendicular</span> — dot product ≈ 0.';
+  else if (theta < 5) txt += '<span class="k">Vectors are nearly parallel</span> — dot product ≈ |a||b|.';
+  else if (theta > 175) txt += '<span class="k">Vectors are nearly anti-parallel</span> — dot product ≈ −|a||b|.';
+
+  if (view === 'add') {
+    const rx = ax+bx, ry = ay+by;
+    txt += ` Resultant: <span class="k">a + b = ${fmtV(rx,ry)}</span>, magnitude <span class="k">${fmt3(mag(rx,ry))}</span>.`;
+  } else if (view === 'sub') {
+    const rx = ax-bx, ry = ay-by;
+    txt += ` Difference: <span class="k">a − b = ${fmtV(rx,ry)}</span>, magnitude <span class="k">${fmt3(mag(rx,ry))}</span>.`;
+  } else {
+    txt += ` λa = <span class="k">${fmtV(lambda*ax, lambda*ay)}</span> — same direction, magnitude scaled by |λ| = <span class="k">${Math.abs(lambda).toFixed(2)}</span>.`;
+    if (lambda < 0) txt += ' Negative λ reverses direction.';
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() { draw(); updateReadouts(); }
+
+// ---- Slider wiring ----
+function syncSliders() {
+  $('sliderAx').value = state.ax; $('vAx').textContent = state.ax.toFixed(2);
+  $('sliderAy').value = state.ay; $('vAy').textContent = state.ay.toFixed(2);
+  $('sliderBx').value = state.bx; $('vBx').textContent = state.bx.toFixed(2);
+  $('sliderBy').value = state.by; $('vBy').textContent = state.by.toFixed(2);
+  $('sliderLambda').value = state.lambda; $('vLambda').textContent = state.lambda.toFixed(2);
+}
+
+$('sliderAx').addEventListener('input', e => { state.ax = parseFloat(e.target.value); $('vAx').textContent = state.ax.toFixed(2); redraw(); });
+$('sliderAy').addEventListener('input', e => { state.ay = parseFloat(e.target.value); $('vAy').textContent = state.ay.toFixed(2); redraw(); });
+$('sliderBx').addEventListener('input', e => { state.bx = parseFloat(e.target.value); $('vBx').textContent = state.bx.toFixed(2); redraw(); });
+$('sliderBy').addEventListener('input', e => { state.by = parseFloat(e.target.value); $('vBy').textContent = state.by.toFixed(2); redraw(); });
+$('sliderLambda').addEventListener('input', e => { state.lambda = parseFloat(e.target.value); $('vLambda').textContent = state.lambda.toFixed(2); redraw(); });
+
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('active')) return;
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.view = b.dataset.view;
+    $('scalarControl').style.display = state.view === 'scalar' ? 'block' : 'none';
+    redraw();
+  });
+});
+
+// ---- Drag arrowheads ----
+(function setupDrag() {
+  const c = $('main');
+  let dragging = null; // 'a' or 'b'
+
+  function vecFromEvent(e) {
+    const rect = c.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const W = rect.width, H = rect.height;
+    return canvasToWorld(clientX - rect.left, clientY - rect.top, W, H);
+  }
+
+  function nearTip(wx, wy, vx, vy, W, H) {
+    const [cx1, cy1] = worldToCanvas(vx, vy, W, H);
+    const scale = Math.min(W, H) / (2 * WORLD);
+    const [cx2, cy2] = worldToCanvas(wx, wy, W, H);
+    const d = Math.sqrt((cx1-cx2)**2 + (cy1-cy2)**2);
+    return d < 18;
+  }
+
+  c.addEventListener('mousedown', e => {
+    const rect = c.getBoundingClientRect();
+    const W = rect.width, H = rect.height;
+    const [wx, wy] = vecFromEvent(e);
+    if (nearTip(wx, wy, state.ax, state.ay, W, H)) dragging = 'a';
+    else if (nearTip(wx, wy, state.bx, state.by, W, H)) dragging = 'b';
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const [wx, wy] = vecFromEvent(e);
+    const snapped = [Math.round(wx * 4) / 4, Math.round(wy * 4) / 4];
+    if (dragging === 'a') { state.ax = snapped[0]; state.ay = snapped[1]; }
+    else { state.bx = snapped[0]; state.by = snapped[1]; }
+    syncSliders(); redraw();
+  });
+  window.addEventListener('mouseup', () => { dragging = null; });
+
+  c.addEventListener('touchstart', e => {
+    const rect = c.getBoundingClientRect();
+    const W = rect.width, H = rect.height;
+    const [wx, wy] = vecFromEvent(e);
+    if (nearTip(wx, wy, state.ax, state.ay, W, H)) dragging = 'a';
+    else if (nearTip(wx, wy, state.bx, state.by, W, H)) dragging = 'b';
+  }, { passive: true });
+  window.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const [wx, wy] = vecFromEvent(e);
+    const snapped = [Math.round(wx * 4) / 4, Math.round(wy * 4) / 4];
+    if (dragging === 'a') { state.ax = snapped[0]; state.ay = snapped[1]; }
+    else { state.bx = snapped[0]; state.by = snapped[1]; }
+    syncSliders(); redraw();
+  }, { passive: true });
+  window.addEventListener('touchend', () => { dragging = null; });
+})();
+
+// ---- Try this ----
+const tryPresets = {
+  perpendicular: { ax: 3, ay: 0, bx: 0, by: 2, view: 'add',
+    note: '<strong>a·b = 3×0 + 0×2 = 0</strong>. Perpendicular vectors always have zero dot product — the angle between them is 90°.' },
+  parallel: { ax: 2, ay: 2, bx: 3, by: 3, view: 'add',
+    note: '<strong>a and b are parallel</strong> (same direction). The angle between them is 0° and a·b = |a||b|. The resultant points the same way but is longer.' },
+  unit_add: { ax: 3, ay: 0, bx: 0, by: 3, view: 'add',
+    note: 'Two vectors at right angles with the <strong>same magnitude</strong>: the resultant has magnitude |a|√2 and points at 45°. This is the Pythagorean theorem in vector form.' },
+  negate: { ax: 3, ay: 2, bx: 3, by: 2, view: 'sub',
+    note: '<strong>a − a = 0</strong>. When both vectors are identical, subtraction yields the zero vector. Switch to Subtraction mode to see this.' }
+};
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = tryPresets[b.dataset.try];
+    if (!cfg) return;
+    Object.assign(state, cfg);
+    syncSliders();
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.toggle('active', x.dataset.view === cfg.view));
+    $('scalarControl').style.display = cfg.view === 'scalar' ? 'block' : 'none';
+    redraw();
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+// ---- Keyboard ----
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  const viewOrder = ['add', 'sub', 'scalar'];
+
+  function reset() {
+    state.ax = 3; state.ay = 2; state.bx = 1; state.by = -3; state.lambda = 2;
+    state.view = 'add'; state.selected = null;
+    syncSliders();
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.toggle('active', x.dataset.view === 'add'));
+    $('scalarControl').style.display = 'none';
+    redraw();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (k === '1') { state.selected = 'a'; }
+    else if (k === '2') { state.selected = 'b'; }
+    else if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(k)) {
+      e.preventDefault();
+      const step = 0.25;
+      const sel = state.selected || 'a';
+      if (k === 'ArrowLeft') { if (sel==='a') state.ax -= step; else state.bx -= step; }
+      if (k === 'ArrowRight') { if (sel==='a') state.ax += step; else state.bx += step; }
+      if (k === 'ArrowUp') { if (sel==='a') state.ay += step; else state.by += step; }
+      if (k === 'ArrowDown') { if (sel==='a') state.ay -= step; else state.by -= step; }
+      // Clamp
+      ['ax','ay','bx','by'].forEach(p => { state[p] = Math.max(-6, Math.min(6, state[p])); });
+      syncSliders(); redraw();
+    } else if (k.toLowerCase() === 'v') {
+      const idx = viewOrder.indexOf(state.view);
+      const next = viewOrder[(idx + 1) % viewOrder.length];
+      document.querySelector(`#viewToggle button[data-view="${next}"]`).click();
+    } else if (k.toLowerCase() === 'r') {
+      reset();
+    }
+  });
+})();
+
+window.addEventListener('resize', redraw);
+syncSliders();
+redraw();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="eigenvalue_vis.html">
+      <div class="related-title">Eigenvalues &amp; Eigenvectors</div>
+      <div class="related-desc">Special vectors that matrix transformations merely scale — not rotate</div>
+    </a>
+    <a class="related-card" href="derivative_slope.html">
+      <div class="related-title">Differentiation: The Slope of a Curve</div>
+      <div class="related-desc">Tangent lines, gradients, and first principles — vectors underlie calculus in higher dimensions</div>
+    </a>
+    <a class="related-card" href="integration_area.html">
+      <div class="related-title">Integration: Area Under a Curve</div>
+      <div class="related-desc">Riemann sums converging to the definite integral</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

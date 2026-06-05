@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Natural Selection: Peppered Moths</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 260px; }
+.graph-wrap { position: relative; width: 100%; height: 220px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.btn-row { display: flex; gap: 8px; margin-top: 12px; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Natural Selection: Peppered Moths</h1>
+    <p class="sub">Industrial melanism · predation pressure · allele frequency change over generations</p>
+    <p class="insight-banner">Natural selection doesn't create new traits — it changes how common existing variants are, by favouring those best matched to the current environment.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Step one generation</span>
+      <span class="kbd-key">G</span><span>Run 10 generations</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Tree bark — moth population</h3>
+        <span id="genLabel" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim)">Generation 0</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="barkCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:#e8e0cc"></span>Light moth (typica)</span>
+        <span class="legend-item"><span class="swatch" style="background:#2a1f14"></span>Dark moth (carbonaria)</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="title-row">
+        <h3>Allele frequency over generations</h3>
+        <span style="font-size:11px;color:var(--text-dim)">dark allele (melanistic) vs light allele</span>
+      </div>
+      <div class="graph-wrap"><canvas id="graphCanvas"></canvas></div>
+    </div>
+
+    <div class="explainer" id="explainer">Set the pollution level and predation pressure, then step through generations to watch natural selection shift the population.</div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Environment</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Industrial pollution darkens tree bark with soot. A value of 0 = clean lichen-covered bark (pale); 100 = heavy soot (dark bark).">Pollution / bark darkness (%)</span>
+          <span class="value num" id="vPollution">0</span>
+        </div>
+        <input type="range" id="slPollution" min="0" max="100" step="1" value="0">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="How many moths are eaten per generation as a fraction of the population. Higher = stronger selection pressure.">Predation rate (%/gen)</span>
+          <span class="value num" id="vPredation">30</span>
+        </div>
+        <input type="range" id="slPredation" min="5" max="60" step="1" value="30">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Starting fraction of dark (carbonaria) moths.">Initial dark fraction (%)</span>
+          <span class="value num" id="vInitDark">5</span>
+        </div>
+        <input type="range" id="slInitDark" min="1" max="99" step="1" value="5">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label">Population size</span>
+          <span class="value num" id="vPopSize">120</span>
+        </div>
+        <input type="range" id="slPopSize" min="40" max="300" step="10" value="120">
+      </div>
+      <div class="btn-row">
+        <button class="primary" id="btnStep">Next generation</button>
+        <button id="btnRun10">Run 10 gens</button>
+        <button id="btnReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Current generation</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Generation</div><div class="val cyan" id="rGen">0</div></div>
+        <div class="readout"><div class="lbl">Dark moths (%)</div><div class="val amber" id="rDark">—</div></div>
+        <div class="readout"><div class="lbl">Light moths (%)</div><div class="val" id="rLight">—</div></div>
+        <div class="readout"><div class="lbl" title="Selection coefficient: s = how much less fit the disadvantaged morph is per generation (0 = neutral, 1 = lethal).">Selection coeff. s</div><div class="val green" id="rSelCoeff">—</div></div>
+        <div class="readout"><div class="lbl">Dark eaten/gen</div><div class="val" id="rEatenDark">—</div></div>
+        <div class="readout"><div class="lbl">Light eaten/gen</div><div class="val" id="rEatenLight">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="industrial">Industrial Revolution</button>
+        <button data-try="clean_air">Clean Air Acts</button>
+        <button data-try="no_predation">No predation</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// ---- Model ----
+// Population stored as N moths, each {dark: bool, x, y}
+const DEFAULTS = { pollution: 0, predation: 30, initDark: 5, popSize: 120 };
+
+const state = {
+  pollution: 0,
+  predation: 30,
+  initDark: 5,
+  popSize: 120,
+  generation: 0,
+  // darkFrac is the main state variable
+  darkFrac: 0.05,
+  history: [] // [{gen, darkFrac}]
+};
+
+// Moth positions (randomised once per reset, updated each gen)
+let moths = [];
+
+function initMoths() {
+  moths = [];
+  for (let i = 0; i < state.popSize; i++) {
+    moths.push({
+      dark: Math.random() < state.darkFrac,
+      x: Math.random(),
+      y: Math.random(),
+      angle: Math.random() * Math.PI * 2,
+      size: 0.6 + Math.random() * 0.4
+    });
+  }
+}
+
+function reset() {
+  state.pollution = parseInt($('slPollution').value);
+  state.predation = parseInt($('slPredation').value);
+  state.initDark = parseInt($('slInitDark').value);
+  state.popSize = parseInt($('slPopSize').value);
+  state.darkFrac = state.initDark / 100;
+  state.generation = 0;
+  state.history = [{ gen: 0, darkFrac: state.darkFrac }];
+  initMoths();
+  updateReadouts();
+  drawBark();
+  drawGraph();
+}
+
+// Selection model:
+// Bark darkness (0–1). Moths that contrast more are eaten more.
+// Contrast of light moth on dark bark = pollution/100
+// Contrast of dark moth on light bark = 1 - pollution/100
+// predation rate is a base per generation; the more contrasted morph gets eaten at a higher rate
+function stepGeneration() {
+  const barkDark = state.pollution / 100; // 0=pale, 1=dark
+  const predRate = state.predation / 100;
+
+  // Visibility: higher = more likely to be eaten
+  // Light moth visibility on bark
+  const lightVis = barkDark; // light moth stands out on dark bark
+  // Dark moth visibility on bark
+  const darkVis = 1 - barkDark; // dark moth stands out on light bark
+
+  // Normalise so average predation = predRate
+  const avgVis = state.darkFrac * darkVis + (1 - state.darkFrac) * lightVis;
+  // predation probability proportional to relative visibility
+  // p_eaten_dark = predRate * darkVis / (avgVis || 1)
+  // p_eaten_light = predRate * lightVis / (avgVis || 1)
+  const denom = avgVis || 0.001;
+  let pEatDark = Math.min(0.99, predRate * darkVis / denom);
+  let pEatLight = Math.min(0.99, predRate * lightVis / denom);
+
+  // Survival fractions
+  const survDark = 1 - pEatDark;
+  const survLight = 1 - pEatLight;
+
+  // New allele frequencies (simplified diploid: treat morphs as directly breeding)
+  const darkCount = state.darkFrac * survDark;
+  const lightCount = (1 - state.darkFrac) * survLight;
+  const total = darkCount + lightCount;
+  state.darkFrac = total > 0 ? Math.min(0.999, Math.max(0.001, darkCount / total)) : state.darkFrac;
+
+  // Add genetic drift (small random perturbation for realism)
+  const drift = (Math.random() - 0.5) * (0.5 / Math.sqrt(state.popSize));
+  state.darkFrac = Math.min(0.999, Math.max(0.001, state.darkFrac + drift));
+
+  state.generation++;
+  state.history.push({ gen: state.generation, darkFrac: state.darkFrac });
+
+  // Regenerate moth positions for new generation
+  initMoths();
+  updateReadouts();
+  drawBark();
+  drawGraph();
+}
+
+function updateReadouts() {
+  $('genLabel').textContent = 'Generation ' + state.generation;
+  $('rGen').textContent = state.generation;
+  $('rDark').textContent = (state.darkFrac * 100).toFixed(1) + '%';
+  $('rLight').textContent = ((1 - state.darkFrac) * 100).toFixed(1) + '%';
+
+  const barkDark = state.pollution / 100;
+  const predRate = state.predation / 100;
+  const avgVis = state.darkFrac * (1 - barkDark) + (1 - state.darkFrac) * barkDark;
+  const denom = avgVis || 0.001;
+  const pEatDark = Math.min(0.99, predRate * (1 - barkDark) / denom);
+  const pEatLight = Math.min(0.99, predRate * barkDark / denom);
+  const s = Math.abs(pEatDark - pEatLight).toFixed(3);
+  $('rSelCoeff').textContent = s;
+  $('rEatenDark').textContent = Math.round(state.darkFrac * state.popSize * pEatDark) + '/gen';
+  $('rEatenLight').textContent = Math.round((1 - state.darkFrac) * state.popSize * pEatLight) + '/gen';
+
+  // Explainer
+  const dominant = state.darkFrac > 0.5 ? 'dark (carbonaria)' : 'light (typica)';
+  const reason = state.pollution > 50 ? 'dark bark from pollution makes light moths conspicuous to birds' : 'pale lichen-covered bark makes dark moths conspicuous';
+  let txt = `Generation <span class="k">${state.generation}</span>: <span class="k">${(state.darkFrac*100).toFixed(1)}%</span> dark moths, <span class="k">${((1-state.darkFrac)*100).toFixed(1)}%</span> light moths. `;
+  txt += `The ${dominant} form is currently more common because ${reason}. `;
+  if (parseFloat(s) < 0.02) txt += `With near-equal bark tone, selection pressure is weak — frequencies change slowly (genetic drift dominates).`;
+  else txt += `Selection coefficient s = <span class="k">${s}</span> — the disadvantaged morph loses about <span class="k">${(parseFloat(s)*100).toFixed(1)}%</span> relative fitness each generation.`;
+  $('explainer').innerHTML = txt;
+}
+
+// ---- Draw bark scene ----
+function barkColour(pollution) {
+  // 0 = pale lichen (#b8b09a), 100 = heavy soot (#1c1410)
+  const r = Math.round(184 - pollution * 1.56);
+  const g = Math.round(176 - pollution * 1.60);
+  const b = Math.round(154 - pollution * 1.38);
+  return `rgb(${r},${g},${b})`;
+}
+
+function drawBark() {
+  const c = $('barkCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const bgColor = barkColour(state.pollution);
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, W, H);
+
+  // Bark texture — vertical streaks
+  const p = state.pollution / 100;
+  for (let i = 0; i < 30; i++) {
+    const x = (i / 30) * W + (Math.sin(i * 2.3) * 8);
+    const alpha = 0.05 + Math.random() * 0.08;
+    ctx.strokeStyle = p > 0.5 ? `rgba(0,0,0,${alpha})` : `rgba(255,255,255,${alpha})`;
+    ctx.lineWidth = 2 + Math.random() * 4;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.bezierCurveTo(x + 10, H * 0.3, x - 8, H * 0.7, x + 5, H);
+    ctx.stroke();
+  }
+
+  // Lichen patches (only on clean bark)
+  if (state.pollution < 70) {
+    const lichenAlpha = (1 - state.pollution / 70) * 0.35;
+    ctx.fillStyle = `rgba(160,180,120,${lichenAlpha})`;
+    for (let i = 0; i < 12; i++) {
+      const lx = (i * 97 + 43) % W;
+      const ly = (i * 67 + 31) % H;
+      ctx.beginPath(); ctx.ellipse(lx, ly, 18 + (i%3)*8, 10 + (i%4)*5, i * 0.4, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  // Draw moths
+  moths.forEach(m => {
+    const mx = m.x * W;
+    const my = m.y * H;
+    const s = 8 + m.size * 6;
+    drawMoth(ctx, mx, my, s, m.dark, m.angle);
+  });
+
+  // Pollution indicator
+  if (state.pollution > 0) {
+    ctx.fillStyle = 'rgba(10,14,20,0.65)';
+    ctx.beginPath(); ctx.roundRect(8, H - 30, 140, 22, 5); ctx.fill();
+    ctx.fillStyle = state.pollution > 60 ? '#f43f5e' : '#f59e0b';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('Pollution: ' + state.pollution + '%', 14, H - 19);
+  }
+}
+
+function drawMoth(ctx, x, y, size, dark, angle) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  const bodyColor = dark ? '#1e1710' : '#d4c9ad';
+  const wingColor = dark ? '#2a1f14' : '#e8e0cc';
+  const wingAccent = dark ? '#3a2d1e' : '#c8b894';
+  const spotColor = dark ? '#3d2f1e' : '#b8a070';
+
+  // Wings
+  ctx.fillStyle = wingColor;
+  ctx.strokeStyle = wingAccent;
+  ctx.lineWidth = 0.7;
+  // Upper wings
+  ctx.beginPath(); ctx.ellipse(-size * 0.55, -size * 0.1, size * 0.65, size * 0.32, -0.45, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(size * 0.55, -size * 0.1, size * 0.65, size * 0.32, 0.45, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  // Lower wings
+  ctx.beginPath(); ctx.ellipse(-size * 0.42, size * 0.25, size * 0.45, size * 0.22, 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(size * 0.42, size * 0.25, size * 0.45, size * 0.22, -0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  // Wing pattern spots
+  ctx.fillStyle = spotColor;
+  [-1, 1].forEach(side => {
+    for (let sp = 0; sp < 3; sp++) {
+      ctx.beginPath(); ctx.arc(side * (size * 0.3 + sp * size * 0.15), -size * 0.05 + sp * size * 0.1, 1.2, 0, Math.PI*2); ctx.fill();
+    }
+  });
+
+  // Body
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath(); ctx.ellipse(0, 0, size * 0.12, size * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Head
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath(); ctx.arc(0, -size * 0.38, size * 0.1, 0, Math.PI * 2); ctx.fill();
+
+  // Antennae
+  ctx.strokeStyle = dark ? '#3a2d1e' : '#a09070';
+  ctx.lineWidth = 0.8;
+  [[-0.3, -1.4], [0.3, -1.4]].forEach(([dx, dy]) => {
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 0.38);
+    ctx.quadraticCurveTo(dx * size * 0.3, -size * 0.65, dx * size * 0.5, -size * 0.8);
+    ctx.stroke();
+  });
+
+  ctx.restore();
+}
+
+// ---- Draw frequency graph ----
+function drawGraph() {
+  const c = $('graphCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 46, r: 16, t: 14, b: 30 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const hist = state.history;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + ph * i / 5;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  const xMax = Math.max(20, hist.length - 1 + 2);
+  const xAt = g => pad.l + (g / xMax) * pw;
+  const yAt = f => pad.t + ph * (1 - f);
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) {
+    ctx.fillText((100 - i * 20) + '%', pad.l - 6, pad.t + ph * i / 5);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const tickStep = xMax <= 20 ? 5 : xMax <= 50 ? 10 : 20;
+  for (let g = 0; g <= xMax; g += tickStep) {
+    ctx.fillText(g, xAt(g), H - pad.b + 5);
+  }
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('Generation', pad.l + pw / 2, H);
+  ctx.save(); ctx.translate(11, pad.t + ph / 2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Frequency', 0, 0); ctx.restore();
+
+  if (hist.length < 2) {
+    ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1; ctx.strokeRect(pad.l, pad.t, pw, ph);
+    return;
+  }
+
+  // Dark moth line
+  ctx.beginPath();
+  hist.forEach((h, i) => {
+    const x = xAt(h.gen), y = yAt(h.darkFrac);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Light moth line (complement)
+  ctx.beginPath();
+  hist.forEach((h, i) => {
+    const x = xAt(h.gen), y = yAt(1 - h.darkFrac);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#e8e0cc'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Current point
+  const last = hist[hist.length - 1];
+  ctx.fillStyle = '#a78bfa';
+  ctx.beginPath(); ctx.arc(xAt(last.gen), yAt(last.darkFrac), 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#e8e0cc';
+  ctx.beginPath(); ctx.arc(xAt(last.gen), yAt(1 - last.darkFrac), 4, 0, Math.PI*2); ctx.fill();
+
+  // Legend inline
+  ctx.fillStyle = '#a78bfa'; ctx.font = '10px Inter'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('dark (carbonaria)', pad.l + 6, pad.t + 4);
+  ctx.fillStyle = '#d4c9ad';
+  ctx.fillText('light (typica)', pad.l + 6, pad.t + 18);
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1; ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+// ---- Controls ----
+$('slPollution').addEventListener('input', e => { state.pollution = +e.target.value; $('vPollution').textContent = state.pollution; drawBark(); });
+$('slPredation').addEventListener('input', e => { state.predation = +e.target.value; $('vPredation').textContent = state.predation; });
+$('slInitDark').addEventListener('input', e => { state.initDark = +e.target.value; $('vInitDark').textContent = state.initDark; });
+$('slPopSize').addEventListener('input', e => { state.popSize = +e.target.value; $('vPopSize').textContent = state.popSize; });
+
+$('btnStep').addEventListener('click', () => { $('tryNote').textContent = ''; stepGeneration(); });
+$('btnRun10').addEventListener('click', () => {
+  $('tryNote').textContent = '';
+  for (let i = 0; i < 10; i++) stepGeneration();
+});
+$('btnReset').addEventListener('click', () => { $('tryNote').textContent = ''; reset(); });
+
+function applyTry(name) {
+  const presets = {
+    industrial: {
+      pollution: 80, predation: 35, initDark: 3, popSize: 120,
+      note: '<strong>Industrial Revolution scenario.</strong> Start with mostly light moths; heavy pollution darkens the bark; watch dark moths become dominant within ~15 generations — exactly what happened in Manchester from 1850–1900.'
+    },
+    clean_air: {
+      pollution: 10, predation: 35, initDark: 95, popSize: 120,
+      note: '<strong>Clean Air Acts (post-1956).</strong> Start with a mostly dark population on now-clean bark. Light moths regain the advantage — dark moths decline. This reversal was observed in UK populations after pollution fell.'
+    },
+    no_predation: {
+      pollution: 50, predation: 0, initDark: 50, popSize: 200,
+      note: '<strong>No predation — drift only.</strong> With predation at zero, there is no directional selection. Any change is due purely to random genetic drift, which is slow and non-directional.'
+    }
+  };
+  const cfg = presets[name];
+  if (!cfg) return;
+  state.pollution = cfg.pollution; $('slPollution').value = cfg.pollution; $('vPollution').textContent = cfg.pollution;
+  state.predation = cfg.predation; $('slPredation').value = cfg.predation; $('vPredation').textContent = cfg.predation;
+  state.initDark = cfg.initDark; $('slInitDark').value = cfg.initDark; $('vInitDark').textContent = cfg.initDark;
+  state.popSize = cfg.popSize; $('slPopSize').value = cfg.popSize; $('vPopSize').textContent = cfg.popSize;
+  $('tryNote').innerHTML = cfg.note;
+  reset();
+}
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', () => { drawBark(); drawGraph(); });
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ' ') { e.preventDefault(); stepGeneration(); }
+    else if (e.key.toLowerCase() === 'g') { for (let i=0;i<10;i++) stepGeneration(); }
+    else if (e.key.toLowerCase() === 'r') { reset(); }
+  });
+})();
+
+reset();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="food_chains.html">
+      <div class="related-title">Food Chains &amp; Energy Pyramids</div>
+      <div class="related-desc">The predation pressure driving selection here is part of every food chain — see how energy flows through trophic levels.</div>
+    </a>
+    <a class="related-card" href="cell_explorer.html">
+      <div class="related-title">Animal &amp; Plant Cells</div>
+      <div class="related-desc">Variation between individuals starts at the cellular level — explore how organelles carry out the processes that make organisms different.</div>
+    </a>
+    <a class="related-card" href="sir_model.html">
+      <div class="related-title">Epidemic Model (SEIR)</div>
+      <div class="related-desc">Disease is another powerful selection pressure — populations evolve resistance over generations.</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

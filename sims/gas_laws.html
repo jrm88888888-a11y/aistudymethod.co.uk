@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gas Laws &amp; the Particle Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.main-canvas-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.canvas-wrap { position: relative; width: 100%; height: 380px; }
+.canvas-wrap-sm { position: relative; width: 100%; height: 240px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Gas Laws &amp; the Particle Model</h1>
+    <p class="sub">Boyle's Law pV = const · pressure from particle collisions · temperature &amp; kinetic energy</p>
+    <p class="insight-banner">Pressure arises from gas particles colliding with container walls. Squeeze the gas (reduce V) — particles collide more often — pressure rises. Heat it — particles move faster — pressure and volume both rise.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Pause / resume particles</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">B</span><span>Boyle's Law demo (fix T)</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="main-canvas-row">
+        <div>
+          <div class="title-row"><h3>Cylinder &amp; piston (particle model)</h3></div>
+          <div class="canvas-wrap"><canvas id="cylinderCanvas"></canvas></div>
+        </div>
+        <div>
+          <div class="title-row">
+            <h3>p–V graph</h3>
+            <div class="seg" id="graphToggle">
+              <button data-graph="pv" class="active">p–V</button>
+              <button data-graph="pt">p–T</button>
+            </div>
+          </div>
+          <div class="canvas-wrap"><canvas id="pvCanvas"></canvas></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Boyle's Law curve (pV = const)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Current state</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Wall collision flash</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Gas state</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Volume of the gas in the cylinder — controlled by moving the piston. Measured in arbitrary display units (scaled).">Volume V (units)</span>
+          <span class="value num" id="vVol">60</span>
+        </div>
+        <input type="range" id="sliderV" min="20" max="100" step="1" value="60">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Temperature of the gas in kelvin (K). Absolute zero = 0 K = −273 °C.">Temperature T (K)</span>
+          <span class="value num" id="vTemp">300</span>
+        </div>
+        <input type="range" id="sliderT" min="100" max="600" step="10" value="300">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Number of simulated gas particles. In reality a gas contains ~10²³ particles per mole.">Particle count N</span>
+          <span class="value num" id="vN">30</span>
+        </div>
+        <input type="range" id="sliderN" min="10" max="60" step="1" value="30">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Calculated values</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="Pressure proportional to NkT/V (ideal gas law). Displayed in arbitrary units normalised to P₀ = 1 at V=60, T=300.">Pressure P</div><div class="val cyan" id="oP">1.00</div></div>
+        <div class="readout"><div class="lbl">Volume V</div><div class="val amber" id="oV">60</div></div>
+        <div class="readout"><div class="lbl">Temperature T</div><div class="val rose" id="oT">300 K</div></div>
+        <div class="readout"><div class="lbl" title="pV / T = constant for a fixed amount of ideal gas (combined gas law).">pV / T</div><div class="val green" id="oPVT">—</div></div>
+        <div class="readout"><div class="lbl" title="Average kinetic energy of a gas particle ∝ T. Ek = (3/2)kT for a monatomic ideal gas.">Mean KE ∝ T</div><div class="val violet" id="oKE">—</div></div>
+        <div class="readout"><div class="lbl">Celsius T</div><div class="val" id="oC">27 °C</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="boyle">Boyle's Law: halve V</button>
+        <button data-try="heat">Heat at fixed V</button>
+        <button data-try="cool">Cool to near 0 K</button>
+        <button data-try="compress">Rapid compression</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const state = {
+  V: 60,    // volume units (20–100)
+  T: 300,   // kelvin
+  N: 30,    // particle count
+  paused: false,
+  graphMode: 'pv',
+  // Boyle's law reference: P0*V0 = constant at current T
+  P0: 1.0,
+  V0: 60,
+  T0: 300
+};
+
+// Pressure: ideal gas P ∝ NT/V. Normalise P=1 at V=60, T=300
+function pressure() {
+  return (state.N / 30) * (state.T / 300) * (60 / state.V);
+}
+function pVT() {
+  return (pressure() * state.V / state.T).toFixed(4);
+}
+
+// Particle simulation
+let particles = [];
+const MAX_PARTICLES = 60;
+
+function initParticles() {
+  particles = [];
+  for (let i = 0; i < MAX_PARTICLES; i++) {
+    // position in normalised [0,1] — mapped to actual cylinder when drawing
+    particles.push({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 2,
+      vy: (Math.random() - 0.5) * 2,
+      flash: 0  // wall collision flash timer
+    });
+  }
+}
+
+// History for graph
+const history = [];
+const MAX_HIST = 200;
+
+// Cylinder geometry (in canvas pixels, recomputed each frame)
+let cyl = { x: 0, y: 0, w: 0, h: 0 }; // inner gas region
+
+let animId = null;
+let lastTs = 0;
+let collisionFlashes = []; // [{x,y,t}] for collision sparks
+
+function getSpeedScale() {
+  // Particle speed proportional to sqrt(T/300)
+  return Math.sqrt(state.T / 300);
+}
+
+function updateParticles(dt) {
+  if (state.paused) return;
+  const speedScale = getSpeedScale();
+  const activeN = Math.min(state.N, MAX_PARTICLES);
+
+  for (let i = 0; i < MAX_PARTICLES; i++) {
+    const p = particles[i];
+    if (i >= activeN) continue;
+
+    // Scale velocity to match current temperature
+    const curSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    const targetSpeed = speedScale;
+    if (curSpeed > 0.01) {
+      const scale = targetSpeed / curSpeed;
+      p.vx *= scale; p.vy *= scale;
+    }
+
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    // Volume fraction (clamped [0,1])
+    const vFrac = Math.max(0.1, Math.min(1, state.V / 100));
+
+    // Bounce off walls (y) and cylinder bottom (y=1), cylinder top (y=0)
+    if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy); p.flash = 1; }
+    if (p.y > 1) { p.y = 1; p.vy = -Math.abs(p.vy); p.flash = 1; }
+    // Bounce off left wall
+    if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx); p.flash = 1; }
+    // Bounce off piston (right side): piston position = vFrac
+    if (p.x > vFrac) { p.x = vFrac; p.vx = -Math.abs(p.vx); p.flash = 1; }
+    if (p.flash > 0) p.flash -= dt * 4;
+  }
+}
+
+function drawCylinder() {
+  const c = $('cylinderCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Layout
+  const padL = 30, padR = 50, padT = 40, padB = 30;
+  const cylW = W - padL - padR;
+  const cylH = H - padT - padB;
+
+  // Cylinder walls
+  ctx.strokeStyle = '#5b6573'; ctx.lineWidth = 3;
+  // Left wall
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + cylH); ctx.stroke();
+  // Top wall
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL + cylW, padT); ctx.stroke();
+  // Bottom wall
+  ctx.beginPath(); ctx.moveTo(padL, padT + cylH); ctx.lineTo(padL + cylW, padT + cylH); ctx.stroke();
+
+  // Gas region
+  const vFrac = Math.max(0.1, Math.min(1, state.V / 100));
+  const gasW = cylW * vFrac;
+
+  // Temperature colour of gas
+  const tNorm = (state.T - 100) / 500;
+  const rC = Math.floor(tNorm * 200);
+  const gC = Math.floor((1 - tNorm) * 100 + 30);
+  ctx.fillStyle = `rgba(${rC}, ${gC}, 200, 0.08)`;
+  ctx.fillRect(padL, padT, gasW, cylH);
+
+  // Particles
+  const activeN = Math.min(state.N, MAX_PARTICLES);
+  for (let i = 0; i < activeN; i++) {
+    const p = particles[i];
+    const px = padL + p.x * cylW;
+    const py = padT + p.y * cylH;
+    const flash = Math.max(0, p.flash);
+    const col = flash > 0.1 ? '#f43f5e' : '#22d3ee';
+    const r = 4;
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+    if (flash > 0.1) {
+      ctx.fillStyle = 'rgba(244,63,94,0.2)';
+      ctx.beginPath(); ctx.arc(px, py, r * 2.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // Piston
+  const pistonX = padL + gasW;
+  const pistonW = 18;
+  // Piston handle
+  ctx.strokeStyle = '#5b6573'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(pistonX + pistonW / 2, padT); ctx.lineTo(pistonX + pistonW / 2, padT + cylH); ctx.stroke();
+  // Piston body
+  ctx.fillStyle = '#97a1b0';
+  ctx.fillRect(pistonX, padT, pistonW / 2, cylH);
+  ctx.strokeStyle = '#e6edf3'; ctx.lineWidth = 2;
+  ctx.strokeRect(pistonX, padT, pistonW / 2, cylH);
+
+  // Piston arrow (showing compression/expansion)
+  ctx.fillStyle = '#f59e0b'; ctx.font = '16px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('⇔', pistonX + pistonW + 8, padT + cylH / 2);
+
+  // Pressure gauge (colour-coded)
+  const P = pressure();
+  const gaugeH = Math.min(cylH * P * 0.6, cylH);
+  const gaugeX = padL + cylW + padR * 0.3;
+  ctx.fillStyle = '#1f2937';
+  ctx.fillRect(gaugeX, padT, 16, cylH);
+  ctx.fillStyle = P > 2 ? '#f43f5e' : P > 1.2 ? '#f59e0b' : '#22d3ee';
+  ctx.fillRect(gaugeX, padT + cylH - gaugeH, 16, gaugeH);
+  ctx.strokeStyle = '#5b6573'; ctx.lineWidth = 1;
+  ctx.strokeRect(gaugeX, padT, 16, cylH);
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('P', gaugeX + 8, padT + cylH + 4);
+  ctx.fillText(P.toFixed(2), gaugeX + 8, padT + cylH + 16);
+
+  // Temperature label
+  const tColor = state.T > 400 ? '#f43f5e' : state.T < 200 ? '#22d3ee' : '#f59e0b';
+  ctx.fillStyle = tColor; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('T = ' + state.T + ' K', padL, 10);
+  ctx.fillText('V = ' + state.V, padL + cylW / 2, 10);
+
+  // Volume label
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('V = ' + state.V + ' units', padL + gasW / 2, padT - 6);
+
+  // Molecular speed arrows (show a few)
+  ctx.strokeStyle = 'rgba(34,211,238,0.35)'; ctx.lineWidth = 1;
+  for (let i = 0; i < Math.min(activeN, 8); i++) {
+    const p = particles[i];
+    const px = padL + p.x * cylW;
+    const py = padT + p.y * cylH;
+    const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    const len = 14 / Math.max(speed, 0.1);
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(px + p.vx * len, py + p.vy * len);
+    ctx.stroke();
+  }
+}
+
+function drawPV() {
+  const c = $('pvCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 52, r: 20, t: 20, b: 44 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  if (state.graphMode === 'pv') {
+    // p–V graph: Boyle's Law hyperbola pV = C at current T
+    const C = pressure() * state.V; // current pV
+    const Vmin = 20, Vmax = 100;
+    const Pmin = 0, Pmax = (state.N / 30) * (state.T / 300) * (60 / 20) * 1.2;
+
+    const xAt = v => pad.l + ((v - Vmin) / (Vmax - Vmin)) * pw;
+    const yAt = p => (H - pad.b) - Math.max(0, (p - Pmin) / (Pmax - Pmin)) * ph;
+
+    // Grid
+    ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      ctx.beginPath(); ctx.moveTo(pad.l + pw*i/4, pad.t); ctx.lineTo(pad.l + pw*i/4, H - pad.b); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad.l, pad.t + ph*i/4); ctx.lineTo(W - pad.r, pad.t + ph*i/4); ctx.stroke();
+    }
+    ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let i = 0; i <= 4; i++) ctx.fillText(Math.round(Vmin + (Vmax - Vmin)*i/4).toString(), pad.l + pw*i/4, H - pad.b + 5);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) ctx.fillText((Pmax*(4-i)/4).toFixed(1), pad.l - 5, pad.t + ph*i/4);
+    ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('Volume V (units)', pad.l + pw/2, H - 16);
+    ctx.save(); ctx.translate(14, pad.t + ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('Pressure P (norm.)', 0, 0); ctx.restore();
+
+    // Boyle's Law hyperbola for current T (multiple isotherms)
+    const temps = [150, 300, 450, 600];
+    temps.forEach((Tt, idx) => {
+      const alpha = (idx + 1) / 4;
+      ctx.beginPath(); let first = true;
+      for (let V = Vmin; V <= Vmax; V += 0.5) {
+        const P = (state.N / 30) * (Tt / 300) * (60 / V);
+        const x = xAt(V), y = yAt(P);
+        if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
+      }
+      ctx.strokeStyle = `rgba(34,211,238,${alpha * 0.5})`; ctx.lineWidth = 1.2; ctx.stroke();
+      // Label isotherms
+      ctx.fillStyle = `rgba(34,211,238,${alpha * 0.7})`; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      const Plab = (state.N / 30) * (Tt / 300) * (60 / Vmax);
+      if (Plab >= Pmin && Plab <= Pmax) ctx.fillText(Tt + 'K', W - pad.r - 2, yAt(Plab));
+    });
+
+    // Current isotherm (bold)
+    ctx.beginPath(); let first = true;
+    for (let V = Vmin; V <= Vmax; V += 0.5) {
+      const P = (state.N / 30) * (state.T / 300) * (60 / V);
+      const x = xAt(V), y = yAt(P);
+      if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
+    }
+    ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.2; ctx.stroke();
+
+    // Current state point
+    const P = pressure();
+    const ptX = xAt(state.V), ptY = yAt(P);
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath(); ctx.arc(ptX, ptY, 6, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(245,158,11,0.3)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ptX, ptY, 12, 0, Math.PI*2); ctx.stroke();
+
+    // History trace
+    if (history.length > 2) {
+      ctx.beginPath(); let fh = true;
+      for (const pt of history.slice(-80)) {
+        const x = xAt(pt.V), y = yAt(pt.P);
+        if (fh) { ctx.moveTo(x, y); fh = false; } else { ctx.lineTo(x, y); }
+      }
+      ctx.strokeStyle = 'rgba(245,158,11,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+  } else {
+    // p–T graph: at fixed V, P ∝ T
+    const Tmin = 100, Tmax = 600;
+    const Pmin = 0, Pmax = (state.N / 30) * (600 / 300) * (60 / state.V) * 1.15;
+
+    const xAt = t => pad.l + ((t - Tmin) / (Tmax - Tmin)) * pw;
+    const yAt = p => (H - pad.b) - Math.max(0, (p - Pmin) / (Pmax - Pmin)) * ph;
+
+    ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      ctx.beginPath(); ctx.moveTo(pad.l + pw*i/4, pad.t); ctx.lineTo(pad.l + pw*i/4, H - pad.b); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad.l, pad.t + ph*i/4); ctx.lineTo(W - pad.r, pad.t + ph*i/4); ctx.stroke();
+    }
+    ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let i = 0; i <= 4; i++) ctx.fillText(Math.round(Tmin + (Tmax - Tmin)*i/4) + 'K', pad.l + pw*i/4, H - pad.b + 5);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) ctx.fillText((Pmax*(4-i)/4).toFixed(1), pad.l - 5, pad.t + ph*i/4);
+    ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('Temperature T (K)', pad.l + pw/2, H - 16);
+    ctx.save(); ctx.translate(14, pad.t + ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('Pressure P (norm.)', 0, 0); ctx.restore();
+
+    // P–T line for fixed V (ideal gas: P ∝ T)
+    ctx.beginPath();
+    ctx.moveTo(xAt(Tmin), yAt((state.N/30) * (Tmin/300) * (60/state.V)));
+    ctx.lineTo(xAt(Tmax), yAt((state.N/30) * (Tmax/300) * (60/state.V)));
+    ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.2; ctx.stroke();
+
+    // Current state
+    const P = pressure();
+    const ptX = xAt(state.T), ptY = yAt(P);
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath(); ctx.arc(ptX, ptY, 6, 0, Math.PI*2); ctx.fill();
+
+    // Absolute zero annotation
+    ctx.save(); ctx.setLineDash([3,3]);
+    ctx.strokeStyle = 'rgba(167,139,250,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(xAt(Tmin), yAt(0)); ctx.lineTo(xAt(Tmax), yAt(0)); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#a78bfa'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('P = 0 at T = 0 K (abs. zero)', pad.l + 4, yAt(0) + 2);
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateReadouts() {
+  const P = pressure();
+  const pvt = (P * state.V / state.T).toFixed(4);
+  $('oP').textContent = P.toFixed(3);
+  $('oV').textContent = state.V;
+  $('oT').textContent = state.T + ' K';
+  $('oPVT').textContent = pvt;
+  $('oKE').textContent = (state.T / 300).toFixed(2) + ' T₀';
+  $('oC').textContent = (state.T - 273).toFixed(0) + ' °C';
+  $('vVol').textContent = state.V;
+  $('vTemp').textContent = state.T;
+  $('vN').textContent = state.N;
+
+  let txt = `<strong>Ideal gas law:</strong> <span class="k">pV = nRT</span>, so at fixed n and R, <span class="k">pV/T = constant</span>. `;
+  txt += `Current: P = <span class="k">${P.toFixed(3)}</span>, V = <span class="k">${state.V}</span>, T = <span class="k">${state.T} K</span> → pV/T = <span class="k">${pvt}</span>. `;
+  txt += `<strong>Boyle's Law</strong> (fixed T): p ∝ 1/V — halving the volume doubles the pressure. `;
+  txt += `<strong>Pressure Law</strong> (fixed V): p ∝ T — heating increases particle speed → more frequent, harder collisions with walls. `;
+  txt += `Average kinetic energy of a particle: <span class="k">E_k ∝ T</span>. At ${state.T} K (${(state.T-273).toFixed(0)} °C), particles move at ~<span class="k">${Math.round(Math.sqrt(state.T/300)*400)} m s⁻¹</span> (scaled for display).`;
+  $('explainer').innerHTML = txt;
+}
+
+function loop(ts) {
+  const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.03) : 0;
+  lastTs = ts;
+  updateParticles(dt * 4); // run at 4× speed for visual interest
+  drawCylinder();
+  drawPV();
+  updateReadouts();
+  // Record history
+  if (!state.paused && Math.floor(ts / 200) > Math.floor((ts - dt*1000) / 200)) {
+    history.push({ V: state.V, T: state.T, P: pressure() });
+    if (history.length > MAX_HIST) history.shift();
+  }
+  animId = requestAnimationFrame(loop);
+}
+
+$('sliderV').addEventListener('input', e => { state.V = parseInt(e.target.value); });
+$('sliderT').addEventListener('input', e => { state.T = parseInt(e.target.value); });
+$('sliderN').addEventListener('input', e => { state.N = parseInt(e.target.value); });
+
+document.querySelectorAll('#graphToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('active')) return;
+    document.querySelectorAll('#graphToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.graphMode = b.dataset.graph;
+    history.length = 0;
+  });
+});
+
+function applyTry(name) {
+  const presets = {
+    boyle:    { V: 30, T: 300, N: 30, note: '<strong>Boyle\'s Law:</strong> volume halved from 60 → 30 at constant T = 300 K. Pressure should double. Check pV/T remains constant. Notice particles collide with walls more often.' },
+    heat:     { V: 60, T: 500, N: 30, note: '<strong>Heating at constant volume:</strong> T rises from 300 → 500 K. Pressure increases proportionally (P ∝ T). Particles move faster — watch the increased collision rate.' },
+    cool:     { V: 60, T: 120, N: 30, note: '<strong>Cooling to near 0 K:</strong> T = 120 K. Particles nearly still. Pressure is very low. At absolute zero (0 K), all motion stops and pressure would be zero — but real gases liquefy first.' },
+    compress: { V: 25, T: 400, N: 40, note: '<strong>Hot, compressed gas:</strong> small volume + high temperature = very high pressure. Both Boyle\'s Law and the Pressure Law are operating simultaneously. pV/T should still be constant.' }
+  };
+  const p = presets[name]; if (!p) return;
+  state.V = p.V; state.T = p.T; state.N = p.N;
+  $('sliderV').value = p.V; $('sliderT').value = p.T; $('sliderN').value = p.N;
+  history.length = 0;
+  $('tryNote').innerHTML = p.note;
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', () => {});
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  const DEFAULTS = { V: 60, T: 300, N: 30 };
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') {
+      e.preventDefault();
+      state.paused = !state.paused;
+    } else if (k === 'r') {
+      state.V = DEFAULTS.V; state.T = DEFAULTS.T; state.N = DEFAULTS.N;
+      $('sliderV').value = DEFAULTS.V; $('sliderT').value = DEFAULTS.T; $('sliderN').value = DEFAULTS.N;
+      history.length = 0;
+    } else if (k === 'b') {
+      applyTry('boyle');
+    }
+  });
+})();
+
+initParticles();
+animId = requestAnimationFrame(loop);
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="ohms_law.html">
+      <div class="related-title">Ohm's Law &amp; I–V Characteristics</div>
+      <div class="related-desc">Voltage, current and resistance — and when the linear relationship breaks down</div>
+    </a>
+    <a class="related-card" href="half_life.html">
+      <div class="related-title">Radioactive Decay &amp; Half-Life</div>
+      <div class="related-desc">Random nuclear decay, the exponential law, and isotope half-lives</div>
+    </a>
+    <a class="related-card" href="reaction_rates.html">
+      <div class="related-title">Reaction Rates</div>
+      <div class="related-desc">How particle collisions and activation energy govern the speed of chemical reactions</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

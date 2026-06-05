@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Series &amp; Parallel Circuits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.rose { color: var(--rose); }
+.canvas-wrap { position: relative; width: 100%; height: 420px; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Series &amp; Parallel Circuits</h1>
+    <p class="sub">Ohm's Law · V = IR · Resistance · Bulb brightness</p>
+    <p class="insight-banner">In a series circuit, adding bulbs increases total resistance so each gets dimmer. In parallel, each bulb sees the full battery voltage — adding bulbs does not dim the others, but draws more current from the cell.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">S</span><span>Switch to series circuit</span>
+      <span class="kbd-key">P</span><span>Switch to parallel circuit</span>
+      <span class="kbd-key">1 / 2 / 3</span><span>Set number of bulbs to 1, 2, or 3</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Circuit diagram</h3>
+        <div class="seg" id="circuitToggle">
+          <button data-mode="series" class="active">Series</button>
+          <button data-mode="parallel">Parallel</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Battery &amp; bulbs</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="EMF of the battery in volts.">Battery voltage V (V)</span>
+          <span class="value num" id="vVoltage">6.0</span>
+        </div>
+        <input type="range" id="slVoltage" min="1" max="24" step="0.5" value="6">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label">Number of bulbs</span>
+          <div class="seg" id="bulbCount">
+            <button data-n="1" class="active">1</button>
+            <button data-n="2">2</button>
+            <button data-n="3">3</button>
+          </div>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Resistance of each individual bulb in ohms.">Bulb resistance R₁ (Ω)</span>
+          <span class="value num" id="vR1">10</span>
+        </div>
+        <input type="range" id="slR1" min="1" max="100" step="1" value="10">
+      </div>
+      <div class="control" id="r2ctrl">
+        <div class="control-row">
+          <span class="label">Bulb resistance R₂ (Ω)</span>
+          <span class="value num" id="vR2">10</span>
+        </div>
+        <input type="range" id="slR2" min="1" max="100" step="1" value="10">
+      </div>
+      <div class="control" id="r3ctrl">
+        <div class="control-row">
+          <span class="label">Bulb resistance R₃ (Ω)</span>
+          <span class="value num" id="vR3">10</span>
+        </div>
+        <input type="range" id="slR3" min="1" max="100" step="1" value="10">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Circuit readouts</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Total resistance seen by the battery.">Total resistance R_T</div>
+          <div class="val amber" id="oRtotal">10 Ω</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Total current supplied by battery: I = V / R_T.">Total current I_T</div>
+          <div class="val cyan" id="oItotal">0.60 A</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Power dissipated by bulb 1: P = I²R or V²/R.">Power bulb 1</div>
+          <div class="val" id="oP1">3.60 W</div>
+        </div>
+        <div class="readout" id="p2readout">
+          <div class="lbl">Power bulb 2</div>
+          <div class="val" id="oP2">—</div>
+        </div>
+        <div class="readout" id="p3readout">
+          <div class="lbl">Power bulb 3</div>
+          <div class="val" id="oP3">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Total power</div>
+          <div class="val green" id="oPtotal">3.60 W</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="series_dim">Series — add bulbs, watch dimming</button>
+        <button data-try="parallel_bright">Parallel — same brightness</button>
+        <button data-try="mismatch">Mismatched bulbs in series</button>
+        <button data-try="high_voltage">Mains voltage, 3 parallel</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const state = {
+  voltage: 6,
+  numBulbs: 1,
+  R: [10, 10, 10],
+  circuitType: 'series'
+};
+
+function computeCircuit() {
+  const V = state.voltage;
+  const n = state.numBulbs;
+  // Pad to the bulb count so currents/powers always have length n,
+  // even if a preset left state.R shorter than the current bulb count.
+  const R = [];
+  for (let i = 0; i < n; i++) R.push(state.R[i] != null ? state.R[i] : 10);
+
+  let Rtotal, currents, voltages;
+
+  if (state.circuitType === 'series') {
+    Rtotal = R.reduce((a, b) => a + b, 0);
+    const I = V / Rtotal;
+    currents = R.map(() => I);
+    voltages = R.map(r => I * r);
+  } else {
+    // Parallel: 1/Rt = sum(1/Ri)
+    const invSum = R.reduce((a, r) => a + 1 / r, 0);
+    Rtotal = 1 / invSum;
+    const Itotal = V / Rtotal;
+    currents = R.map(r => V / r);
+    voltages = R.map(() => V);
+  }
+
+  const powers = R.map((r, i) => currents[i] * currents[i] * r);
+  const Itotal = state.circuitType === 'series' ? (V / Rtotal) : currents.reduce((a, b) => a + b, 0);
+  const Ptotal = powers.reduce((a, b) => a + b, 0);
+
+  return { Rtotal, Itotal, currents, voltages, powers, Ptotal, R };
+}
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+// Draw a stylised filament bulb symbol
+function drawBulb(ctx, cx, cy, brightness, label, current, power) {
+  const r = 22;
+  // Glow behind bulb based on brightness (0–1)
+  if (brightness > 0.02) {
+    const grd = ctx.createRadialGradient(cx, cy, 2, cx, cy, r * 2.5);
+    const alpha = Math.min(0.9, brightness * 0.85);
+    grd.addColorStop(0, `rgba(251,191,36,${alpha})`);
+    grd.addColorStop(1, 'rgba(251,191,36,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Bulb outline (circle)
+  ctx.strokeStyle = brightness > 0.05 ? '#fbbf24' : '#2d3f55';
+  ctx.lineWidth = 2;
+  ctx.fillStyle = brightness > 0.05
+    ? `rgba(251,191,36,${Math.min(0.35, brightness * 0.4)})`
+    : '#11161f';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Filament (zig-zag)
+  ctx.strokeStyle = brightness > 0.05
+    ? `rgba(255,220,100,${Math.min(1, 0.5 + brightness * 0.7)})`
+    : '#2d3f55';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  const fW = 14, fH = 12;
+  const fx = cx - fW / 2, fy = cy - fH / 2;
+  ctx.moveTo(fx, fy + fH);
+  for (let i = 0; i < 4; i++) {
+    ctx.lineTo(fx + fW * (i + 0.5) / 4, fy + (i % 2 === 0 ? 0 : fH));
+  }
+  ctx.lineTo(fx + fW, fy + fH);
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(label, cx, cy + r + 6);
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillText(power.toFixed(2) + 'W', cx, cy + r + 20);
+}
+
+function drawBattery(ctx, x, y, voltage) {
+  const w = 18, h = 50;
+  // Battery body
+  ctx.fillStyle = '#161d28';
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x - w / 2, y - h / 2, w, h, 3);
+  ctx.fill();
+  ctx.stroke();
+
+  // + and - terminals
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillRect(x - 8, y - h / 2 - 6, 16, 4);
+  ctx.fillStyle = '#97a1b0';
+  ctx.fillRect(x - 5, y + h / 2 + 2, 10, 4);
+
+  // Voltage label
+  ctx.fillStyle = '#22d3ee';
+  ctx.font = 'bold 12px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(voltage.toFixed(1) + 'V', x, y);
+
+  // + / -
+  ctx.fillStyle = '#34d399';
+  ctx.font = 'bold 14px Inter';
+  ctx.fillText('+', x, y - h / 2 - 14);
+  ctx.fillStyle = '#f43f5e';
+  ctx.fillText('−', x, y + h / 2 + 14);
+}
+
+function drawWire(ctx, x1, y1, x2, y2, current) {
+  const alpha = Math.min(1, 0.35 + Math.abs(current) * 0.6);
+  ctx.strokeStyle = `rgba(34,211,238,${alpha})`;
+  ctx.lineWidth = 2 + Math.min(3, Math.abs(current) * 1.5);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+}
+
+function drawElectronFlow(ctx, x1, y1, x2, y2, t, current) {
+  if (Math.abs(current) < 0.001) return;
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const speed = Math.min(0.8, Math.abs(current) * 0.3);
+  const numDots = Math.max(1, Math.floor(len / 40));
+  for (let i = 0; i < numDots; i++) {
+    const base = (i / numDots + t * speed) % 1;
+    const frac = current < 0 ? 1 - base : base;
+    const ex = x1 + dx * frac;
+    const ey = y1 + dy * frac;
+    ctx.fillStyle = 'rgba(34,211,238,0.7)';
+    ctx.beginPath();
+    ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+let animT = 0;
+let animId = null;
+let lastTs = null;
+
+function drawCircuit(ts) {
+  if (lastTs !== null) animT += (ts - lastTs) / 1000;
+  lastTs = ts;
+
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0a0e14';
+  ctx.fillRect(0, 0, W, H);
+
+  const circ = computeCircuit();
+  const n = state.numBulbs;
+
+  // Max power for brightness scaling
+  const maxP = Math.max(...circ.powers, 0.001);
+  const brightnesses = circ.powers.map(p => Math.sqrt(p / maxP)); // sqrt for perceptual linearity
+
+  if (state.circuitType === 'series') {
+    // Series: ONE loop. battery + -> bulb1 -> bulb2 -> ... -> bulbN -> back to battery -.
+    // The same current flows through every element; bulbs sit inline on the top wire.
+    const battX = 80, battY = H / 2;
+    const topY = 90, botY = H - 80;
+    const startX = battX + 70;
+    const endX = W - 70;
+    const bulbR = 22;
+
+    // Return path (right side down, bottom rail, up to battery) — same current everywhere.
+    drawWire(ctx, battX, battY - 25, battX, topY, circ.Itotal);
+    drawWire(ctx, endX, topY, endX, botY, circ.Itotal);
+    drawWire(ctx, endX, botY, battX, botY, circ.Itotal);
+    drawWire(ctx, battX, botY, battX, battY + 25, circ.Itotal);
+    drawElectronFlow(ctx, endX, topY, endX, botY, animT, circ.Itotal);
+    drawElectronFlow(ctx, endX, botY, battX, botY, animT, circ.Itotal);
+
+    // Bulb positions inline along the top wire
+    const xs = [];
+    for (let i = 0; i < n; i++) {
+      xs.push(n === 1 ? (startX + endX) / 2 : startX + (endX - startX) * i / (n - 1));
+    }
+
+    // Top wire: battery -> bulb1 -> ... -> bulbN -> endX, bulbs inline (in series)
+    let prevX = battX;
+    for (let i = 0; i < n; i++) {
+      const bx = xs[i];
+      drawWire(ctx, prevX, topY, bx - bulbR, topY, circ.Itotal);
+      drawElectronFlow(ctx, prevX, topY, bx - bulbR, topY, animT + i * 0.2, circ.Itotal);
+      drawBulb(ctx, bx, topY, brightnesses[i], 'B' + (i + 1) + '  ' + circ.R[i] + 'Ω', circ.currents[i], circ.powers[i]);
+      prevX = bx + bulbR;
+    }
+    drawWire(ctx, prevX, topY, endX, topY, circ.Itotal);
+    drawElectronFlow(ctx, prevX, topY, endX, topY, animT, circ.Itotal);
+
+    drawBattery(ctx, battX, battY, state.voltage);
+
+    ctx.fillStyle = '#22d3ee';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('I = ' + circ.Itotal.toFixed(3) + ' A — the same through every bulb', (battX + endX) / 2, topY - 30);
+
+  } else {
+    // Parallel: two rails fed by the battery; each bulb bridges them. No shorting loop.
+    // Each rail segment carries only the current still heading to the bulbs on its right,
+    // so the rail thins out toward the far end as branches tap off.
+    const battX = 80, battY = H / 2;
+    const topY = 80, botY = H - 80;
+    const firstX = battX + 120;
+    const lastX = W - 100;
+    const bulbR = 22;
+    const midY = (topY + botY) / 2;
+
+    const xs = [];
+    for (let i = 0; i < n; i++) {
+      xs.push(n === 1 ? (firstX + lastX) / 2 : firstX + (lastX - firstX) * i / (n - 1));
+    }
+
+    // tail[i] = current in the rail just before bulb i = sum of branch currents i..n-1
+    const tail = new Array(n + 1).fill(0);
+    for (let i = n - 1; i >= 0; i--) tail[i] = tail[i + 1] + circ.currents[i];
+
+    // Battery leads to the rails
+    drawWire(ctx, battX, battY - 25, battX, topY, circ.Itotal);
+    drawWire(ctx, battX, battY + 25, battX, botY, circ.Itotal);
+
+    // Rails, segment by segment, with the correct (decreasing) current in each
+    let prevX = battX;
+    for (let i = 0; i < n; i++) {
+      drawWire(ctx, prevX, topY, xs[i], topY, tail[i]);
+      drawWire(ctx, prevX, botY, xs[i], botY, tail[i]);
+      drawElectronFlow(ctx, prevX, topY, xs[i], topY, animT, tail[i]);
+      drawElectronFlow(ctx, xs[i], botY, prevX, botY, animT, tail[i]);
+      prevX = xs[i];
+    }
+
+    // Branches (bulbs bridge the two rails)
+    for (let i = 0; i < n; i++) {
+      const bx = xs[i];
+      drawWire(ctx, bx, topY, bx, midY - bulbR, circ.currents[i]);
+      drawBulb(ctx, bx, midY, brightnesses[i], 'B' + (i + 1) + '  ' + circ.R[i] + 'Ω', circ.currents[i], circ.powers[i]);
+      drawWire(ctx, bx, midY + bulbR, bx, botY, circ.currents[i]);
+      drawElectronFlow(ctx, bx, topY, bx, midY - bulbR, animT + i * 0.3, circ.currents[i]);
+      drawElectronFlow(ctx, bx, midY + bulbR, bx, botY, animT + i * 0.3, circ.currents[i]);
+
+      // junction dots
+      ctx.fillStyle = '#22d3ee';
+      ctx.beginPath(); ctx.arc(bx, topY, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(bx, botY, 4, 0, Math.PI * 2); ctx.fill();
+
+      // branch current label
+      ctx.fillStyle = '#97a1b0';
+      ctx.font = '10px JetBrains Mono';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(circ.currents[i].toFixed(3) + ' A', bx + bulbR + 6, midY);
+    }
+
+    drawBattery(ctx, battX, battY, state.voltage);
+
+    ctx.fillStyle = '#22d3ee';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('I_total = ' + circ.Itotal.toFixed(3) + ' A', (battX + xs[0]) / 2, topY - 8);
+  }
+
+  animId = requestAnimationFrame(drawCircuit);
+}
+
+function updateReadouts() {
+  const circ = computeCircuit();
+  const n = state.numBulbs;
+
+  $('oRtotal').textContent = circ.Rtotal.toFixed(2) + ' Ω';
+  $('oItotal').textContent = circ.Itotal.toFixed(3) + ' A';
+  $('oP1').textContent = n >= 1 ? circ.powers[0].toFixed(3) + ' W' : '—';
+  $('oP2').textContent = n >= 2 ? circ.powers[1].toFixed(3) + ' W' : '—';
+  $('oP3').textContent = n >= 3 ? circ.powers[2].toFixed(3) + ' W' : '—';
+  $('oPtotal').textContent = circ.Ptotal.toFixed(3) + ' W';
+
+  const V = state.voltage;
+  const type = state.circuitType;
+  let txt;
+  if (type === 'series') {
+    txt = `<span class="k">Series</span>: total resistance R_T = ${circ.Rtotal.toFixed(1)} Ω (sum of all bulb resistances). `;
+    txt += `Current <span class="k">I = V/R_T = ${V}/${circ.Rtotal.toFixed(1)} = ${circ.Itotal.toFixed(3)} A</span> — the same through every bulb. `;
+    txt += `Each bulb dissipates <span class="k">P = I²R</span>. Adding more bulbs in series increases R_T, reduces I, and makes every bulb dimmer.`;
+  } else {
+    txt = `<span class="k">Parallel</span>: each bulb connects directly across the ${V} V battery. `;
+    txt += `Total resistance <span class="k">1/R_T = ${circ.R.map(r => '1/' + r).join(' + ')} → R_T = ${circ.Rtotal.toFixed(2)} Ω</span>. `;
+    txt += `Each bulb carries its own current <span class="k">I = V/R</span>. `;
+    txt += `Adding bulbs does <span class="k">not</span> affect the brightness of existing ones — but total current drawn from the cell increases to <span class="k">${circ.Itotal.toFixed(3)} A</span>.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+// Wire controls
+$('slVoltage').addEventListener('input', e => {
+  state.voltage = parseFloat(e.target.value);
+  $('vVoltage').textContent = state.voltage.toFixed(1);
+  updateReadouts();
+});
+$('slR1').addEventListener('input', e => { state.R[0] = parseInt(e.target.value); $('vR1').textContent = state.R[0]; updateReadouts(); });
+$('slR2').addEventListener('input', e => { state.R[1] = parseInt(e.target.value); $('vR2').textContent = state.R[1]; updateReadouts(); });
+$('slR3').addEventListener('input', e => { state.R[2] = parseInt(e.target.value); $('vR3').textContent = state.R[2]; updateReadouts(); });
+
+document.querySelectorAll('#bulbCount button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#bulbCount button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.numBulbs = parseInt(b.dataset.n);
+    $('r2ctrl').style.display = state.numBulbs >= 2 ? 'block' : 'none';
+    $('r3ctrl').style.display = state.numBulbs >= 3 ? 'block' : 'none';
+    updateReadouts();
+  });
+});
+
+document.querySelectorAll('#circuitToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#circuitToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.circuitType = b.dataset.mode;
+    updateReadouts();
+  });
+});
+
+// Try this
+const DEFAULTS = { voltage: 6, numBulbs: 1, R: [10, 10, 10], circuitType: 'series' };
+
+function applyPreset(cfg) {
+  state.voltage = cfg.voltage; $('slVoltage').value = cfg.voltage; $('vVoltage').textContent = cfg.voltage.toFixed(1);
+  state.numBulbs = cfg.numBulbs;
+  document.querySelectorAll('#bulbCount button').forEach(b => b.classList.toggle('active', parseInt(b.dataset.n) === cfg.numBulbs));
+  $('r2ctrl').style.display = cfg.numBulbs >= 2 ? 'block' : 'none';
+  $('r3ctrl').style.display = cfg.numBulbs >= 3 ? 'block' : 'none';
+  state.R = cfg.R.slice();
+  $('slR1').value = cfg.R[0]; $('vR1').textContent = cfg.R[0];
+  $('slR2').value = cfg.R[1]; $('vR2').textContent = cfg.R[1];
+  $('slR3').value = cfg.R[2]; $('vR3').textContent = cfg.R[2];
+  state.circuitType = cfg.circuitType;
+  document.querySelectorAll('#circuitToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === cfg.circuitType));
+  updateReadouts();
+}
+
+const tryPresets = {
+  series_dim: {
+    voltage: 9, numBulbs: 3, R: [10, 10, 10], circuitType: 'series',
+    note: '<strong>Three equal bulbs in series</strong>: R_T = 30 Ω, I = 0.3 A. Each bulb gets only 3 V (1/3 of battery) and 0.9 W. Now switch to parallel — each bulb gets the full 9 V and glows much brighter.'
+  },
+  parallel_bright: {
+    voltage: 9, numBulbs: 3, R: [10, 10, 10], circuitType: 'parallel',
+    note: '<strong>Three equal bulbs in parallel</strong>: each sees 9 V, each carries 0.9 A and dissipates 8.1 W. Total current is 2.7 A. Adding bulbs draws more current but does not dim the others.'
+  },
+  mismatch: {
+    voltage: 12, numBulbs: 2, R: [5, 30], circuitType: 'series',
+    note: '<strong>Mismatched resistances in series</strong>: in a series circuit the same current flows through both. The high-resistance bulb (30 Ω) dissipates far more power — it is much brighter than the 5 Ω bulb.'
+  },
+  high_voltage: {
+    voltage: 12, numBulbs: 3, R: [20, 20, 20], circuitType: 'parallel',
+    note: '<strong>12 V supply, three 20 Ω bulbs in parallel</strong>: each branch carries 0.6 A and dissipates 7.2 W. Total current = 1.8 A. This is why household sockets are wired in parallel — each device gets 230 V regardless of what else is connected.'
+  }
+};
+
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = tryPresets[b.dataset.try];
+    if (!cfg) return;
+    applyPreset(cfg);
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+window.addEventListener('resize', updateReadouts);
+
+// Keyboard
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 's') { state.circuitType = 'series'; document.querySelectorAll('#circuitToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'series')); updateReadouts(); }
+    else if (k === 'p') { state.circuitType = 'parallel'; document.querySelectorAll('#circuitToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'parallel')); updateReadouts(); }
+    else if (['1','2','3'].includes(e.key)) {
+      const n = parseInt(e.key);
+      state.numBulbs = n;
+      document.querySelectorAll('#bulbCount button').forEach(b => b.classList.toggle('active', parseInt(b.dataset.n) === n));
+      $('r2ctrl').style.display = n >= 2 ? 'block' : 'none';
+      $('r3ctrl').style.display = n >= 3 ? 'block' : 'none';
+      updateReadouts();
+    } else if (k === 'r') { applyPreset({ ...DEFAULTS, R: DEFAULTS.R.slice() }); }
+  });
+})();
+
+// Init
+$('r2ctrl').style.display = 'none';
+$('r3ctrl').style.display = 'none';
+updateReadouts();
+animId = requestAnimationFrame(drawCircuit);
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="forces_motion.html">
+      <div class="related-title">Forces &amp; Motion</div>
+      <div class="related-desc">Newton's Second Law, free-body diagrams, and velocity–time graphs</div>
+    </a>
+    <a class="related-card" href="energy_skate.html">
+      <div class="related-title">Energy Skate Park</div>
+      <div class="related-desc">Kinetic and potential energy, conservation, and friction losses</div>
+    </a>
+    <a class="related-card" href="states_matter.html">
+      <div class="related-title">States of Matter</div>
+      <div class="related-desc">Particles, temperature, and the behaviour of solids, liquids, and gases</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

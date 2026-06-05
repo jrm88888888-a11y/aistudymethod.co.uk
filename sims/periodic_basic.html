@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Periodic Table Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+
+/* Main layout — wider left for the table */
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: none; background: transparent; padding: 5px 10px; border-radius: 999px; font-size: 12px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 16px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 12px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+
+/* Periodic table grid */
+#ptable { display: grid; grid-template-columns: repeat(18, 1fr); gap: 2px; padding: 4px; overflow-x: auto; }
+.el-cell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 1px;
+  transition: border-color 100ms, transform 80ms;
+  min-width: 0;
+  position: relative;
+}
+.el-cell:hover { border-color: rgba(255,255,255,0.5); transform: scale(1.15); z-index: 10; }
+.el-cell.selected { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); z-index: 10; }
+.el-cell .el-num { font-size: 7px; color: rgba(255,255,255,0.55); line-height: 1; align-self: flex-start; padding-left: 2px; font-family: 'JetBrains Mono', monospace; }
+.el-cell .el-sym { font-size: 13px; font-weight: 700; line-height: 1.1; color: #fff; }
+.el-cell .el-name { font-size: 5.5px; color: rgba(255,255,255,0.6); line-height: 1; text-align: center; }
+.el-cell.placeholder { background: transparent; cursor: default; border: none; }
+.el-cell.placeholder:hover { transform: none; }
+
+/* Electron shell canvas */
+#shellCanvas { display: block; margin: 0 auto; }
+
+/* Legend dots */
+.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Periodic Table Explorer</h1>
+    <p class="sub">First 36 elements · Groups &amp; periods · Electron shells · Metal/non-metal classification</p>
+    <p class="insight-banner">Elements in the same group have the same number of outer electrons — which is why they share similar chemical properties.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">← → ↑ ↓</span><span>Navigate between elements</span>
+      <span class="kbd-key">M</span><span>Highlight metals</span>
+      <span class="kbd-key">N</span><span>Highlight non-metals</span>
+      <span class="kbd-key">G</span><span>Highlight by group</span>
+      <span class="kbd-key">R</span><span>Reset highlight</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Periodic Table (first 36 elements)</h3>
+        <div class="seg" id="highlightSeg">
+          <button data-mode="none" class="active">All</button>
+          <button data-mode="metal">Metals</button>
+          <button data-mode="nonmetal">Non-metals</button>
+          <button data-mode="metalloid">Metalloids</button>
+          <button data-mode="group">Groups</button>
+        </div>
+      </div>
+      <div id="ptable"></div>
+      <!-- Legend -->
+      <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;font-size:11px;color:var(--text-dim);">
+        <span><span class="legend-dot" style="background:#1e4d6b"></span>Alkali metal</span>
+        <span><span class="legend-dot" style="background:#4a2060"></span>Alkaline earth</span>
+        <span><span class="legend-dot" style="background:#1e5c3a"></span>Transition metal</span>
+        <span><span class="legend-dot" style="background:#6b4a00"></span>Post-transition</span>
+        <span><span class="legend-dot" style="background:#5c3010"></span>Metalloid</span>
+        <span><span class="legend-dot" style="background:#4a1a2e"></span>Non-metal</span>
+        <span><span class="legend-dot" style="background:#1a3050"></span>Halogen</span>
+        <span><span class="legend-dot" style="background:#0d3030"></span>Noble gas</span>
+      </div>
+    </div>
+    <div class="explainer" id="explainer">Click any element to see its details.</div>
+  </div>
+
+  <aside>
+    <div class="panel" id="elementDetail">
+      <p class="section-label">Element details</p>
+      <div style="text-align:center;padding:12px 0;" id="elementHero">
+        <div style="font-size:11px;color:var(--text-faint);margin-bottom:4px;" id="elHeroNum">—</div>
+        <div style="font-size:52px;font-weight:700;line-height:1;" id="elHeroSym">?</div>
+        <div style="font-size:16px;color:var(--text-dim);margin-top:4px;" id="elHeroName">Select an element</div>
+      </div>
+      <canvas id="shellCanvas" width="240" height="240"></canvas>
+      <div class="readouts" style="margin-top:12px;">
+        <div class="readout"><div class="lbl">Atomic number</div><div class="val cyan" id="oAtomicNum">—</div></div>
+        <div class="readout"><div class="lbl">Group</div><div class="val amber" id="oGroup">—</div></div>
+        <div class="readout"><div class="lbl">Period</div><div class="val green" id="oPeriod">—</div></div>
+        <div class="readout"><div class="lbl">Outer electrons</div><div class="val violet" id="oOuter">—</div></div>
+      </div>
+      <div style="margin-top:10px;padding:10px 12px;background:var(--bg-elev-1);border-radius:var(--r-sm);border:1px solid var(--panel-border);font-size:12px;color:var(--text-dim);" id="elClassNote">
+        Click an element to explore.
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="alkali">Alkali metals</button>
+        <button data-try="noble">Noble gases</button>
+        <button data-try="halogens">Halogens</button>
+        <button data-try="transition">Transition metals</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ---- ELEMENT DATA (first 36 elements) ----
+// Fields: z, sym, name, period, group, type, shells
+// type: alkali | alkaline | transition | post-transition | metalloid | nonmetal | halogen | noble
+// shells: electron configuration per shell e.g. [2,8,1] for Na
+const ELEMENTS = [
+  // Period 1
+  { z:1,  sym:'H',  name:'Hydrogen',    period:1, group:1,  type:'nonmetal',     shells:[1]       },
+  { z:2,  sym:'He', name:'Helium',      period:1, group:18, type:'noble',        shells:[2]       },
+  // Period 2
+  { z:3,  sym:'Li', name:'Lithium',     period:2, group:1,  type:'alkali',       shells:[2,1]     },
+  { z:4,  sym:'Be', name:'Beryllium',   period:2, group:2,  type:'alkaline',     shells:[2,2]     },
+  { z:5,  sym:'B',  name:'Boron',       period:2, group:13, type:'metalloid',    shells:[2,3]     },
+  { z:6,  sym:'C',  name:'Carbon',      period:2, group:14, type:'nonmetal',     shells:[2,4]     },
+  { z:7,  sym:'N',  name:'Nitrogen',    period:2, group:15, type:'nonmetal',     shells:[2,5]     },
+  { z:8,  sym:'O',  name:'Oxygen',      period:2, group:16, type:'nonmetal',     shells:[2,6]     },
+  { z:9,  sym:'F',  name:'Fluorine',    period:2, group:17, type:'halogen',      shells:[2,7]     },
+  { z:10, sym:'Ne', name:'Neon',        period:2, group:18, type:'noble',        shells:[2,8]     },
+  // Period 3
+  { z:11, sym:'Na', name:'Sodium',      period:3, group:1,  type:'alkali',       shells:[2,8,1]   },
+  { z:12, sym:'Mg', name:'Magnesium',   period:3, group:2,  type:'alkaline',     shells:[2,8,2]   },
+  { z:13, sym:'Al', name:'Aluminium',   period:3, group:13, type:'post-transition',shells:[2,8,3] },
+  { z:14, sym:'Si', name:'Silicon',     period:3, group:14, type:'metalloid',    shells:[2,8,4]   },
+  { z:15, sym:'P',  name:'Phosphorus',  period:3, group:15, type:'nonmetal',     shells:[2,8,5]   },
+  { z:16, sym:'S',  name:'Sulfur',      period:3, group:16, type:'nonmetal',     shells:[2,8,6]   },
+  { z:17, sym:'Cl', name:'Chlorine',    period:3, group:17, type:'halogen',      shells:[2,8,7]   },
+  { z:18, sym:'Ar', name:'Argon',       period:3, group:18, type:'noble',        shells:[2,8,8]   },
+  // Period 4
+  { z:19, sym:'K',  name:'Potassium',   period:4, group:1,  type:'alkali',       shells:[2,8,8,1] },
+  { z:20, sym:'Ca', name:'Calcium',     period:4, group:2,  type:'alkaline',     shells:[2,8,8,2] },
+  // Transition metals (Groups 3–12)
+  { z:21, sym:'Sc', name:'Scandium',    period:4, group:3,  type:'transition',   shells:[2,8,9,2] },
+  { z:22, sym:'Ti', name:'Titanium',    period:4, group:4,  type:'transition',   shells:[2,8,10,2]},
+  { z:23, sym:'V',  name:'Vanadium',    period:4, group:5,  type:'transition',   shells:[2,8,11,2]},
+  { z:24, sym:'Cr', name:'Chromium',    period:4, group:6,  type:'transition',   shells:[2,8,13,1]},
+  { z:25, sym:'Mn', name:'Manganese',   period:4, group:7,  type:'transition',   shells:[2,8,13,2]},
+  { z:26, sym:'Fe', name:'Iron',        period:4, group:8,  type:'transition',   shells:[2,8,14,2]},
+  { z:27, sym:'Co', name:'Cobalt',      period:4, group:9,  type:'transition',   shells:[2,8,15,2]},
+  { z:28, sym:'Ni', name:'Nickel',      period:4, group:10, type:'transition',   shells:[2,8,16,2]},
+  { z:29, sym:'Cu', name:'Copper',      period:4, group:11, type:'transition',   shells:[2,8,18,1]},
+  { z:30, sym:'Zn', name:'Zinc',        period:4, group:12, type:'transition',   shells:[2,8,18,2]},
+  { z:31, sym:'Ga', name:'Gallium',     period:4, group:13, type:'post-transition',shells:[2,8,18,3]},
+  { z:32, sym:'Ge', name:'Germanium',   period:4, group:14, type:'metalloid',    shells:[2,8,18,4]},
+  { z:33, sym:'As', name:'Arsenic',     period:4, group:15, type:'metalloid',    shells:[2,8,18,5]},
+  { z:34, sym:'Se', name:'Selenium',    period:4, group:16, type:'nonmetal',     shells:[2,8,18,6]},
+  { z:35, sym:'Br', name:'Bromine',     period:4, group:17, type:'halogen',      shells:[2,8,18,7]},
+  { z:36, sym:'Kr', name:'Krypton',     period:4, group:18, type:'noble',        shells:[2,8,18,8]},
+];
+
+// Colour scheme by type
+const TYPE_COLORS = {
+  'alkali':          '#1e4d6b',
+  'alkaline':        '#4a2060',
+  'transition':      '#1e5c3a',
+  'post-transition': '#6b4a00',
+  'metalloid':       '#5c3010',
+  'nonmetal':        '#4a1a2e',
+  'halogen':         '#1a3050',
+  'noble':           '#0d3030',
+};
+const TYPE_HIGHLIGHT = {
+  'alkali':          '#22d3ee',
+  'alkaline':        '#a78bfa',
+  'transition':      '#34d399',
+  'post-transition': '#f59e0b',
+  'metalloid':       '#f43f5e',
+  'nonmetal':        '#f43f5e',
+  'halogen':         '#60a5fa',
+  'noble':           '#22d3ee',
+};
+const TYPE_LABELS = {
+  'alkali':          'Alkali metal — Group 1. 1 outer electron; highly reactive; reacts violently with water.',
+  'alkaline':        'Alkaline earth metal — Group 2. 2 outer electrons; reactive but less so than Group 1.',
+  'transition':      'Transition metal — Groups 3–12. Variable oxidation states; many form coloured compounds; good conductors.',
+  'post-transition': 'Post-transition metal — metallic but softer, lower melting points than transition metals.',
+  'metalloid':       'Metalloid (semi-metal) — properties intermediate between metals and non-metals. Used as semiconductors.',
+  'nonmetal':        'Non-metal — poor conductors; form covalent bonds; may be solid, liquid, or gas at room temperature.',
+  'halogen':         'Halogen — Group 17. 7 outer electrons; one short of a full shell; very reactive non-metals. Form salts with metals.',
+  'noble':           'Noble gas — Group 18. Full outer shell; chemically inert; exist as monatomic gases.',
+};
+
+const GROUP_COLORS = [
+  null,
+  '#22d3ee','#a78bfa','#8b7355','#7a5e3e','#6e5030','#5e4020','#4e3010','#3e2000',
+  '#2e1800','#1e1000','#34d399','#2ab87a','#1a9c5c','#0a8040','#006428',
+  '#f43f5e','#60a5fa','#22d3ee'
+];
+
+// Build the grid: 18 columns × 7 rows for periods 1–4 (we only need rows 1–4 + lanthanide gap placeholder)
+// Positions: element (z) → [row, col] (0-indexed)
+// Standard layout:
+const GRID = {}; // z → {row, col}
+ELEMENTS.forEach(el => {
+  let col = el.group - 1; // 0-indexed
+  let row = el.period - 1;
+  GRID[el.z] = { row, col };
+});
+
+let selectedZ = null;
+let highlightMode = 'none';
+
+function buildTable() {
+  const container = $('ptable');
+  container.innerHTML = '';
+  const rows = 4;
+  const cols = 18;
+
+  // Build a 2D map
+  const cells = Array.from({ length: rows }, () => Array(cols).fill(null));
+  ELEMENTS.forEach(el => {
+    const { row, col } = GRID[el.z];
+    if (row < rows) cells[row][col] = el;
+  });
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const el = cells[r][c];
+      const div = document.createElement('div');
+      if (!el) {
+        div.className = 'el-cell placeholder';
+        container.appendChild(div);
+        continue;
+      }
+      div.className = 'el-cell';
+      div.dataset.z = el.z;
+      div.title = `${el.name} (Z=${el.z})`;
+
+      const baseColor = TYPE_COLORS[el.type];
+      div.style.background = baseColor;
+
+      div.innerHTML = `
+        <span class="el-num">${el.z}</span>
+        <span class="el-sym">${el.sym}</span>
+        <span class="el-name">${el.name}</span>
+      `;
+      div.addEventListener('click', () => selectElement(el.z));
+      container.appendChild(div);
+    }
+  }
+  applyHighlight();
+}
+
+function applyHighlight() {
+  document.querySelectorAll('.el-cell:not(.placeholder)').forEach(cell => {
+    const z = parseInt(cell.dataset.z);
+    const el = ELEMENTS.find(e => e.z === z);
+    if (!el) return;
+    const base = TYPE_COLORS[el.type];
+
+    let highlighted = false;
+    if (highlightMode === 'metal') {
+      highlighted = ['alkali','alkaline','transition','post-transition'].includes(el.type);
+    } else if (highlightMode === 'nonmetal') {
+      highlighted = ['nonmetal','halogen'].includes(el.type);
+    } else if (highlightMode === 'metalloid') {
+      highlighted = el.type === 'metalloid';
+    } else if (highlightMode === 'group') {
+      highlighted = el.z === selectedZ || (selectedZ && ELEMENTS.find(e => e.z === selectedZ)?.group === el.group);
+    }
+
+    if (highlightMode === 'none') {
+      cell.style.background = base;
+      cell.style.opacity = '1';
+    } else {
+      if (highlighted) {
+        cell.style.background = base;
+        cell.style.opacity = '1';
+        cell.style.outline = `1px solid ${TYPE_HIGHLIGHT[el.type]}`;
+        cell.style.outlineOffset = '0px';
+      } else {
+        cell.style.background = '#0d1117';
+        cell.style.opacity = '0.35';
+        cell.style.outline = 'none';
+      }
+    }
+
+    if (el.z === selectedZ) {
+      cell.classList.add('selected');
+    } else {
+      cell.classList.remove('selected');
+    }
+  });
+}
+
+function selectElement(z) {
+  selectedZ = z;
+  const el = ELEMENTS.find(e => e.z === z);
+  if (!el) return;
+
+  // Hero
+  $('elHeroNum').textContent = 'Atomic number ' + el.z;
+  $('elHeroSym').textContent = el.sym;
+  $('elHeroName').textContent = el.name;
+  $('elHeroSym').style.color = TYPE_HIGHLIGHT[el.type];
+
+  // Readouts
+  $('oAtomicNum').textContent = el.z;
+  $('oGroup').textContent = el.group;
+  $('oPeriod').textContent = el.period;
+  const outerElectrons = el.shells[el.shells.length - 1];
+  $('oOuter').textContent = outerElectrons;
+
+  // Type note
+  $('elClassNote').innerHTML =
+    `<strong style="color:${TYPE_HIGHLIGHT[el.type]}">${el.type.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())}</strong><br>${TYPE_LABELS[el.type]}`;
+
+  // Draw shells
+  drawShells(el);
+
+  // Explainer
+  const shellStr = el.shells.join(', ');
+  const outerFull = outerElectrons === 8 || (el.period === 1 && outerElectrons === 2);
+  $('explainer').innerHTML =
+    `<span class="k">${el.name} (${el.sym})</span>, atomic number <span class="k">${el.z}</span>. ` +
+    `Electron configuration: <span class="k">${shellStr}</span> — ${el.shells.length} shell${el.shells.length > 1 ? 's' : ''}, ` +
+    `<span class="k">${outerElectrons}</span> electron${outerElectrons !== 1 ? 's' : ''} in the outer shell. ` +
+    `In <span class="k">Group ${el.group}</span>, <span class="k">Period ${el.period}</span>. ` +
+    (outerFull ? `Full outer shell — chemically stable (like a noble gas). ` : '') +
+    `<span class="k">${el.type.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>: ${TYPE_LABELS[el.type]}`;
+
+  applyHighlight();
+}
+
+function drawShells(el) {
+  const canvas = $('shellCanvas');
+  const dpr = window.devicePixelRatio || 1;
+  const SIZE = 240;
+  canvas.width = SIZE * dpr;
+  canvas.height = SIZE * dpr;
+  canvas.style.width = SIZE + 'px';
+  canvas.style.height = SIZE + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  const cx = SIZE / 2, cy = SIZE / 2;
+  const maxShells = el.shells.length;
+  const shellRadii = [];
+  const rMin = 16; // nucleus radius
+  const rStep = (cx - rMin - 16) / maxShells;
+
+  // Nucleus
+  const nucGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, rMin);
+  nucGlow.addColorStop(0, TYPE_HIGHLIGHT[el.type]);
+  nucGlow.addColorStop(1, 'transparent');
+  ctx.fillStyle = nucGlow;
+  ctx.beginPath(); ctx.arc(cx, cy, rMin * 1.5, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = TYPE_HIGHLIGHT[el.type];
+  ctx.beginPath(); ctx.arc(cx, cy, rMin, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 11px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(el.sym, cx, cy);
+
+  // Atomic number inside nucleus
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = '8px JetBrains Mono';
+  ctx.fillText(el.z, cx, cy + 10);
+
+  // Draw shells
+  el.shells.forEach((count, shellIdx) => {
+    const r = rMin + (shellIdx + 1) * rStep;
+    shellRadii.push(r);
+
+    // Shell orbit ring
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Shell label
+    const shellNames = ['K','L','M','N','O'];
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '8px JetBrains Mono';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(shellNames[shellIdx], cx + r + 4, cy - 4);
+
+    // Electrons evenly spaced around the orbit
+    const eRadius = 4;
+    for (let e = 0; e < count; e++) {
+      const angle = (e / count) * Math.PI * 2 - Math.PI / 2;
+      const ex = cx + r * Math.cos(angle);
+      const ey = cy + r * Math.sin(angle);
+
+      // Glow
+      const eGlow = ctx.createRadialGradient(ex, ey, 0, ex, ey, eRadius * 2);
+      eGlow.addColorStop(0, 'rgba(34,211,238,0.4)');
+      eGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = eGlow;
+      ctx.beginPath(); ctx.arc(ex, ey, eRadius * 2, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = '#22d3ee';
+      ctx.beginPath(); ctx.arc(ex, ey, eRadius, 0, Math.PI * 2); ctx.fill();
+
+      // Electron highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Electron count label
+    ctx.fillStyle = 'rgba(34,211,238,0.7)';
+    ctx.font = '9px JetBrains Mono';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(count + 'e⁻', cx - r - 4, cy + 6);
+  });
+}
+
+// Highlight toggle
+document.querySelectorAll('#highlightSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#highlightSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    highlightMode = b.dataset.mode;
+    applyHighlight();
+  });
+});
+
+// Try this
+const TRIES = {
+  alkali: {
+    mode: 'group', z: 3,
+    note: '<strong>Alkali metals (Group 1)</strong>: Li, Na, K — each has 1 outer electron. They get more reactive down the group as the outer electron is further from the nucleus and easier to lose.'
+  },
+  noble: {
+    mode: 'group', z: 2,
+    note: '<strong>Noble gases (Group 18)</strong>: He, Ne, Ar, Kr — full outer shells make them extremely stable and chemically inert. They exist as single atoms (monatomic).'
+  },
+  halogens: {
+    mode: 'group', z: 9,
+    note: '<strong>Halogens (Group 17)</strong>: F, Cl, Br — 7 outer electrons, one short of a full shell. They react readily to gain that final electron, forming ionic salts with metals.'
+  },
+  transition: {
+    mode: 'metal', z: 26,
+    note: '<strong>Transition metals</strong> include Fe (iron), Cu (copper), Ni (nickel). They have variable valency, are good conductors, and many form coloured compounds.'
+  }
+};
+
+document.querySelectorAll('.try-buttons button[data-try]').forEach(b => {
+  b.addEventListener('click', () => {
+    const t = TRIES[b.dataset.try]; if (!t) return;
+    $('tryNote').innerHTML = t.note;
+    selectElement(t.z);
+    if (t.mode === 'group') {
+      highlightMode = 'group';
+      document.querySelectorAll('#highlightSeg button').forEach(x => x.classList.remove('active'));
+      document.querySelector('#highlightSeg button[data-mode="group"]').classList.add('active');
+    } else {
+      highlightMode = t.mode;
+      document.querySelectorAll('#highlightSeg button').forEach(x => x.classList.remove('active'));
+      document.querySelector(`#highlightSeg button[data-mode="${t.mode}"]`).classList.add('active');
+    }
+    applyHighlight();
+  });
+});
+
+// Keyboard navigation
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    const k = e.key.toLowerCase();
+    if (k === 'm') {
+      highlightMode = 'metal';
+      document.querySelectorAll('#highlightSeg button').forEach(x => x.classList.remove('active'));
+      document.querySelector('#highlightSeg button[data-mode="metal"]').classList.add('active');
+      applyHighlight();
+    } else if (k === 'n') {
+      highlightMode = 'nonmetal';
+      document.querySelectorAll('#highlightSeg button').forEach(x => x.classList.remove('active'));
+      document.querySelector('#highlightSeg button[data-mode="nonmetal"]').classList.add('active');
+      applyHighlight();
+    } else if (k === 'g') {
+      highlightMode = 'group';
+      document.querySelectorAll('#highlightSeg button').forEach(x => x.classList.remove('active'));
+      document.querySelector('#highlightSeg button[data-mode="group"]').classList.add('active');
+      applyHighlight();
+    } else if (k === 'r') {
+      highlightMode = 'none';
+      document.querySelectorAll('#highlightSeg button').forEach(x => x.classList.remove('active'));
+      document.querySelector('#highlightSeg button[data-mode="none"]').classList.add('active');
+      applyHighlight();
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!selectedZ) { selectElement(1); return; }
+      const cur = ELEMENTS.find(e => e.z === selectedZ);
+      if (!cur) return;
+      const { row, col } = GRID[cur.z];
+      let tr = row, tc = col;
+      if (e.key === 'ArrowRight') tc++;
+      else if (e.key === 'ArrowLeft') tc--;
+      else if (e.key === 'ArrowDown') tr++;
+      else if (e.key === 'ArrowUp') tr--;
+      // Find nearest element at that grid position
+      const next = ELEMENTS.find(el => {
+        const g = GRID[el.z];
+        return g.row === tr && g.col === tc;
+      });
+      if (next) selectElement(next.z);
+    }
+  });
+})();
+
+// Init
+buildTable();
+selectElement(6); // Start with Carbon
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="separating_mixtures.html">
+      <div class="related-title">Chromatography</div>
+      <div class="related-desc">Paper chromatography simulation — separating dyes and computing Rf values</div>
+    </a>
+    <a class="related-card" href="ph_scale.html">
+      <div class="related-title">The pH Scale</div>
+      <div class="related-desc">Acids, alkalis, H⁺ and OH⁻ concentration, indicators, and dilution</div>
+    </a>
+    <a class="related-card" href="forces_motion.html">
+      <div class="related-title">Forces &amp; Motion</div>
+      <div class="related-desc">Newton's laws, resultant forces, acceleration, and velocity-time graphs</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

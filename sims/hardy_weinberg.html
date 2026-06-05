@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hardy–Weinberg Equilibrium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active, button.primary:active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 320px; }
+.pop-wrap { position: relative; width: 100%; height: 180px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.gen-track { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 12px; color: var(--text-dim); }
+.gen-badge { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Hardy–Weinberg Equilibrium</h1>
+    <p class="sub">Allele and genotype frequencies across generations</p>
+    <p class="insight-banner">In an ideal population, allele frequencies never change — but selection, mutation, or drift each push the population away from equilibrium in distinct, predictable ways.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Run / pause evolution</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">N</span><span>Step one generation</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Genotype frequencies over generations</h3>
+        <div class="seg" id="viewToggle">
+          <button data-mode="bar" class="active">Bars</button>
+          <button data-mode="line">Lines</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainChart"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>AA (p²)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Aa (2pq)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>aa (q²)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>Allele freq p (A)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--violet)"></span>Allele freq q (a)</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Population snapshot</h3>
+        <div class="gen-track">Generation <span class="gen-badge" id="genLabel">0</span></div>
+      </div>
+      <div class="pop-wrap"><canvas id="popCanvas"></canvas></div>
+      <div class="legend" style="margin-top:6px;">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>AA (homozygous dominant)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Aa (heterozygous)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>aa (homozygous recessive)</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Starting allele frequency</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="p: frequency of dominant allele A. q = 1 − p is inferred automatically.">Freq. of A (p)</span>
+          <span class="value num" id="vP">0.60</span>
+        </div>
+        <input type="range" id="slP" min="0.01" max="0.99" step="0.01" value="0.60">
+        <div class="refs">
+          <span class="ref-chip" data-p="0.99">q very rare</span>
+          <span class="ref-chip" data-p="0.60">p = 0.6</span>
+          <span class="ref-chip" data-p="0.50">Equal (0.5)</span>
+          <span class="ref-chip" data-p="0.01">p very rare</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <p class="section-label">Evolutionary forces</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Selection coefficient against aa genotype. s = 0 means no selection; s = 1 means aa individuals produce no offspring (lethal recessive).">Selection against aa (s)</span>
+          <span class="value num" id="vS">0.00</span>
+        </div>
+        <input type="range" id="slS" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Mutation rate from A → a per generation (forward mutation). Typical real values are 10⁻⁵ to 10⁻⁶.">Mutation A → a (μ)</span>
+          <span class="value num" id="vMu">0.000</span>
+        </div>
+        <input type="range" id="slMu" min="0" max="0.05" step="0.001" value="0">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Number of generations to simulate.">Generations</span>
+          <span class="value num" id="vGens">50</span>
+        </div>
+        <input type="range" id="slGens" min="5" max="200" step="5" value="50">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <p class="section-label">Current state</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="Frequency of dominant allele A">p (A freq)</div><div class="val cyan" id="oCurP">—</div></div>
+        <div class="readout"><div class="lbl" title="Frequency of recessive allele a">q (a freq)</div><div class="val violet" id="oCurQ">—</div></div>
+        <div class="readout"><div class="lbl">AA (p²)</div><div class="val cyan" id="oAA">—</div></div>
+        <div class="readout"><div class="lbl">Aa (2pq)</div><div class="val amber" id="oAa">—</div></div>
+        <div class="readout"><div class="lbl">aa (q²)</div><div class="val rose" id="oAA2">—</div></div>
+        <div class="readout"><div class="lbl" title="Whether the population is at Hardy–Weinberg equilibrium (no evolutionary forces acting)">HW equilibrium?</div><div class="val" id="oEq">—</div></div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="btnRun" class="primary">Run evolution</button>
+        <button id="btnStep">Step gen</button>
+        <button id="btnReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:14px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="hwIdeal">HW equilibrium (no forces)</button>
+        <button data-try="lethRecessive">Lethal recessive</button>
+        <button data-try="mutationPressure">Mutation pressure</button>
+        <button data-try="cysticFibrosis">Cystic fibrosis q ≈ 0.02</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="predator_prey.html">
+      <div class="related-title">Predator–Prey Dynamics</div>
+      <div class="related-desc">Lotka–Volterra equations: why rabbit and fox numbers oscillate together</div>
+    </a>
+    <a class="related-card" href="action_potential.html">
+      <div class="related-title">Neuron Action Potential</div>
+      <div class="related-desc">Voltage-gated channels, depolarisation, and the all-or-nothing firing rule</div>
+    </a>
+    <a class="related-card" href="sir_model.html">
+      <div class="related-title">Epidemic Model (SEIR)</div>
+      <div class="related-desc">How disease spreads through a population and why vaccination works</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// ---- State ----
+const DEFAULTS = { p: 0.60, s: 0, mu: 0, gens: 50 };
+const params = { ...DEFAULTS };
+
+let history = []; // [{gen, p, q, AA, Aa, aa}]
+let running = false;
+let runTimer = null;
+let viewMode = 'bar';
+
+function hwFreqs(p) {
+  const q = 1 - p;
+  return { p, q, AA: p*p, Aa: 2*p*q, aa: q*q };
+}
+
+function nextGen(p, s, mu) {
+  const q = 1 - p;
+  // Apply selection against aa: fitness of aa = 1 - s
+  // Mean fitness w̄ = p² + 2pq + q²(1-s) = 1 - s*q²
+  const wBar = 1 - s * q * q;
+  if (wBar <= 0) return p; // degenerate
+  let pAfterSel = (p * p + p * q) / wBar; // (freq AA + half freq Aa) / w̄ for A allele
+  // Actually: freq(A after selection) = [p²·1 + 2pq·0.5] / wBar
+  pAfterSel = Math.min(1, Math.max(0, pAfterSel));
+  // Apply forward mutation A → a at rate mu
+  const pNew = pAfterSel * (1 - mu);
+  return Math.min(1, Math.max(0, pNew));
+}
+
+function buildHistory() {
+  history = [];
+  let p = params.p;
+  history.push({ gen: 0, ...hwFreqs(p) });
+  for (let g = 1; g <= params.gens; g++) {
+    p = nextGen(p, params.s, params.mu);
+    history.push({ gen: g, ...hwFreqs(p) });
+  }
+}
+
+// ---- Drawing ----
+function drawMain() {
+  const c = $('mainChart');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+
+  const pad = { l: 52, r: 16, t: 16, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const n = history.length;
+  if (n === 0) return;
+
+  // grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + ph * i / 5;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
+  }
+  const tickStep = Math.ceil(params.gens / 10) * (params.gens > 100 ? 2 : 1);
+  for (let g = 0; g <= params.gens; g += tickStep) {
+    const x = pad.l + (g / params.gens) * pw;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H-pad.b); ctx.stroke();
+  }
+
+  // axis labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) {
+    ctx.fillText((((5-i)/5)*100).toFixed(0)+'%', pad.l-6, pad.t + ph*i/5);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let g = 0; g <= params.gens; g += tickStep) {
+    const x = pad.l + (g / params.gens) * pw;
+    ctx.fillText(g, x, H-pad.b+5);
+  }
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText('Generation', pad.l + pw/2, H-4);
+
+  const xAt = g => pad.l + (g / params.gens) * pw;
+  const yAt = f => pad.t + ph * (1 - f);
+
+  if (viewMode === 'bar') {
+    const barW = Math.max(1, pw / n - 1);
+    for (let i = 0; i < history.length; i++) {
+      const d = history[i];
+      const x = xAt(d.gen) - barW/2;
+      let y0 = H - pad.b;
+      // stack: AA (bottom), Aa, aa
+      const segments = [
+        { h: d.AA, color: 'rgba(34,211,238,0.75)' },
+        { h: d.Aa, color: 'rgba(245,158,11,0.80)' },
+        { h: d.aa, color: 'rgba(244,63,94,0.80)' }
+      ];
+      for (const seg of segments) {
+        const barH = seg.h * ph;
+        ctx.fillStyle = seg.color;
+        ctx.fillRect(x, y0 - barH, barW, barH);
+        y0 -= barH;
+      }
+    }
+    // p and q lines on top
+    const lines = [
+      { key: 'p', color: '#34d399' },
+      { key: 'q', color: '#a78bfa' }
+    ];
+    for (const ln of lines) {
+      ctx.beginPath();
+      for (let i = 0; i < history.length; i++) {
+        const x = xAt(history[i].gen), y = yAt(history[i][ln.key]);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = ln.color; ctx.lineWidth = 2; ctx.stroke();
+    }
+  } else {
+    // line chart
+    const lines = [
+      { key: 'AA', color: '#22d3ee' },
+      { key: 'Aa', color: '#f59e0b' },
+      { key: 'aa', color: '#f43f5e' },
+      { key: 'p',  color: '#34d399' },
+      { key: 'q',  color: '#a78bfa' }
+    ];
+    const widths = { AA: 2, Aa: 2, aa: 2, p: 2.5, q: 2.5 };
+    const dashes = { AA: [], Aa: [], aa: [], p: [5,3], q: [5,3] };
+    for (const ln of lines) {
+      ctx.beginPath();
+      ctx.setLineDash(dashes[ln.key]);
+      for (let i = 0; i < history.length; i++) {
+        const x = xAt(history[i].gen), y = yAt(history[i][ln.key]);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = ln.color; ctx.lineWidth = widths[ln.key]; ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // HW label if no forces
+  if (params.s === 0 && params.mu === 0) {
+    ctx.fillStyle = 'rgba(34,211,238,0.7)'; ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('HW equilibrium — frequencies constant', pad.l + 6, pad.t + 6);
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function drawPopulation() {
+  const c = $('popCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+  if (history.length === 0) return;
+
+  const last = history[history.length - 1];
+  const N_DOTS = 200;
+  const nAA = Math.round(last.AA * N_DOTS);
+  const nAa = Math.round(last.Aa * N_DOTS);
+  // rest = aa
+  const dots = [];
+  for (let i = 0; i < N_DOTS; i++) {
+    dots.push(i < nAA ? 0 : i < nAA + nAa ? 1 : 2);
+  }
+  // shuffle
+  for (let i = dots.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRand(i) * (i+1));
+    [dots[i], dots[j]] = [dots[j], dots[i]];
+  }
+  const cols = Math.ceil(Math.sqrt(N_DOTS * W / H));
+  const rows = Math.ceil(N_DOTS / cols);
+  const cellW = W / cols;
+  const cellH = H / rows;
+  const r = Math.min(cellW, cellH) * 0.38;
+  const colors = ['#22d3ee','#f59e0b','#f43f5e'];
+  const alphas = ['0.85','0.85','0.85'];
+  for (let i = 0; i < N_DOTS; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = (col + 0.5) * cellW;
+    const cy = (row + 0.5) * cellH;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.fillStyle = colors[dots[i]];
+    ctx.globalAlpha = 0.85;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// Simple seeded deterministic shuffle helper
+function seededRand(seed) {
+  const x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
+function updateReadouts() {
+  if (history.length === 0) return;
+  const last = history[history.length - 1];
+  $('oCurP').textContent = last.p.toFixed(4);
+  $('oCurQ').textContent = last.q.toFixed(4);
+  $('oAA').textContent = (last.AA * 100).toFixed(2) + '%';
+  $('oAa').textContent = (last.Aa * 100).toFixed(2) + '%';
+  $('oAA2').textContent = (last.aa * 100).toFixed(2) + '%';
+  const atEq = params.s === 0 && params.mu === 0;
+  const eqEl = $('oEq');
+  eqEl.textContent = atEq ? 'Yes' : 'No';
+  eqEl.className = 'val ' + (atEq ? 'green' : 'rose');
+  $('genLabel').textContent = last.gen;
+
+  // explainer
+  const p0 = history[0].p.toFixed(3);
+  const pN = last.p.toFixed(4);
+  let txt = `Initial allele frequency <span class="k">p = ${p0}</span>, so <span class="k">q = ${(1-history[0].p).toFixed(3)}</span>. `;
+  txt += `Hardy–Weinberg predicts genotypes <span class="k">AA = ${(history[0].AA*100).toFixed(1)}%</span>, <span class="k">Aa = ${(history[0].Aa*100).toFixed(1)}%</span>, <span class="k">aa = ${(history[0].aa*100).toFixed(1)}%</span>. `;
+  if (params.s === 0 && params.mu === 0) {
+    txt += `With no evolutionary forces, these proportions remain <strong style="color:var(--green)">constant</strong> across all generations — this <em>is</em> the Hardy–Weinberg equilibrium.`;
+  } else {
+    txt += `After ${last.gen} generations, p has shifted to <span class="k">${pN}</span>. `;
+    if (params.s > 0) txt += `Selection (s = ${params.s.toFixed(2)}) against <span class="k">aa</span> removes the recessive allele each generation. `;
+    if (params.mu > 0) txt += `Mutation (μ = ${params.mu.toFixed(3)}) converts A → a, pushing p down slowly. `;
+    txt += `Equilibrium is broken.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function rerun() {
+  buildHistory();
+  drawMain();
+  drawPopulation();
+  updateReadouts();
+}
+
+// Controls
+$('slP').addEventListener('input', e => {
+  params.p = parseFloat(e.target.value);
+  $('vP').textContent = params.p.toFixed(2);
+  rerun();
+});
+$('slS').addEventListener('input', e => {
+  params.s = parseFloat(e.target.value);
+  $('vS').textContent = params.s.toFixed(2);
+  rerun();
+});
+$('slMu').addEventListener('input', e => {
+  params.mu = parseFloat(e.target.value);
+  $('vMu').textContent = params.mu.toFixed(3);
+  rerun();
+});
+$('slGens').addEventListener('input', e => {
+  params.gens = parseInt(e.target.value);
+  $('vGens').textContent = params.gens;
+  rerun();
+});
+
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    viewMode = b.dataset.mode;
+    drawMain();
+  });
+});
+
+document.querySelectorAll('.ref-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    if (c.dataset.p) {
+      params.p = parseFloat(c.dataset.p);
+      $('slP').value = params.p;
+      $('vP').textContent = params.p.toFixed(2);
+      rerun();
+    }
+  });
+});
+
+// Run / step buttons
+let stepTimer = null;
+$('btnRun').addEventListener('click', () => {
+  running = !running;
+  $('btnRun').textContent = running ? 'Pause' : 'Run evolution';
+  if (running) {
+    // Animate one generation at a time
+    let currentGen = 0;
+    const maxGen = params.gens;
+    const pInit = params.p;
+    buildHistory(); // full history built, we just reveal progressively
+    function tick() {
+      currentGen++;
+      if (currentGen > maxGen || !running) {
+        running = false;
+        $('btnRun').textContent = 'Run evolution';
+        return;
+      }
+      // Slice history to currentGen
+      const slice = history.slice(0, currentGen + 1);
+      const saved = history;
+      history = slice;
+      drawMain();
+      drawPopulation();
+      updateReadouts();
+      history = saved;
+      stepTimer = setTimeout(tick, 60);
+    }
+    tick();
+  } else {
+    clearTimeout(stepTimer);
+    rerun();
+  }
+});
+
+$('btnStep').addEventListener('click', () => {
+  running = false;
+  clearTimeout(stepTimer);
+  $('btnRun').textContent = 'Run evolution';
+  buildHistory();
+  // Advance one generation beyond current display
+  const curGen = parseInt($('genLabel').textContent) || 0;
+  const nextGen2 = Math.min(curGen + 1, params.gens);
+  const slice = history.slice(0, nextGen2 + 1);
+  history = slice;
+  drawMain();
+  drawPopulation();
+  updateReadouts();
+});
+
+$('btnReset').addEventListener('click', resetToDefaults);
+
+function resetToDefaults() {
+  running = false;
+  clearTimeout(stepTimer);
+  $('btnRun').textContent = 'Run evolution';
+  Object.assign(params, DEFAULTS);
+  $('slP').value = DEFAULTS.p; $('vP').textContent = DEFAULTS.p.toFixed(2);
+  $('slS').value = DEFAULTS.s; $('vS').textContent = DEFAULTS.s.toFixed(2);
+  $('slMu').value = DEFAULTS.mu; $('vMu').textContent = DEFAULTS.mu.toFixed(3);
+  $('slGens').value = DEFAULTS.gens; $('vGens').textContent = DEFAULTS.gens;
+  rerun();
+}
+
+// Try presets
+function applyTry(name) {
+  running = false; clearTimeout(stepTimer); $('btnRun').textContent = 'Run evolution';
+  const presets = {
+    hwIdeal: { p: 0.60, s: 0, mu: 0, gens: 50,
+      note: 'No selection, no mutation — <strong>allele frequencies stay perfectly constant</strong>. This is what Hardy–Weinberg equilibrium looks like.' },
+    lethRecessive: { p: 0.80, s: 1.0, mu: 0, gens: 50,
+      note: 'Every <strong>aa</strong> individual dies before reproducing (s = 1). The recessive allele (q) declines rapidly — but never disappears because it hides in Aa heterozygotes.' },
+    mutationPressure: { p: 0.95, s: 0, mu: 0.01, gens: 100,
+      note: 'Mutation at μ = 0.01 slowly converts A → a. Even without selection, <strong>p drifts downward</strong> over many generations until a mutation-selection balance is reached.' },
+    cysticFibrosis: { p: 0.98, s: 0, mu: 0, gens: 50,
+      note: 'With q ≈ 0.02 (typical for CF allele in Northern Europe), <strong>aa frequency ≈ 0.0004</strong> — about 1 in 2500 live births, matching real UK incidence.' }
+  };
+  const cfg = presets[name]; if (!cfg) return;
+  params.p = cfg.p; params.s = cfg.s; params.mu = cfg.mu; params.gens = cfg.gens;
+  $('slP').value = cfg.p; $('vP').textContent = cfg.p.toFixed(2);
+  $('slS').value = cfg.s; $('vS').textContent = cfg.s.toFixed(2);
+  $('slMu').value = cfg.mu; $('vMu').textContent = cfg.mu.toFixed(3);
+  $('slGens').value = cfg.gens; $('vGens').textContent = cfg.gens;
+  $('tryNote').innerHTML = cfg.note;
+  rerun();
+}
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', () => { drawMain(); drawPopulation(); });
+
+// Keyboard
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); $('btnRun').click(); }
+    else if (k === 'r') resetToDefaults();
+    else if (k === 'n') $('btnStep').click();
+  });
+})();
+
+// Init
+rerun();
+</script>
+</body>
+</html>

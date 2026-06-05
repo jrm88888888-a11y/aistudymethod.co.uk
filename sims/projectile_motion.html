@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projectile Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.active-btn { background: var(--cyan-soft); color: var(--cyan); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 440px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.play-btn-row { display: flex; gap: 8px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Projectile Motion</h1>
+    <p class="sub">Parabolic trajectories · horizontal and vertical components · g = 9.8 m s⁻²</p>
+    <p class="insight-banner">Horizontal and vertical motions are completely independent. Horizontal velocity stays constant; vertical velocity changes at 9.8 m s⁻² due to gravity alone.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Launch / pause animation</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">A</span><span>Toggle air resistance</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Trajectory</h3>
+        <div class="seg" id="airToggle">
+          <button data-air="off" class="active">No air resistance</button>
+          <button data-air="on">Air resistance</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="trajCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Trajectory</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Horizontal velocity vₓ</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Vertical velocity vᵧ</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>Max height</span>
+      </div>
+      <div class="play-btn-row">
+        <button id="btnLaunch" class="primary">&#9654; Launch</button>
+        <button id="btnReset">Reset</button>
+      </div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Launch parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Initial launch speed in metres per second.">Initial speed u (m s⁻¹)</span>
+          <span class="value num" id="vSpeed">20</span>
+        </div>
+        <input type="range" id="sliderSpeed" min="5" max="50" step="1" value="20">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Angle above the horizontal at launch, in degrees.">Launch angle θ (°)</span>
+          <span class="value num" id="vAngle">45</span>
+        </div>
+        <input type="range" id="sliderAngle" min="5" max="85" step="1" value="45">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Initial height above ground level in metres.">Launch height h₀ (m)</span>
+          <span class="value num" id="vHeight">0</span>
+        </div>
+        <input type="range" id="sliderHeight" min="0" max="50" step="1" value="0">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Calculated results</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Range R</div><div class="val cyan" id="oRange">—</div></div>
+        <div class="readout"><div class="lbl">Max height H</div><div class="val green" id="oMaxH">—</div></div>
+        <div class="readout"><div class="lbl">Time of flight T</div><div class="val amber" id="oTime">—</div></div>
+        <div class="readout"><div class="lbl" title="Horizontal component of initial velocity: uₓ = u·cos θ">uₓ = u cos θ</div><div class="val rose" id="oUx">—</div></div>
+        <div class="readout"><div class="lbl" title="Vertical component of initial velocity: uᵧ = u·sin θ">uᵧ = u sin θ</div><div class="val violet" id="oUy">—</div></div>
+        <div class="readout"><div class="lbl">At landing vᵧ</div><div class="val" id="oVyLand">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="maxRange">45° — maximum range</button>
+        <button data-try="steep">80° — steep lob</button>
+        <button data-try="flat">15° — flat drive</button>
+        <button data-try="cliff">Cliff launch</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const g = 9.8; // m/s²
+
+const state = {
+  u: 20,
+  theta: 45,
+  h0: 0,
+  air: false,
+  animT: 0,
+  animRunning: false,
+  animId: null
+};
+
+function degToRad(d) { return d * Math.PI / 180; }
+
+// Compute ideal trajectory (no air resistance)
+function computeIdeal() {
+  const theta = degToRad(state.theta);
+  const u = state.u;
+  const h0 = state.h0;
+  const ux = u * Math.cos(theta);
+  const uy = u * Math.sin(theta);
+  // Time to max height: uy - g*t = 0 => t = uy/g
+  const tMaxH = uy / g;
+  const maxH = h0 + uy * tMaxH - 0.5 * g * tMaxH * tMaxH;
+  // Time of flight: h0 + uy*t - 0.5g*t² = 0
+  const disc = uy * uy + 2 * g * h0;
+  const T = (uy + Math.sqrt(Math.max(0, disc))) / g;
+  const R = ux * T;
+  return { ux, uy, tMaxH, maxH, T, R };
+}
+
+// Build trajectory array for given params (with or without air resistance)
+function buildTrajectory(air) {
+  const theta = degToRad(state.theta);
+  const u = state.u;
+  const h0 = state.h0;
+  let vx = u * Math.cos(theta);
+  let vy = u * Math.sin(theta);
+  let x = 0, y = h0;
+  const drag = 0.02; // drag coefficient (simplified)
+  const dt = 0.02;
+  const pts = [{x, y, vx, vy, t: 0}];
+  let t = 0;
+  const maxSteps = 20000;
+  for (let i = 0; i < maxSteps; i++) {
+    t += dt;
+    if (air) {
+      const speed = Math.sqrt(vx*vx + vy*vy);
+      const ax = -drag * speed * vx;
+      const ay = -g - drag * speed * vy;
+      vx += ax * dt;
+      vy += ay * dt;
+    } else {
+      vy -= g * dt;
+    }
+    x += vx * dt;
+    y += vy * dt;
+    if (y <= 0 && i > 2) {
+      // interpolate landing
+      const prev = pts[pts.length - 1];
+      const frac = prev.y / (prev.y - y);
+      x = prev.x + frac * (x - prev.x);
+      y = 0;
+      vx = prev.vx + frac * (vx - prev.vx);
+      vy = prev.vy + frac * (vy - prev.vy);
+      pts.push({x, y, vx, vy, t});
+      break;
+    }
+    pts.push({x, y, vx, vy, t});
+  }
+  return pts;
+}
+
+let idealTraj = [];
+let airTraj = [];
+
+function recompute() {
+  idealTraj = buildTrajectory(false);
+  airTraj = buildTrajectory(true);
+  state.animT = 0;
+  drawAll();
+  updateReadouts();
+}
+
+function drawTraj() {
+  const c = $('trajCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 56, r: 24, t: 24, b: 48 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const traj = state.air ? airTraj : idealTraj;
+  if (!traj.length) return;
+
+  // Determine axis limits
+  const maxX = Math.max(...traj.map(p => p.x), 1);
+  const maxY = Math.max(...traj.map(p => p.y), state.h0, 1);
+  const xScale = pw / (maxX * 1.08);
+  const yScale = ph / (maxY * 1.2 + state.h0 * 0.1 + 1);
+
+  const xAt = x => pad.l + x * xScale;
+  const yAt = y => (H - pad.b) - y * yScale;
+
+  // Ground
+  ctx.fillStyle = 'rgba(52,211,153,0.08)';
+  ctx.fillRect(pad.l, H - pad.b, pw, 4);
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  const xTickInterval = Math.pow(10, Math.floor(Math.log10(maxX / 4)));
+  const yTickInterval = Math.pow(10, Math.floor(Math.log10(maxY / 3 + 1)));
+  for (let x = 0; x <= maxX * 1.08; x += xTickInterval) {
+    ctx.beginPath(); ctx.moveTo(xAt(x), pad.t); ctx.lineTo(xAt(x), H - pad.b); ctx.stroke();
+  }
+  for (let y = 0; y <= maxY * 1.2; y += yTickInterval) {
+    ctx.beginPath(); ctx.moveTo(pad.l, yAt(y)); ctx.lineTo(W - pad.r, yAt(y)); ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let x = 0; x <= maxX * 1.08; x += xTickInterval) {
+    ctx.fillText(x.toFixed(0), xAt(x), H - pad.b + 6);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let y = 0; y <= maxY * 1.2; y += yTickInterval) {
+    ctx.fillText(y.toFixed(0), pad.l - 6, yAt(y));
+  }
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Horizontal distance x / m', pad.l + pw / 2, H - 12);
+  ctx.save(); ctx.translate(14, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Height y / m', 0, 0); ctx.restore();
+
+  // Ideal trajectory (always show faint)
+  ctx.beginPath();
+  for (let i = 0; i < idealTraj.length; i++) {
+    const p = idealTraj[i];
+    if (i === 0) ctx.moveTo(xAt(p.x), yAt(p.y)); else ctx.lineTo(xAt(p.x), yAt(p.y));
+  }
+  ctx.strokeStyle = state.air ? 'rgba(34,211,238,0.25)' : '#22d3ee';
+  ctx.lineWidth = state.air ? 1 : 2.2; ctx.stroke();
+
+  // Air resistance trajectory
+  if (state.air) {
+    ctx.beginPath();
+    for (let i = 0; i < airTraj.length; i++) {
+      const p = airTraj[i];
+      if (i === 0) ctx.moveTo(xAt(p.x), yAt(p.y)); else ctx.lineTo(xAt(p.x), yAt(p.y));
+    }
+    ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2.2; ctx.stroke();
+  }
+
+  // Max height line (ideal)
+  const ideal = computeIdeal();
+  const maxHY = yAt(ideal.maxH);
+  ctx.save(); ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(52,211,153,0.55)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, maxHY); ctx.lineTo(W - pad.r, maxHY); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(52,211,153,0.9)'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillText('H = ' + ideal.maxH.toFixed(1) + ' m', pad.l + 4, maxHY - 2);
+
+  // Animated projectile
+  const activeT = state.air ? airTraj : idealTraj;
+  if (activeT.length > 0) {
+    const tTotal = activeT[activeT.length - 1].t;
+    const tNow = state.animT;
+    // Interpolate position
+    let pt = activeT[activeT.length - 1];
+    for (let i = 0; i < activeT.length - 1; i++) {
+      if (activeT[i + 1].t >= tNow) {
+        const frac = (tNow - activeT[i].t) / (activeT[i+1].t - activeT[i].t + 1e-9);
+        pt = {
+          x: activeT[i].x + frac * (activeT[i+1].x - activeT[i].x),
+          y: activeT[i].y + frac * (activeT[i+1].y - activeT[i].y),
+          vx: activeT[i].vx + frac * (activeT[i+1].vx - activeT[i].vx),
+          vy: activeT[i].vy + frac * (activeT[i+1].vy - activeT[i].vy)
+        };
+        break;
+      }
+    }
+    const px = xAt(pt.x), py = yAt(pt.y);
+
+    // Velocity arrows
+    const arrowScale = Math.min(pw, ph) * 0.012;
+    // vx arrow (horizontal)
+    if (Math.abs(pt.vx) > 0.1) {
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.fillStyle = '#f59e0b';
+      drawArrow(ctx, px, py, px + pt.vx * arrowScale, py, 8);
+    }
+    // vy arrow (vertical)
+    if (Math.abs(pt.vy) > 0.1) {
+      ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2; ctx.fillStyle = '#f43f5e';
+      drawArrow(ctx, px, py, px, py - pt.vy * arrowScale, 8);
+    }
+
+    // Projectile circle
+    ctx.fillStyle = '#22d3ee';
+    ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(34,211,238,0.3)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(px, py, 13, 0, Math.PI*2); ctx.stroke();
+  }
+
+  // Launch angle arc
+  const theta = degToRad(state.theta);
+  const arcR = 30;
+  ctx.strokeStyle = 'rgba(245,158,11,0.5)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(xAt(0), yAt(state.h0), arcR, -theta, 0); ctx.stroke();
+  ctx.fillStyle = '#f59e0b'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillText(state.theta + '°', xAt(0) + arcR * 0.8, yAt(state.h0) - 4);
+
+  // Box
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, headLen) {
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI/7), y2 - headLen * Math.sin(angle - Math.PI/7));
+  ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI/7), y2 - headLen * Math.sin(angle + Math.PI/7));
+  ctx.closePath(); ctx.fill();
+}
+
+function updateReadouts() {
+  const ideal = computeIdeal();
+  $('oRange').textContent = ideal.R.toFixed(1) + ' m';
+  $('oMaxH').textContent = ideal.maxH.toFixed(1) + ' m';
+  $('oTime').textContent = ideal.T.toFixed(2) + ' s';
+  $('oUx').textContent = ideal.ux.toFixed(1) + ' m s⁻¹';
+  $('oUy').textContent = ideal.uy.toFixed(1) + ' m s⁻¹';
+  // vy at landing = -sqrt(uy² + 2g*h0)  [downward]
+  const vyLand = Math.sqrt(ideal.uy * ideal.uy + 2 * g * state.h0);
+  $('oVyLand').textContent = vyLand.toFixed(1) + ' m s⁻¹ ↓';
+
+  const theta = state.theta;
+  const u = state.u;
+  let txt = `Launched at <span class="k">u = ${u} m s⁻¹</span>, <span class="k">θ = ${theta}°</span>. `;
+  txt += `Horizontal component: <span class="k">uₓ = ${ideal.ux.toFixed(1)} m s⁻¹</span> (constant throughout). `;
+  txt += `Vertical component: <span class="k">uᵧ = ${ideal.uy.toFixed(1)} m s⁻¹</span>, decreasing at <span class="k">g = 9.8 m s⁻²</span>. `;
+  txt += `Maximum height <span class="k">H = ${ideal.maxH.toFixed(1)} m</span> reached after <span class="k">${ideal.tMaxH.toFixed(2)} s</span>. `;
+  txt += `Range <span class="k">R = ${ideal.R.toFixed(1)} m</span>, total flight time <span class="k">T = ${ideal.T.toFixed(2)} s</span>.`;
+  if (state.air) {
+    const airPt = airTraj[airTraj.length - 1];
+    txt += ` With air resistance, range reduces to ≈ <span class="k">${(airPt ? airPt.x : 0).toFixed(1)} m</span>.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function drawAll() { drawTraj(); }
+
+// Animation
+let lastTimestamp = 0;
+function animStep(ts) {
+  if (!state.animRunning) return;
+  const dt = lastTimestamp ? Math.min((ts - lastTimestamp) / 1000, 0.05) : 0;
+  lastTimestamp = ts;
+  const traj = state.air ? airTraj : idealTraj;
+  const tMax = traj.length > 0 ? traj[traj.length - 1].t : 0;
+  state.animT += dt * 1.0; // real-time playback
+  if (state.animT >= tMax) {
+    state.animT = tMax;
+    state.animRunning = false;
+    $('btnLaunch').textContent = '⟳ Re-launch';
+  }
+  drawAll();
+  updateReadouts();
+  if (state.animRunning) state.animId = requestAnimationFrame(animStep);
+}
+
+function launch() {
+  if (state.animRunning) {
+    state.animRunning = false;
+    if (state.animId) cancelAnimationFrame(state.animId);
+    $('btnLaunch').textContent = '▶ Resume';
+    return;
+  }
+  const traj = state.air ? airTraj : idealTraj;
+  const tMax = traj.length > 0 ? traj[traj.length - 1].t : 0;
+  if (state.animT >= tMax - 0.01) {
+    state.animT = 0;
+  }
+  state.animRunning = true;
+  lastTimestamp = 0;
+  $('btnLaunch').textContent = '⏸ Pause';
+  state.animId = requestAnimationFrame(animStep);
+}
+
+$('btnLaunch').addEventListener('click', launch);
+$('btnReset').addEventListener('click', () => {
+  state.animRunning = false;
+  if (state.animId) cancelAnimationFrame(state.animId);
+  state.animT = 0;
+  $('btnLaunch').textContent = '▶ Launch';
+  recompute();
+});
+
+$('sliderSpeed').addEventListener('input', e => {
+  state.u = parseInt(e.target.value);
+  $('vSpeed').textContent = state.u;
+  state.animT = 0; state.animRunning = false; $('btnLaunch').textContent = '▶ Launch';
+  recompute();
+});
+$('sliderAngle').addEventListener('input', e => {
+  state.theta = parseInt(e.target.value);
+  $('vAngle').textContent = state.theta;
+  state.animT = 0; state.animRunning = false; $('btnLaunch').textContent = '▶ Launch';
+  recompute();
+});
+$('sliderHeight').addEventListener('input', e => {
+  state.h0 = parseInt(e.target.value);
+  $('vHeight').textContent = state.h0;
+  state.animT = 0; state.animRunning = false; $('btnLaunch').textContent = '▶ Launch';
+  recompute();
+});
+document.querySelectorAll('#airToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('active')) return;
+    document.querySelectorAll('#airToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.air = b.dataset.air === 'on';
+    state.animT = 0; state.animRunning = false; $('btnLaunch').textContent = '▶ Launch';
+    recompute();
+  });
+});
+
+function applyTry(name) {
+  const presets = {
+    maxRange: { u: 20, theta: 45, h0: 0, note: '<strong>45° gives maximum range on flat ground</strong> — at this angle uₓ and uᵧ are equal, and the product uₓ × T is maximised. Any other angle gives shorter range.' },
+    steep:    { u: 20, theta: 80, h0: 0, note: '<strong>Steep lob at 80°:</strong> most energy goes into vertical motion. Maximum height is large but range is short. vᵧ dominates.' },
+    flat:     { u: 20, theta: 15, h0: 0, note: '<strong>Flat drive at 15°:</strong> maximum range in horizontal direction but low maximum height. Notice the range is the same as 75° (complementary angle).' },
+    cliff:    { u: 15, theta: 30, h0: 40, note: '<strong>Cliff launch at 40 m:</strong> extra height extends the time of flight, so the projectile travels further than from ground level. Compare to h₀ = 0.' }
+  };
+  const p = presets[name]; if (!p) return;
+  state.u = p.u; state.theta = p.theta; state.h0 = p.h0;
+  $('sliderSpeed').value = p.u; $('sliderAngle').value = p.theta; $('sliderHeight').value = p.h0;
+  $('vSpeed').textContent = p.u; $('vAngle').textContent = p.theta; $('vHeight').textContent = p.h0;
+  state.animT = 0; state.animRunning = false; $('btnLaunch').textContent = '▶ Launch';
+  $('tryNote').innerHTML = p.note;
+  recompute();
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', drawAll);
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  const DEFAULTS = { u: 20, theta: 45, h0: 0, air: false };
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); launch(); }
+    else if (k === 'r') {
+      state.u = DEFAULTS.u; state.theta = DEFAULTS.theta; state.h0 = DEFAULTS.h0; state.air = DEFAULTS.air;
+      $('sliderSpeed').value = DEFAULTS.u; $('sliderAngle').value = DEFAULTS.theta; $('sliderHeight').value = DEFAULTS.h0;
+      $('vSpeed').textContent = DEFAULTS.u; $('vAngle').textContent = DEFAULTS.theta; $('vHeight').textContent = DEFAULTS.h0;
+      document.querySelector('#airToggle button[data-air="off"]').click();
+      state.animT = 0; state.animRunning = false; $('btnLaunch').textContent = '▶ Launch';
+      recompute();
+    } else if (k === 'a') {
+      const nextAir = !state.air;
+      document.querySelector(`#airToggle button[data-air="${nextAir ? 'on' : 'off'}"]`).click();
+    }
+  });
+})();
+
+recompute();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="wave_properties.html">
+      <div class="related-title">Wave Properties</div>
+      <div class="related-desc">Frequency, wavelength, speed and amplitude of transverse waves</div>
+    </a>
+    <a class="related-card" href="hookes_law.html">
+      <div class="related-title">Hooke's Law</div>
+      <div class="related-desc">Springs, elastic limits, and the force–extension relationship</div>
+    </a>
+    <a class="related-card" href="forces_motion.html">
+      <div class="related-title">Forces &amp; Motion</div>
+      <div class="related-desc">Newton's laws, resultant forces, and acceleration</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

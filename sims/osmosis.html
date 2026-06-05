@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Osmosis &amp; Diffusion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 360px; }
+.cell-wrap { position: relative; width: 100%; height: 200px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Osmosis &amp; Diffusion</h1>
+    <p class="sub">Water potential, partially permeable membranes, and net water movement</p>
+    <p class="insight-banner">Water moves by osmosis from a region of higher water potential (more dilute solution) to lower water potential (more concentrated solution) across a partially permeable membrane — until equilibrium is reached.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Toggle membrane / cell view</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">E</span><span>Equalise concentrations (isotonic)</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Osmosis across partially permeable membrane</h3>
+        <div class="seg" id="viewToggle">
+          <button data-mode="membrane" class="active">Membrane view</button>
+          <button data-mode="cell">Cell / potato</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>
+      <div style="display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--text-dim);flex-wrap:wrap;">
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#22d3ee;display:inline-block"></span>Water molecule</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block"></span>Solute molecule</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--panel-border);border:1px solid #5b6573;display:inline-block"></span>Membrane</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:2px;background:#34d399;display:inline-block"></span>Net flow direction</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Left compartment</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Solute concentration on the left side. More solute = lower water potential = water flows in from right if right is more dilute.">Solute concentration left (mol/L)</span>
+          <span class="value num" id="vLeft">0.1</span>
+        </div>
+        <input type="range" id="slLeft" min="0" max="1" step="0.01" value="0.1">
+        <div class="refs">
+          <span class="ref-chip" data-left="0">Pure water</span>
+          <span class="ref-chip" data-left="0.15">Blood plasma ≈ 0.15</span>
+          <span class="ref-chip" data-left="0.5">Concentrated 0.5</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Right compartment</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Solute concentration on the right side. Water will flow from whichever side has lower solute concentration to higher solute concentration.">Solute concentration right (mol/L)</span>
+          <span class="value num" id="vRight">0.5</span>
+        </div>
+        <input type="range" id="slRight" min="0" max="1" step="0.01" value="0.5">
+        <div class="refs">
+          <span class="ref-chip" data-right="0.15">Blood ≈ 0.15</span>
+          <span class="ref-chip" data-right="0.5">Seawater ≈ 0.5</span>
+          <span class="ref-chip" data-right="1.0">Saturated 1.0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Cell in solution (potato / animal cell)</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="The external solution concentration the cell is placed in. The cell's internal concentration is fixed at 0.3 mol/L (like cell cytoplasm).">External solution conc. (mol/L)</span>
+          <span class="value num" id="vExternal">0.3</span>
+        </div>
+        <input type="range" id="slExternal" min="0" max="1" step="0.01" value="0.3">
+        <div class="refs">
+          <span class="ref-chip" data-ext="0.0">Distilled water</span>
+          <span class="ref-chip" data-ext="0.3">Isotonic ≈ 0.3</span>
+          <span class="ref-chip" data-ext="0.9">Hypertonic 0.9</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Readouts</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Water potential: ψ = −iCRT. More negative = lower water potential. Water flows from less negative to more negative.">ψ left (kPa)</div>
+          <div class="val cyan" id="oPsiLeft">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Water potential on the right side.">ψ right (kPa)</div>
+          <div class="val amber" id="oPsiRight">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Net flow</div>
+          <div class="val" id="oNetFlow">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Cell mass change</div>
+          <div class="val" id="oCellMass">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Cell state</div>
+          <div class="val" id="oCellState">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Osmotic pressure</div>
+          <div class="val violet" id="oOsm">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="hypotonic">Cell in hypotonic solution</button>
+        <button data-try="isotonic">Isotonic — no net flow</button>
+        <button data-try="hypertonic">Cell in hypertonic (plasmolysis)</button>
+        <button data-try="osmosisDemo">Strong osmosis across membrane</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const params = {
+  leftConc: 0.1,
+  rightConc: 0.5,
+  externalConc: 0.3,
+  viewMode: 'membrane'
+};
+
+// Water potential: ψ = -iCRT (simplified, i=1 for non-electrolyte, R=8.314, T=298K)
+// ψ in kPa = -C * 2477 kPa·L/mol (at 25°C, i=1)
+const RT = 2477; // R*T in kPa·L/mol at 25°C
+function waterPotential(conc) {
+  return -conc * RT; // kPa, always ≤ 0 for solutions
+}
+
+// Particle simulation
+const NWATER_EACH = 40;
+const NSOLUTE_MAX = 30;
+
+let particles = { left: [], right: [] };
+let animTime = 0;
+let animFrame = null;
+
+function initParticles() {
+  // Left side water + solute
+  const lSolute = Math.round(params.leftConc * NSOLUTE_MAX);
+  const rSolute = Math.round(params.rightConc * NSOLUTE_MAX);
+
+  function makeParticles(side, nWater, nSolute) {
+    const arr = [];
+    for (let i = 0; i < nWater; i++) {
+      arr.push({ type:'water', x: Math.random(), y: Math.random(),
+        vx: (Math.random()-0.5)*0.006, vy: (Math.random()-0.5)*0.006 });
+    }
+    for (let i = 0; i < nSolute; i++) {
+      arr.push({ type:'solute', x: Math.random(), y: Math.random(),
+        vx: (Math.random()-0.5)*0.003, vy: (Math.random()-0.5)*0.003 });
+    }
+    return arr;
+  }
+  particles.left = makeParticles('left', NWATER_EACH, lSolute);
+  particles.right = makeParticles('right', NWATER_EACH, rSolute);
+}
+
+function stepParticles(dt) {
+  // Net water flow rate proportional to water potential difference
+  const psiL = waterPotential(params.leftConc);
+  const psiR = waterPotential(params.rightConc);
+  const dpsi = psiR - psiL; // positive → right has lower psi → water flows left→right
+
+  // Move particles in their compartments (bounded Brownian motion)
+  for (const side of ['left','right']) {
+    for (const p of particles[side]) {
+      p.x += p.vx * dt * 60;
+      p.y += p.vy * dt * 60;
+      // Bounce
+      if (p.x < 0.02) { p.x = 0.02; p.vx = Math.abs(p.vx); }
+      if (p.x > 0.98) { p.x = 0.98; p.vx = -Math.abs(p.vx); }
+      if (p.y < 0.02) { p.y = 0.02; p.vy = Math.abs(p.vy); }
+      if (p.y > 0.98) { p.y = 0.98; p.vy = -Math.abs(p.vy); }
+      // Random nudge
+      p.vx += (Math.random()-0.5)*0.0015;
+      p.vy += (Math.random()-0.5)*0.0015;
+      const spd = Math.sqrt(p.vx*p.vx+p.vy*p.vy);
+      const maxSpd = p.type==='water' ? 0.008 : 0.004;
+      if (spd > maxSpd) { p.vx *= maxSpd/spd; p.vy *= maxSpd/spd; }
+    }
+  }
+}
+
+function drawMembrane() {
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+
+  const midX = W * 0.5;
+  const pad = 20;
+  const leftW = midX - pad * 1.5;
+  const rightW = W - midX - pad * 1.5;
+  const topY = 40, botY = H - 40;
+  const chamberH = botY - topY;
+
+  // Background compartments
+  const lAlpha = Math.max(0.05, 0.15 - params.leftConc * 0.1);
+  const rAlpha = Math.max(0.05, 0.15 - params.rightConc * 0.1);
+  ctx.fillStyle = `rgba(34,211,238,${lAlpha + 0.04})`;
+  ctx.fillRect(pad, topY, leftW, chamberH);
+  ctx.fillStyle = `rgba(34,211,238,${rAlpha})`;
+  ctx.fillRect(midX + pad*0.5, topY, rightW, chamberH);
+
+  // Water level heights based on current flow state (visual only)
+  // Simulate accumulated flow: water level on high-psi side drops, other rises
+  const psiL = waterPotential(params.leftConc);
+  const psiR = waterPotential(params.rightConc);
+  const dpsi = psiR - psiL;
+  const flowFrac = Math.tanh(dpsi / 500); // −1 to 1: positive dpsi → flow R→L; negative dpsi → flow L→R
+  const levelShift = Math.abs(flowFrac) * chamberH * 0.15; // magnitude of height shift
+
+  // Left column rises when water flows R→L (dpsi > 0, flowFrac > 0)
+  // Right column rises when water flows L→R (dpsi < 0, flowFrac < 0)
+  const lLevel = chamberH * 0.85 + (flowFrac > 0 ? levelShift : 0);
+  const rLevel = chamberH * 0.85 + (flowFrac < 0 ? levelShift : 0);
+  ctx.fillStyle = 'rgba(34,211,238,0.18)';
+  ctx.fillRect(pad, botY - lLevel, leftW, lLevel);
+  ctx.fillStyle = 'rgba(34,211,238,0.18)';
+  ctx.fillRect(midX + pad*0.5, botY - rLevel, rightW, rLevel);
+
+  // Draw particles
+  function drawParticles(side, xOff, ww) {
+    for (const p of particles[side]) {
+      const px = xOff + p.x * ww;
+      const py = topY + p.y * chamberH;
+      if (p.type==='water') {
+        ctx.fillStyle = '#22d3ee';
+        ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = 'rgba(34,211,238,0.4)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(px, py, 5.5, 0, Math.PI*2); ctx.stroke();
+      } else {
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(px-4, py-4, 8, 8);
+        ctx.strokeStyle = 'rgba(245,158,11,0.4)'; ctx.lineWidth = 1;
+        ctx.strokeRect(px-6, py-6, 12, 12);
+      }
+    }
+  }
+  drawParticles('left', pad, leftW);
+  drawParticles('right', midX + pad*0.5, rightW);
+
+  // Membrane (dotted partially permeable)
+  const memX = midX - 4;
+  ctx.fillStyle = '#2a3547';
+  ctx.fillRect(memX, topY, 8, chamberH);
+  // Small pores (gaps) — only water can pass
+  ctx.fillStyle = 'var(--bg)';
+  const poreCount = 8;
+  for (let i = 0; i < poreCount; i++) {
+    const py = topY + (i + 0.5) / poreCount * chamberH;
+    ctx.fillRect(memX, py - 4, 8, 8);
+  }
+  // Label membrane
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('Partially permeable', midX, topY - 4);
+  ctx.fillText('membrane', midX, topY + 8);
+
+  // Net flow arrow
+  // Water moves from HIGH water potential to LOW water potential.
+  // psiL > psiR (dpsi < 0) means left is more dilute (higher ψ) → water flows L→R.
+  // psiL < psiR (dpsi > 0) means right is more dilute (higher ψ) → water flows R→L.
+  const arrowY = H * 0.5;
+  if (Math.abs(dpsi) > 20) {
+    const arrowDir = dpsi < 0 ? 1 : -1; // dpsi < 0 → psiL > psiR → water flows L→R
+    const arrowCol = '#34d399';
+    const arrowLen = Math.min(60, Math.abs(dpsi) / 20) * arrowDir;
+    const ax = midX, ay = arrowY;
+    ctx.strokeStyle = arrowCol; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(ax - arrowLen*0.8, ay); ctx.lineTo(ax + arrowLen*0.8, ay); ctx.stroke();
+    // Arrowhead
+    const ahx = ax + arrowLen*0.8;
+    ctx.fillStyle = arrowCol;
+    ctx.beginPath();
+    ctx.moveTo(ahx, ay);
+    ctx.lineTo(ahx - 8*arrowDir, ay - 5);
+    ctx.lineTo(ahx - 8*arrowDir, ay + 5);
+    ctx.closePath(); ctx.fill();
+    // Label
+    ctx.fillStyle = arrowCol; ctx.font = '11px Inter';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('Net H₂O flow', midX, arrowY - 8);
+  } else {
+    ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('≈ Equilibrium', midX, arrowY - 8);
+  }
+
+  // Labels
+  ctx.fillStyle = '#e6edf3'; ctx.font = 'bold 12px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText(`Left: ${params.leftConc.toFixed(2)} mol/L`, pad + leftW/2, topY + 6);
+  ctx.fillText(`Right: ${params.rightConc.toFixed(2)} mol/L`, midX + pad*0.5 + rightW/2, topY + 6);
+
+  ctx.fillStyle = '#22d3ee'; ctx.font = '11px JetBrains Mono';
+  ctx.fillText(`ψ = ${waterPotential(params.leftConc).toFixed(0)} kPa`, pad + leftW/2, topY + 24);
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillText(`ψ = ${waterPotential(params.rightConc).toFixed(0)} kPa`, midX + pad*0.5 + rightW/2, topY + 24);
+
+  // Chamber borders
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad, topY, leftW, chamberH);
+  ctx.strokeRect(midX + pad*0.5, topY, rightW, chamberH);
+}
+
+function drawCellView() {
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0,0,W,H);
+
+  const CELL_CONC = 0.3; // fixed cytoplasm concentration (typical plant/animal cell)
+  const ext = params.externalConc;
+  const diff = ext - CELL_CONC; // positive = hypertonic outside → water leaves cell
+  const normDiff = Math.tanh(diff * 3); // −1 to 1
+  // Cell size: shrinks in hypertonic, swells in hypotonic
+  const baseR = Math.min(W, H) * 0.22;
+  const cellR = baseR * (1 - normDiff * 0.25); // ±25% radius change
+
+  // Draw two cells: plant cell (left) and animal cell (right)
+  const cx1 = W * 0.28, cx2 = W * 0.72, cy = H * 0.5;
+
+  // ---- Plant cell ----
+  ctx.save();
+  ctx.translate(cx1, cy);
+
+  // Cell wall (rigid — maintains shape)
+  const wallR = baseR * 1.08;
+  ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 6;
+  ctx.strokeRect(-wallR, -wallR, wallR*2, wallR*2);
+  ctx.fillStyle = 'rgba(74,85,104,0.15)';
+  ctx.fillRect(-wallR, -wallR, wallR*2, wallR*2);
+  ctx.fillStyle = '#4a5568'; ctx.font = '10px Inter'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText('Cell wall', 0, wallR+4);
+
+  // Vacuole (central, turgor)
+  const vacuoleR = cellR * (diff < 0 ? 0.55 : Math.max(0.1, 0.55 - normDiff*0.4));
+  if (diff <= 0) {
+    // Turgid: vacuole large and full
+    ctx.fillStyle = 'rgba(34,211,238,0.18)';
+    ctx.beginPath(); ctx.arc(0, 0, vacuoleR, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(34,211,238,0.4)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, vacuoleR, 0, Math.PI*2); ctx.stroke();
+  }
+
+  // Cell membrane (inside wall)
+  const memColor = diff > 0.2 ? '#f43f5e' : '#22d3ee';
+  ctx.strokeStyle = memColor; ctx.lineWidth = 2.5;
+  ctx.strokeRect(-cellR, -cellR, cellR*2, cellR*2);
+  ctx.fillStyle = `rgba(${diff>0.2?'244,63,94':'34,211,238'},0.08)`;
+  ctx.fillRect(-cellR, -cellR, cellR*2, cellR*2);
+
+  // State label
+  let plantState, plantColor;
+  if (diff < -0.05) { plantState = 'Turgid'; plantColor = '#34d399'; }
+  else if (Math.abs(diff) <= 0.05) { plantState = 'Flaccid'; plantColor = '#f59e0b'; }
+  else if (diff < 0.3) { plantState = 'Plasmolysing'; plantColor = '#f59e0b'; }
+  else { plantState = 'Plasmolysed'; plantColor = '#f43f5e'; }
+  ctx.fillStyle = plantColor; ctx.font = 'bold 11px Inter'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillText(plantState, 0, -wallR - 6);
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px Inter';
+  ctx.fillText('Plant cell', 0, wallR + 18);
+  ctx.restore();
+
+  // ---- Animal cell ----
+  ctx.save();
+  ctx.translate(cx2, cy);
+  const aColor = diff > 0.2 ? '#f43f5e' : diff < -0.2 ? '#a78bfa' : '#22d3ee';
+  ctx.fillStyle = `rgba(${diff>0.2?'244,63,94':diff<-0.2?'167,139,250':'34,211,238'},0.10)`;
+  ctx.beginPath(); ctx.arc(0, 0, cellR, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = aColor; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(0, 0, cellR, 0, Math.PI*2); ctx.stroke();
+  // Nucleus
+  ctx.fillStyle = 'rgba(167,139,250,0.25)';
+  ctx.beginPath(); ctx.arc(0, 0, cellR*0.3, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(167,139,250,0.5)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(0, 0, cellR*0.3, 0, Math.PI*2); ctx.stroke();
+
+  let animalState, animalColor;
+  if (diff < -0.2) { animalState = 'Lysing/bursting'; animalColor = '#a78bfa'; }
+  else if (diff < -0.05) { animalState = 'Swelling'; animalColor = '#34d399'; }
+  else if (Math.abs(diff) <= 0.05) { animalState = 'Normal'; animalColor = '#22d3ee'; }
+  else if (diff < 0.3) { animalState = 'Crenating'; animalColor = '#f59e0b'; }
+  else { animalState = 'Crenated'; animalColor = '#f43f5e'; }
+
+  if (diff > 0.1) {
+    // Crenation — spiky border
+    for (let i = 0; i < 12; i++) {
+      const a = i / 12 * Math.PI * 2;
+      const sr = cellR * (1 + Math.min(0.25, normDiff*0.2) * Math.sin(i*3));
+      const px = Math.cos(a)*sr, py = Math.sin(a)*sr;
+      ctx.fillStyle = aColor;
+      ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.fillStyle = animalColor; ctx.font = 'bold 11px Inter'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillText(animalState, 0, -cellR - 8);
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px Inter'; ctx.textBaseline='top';
+  ctx.fillText('Animal cell', 0, cellR + 6);
+  ctx.restore();
+
+  // Solution bath
+  ctx.fillStyle = '#5b6573'; ctx.font = '12px Inter'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText(`External solution: ${ext.toFixed(2)} mol/L   |   Cell cytoplasm: 0.30 mol/L`, W/2, 10);
+
+  // Mass change indicator
+  const massChangePct = -normDiff * 25; // ±25% mass change
+  ctx.fillStyle = '#e6edf3'; ctx.font = '11px JetBrains Mono'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+  const massCol = massChangePct > 0 ? '#34d399' : massChangePct < 0 ? '#f43f5e' : '#97a1b0';
+  ctx.fillStyle = massCol;
+  ctx.fillText(`Approx. mass change: ${massChangePct > 0 ? '+' : ''}${massChangePct.toFixed(1)}%`, W/2, H - 10);
+}
+
+function draw() {
+  if (params.viewMode === 'membrane') {
+    stepParticles(1/60);
+    drawMembrane();
+  } else {
+    drawCellView();
+  }
+}
+
+function updateReadouts() {
+  const psiL = waterPotential(params.leftConc);
+  const psiR = waterPotential(params.rightConc);
+  $('oPsiLeft').textContent = psiL.toFixed(0) + ' kPa';
+  $('oPsiRight').textContent = psiR.toFixed(0) + ' kPa';
+  $('oPsiLeft').className = 'val ' + (params.leftConc < params.rightConc ? 'cyan' : 'amber');
+  $('oPsiRight').className = 'val ' + (params.rightConc < params.leftConc ? 'amber' : 'cyan');
+
+  const dpsi = psiR - psiL;
+  // Water flows from high ψ to low ψ: if psiL > psiR (dpsi < 0) → flows L→R; if psiR > psiL (dpsi > 0) → flows R→L.
+  if (Math.abs(dpsi) < 50) {
+    $('oNetFlow').textContent = '≈ None';
+    $('oNetFlow').className = 'val';
+  } else if (dpsi < 0) {
+    $('oNetFlow').textContent = '→ Right';
+    $('oNetFlow').className = 'val cyan';
+  } else {
+    $('oNetFlow').textContent = '← Left';
+    $('oNetFlow').className = 'val amber';
+  }
+
+  const CELL_CONC = 0.3;
+  const diff = params.externalConc - CELL_CONC;
+  const normDiff = Math.tanh(diff * 3);
+  const massChangePct = -normDiff * 25;
+  $('oCellMass').textContent = (massChangePct >= 0 ? '+' : '') + massChangePct.toFixed(1) + '%';
+  $('oCellMass').className = 'val ' + (massChangePct > 1 ? 'green' : massChangePct < -1 ? 'rose' : '');
+
+  let stateText, stateClass;
+  if (diff < -0.05) { stateText = 'Hypotonic'; stateClass = 'val green'; }
+  else if (Math.abs(diff) <= 0.05) { stateText = 'Isotonic'; stateClass = 'val'; }
+  else { stateText = 'Hypertonic'; stateClass = 'val rose'; }
+  $('oCellState').textContent = stateText;
+  $('oCellState').className = stateClass;
+
+  const osmDiff = Math.abs(dpsi);
+  $('oOsm').textContent = osmDiff.toFixed(0) + ' kPa';
+
+  // Explainer
+  let txt = '';
+  if (params.viewMode === 'membrane') {
+    if (Math.abs(dpsi) < 50) {
+      txt = `The concentrations on both sides are approximately equal, so water potential is the same on each side (<span class="k">${psiL.toFixed(0)} kPa</span> vs <span class="k">${psiR.toFixed(0)} kPa</span>). There is no net movement of water — the system is at osmotic equilibrium.`;
+    } else {
+      const flowDir = dpsi < 0 ? 'left to right' : 'right to left';
+      const lowSide = dpsi < 0 ? 'right' : 'left';
+      txt = `Water potential on the left is <span class="k">${psiL.toFixed(0)} kPa</span> and on the right <span class="k">${psiR.toFixed(0)} kPa</span>. Water moves by osmosis from <span class="k">${flowDir}</span> — towards the ${lowSide} side which has a lower (more negative) water potential. Solute molecules are too large to pass through the partially permeable membrane.`;
+    }
+  } else {
+    if (diff < -0.05) {
+      txt = `External solution (<span class="k">${params.externalConc.toFixed(2)} mol/L</span>) is <strong>hypotonic</strong> relative to the cell (<span class="k">0.30 mol/L</span>). The cell has lower water potential, so water enters by osmosis. The plant cell becomes turgid (swollen against its cell wall, creating turgor pressure). An animal cell may lyse (burst) if the difference is very large.`;
+    } else if (Math.abs(diff) <= 0.05) {
+      txt = `The external solution (<span class="k">${params.externalConc.toFixed(2)} mol/L</span>) is <strong>isotonic</strong> — the same concentration as the cell cytoplasm (<span class="k">0.30 mol/L</span>). Water potential is equal on both sides, so there is no net movement of water. Cell mass and volume remain unchanged.`;
+    } else {
+      txt = `External solution (<span class="k">${params.externalConc.toFixed(2)} mol/L</span>) is <strong>hypertonic</strong> — more concentrated than the cell (<span class="k">0.30 mol/L</span>). The external solution has a lower water potential, so water leaves the cell by osmosis. A plant cell becomes plasmolysed (membrane pulls away from cell wall). An animal cell becomes crenated (shrivelled).`;
+    }
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() {
+  draw();
+  updateReadouts();
+}
+
+let animRunning = false;
+function startAnim() {
+  if (animRunning) return;
+  animRunning = true;
+  function loop() {
+    if (params.viewMode === 'membrane') {
+      stepParticles(1/60);
+      drawMembrane();
+    } else {
+      drawCellView();
+    }
+    animFrame = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// Controls
+$('slLeft').addEventListener('input', e => {
+  params.leftConc = parseFloat(e.target.value);
+  $('vLeft').textContent = params.leftConc.toFixed(2);
+  updateReadouts();
+});
+$('slRight').addEventListener('input', e => {
+  params.rightConc = parseFloat(e.target.value);
+  $('vRight').textContent = params.rightConc.toFixed(2);
+  updateReadouts();
+});
+$('slExternal').addEventListener('input', e => {
+  params.externalConc = parseFloat(e.target.value);
+  $('vExternal').textContent = params.externalConc.toFixed(2);
+  updateReadouts();
+});
+
+document.querySelectorAll('.ref-chip[data-left]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.leftConc = parseFloat(c.dataset.left);
+    $('slLeft').value = params.leftConc;
+    $('vLeft').textContent = params.leftConc.toFixed(2);
+    updateReadouts();
+  });
+});
+document.querySelectorAll('.ref-chip[data-right]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.rightConc = parseFloat(c.dataset.right);
+    $('slRight').value = params.rightConc;
+    $('vRight').textContent = params.rightConc.toFixed(2);
+    updateReadouts();
+  });
+});
+document.querySelectorAll('.ref-chip[data-ext]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.externalConc = parseFloat(c.dataset.ext);
+    $('slExternal').value = params.externalConc;
+    $('vExternal').textContent = params.externalConc.toFixed(2);
+    updateReadouts();
+  });
+});
+
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.viewMode = b.dataset.mode;
+    updateReadouts();
+  });
+});
+
+function applyTry(name) {
+  const presets = {
+    hypotonic: { left:0.3, right:0.3, ext:0.0, mode:'cell',
+      note:'<strong>Distilled water is hypotonic</strong> to the cell. Water rushes in by osmosis. A plant cell becomes turgid — the cell wall prevents it bursting. An animal cell may lyse (haemolysis in red blood cells).' },
+    isotonic: { left:0.3, right:0.3, ext:0.3, mode:'cell',
+      note:'<strong>Isotonic solution</strong>: water potential inside = outside. No net water movement. This is why saline drips (0.9% NaCl ≈ 0.15 mol/L for ions) are used in medicine — they do not distort cells.' },
+    hypertonic: { left:0.3, right:0.3, ext:0.9, mode:'cell',
+      note:'The external solution is <strong>hypertonic</strong> — more concentrated than the cell. Water leaves by osmosis. A plant cell is plasmolysed (the membrane peels from the cell wall). This is why salting food preserves it — bacteria lose water and die.' },
+    osmosisDemo: { left:0.0, right:0.8, ext:0.3, mode:'membrane',
+      note:'A large water potential difference (<span style="color:var(--text)">ψ left = 0 kPa, ψ right = −1982 kPa</span>). Water moves rapidly from the pure-water side (high ψ) to the concentrated side (low ψ). The right side solution level rises (osmotic pressure).' }
+  };
+  const cfg = presets[name];
+  if (!cfg) return;
+  params.leftConc = cfg.left; params.rightConc = cfg.right; params.externalConc = cfg.ext;
+  params.viewMode = cfg.mode;
+  $('slLeft').value = cfg.left; $('vLeft').textContent = cfg.left.toFixed(2);
+  $('slRight').value = cfg.right; $('vRight').textContent = cfg.right.toFixed(2);
+  $('slExternal').value = cfg.ext; $('vExternal').textContent = cfg.ext.toFixed(2);
+  document.querySelectorAll('#viewToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode===cfg.mode));
+  updateReadouts();
+  $('tryNote').innerHTML = cfg.note;
+}
+document.querySelectorAll('.try-panel-section .try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', updateReadouts);
+
+// Keyboard
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target===modal) closeModal(); });
+  const DEFAULTS = { leftConc:0.1, rightConc:0.5, externalConc:0.3, viewMode:'membrane' };
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+    if (e.key==='Escape') { closeModal(); return; }
+    if (e.key==='?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey||e.ctrlKey||e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key===' ') {
+      e.preventDefault();
+      params.viewMode = params.viewMode==='membrane' ? 'cell' : 'membrane';
+      document.querySelectorAll('#viewToggle button').forEach(b=>b.classList.toggle('active',b.dataset.mode===params.viewMode));
+      updateReadouts();
+    } else if (k==='r') {
+      Object.assign(params, DEFAULTS);
+      $('slLeft').value=DEFAULTS.leftConc; $('vLeft').textContent=DEFAULTS.leftConc.toFixed(2);
+      $('slRight').value=DEFAULTS.rightConc; $('vRight').textContent=DEFAULTS.rightConc.toFixed(2);
+      $('slExternal').value=DEFAULTS.externalConc; $('vExternal').textContent=DEFAULTS.externalConc.toFixed(2);
+      document.querySelectorAll('#viewToggle button').forEach(b=>b.classList.toggle('active',b.dataset.mode==='membrane'));
+      updateReadouts();
+    } else if (k==='e') {
+      params.leftConc = 0.3; params.rightConc = 0.3; params.externalConc = 0.3;
+      $('slLeft').value=0.3; $('vLeft').textContent='0.30';
+      $('slRight').value=0.3; $('vRight').textContent='0.30';
+      $('slExternal').value=0.3; $('vExternal').textContent='0.30';
+      updateReadouts();
+    }
+  });
+})();
+
+// Init
+initParticles();
+updateReadouts();
+startAnim();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="enzyme_activity.html">
+      <div class="related-title">Enzyme Activity</div>
+      <div class="related-desc">Rate of reaction vs temperature and pH, denaturation, and Michaelis-Menten kinetics</div>
+    </a>
+    <a class="related-card" href="punnett_squares.html">
+      <div class="related-title">Genetic Inheritance</div>
+      <div class="related-desc">Punnett squares, monohybrid crosses, and phenotype ratios</div>
+    </a>
+    <a class="related-card" href="photosynthesis_ks3.html">
+      <div class="related-title">Photosynthesis</div>
+      <div class="related-desc">Limiting factors: light intensity, CO₂ concentration, and temperature</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

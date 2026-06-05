@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hooke's Law</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.main-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.canvas-wrap { position: relative; width: 100%; height: 440px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.beyond-label { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); margin-left: 4px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Hooke's Law</h1>
+    <p class="sub">F = ke · spring constant · elastic limit · force–extension graph</p>
+    <p class="insight-banner">Up to the elastic limit, extension is directly proportional to force: F = ke. Beyond it, the spring deforms permanently — the relationship becomes non-linear.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">↑ ↓</span><span>Increase / decrease force</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="main-layout">
+        <!-- Spring diagram -->
+        <div>
+          <div class="title-row"><h3>Spring diagram</h3></div>
+          <div class="canvas-wrap"><canvas id="springCanvas"></canvas></div>
+        </div>
+        <!-- F-e graph -->
+        <div>
+          <div class="title-row"><h3>Force–extension graph</h3></div>
+          <div class="canvas-wrap"><canvas id="feCanvas"></canvas></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Elastic region (F = ke)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Beyond elastic limit</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Elastic limit</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>Current operating point</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Spring properties</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Spring constant k in N/m — a stiffer spring has a higher k.">Spring constant k (N m⁻¹)</span>
+          <span class="value num" id="vK">50</span>
+        </div>
+        <input type="range" id="sliderK" min="10" max="200" step="5" value="50">
+        <div class="refs">
+          <span class="ref-chip" data-k="10">Soft 10</span>
+          <span class="ref-chip" data-k="50">Medium 50</span>
+          <span class="ref-chip" data-k="100">Stiff 100</span>
+          <span class="ref-chip" data-k="200">Steel 200</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="The extension at which the spring leaves its elastic region and starts to deform permanently.">Elastic limit e_L (m)</span>
+          <span class="value num" id="vEL">0.20</span>
+        </div>
+        <input type="range" id="sliderEL" min="0.05" max="0.50" step="0.01" value="0.20">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Applied force / mass</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Force applied to the spring by hanging masses. F = mg.">Force F (N)</span>
+          <span class="value num" id="vF">5.0</span>
+        </div>
+        <input type="range" id="sliderF" min="0" max="30" step="0.5" value="5">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Equivalent hanging mass (F = mg, g = 9.8 m/s²).">Equiv. mass m (kg)</span>
+          <span class="value num" id="vM">0.51</span>
+        </div>
+        <input type="range" id="sliderM" min="0" max="3" step="0.05" value="0.51">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Calculated results</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="Extension within elastic region: e = F/k">Extension e</div><div class="val cyan" id="oExt">0.100 m</div></div>
+        <div class="readout"><div class="lbl">Spring constant k</div><div class="val amber" id="oK">50 N/m</div></div>
+        <div class="readout"><div class="lbl" title="Elastic potential energy stored: Ep = ½ke²">Energy Ep</div><div class="val green" id="oEp">0.25 J</div></div>
+        <div class="readout"><div class="lbl">Status</div><div class="val rose" id="oStatus">Elastic</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="doubleK">Double the stiffness</button>
+        <button data-try="beyondLimit">Go past elastic limit</button>
+        <button data-try="softSpring">Soft spring, heavy load</button>
+        <button data-try="gradient">Read graph gradient</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const g = 9.8;
+
+const state = {
+  k: 50,      // N/m
+  F: 5,       // N applied
+  elasticLimit: 0.20  // m extension
+};
+
+// Extension: within elastic region, e = F/k.
+// Beyond elastic limit: spring deforms non-linearly.
+// We model the non-linear region with a softening curve.
+function getExtension(F, k, eL) {
+  const eLin = F / k;
+  if (eLin <= eL) return { e: eLin, beyond: false };
+  // Non-linear region: beyond elastic limit, additional extension grows faster
+  const eExtra = eL + (F - k * eL) / (k * 0.15); // much softer
+  return { e: eExtra, beyond: true };
+}
+
+function drawSpring() {
+  const c = $('springCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const { e, beyond } = getExtension(state.F, state.k, state.elasticLimit);
+
+  // Layout
+  const cx = W / 2;
+  const fixY = 30;        // fixed point at top
+  const naturalLen = H * 0.3;  // natural length in pixels
+  const eMax = state.elasticLimit * 2.5;
+  const ePixels = Math.min((e / eMax) * H * 0.4, H * 0.45);  // extension in pixels
+  const massH = 40, massW = 60;
+
+  // Ceiling
+  ctx.fillStyle = '#1f2937';
+  ctx.fillRect(cx - 60, fixY - 10, 120, 10);
+  ctx.strokeStyle = '#5b6573'; ctx.lineWidth = 1;
+  for (let i = -55; i < 55; i += 10) {
+    ctx.beginPath(); ctx.moveTo(cx + i, fixY - 10); ctx.lineTo(cx + i - 8, fixY - 18); ctx.stroke();
+  }
+
+  // Spring (zigzag)
+  const springTop = fixY;
+  const springBot = springTop + naturalLen + ePixels;
+  const coils = 10;
+  const coilW = 20 + Math.min(ePixels * 0.2, 10); // coil width narrows under tension
+  const springColor = beyond ? '#f43f5e' : '#22d3ee';
+
+  ctx.strokeStyle = springColor; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, springTop);
+  ctx.lineTo(cx, springTop + (springBot - springTop) / (coils * 2 + 2));
+
+  const segH = (springBot - springTop - 2 * (springBot - springTop) / (coils * 2 + 2)) / (coils * 2);
+  const startY = springTop + (springBot - springTop) / (coils * 2 + 2);
+  for (let i = 0; i < coils * 2; i++) {
+    const y = startY + i * segH;
+    const xOff = (i % 2 === 0) ? coilW : -coilW;
+    ctx.lineTo(cx + xOff, y + segH / 2);
+    ctx.lineTo(cx, y + segH);
+  }
+  ctx.lineTo(cx, springBot);
+  ctx.stroke();
+
+  // Mass block
+  const massY = springBot;
+  const massColor = beyond ? 'rgba(244,63,94,0.25)' : 'rgba(34,211,238,0.15)';
+  const massBorder = beyond ? '#f43f5e' : '#22d3ee';
+  ctx.fillStyle = massColor;
+  ctx.strokeStyle = massBorder; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(cx - massW / 2, massY, massW, massH, 4);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = massBorder; ctx.font = '13px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(state.F.toFixed(1) + ' N', cx, massY + massH / 2);
+
+  // Natural length bracket
+  ctx.strokeStyle = '#5b6573'; ctx.lineWidth = 1;
+  ctx.save(); ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(cx + coilW + 14, springTop); ctx.lineTo(cx + coilW + 14, springTop + naturalLen); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('natural', cx + coilW + 18, springTop + naturalLen / 2);
+
+  // Extension bracket (right side)
+  if (ePixels > 8) {
+    ctx.strokeStyle = beyond ? '#f43f5e' : '#22d3ee'; ctx.lineWidth = 1.5;
+    const brX = cx + coilW + 14;
+    ctx.beginPath();
+    ctx.moveTo(brX, springTop + naturalLen);
+    ctx.lineTo(brX, massY);
+    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(brX - 4, springTop + naturalLen); ctx.lineTo(brX + 4, springTop + naturalLen); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(brX - 4, massY); ctx.lineTo(brX + 4, massY); ctx.stroke();
+    ctx.fillStyle = beyond ? '#f43f5e' : '#22d3ee';
+    ctx.fillText('e = ' + e.toFixed(3) + ' m', brX + 6, (springTop + naturalLen + massY) / 2);
+  }
+
+  // Elastic limit indicator on spring
+  const eLimitPx = Math.min((state.elasticLimit / eMax) * H * 0.4, H * 0.4);
+  const eLimitY = springTop + naturalLen + eLimitPx;
+  if (eLimitY < massY) {
+    ctx.save(); ctx.setLineDash([4,3]);
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx - coilW - 10, eLimitY); ctx.lineTo(cx + coilW + 10, eLimitY); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('elastic limit', cx - coilW - 14, eLimitY);
+  }
+
+  // Beyond annotation
+  if (beyond) {
+    ctx.fillStyle = '#f43f5e'; ctx.font = '11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('⚠ Beyond elastic limit', cx, massY + massH + 10);
+  }
+
+  // Weight arrow
+  if (state.F > 0) {
+    const arrowLen = Math.min(40, state.F * 3);
+    ctx.strokeStyle = '#f59e0b'; ctx.fillStyle = '#f59e0b'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, massY + massH);
+    ctx.lineTo(cx, massY + massH + arrowLen);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, massY + massH + arrowLen + 8);
+    ctx.lineTo(cx - 6, massY + massH + arrowLen);
+    ctx.lineTo(cx + 6, massY + massH + arrowLen);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+    ctx.fillText('W = ' + state.F.toFixed(1) + ' N', cx + 10, massY + massH + arrowLen / 2);
+  }
+}
+
+function drawFE() {
+  const c = $('feCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 52, r: 20, t: 20, b: 44 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const eMax = state.elasticLimit * 3;
+  const fMax = state.k * eMax * 1.1;
+  const xAt = e => pad.l + (e / eMax) * pw;
+  const yAt = f => (H - pad.b) - (f / fMax) * ph;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const x = pad.l + pw * i / 5;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+    const y = pad.t + ph * i / 5;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  // Labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i <= 5; i++) {
+    const e = eMax * i / 5;
+    ctx.fillText(e.toFixed(2), pad.l + pw * i / 5, H - pad.b + 6);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) {
+    const f = fMax * (5 - i) / 5;
+    ctx.fillText(f.toFixed(0), pad.l - 6, pad.t + ph * i / 5);
+  }
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Extension e / m', pad.l + pw / 2, H - 16);
+  ctx.save(); ctx.translate(14, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Force F / N', 0, 0); ctx.restore();
+
+  // Elastic region line (Hooke's law: F = ke)
+  ctx.beginPath();
+  ctx.moveTo(xAt(0), yAt(0));
+  ctx.lineTo(xAt(state.elasticLimit), yAt(state.k * state.elasticLimit));
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Non-linear region beyond elastic limit
+  const eL = state.elasticLimit;
+  const fL = state.k * eL;
+  // Softening curve: F grows slowly beyond elastic limit
+  ctx.beginPath();
+  ctx.moveTo(xAt(eL), yAt(fL));
+  const steps = 80;
+  for (let i = 1; i <= steps; i++) {
+    const de = eL + (eMax - eL) * i / steps;
+    // Beyond elastic limit: spring softens — gradient falls, curve bends toward the e-axis.
+    // Gradient decreases from k*0.15 at the limit toward zero, giving a concave-down shape.
+    const excess = de - eL;
+    const df = fL + state.k * 0.15 * excess - 0.5 * state.k * 0.04 * excess * excess;
+    ctx.lineTo(xAt(de), yAt(Math.min(df, fMax)));
+  }
+  ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Elastic limit marker
+  ctx.save(); ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(xAt(eL), pad.t); ctx.lineTo(xAt(eL), H - pad.b); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('Elastic\nlimit', xAt(eL) + 4, pad.t + 4);
+
+  // Current operating point
+  const { e, beyond } = getExtension(state.F, state.k, state.elasticLimit);
+  const curF = state.F;
+  const ptX = xAt(Math.min(e, eMax));
+  const ptY = yAt(Math.min(curF, fMax));
+  ctx.fillStyle = beyond ? '#f43f5e' : '#34d399';
+  ctx.beginPath(); ctx.arc(ptX, ptY, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = beyond ? 'rgba(244,63,94,0.3)' : 'rgba(52,211,153,0.3)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(ptX, ptY, 12, 0, Math.PI * 2); ctx.stroke();
+
+  // Dashed guide lines to axes
+  ctx.save(); ctx.setLineDash([3,3]);
+  ctx.strokeStyle = 'rgba(52,211,153,0.5)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ptX, ptY); ctx.lineTo(ptX, H - pad.b); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ptX, ptY); ctx.lineTo(pad.l, ptY); ctx.stroke();
+  ctx.restore();
+
+  // Gradient annotation (in elastic region)
+  if (!beyond) {
+    const gradLen = Math.min(eL * 0.6, eMax * 0.3);
+    ctx.fillStyle = 'rgba(34,211,238,0.15)';
+    ctx.beginPath();
+    ctx.moveTo(xAt(0), yAt(0));
+    ctx.lineTo(xAt(gradLen), yAt(0));
+    ctx.lineTo(xAt(gradLen), yAt(state.k * gradLen));
+    ctx.closePath(); ctx.fill();
+    // Label gradient = k
+    const midX = xAt(gradLen / 2), midY = yAt(state.k * gradLen / 2);
+    ctx.fillStyle = '#22d3ee'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('gradient = k = ' + state.k + ' N/m', midX + pw*0.12, midY - 4);
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateReadouts() {
+  const { e, beyond } = getExtension(state.F, state.k, state.elasticLimit);
+  const Ep = 0.5 * state.k * Math.min(e, state.elasticLimit) * Math.min(e, state.elasticLimit); // Ep uses ideal e
+  $('oExt').textContent = e.toFixed(3) + ' m';
+  $('oK').textContent = state.k + ' N m⁻¹';
+  $('oEp').textContent = Ep.toFixed(3) + ' J';
+  $('oStatus').textContent = beyond ? 'PLASTIC' : 'Elastic';
+  $('oStatus').style.color = beyond ? 'var(--rose)' : 'var(--green)';
+  $('vK').textContent = state.k;
+  $('vEL').textContent = state.elasticLimit.toFixed(2);
+  $('vF').textContent = state.F.toFixed(1);
+  $('vM').textContent = (state.F / g).toFixed(2);
+
+  let txt = '';
+  if (!beyond) {
+    txt = `Within the <em>elastic region</em>: <span class="k">F = ke</span>. `;
+    txt += `With k = <span class="k">${state.k} N m⁻¹</span> and F = <span class="k">${state.F.toFixed(1)} N</span>, `;
+    txt += `extension e = F/k = <span class="k">${e.toFixed(3)} m</span>. `;
+    txt += `Elastic potential energy stored: <span class="k">Ep = ½ke² = ${Ep.toFixed(3)} J</span>. `;
+    txt += `Remove the force and the spring returns to its original length — this is elastic deformation.`;
+  } else {
+    txt = `<strong style="color:var(--rose)">Beyond the elastic limit!</strong> The spring has undergone <em>plastic deformation</em>. `;
+    txt += `Extension is now <span class="k">${e.toFixed(3)} m</span> — greater than Hooke's Law predicts (<span class="k">${(state.F/state.k).toFixed(3)} m</span>). `;
+    txt += `The spring will not return to its original length when the force is removed. `;
+    txt += `On the F–e graph, the curve bends away from the straight line.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() {
+  drawSpring();
+  drawFE();
+  updateReadouts();
+}
+
+$('sliderK').addEventListener('input', e => {
+  state.k = parseInt(e.target.value);
+  redraw();
+});
+$('sliderEL').addEventListener('input', e => {
+  state.elasticLimit = parseFloat(e.target.value);
+  redraw();
+});
+$('sliderF').addEventListener('input', e => {
+  state.F = parseFloat(e.target.value);
+  $('sliderM').value = (state.F / g).toFixed(2);
+  redraw();
+});
+$('sliderM').addEventListener('input', e => {
+  state.F = parseFloat(e.target.value) * g;
+  $('sliderF').value = state.F.toFixed(1);
+  redraw();
+});
+document.querySelectorAll('.ref-chip[data-k]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    state.k = parseInt(chip.dataset.k);
+    $('sliderK').value = state.k;
+    redraw();
+  });
+});
+
+function applyTry(name) {
+  const presets = {
+    doubleK:    { k: 100, F: 5, eL: 0.20, note: '<strong>Double stiffness (k = 100 N/m):</strong> the same force now produces half the extension. The F–e graph slope is steeper. Gradient of the graph = spring constant.' },
+    beyondLimit:{ k: 50, F: 12, eL: 0.20, note: '<strong>Beyond the elastic limit:</strong> the operating point leaves the linear region. Notice the extension is greater than F/k predicts — the spring is permanently stretched.' },
+    softSpring: { k: 10, F: 5, eL: 0.30, note: '<strong>Soft spring:</strong> k = 10 N/m. A 5 N force causes 0.5 m extension. The elastic limit is harder to reach — soft springs deform more before the limit.' },
+    gradient:   { k: 50, F: 0, eL: 0.25, note: '<strong>Reading the gradient:</strong> apply force slowly with the slider. The gradient of the linear section = k (spring constant). Gradient = ΔF / Δe = k.' }
+  };
+  const p = presets[name]; if (!p) return;
+  state.k = p.k; state.F = p.F; state.elasticLimit = p.eL;
+  $('sliderK').value = p.k; $('sliderF').value = p.F; $('sliderEL').value = p.eL;
+  $('sliderM').value = (p.F / g).toFixed(2);
+  $('tryNote').innerHTML = p.note;
+  redraw();
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', redraw);
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  const DEFAULTS = { k: 50, F: 5, eL: 0.20 };
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (k === 'ArrowUp') {
+      e.preventDefault();
+      state.F = Math.min(30, state.F + 0.5);
+      $('sliderF').value = state.F; $('sliderM').value = (state.F/g).toFixed(2);
+      redraw();
+    } else if (k === 'ArrowDown') {
+      e.preventDefault();
+      state.F = Math.max(0, state.F - 0.5);
+      $('sliderF').value = state.F; $('sliderM').value = (state.F/g).toFixed(2);
+      redraw();
+    } else if (k.toLowerCase() === 'r') {
+      state.k = DEFAULTS.k; state.F = DEFAULTS.F; state.elasticLimit = DEFAULTS.eL;
+      $('sliderK').value = DEFAULTS.k; $('sliderF').value = DEFAULTS.F; $('sliderEL').value = DEFAULTS.eL;
+      $('sliderM').value = (DEFAULTS.F/g).toFixed(2);
+      redraw();
+    }
+  });
+})();
+
+redraw();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="ohms_law.html">
+      <div class="related-title">Ohm's Law &amp; I–V Characteristics</div>
+      <div class="related-desc">Another linear relationship — V = IR — and what happens when it breaks down</div>
+    </a>
+    <a class="related-card" href="gas_laws.html">
+      <div class="related-title">Gas Laws &amp; the Particle Model</div>
+      <div class="related-desc">Pressure, volume and temperature in a gas — from particle collisions</div>
+    </a>
+    <a class="related-card" href="forces_motion.html">
+      <div class="related-title">Forces &amp; Motion</div>
+      <div class="related-desc">Newton's laws, free body diagrams, and calculating acceleration</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

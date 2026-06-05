@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radioactive Decay &amp; Half-Life</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 260px; }
+.canvas-grid-wrap { position: relative; width: 100%; height: 200px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.step-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Radioactive Decay &amp; Half-Life</h1>
+    <p class="sub">Stochastic nuclear decay · N = N₀e^(−λt) · activity · isotope half-lives</p>
+    <p class="insight-banner">Radioactive decay is a random process — you cannot predict when any single nucleus will decay. But with large numbers, the fraction remaining follows a precise exponential law.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Step through one half-life</span>
+      <span class="kbd-key">P</span><span>Play / pause animation</span>
+      <span class="kbd-key">R</span><span>Reset nuclei grid</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Decay curve: N = N₀ e<sup>−λt</sup></h3>
+        <div class="seg" id="scaleToggle">
+          <button data-scale="linear" class="active">Linear N</button>
+          <button data-scale="log">ln(N)</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="decayCurve"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Theoretical N(t)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Simulation (random)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Activity A = −dN/dt</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <div class="title-row">
+        <h3>Nucleus grid (random decay)</h3>
+        <span style="font-size:11px;color:var(--text-dim);">each cell = one nucleus</span>
+      </div>
+      <div class="canvas-grid-wrap"><canvas id="nucleiGrid"></canvas></div>
+      <div class="step-row">
+        <button id="btnStep" class="primary">+½ life step</button>
+        <button id="btnPlay">▶ Auto-play</button>
+        <button id="btnReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Isotope presets</p>
+      <div class="refs" style="margin-top:0;">
+        <span class="ref-chip" data-isotope="carbon14">Carbon-14 (5730 yr)</span>
+        <span class="ref-chip" data-isotope="iodine131">Iodine-131 (8.02 d)</span>
+        <span class="ref-chip" data-isotope="radium226">Radium-226 (1600 yr)</span>
+        <span class="ref-chip" data-isotope="polonium210">Polonium-210 (138 d)</span>
+        <span class="ref-chip" data-isotope="uranium238">Uranium-238 (4.47 Gyr)</span>
+        <span class="ref-chip" data-isotope="technetium99m">Tc-99m (6 hr)</span>
+      </div>
+      <p style="font-size:11px;color:var(--text-faint);margin:8px 0 0;">Simulation uses scaled time — one display half-life = the real t₁/₂ above</p>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Simulation parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Initial number of nuclei in the simulation grid.">Initial nuclei N₀</span>
+          <span class="value num" id="vN0">200</span>
+        </div>
+        <input type="range" id="sliderN0" min="50" max="400" step="10" value="200">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Half-life in the simulation's scaled time units.">Half-life t₁/₂ (steps)</span>
+          <span class="value num" id="vHL">5</span>
+        </div>
+        <input type="range" id="sliderHL" min="2" max="20" step="1" value="5">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Current state</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Remaining N</div><div class="val cyan" id="oN">200</div></div>
+        <div class="readout"><div class="lbl" title="Activity = rate of decay = λN. In Bq (decays per second) in real isotopes.">Activity A</div><div class="val rose" id="oActivity">—</div></div>
+        <div class="readout"><div class="lbl">Half-lives elapsed</div><div class="val amber" id="oHLElapsed">0.0</div></div>
+        <div class="readout"><div class="lbl" title="Decay constant λ = ln2 / t½">Decay const. λ</div><div class="val green" id="oLambda">—</div></div>
+        <div class="readout"><div class="lbl">Fraction remaining</div><div class="val violet" id="oFraction">100%</div></div>
+        <div class="readout"><div class="lbl">Time step</div><div class="val" id="oStep">0</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="shortHL">Short half-life</button>
+        <button data-try="manyNuclei">Many nuclei</button>
+        <button data-try="fewNuclei">Few nuclei (random visible)</button>
+        <button data-try="iodine">Medical iodine-131</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const ISOTOPES = {
+  carbon14:     { name: 'Carbon-14',    hl_real: '5730 yr',   hl_steps: 10 },
+  iodine131:    { name: 'Iodine-131',   hl_real: '8.02 days', hl_steps: 6  },
+  radium226:    { name: 'Radium-226',   hl_real: '1600 yr',   hl_steps: 8  },
+  polonium210:  { name: 'Polonium-210', hl_real: '138 days',  hl_steps: 5  },
+  uranium238:   { name: 'Uranium-238',  hl_real: '4.47 Gyr',  hl_steps: 15 },
+  technetium99m:{ name: 'Tc-99m',       hl_real: '6 hours',   hl_steps: 4  }
+};
+
+const state = {
+  N0: 200,
+  halfLife: 5,      // in time steps
+  step: 0,
+  nuclei: [],       // array of {alive: bool, decayStep: int}
+  simHistory: [],   // {step, N, activity}
+  logScale: false,
+  playing: false,
+  playInterval: null,
+  isotopeLabel: '',
+  isotopeHL: ''
+};
+
+function lambdaDecay() { return Math.log(2) / state.halfLife; }
+
+function initNuclei() {
+  state.nuclei = [];
+  const lam = lambdaDecay();
+  for (let i = 0; i < state.N0; i++) {
+    // Pre-assign decay step using geometric distribution: P(survive step t) = e^(-λt)
+    // decay at step k with prob (1-p)^(k-1) * p where p = 1 - e^(-λ)
+    const u = Math.random();
+    const p = 1 - Math.exp(-lam);
+    const k = p > 0 ? Math.ceil(Math.log(1 - u) / Math.log(1 - p)) : Infinity;
+    state.nuclei.push({ alive: true, decayStep: k });
+  }
+  state.step = 0;
+  state.simHistory = [{ step: 0, N: state.N0, activity: 0 }];
+  updateNucleiAlive();
+}
+
+function updateNucleiAlive() {
+  let N = 0, activity = 0;
+  for (const n of state.nuclei) {
+    if (n.decayStep > state.step) { n.alive = true; N++; }
+    else { n.alive = false; }
+    if (n.decayStep === state.step) activity++;
+  }
+  return { N, activity };
+}
+
+function stepForward() {
+  state.step++;
+  const { N, activity } = updateNucleiAlive();
+  state.simHistory.push({ step: state.step, N, activity });
+  drawAll();
+  updateReadouts();
+}
+
+function halfLifeStep() {
+  const targetStep = state.step + state.halfLife;
+  // Step one half-life
+  for (let s = state.step + 1; s <= targetStep; s++) {
+    state.step = s;
+    const { N, activity } = updateNucleiAlive();
+    state.simHistory.push({ step: s, N, activity });
+  }
+  drawAll();
+  updateReadouts();
+}
+
+function reset() {
+  if (state.playing) { clearInterval(state.playInterval); state.playing = false; $('btnPlay').textContent = '▶ Auto-play'; }
+  initNuclei();
+  drawAll();
+  updateReadouts();
+}
+
+// Curve: theoretical exponential + simulated data points
+function drawCurve() {
+  const c = $('decayCurve');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 60, r: 60, t: 24, b: 40 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const tMax = state.halfLife * 6; // show 6 half-lives
+  const lam = lambdaDecay();
+
+  const xAt = t => pad.l + (t / tMax) * pw;
+  let yAt;
+  if (state.logScale) {
+    // ln(N) scale: ln(N0) at t=0 → 0 at t→∞
+    const yMax = Math.log(state.N0);
+    yAt = n => (n <= 0) ? H - pad.b : pad.t + ((yMax - Math.log(n)) / yMax) * ph;
+  } else {
+    yAt = n => pad.t + ((state.N0 - n) / state.N0) * ph;
+  }
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 6; i++) {
+    const x = xAt(i * state.halfLife);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+  for (let j = 0; j <= 5; j++) {
+    const y = pad.t + (ph * j / 5);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  // Y labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let j = 0; j <= 5; j++) {
+    const frac = (5 - j) / 5;
+    const N = frac * state.N0;
+    const y = pad.t + (ph * j / 5);
+    if (state.logScale) {
+      const lnVal = Math.log(Math.max(N, 1));
+      ctx.fillText(lnVal.toFixed(1), pad.l - 6, y);
+    } else {
+      ctx.fillText(Math.round(N).toString(), pad.l - 6, y);
+    }
+  }
+  // X labels
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i <= 6; i++) {
+    ctx.fillText(i + ' t½', xAt(i * state.halfLife), H - pad.b + 6);
+  }
+  // Axis labels
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Time (half-lives)', pad.l + pw / 2, H - 14);
+  ctx.save(); ctx.translate(14, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText(state.logScale ? 'ln(N)' : 'N (nuclei remaining)', 0, 0); ctx.restore();
+
+  // Theoretical curve
+  ctx.beginPath();
+  for (let px = 0; px <= pw; px++) {
+    const t = (px / pw) * tMax;
+    const N = state.N0 * Math.exp(-lam * t);
+    const x = pad.l + px;
+    const y = yAt(N);
+    if (px === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Simulated data points
+  if (state.simHistory.length > 1) {
+    ctx.fillStyle = '#f59e0b';
+    for (const pt of state.simHistory) {
+      if (pt.step > tMax) break;
+      const x = xAt(pt.step);
+      const y = yAt(pt.N);
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    // Connect sim points
+    ctx.beginPath();
+    let first = true;
+    for (const pt of state.simHistory) {
+      if (pt.step > tMax) break;
+      const x = xAt(pt.step), y = yAt(pt.N);
+      if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
+    }
+    ctx.strokeStyle = 'rgba(245,158,11,0.55)'; ctx.lineWidth = 1.2; ctx.stroke();
+  }
+
+  // Current step vertical line
+  if (state.step <= tMax) {
+    const xCur = xAt(state.step);
+    ctx.save(); ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(34,211,238,0.6)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(xCur, pad.t); ctx.lineTo(xCur, H - pad.b); ctx.stroke();
+    ctx.restore();
+  }
+
+  // Half-life markers (dashed horizontal lines at 50%, 25%, 12.5%)
+  const halfLevels = [0.5, 0.25, 0.125];
+  halfLevels.forEach((frac, idx) => {
+    const N = frac * state.N0;
+    const y = yAt(N);
+    if (y > pad.t && y < H - pad.b) {
+      ctx.save(); ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = `rgba(167,139,250,${0.5 - idx * 0.12})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = '#a78bfa'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+      ctx.fillText((frac * 100) + '%', W - pad.r + 2, y + 4);
+    }
+  });
+
+  // Activity plot on right y-axis (scaled)
+  if (state.simHistory.length > 1) {
+    const maxAct = Math.max(...state.simHistory.map(p => p.activity), 1);
+    const actScale = ph / maxAct;
+    ctx.strokeStyle = 'rgba(244,63,94,0.7)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    let first = true;
+    for (const pt of state.simHistory) {
+      if (pt.step > tMax) break;
+      const x = xAt(pt.step);
+      const y = (H - pad.b) - pt.activity * actScale;
+      if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
+    }
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function drawGrid() {
+  const c = $('nucleiGrid');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const N = state.nuclei.length;
+  const cols = Math.ceil(Math.sqrt(N * W / H));
+  const rows = Math.ceil(N / cols);
+  const cellW = W / cols;
+  const cellH = H / rows;
+  const r = Math.min(cellW, cellH) * 0.38;
+
+  for (let i = 0; i < N; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = (col + 0.5) * cellW;
+    const cy = (row + 0.5) * cellH;
+    const n = state.nuclei[i];
+
+    if (n.alive) {
+      ctx.fillStyle = '#22d3ee';
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    } else {
+      // Decayed: show faded
+      ctx.fillStyle = 'rgba(244,63,94,0.25)';
+      ctx.beginPath(); ctx.arc(cx, cy, r * 0.7, 0, Math.PI * 2); ctx.fill();
+      // small X
+      ctx.strokeStyle = 'rgba(244,63,94,0.5)'; ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(cx - r*0.4, cy - r*0.4); ctx.lineTo(cx + r*0.4, cy + r*0.4);
+      ctx.moveTo(cx + r*0.4, cy - r*0.4); ctx.lineTo(cx - r*0.4, cy + r*0.4);
+      ctx.stroke();
+    }
+  }
+}
+
+function updateReadouts() {
+  const last = state.simHistory[state.simHistory.length - 1] || { N: state.N0, activity: 0 };
+  const lam = lambdaDecay();
+  $('oN').textContent = last.N.toLocaleString('en-GB');
+  $('oActivity').textContent = last.activity + ' /step';
+  $('oHLElapsed').textContent = (state.step / state.halfLife).toFixed(2);
+  $('oLambda').textContent = lam.toFixed(4);
+  $('oFraction').textContent = ((last.N / state.N0) * 100).toFixed(1) + '%';
+  $('oStep').textContent = state.step;
+  $('vN0').textContent = state.N0;
+  $('vHL').textContent = state.halfLife;
+
+  const hlsElapsed = state.step / state.halfLife;
+  const Ntheory = state.N0 * Math.exp(-lam * state.step);
+  let txt = `At step <span class="k">${state.step}</span> (${hlsElapsed.toFixed(1)} half-lives): `;
+  txt += `theory predicts <span class="k">N = ${Math.round(Ntheory)}</span>, simulation shows <span class="k">N = ${last.N}</span>. `;
+  txt += `Decay constant <span class="k">λ = ln(2)/t½ = ${lam.toFixed(4)}</span> per step. `;
+  txt += `Each nucleus has probability <span class="k">p = 1 − e^(−λ) = ${(1 - Math.exp(-lam)).toFixed(3)}</span> of decaying per step, `;
+  txt += `regardless of its age. `;
+  if (last.N < 10) txt += '<strong style="color:var(--rose)">Very few nuclei remain — statistical fluctuations are large.</strong>';
+  else if (state.step > 0) txt += `Activity (decays this step): <span class="k">${last.activity}</span>.`;
+  if (state.isotopeLabel) txt += ` Preset: <span class="k">${state.isotopeLabel}</span> (real t½ = ${state.isotopeHL}).`;
+  $('explainer').innerHTML = txt;
+}
+
+function drawAll() { drawCurve(); drawGrid(); }
+
+$('sliderN0').addEventListener('input', e => {
+  state.N0 = parseInt(e.target.value);
+  reset();
+});
+$('sliderHL').addEventListener('input', e => {
+  state.halfLife = parseInt(e.target.value);
+  reset();
+});
+
+document.querySelectorAll('.ref-chip[data-isotope]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const iso = ISOTOPES[chip.dataset.isotope];
+    if (!iso) return;
+    state.halfLife = iso.hl_steps;
+    $('sliderHL').value = iso.hl_steps;
+    state.isotopeLabel = iso.name;
+    state.isotopeHL = iso.hl_real;
+    reset();
+    $('tryNote').innerHTML = `<strong>${iso.name}</strong>: real half-life = ${iso.hl_real}. Each display step represents one real half-life. Decay constant λ = ln(2)/${iso.hl_steps} steps⁻¹.`;
+  });
+});
+
+document.querySelectorAll('#scaleToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('active')) return;
+    document.querySelectorAll('#scaleToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.logScale = b.dataset.scale === 'log';
+    drawCurve();
+  });
+});
+
+$('btnStep').addEventListener('click', halfLifeStep);
+$('btnReset').addEventListener('click', reset);
+$('btnPlay').addEventListener('click', () => {
+  if (state.playing) {
+    clearInterval(state.playInterval); state.playing = false;
+    $('btnPlay').textContent = '▶ Auto-play';
+  } else {
+    state.playing = true;
+    $('btnPlay').textContent = '⏸ Pause';
+    state.playInterval = setInterval(() => {
+      const last = state.simHistory[state.simHistory.length - 1];
+      if (last && last.N === 0) {
+        clearInterval(state.playInterval); state.playing = false;
+        $('btnPlay').textContent = '▶ Auto-play';
+        return;
+      }
+      stepForward();
+    }, 400);
+  }
+});
+
+function applyTry(name) {
+  const presets = {
+    shortHL:    { N0: 200, hl: 3, note: '<strong>Short half-life (3 steps):</strong> rapid decay — the sample is nearly gone after 6 half-lives. Activity is initially very high.' },
+    manyNuclei: { N0: 400, hl: 8, note: '<strong>400 nuclei:</strong> the simulated curve hugs the theoretical exponential closely. With more atoms, random fluctuations are proportionally smaller (law of large numbers).' },
+    fewNuclei:  { N0: 50,  hl: 5, note: '<strong>Only 50 nuclei:</strong> watch how the simulation zigzags around the theoretical curve. The randomness of individual nuclear events becomes visible.' },
+    iodine:     { N0: 200, hl: 6, note: '<strong>Iodine-131 profile (t½ = 8 days):</strong> used in thyroid cancer treatment. After 5 half-lives (~40 days), only 3% remains. Rapid enough to be effective, slow enough for treatment planning.' }
+  };
+  const p = presets[name]; if (!p) return;
+  state.N0 = p.N0; state.halfLife = p.hl;
+  $('sliderN0').value = p.N0; $('sliderHL').value = p.hl;
+  state.isotopeLabel = ''; state.isotopeHL = '';
+  $('tryNote').innerHTML = p.note;
+  reset();
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', drawAll);
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); halfLifeStep(); }
+    else if (k === 'p') { $('btnPlay').click(); }
+    else if (k === 'r') { reset(); }
+  });
+})();
+
+reset();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="wave_properties.html">
+      <div class="related-title">Wave Properties</div>
+      <div class="related-desc">Frequency, wavelength and the electromagnetic spectrum</div>
+    </a>
+    <a class="related-card" href="gas_laws.html">
+      <div class="related-title">Gas Laws &amp; the Particle Model</div>
+      <div class="related-desc">Pressure, volume and temperature — Boyle's Law from first principles</div>
+    </a>
+    <a class="related-card" href="reaction_rates.html">
+      <div class="related-title">Reaction Rates</div>
+      <div class="related-desc">How concentration, temperature and catalysts affect the rate of a reaction</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

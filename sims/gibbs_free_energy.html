@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gibbs Free Energy &amp; Feasibility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14; --bg-elev-1: #11161f; --bg-elev-2: #161d28;
+  --panel: #131923; --panel-border: #1f2937; --grid: #1a2230;
+  --text: #e6edf3; --text-dim: #97a1b0; --text-faint: #5b6573;
+  --cyan: #22d3ee; --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b; --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e; --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399; --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa; --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 17px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 380px; }
+.canvas-wrap-sm { position: relative; width: 100%; height: 200px; margin-top: 14px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.case-card { background: var(--bg-elev-2); border: 1px solid var(--panel-border); border-radius: var(--r-sm); padding: 8px 10px; font-size: 11px; line-height: 1.4; }
+.case-card .case-head { font-weight: 600; font-size: 11px; margin-bottom: 3px; }
+.case-card.feasible { border-color: var(--green); }
+.case-card.never { border-color: var(--rose); }
+.case-card.hot { border-color: var(--amber); }
+.case-card.cold { border-color: var(--cyan); }
+.gibbs-eq { background: var(--bg-elev-2); border: 1px solid var(--panel-border); border-radius: var(--r-sm); padding: 10px 14px; margin-bottom: 12px; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--cyan); text-align: center; }
+.feasibility-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.feasibility-badge.yes { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+.feasibility-badge.no { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+.feasibility-badge.cross { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Gibbs Free Energy &amp; Feasibility</h1>
+    <p class="sub">ΔG = ΔH − TΔS · Four cases · Crossover temperature · ΔG vs T graph</p>
+    <p class="insight-banner">ΔG &lt; 0 means spontaneous (feasible) — but thermodynamic feasibility does not guarantee a fast reaction. A reaction can be feasible yet imperceptibly slow without a catalyst (e.g. diamond converting to graphite).</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">1–4</span><span>Load one of the four classic cases</span>
+      <span class="kbd-key">↑ / ↓</span><span>Increase / decrease ΔH by 10 kJ</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>ΔG vs Temperature</h3>
+        <span id="feasBadge" class="feasibility-badge yes">Feasible</span>
+      </div>
+      <div class="gibbs-eq" id="gibbsEq">ΔG = ΔH − TΔS</div>
+      <div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>ΔG (kJ mol⁻¹) — feasible when below x-axis</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green);opacity:0.5"></span>Feasible region (ΔG &lt; 0)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose);opacity:0.5"></span>Non-feasible region (ΔG &gt; 0)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Current T marker</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <div class="title-row"><h3>ΔH and −TΔS contributions</h3></div>
+      <div class="canvas-wrap-sm"><canvas id="barCanvas"></canvas></div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Thermodynamic parameters</p>
+      <div class="control">
+        <div class="control-row"><span class="label" title="Standard enthalpy change. Negative = exothermic (releases energy to surroundings).">ΔH° (kJ mol⁻¹)</span><span class="value num" id="vDH">−100</span></div>
+        <input type="range" id="sDH" min="-300" max="300" step="5" value="-100">
+        <div class="refs">
+          <span class="ref-chip" data-dh="-100">Exothermic (−100)</span>
+          <span class="ref-chip" data-dh="100">Endothermic (+100)</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label" title="Standard entropy change. Positive means products are more disordered than reactants (e.g., gas produced from solid).">ΔS° (J mol⁻¹ K⁻¹)</span><span class="value num" id="vDS">+150</span></div>
+        <input type="range" id="sDS" min="-300" max="300" step="5" value="150">
+        <div class="refs">
+          <span class="ref-chip" data-ds="150">Gas formed (+150)</span>
+          <span class="ref-chip" data-ds="-150">Gas lost (−150)</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label" title="Current temperature — move this to see how ΔG changes.">Current temperature T (K)</span><span class="value num" id="vT">298</span></div>
+        <input type="range" id="sT" min="100" max="1500" step="10" value="298">
+        <div class="refs">
+          <span class="ref-chip" data-t="298">298 K (25°C)</span>
+          <span class="ref-chip" data-t="500">500 K</span>
+          <span class="ref-chip" data-t="1000">1000 K</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <p class="section-label">Current values at T</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">ΔH°</div><div class="val cyan" id="oDH">—</div></div>
+        <div class="readout"><div class="lbl">−TΔS°</div><div class="val amber" id="oTdS">—</div></div>
+        <div class="readout"><div class="lbl">ΔG°</div><div class="val" id="oDG">—</div></div>
+        <div class="readout"><div class="lbl" title="Temperature at which ΔG = 0, i.e. ΔH = TΔS. Feasibility changes here.">Crossover T</div><div class="val green" id="oTcross">—</div></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <p class="section-label">The four cases</p>
+      <div class="case-grid">
+        <div class="case-card feasible">
+          <div class="case-head" style="color:var(--green)">Always feasible</div>
+          ΔH &lt; 0, ΔS &gt; 0<br>ΔG always negative
+        </div>
+        <div class="case-card never">
+          <div class="case-head" style="color:var(--rose)">Never feasible</div>
+          ΔH &gt; 0, ΔS &lt; 0<br>ΔG always positive
+        </div>
+        <div class="case-card hot">
+          <div class="case-head" style="color:var(--amber)">Feasible at high T</div>
+          ΔH &gt; 0, ΔS &gt; 0<br>ΔG &lt; 0 above Tcross
+        </div>
+        <div class="case-card cold">
+          <div class="case-head" style="color:var(--cyan)">Feasible at low T</div>
+          ΔH &lt; 0, ΔS &lt; 0<br>ΔG &lt; 0 below Tcross
+        </div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:14px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="caco3">CaCO₃ decomposition</button>
+        <button data-try="haber">Haber process (N₂+H₂)</button>
+        <button data-try="combustion">Combustion (exo/+ΔS)</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const params = {
+  DH: -100,  // kJ/mol
+  DS: 150,   // J/mol/K
+  T: 298     // K
+};
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+function deltaG(T) {
+  // ΔG = ΔH - TΔS (ΔH in kJ, ΔS in J/K → ΔS/1000 in kJ/K)
+  return params.DH - T * (params.DS / 1000);
+}
+
+function crossoverT() {
+  // ΔG = 0 → T = ΔH / ΔS (in consistent units)
+  if (Math.abs(params.DS) < 0.001) return Infinity;
+  const T = (params.DH * 1000) / params.DS; // in K
+  return T;
+}
+
+function getCaseLabel() {
+  const { DH, DS } = params;
+  if (DH < 0 && DS > 0) return { label:'Always feasible', color:'var(--green)', detail:'ΔH < 0 and ΔS > 0 → ΔG always negative' };
+  if (DH > 0 && DS < 0) return { label:'Never feasible', color:'var(--rose)', detail:'ΔH > 0 and ΔS < 0 → ΔG always positive' };
+  if (DH > 0 && DS > 0) return { label:'Feasible at high T', color:'var(--amber)', detail:'ΔG becomes negative above Tcross = ΔH/ΔS' };
+  if (DH < 0 && DS < 0) return { label:'Feasible at low T', color:'var(--cyan)', detail:'ΔG becomes negative below Tcross = ΔH/ΔS' };
+  return { label:'Edge case', color:'var(--text-dim)', detail:'ΔH or ΔS is zero' };
+}
+
+function drawMain() {
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l:66, r:20, t:20, b:36 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  const Tmin = 0, Tmax = 1500;
+  // Compute ΔG range
+  const pts = [];
+  for (let i = 0; i <= 300; i++) {
+    const T = Tmin + (i/300) * (Tmax - Tmin);
+    pts.push({ T, G: deltaG(T) });
+  }
+  const gVals = pts.map(p => p.G);
+  const gMin = Math.min(...gVals, -50);
+  const gMax = Math.max(...gVals, 50);
+  const gSpan = gMax - gMin || 1;
+  const gPad = gSpan * 0.1;
+  const yMin = gMin - gPad, yMax = gMax + gPad;
+  const ySpan = yMax - yMin;
+
+  const xAt = T => pad.l + ((T - Tmin) / (Tmax - Tmin)) * pw;
+  const yAt = G => pad.t + ph * (1 - (G - yMin) / ySpan);
+
+  // Feasible region (ΔG < 0) — green fill below x-axis
+  const y0 = yAt(0);
+  // Fill feasible (green) — below y=0 (G<0)
+  ctx.beginPath();
+  ctx.moveTo(pad.l, Math.max(pad.t, y0));
+  ctx.lineTo(W-pad.r, Math.max(pad.t, y0));
+  ctx.lineTo(W-pad.r, H-pad.b);
+  ctx.lineTo(pad.l, H-pad.b);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(52,211,153,0.06)'; ctx.fill();
+
+  // Non-feasible region (ΔG > 0) — rose fill above x-axis
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t);
+  ctx.lineTo(W-pad.r, pad.t);
+  ctx.lineTo(W-pad.r, Math.min(H-pad.b, y0));
+  ctx.lineTo(pad.l, Math.min(H-pad.b, y0));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(244,63,94,0.06)'; ctx.fill();
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  const yTickStep = Math.pow(10, Math.floor(Math.log10(ySpan/5)));
+  const yTickStart = Math.ceil(yMin / yTickStep) * yTickStep;
+  for (let G = yTickStart; G <= yMax; G += yTickStep) {
+    const y = yAt(G);
+    if (y < pad.t || y > H-pad.b) continue;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
+  }
+  const xTickStep = 200;
+  for (let T = 0; T <= Tmax; T += xTickStep) {
+    const x = xAt(T);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H-pad.b); ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let G = yTickStart; G <= yMax; G += yTickStep) {
+    const y = yAt(G);
+    if (y < pad.t || y > H-pad.b) continue;
+    ctx.fillText(G.toFixed(0), pad.l-6, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let T = 0; T <= Tmax; T += xTickStep) {
+    ctx.fillText(T+' K', xAt(T), H-pad.b+5);
+  }
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('Temperature / K', pad.l+pw/2, H-8);
+  ctx.save(); ctx.translate(12, pad.t+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('ΔG° / kJ mol⁻¹', 0, 0); ctx.restore();
+
+  // Zero line (x-axis)
+  if (y0 >= pad.t && y0 <= H-pad.b) {
+    ctx.save(); ctx.setLineDash([4,4]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(pad.l, y0); ctx.lineTo(W-pad.r, y0); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'left';
+    ctx.fillText('ΔG = 0', pad.l+3, y0-10);
+  }
+
+  // ΔG line — colour-coded by sign
+  ctx.beginPath();
+  let prevSign = null;
+  for (let i = 0; i < pts.length; i++) {
+    const x = xAt(pts[i].T), y = yAt(pts[i].G);
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 3; ctx.stroke();
+
+  // Crossover T marker
+  const Tc = crossoverT();
+  if (Tc > Tmin && Tc < Tmax) {
+    const xc = xAt(Tc);
+    ctx.save(); ctx.setLineDash([4,4]);
+    ctx.strokeStyle = 'rgba(245,158,11,0.8)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(xc, pad.t); ctx.lineTo(xc, H-pad.b); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText('Tcross = '+Tc.toFixed(0)+' K', xc, pad.t+6);
+  }
+
+  // Current T marker
+  const xT = xAt(params.T);
+  const gT = deltaG(params.T);
+  const yT = yAt(gT);
+  ctx.save(); ctx.setLineDash([3,3]);
+  ctx.strokeStyle = 'rgba(245,158,11,0.6)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(xT, pad.t); ctx.lineTo(xT, H-pad.b); ctx.stroke();
+  ctx.restore();
+  const dotColor = gT < 0 ? '#34d399' : '#f43f5e';
+  ctx.fillStyle = dotColor;
+  ctx.beginPath(); ctx.arc(xT, yT, 6, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.arc(xT, yT, 6, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = dotColor; ctx.beginPath(); ctx.arc(xT, yT, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = dotColor; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillText(`T=${params.T}K  ΔG=${gT.toFixed(0)}`, xT+8, yT-2);
+
+  // Labels for feasible/non-feasible regions
+  ctx.font = '10px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(52,211,153,0.5)';
+  ctx.fillText('FEASIBLE (ΔG < 0)', pad.l+pw/2, Math.min(H-pad.b-15, y0+20));
+  ctx.fillStyle = 'rgba(244,63,94,0.5)';
+  ctx.fillText('NON-FEASIBLE (ΔG > 0)', pad.l+pw/2, Math.max(pad.t+15, y0-20));
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function drawBar() {
+  const c = $('barCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l:80, r:20, t:16, b:16 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  const T = params.T;
+  const DH = params.DH; // kJ
+  const TdS = T * params.DS / 1000; // kJ
+  const DG = DH - TdS; // kJ
+
+  const allVals = [0, DH, -TdS, DG];
+  const absMax = Math.max(...allVals.map(Math.abs), 10) * 1.2;
+
+  // Zero line
+  const y0 = pad.t + ph / 2;
+  const xCenter = pad.l + pw / 2;
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, y0); ctx.lineTo(W-pad.r, y0); ctx.stroke();
+
+  const barW = pw / 5;
+  const bars = [
+    { label:'ΔH', val:DH, color:'#22d3ee', x:pad.l + pw*0.15 },
+    { label:'−TΔS', val:-TdS, color:'#f59e0b', x:pad.l + pw*0.5 },
+    { label:'ΔG', val:DG, color: DG < 0 ? '#34d399' : '#f43f5e', x:pad.l + pw*0.83 }
+  ];
+
+  for (const bar of bars) {
+    const h = (Math.abs(bar.val) / absMax) * (ph/2);
+    const y = bar.val < 0 ? y0 : y0 - h;
+    const bx = bar.x - barW/2;
+    ctx.fillStyle = bar.color + '55';
+    ctx.fillRect(bx, y, barW, h);
+    ctx.strokeStyle = bar.color; ctx.lineWidth = 2;
+    ctx.strokeRect(bx, y, barW, h);
+
+    // Label above/below bar
+    ctx.fillStyle = bar.color; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+    if (bar.val < 0) {
+      ctx.fillText(bar.val.toFixed(1)+' kJ', bar.x, y + h + 12);
+    } else {
+      ctx.fillText('+'+bar.val.toFixed(1)+' kJ', bar.x, y - 12);
+    }
+    ctx.fillStyle = '#97a1b0'; ctx.font = '11px Inter';
+    ctx.fillText(bar.label, bar.x, bar.val < 0 ? y + h + 24 : y - 24);
+  }
+
+  // Y-axis labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('0', pad.l-8, y0);
+  ctx.fillText('+'+absMax.toFixed(0), pad.l-8, pad.t+8);
+  ctx.fillText('-'+absMax.toFixed(0), pad.l-8, H-pad.b-8);
+  ctx.fillStyle = '#5b6573'; ctx.font = '9px Inter'; ctx.textAlign = 'right';
+  ctx.fillText('kJ mol⁻¹', pad.l-8, pad.t);
+}
+
+function updateReadouts() {
+  const T = params.T;
+  const DH = params.DH;
+  const TdS = T * params.DS / 1000;
+  const DG = deltaG(T);
+  const Tc = crossoverT();
+
+  $('oDH').textContent = (DH >= 0 ? '+' : '') + DH.toFixed(1) + ' kJ';
+  $('oTdS').textContent = ((-TdS) >= 0 ? '+' : '') + (-TdS).toFixed(1) + ' kJ';
+  $('oDG').textContent = (DG >= 0 ? '+' : '') + DG.toFixed(1) + ' kJ';
+  $('oDG').className = 'val ' + (DG < 0 ? 'green' : 'rose');
+  if (isFinite(Tc) && Tc > 0) {
+    $('oTcross').textContent = Tc.toFixed(0) + ' K';
+  } else if (Tc <= 0) {
+    $('oTcross').textContent = '≤ 0 K';
+  } else {
+    $('oTcross').textContent = '—';
+  }
+
+  const badge = $('feasBadge');
+  if (DG < 0) {
+    badge.textContent = 'Feasible (ΔG < 0)'; badge.className = 'feasibility-badge yes';
+  } else if (DG > 0) {
+    badge.textContent = 'Not feasible (ΔG > 0)'; badge.className = 'feasibility-badge no';
+  } else {
+    badge.textContent = 'At crossover (ΔG = 0)'; badge.className = 'feasibility-badge cross';
+  }
+
+  const cs = getCaseLabel();
+  $('gibbsEq').innerHTML = `ΔG° = ΔH° − TΔS° &nbsp; | &nbsp; <span style="color:${cs.color}">${cs.label}</span>`;
+}
+
+function updateExplainer() {
+  const T = params.T, DH = params.DH, DS = params.DS;
+  const DG = deltaG(T);
+  const Tc = crossoverT();
+  const cs = getCaseLabel();
+
+  let txt = `At <span class="k">T = ${T} K</span>: `;
+  txt += `ΔH° = <span class="k">${DH >= 0 ? '+' : ''}${DH} kJ mol⁻¹</span>, `;
+  txt += `ΔS° = <span class="k">${DS >= 0 ? '+' : ''}${DS} J mol⁻¹ K⁻¹</span>. `;
+  txt += `−TΔS° = <span class="k">${(-T*DS/1000 >= 0 ? '+' : '')}${(-T*DS/1000).toFixed(1)} kJ mol⁻¹</span>. `;
+  txt += `Therefore ΔG° = <span class="k">${DG >= 0 ? '+' : ''}${DG.toFixed(1)} kJ mol⁻¹</span>. `;
+  txt += DG < 0
+    ? `The reaction is <span class="k">thermodynamically feasible</span> at this temperature. `
+    : `The reaction is <span class="k">not feasible</span> at this temperature. `;
+  txt += `Case: <span class="k">${cs.label}</span> — ${cs.detail}. `;
+  if (isFinite(Tc) && Tc > 0) {
+    txt += `The crossover temperature is <span class="k">Tcross = ΔH/ΔS = ${Tc.toFixed(0)} K</span> — feasibility changes here.`;
+  } else if (!isFinite(Tc) || Tc <= 0) {
+    txt += `There is no positive crossover temperature — the reaction is <span class="k">${DH*DS > 0 || (DH < 0 && DS > 0) ? 'always feasible' : 'never feasible'}</span>.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() {
+  updateReadouts();
+  drawMain();
+  drawBar();
+  updateExplainer();
+}
+
+// Controls
+$('sDH').addEventListener('input', e => { params.DH = parseFloat(e.target.value); $('vDH').textContent = (params.DH >= 0 ? '+' : '') + params.DH; redraw(); });
+$('sDS').addEventListener('input', e => { params.DS = parseFloat(e.target.value); $('vDS').textContent = (params.DS >= 0 ? '+' : '') + params.DS; redraw(); });
+$('sT').addEventListener('input', e => { params.T = parseFloat(e.target.value); $('vT').textContent = params.T; redraw(); });
+
+document.querySelectorAll('.ref-chip[data-dh]').forEach(c => {
+  c.addEventListener('click', () => { params.DH = parseFloat(c.dataset.dh); $('sDH').value = params.DH; $('vDH').textContent = (params.DH >= 0 ? '+' : '') + params.DH; redraw(); });
+});
+document.querySelectorAll('.ref-chip[data-ds]').forEach(c => {
+  c.addEventListener('click', () => { params.DS = parseFloat(c.dataset.ds); $('sDS').value = params.DS; $('vDS').textContent = (params.DS >= 0 ? '+' : '') + params.DS; redraw(); });
+});
+document.querySelectorAll('.ref-chip[data-t]').forEach(c => {
+  c.addEventListener('click', () => { params.T = parseFloat(c.dataset.t); $('sT').value = params.T; $('vT').textContent = params.T; redraw(); });
+});
+
+// Try this
+function applyTry(name) {
+  const presets = {
+    caco3: { DH:178, DS:161, T:298,
+      note: '<strong>CaCO₃ → CaO + CO₂:</strong> strongly endothermic (ΔH = +178 kJ/mol) and positive ΔS (CO₂ gas produced). At 298 K: not feasible. The crossover temperature ≈ 1108 K — above this temperature decomposition becomes spontaneous, hence industrial kilns operate >1000°C.' },
+    haber: { DH:-92, DS:-198, T:700,
+      note: '<strong>Haber: N₂ + 3H₂ → 2NH₃:</strong> exothermic but negative ΔS (4 mol gas → 2 mol). Feasible at low T, not at high T (Tcross ≈ 465 K). The industrial process uses ~700 K for kinetics — sacrificing some thermodynamic feasibility for acceptable rate, with an iron catalyst to compensate.' },
+    combustion: { DH:-890, DS:243, T:298,
+      note: '<strong>CH₄ + 2O₂ → CO₂ + 2H₂O (g):</strong> exothermic and positive ΔS (more moles of gas). Both terms drive ΔG negative — always feasible at all temperatures. This is the "ideal" case: thermodynamics and entropy both favour products.' }
+  };
+  const cfg = presets[name];
+  if (!cfg) return;
+  params.DH = cfg.DH; params.DS = cfg.DS; params.T = cfg.T;
+  $('sDH').value = cfg.DH; $('vDH').textContent = (cfg.DH >= 0 ? '+' : '') + cfg.DH;
+  $('sDS').value = cfg.DS; $('vDS').textContent = (cfg.DS >= 0 ? '+' : '') + cfg.DS;
+  $('sT').value = cfg.T; $('vT').textContent = cfg.T;
+  redraw();
+  $('tryNote').innerHTML = cfg.note;
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', redraw);
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  const DEFAULTS = { DH:-100, DS:150, T:298 };
+  function resetAll() {
+    Object.assign(params, DEFAULTS);
+    $('sDH').value = params.DH; $('vDH').textContent = (params.DH >= 0 ? '+' : '') + params.DH;
+    $('sDS').value = params.DS; $('vDS').textContent = (params.DS >= 0 ? '+' : '') + params.DS;
+    $('sT').value = params.T; $('vT').textContent = params.T;
+    redraw();
+  }
+
+  // Four classic cases
+  const cases = {
+    '1': { DH:-100, DS:150, T:298 },
+    '2': { DH:100,  DS:-150, T:298 },
+    '3': { DH:100,  DS:150, T:298 },
+    '4': { DH:-100, DS:-150, T:298 }
+  };
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+    if (e.key==='Escape') { close(); return; }
+    if (e.key==='?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey||e.ctrlKey||e.altKey) return;
+    const k = e.key;
+    if (k.toLowerCase()==='r') resetAll();
+    else if (cases[k]) {
+      Object.assign(params, cases[k]);
+      $('sDH').value=params.DH; $('vDH').textContent=(params.DH>=0?'+':'')+params.DH;
+      $('sDS').value=params.DS; $('vDS').textContent=(params.DS>=0?'+':'')+params.DS;
+      $('sT').value=params.T; $('vT').textContent=params.T;
+      redraw();
+    }
+    else if (k==='ArrowUp') { params.DH = Math.min(300, params.DH+10); $('sDH').value=params.DH; $('vDH').textContent=(params.DH>=0?'+':'')+params.DH; redraw(); }
+    else if (k==='ArrowDown') { params.DH = Math.max(-300, params.DH-10); $('sDH').value=params.DH; $('vDH').textContent=(params.DH>=0?'+':'')+params.DH; redraw(); }
+  });
+})();
+
+redraw();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="equilibrium_kc.html">
+      <div class="related-title">Equilibrium &amp; K<sub>c</sub></div>
+      <div class="related-desc">ΔG° = −RT ln Kc links Gibbs energy to the equilibrium constant — see how Kc changes with temperature</div>
+    </a>
+    <a class="related-card" href="kinetics.html">
+      <div class="related-title">Reaction Kinetics &amp; Rate Equations</div>
+      <div class="related-desc">Thermodynamic feasibility tells us if a reaction can proceed; kinetics determines how fast</div>
+    </a>
+    <a class="related-card" href="maxwell_boltzmann.html">
+      <div class="related-title">Maxwell–Boltzmann Distribution</div>
+      <div class="related-desc">The molecular-level picture of why activation energy governs reaction rate</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

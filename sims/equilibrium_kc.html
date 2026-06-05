@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equilibrium &amp; Kc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14; --bg-elev-1: #11161f; --bg-elev-2: #161d28;
+  --panel: #131923; --panel-border: #1f2937; --grid: #1a2230; --grid-soft: #131a25;
+  --text: #e6edf3; --text-dim: #97a1b0; --text-faint: #5b6573;
+  --cyan: #22d3ee; --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b; --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e; --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399; --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa; --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 17px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 340px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.kc-expr { background: var(--bg-elev-2); border: 1px solid var(--panel-border); border-radius: var(--r-sm); padding: 10px 14px; margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--cyan); text-align: center; }
+.ice-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+.ice-table th, .ice-table td { padding: 5px 8px; border: 1px solid var(--panel-border); text-align: center; font-family: 'JetBrains Mono', monospace; }
+.ice-table th { background: var(--bg-elev-2); color: var(--text-dim); font-size: 10px; letter-spacing: 0.05em; }
+.ice-table td { background: var(--bg-elev-1); }
+.ice-table td.cyan { color: var(--cyan); }
+.ice-table td.amber { color: var(--amber); }
+.ice-table td.rose { color: var(--rose); }
+.ice-table td.green { color: var(--green); }
+.qc-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; margin-top: 6px; }
+.qc-badge.eq { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+.qc-badge.fwd { background: var(--cyan-soft); color: var(--cyan); border: 1px solid var(--cyan); }
+.qc-badge.rev { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Equilibrium &amp; K<sub>c</sub></h1>
+    <p class="sub">Reversible reactions · ICE tables · Le Chatelier's principle · Q vs K</p>
+    <p class="insight-banner">K<sub>c</sub> is fixed by temperature alone. Adding or removing a species changes Q<sub>c</sub>, not K<sub>c</sub> — the system shifts to restore equality. Dilution shifts equilibria involving unequal moles of gas towards the side with more moles.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">A</span><span>Add more reactant A (disturb equilibrium)</span>
+      <span class="kbd-key">D</span><span>Dilute the system (double volume)</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Concentration vs Time</h3>
+        <span id="reactionLabel" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber);">aA + bB ⇌ cC + dD</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>A (reactant)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>B (reactant)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--green)"></span>C (product)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>D (product)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--text-faint);opacity:0.6"></span>Equilibrium point</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="title-row"><h3>ICE Table &amp; K<sub>c</sub></h3></div>
+      <div class="kc-expr" id="kcExpr">Kc = [C]c[D]d / [A]a[B]b</div>
+      <table class="ice-table" id="iceTable">
+        <thead><tr><th>Species</th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead>
+        <tbody>
+          <tr><td>Initial (I)</td><td class="cyan" id="iceIA">—</td><td class="rose" id="iceIB">—</td><td class="green" id="iceIC">—</td><td class="amber" id="iceID">—</td></tr>
+          <tr><td>Change (C)</td><td class="cyan" id="iceCА">—</td><td class="rose" id="iceCB">—</td><td class="green" id="iceCC">—</td><td class="amber" id="iceCD">—</td></tr>
+          <tr><td>Equilibrium (E)</td><td class="cyan" id="iceEA">—</td><td class="rose" id="iceEB">—</td><td class="green" id="iceEC">—</td><td class="amber" id="iceED">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Reaction stoichiometry</p>
+      <div class="control">
+        <div class="control-row"><span class="label">a (coeff. of A)</span><span class="value num" id="vA">1</span></div>
+        <input type="range" id="sA" min="1" max="3" step="1" value="1">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">b (coeff. of B)</span><span class="value num" id="vB">1</span></div>
+        <input type="range" id="sB" min="0" max="3" step="1" value="1">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">c (coeff. of C)</span><span class="value num" id="vC">1</span></div>
+        <input type="range" id="sC" min="1" max="3" step="1" value="1">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">d (coeff. of D)</span><span class="value num" id="vD">0</span></div>
+        <input type="range" id="sD" min="0" max="3" step="1" value="0">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Initial concentrations &amp; K<sub>c</sub></p>
+      <div class="control">
+        <div class="control-row"><span class="label">[A]₀ (mol dm⁻³)</span><span class="value num" id="vA0">1.00</span></div>
+        <input type="range" id="sA0" min="0.1" max="3.0" step="0.05" value="1.0">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">[B]₀ (mol dm⁻³)</span><span class="value num" id="vB0">1.00</span></div>
+        <input type="range" id="sB0" min="0.0" max="3.0" step="0.05" value="1.0">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">[C]₀ (initial product)</span><span class="value num" id="vC0">0.00</span></div>
+        <input type="range" id="sC0" min="0.0" max="2.0" step="0.05" value="0.0">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label" title="Kc is set by temperature. Here we set it directly to explore how different values change equilibrium position.">K<sub>c</sub> (set by temperature)</span><span class="value num" id="vKc">1.00</span></div>
+        <input type="range" id="sKc" min="-2" max="2" step="0.05" value="0">
+        <div class="refs">
+          <span class="ref-chip" data-kc="-2">Kc = 0.01 (reactant-favoured)</span>
+          <span class="ref-chip" data-kc="0">Kc = 1 (balanced)</span>
+          <span class="ref-chip" data-kc="2">Kc = 100 (product-favoured)</span>
+        </div>
+      </div>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="Reaction quotient — current ratio of products to reactants. When Qc < Kc, reaction proceeds forward.">Q<sub>c</sub> (current)</div><div class="val cyan" id="oQc">—</div></div>
+        <div class="readout"><div class="lbl">K<sub>c</sub> (fixed)</div><div class="val amber" id="oKcDisplay">—</div></div>
+        <div class="readout" style="grid-column:1/-1;"><div class="lbl">Direction of shift</div><div id="oShift" class="val" style="font-size:13px;">—</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="addA">Add more [A] — shift right</button>
+        <button data-try="dilute">Dilute (double volume)</button>
+        <button data-try="haber">Haber process model</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const params = {
+  a:1, b:1, c:1, d:0,
+  A0:1.0, B0:1.0, C0:0.0, D0:0.0,
+  Kc:1.0,
+  disturbance: null // { type, value }
+};
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+// Solve for equilibrium using numerical iteration (bisection on extent x)
+// a*A + b*B ⇌ c*C + d*D
+// [A]eq = A0 - a*x, [B]eq = B0 - b*x, [C]eq = C0 + c*x, [D]eq = D0 + d*x
+// Kc = [C]^c [D]^d / [A]^a [B]^b
+function solveEquilibrium(A0, B0, C0, D0, a, b, c, d, Kc) {
+  // Find max feasible x
+  const xMaxFwd = Math.min(
+    a > 0 ? A0/a : Infinity,
+    b > 0 ? B0/b : Infinity
+  );
+  const xMaxRev = Math.min(
+    c > 0 ? C0/c : Infinity,
+    d > 0 ? D0/d : Infinity
+  );
+  // Q(x) - Kc = 0 where x can be negative (reverse) or positive (forward)
+  const xLo = -xMaxRev * 0.9999;
+  const xHi = xMaxFwd * 0.9999;
+
+  function Q(x) {
+    const cA = Math.max(0, A0 - a*x);
+    const cB = Math.max(0, B0 - b*x);
+    const cC = Math.max(0, C0 + c*x);
+    const cD = Math.max(0, D0 + d*x);
+    const num = Math.pow(cC, c) * (d > 0 ? Math.pow(cD, d) : 1);
+    const den = Math.pow(cA, a) * (b > 0 ? Math.pow(cB, b) : 1);
+    if (den < 1e-30) return Infinity;
+    return num / den;
+  }
+
+  // Bisection
+  let lo = xLo, hi = xHi;
+  const fLo = Q(lo) - Kc, fHi = Q(hi) - Kc;
+  if (isNaN(fLo) || isNaN(fHi)) return { x: 0, valid: false };
+  if (Math.sign(fLo) === Math.sign(fHi)) {
+    // Both same sign — pick whichever end is closer
+    return { x: Math.abs(fLo) < Math.abs(fHi) ? lo : hi, valid: true };
+  }
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2;
+    const fMid = Q(mid) - Kc;
+    if (Math.abs(fMid) < 1e-12) { lo = hi = mid; break; }
+    if (Math.sign(fMid) === Math.sign(fLo)) { lo = mid; } else { hi = mid; }
+  }
+  return { x: (lo+hi)/2, valid: true };
+}
+
+function simulate() {
+  const { a, b, c, d, A0, B0, C0, D0, Kc } = params;
+  const eq = solveEquilibrium(A0, B0, C0, D0, a, b, c, d, Kc);
+  const x = eq.x;
+
+  // Build concentration-time series using smooth sigmoid approach
+  // We model the path to equilibrium as exponential relaxation
+  const Aeq = Math.max(0, A0 - a*x);
+  const Beq = Math.max(0, B0 - b*x);
+  const Ceq = Math.max(0, C0 + c*x);
+  const Deq = Math.max(0, D0 + d*x);
+
+  const N = 300;
+  const series = [];
+  for (let i = 0; i <= N; i++) {
+    const f = i / N;
+    // Logistic relaxation: slow start, rapid middle, slow finish
+    const p = 1 - Math.exp(-6 * f); // approaches equilibrium
+    series.push({
+      t: f,
+      A: A0 + (Aeq - A0) * p,
+      B: B0 + (Beq - B0) * p,
+      C: C0 + (Ceq - C0) * p,
+      D: D0 + (Deq - D0) * p
+    });
+  }
+
+  // Add disturbance if present
+  let distSeries = null;
+  if (params.disturbance) {
+    const { type, amount } = params.disturbance;
+    let A0d = Aeq, B0d = Beq, C0d = Ceq, D0d = Deq;
+    if (type === 'addA') A0d = Aeq + amount;
+    if (type === 'dilute') { A0d *= 0.5; B0d *= 0.5; C0d *= 0.5; D0d *= 0.5; }
+
+    const eq2 = solveEquilibrium(A0d, B0d, C0d, D0d, a, b, c, d, Kc);
+    const x2 = eq2.x;
+    const Aeq2 = Math.max(0, A0d - a*x2);
+    const Beq2 = Math.max(0, B0d - b*x2);
+    const Ceq2 = Math.max(0, C0d + c*x2);
+    const Deq2 = Math.max(0, D0d + d*x2);
+
+    distSeries = [];
+    for (let i = 0; i <= N; i++) {
+      const f = i / N;
+      const p = 1 - Math.exp(-6*f);
+      distSeries.push({
+        t: f,
+        A: A0d + (Aeq2 - A0d) * p,
+        B: B0d + (Beq2 - B0d) * p,
+        C: C0d + (Ceq2 - C0d) * p,
+        D: D0d + (Deq2 - D0d) * p,
+      });
+    }
+  }
+
+  return { series, Aeq, Beq, Ceq, Deq, x, distSeries };
+}
+
+let simData = null;
+
+function redraw() {
+  simData = simulate();
+  updateICE();
+  updateReadouts();
+  drawChart();
+  updateExplainer();
+}
+
+function drawChart() {
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l:58, r:20, t:16, b:30 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  const { series, distSeries } = simData;
+  const { A0, B0, C0, D0, d } = params;
+  const allVals = series.map(s => Math.max(s.A, s.B, s.C, s.D));
+  if (distSeries) distSeries.forEach(s => allVals.push(s.A, s.B, s.C, s.D));
+  const yMax = Math.max(...allVals) * 1.1 || 1;
+  const totalPts = distSeries ? series.length + distSeries.length : series.length;
+  const xScale = (idx, total) => pad.l + (idx / total) * pw;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph*i/4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
+    const x = pad.l + pw*i/4;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H-pad.b); ctx.stroke();
+  }
+  ctx.fillStyle = '#97a1b0'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    ctx.fillText(((1-i/4)*yMax).toFixed(2), pad.l-6, pad.t+ph*i/4);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter';
+  ctx.fillText('[Concentration] / mol dm⁻³', pad.l+pw/2, H-12);
+  ctx.save(); ctx.translate(13, pad.t+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('mol dm⁻³', 0, 0); ctx.restore();
+
+  const yAt = v => pad.t + ph*(1 - v/yMax);
+  const lines = [
+    { key:'A', color:'#22d3ee' },
+    { key:'B', color:'#f43f5e' },
+    { key:'C', color:'#34d399' },
+    ...(params.d > 0 ? [{ key:'D', color:'#f59e0b' }] : [])
+  ];
+
+  // Draw initial approach
+  for (const ln of lines) {
+    ctx.beginPath();
+    for (let i = 0; i < series.length; i++) {
+      const x = pad.l + (i / (totalPts-1)) * pw;
+      const y = yAt(series[i][ln.key]);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = ln.color; ctx.lineWidth = 2.5; ctx.stroke();
+  }
+
+  // Equilibrium vertical dashed line
+  const eqX = pad.l + (series.length / (totalPts)) * pw;
+  const showEqLine = !distSeries || true;
+  ctx.save(); ctx.setLineDash([4,4]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(eqX, pad.t); ctx.lineTo(eqX, H-pad.b); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(151,161,176,0.7)'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('equilibrium', eqX, pad.t + 4);
+
+  // Disturbance section
+  if (distSeries) {
+    const distStart = series.length;
+    // Disturbance marker
+    const dX = pad.l + (distStart / totalPts) * pw;
+    ctx.save(); ctx.setLineDash([3,3]);
+    ctx.strokeStyle = 'rgba(245,158,11,0.8)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(dX, pad.t); ctx.lineTo(dX, H-pad.b); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText('disturbance', dX, pad.t + 14);
+
+    for (const ln of lines) {
+      ctx.beginPath();
+      for (let i = 0; i < distSeries.length; i++) {
+        const x = pad.l + ((distStart + i) / totalPts) * pw;
+        const y = yAt(distSeries[i][ln.key]);
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = ln.color; ctx.lineWidth = 2.5; ctx.setLineDash([6,3]); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateICE() {
+  if (!simData) return;
+  const { x, Aeq, Beq, Ceq, Deq } = simData;
+  const { a, b, c, d, A0, B0, C0, D0 } = params;
+  $('iceIA').textContent = A0.toFixed(3);
+  $('iceIB').textContent = b > 0 ? B0.toFixed(3) : '—';
+  $('iceIC').textContent = C0.toFixed(3);
+  $('iceID').textContent = d > 0 ? D0.toFixed(3) : '—';
+  const sign = x >= 0 ? '−' : '+';
+  $('iceCА').textContent = `${x >= 0 ? '−' : '+'}${(Math.abs(a*x)).toFixed(3)}`;
+  $('iceCB').textContent = b > 0 ? `${x >= 0 ? '−' : '+'}${(Math.abs(b*x)).toFixed(3)}` : '—';
+  $('iceCC').textContent = `${x >= 0 ? '+' : '−'}${(Math.abs(c*x)).toFixed(3)}`;
+  $('iceCD').textContent = d > 0 ? `${x >= 0 ? '+' : '−'}${(Math.abs(d*x)).toFixed(3)}` : '—';
+  $('iceEA').textContent = Aeq.toFixed(3);
+  $('iceEB').textContent = b > 0 ? Beq.toFixed(3) : '—';
+  $('iceEC').textContent = Ceq.toFixed(3);
+  $('iceED').textContent = d > 0 ? Deq.toFixed(3) : '—';
+}
+
+function calcQc(A, B, C, D) {
+  const { a, b, c, d } = params;
+  const num = Math.pow(C, c) * (d > 0 ? Math.pow(D, d) : 1);
+  const den = Math.pow(A, a) * (b > 0 ? Math.pow(B, b) : 1);
+  if (den < 1e-30) return Infinity;
+  return num / den;
+}
+
+function updateReadouts() {
+  const { A0, B0, C0, D0, Kc, a, b, c, d } = params;
+  const Qc = calcQc(A0, B0, C0, D0);
+  $('oQc').textContent = isFinite(Qc) ? Qc.toFixed(4) : '∞';
+  $('oKcDisplay').textContent = Kc.toFixed(4);
+  let shiftEl = $('oShift');
+  if (Math.abs(Qc - Kc) < 1e-6) {
+    shiftEl.innerHTML = '<span class="qc-badge eq">At equilibrium</span>';
+  } else if (Qc < Kc) {
+    shiftEl.innerHTML = '<span class="qc-badge fwd">→ Forward (Q &lt; K)</span>';
+  } else {
+    shiftEl.innerHTML = '<span class="qc-badge rev">← Reverse (Q &gt; K)</span>';
+  }
+
+  // Update Kc expression
+  const aS = params.a > 1 ? params.a : '';
+  const bS = params.b > 1 ? params.b : '';
+  const cS = params.c > 1 ? params.c : '';
+  const dS = params.d > 1 ? params.d : '';
+  const dPart = params.d > 0 ? `[D]${dS ? '⁰¹²³'[params.d] : ''}` : '';
+  const bPart = params.b > 0 ? `[B]${bS ? '⁰¹²³'[params.b] : ''}` : '';
+  const sup = n => n <= 1 ? '' : ['','','²','³'][n] || String(n);
+  const kcStr = `Kc = [C]${sup(params.c)}${params.d>0?'[D]'+sup(params.d):''} / [A]${sup(params.a)}${params.b>0?'[B]'+sup(params.b):''}`;
+  $('kcExpr').textContent = kcStr + ` = ${Kc.toFixed(3)}`;
+  $('reactionLabel').textContent = `${params.a}A${params.b>0?' + '+params.b+'B':''} ⇌ ${params.c}C${params.d>0?' + '+params.d+'D':''}`;
+}
+
+function updateExplainer() {
+  if (!simData) return;
+  const { Aeq, Beq, Ceq, Deq } = simData;
+  const { Kc, a, b, c, d } = params;
+  const Qeq = calcQc(Aeq, Beq, Ceq, Deq);
+  const posStr = Kc > 100 ? 'strongly product-favoured' : Kc > 1 ? 'product-favoured' : Kc === 1 ? 'balanced' : Kc < 0.01 ? 'strongly reactant-favoured' : 'reactant-favoured';
+  let txt = `With <span class="k">Kc = ${Kc.toFixed(3)}</span>, the equilibrium is <span class="k">${posStr}</span>. `;
+  txt += `At equilibrium: [A] = <span class="k">${Aeq.toFixed(3)}</span>`;
+  if (b > 0) txt += `, [B] = <span class="k">${Beq.toFixed(3)}</span>`;
+  txt += `, [C] = <span class="k">${Ceq.toFixed(3)}</span>`;
+  if (d > 0) txt += `, [D] = <span class="k">${Deq.toFixed(3)}</span>`;
+  txt += `. `;
+  txt += `<span class="k">Kc is set by temperature only</span> — adding a species changes Qc, and the system shifts to restore Qc = Kc without altering Kc.`;
+  if (params.disturbance) {
+    txt += ` The dashed region shows the system re-equilibrating after the disturbance while maintaining the same Kc.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+// Controls
+[['sA','vA','a'],['sB','vB','b'],['sC','vC','c'],['sD','vD','d']].forEach(([id,vid,key]) => {
+  $(id).addEventListener('input', e => {
+    params[key] = parseInt(e.target.value);
+    $(vid).textContent = params[key];
+    params.disturbance = null;
+    redraw();
+  });
+});
+[['sA0','vA0','A0'],['sB0','vB0','B0'],['sC0','vC0','C0']].forEach(([id,vid,key]) => {
+  $(id).addEventListener('input', e => {
+    params[key] = parseFloat(e.target.value);
+    $(vid).textContent = params[key].toFixed(2);
+    params.disturbance = null;
+    redraw();
+  });
+});
+$('sKc').addEventListener('input', e => {
+  params.Kc = Math.pow(10, parseFloat(e.target.value));
+  $('vKc').textContent = params.Kc.toFixed(3);
+  params.disturbance = null;
+  redraw();
+});
+document.querySelectorAll('.ref-chip[data-kc]').forEach(c => {
+  c.addEventListener('click', () => {
+    const v = parseFloat(c.dataset.kc);
+    params.Kc = Math.pow(10, v); $('sKc').value = v; $('vKc').textContent = params.Kc.toFixed(3);
+    params.disturbance = null; redraw();
+  });
+});
+
+// Try this
+function applyTry(name) {
+  const presets = {
+    addA: {
+      setup: () => {
+        params.disturbance = { type:'addA', amount: 0.5 };
+      },
+      note: '<strong>Adding more [A]</strong> raises Qc below Kc — the system shifts <em>forward</em> to produce more C (and D), consuming the extra A until Qc = Kc again. Kc is unchanged.'
+    },
+    dilute: {
+      setup: () => {
+        params.disturbance = { type:'dilute', amount: null };
+      },
+      note: '<strong>Diluting to twice the volume</strong> halves all concentrations instantly. If the reaction has unequal moles on each side (a+b ≠ c+d), the system shifts towards the side with more moles of solute to partially restore concentrations.'
+    },
+    haber: {
+      setup: () => {
+        // N₂ + 3H₂ ⇌ 2NH₃  Kc ~ 6×10⁵ at 25°C but use Kc=50 for visibility
+        params.a=1; params.b=3; params.c=2; params.d=0;
+        params.A0=1.0; params.B0=3.0; params.C0=0.0; params.D0=0.0;
+        params.Kc=50;
+        ['sA','sB','sC','sD'].forEach((id,i) => { $(id).value=[1,3,2,0][i]; });
+        ['vA','vB','vC','vD'].forEach((id,i) => { $(id).textContent=[1,3,2,0][i]; });
+        $('sA0').value=1.0; $('vA0').textContent='1.00';
+        $('sB0').value=3.0; $('vB0').textContent='3.00';
+        $('sC0').value=0.0; $('vC0').textContent='0.00';
+        $('sKc').value=Math.log10(50); $('vKc').textContent='50.000';
+        params.disturbance = null;
+      },
+      note: '<strong>Haber process (simplified):</strong> N₂ + 3H₂ ⇌ 2NH₃. Notice 4 moles on the left → 2 on the right. High Kc here means product-favoured at this temperature. In reality the industrial process runs at high T (lower Kc) for speed, using an iron catalyst.'
+    }
+  };
+  const p = presets[name];
+  if (!p) return;
+  p.setup();
+  redraw();
+  $('tryNote').innerHTML = p.note;
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+window.addEventListener('resize', redraw);
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  const DEFAULTS = { a:1, b:1, c:1, d:0, A0:1.0, B0:1.0, C0:0.0, D0:0.0, Kc:1.0 };
+  function resetAll() {
+    Object.assign(params, DEFAULTS);
+    params.disturbance = null;
+    $('sA').value=1; $('vA').textContent=1;
+    $('sB').value=1; $('vB').textContent=1;
+    $('sC').value=1; $('vC').textContent=1;
+    $('sD').value=0; $('vD').textContent=0;
+    $('sA0').value=1; $('vA0').textContent='1.00';
+    $('sB0').value=1; $('vB0').textContent='1.00';
+    $('sC0').value=0; $('vC0').textContent='0.00';
+    $('sKc').value=0; $('vKc').textContent='1.000';
+    redraw();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+    if (e.key==='Escape') { close(); return; }
+    if (e.key==='?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey||e.ctrlKey||e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k==='r') resetAll();
+    else if (k==='a') { params.disturbance={type:'addA',amount:0.5}; redraw(); }
+    else if (k==='d') { params.disturbance={type:'dilute',amount:null}; redraw(); }
+  });
+})();
+
+redraw();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="kinetics.html">
+      <div class="related-title">Reaction Kinetics &amp; Rate Equations</div>
+      <div class="related-desc">How concentration–time curves reveal reaction order, and the Arrhenius temperature effect on k</div>
+    </a>
+    <a class="related-card" href="gibbs_free_energy.html">
+      <div class="related-title">Gibbs Free Energy &amp; Feasibility</div>
+      <div class="related-desc">ΔG = ΔH − TΔS — why temperature determines whether a reaction can proceed spontaneously</div>
+    </a>
+    <a class="related-card" href="equilibrium_gcse.html">
+      <div class="related-title">Equilibrium (GCSE)</div>
+      <div class="related-desc">Le Chatelier's principle — qualitative introduction to reversible reactions and dynamic equilibrium</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

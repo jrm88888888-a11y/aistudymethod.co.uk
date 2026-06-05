@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sound: Pitch & Volume</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --glow-cyan: 0 0 24px rgba(34,211,238,0.45);
+  --glow-amber: 0 0 24px rgba(245,158,11,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title], .control-row .label[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 300px; }
+.canvas-wrap2 { position: relative; width: 100%; height: 200px; margin-top: 12px; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.play-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.audio-status { font-size: 11px; color: var(--text-faint); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Sound: Pitch &amp; Volume</h1>
+    <p class="sub">Oscilloscope waveform · frequency · amplitude · wave equation</p>
+    <p class="insight-banner">The speed of sound in air is fixed at ~340 m/s. Increasing frequency shortens the wavelength (v = fλ); increasing amplitude raises volume, not pitch.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Play / stop tone</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">↑ ↓</span><span>Adjust frequency ±10 Hz</span>
+      <span class="kbd-key">[ ]</span><span>Adjust amplitude ±0.05</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help / stop audio</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Oscilloscope view</h3>
+        <div class="seg" id="waveToggle">
+          <button data-wave="sine" class="active">Sine</button>
+          <button data-wave="square">Square</button>
+          <button data-wave="triangle">Triangle</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="oscCanvas"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Displacement of air particles over time</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Wavelength marker (λ)</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 12px;">
+      <div class="title-row">
+        <h3>Frequency spectrum (relative)</h3>
+        <span style="font-size: 11px; color: var(--text-dim);">audio hearing range context</span>
+      </div>
+      <div class="canvas-wrap2"><canvas id="specCanvas"></canvas></div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Wave parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Frequency: the number of complete wave cycles per second, measured in hertz (Hz). Determines pitch.">Frequency (pitch) / Hz</span>
+          <span class="value num" id="vFreq">440</span>
+        </div>
+        <input type="range" id="slFreq" min="20" max="4000" step="1" value="440">
+        <div class="refs">
+          <span class="ref-chip" data-freq="20">20 Hz (lowest audible)</span>
+          <span class="ref-chip" data-freq="261">C4 ≈ 261 Hz</span>
+          <span class="ref-chip" data-freq="440">A4 = 440 Hz</span>
+          <span class="ref-chip" data-freq="1000">1 kHz</span>
+          <span class="ref-chip" data-freq="4000">4 kHz</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Amplitude: the maximum displacement of particles from rest. Determines the loudness (volume) of the sound.">Amplitude (volume) / A</span>
+          <span class="value num" id="vAmp">0.70</span>
+        </div>
+        <input type="range" id="slAmp" min="0.05" max="1.00" step="0.01" value="0.70">
+      </div>
+      <div class="play-row">
+        <button class="primary" id="playBtn">▶ Play tone</button>
+        <span class="audio-status" id="audioStatus">Click to play</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Wave properties</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Wavelength: the distance between two successive wave crests. λ = v / f">Wavelength λ</div>
+          <div class="val cyan" id="oLambda">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Period: the time for one complete oscillation. T = 1/f">Period T</div>
+          <div class="val amber" id="oPeriod">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Wave speed v</div>
+          <div class="val green" id="oSpeed">340 m/s</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Frequency f</div>
+          <div class="val violet" id="oFreqOut">—</div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; padding: 10px 12px; background: var(--bg-elev-1); border-radius: var(--r-sm); border: 1px solid var(--panel-border);">
+        <div style="font-size: 11px; color: var(--text-faint); margin-bottom: 4px;">WAVE EQUATION</div>
+        <div class="mono" style="font-size: 15px; color: var(--text);">v = f × λ</div>
+        <div id="eqSubst" class="mono" style="font-size: 12px; color: var(--text-dim); margin-top: 4px;"></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="bass">Deep bass</button>
+        <button data-try="concert">Concert A</button>
+        <button data-try="high">High-pitched whistle</button>
+        <button data-try="quiet">Very quiet, high pitch</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr;
+  c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+const SPEED_OF_SOUND = 340; // m/s
+
+const state = {
+  freq: 440,
+  amp: 0.70,
+  waveType: 'sine',
+  playing: false,
+  phase: 0
+};
+
+let audioCtx = null;
+let oscNode = null;
+let gainNode = null;
+let animId = null;
+let lastTime = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) {
+      return null;
+    }
+  }
+  return audioCtx;
+}
+
+function startAudio() {
+  const ctx = getAudioCtx();
+  if (!ctx) { $('audioStatus').textContent = 'Audio not available'; return; }
+  if (ctx.state === 'suspended') ctx.resume();
+  stopAudio();
+  oscNode = ctx.createOscillator();
+  gainNode = ctx.createGain();
+  oscNode.type = state.waveType;
+  oscNode.frequency.value = state.freq;
+  gainNode.gain.value = state.amp * 0.3;
+  oscNode.connect(gainNode);
+  gainNode.connect(ctx.destination);
+  oscNode.start();
+  state.playing = true;
+  $('playBtn').textContent = '■ Stop tone';
+  $('playBtn').classList.add('active');
+  $('audioStatus').textContent = 'Playing';
+}
+
+function stopAudio() {
+  if (oscNode) {
+    try { oscNode.stop(); } catch(e) {}
+    oscNode.disconnect();
+    oscNode = null;
+  }
+  if (gainNode) { gainNode.disconnect(); gainNode = null; }
+  state.playing = false;
+  $('playBtn').textContent = '▶ Play tone';
+  $('playBtn').classList.remove('active');
+  $('audioStatus').textContent = 'Stopped';
+}
+
+function toggleAudio() {
+  if (state.playing) stopAudio();
+  else startAudio();
+}
+
+$('playBtn').addEventListener('click', toggleAudio);
+
+function updateAudioParams() {
+  if (oscNode) {
+    oscNode.frequency.setTargetAtTime(state.freq, audioCtx.currentTime, 0.01);
+    oscNode.type = state.waveType;
+  }
+  if (gainNode) {
+    gainNode.gain.setTargetAtTime(state.amp * 0.3, audioCtx.currentTime, 0.01);
+  }
+}
+
+function waveValue(t, type, freq, amp) {
+  const phase = 2 * Math.PI * freq * t;
+  if (type === 'sine') return amp * Math.sin(phase);
+  if (type === 'square') return amp * Math.sign(Math.sin(phase));
+  if (type === 'triangle') return amp * (2 / Math.PI) * Math.asin(Math.sin(phase));
+  return amp * Math.sin(phase);
+}
+
+let animPhase = 0;
+let lastAnimTime = null;
+
+function drawOsc(timestamp) {
+  if (lastAnimTime === null) lastAnimTime = timestamp;
+  const dt = Math.min((timestamp - lastAnimTime) / 1000, 0.05);
+  lastAnimTime = timestamp;
+
+  // Advance phase so waveform scrolls
+  if (state.playing) {
+    animPhase = (animPhase + dt * state.freq) % 1;
+  }
+
+  const c = $('oscCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 56, r: 20, t: 24, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const cy = pad.t + ph / 2;
+
+  // Grid
+  ctx.strokeStyle = '#1a2230';
+  ctx.lineWidth = 1;
+  // Horizontal centre and ±amplitude lines
+  const gridLines = [0, 0.5, -0.5, 1, -1];
+  gridLines.forEach(g => {
+    const y = cy - g * (ph / 2) * 0.85;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  });
+  // Vertical grid: show period divisions
+  const visibleDuration = 3 / Math.max(state.freq, 1); // 3 periods visible
+  const periods = 3;
+  for (let i = 0; i <= periods * 4; i++) {
+    const x = pad.l + (i / (periods * 4)) * pw;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('+A', pad.l - 6, cy - (ph / 2) * 0.85);
+  ctx.fillText('0', pad.l - 6, cy);
+  ctx.fillText('-A', pad.l - 6, cy + (ph / 2) * 0.85);
+
+  // Time axis labels
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const T = 1 / state.freq;
+  for (let i = 0; i <= periods; i++) {
+    const x = pad.l + (i / periods) * pw;
+    ctx.fillText((i * T * 1000).toFixed(i === 0 ? 0 : 1) + ' ms', x, H - pad.b + 5);
+  }
+
+  // Waveform
+  const N = pw * 2;
+  ctx.beginPath();
+  for (let px = 0; px <= N; px++) {
+    const t = (px / N) * visibleDuration + animPhase / state.freq;
+    const y_norm = waveValue(t, state.waveType, state.freq, state.amp);
+    const x = pad.l + (px / N) * pw;
+    const y = cy - y_norm * (ph / 2) * 0.85;
+    if (px === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  const gradient = ctx.createLinearGradient(pad.l, 0, W - pad.r, 0);
+  gradient.addColorStop(0, 'rgba(34,211,238,0.3)');
+  gradient.addColorStop(0.5, '#22d3ee');
+  gradient.addColorStop(1, 'rgba(34,211,238,0.3)');
+  ctx.strokeStyle = gradient;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Wavelength annotation — mark one period
+  const lambda_px = pw / periods;
+  const x0 = pad.l + lambda_px * 0.2;
+  const x1 = x0 + lambda_px;
+  const yArrow = pad.t + 12;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(x0, yArrow); ctx.lineTo(x1, yArrow); ctx.stroke();
+  ctx.setLineDash([]);
+  // Arrow heads
+  [[x0, 1], [x1, -1]].forEach(([x, dir]) => {
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(x, yArrow);
+    ctx.lineTo(x + dir * 7, yArrow - 4);
+    ctx.lineTo(x + dir * 7, yArrow + 4);
+    ctx.closePath(); ctx.fill();
+  });
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  const lambda = SPEED_OF_SOUND / state.freq;
+  const lambdaStr = lambda >= 1 ? lambda.toFixed(2) + ' m' : (lambda * 100).toFixed(1) + ' cm';
+  ctx.fillText('λ = ' + lambdaStr, (x0 + x1) / 2, yArrow - 3);
+
+  // Box
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+  animId = requestAnimationFrame(drawOsc);
+}
+
+function drawSpec() {
+  const c = $('specCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 56, r: 20, t: 16, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  // Log scale from 20 Hz to 20000 Hz
+  const logMin = Math.log10(20);
+  const logMax = Math.log10(20000);
+  const freqToX = f => pad.l + ((Math.log10(f) - logMin) / (logMax - logMin)) * pw;
+
+  // Grid and labels
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  const markers = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+  markers.forEach(f => {
+    const x = freqToX(f);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+    ctx.fillStyle = '#5b6573'; ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const label = f >= 1000 ? (f / 1000) + 'k' : f.toString();
+    ctx.fillText(label, x, H - pad.b + 4);
+  });
+
+  // Hearing range shading
+  ctx.fillStyle = 'rgba(34,211,238,0.04)';
+  ctx.fillRect(freqToX(20), pad.t, freqToX(20000) - freqToX(20), ph);
+
+  // Region labels
+  const regions = [
+    { label: 'Sub-bass', lo: 20, hi: 60, color: 'rgba(167,139,250,0.4)' },
+    { label: 'Bass', lo: 60, hi: 250, color: 'rgba(34,211,238,0.3)' },
+    { label: 'Midrange', lo: 250, hi: 2000, color: 'rgba(52,211,153,0.3)' },
+    { label: 'Treble', lo: 2000, hi: 20000, color: 'rgba(245,158,11,0.3)' },
+  ];
+  regions.forEach(r => {
+    const x0 = freqToX(r.lo), x1 = freqToX(r.hi);
+    ctx.fillStyle = r.color;
+    ctx.fillRect(x0, pad.t, x1 - x0, ph);
+    ctx.fillStyle = 'rgba(150,150,150,0.5)';
+    ctx.font = '9px Inter';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(r.label, (x0 + x1) / 2, pad.t + 3);
+  });
+
+  // Current frequency bar
+  const xF = freqToX(state.freq);
+  const barH = ph * state.amp;
+  ctx.fillStyle = 'rgba(34,211,238,0.3)';
+  ctx.fillRect(xF - 3, pad.t + (ph - barH), 6, barH);
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillRect(xF - 2, pad.t + (ph - barH), 4, 2);
+
+  // Frequency label
+  ctx.fillStyle = '#22d3ee'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText(state.freq + ' Hz', xF, pad.t + (ph - barH) - 2);
+
+  // x-axis label
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Frequency (Hz) — logarithmic scale', pad.l + pw / 2, H - 2);
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateReadouts() {
+  const f = state.freq;
+  const lambda = SPEED_OF_SOUND / f;
+  const T = 1 / f;
+
+  $('oLambda').textContent = lambda >= 1 ? lambda.toFixed(3) + ' m' : (lambda * 100).toFixed(1) + ' cm';
+  $('oPeriod').textContent = T >= 0.001 ? (T * 1000).toFixed(2) + ' ms' : (T * 1000000).toFixed(1) + ' µs';
+  $('oSpeed').textContent = '340 m/s';
+  $('oFreqOut').textContent = f >= 1000 ? (f / 1000).toFixed(2) + ' kHz' : f + ' Hz';
+  $('eqSubst').textContent = `340 = ${f} × ${lambda >= 1 ? lambda.toFixed(3) : (lambda*100).toFixed(1) + 'c'}m`;
+
+  const fHz = state.freq;
+  let pitchDesc = '';
+  if (fHz < 60) pitchDesc = 'sub-bass (felt more than heard)';
+  else if (fHz < 250) pitchDesc = 'bass range';
+  else if (fHz < 500) pitchDesc = 'low midrange (human speech fundamentals)';
+  else if (fHz < 2000) pitchDesc = 'midrange';
+  else if (fHz < 6000) pitchDesc = 'upper midrange / presence';
+  else pitchDesc = 'treble / high-frequency';
+
+  $('explainer').innerHTML =
+    `At <span class="k">${state.freq} Hz</span>, one complete wave cycle takes <span class="k">T = ${(T * 1000).toFixed(2)} ms</span>. ` +
+    `In air (v = 340 m/s) the wave crests are <span class="k">λ = ${lambda >= 1 ? lambda.toFixed(3) + ' m' : (lambda * 100).toFixed(1) + ' cm'}</span> apart. ` +
+    `This pitch sits in the <span class="k">${pitchDesc}</span>. ` +
+    `Amplitude <span class="k">A = ${state.amp.toFixed(2)}</span> sets the loudness — it does not change the pitch. ` +
+    `Doubling the frequency raises the pitch by exactly one octave.`;
+
+  drawSpec();
+}
+
+// Sliders
+$('slFreq').addEventListener('input', e => {
+  state.freq = parseInt(e.target.value);
+  $('vFreq').textContent = state.freq;
+  updateAudioParams();
+  updateReadouts();
+});
+$('slAmp').addEventListener('input', e => {
+  state.amp = parseFloat(e.target.value);
+  $('vAmp').textContent = state.amp.toFixed(2);
+  updateAudioParams();
+  updateReadouts();
+});
+
+// Ref chips
+document.querySelectorAll('.ref-chip[data-freq]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const f = parseInt(chip.dataset.freq);
+    state.freq = f;
+    $('slFreq').value = f;
+    $('vFreq').textContent = f;
+    updateAudioParams();
+    updateReadouts();
+  });
+});
+
+// Wave type toggle
+document.querySelectorAll('#waveToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#waveToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.waveType = b.dataset.wave;
+    updateAudioParams();
+  });
+});
+
+// Try this
+const TRIES = {
+  bass: { freq: 80, amp: 0.85, note: '<strong>80 Hz bass</strong> — wavelength is over 4 metres. You feel these low frequencies as vibration more than hearing them distinctly.' },
+  concert: { freq: 440, amp: 0.70, note: '<strong>A4 = 440 Hz</strong> — international tuning standard since 1939. λ ≈ 77 cm. Middle of the musical range.' },
+  high: { freq: 3500, amp: 0.80, note: '<strong>3,500 Hz</strong> — wavelength shrinks to under 10 cm. Human ears are most sensitive around 2–5 kHz, so this sounds very loud relative to its amplitude.' },
+  quiet: { freq: 2000, amp: 0.15, note: '<strong>Small amplitude, high frequency</strong> — notice that the waveform stays narrow (high frequency) but the peaks are much lower. Pitch is unchanged; only loudness drops.' }
+};
+
+document.querySelectorAll('.try-buttons button[data-try]').forEach(b => {
+  b.addEventListener('click', () => {
+    const t = TRIES[b.dataset.try]; if (!t) return;
+    state.freq = t.freq; state.amp = t.amp;
+    $('slFreq').value = t.freq; $('vFreq').textContent = t.freq;
+    $('slAmp').value = t.amp; $('vAmp').textContent = t.amp.toFixed(2);
+    updateAudioParams(); updateReadouts();
+    $('tryNote').innerHTML = t.note;
+  });
+});
+
+window.addEventListener('resize', () => { drawSpec(); });
+
+// Keyboard
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  const DEFAULTS = { freq: 440, amp: 0.70, waveType: 'sine' };
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); stopAudio(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ' ') { e.preventDefault(); toggleAudio(); }
+    else if (e.key === 'r' || e.key === 'R') {
+      state.freq = DEFAULTS.freq; state.amp = DEFAULTS.amp; state.waveType = DEFAULTS.waveType;
+      $('slFreq').value = state.freq; $('vFreq').textContent = state.freq;
+      $('slAmp').value = state.amp; $('vAmp').textContent = state.amp.toFixed(2);
+      document.querySelectorAll('#waveToggle button').forEach(b => b.classList.remove('active'));
+      document.querySelector('#waveToggle button[data-wave="sine"]').classList.add('active');
+      updateAudioParams(); updateReadouts();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      state.freq = Math.min(4000, state.freq + 10);
+      $('slFreq').value = state.freq; $('vFreq').textContent = state.freq;
+      updateAudioParams(); updateReadouts();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      state.freq = Math.max(20, state.freq - 10);
+      $('slFreq').value = state.freq; $('vFreq').textContent = state.freq;
+      updateAudioParams(); updateReadouts();
+    } else if (e.key === ']') {
+      state.amp = Math.min(1.0, parseFloat((state.amp + 0.05).toFixed(2)));
+      $('slAmp').value = state.amp; $('vAmp').textContent = state.amp.toFixed(2);
+      updateAudioParams(); updateReadouts();
+    } else if (e.key === '[') {
+      state.amp = Math.max(0.05, parseFloat((state.amp - 0.05).toFixed(2)));
+      $('slAmp').value = state.amp; $('vAmp').textContent = state.amp.toFixed(2);
+      updateAudioParams(); updateReadouts();
+    }
+  });
+})();
+
+// Init
+updateReadouts();
+requestAnimationFrame(drawOsc);
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="states_matter.html">
+      <div class="related-title">States of Matter</div>
+      <div class="related-desc">Particle model animation — how temperature drives solid, liquid and gas behaviour</div>
+    </a>
+    <a class="related-card" href="periodic_basic.html">
+      <div class="related-title">Periodic Table Explorer</div>
+      <div class="related-desc">Click any element for its properties, electron shells, and group classification</div>
+    </a>
+    <a class="related-card" href="fourier_builder.html">
+      <div class="related-title">Fourier Builder</div>
+      <div class="related-desc">Build any waveform from sine waves — the mathematics behind sound synthesis</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

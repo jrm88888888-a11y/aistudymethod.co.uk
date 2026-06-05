@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simultaneous Equations (Graphical)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.green { color: var(--green); }
+.readout-full { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); margin-top: 12px; }
+.readout-full .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.readout-full .val { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); line-height: 1.7; }
+.canvas-wrap { position: relative; width: 100%; height: 460px; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.outcome-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.outcome-unique { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+.outcome-parallel { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+.outcome-infinite { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); }
+.line-eq { font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 6px 10px; border-radius: var(--r-sm); margin-bottom: 6px; }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Simultaneous Equations</h1>
+    <p class="sub">Two straight lines — graphical and algebraic solution</p>
+    <p class="insight-banner">Two lines intersect at exactly one point unless they are parallel (no solution) or identical (infinitely many solutions) — the discriminant of the system is the difference of gradients.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">P</span><span>Make lines parallel</span>
+      <span class="kbd-key">I</span><span>Make lines identical</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Graphical solution</h3>
+        <div id="outcomeBadge"></div>
+      </div>
+      <div class="canvas-wrap"><canvas id="main"></canvas></div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--text-dim);">
+        <span><span style="color:var(--cyan)">—</span> Line 1 (y = m₁x + c₁)</span>
+        <span><span style="color:var(--amber)">—</span> Line 2 (y = m₂x + c₂)</span>
+        <span><span style="color:var(--rose)">●</span> Intersection</span>
+      </div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label" style="color:var(--cyan)">Line 1: y = m₁x + c₁</p>
+      <div class="control">
+        <div class="control-row"><span class="label">Gradient m₁</span><span class="value num" id="vM1">2.00</span></div>
+        <input type="range" id="slM1" min="-5" max="5" step="0.25" value="2">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">Intercept c₁</span><span class="value num" id="vC1">1.00</span></div>
+        <input type="range" id="slC1" min="-10" max="10" step="0.5" value="1">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label" style="color:var(--amber)">Line 2: y = m₂x + c₂</p>
+      <div class="control">
+        <div class="control-row"><span class="label">Gradient m₂</span><span class="value num" id="vM2">−1.00</span></div>
+        <input type="range" id="slM2" min="-5" max="5" step="0.25" value="-1">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">Intercept c₂</span><span class="value num" id="vC2">4.00</span></div>
+        <input type="range" id="slC2" min="-10" max="10" step="0.5" value="4">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Solution</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">x</div><div class="val cyan" id="oX">—</div></div>
+        <div class="readout"><div class="lbl">y</div><div class="val amber" id="oY">—</div></div>
+      </div>
+      <div class="readout-full">
+        <div class="lbl">Algebraic method (elimination)</div>
+        <div class="val" id="oAlgebra">—</div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="simple">Simple intersection</button>
+        <button data-try="parallel">Parallel — no solution</button>
+        <button data-try="identical">Identical — ∞ solutions</button>
+        <button data-try="steep">Steep vs shallow</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+const params = { m1: 2, c1: 1, m2: -1, c2: 4 };
+
+function fmt(n, dp=3) {
+  if (!isFinite(n)) return '—';
+  return parseFloat(n.toFixed(dp)).toString();
+}
+
+function fmtSigned(n, dp=2) {
+  const v = parseFloat(n.toFixed(dp));
+  return v >= 0 ? `+${v}` : `${v}`;
+}
+
+function fmtEq(m, c) {
+  const mStr = m === 1 ? '' : (m === -1 ? '−' : fmt(m, 2));
+  const cPart = c === 0 ? '' : (c > 0 ? ` + ${fmt(c,2)}` : ` − ${fmt(Math.abs(c),2)}`);
+  return `y = ${mStr}x${cPart}`;
+}
+
+function solve(m1, c1, m2, c2) {
+  const dm = m1 - m2;
+  const dc = c2 - c1;
+  if (Math.abs(dm) < 1e-10) {
+    if (Math.abs(dc) < 1e-10) return { type: 'infinite' };
+    return { type: 'parallel' };
+  }
+  const x = dc / dm;
+  const y = m1 * x + c1;
+  return { type: 'unique', x, y };
+}
+
+function niceTick(approx) {
+  const pow = Math.pow(10, Math.floor(Math.log10(Math.abs(approx) || 1)));
+  const norm = approx / pow;
+  if (norm < 1.5) return pow;
+  if (norm < 3.5) return 2 * pow;
+  if (norm < 7.5) return 5 * pow;
+  return 10 * pow;
+}
+
+function draw() {
+  const c = $('main');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 52, r: 20, t: 24, b: 36 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const { m1, c1, m2, c2 } = params;
+  const sol = solve(m1, c1, m2, c2);
+
+  // View window centred on intersection or origin
+  let xC = 0, yC = 0;
+  if (sol.type === 'unique') { xC = sol.x; yC = sol.y; }
+  const range = 10;
+  const xMin = xC - range, xMax = xC + range;
+  const yMin = yC - range, yMax = yC + range;
+
+  const sx = x => pad.l + (x - xMin) / (xMax - xMin) * pw;
+  const sy = y => pad.t + (1 - (y - yMin) / (yMax - yMin)) * ph;
+
+  // Grid
+  const xStep = niceTick((xMax - xMin) / 7);
+  const yStep = niceTick((yMax - yMin) / 7);
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let x = Math.ceil(xMin/xStep)*xStep; x <= xMax+1e-9; x += xStep) {
+    ctx.beginPath(); ctx.moveTo(sx(x), pad.t); ctx.lineTo(sx(x), pad.t+ph); ctx.stroke();
+  }
+  for (let y = Math.ceil(yMin/yStep)*yStep; y <= yMax+1e-9; y += yStep) {
+    ctx.beginPath(); ctx.moveTo(pad.l, sy(y)); ctx.lineTo(pad.l+pw, sy(y)); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = '#2a3a50'; ctx.lineWidth = 1.5;
+  if (yMin <= 0 && yMax >= 0) { ctx.beginPath(); ctx.moveTo(pad.l, sy(0)); ctx.lineTo(pad.l+pw, sy(0)); ctx.stroke(); }
+  if (xMin <= 0 && xMax >= 0) { ctx.beginPath(); ctx.moveTo(sx(0), pad.t); ctx.lineTo(sx(0), pad.t+ph); ctx.stroke(); }
+
+  // Axis tick labels
+  ctx.fillStyle = '#5b6573'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let x = Math.ceil(xMin/xStep)*xStep; x <= xMax+1e-9; x += xStep) {
+    if (Math.abs(x) < xStep*0.01) continue;
+    ctx.fillText(fmt(x,1), sx(x), pad.t+ph+4);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let y = Math.ceil(yMin/yStep)*yStep; y <= yMax+1e-9; y += yStep) {
+    if (Math.abs(y) < yStep*0.01) continue;
+    ctx.fillText(fmt(y,1), pad.l-6, sy(y));
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px Inter';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('y', pad.l-4, pad.t+2);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('x', pad.l+pw, pad.t+ph+4);
+
+  // Helper: draw line y=mx+c across visible x range
+  function drawLine(m, c, color, dashed) {
+    const y0 = m * xMin + c, y1 = m * xMax + c;
+    ctx.save();
+    if (dashed) ctx.setLineDash([8, 6]);
+    ctx.beginPath(); ctx.moveTo(sx(xMin), sy(y0)); ctx.lineTo(sx(xMax), sy(y1));
+    ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.stroke();
+    ctx.restore();
+  }
+
+  // Line fills (shaded half-planes for visual clarity)
+  function halfFill(m, c, color) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(sx(xMin), sy(m * xMin + c));
+    ctx.lineTo(sx(xMax), sy(m * xMax + c));
+    ctx.lineTo(sx(xMax), pad.t + ph);
+    ctx.lineTo(sx(xMin), pad.t + ph);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  halfFill(m1, c1, 'rgba(34,211,238,0.05)');
+  halfFill(m2, c2, 'rgba(245,158,11,0.05)');
+
+  if (sol.type === 'infinite') {
+    drawLine(m1, c1, '#22d3ee', false);
+    drawLine(m2, c2, '#f59e0b', true);
+  } else {
+    drawLine(m1, c1, '#22d3ee', false);
+    drawLine(m2, c2, '#f59e0b', false);
+  }
+
+  // Line labels
+  ctx.font = '12px JetBrains Mono';
+  const labelX1 = xMin + (xMax - xMin) * 0.12;
+  ctx.fillStyle = '#22d3ee'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  const ly1 = m1 * labelX1 + c1;
+  if (ly1 >= yMin && ly1 <= yMax) ctx.fillText(fmtEq(m1, c1), sx(labelX1), sy(ly1) - 4);
+
+  const labelX2 = xMin + (xMax - xMin) * 0.7;
+  ctx.fillStyle = '#f59e0b';
+  const ly2 = m2 * labelX2 + c2;
+  if (ly2 >= yMin && ly2 <= yMax) ctx.fillText(fmtEq(m2, c2), sx(labelX2), sy(ly2) - 4);
+
+  // Intersection point
+  if (sol.type === 'unique') {
+    const px = sx(sol.x), py = sy(sol.y);
+    ctx.fillStyle = 'rgba(244,63,94,0.2)';
+    ctx.beginPath(); ctx.arc(px, py, 12, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#f43f5e';
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
+    ctx.font = '12px JetBrains Mono'; ctx.fillStyle = '#f43f5e';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`(${fmt(sol.x,3)}, ${fmt(sol.y,3)})`, px + 10, py - 6);
+
+    // Dashed projections to axes
+    ctx.save(); ctx.setLineDash([4,4]);
+    ctx.strokeStyle = 'rgba(244,63,94,0.35)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, sy(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx(0), py); ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function algebraSteps(m1, c1, m2, c2, sol) {
+  if (sol.type === 'parallel') {
+    return `Equations:\n  y = ${fmt(m1,2)}x ${fmt(c1,2)>=0?'+ '+fmt(c1,2):'− '+fmt(Math.abs(c1),2)}\n  y = ${fmt(m2,2)}x ${fmt(c2,2)>=0?'+ '+fmt(c2,2):'− '+fmt(Math.abs(c2),2)}\n\nSetting equal:\n  ${fmt(m1,2)}x ${fmtSigned(c1,2)} = ${fmt(m2,2)}x ${fmtSigned(c2,2)}\n  (${fmt(m1-m2,2)})x = ${fmt(c2-c1,2)}\n  0·x = ${fmt(c2-c1,2)} ← Contradiction\n\nNo solution.`;
+  }
+  if (sol.type === 'infinite') {
+    return `Both equations are identical.\nEvery point on the line is a solution.\nLines have same m and c.`;
+  }
+  const dm = m1 - m2, dc = c2 - c1;
+  const x = dc / dm;
+  const y = m1 * x + c1;
+  return `y = ${fmt(m1,2)}x ${fmtSigned(c1,2)}\ny = ${fmt(m2,2)}x ${fmtSigned(c2,2)}\n\nSet equal (eliminate y):\n${fmt(m1,2)}x ${fmtSigned(c1,2)} = ${fmt(m2,2)}x ${fmtSigned(c2,2)}\n(${fmt(m1,2)}−${fmt(m2,2)})x = ${fmt(c2,2)}−${fmt(c1,2)}\n${fmt(dm,2)}x = ${fmt(dc,2)}\nx = ${fmt(x,4)}\n\nSubstitute: y = ${fmt(m1,2)}×${fmt(x,4)} ${fmtSigned(c1,2)} = ${fmt(y,4)}`;
+}
+
+function updateReadouts() {
+  const { m1, c1, m2, c2 } = params;
+  const sol = solve(m1, c1, m2, c2);
+
+  const badge = $('outcomeBadge');
+  if (sol.type === 'unique') {
+    badge.innerHTML = '<span class="outcome-badge outcome-unique">Unique solution</span>';
+    $('oX').textContent = fmt(sol.x, 4);
+    $('oY').textContent = fmt(sol.y, 4);
+  } else if (sol.type === 'parallel') {
+    badge.innerHTML = '<span class="outcome-badge outcome-parallel">No solution (parallel)</span>';
+    $('oX').textContent = '—';
+    $('oY').textContent = '—';
+  } else {
+    badge.innerHTML = '<span class="outcome-badge outcome-infinite">∞ solutions (identical)</span>';
+    $('oX').textContent = '∞';
+    $('oY').textContent = '∞';
+  }
+
+  $('oAlgebra').textContent = algebraSteps(m1, c1, m2, c2, sol);
+
+  let txt = '';
+  if (sol.type === 'unique') {
+    txt = `Lines with gradients <span class="k">m₁ = ${fmt(m1,2)}</span> and <span class="k">m₂ = ${fmt(m2,2)}</span> are not parallel, so they meet at exactly one point. Algebraically: set <span class="k">${fmt(m1,2)}x ${fmtSigned(c1,2)} = ${fmt(m2,2)}x ${fmtSigned(c2,2)}</span>, giving <span class="k">x = ${fmt(sol.x,4)}</span>, then <span class="k">y = ${fmt(sol.y,4)}</span>. Graphically this is where both lines cross.`;
+  } else if (sol.type === 'parallel') {
+    txt = `Both lines have gradient <span class="k">m = ${fmt(m1,2)}</span> but different y-intercepts (<span class="k">${fmt(c1,2)}</span> vs <span class="k">${fmt(c2,2)}</span>). They are <strong>parallel</strong> — they never meet. The system has <strong>no solution</strong>. Algebraically you reach a contradiction: <span class="k">0 = ${fmt(c2-c1,2)}</span>.`;
+  } else {
+    txt = `Both equations represent the <strong>same line</strong> — every point on the line satisfies both equations simultaneously. There are <strong>infinitely many solutions</strong>. This happens when m₁ = m₂ and c₁ = c₂.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function update() { draw(); updateReadouts(); }
+
+// Sliders
+function wireSlider(id, valId, key, dp) {
+  $(id).addEventListener('input', e => {
+    params[key] = parseFloat(e.target.value);
+    $(valId).textContent = fmt(params[key], dp);
+    update();
+  });
+}
+wireSlider('slM1','vM1','m1',2);
+wireSlider('slC1','vC1','c1',2);
+wireSlider('slM2','vM2','m2',2);
+wireSlider('slC2','vC2','c2',2);
+
+window.addEventListener('resize', update);
+
+// Try this
+const PRESETS = {
+  simple:   { m1:2,  c1:1,  m2:-1, c2:4,  note:'<strong>Two distinct gradients</strong> → unique solution at x=1, y=3. Solve: 2x+1=−x+4 → 3x=3 → x=1.' },
+  parallel: { m1:2,  c1:1,  m2:2,  c2:4,  note:'<strong>Same gradient (m=2), different intercepts</strong> → parallel lines. No solution. The algebra gives 0=3, a contradiction.' },
+  identical:{ m1:2,  c1:3,  m2:2,  c2:3,  note:'<strong>Identical equations</strong> → the same line. Infinitely many solutions — every (x, 2x+3) is a solution.' },
+  steep:    { m1:4,  c1:-2, m2:0.5,c2:1,  note:'<strong>Steep vs shallow</strong>: gradients 4 and 0.5 cross at one point. The large difference in gradients makes the crossing clear.' }
+};
+
+document.querySelectorAll('.try-buttons button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = PRESETS[btn.dataset.try];
+    if (!p) return;
+    params.m1=p.m1; params.c1=p.c1; params.m2=p.m2; params.c2=p.c2;
+    $('slM1').value=p.m1; $('slC1').value=p.c1; $('slM2').value=p.m2; $('slC2').value=p.c2;
+    $('vM1').textContent=fmt(p.m1,2); $('vC1').textContent=fmt(p.c1,2);
+    $('vM2').textContent=fmt(p.m2,2); $('vC2').textContent=fmt(p.c2,2);
+    $('tryNote').innerHTML=p.note;
+    update();
+  });
+});
+
+// Keyboard
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  const DEFAULTS = { m1:2, c1:1, m2:-1, c2:4 };
+  function reset() {
+    Object.assign(params, DEFAULTS);
+    $('slM1').value=DEFAULTS.m1; $('slC1').value=DEFAULTS.c1;
+    $('slM2').value=DEFAULTS.m2; $('slC2').value=DEFAULTS.c2;
+    $('vM1').textContent=fmt(DEFAULTS.m1,2); $('vC1').textContent=fmt(DEFAULTS.c1,2);
+    $('vM2').textContent=fmt(DEFAULTS.m2,2); $('vC2').textContent=fmt(DEFAULTS.c2,2);
+    $('tryNote').textContent=''; update();
+  }
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'r') reset();
+    else if (k === 'p') { // parallel
+      params.m2 = params.m1; params.c2 = params.c1 + 3;
+      $('slM2').value=params.m2; $('slC2').value=params.c2;
+      $('vM2').textContent=fmt(params.m2,2); $('vC2').textContent=fmt(params.c2,2);
+      update();
+    } else if (k === 'i') { // identical
+      params.m2 = params.m1; params.c2 = params.c1;
+      $('slM2').value=params.m2; $('slC2').value=params.c2;
+      $('vM2').textContent=fmt(params.m2,2); $('vC2').textContent=fmt(params.c2,2);
+      update();
+    }
+  });
+})();
+
+// Init
+$('vM1').textContent=fmt(params.m1,2); $('vC1').textContent=fmt(params.c1,2);
+$('vM2').textContent=fmt(params.m2,2); $('vC2').textContent=fmt(params.c2,2);
+update();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="quadratics.html">
+      <div class="related-title">Quadratic Graphs</div>
+      <div class="related-desc">Extend to curves — explore roots, vertex, and the discriminant</div>
+    </a>
+    <a class="related-card" href="scatter_correlation.html">
+      <div class="related-title">Scatter Graphs & Correlation</div>
+      <div class="related-desc">Lines of best fit, correlation coefficients, and prediction</div>
+    </a>
+    <a class="related-card" href="coordinates.html">
+      <div class="related-title">Coordinates & Straight Lines</div>
+      <div class="related-desc">Gradient, y-intercept, and the equation of a straight line</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

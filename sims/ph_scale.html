@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The pH Scale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); background: var(--bg-elev-1); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; height: 420px; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.add-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>The pH Scale</h1>
+    <p class="sub">Acids · Alkalis · H⁺ and OH⁻ concentration · Indicators · Dilution</p>
+    <p class="insight-banner">pH = −log₁₀[H⁺]. Each step on the pH scale is a 10× change in hydrogen ion concentration — pH 3 has 10,000× more H⁺ than pH 7.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">←  →</span><span>Decrease / increase pH by 0.5</span>
+      <span class="kbd-key">A</span><span>Add acid (−0.5 pH)</span>
+      <span class="kbd-key">K</span><span>Add alkali (+0.5 pH)</span>
+      <span class="kbd-key">D</span><span>Dilute with water</span>
+      <span class="kbd-key">R</span><span>Reset to neutral (pH 7)</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>pH indicator &amp; concentration</h3>
+        <span style="font-size:11px;color:var(--text-dim);">universal indicator colour</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="phCanvas"></canvas></div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">pH Control</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="pH: the negative logarithm (base 10) of the hydrogen ion concentration in mol/dm³.">pH value</span>
+          <span class="value num" id="vPH">7.0</span>
+        </div>
+        <input type="range" id="slPH" min="0" max="14" step="0.1" value="7">
+      </div>
+      <div class="add-btns">
+        <button id="btnAcid">+ Add acid</button>
+        <button id="btnAlkali">+ Add alkali</button>
+        <button id="btnDilute">Dilute ×10</button>
+      </div>
+      <div class="refs" style="margin-top: 10px;">
+        <span class="ref-chip" data-ph="1.0">Stomach acid ≈ 1</span>
+        <span class="ref-chip" data-ph="2.5">Lemon juice ≈ 2.5</span>
+        <span class="ref-chip" data-ph="4.0">Vinegar ≈ 4</span>
+        <span class="ref-chip" data-ph="7.0">Pure water = 7</span>
+        <span class="ref-chip" data-ph="8.3">Seawater ≈ 8.3</span>
+        <span class="ref-chip" data-ph="9.0">Soap ≈ 9</span>
+        <span class="ref-chip" data-ph="12.5">Bleach ≈ 12.5</span>
+        <span class="ref-chip" data-ph="13.5">Drain cleaner ≈ 13.5</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Ion concentrations</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="H⁺ concentration = 10^(−pH) mol/dm³">[H⁺] mol/dm³</div>
+          <div class="val rose" id="oHplus">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="OH⁻ concentration = 10^(pH−14) mol/dm³. At 25°C: [H⁺][OH⁻] = 10^−14">[OH⁻] mol/dm³</div>
+          <div class="val cyan" id="oOHminus">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">pH</div>
+          <div class="val amber" id="oPH">7.0</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Character</div>
+          <div class="val" id="oChar">Neutral</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top: 16px;">
+      <p class="section-label">Common substances</p>
+      <div style="display:flex; flex-direction:column; gap:6px;" id="substanceList"></div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top: 16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="lemon">Lemon juice</button>
+        <button data-try="neutral">Neutralise to 7</button>
+        <button data-try="dilute">Dilute strong acid</button>
+        <button data-try="bleach">Household bleach</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr;
+  c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+let ph = 7.0;
+
+// Universal indicator colour for each pH (0-14)
+// Approximate real indicator colours
+function phColor(p) {
+  p = Math.max(0, Math.min(14, p));
+  if (p < 1)       return [200, 0, 40];
+  if (p < 3)       { const t = (p-1)/2; return [200+t*15, 0+t*60, 40+t*10]; }   // red → orange-red
+  if (p < 5)       { const t = (p-3)/2; return [215+t*20, 60+t*100, 50+t*0]; }  // orange
+  if (p < 6)       { const t = (p-5)/1; return [235, 160+t*55, 50+t*0]; }       // orange → yellow
+  if (p < 7)       { const t = (p-6)/1; return [235-t*100, 215, 50+t*50]; }     // yellow-green
+  if (p < 7.5)     { const t = (p-7)/0.5; return [135-t*60, 215, 100+t*50]; }   // green
+  if (p < 9)       { const t = (p-7.5)/1.5; return [75-t*50, 215-t*100, 150+t*50]; } // green→teal
+  if (p < 11)      { const t = (p-9)/2; return [25+t*30, 115-t*80, 200+t*20]; } // teal→blue
+  if (p < 13)      { const t = (p-11)/2; return [55+t*80, 35-t*20, 220-t*20]; } // blue→violet
+                   { const t = (p-13)/1; return [135+t*65, 15, 200-t*100]; }    // violet→deep purple
+}
+
+function phColorStr(p, alpha) {
+  const [r, g, b] = phColor(p);
+  return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${alpha || 1})`;
+}
+
+// Substances for reference
+const SUBSTANCES = [
+  { name: 'Battery acid', ph: 0.5 },
+  { name: 'Stomach acid', ph: 1.5 },
+  { name: 'Lemon juice', ph: 2.5 },
+  { name: 'Vinegar', ph: 3.5 },
+  { name: 'Coffee', ph: 5.0 },
+  { name: 'Rainwater', ph: 5.6 },
+  { name: 'Pure water', ph: 7.0 },
+  { name: 'Seawater', ph: 8.3 },
+  { name: 'Soap', ph: 9.0 },
+  { name: 'Milk of magnesia', ph: 10.5 },
+  { name: 'Ammonia solution', ph: 11.5 },
+  { name: 'Bleach', ph: 12.5 },
+  { name: 'Drain cleaner', ph: 13.5 },
+];
+
+function buildSubstanceList() {
+  const el = $('substanceList');
+  el.innerHTML = '';
+  SUBSTANCES.forEach(s => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background 120ms;';
+    row.title = `Set pH to ${s.ph}`;
+
+    const dot = document.createElement('span');
+    dot.style.cssText = `width:12px;height:12px;border-radius:50%;background:${phColorStr(s.ph)};flex-shrink:0;`;
+
+    const label = document.createElement('span');
+    label.style.cssText = 'font-size:12px;color:var(--text-dim);flex:1;';
+    label.textContent = s.name;
+
+    const val = document.createElement('span');
+    val.className = 'mono';
+    val.style.cssText = 'font-size:11px;color:var(--text-faint);';
+    val.textContent = 'pH ' + s.ph;
+
+    row.appendChild(dot); row.appendChild(label); row.appendChild(val);
+    row.addEventListener('click', () => { setPH(s.ph); });
+    row.addEventListener('mouseenter', () => { row.style.background = 'var(--bg-elev-1)'; });
+    row.addEventListener('mouseleave', () => { row.style.background = ''; });
+    el.appendChild(row);
+  });
+}
+
+function fmtSci(n) {
+  if (n === 0) return '0';
+  const exp = Math.floor(Math.log10(Math.abs(n)));
+  const mantissa = n / Math.pow(10, exp);
+  if (exp === 0) return mantissa.toFixed(2);
+  return mantissa.toFixed(2) + ' × 10' + superscript(exp);
+}
+
+function superscript(n) {
+  const map = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+  return String(n).split('').map(c => map[c] || c).join('');
+}
+
+function drawPH() {
+  const c = $('phCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 40, r: 20, t: 20, b: 20 };
+
+  // ----- 1. pH colour bar (top strip) -----
+  const barTop = pad.t;
+  const barH = 48;
+  const barW = W - pad.l - pad.r;
+  // Gradient across 0–14
+  const grad = ctx.createLinearGradient(pad.l, 0, pad.l + barW, 0);
+  for (let i = 0; i <= 14; i++) {
+    grad.addColorStop(i / 14, phColorStr(i, 0.9));
+  }
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.roundRect(pad.l, barTop, barW, barH, 8);
+  ctx.fill();
+
+  // pH tick marks
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i <= 14; i++) {
+    const x = pad.l + (i / 14) * barW;
+    ctx.fillRect(x - 0.5, barTop + barH - 8, 1, 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(i, x, barTop + barH + 4);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  }
+
+  // Current pH marker
+  const xPH = pad.l + (ph / 14) * barW;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(xPH, barTop - 2);
+  ctx.lineTo(xPH - 8, barTop - 14);
+  ctx.lineTo(xPH + 8, barTop - 14);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = phColorStr(ph, 1);
+  ctx.font = 'bold 12px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('pH ' + ph.toFixed(1), xPH, barTop - 20);
+
+  // ACID / NEUTRAL / ALKALI labels
+  ctx.font = '10px Inter';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('← ACID', pad.l + 4, barTop + barH / 2);
+  ctx.textAlign = 'center';
+  ctx.fillText('NEUTRAL', pad.l + barW / 2, barTop + barH / 2);
+  ctx.textAlign = 'right';
+  ctx.fillText('ALKALI →', pad.l + barW - 4, barTop + barH / 2);
+
+  // ----- 2. Solution beaker visualisation -----
+  const beakerTop = barTop + barH + 52;
+  const beakerW = 160;
+  const beakerH = 160;
+  const beakerX = W / 2 - beakerW / 2;
+
+  // Beaker outline
+  ctx.strokeStyle = 'rgba(150,160,180,0.4)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(beakerX - 10, beakerTop);
+  ctx.lineTo(beakerX, beakerTop);
+  ctx.lineTo(beakerX, beakerTop + beakerH);
+  ctx.lineTo(beakerX + beakerW, beakerTop + beakerH);
+  ctx.lineTo(beakerX + beakerW, beakerTop);
+  ctx.lineTo(beakerX + beakerW + 10, beakerTop);
+  ctx.stroke();
+
+  // Liquid in beaker
+  ctx.fillStyle = phColorStr(ph, 0.45);
+  ctx.fillRect(beakerX, beakerTop + 10, beakerW, beakerH - 10);
+
+  // Liquid surface
+  ctx.strokeStyle = phColorStr(ph, 0.8);
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(beakerX, beakerTop + 10);
+  ctx.lineTo(beakerX + beakerW, beakerTop + 10);
+  ctx.stroke();
+
+  // Bubbles / particles representing H⁺ and OH⁻
+  const Hconc = Math.pow(10, -ph);     // mol/dm³
+  const OHconc = Math.pow(10, -(14 - ph));
+  const maxIons = 30;
+  // Number of H⁺ dots scales logarithmically
+  const nH = Math.round(maxIons * (1 - ph / 14));
+  const nOH = Math.round(maxIons * (ph / 14));
+
+  // Use deterministic positions based on index for stability
+  function pseudoRand(seed) {
+    let s = Math.sin(seed * 9301 + 49297) * 233280;
+    return s - Math.floor(s);
+  }
+  // H+ ions (rose)
+  for (let i = 0; i < nH; i++) {
+    const x = beakerX + 10 + pseudoRand(i * 3 + 1) * (beakerW - 20);
+    const y = beakerTop + 15 + pseudoRand(i * 3 + 2) * (beakerH - 20);
+    ctx.fillStyle = 'rgba(244,63,94,0.75)';
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(244,63,94,0.3)';
+    ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+  }
+  // OH- ions (cyan)
+  for (let i = 0; i < nOH; i++) {
+    const x = beakerX + 10 + pseudoRand((i + 50) * 3 + 1) * (beakerW - 20);
+    const y = beakerTop + 15 + pseudoRand((i + 50) * 3 + 2) * (beakerH - 20);
+    ctx.fillStyle = 'rgba(34,211,238,0.75)';
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(34,211,238,0.3)';
+    ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Beaker label
+  ctx.fillStyle = phColorStr(ph, 1);
+  ctx.font = 'bold 22px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('pH ' + ph.toFixed(1), beakerX + beakerW / 2, beakerTop + beakerH / 2);
+
+  // Legend for ions
+  const legY = beakerTop + beakerH + 20;
+  [[0, 'H⁺ (acid)', 'rgba(244,63,94,0.85)'], [1, 'OH⁻ (alkali)', 'rgba(34,211,238,0.85)']].forEach(([idx, lbl, col]) => {
+    const lx = beakerX + 20 + idx * 120;
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(lx, legY, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'var(--text-dim)'; ctx.font = '11px Inter';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(lbl, lx + 10, legY);
+  });
+
+  // ----- 3. H⁺ and OH⁻ concentration bars -----
+  const barsTop = beakerTop;
+  const barsH = beakerH;
+
+  // H+ bar (left)
+  const hBarX = pad.l;
+  const hBarW = 55;
+  const hFrac = Math.max(0, Math.min(1, 1 - ph / 14));
+  const hBarFillH = barsH * hFrac;
+  ctx.fillStyle = 'rgba(244,63,94,0.12)';
+  ctx.fillRect(hBarX, barsTop, hBarW, barsH);
+  ctx.fillStyle = 'rgba(244,63,94,0.6)';
+  ctx.fillRect(hBarX, barsTop + barsH - hBarFillH, hBarW, hBarFillH);
+  ctx.fillStyle = '#f43f5e'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('[H⁺]', hBarX + hBarW / 2, barsTop - 4);
+  ctx.fillText(fmtSci(Hconc).split('×')[0].trim(), hBarX + hBarW / 2, barsTop + barsH - hBarFillH - 4);
+  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '9px JetBrains Mono';
+  ctx.fillText('mol/dm³', hBarX + hBarW / 2, barsTop + barsH + 14);
+
+  // OH- bar (right)
+  const ohBarX = W - pad.r - 55;
+  const ohBarW = 55;
+  const ohFrac = Math.max(0, Math.min(1, ph / 14));
+  const ohBarFillH = barsH * ohFrac;
+  ctx.fillStyle = 'rgba(34,211,238,0.12)';
+  ctx.fillRect(ohBarX, barsTop, ohBarW, barsH);
+  ctx.fillStyle = 'rgba(34,211,238,0.6)';
+  ctx.fillRect(ohBarX, barsTop + barsH - ohBarFillH, ohBarW, ohBarFillH);
+  ctx.fillStyle = '#22d3ee'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('[OH⁻]', ohBarX + ohBarW / 2, barsTop - 4);
+  ctx.fillText(fmtSci(OHconc).split('×')[0].trim(), ohBarX + ohBarW / 2, barsTop + barsH - ohBarFillH - 4);
+  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '9px JetBrains Mono';
+  ctx.fillText('mol/dm³', ohBarX + ohBarW / 2, barsTop + barsH + 14);
+
+  // Kw label
+  ctx.fillStyle = 'var(--text-faint)'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('Kw = [H⁺][OH⁻] = 10⁻¹⁴', W / 2, barsTop + barsH + 32);
+
+  // Indicator strip at bottom
+  const stripTop = H - 30;
+  const stripW = barW;
+  const stripH = 20;
+  const stripGrad = ctx.createLinearGradient(pad.l, 0, pad.l + stripW, 0);
+  for (let i = 0; i <= 14; i++) {
+    stripGrad.addColorStop(i / 14, phColorStr(i, 0.85));
+  }
+  ctx.fillStyle = stripGrad;
+  ctx.beginPath();
+  ctx.roundRect(pad.l, stripTop, stripW, stripH, 4);
+  ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '9px Inter';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('Universal indicator colour →', pad.l + 4, stripTop + stripH / 2);
+
+  // Arrow for current pH on indicator
+  const xInd = pad.l + (ph / 14) * stripW;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(xInd, stripTop - 2);
+  ctx.lineTo(xInd - 4, stripTop - 9);
+  ctx.lineTo(xInd + 4, stripTop - 9);
+  ctx.closePath(); ctx.fill();
+}
+
+function setPH(val) {
+  ph = Math.max(0, Math.min(14, Math.round(val * 10) / 10));
+  $('slPH').value = ph;
+  $('vPH').textContent = ph.toFixed(1);
+  updateReadouts();
+  drawPH();
+}
+
+function updateReadouts() {
+  const Hconc = Math.pow(10, -ph);
+  const OHconc = Math.pow(10, -(14 - ph));
+
+  function fmt(n) {
+    const exp = Math.floor(Math.log10(n));
+    const m = n / Math.pow(10, exp);
+    if (Math.abs(exp) <= 2) return n.toFixed(Math.max(0, -exp + 2));
+    return m.toFixed(2) + '×10' + superscript(exp);
+  }
+
+  $('oHplus').textContent = fmt(Hconc);
+  $('oOHminus').textContent = fmt(OHconc);
+  $('oPH').textContent = ph.toFixed(1);
+
+  let charText = 'Neutral';
+  let charColor = 'var(--green)';
+  if (ph < 6.5) { charText = ph < 3 ? 'Strong acid' : ph < 5 ? 'Acid' : 'Weak acid'; charColor = 'var(--rose)'; }
+  else if (ph > 7.5) { charText = ph > 11 ? 'Strong alkali' : ph > 9 ? 'Alkali' : 'Weak alkali'; charColor = 'var(--cyan)'; }
+  $('oChar').textContent = charText;
+  $('oChar').style.color = charColor;
+
+  const diffFrom7 = ph - 7;
+  const hFactor = Math.pow(10, Math.abs(diffFrom7));
+  let explainerText = '';
+
+  if (Math.abs(ph - 7) < 0.1) {
+    explainerText = `At <span class="k">pH 7</span>, [H⁺] = [OH⁻] = 10⁻⁷ mol/dm³. The solution is perfectly neutral — equal concentrations of hydrogen and hydroxide ions.`;
+  } else if (ph < 7) {
+    explainerText = `At <span class="k">pH ${ph.toFixed(1)}</span>, [H⁺] = <span class="k">${fmt(Hconc)} mol/dm³</span>. This is <span class="k">${hFactor.toFixed(hFactor < 10 ? 1 : 0)}×</span> more H⁺ than pure water. ` +
+      `Acids donate H⁺ ions to the solution; pH = −log₁₀[H⁺] so each unit drop in pH multiplies [H⁺] by 10.`;
+  } else {
+    explainerText = `At <span class="k">pH ${ph.toFixed(1)}</span>, [OH⁻] = <span class="k">${fmt(OHconc)} mol/dm³</span>. This is <span class="k">${hFactor.toFixed(hFactor < 10 ? 1 : 0)}×</span> more OH⁻ than pure water. ` +
+      `Alkalis increase [OH⁻], which forces [H⁺] down (since Kw = [H⁺][OH⁻] = 10⁻¹⁴ is constant at 25°C).`;
+  }
+  $('explainer').innerHTML = explainerText;
+}
+
+// Slider
+$('slPH').addEventListener('input', e => { setPH(parseFloat(e.target.value)); });
+
+// Ref chips
+document.querySelectorAll('.ref-chip[data-ph]').forEach(c => {
+  c.addEventListener('click', () => { setPH(parseFloat(c.dataset.ph)); });
+});
+
+// Add acid / alkali buttons
+$('btnAcid').addEventListener('click', () => { setPH(ph - 0.5); });
+$('btnAlkali').addEventListener('click', () => { setPH(ph + 0.5); });
+$('btnDilute').addEventListener('click', () => {
+  // Dilution moves pH toward 7
+  if (ph < 7) setPH(Math.min(7, ph + 1));
+  else if (ph > 7) setPH(Math.max(7, ph - 1));
+  $('tryNote').innerHTML = '<strong>Dilution effect:</strong> Adding water to an acid or alkali moves pH towards 7 — you cannot dilute beyond pH 7 in either direction.';
+});
+
+// Try this
+const TRIES = {
+  lemon: { ph: 2.5, note: '<strong>Lemon juice pH ≈ 2.5</strong> — citric acid gives [H⁺] about 3×10⁻³ mol/dm³. That is 32,000× more H⁺ than pure water. Tastes sour as a result.' },
+  neutral: { ph: 7.0, note: '<strong>Neutral (pH 7)</strong> — exactly equal H⁺ and OH⁻ concentrations. Pure water at 25°C. The indicator turns green.' },
+  dilute: { ph: 1.0, note: '<strong>Start at pH 1 (strong acid)</strong> then click "Dilute ×10" to see pH move towards 7 step by step. You cannot dilute past pH 7.' },
+  bleach: { ph: 12.5, note: '<strong>Bleach pH ≈ 12.5</strong> — sodium hypochlorite makes a strongly alkaline solution. [OH⁻] ≈ 0.03 mol/dm³. Corrosive to skin and eyes.' }
+};
+
+document.querySelectorAll('.try-buttons button[data-try]').forEach(b => {
+  b.addEventListener('click', () => {
+    const t = TRIES[b.dataset.try]; if (!t) return;
+    setPH(t.ph);
+    $('tryNote').innerHTML = t.note;
+  });
+});
+
+window.addEventListener('resize', () => { drawPH(); });
+
+// Keyboard
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', open);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === '?') { e.preventDefault(); open(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); setPH(ph - 0.5); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); setPH(ph + 0.5); }
+    else if (e.key === 'a' || e.key === 'A') { setPH(ph - 0.5); }
+    else if (e.key === 'k' || e.key === 'K') { setPH(ph + 0.5); }
+    else if (e.key === 'd' || e.key === 'D') { $('btnDilute').click(); }
+    else if (e.key === 'r' || e.key === 'R') { setPH(7.0); }
+  });
+})();
+
+// Init
+buildSubstanceList();
+setPH(7.0);
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="separating_mixtures.html">
+      <div class="related-title">Chromatography</div>
+      <div class="related-desc">Paper chromatography simulation — Rf values and separating dye mixtures</div>
+    </a>
+    <a class="related-card" href="states_matter.html">
+      <div class="related-title">States of Matter</div>
+      <div class="related-desc">Particle model animation — solid, liquid and gas behaviour</div>
+    </a>
+    <a class="related-card" href="index.html">
+      <div class="related-title">All Simulations</div>
+      <div class="related-desc">Browse the full library of interactive science and maths simulations</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacitor Charge &amp; Discharge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 14px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; }
+canvas { width: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.circuit-label { font-size: 11px; color: var(--text-faint); margin-top: 6px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Capacitor Charge &amp; Discharge</h1>
+    <p class="sub">RC circuit · exponential curves · time constant τ = RC · 5τ rule</p>
+    <p class="insight-banner">Voltage, charge, and current all decay (or rise) exponentially with the same time constant τ = RC. After 5τ the capacitor is within 1% of its final value — the "fully charged" rule of thumb.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Toggle charge / discharge</span>
+      <span class="kbd-key">R</span><span>Reset (restart from t = 0)</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <!-- RC circuit schematic -->
+    <div class="panel">
+      <div class="title-row">
+        <h3>RC circuit schematic</h3>
+        <div class="seg" id="modeToggle">
+          <button data-mode="charge" class="active">Charging</button>
+          <button data-mode="discharge">Discharging</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" style="height:150px;">
+        <canvas id="schematicCanvas" style="height:150px;"></canvas>
+      </div>
+      <p class="circuit-label" id="circuitLabel">Charging: switch closes, EMF source drives current through R into C until V_C = V₀</p>
+    </div>
+
+    <!-- Main exponential graphs -->
+    <div class="panel" style="margin-top:16px;">
+      <div class="title-row">
+        <h3>Q, V, I vs time</h3>
+        <span style="font-size:11px;color:var(--text-dim);">0 to 6τ shown</span>
+      </div>
+      <div class="canvas-wrap" style="height:340px;">
+        <canvas id="graphCanvas" style="height:340px;"></canvas>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Voltage V_C (V)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Charge Q (μC)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Current I (mA)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--text-dim);opacity:0.5"></span>τ markers</span>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Circuit parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Resistance R in kilohms — controls how quickly current flows.">Resistance R (kΩ)</span>
+          <span class="value num" id="vR">10.0</span>
+        </div>
+        <input type="range" id="slR" min="1" max="100" step="1" value="10">
+        <div class="refs">
+          <span class="ref-chip" data-r="1">1 kΩ</span>
+          <span class="ref-chip" data-r="10">10 kΩ</span>
+          <span class="ref-chip" data-r="100">100 kΩ</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Capacitance C in microfarads — controls how much charge can be stored.">Capacitance C (μF)</span>
+          <span class="value num" id="vC">100</span>
+        </div>
+        <input type="range" id="slC" min="10" max="1000" step="10" value="100">
+        <div class="refs">
+          <span class="ref-chip" data-c="10">10 μF</span>
+          <span class="ref-chip" data-c="100">100 μF</span>
+          <span class="ref-chip" data-c="470">470 μF</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Supply EMF V₀ applied during charging.">Supply voltage V₀ (V)</span>
+          <span class="value num" id="vV0">9.0</span>
+        </div>
+        <input type="range" id="slV0" min="1" max="24" step="0.5" value="9">
+        <div class="refs">
+          <span class="ref-chip" data-v0="1.5">1.5 V cell</span>
+          <span class="ref-chip" data-v0="9">9 V PP3</span>
+          <span class="ref-chip" data-v0="12">12 V</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Key values</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Time constant τ = RC: the time for V to change by a factor of 1/e ≈ 63%.">τ = RC</div>
+          <div class="val cyan" id="oTau">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="The time at which 63% charge/discharge is complete (one time constant).">63% at</div>
+          <div class="val" id="o63">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">5τ (≈ 99%)</div>
+          <div class="val amber" id="o5tau">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Max Q (μC)</div>
+          <div class="val" id="oQmax">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Max I (mA)</div>
+          <div class="val rose" id="oImax">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Mode</div>
+          <div class="val" id="oMode">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Live state</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl">V_C (V)</div>
+          <div class="val cyan" id="oVc">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Q (μC)</div>
+          <div class="val amber" id="oQ">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">I (mA)</div>
+          <div class="val rose" id="oI">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">t / τ</div>
+          <div class="val" id="oToverTau">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="fast">Fast discharge (low RC)</button>
+        <button data-try="slow">Slow charge (large RC)</button>
+        <button data-try="flash">Camera flash capacitor</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr;
+  c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+// Params: R in Ω, C in F, V0 in V
+const params = {
+  R: 10e3,   // 10 kΩ
+  C: 100e-6, // 100 μF
+  V0: 9.0,
+  mode: 'charge' // 'charge' or 'discharge'
+};
+
+// Simulation time progresses in real time but scaled (1 real second = 1 sim second)
+// We animate t from 0 to 6τ over 6 seconds real time
+let tSim = 0;
+let lastRaf = null;
+let rafId = null;
+const DISPLAY_TAUS = 6; // show 6τ
+
+function tau() { return params.R * params.C; }
+function Qmax() { return params.C * params.V0; } // in Coulombs
+function Imax() { return params.V0 / params.R; }  // in Amperes
+
+// V(t), Q(t), I(t) for charge/discharge
+function Vc(t) {
+  const τ = tau();
+  if (params.mode === 'charge') {
+    return params.V0 * (1 - Math.exp(-t / τ));
+  } else {
+    // Discharge: starts at V0, decays to 0
+    return params.V0 * Math.exp(-t / τ);
+  }
+}
+function Q(t) { return params.C * Vc(t); }
+function I(t) {
+  const τ = tau();
+  if (params.mode === 'charge') {
+    return (params.V0 / params.R) * Math.exp(-t / τ);
+  } else {
+    return -(params.V0 / params.R) * Math.exp(-t / τ); // negative convention for discharge
+  }
+}
+
+// --- Schematic ---
+function drawSchematic() {
+  const c = $('schematicCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const cy = H / 2;
+  const w = Math.min(W - 80, 520);
+  const h = Math.min(H - 30, 100);
+  const x0 = cx - w / 2, x1 = cx + w / 2;
+  const y0 = cy - h / 2, y1 = cy + h / 2;
+
+  ctx.strokeStyle = '#2d3b4f';
+  ctx.lineWidth = 2;
+  // Top wire
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); ctx.stroke();
+  // Bottom wire
+  ctx.beginPath(); ctx.moveTo(x0, y1); ctx.lineTo(x1, y1); ctx.stroke();
+  // Left wire
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, y1); ctx.stroke();
+
+  // Battery / EMF (left side, if charging)
+  const battX = x0 + w * 0.18;
+  if (params.mode === 'charge') {
+    // Battery symbol
+    ctx.strokeStyle = '#34d399';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(battX - 10, y0); ctx.lineTo(battX - 10, y0 - 5); ctx.stroke(); // long
+    ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(battX + 2, y0); ctx.lineTo(battX + 2, y0 - 3); ctx.stroke(); // short
+    ctx.lineWidth = 2;
+    ctx.fillStyle = '#34d399';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('V₀=' + params.V0.toFixed(1) + 'V', battX - 4, y0 - 16);
+
+    // Switch closed
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 2;
+    const sw1x = x0 + w * 0.08;
+    ctx.beginPath(); ctx.moveTo(sw1x - 8, y0); ctx.lineTo(sw1x + 8, y0); ctx.stroke();
+    ctx.fillStyle = '#22d3ee'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText('SW', sw1x, y0 - 12);
+  } else {
+    // Discharge: switch on top wire after the node where cap was connected
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2;
+    const sw1x = x0 + w * 0.08;
+    ctx.beginPath(); ctx.moveTo(sw1x - 8, y0); ctx.lineTo(sw1x + 4, y0 - 10); ctx.stroke(); // open switch
+    ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText('open', sw1x, y0 - 20);
+  }
+
+  // Resistor (top wire, right of battery)
+  const rCx = x0 + w * 0.5;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2.5;
+  const rW = 54, rH = 14;
+  ctx.strokeRect(rCx - rW / 2, y0 - rH / 2, rW, rH);
+  ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('R=' + fmtR(params.R), rCx, y0 - rH / 2 - 6);
+
+  // Capacitor (right wire)
+  const capY = cy;
+  const plateGap = 10, plateW = 30;
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 3;
+  // Upper plate
+  ctx.beginPath(); ctx.moveTo(x1 - plateW / 2, capY - plateGap / 2); ctx.lineTo(x1 + plateW / 2, capY - plateGap / 2); ctx.stroke();
+  // Lower plate
+  ctx.beginPath(); ctx.moveTo(x1 - plateW / 2, capY + plateGap / 2); ctx.lineTo(x1 + plateW / 2, capY + plateGap / 2); ctx.stroke();
+  // Wire to plates
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x1, y0); ctx.lineTo(x1, capY - plateGap / 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1, capY + plateGap / 2); ctx.stroke();
+  ctx.fillStyle = '#22d3ee'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillText('C=' + fmtC(params.C), x1 + plateW / 2 + 6, capY);
+
+  // Charge fill on capacitor plates (visual)
+  const chargeRatio = tSim <= 0 ? (params.mode === 'discharge' ? 1 : 0) : Vc(tSim) / params.V0;
+  const fillH = Math.abs(chargeRatio) * (plateGap - 2);
+  if (fillH > 0.5) {
+    ctx.fillStyle = params.mode === 'charge' ? 'rgba(34,211,238,0.35)' : 'rgba(244,63,94,0.25)';
+    ctx.fillRect(x1 - plateW / 2, capY - fillH / 2, plateW, fillH);
+  }
+
+  // Current arrow on top wire (between R and battery)
+  // Charging: conventional current flows left→right (into capacitor). I(t) > 0.
+  // Discharging: current flows right→left (out of capacitor through R). I(t) < 0.
+  const Icur = I(tSim);
+  if (Math.abs(Icur) > 1e-9) {
+    const arrowX = x0 + w * 0.78;
+    // rightward = +1 (charging), leftward = -1 (discharging)
+    const arrowRight = Icur > 0;
+    ctx.save();
+    ctx.strokeStyle = '#f43f5e'; ctx.fillStyle = '#f43f5e'; ctx.lineWidth = 1.5;
+    const ax1 = arrowX - 20, ax2 = arrowX + 20;
+    ctx.beginPath(); ctx.moveTo(ax1, y0); ctx.lineTo(ax2, y0); ctx.stroke();
+    // Arrowhead at the leading end
+    if (arrowRight) {
+      // Arrow points right → head at ax2
+      ctx.beginPath();
+      ctx.moveTo(ax2, y0);
+      ctx.lineTo(ax2 - 8, y0 - 4);
+      ctx.lineTo(ax2 - 8, y0 + 4);
+      ctx.closePath(); ctx.fill();
+    } else {
+      // Arrow points left → head at ax1
+      ctx.beginPath();
+      ctx.moveTo(ax1, y0);
+      ctx.lineTo(ax1 + 8, y0 - 4);
+      ctx.lineTo(ax1 + 8, y0 + 4);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Labels
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('+ terminal', x1 + plateW / 2 + 24, capY - 12);
+  ctx.fillText('− terminal', x1 + plateW / 2 + 24, capY + 16);
+}
+
+function fmtR(r) {
+  if (r >= 1e6) return (r / 1e6).toFixed(1) + ' MΩ';
+  if (r >= 1e3) return (r / 1e3).toFixed(0) + ' kΩ';
+  return r.toFixed(0) + ' Ω';
+}
+function fmtC(c) {
+  if (c >= 1e-3) return (c * 1e3).toFixed(0) + ' mF';
+  if (c >= 1e-6) return (c * 1e6).toFixed(0) + ' μF';
+  return (c * 1e9).toFixed(0) + ' nF';
+}
+
+// --- Main graph ---
+function drawGraph() {
+  const c = $('graphCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 60, r: 20, t: 18, b: 34 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const τ = tau();
+  const tMax = DISPLAY_TAUS * τ;
+  const nSamples = 600;
+
+  // Grid and τ markers
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 6; i++) {
+    const xp = pad.l + pw * i / DISPLAY_TAUS;
+    ctx.beginPath(); ctx.moveTo(xp, pad.t); ctx.lineTo(xp, H - pad.b); ctx.stroke();
+  }
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + ph * i / 5;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  // Tau marker vertical dashed lines
+  ctx.save();
+  ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = 'rgba(161,139,250,0.3)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i <= 5; i++) {
+    const xp = pad.l + pw * i / DISPLAY_TAUS;
+    ctx.beginPath(); ctx.moveTo(xp, pad.t); ctx.lineTo(xp, H - pad.b); ctx.stroke();
+  }
+  ctx.restore();
+
+  // x-axis labels: τ
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i <= DISPLAY_TAUS; i++) {
+    const xp = pad.l + pw * i / DISPLAY_TAUS;
+    ctx.fillText(i + 'τ', xp, H - pad.b + 4);
+  }
+
+  // y-axis: three scales normalised to [0,1]
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + ph * i / 5;
+    const frac = 1 - i / 5;
+    ctx.fillText((frac * 100).toFixed(0) + '%', pad.l - 6, y);
+  }
+
+  const xAt = (t) => pad.l + pw * (t / tMax);
+  const yAt = (frac) => pad.t + ph * (1 - Math.max(0, Math.min(1, frac)));
+
+  // 63% / 37% guide line
+  const fracGuide = params.mode === 'charge' ? 0.632 : 0.368;
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(167,139,250,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, yAt(fracGuide));
+  ctx.lineTo(W - pad.r, yAt(fracGuide));
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(167,139,250,0.9)';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText(params.mode === 'charge' ? '63%' : '37%', pad.l + 4, yAt(fracGuide) - 12);
+
+  // Voltage Vc
+  ctx.beginPath();
+  for (let i = 0; i <= nSamples; i++) {
+    const t = tMax * i / nSamples;
+    const frac = Vc(t) / params.V0;
+    const xp = xAt(t), yp = yAt(frac);
+    if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
+  }
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Charge Q (same shape as V, just scaled)
+  ctx.beginPath();
+  for (let i = 0; i <= nSamples; i++) {
+    const t = tMax * i / nSamples;
+    const frac = Q(t) / Qmax();
+    const xp = xAt(t), yp = yAt(frac);
+    if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
+  }
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Current I (normalised to Imax)
+  ctx.beginPath();
+  for (let i = 0; i <= nSamples; i++) {
+    const t = tMax * i / nSamples;
+    const frac = Math.abs(I(t)) / Imax();
+    const xp = xAt(t), yp = yAt(frac);
+    if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
+  }
+  ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Current time marker
+  if (tSim >= 0 && tSim <= tMax) {
+    const xCur = xAt(tSim);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(xCur, pad.t); ctx.lineTo(xCur, H - pad.b); ctx.stroke();
+    ctx.restore();
+
+    // Dots on curves at current t
+    const dotR = 5;
+    [[Vc(tSim) / params.V0, '#22d3ee'],
+     [Q(tSim) / Qmax(), '#f59e0b'],
+     [Math.abs(I(tSim)) / Imax(), '#f43f5e']].forEach(([frac, col]) => {
+      ctx.beginPath();
+      ctx.arc(xCur, yAt(frac), dotR, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.fill();
+    });
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+// --- Readouts ---
+function updateReadouts() {
+  const τ = tau();
+  $('oTau').textContent = fmtTime(τ);
+  $('o63').textContent = fmtTime(τ);
+  $('o5tau').textContent = fmtTime(5 * τ);
+  $('oQmax').textContent = (Qmax() * 1e6).toFixed(2);
+  $('oImax').textContent = (Imax() * 1e3).toFixed(3);
+  $('oMode').textContent = params.mode === 'charge' ? 'Charging' : 'Discharging';
+
+  const vc = Vc(tSim);
+  const q = Q(tSim);
+  const i = I(tSim);
+  $('oVc').textContent = vc.toFixed(4);
+  $('oQ').textContent = (q * 1e6).toFixed(3);
+  $('oI').textContent = (Math.abs(i) * 1e3).toFixed(4);
+  $('oToverTau').textContent = (tSim / τ).toFixed(3);
+
+  const tMax = DISPLAY_TAUS * τ;
+  const pct = Math.abs(vc / params.V0 * 100).toFixed(1);
+  let txt;
+  if (params.mode === 'charge') {
+    txt = `Charging: <span class="k">V_C = V₀(1 − e^(−t/τ))</span>. ` +
+      `At <span class="k">t = τ = ${fmtTime(τ)}</span>, the capacitor reaches <span class="k">63.2%</span> of V₀. ` +
+      `Currently at <span class="k">t = ${(tSim / τ).toFixed(2)}τ</span>, V_C = <span class="k">${vc.toFixed(3)} V (${pct}%)</span>. ` +
+      `After <span class="k">5τ = ${fmtTime(5 * τ)}</span> it is effectively fully charged (99.3%).`;
+  } else {
+    txt = `Discharging: <span class="k">V_C = V₀ e^(−t/τ)</span>. ` +
+      `At <span class="k">t = τ = ${fmtTime(τ)}</span>, voltage falls to <span class="k">36.8%</span> of its initial value. ` +
+      `Currently at <span class="k">t = ${(tSim / τ).toFixed(2)}τ</span>, V_C = <span class="k">${vc.toFixed(3)} V (${pct}%)</span>. ` +
+      `Current <span class="k">I = V₀/R · e^(−t/τ)</span> — it is largest at the moment of connection and falls asymptotically to zero.`;
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function fmtTime(s) {
+  if (s >= 1) return s.toFixed(3) + ' s';
+  if (s >= 1e-3) return (s * 1e3).toFixed(2) + ' ms';
+  return (s * 1e6).toFixed(1) + ' μs';
+}
+
+// Animation
+let running = true;
+const SIM_SPEED = 1; // real seconds = sim seconds
+
+function loop(ts) {
+  if (lastRaf === null) lastRaf = ts;
+  const dt = Math.min((ts - lastRaf) / 1000, 0.05) * SIM_SPEED;
+  lastRaf = ts;
+  const τ = tau();
+  const tMax = DISPLAY_TAUS * τ;
+  if (running) {
+    tSim += dt;
+    if (tSim > tMax) tSim = tMax; // clamp at 6τ
+  }
+  drawSchematic();
+  drawGraph();
+  updateReadouts();
+  rafId = requestAnimationFrame(loop);
+}
+
+function resetSim() {
+  tSim = 0;
+  lastRaf = null;
+}
+
+// Controls
+$('slR').addEventListener('input', e => {
+  params.R = parseFloat(e.target.value) * 1e3;
+  $('vR').textContent = parseFloat(e.target.value).toFixed(0);
+  resetSim();
+});
+$('slC').addEventListener('input', e => {
+  params.C = parseFloat(e.target.value) * 1e-6;
+  $('vC').textContent = parseFloat(e.target.value).toFixed(0);
+  resetSim();
+});
+$('slV0').addEventListener('input', e => {
+  params.V0 = parseFloat(e.target.value);
+  $('vV0').textContent = params.V0.toFixed(1);
+  resetSim();
+});
+
+document.querySelectorAll('[data-r]').forEach(c => {
+  c.addEventListener('click', () => {
+    const v = parseFloat(c.dataset.r);
+    params.R = v * 1e3;
+    $('slR').value = v;
+    $('vR').textContent = v.toFixed(0);
+    resetSim();
+  });
+});
+document.querySelectorAll('[data-c]').forEach(c => {
+  c.addEventListener('click', () => {
+    const v = parseFloat(c.dataset.c);
+    params.C = v * 1e-6;
+    $('slC').value = v;
+    $('vC').textContent = v.toFixed(0);
+    resetSim();
+  });
+});
+document.querySelectorAll('[data-v0]').forEach(c => {
+  c.addEventListener('click', () => {
+    const v = parseFloat(c.dataset.v0);
+    params.V0 = v;
+    $('slV0').value = v;
+    $('vV0').textContent = v.toFixed(1);
+    resetSim();
+  });
+});
+
+// Mode toggle
+document.querySelectorAll('#modeToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('active')) return;
+    document.querySelectorAll('#modeToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    params.mode = b.dataset.mode;
+    $('circuitLabel').textContent = params.mode === 'charge'
+      ? 'Charging: switch closes, EMF source drives current through R into C until V_C = V₀'
+      : 'Discharging: EMF disconnected, capacitor drives current through R until V_C = 0';
+    resetSim();
+  });
+});
+
+// Try this
+const presets = {
+  fast: { R: 1, C: 10, V0: 9, mode: 'discharge',
+    note: '<strong>Fast discharge (τ = 0.01 s):</strong> with R = 1 kΩ, C = 10 μF, the time constant is just 10 ms — voltage collapses in milliseconds, as in a defibrillator pulse.' },
+  slow: { R: 100, C: 1000, V0: 9, mode: 'charge',
+    note: '<strong>Slow charge (τ = 100 s):</strong> R = 100 kΩ, C = 1000 μF gives τ = 100 s. This is the scale used in dimmer circuits and audio tone controls.' },
+  flash: { R: 1, C: 470, V0: 9, mode: 'discharge',
+    note: '<strong>Camera flash (τ ≈ 0.47 s):</strong> a 470 μF capacitor through a 1 kΩ resistor — typical of a disposable camera flash circuit. Full discharge in about 2.4 s.' }
+};
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = presets[b.dataset.try];
+    if (!cfg) return;
+    params.R = cfg.R * 1e3; $('slR').value = cfg.R; $('vR').textContent = cfg.R.toFixed(0);
+    params.C = cfg.C * 1e-6; $('slC').value = cfg.C; $('vC').textContent = cfg.C.toFixed(0);
+    params.V0 = cfg.V0; $('slV0').value = cfg.V0; $('vV0').textContent = cfg.V0.toFixed(1);
+    params.mode = cfg.mode;
+    document.querySelectorAll('#modeToggle button').forEach(x => {
+      x.classList.toggle('active', x.dataset.mode === cfg.mode);
+    });
+    $('circuitLabel').textContent = params.mode === 'charge'
+      ? 'Charging: switch closes, EMF source drives current through R into C until V_C = V₀'
+      : 'Discharging: EMF disconnected, capacitor drives current through R until V_C = 0';
+    resetSim();
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+window.addEventListener('resize', () => {
+  drawSchematic();
+  drawGraph();
+});
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  const DEFAULTS = { R: 10, C: 100, V0: 9, mode: 'charge' };
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ' ') {
+      e.preventDefault();
+      const next = params.mode === 'charge' ? 'discharge' : 'charge';
+      const btn = document.querySelector(`#modeToggle button[data-mode="${next}"]`);
+      if (btn) btn.click();
+    } else if (e.key.toLowerCase() === 'r') {
+      params.R = DEFAULTS.R * 1e3; $('slR').value = DEFAULTS.R; $('vR').textContent = DEFAULTS.R.toFixed(0);
+      params.C = DEFAULTS.C * 1e-6; $('slC').value = DEFAULTS.C; $('vC').textContent = DEFAULTS.C.toFixed(0);
+      params.V0 = DEFAULTS.V0; $('slV0').value = DEFAULTS.V0; $('vV0').textContent = DEFAULTS.V0.toFixed(1);
+      params.mode = DEFAULTS.mode;
+      document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('active', x.dataset.mode === DEFAULTS.mode));
+      resetSim();
+    }
+  });
+})();
+
+rafId = requestAnimationFrame(loop);
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="shm.html">
+      <div class="related-title">Simple Harmonic Motion</div>
+      <div class="related-desc">Energy stored and released in oscillation — analogous to charge and discharge</div>
+    </a>
+    <a class="related-card" href="double_slit.html">
+      <div class="related-title">Double-Slit Interference</div>
+      <div class="related-desc">Wave optics — the other core A-level topic alongside circuits</div>
+    </a>
+    <a class="related-card" href="photoelectric.html">
+      <div class="related-title">Photoelectric Effect</div>
+      <div class="related-desc">Photon energy and the quantum view — connects to capacitor charge sensors</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

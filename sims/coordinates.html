@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coordinates &amp; Straight-Line Graphs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=number]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 16px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.canvas-wrap { position: relative; width: 100%; height: 480px; cursor: crosshair; }
+canvas { width: 100%; height: 100%; display: block; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.point-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.point-row input[type=number] { width: 64px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: var(--r-sm); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 5px 8px; }
+.on-line-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.on-line-badge.yes { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+.on-line-badge.no { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Coordinates &amp; Straight-Line Graphs</h1>
+    <p class="sub">4-quadrant grid · y = mx + c · gradient as rise/run · point testing</p>
+    <p class="insight-banner">The gradient m tells you how steeply the line rises (or falls) — for every 1 step right, y changes by exactly m. The y-intercept c is where the line crosses the vertical axis.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">G</span><span>Toggle gradient triangle</span>
+      <span class="kbd-key">C</span><span>Clear all plotted points</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3 id="lineLabel">y = 1x + 0</h3>
+        <span style="font-size:11px;color:var(--text-dim);">click grid to plot a point</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="mainCanvas"></canvas></div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Line parameters</p>
+      <div class="control">
+        <div class="control-row"><span class="label">Gradient m</span><span class="value num" id="vM">1</span></div>
+        <input type="range" id="slM" min="-5" max="5" step="0.25" value="1">
+      </div>
+      <div class="control">
+        <div class="control-row"><span class="label">y-intercept c</span><span class="value num" id="vC">0</span></div>
+        <input type="range" id="slC" min="-10" max="10" step="0.5" value="0">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label">Show gradient triangle</span>
+          <button id="toggleGrad" style="font-size:11px;padding:4px 10px;">On</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Line readouts</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl">Gradient m</div><div class="val cyan" id="oM">—</div></div>
+        <div class="readout"><div class="lbl">y-intercept c</div><div class="val amber" id="oC">—</div></div>
+        <div class="readout"><div class="lbl">x-intercept</div><div class="val" id="oXint">—</div></div>
+        <div class="readout"><div class="lbl">Rise / Run</div><div class="val green" id="oRiseRun">—</div></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Test a point</p>
+      <div class="point-row">
+        <span style="color:var(--text-dim);font-size:12px;">x =</span>
+        <input type="number" id="testX" value="2" step="1" min="-10" max="10">
+        <span style="color:var(--text-dim);font-size:12px;">y =</span>
+        <input type="number" id="testY" value="2" step="1" min="-10" max="10">
+        <span id="onLineBadge" class="on-line-badge">—</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
+        Line gives y = <span class="mono" id="testCalcY">—</span> when x = <span class="mono" id="testXShow">—</span>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-dim);">Plotted points (click canvas to add):</div>
+      <div id="pointsList" style="margin-top:6px;font-size:12px;color:var(--text-dim);min-height:20px;font-family:'JetBrains Mono',monospace;"></div>
+      <button id="clearPts" style="margin-top:8px;font-size:11px;padding:4px 10px;">Clear points</button>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="steep">Steep positive</button>
+        <button data-try="neg">Negative gradient</button>
+        <button data-try="horiz">Horizontal line</button>
+        <button data-try="parallel">Parallel lines</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const state = {
+  m: 1, c: 0,
+  showGrad: true,
+  points: [],   // {x, y} in grid coords
+  hoverGrid: null  // {x, y} snapped
+};
+
+// Grid: x and y each go from -10 to 10
+const GRID_RANGE = 10;
+
+function getLayout(W, H) {
+  const pad = { l: 44, r: 20, t: 20, b: 44 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const unitX = pw / (GRID_RANGE * 2);
+  const unitY = ph / (GRID_RANGE * 2);
+  const unit = Math.min(unitX, unitY);
+  const ox = pad.l + pw / 2;
+  const oy = pad.t + ph / 2;
+  return { pad, pw, ph, unit, ox, oy };
+}
+
+function gridToCanvas(gx, gy, layout) {
+  return { x: layout.ox + gx * layout.unit, y: layout.oy - gy * layout.unit };
+}
+function canvasToGrid(cx, cy, layout) {
+  return { x: (cx - layout.ox) / layout.unit, y: -(cy - layout.oy) / layout.unit };
+}
+
+function draw() {
+  const c = $('mainCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const L = getLayout(W, H);
+
+  // grid lines
+  for (let i = -GRID_RANGE; i <= GRID_RANGE; i++) {
+    const isMajor = (i === 0);
+    ctx.strokeStyle = isMajor ? '#2a3a52' : '#1a2230';
+    ctx.lineWidth = isMajor ? 1.5 : 1;
+    // vertical
+    const { x: vx } = gridToCanvas(i, 0, L);
+    ctx.beginPath(); ctx.moveTo(vx, L.pad.t); ctx.lineTo(vx, H - L.pad.b); ctx.stroke();
+    // horizontal
+    const { y: hy } = gridToCanvas(0, i, L);
+    ctx.beginPath(); ctx.moveTo(L.pad.l, hy); ctx.lineTo(W - L.pad.r, hy); ctx.stroke();
+  }
+
+  // axis labels
+  ctx.fillStyle = '#5b6573';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = -GRID_RANGE; i <= GRID_RANGE; i += 2) {
+    if (i === 0) continue;
+    const { x: vx } = gridToCanvas(i, 0, L);
+    ctx.fillText(i, vx, L.oy + 4);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = -GRID_RANGE; i <= GRID_RANGE; i += 2) {
+    if (i === 0) continue;
+    const { y: hy } = gridToCanvas(0, i, L);
+    ctx.fillText(i, L.ox - 4, hy);
+  }
+
+  // axis letter labels
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px Inter';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('x', W - L.pad.r, L.oy + 4);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('y', L.ox + 4, L.pad.t);
+
+  // the line y = mx + c
+  const m = state.m, cVal = state.c;
+  const xL = -GRID_RANGE, xR = GRID_RANGE;
+  const yL = m * xL + cVal, yR = m * xR + cVal;
+  // clip to visible range
+  const p1 = gridToCanvas(xL, yL, L);
+  const p2 = gridToCanvas(xR, yR, L);
+
+  // line glow
+  ctx.save();
+  ctx.shadowColor = '#22d3ee';
+  ctx.shadowBlur = 8;
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+  ctx.restore();
+
+  // y-intercept dot
+  const yIntPt = gridToCanvas(0, cVal, L);
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath(); ctx.arc(yIntPt.x, yIntPt.y, 6, 0, 2 * Math.PI); ctx.fill();
+  ctx.fillStyle = '#0a0e14';
+  ctx.beginPath(); ctx.arc(yIntPt.x, yIntPt.y, 3, 0, 2 * Math.PI); ctx.fill();
+
+  // gradient triangle
+  if (state.showGrad && m !== 0) {
+    const runX = 2, riseY = m * 2;
+    const startGX = -runX / 2, startGY = m * startGX + cVal;
+    const midGX = startGX + runX, midGY = startGY;
+    const endGX = midGX, endGY = midGY + riseY;
+
+    const sp = gridToCanvas(startGX, startGY, L);
+    const mp = gridToCanvas(midGX, midGY, L);
+    const ep = gridToCanvas(endGX, endGY, L);
+
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(sp.x, sp.y);
+    ctx.lineTo(mp.x, mp.y);
+    ctx.lineTo(ep.x, ep.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // run label
+    ctx.fillStyle = '#f59e0b'; ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'center'; ctx.textBaseline = m > 0 ? 'top' : 'bottom';
+    ctx.fillText('run = ' + runX, (sp.x + mp.x) / 2, mp.y + (m > 0 ? 4 : -4));
+    // rise label
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    const riseLabel = (riseY >= 0 ? '+' : '') + riseY.toFixed(2).replace(/\.?0+$/, '');
+    ctx.fillText('rise = ' + riseLabel, ep.x + 4, (mp.y + ep.y) / 2);
+  }
+
+  // plotted points
+  for (const pt of state.points) {
+    const cp = gridToCanvas(pt.x, pt.y, L);
+    const expectedY = state.m * pt.x + state.c;
+    const onLine = Math.abs(pt.y - expectedY) < 0.01;
+    ctx.fillStyle = onLine ? '#34d399' : '#f43f5e';
+    ctx.beginPath(); ctx.arc(cp.x, cp.y, 5, 0, 2 * Math.PI); ctx.fill();
+    ctx.strokeStyle = '#0a0e14'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cp.x, cp.y, 5, 0, 2 * Math.PI); ctx.stroke();
+    // coord label
+    ctx.fillStyle = '#e6edf3'; ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('(' + pt.x + ',' + pt.y + ')', cp.x + 7, cp.y - 2);
+  }
+
+  // hover ghost point
+  if (state.hoverGrid) {
+    const hp = gridToCanvas(state.hoverGrid.x, state.hoverGrid.y, L);
+    ctx.fillStyle = 'rgba(34,211,238,0.35)';
+    ctx.beginPath(); ctx.arc(hp.x, hp.y, 5, 0, 2 * Math.PI); ctx.fill();
+  }
+}
+
+function fmtM(m) {
+  if (m === Math.floor(m)) return m.toString();
+  return m.toFixed(2);
+}
+
+function updateReadouts() {
+  const m = state.m, c = state.c;
+  // equation string
+  let eq = 'y = ';
+  if (m === 0) eq += c;
+  else {
+    if (m === 1) eq += 'x';
+    else if (m === -1) eq += '−x';
+    else eq += fmtM(m) + 'x';
+    if (c > 0) eq += ' + ' + c;
+    else if (c < 0) eq += ' − ' + Math.abs(c);
+  }
+  $('lineLabel').textContent = eq;
+
+  $('oM').textContent = fmtM(m);
+  $('oC').textContent = c;
+  $('oRiseRun').textContent = fmtM(m) + ' / 1';
+  if (m !== 0) {
+    $('oXint').textContent = fmtM(-c / m);
+  } else {
+    $('oXint').textContent = c === 0 ? 'all x' : 'none';
+  }
+
+  // test point
+  const tx = parseFloat($('testX').value);
+  const ty = parseFloat($('testY').value);
+  if (!isNaN(tx) && !isNaN(ty)) {
+    const calcY = m * tx + c;
+    $('testCalcY').textContent = fmtM(calcY);
+    $('testXShow').textContent = tx;
+    const onLine = Math.abs(ty - calcY) < 0.001;
+    const badge = $('onLineBadge');
+    badge.textContent = onLine ? 'ON LINE' : 'NOT ON LINE';
+    badge.className = 'on-line-badge ' + (onLine ? 'yes' : 'no');
+  }
+
+  // points list
+  const pl = $('pointsList');
+  if (state.points.length === 0) {
+    pl.textContent = 'None yet — click the grid';
+  } else {
+    pl.textContent = state.points.map(p => '(' + p.x + ', ' + p.y + ')').join('  ');
+  }
+
+  // explainer
+  const gradDesc = m > 0 ? 'rises' : m < 0 ? 'falls' : 'is horizontal (gradient = 0)';
+  let txt = `The line <span class="k">${eq}</span> has gradient <span class="k">m = ${fmtM(m)}</span>. `;
+  txt += `It ${gradDesc} — for every 1 unit right, y changes by <span class="k">${fmtM(m)}</span>. `;
+  txt += `The y-intercept is <span class="k">(0, ${c})</span>`;
+  if (m !== 0) txt += `, and the line crosses the x-axis at <span class="k">(${fmtM(-c / m)}, 0)</span>`;
+  txt += '.';
+  $('explainer').innerHTML = txt;
+}
+
+function refresh() { draw(); updateReadouts(); }
+
+$('slM').addEventListener('input', e => {
+  state.m = parseFloat(e.target.value);
+  $('vM').textContent = fmtM(state.m);
+  refresh();
+});
+$('slC').addEventListener('input', e => {
+  state.c = parseFloat(e.target.value);
+  $('vC').textContent = state.c;
+  refresh();
+});
+$('toggleGrad').addEventListener('click', () => {
+  state.showGrad = !state.showGrad;
+  $('toggleGrad').textContent = state.showGrad ? 'On' : 'Off';
+  refresh();
+});
+$('testX').addEventListener('input', refresh);
+$('testY').addEventListener('input', refresh);
+$('clearPts').addEventListener('click', () => { state.points = []; refresh(); });
+
+// Canvas click — add point (snapped to nearest integer)
+const canvasEl = $('mainCanvas');
+canvasEl.addEventListener('click', e => {
+  const rect = canvasEl.getBoundingClientRect();
+  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+  const W = rect.width, H = rect.height;
+  const L = getLayout(W, H);
+  const g = canvasToGrid(cx, cy, L);
+  const gx = Math.round(g.x), gy = Math.round(g.y);
+  if (Math.abs(gx) <= GRID_RANGE && Math.abs(gy) <= GRID_RANGE) {
+    // deduplicate
+    if (!state.points.some(p => p.x === gx && p.y === gy)) {
+      state.points.push({ x: gx, y: gy });
+    }
+    refresh();
+  }
+});
+canvasEl.addEventListener('mousemove', e => {
+  const rect = canvasEl.getBoundingClientRect();
+  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+  const W = rect.width, H = rect.height;
+  const L = getLayout(W, H);
+  const g = canvasToGrid(cx, cy, L);
+  const gx = Math.round(g.x), gy = Math.round(g.y);
+  if (Math.abs(gx) <= GRID_RANGE && Math.abs(gy) <= GRID_RANGE) {
+    state.hoverGrid = { x: gx, y: gy };
+  } else {
+    state.hoverGrid = null;
+  }
+  draw();
+});
+canvasEl.addEventListener('mouseleave', () => { state.hoverGrid = null; draw(); });
+
+window.addEventListener('resize', refresh);
+
+function applyTry(name) {
+  const presets = {
+    steep:    { m:3, c:1, note: '<strong>m = 3</strong>: for every 1 step right, y rises by 3. A gradient > 1 means rise exceeds run.' },
+    neg:      { m:-2, c:4, note: '<strong>m = −2</strong>: the line falls left-to-right. Negative gradient means as x increases, y decreases.' },
+    horiz:    { m:0, c:3, note: '<strong>y = 3</strong>: gradient is 0 — the line is perfectly horizontal. Every point has y-coordinate 3.' },
+    parallel: { m:1.5, c:-3, note: '<strong>Parallel lines have the same gradient.</strong> Try setting m = 1.5 on two different intercepts — they never meet.' }
+  };
+  const p = presets[name]; if (!p) return;
+  state.m = p.m; state.c = p.c;
+  $('slM').value = p.m; $('vM').textContent = fmtM(p.m);
+  $('slC').value = p.c; $('vC').textContent = p.c;
+  $('tryNote').innerHTML = p.note;
+  refresh();
+}
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => applyTry(b.dataset.try));
+});
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'r') {
+      state.m = 1; state.c = 0; state.points = [];
+      $('slM').value = 1; $('vM').textContent = '1';
+      $('slC').value = 0; $('vC').textContent = '0';
+      refresh();
+    } else if (k === 'g') {
+      $('toggleGrad').click();
+    } else if (k === 'c') {
+      $('clearPts').click();
+    }
+  });
+})();
+
+refresh();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="area_perimeter.html">
+      <div class="related-title">Area &amp; Perimeter</div>
+      <div class="related-desc">Drag shapes on a unit grid and see area and perimeter computed live</div>
+    </a>
+    <a class="related-card" href="fractions_viz.html">
+      <div class="related-title">Fractions, Decimals &amp; Percentages</div>
+      <div class="related-desc">Bar and pie models show equivalent fractions and how to add them</div>
+    </a>
+    <a class="related-card" href="clt_sampler.html">
+      <div class="related-title">Central Limit Theorem</div>
+      <div class="related-desc">Why sample means cluster around the population mean as n increases</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

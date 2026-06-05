@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circular Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --grid-soft: #131a25;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245,158,11,0.20);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+button.primary { border-color: var(--cyan); color: var(--cyan); }
+button.primary.active { background: var(--cyan); color: #04121a; }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; color: var(--text); }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.rose { color: var(--rose); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.canvas-wrap { position: relative; width: 100%; }
+canvas { width: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.danger-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.danger-badge.off { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+.danger-badge.on { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Circular Motion</h1>
+    <p class="sub">Centripetal force · angular velocity · period · tangential release</p>
+    <p class="insight-banner">The centripetal force F = mv²/r always points to the centre — it changes the direction of velocity but not its magnitude. Remove that force and the object flies off tangentially.</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">Space</span><span>Play / pause</span>
+      <span class="kbd-key">F</span><span>Toggle centripetal force cut</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3>Circular orbit</h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="forceBtn" class="primary active" style="min-width:140px;">Force ON</button>
+          <button id="playBtn" class="primary active" style="min-width:80px;">Pause</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" style="height:420px;">
+        <canvas id="circleCanvas" style="height:420px;"></canvas>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>Velocity v (tangential)</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--rose)"></span>Centripetal acc a_c = v²/r</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Centripetal force F = mv²/r</span>
+      </div>
+    </div>
+
+    <!-- ω and period graph -->
+    <div class="panel" style="margin-top:16px;">
+      <div class="title-row">
+        <h3>Speed vs time</h3>
+        <span style="font-size:11px;color:var(--text-dim);">constant in uniform circular motion</span>
+      </div>
+      <div class="canvas-wrap" style="height:160px;">
+        <canvas id="speedCanvas" style="height:160px;"></canvas>
+      </div>
+    </div>
+
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Motion parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Linear speed of the object around the circle.">Speed v (m s⁻¹)</span>
+          <span class="value num" id="vV">5.0</span>
+        </div>
+        <input type="range" id="slV" min="1" max="20" step="0.5" value="5">
+        <div class="refs">
+          <span class="ref-chip" data-v="2">Slow 2</span>
+          <span class="ref-chip" data-v="5">Medium 5</span>
+          <span class="ref-chip" data-v="15">Fast 15</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Radius of the circular path.">Radius r (m)</span>
+          <span class="value num" id="vR">2.0</span>
+        </div>
+        <input type="range" id="slR" min="0.5" max="8" step="0.1" value="2.0">
+        <div class="refs">
+          <span class="ref-chip" data-r="0.5">0.5 m</span>
+          <span class="ref-chip" data-r="2.0">2 m</span>
+          <span class="ref-chip" data-r="6.0">6 m</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="Mass of the orbiting object.">Mass m (kg)</span>
+          <span class="value num" id="vM">1.0</span>
+        </div>
+        <input type="range" id="slM" min="0.1" max="10" step="0.1" value="1.0">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Derived quantities</p>
+      <div class="readouts">
+        <div class="readout">
+          <div class="lbl" title="Angular velocity: angle swept per second.">ω (rad s⁻¹)</div>
+          <div class="val cyan" id="oOmega">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Period: time for one full revolution.">Period T (s)</div>
+          <div class="val" id="oT">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Centripetal acceleration directed towards the centre.">a_c (m s⁻²)</div>
+          <div class="val rose" id="oAc">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl" title="Centripetal force required to maintain circular motion.">F_c (N)</div>
+          <div class="val amber" id="oFc">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Angle θ (°)</div>
+          <div class="val" id="oTheta">—</div>
+        </div>
+        <div class="readout">
+          <div class="lbl">Force state</div>
+          <div class="val" id="oForceState">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="tight">Tight bend, fast</button>
+        <button data-try="gentle">Gentle wide arc</button>
+        <button data-try="cut">Cut the force!</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr;
+  c.height = r.height * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
+const params = { v: 5.0, r: 2.0, m: 1.0 };
+let running = true;
+let forceOn = true;
+let theta = 0; // current angle in radians
+let lastRaf = null;
+let rafId = null;
+
+// When force is cut: store position and velocity for linear flight
+let flightMode = false;
+let flightX = 0, flightY = 0;  // in world coords (m), relative to canvas centre
+let flightVx = 0, flightVy = 0;
+let flightT = 0;
+// History of positions for trail
+const trail = [];
+const MAX_TRAIL = 300;
+
+// Speed history for the speed graph
+const speedHistory = [];
+const MAX_SPEED_HIST = 400;
+let histTime = 0;
+
+function omega() { return params.v / params.r; }
+function period() { return 2 * Math.PI / omega(); }
+function ac() { return params.v * params.v / params.r; }
+function Fc() { return params.m * ac(); }
+
+function drawCircle(dt) {
+  const c = $('circleCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Scale: fit radius + some margin into canvas
+  const maxR = Math.min(W, H) * 0.42;
+  const scale = maxR / Math.max(params.r, 0.5); // px per metre
+  const cx = W / 2;
+  const cy = H / 2;
+
+  // Grid dots
+  ctx.fillStyle = '#1a2230';
+  for (let gx = 0; gx < W; gx += 30) {
+    for (let gy = 0; gy < H; gy += 30) {
+      ctx.beginPath(); ctx.arc(gx, gy, 1.2, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  if (!flightMode) {
+    // Circular path
+    ctx.beginPath();
+    ctx.arc(cx, cy, params.r * scale, 0, Math.PI * 2);
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Faint trail arc
+    if (trail.length > 1) {
+      ctx.beginPath();
+      for (let i = 0; i < trail.length; i++) {
+        const px = cx + trail[i].x * scale;
+        const py = cy + trail[i].y * scale;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = 'rgba(34,211,238,0.18)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    const mx = cx + Math.cos(theta) * params.r * scale;
+    const my = cy - Math.sin(theta) * params.r * scale; // canvas y inverted
+
+    // Radius line
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(mx, my);
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Centre dot
+    ctx.fillStyle = '#5b6573';
+    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+
+    // Velocity vector (tangential — perpendicular to radius)
+    const vx = -Math.sin(theta);
+    const vy = Math.cos(theta); // in canvas coords: positive y = down
+    const vScale = 20 * params.v / 5; // visual scale
+    const vLen = Math.min(vScale, 110);
+    drawArrow(ctx, mx, my, mx + vx * vLen, my - vy * vLen, '#22d3ee', 'v', 2.5);
+
+    if (forceOn) {
+      // Centripetal acceleration arrow (towards centre)
+      const acScale = 15;
+      const acLen = Math.min(ac() * acScale, 90);
+      const adx = (cx - mx) / (params.r * scale); // unit vector towards centre
+      const ady = (cy - my) / (params.r * scale);
+      drawArrow(ctx, mx, my, mx + adx * acLen, my + ady * acLen, '#f43f5e', 'a_c', 2);
+
+      // Force arrow (same direction, slightly offset)
+      const fcScale = 8;
+      const fcLen = Math.min(Fc() * fcScale, 80);
+      drawArrow(ctx, mx + 6 * ady, my - 6 * adx, mx + adx * fcLen + 6 * ady, my + ady * fcLen - 6 * adx, '#f59e0b', 'F', 2);
+    }
+
+    // Mass
+    const gr = ctx.createRadialGradient(mx - 4, my - 4, 2, mx, my, 14);
+    gr.addColorStop(0, '#2a3f5a');
+    gr.addColorStop(1, '#11161f');
+    ctx.beginPath(); ctx.arc(mx, my, 14, 0, Math.PI * 2);
+    ctx.fillStyle = gr; ctx.fill();
+    ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2; ctx.stroke();
+
+  } else {
+    // Flight mode — draw tangential line
+    flightT += dt;
+    const worldX = flightX + flightVx * flightT;
+    const worldY = flightY + flightVy * flightT;
+    const px = cx + worldX * scale;
+    const py = cy + worldY * scale;
+
+    // Circular ghost
+    ctx.beginPath();
+    ctx.arc(cx, cy, params.r * scale, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(31,41,55,0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Trail from release point
+    if (trail.length > 1) {
+      ctx.beginPath();
+      for (let i = 0; i < trail.length; i++) {
+        const tpx = cx + trail[i].x * scale;
+        const tpy = cy + trail[i].y * scale;
+        if (i === 0) ctx.moveTo(tpx, tpy); else ctx.lineTo(tpx, tpy);
+      }
+      ctx.strokeStyle = 'rgba(244,63,94,0.5)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Velocity arrow
+    const vLen = 70;
+    drawArrow(ctx, px, py, px + flightVx * vLen / params.v, py + flightVy * vLen / params.v, '#22d3ee', 'v', 2.5);
+
+    // Mass
+    ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2);
+    ctx.fillStyle = '#11161f'; ctx.fill();
+    ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2; ctx.stroke();
+
+    // Rose "FORCE CUT" label
+    ctx.fillStyle = '#f43f5e';
+    ctx.font = 'bold 12px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('Force cut — tangential flight', cx, 24);
+  }
+
+  // Labels: ω, T top-left
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'left';
+  ctx.fillText(`ω = ${omega().toFixed(3)} rad s⁻¹`, 14, H - 36);
+  ctx.fillText(`T = ${period().toFixed(3)} s`, 14, H - 20);
+
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0, 0, W, H);
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, label, lw) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 4) return;
+  const ux = dx / len, uy = dy / len;
+  const hs = 9;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * hs + uy * hs * 0.4, y2 - uy * hs - ux * hs * 0.4);
+  ctx.lineTo(x2 - ux * hs - uy * hs * 0.4, y2 - uy * hs + ux * hs * 0.4);
+  ctx.closePath(); ctx.fill();
+  if (label) {
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillText(label, x2 + ux * 12 - uy * 4, y2 + uy * 12 + ux * 4);
+  }
+  ctx.restore();
+}
+
+function drawSpeedGraph() {
+  const c = $('speedCanvas');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 54, r: 16, t: 16, b: 28 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  const maxSpd = 22;
+  ctx.fillStyle = '#97a1b0';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + ph * i / 4;
+    ctx.fillText(((1 - i / 4) * maxSpd).toFixed(0), pad.l - 6, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('v (m s⁻¹)', pad.l + pw / 2, H - pad.b + 4);
+
+  if (speedHistory.length > 1) {
+    ctx.beginPath();
+    for (let i = 0; i < speedHistory.length; i++) {
+      const xp = pad.l + pw * i / (MAX_SPEED_HIST - 1);
+      const yp = pad.t + ph * (1 - speedHistory[i] / maxSpd);
+      if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
+    }
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateReadouts() {
+  $('oOmega').textContent = omega().toFixed(3);
+  $('oT').textContent = period().toFixed(3) + ' s';
+  $('oAc').textContent = ac().toFixed(3);
+  $('oFc').textContent = Fc().toFixed(3);
+  $('oTheta').textContent = ((theta * 180 / Math.PI) % 360).toFixed(1) + '°';
+  const fs = $('oForceState');
+  if (forceOn && !flightMode) {
+    fs.innerHTML = '<span class="danger-badge off">ACTIVE</span>';
+  } else {
+    fs.innerHTML = '<span class="danger-badge on">CUT!</span>';
+  }
+
+  let expl;
+  if (flightMode) {
+    expl = `The centripetal force has been cut. With no inward force, the object travels in a straight line at <span class="k">v = ${params.v.toFixed(1)} m s⁻¹</span> — Newton's first law. It leaves tangentially at the point of release.`;
+  } else {
+    expl = `At <span class="k">v = ${params.v.toFixed(1)} m s⁻¹</span> and <span class="k">r = ${params.r.toFixed(1)} m</span>, the required centripetal force is <span class="k">F = mv²/r = ${Fc().toFixed(2)} N</span>, ` +
+      `directed continuously towards the centre. Angular velocity <span class="k">ω = v/r = ${omega().toFixed(3)} rad s⁻¹</span>, ` +
+      `period <span class="k">T = 2πr/v = ${period().toFixed(3)} s</span>. ` +
+      `Doubling the speed quadruples the required force for the same radius.`;
+  }
+  $('explainer').innerHTML = expl;
+}
+
+function cutForce() {
+  flightMode = true;
+  // Record current tangential velocity in canvas world coords
+  // θ is angle from positive-x, mass at (cos θ, -sin θ)*r in canvas
+  // Tangential velocity direction: (-sin θ, -cos θ) in canvas (positive y = down)
+  flightX = Math.cos(theta) * params.r;
+  flightY = -Math.sin(theta) * params.r;
+  flightVx = -Math.sin(theta) * params.v;
+  flightVy = -Math.cos(theta) * params.v;  // canvas y inverted, but we keep consistent
+  flightT = 0;
+  trail.length = 0;
+}
+
+function restoreForce() {
+  flightMode = false;
+  trail.length = 0;
+  flightT = 0;
+}
+
+let frameCount = 0;
+function loop(ts) {
+  if (lastRaf === null) lastRaf = ts;
+  const dt = Math.min((ts - lastRaf) / 1000, 0.05);
+  lastRaf = ts;
+
+  if (running) {
+    if (!flightMode) {
+      theta += omega() * dt;
+      const wx = Math.cos(theta) * params.r;
+      const wy = -Math.sin(theta) * params.r;
+      trail.push({ x: wx, y: wy });
+      if (trail.length > MAX_TRAIL) trail.shift();
+
+      histTime += dt;
+      speedHistory.push(params.v);
+      if (speedHistory.length > MAX_SPEED_HIST) speedHistory.shift();
+    } else {
+      // During flight, record trail
+      const worldX = flightX + flightVx * flightT;
+      const worldY = flightY + flightVy * flightT;
+      trail.push({ x: worldX, y: worldY });
+      if (trail.length > MAX_TRAIL) trail.shift();
+
+      speedHistory.push(params.v);
+      if (speedHistory.length > MAX_SPEED_HIST) speedHistory.shift();
+    }
+  }
+
+  drawCircle(running && flightMode ? dt : 0);
+  drawSpeedGraph();
+  updateReadouts();
+  rafId = requestAnimationFrame(loop);
+}
+
+// Controls
+$('slV').addEventListener('input', e => {
+  params.v = parseFloat(e.target.value);
+  $('vV').textContent = params.v.toFixed(1);
+});
+$('slR').addEventListener('input', e => {
+  params.r = parseFloat(e.target.value);
+  $('vR').textContent = params.r.toFixed(1);
+});
+$('slM').addEventListener('input', e => {
+  params.m = parseFloat(e.target.value);
+  $('vM').textContent = params.m.toFixed(1);
+});
+
+document.querySelectorAll('[data-v]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.v = parseFloat(c.dataset.v);
+    $('slV').value = params.v;
+    $('vV').textContent = params.v.toFixed(1);
+  });
+});
+document.querySelectorAll('[data-r]').forEach(c => {
+  c.addEventListener('click', () => {
+    params.r = parseFloat(c.dataset.r);
+    $('slR').value = params.r;
+    $('vR').textContent = params.r.toFixed(1);
+  });
+});
+
+$('forceBtn').addEventListener('click', () => {
+  if (!flightMode) {
+    forceOn = false;
+    cutForce();
+    $('forceBtn').textContent = 'Restore Force';
+    $('forceBtn').classList.remove('active');
+  } else {
+    forceOn = true;
+    restoreForce();
+    $('forceBtn').textContent = 'Force ON';
+    $('forceBtn').classList.add('active');
+  }
+});
+
+$('playBtn').addEventListener('click', () => {
+  running = !running;
+  lastRaf = null;
+  $('playBtn').textContent = running ? 'Pause' : 'Play';
+  $('playBtn').classList.toggle('active', running);
+});
+
+// Try this
+const presets = {
+  tight: {
+    v: 12, r: 0.8, m: 1.0,
+    note: '<strong>Tight, fast corner:</strong> small radius and high speed demand enormous centripetal force — F = mv²/r surges. Think Formula 1 chicane.'
+  },
+  gentle: {
+    v: 3, r: 6, m: 2.0,
+    note: '<strong>Wide gentle arc:</strong> large radius reduces centripetal acceleration dramatically even at moderate speed. Think motorway roundabout.'
+  },
+  cut: {
+    v: 8, r: 2, m: 1.0,
+    note: '<strong>Force cut:</strong> press "Force ON" to release the object and watch it fly off tangentially — straight-line motion with no centripetal force (Newton\'s first law).',
+    action: () => {
+      if (flightMode) { restoreForce(); $('forceBtn').textContent = 'Force ON'; $('forceBtn').classList.add('active'); forceOn = true; }
+    }
+  }
+};
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = presets[b.dataset.try];
+    if (!cfg) return;
+    // Restore circular first
+    if (flightMode) { restoreForce(); $('forceBtn').textContent = 'Force ON'; $('forceBtn').classList.add('active'); forceOn = true; }
+    params.v = cfg.v; $('slV').value = cfg.v; $('vV').textContent = cfg.v.toFixed(1);
+    params.r = cfg.r; $('slR').value = cfg.r; $('vR').textContent = cfg.r.toFixed(1);
+    params.m = cfg.m; $('slM').value = cfg.m; $('vM').textContent = cfg.m.toFixed(1);
+    if (cfg.action) cfg.action();
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+window.addEventListener('resize', () => { /* redrawn each frame */ });
+
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  const DEFAULTS = { v: 5.0, r: 2.0, m: 1.0 };
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ' ') {
+      e.preventDefault(); $('playBtn').click();
+    } else if (e.key.toLowerCase() === 'f') {
+      $('forceBtn').click();
+    } else if (e.key.toLowerCase() === 'r') {
+      if (flightMode) { restoreForce(); $('forceBtn').textContent = 'Force ON'; $('forceBtn').classList.add('active'); forceOn = true; }
+      params.v = DEFAULTS.v; $('slV').value = DEFAULTS.v; $('vV').textContent = DEFAULTS.v.toFixed(1);
+      params.r = DEFAULTS.r; $('slR').value = DEFAULTS.r; $('vR').textContent = DEFAULTS.r.toFixed(1);
+      params.m = DEFAULTS.m; $('slM').value = DEFAULTS.m; $('vM').textContent = DEFAULTS.m.toFixed(1);
+      theta = 0; trail.length = 0;
+    }
+  });
+})();
+
+rafId = requestAnimationFrame(loop);
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="shm.html">
+      <div class="related-title">Simple Harmonic Motion</div>
+      <div class="related-desc">The projection of circular motion onto a straight line is SHM — see the connection</div>
+    </a>
+    <a class="related-card" href="double_slit.html">
+      <div class="related-title">Double-Slit Interference</div>
+      <div class="related-desc">Wave phenomena and path-difference geometry — another use of angular quantities</div>
+    </a>
+    <a class="related-card" href="photoelectric.html">
+      <div class="related-title">Photoelectric Effect</div>
+      <div class="related-desc">Quantised energy and photon momentum — links to particle in circular orbit</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>

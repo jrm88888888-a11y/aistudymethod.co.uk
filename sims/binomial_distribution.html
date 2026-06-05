@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binomial & Normal Distributions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg-elev-1: #11161f;
+  --bg-elev-2: #161d28;
+  --panel: #131923;
+  --panel-border: #1f2937;
+  --grid: #1a2230;
+  --text: #e6edf3;
+  --text-dim: #97a1b0;
+  --text-faint: #5b6573;
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.18);
+  --amber: #f59e0b;
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.20);
+  --green: #34d399;
+  --green-soft: rgba(52,211,153,0.18);
+  --violet: #a78bfa;
+  --gold: #fbbf24;
+  --shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; font-size: 13px; }
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--panel-border); }
+.topbar h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.topbar .sub { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+.kbd-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--panel-border); background: var(--bg-elev-1); color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 120ms ease; }
+.kbd-indicator:hover { color: var(--cyan); border-color: var(--cyan); }
+.kbd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.kbd-modal.open { display: flex; }
+.kbd-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 24px; min-width: 320px; max-width: 480px; box-shadow: var(--shadow); }
+.kbd-card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; }
+.kbd-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.kbd-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-elev-1); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--cyan); justify-self: start; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+input[type=range]:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.back { color: var(--text-dim); text-decoration: none; font-size: 12px; }
+.back:hover { color: var(--cyan); }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+.panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+.section-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--text-dim); margin: 0 0 10px; font-weight: 600; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: var(--grid); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.12); cursor: pointer; border: none; transition: box-shadow 120ms ease; }
+input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(34,211,238,0.18); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); cursor: pointer; border: none; }
+button { font-family: inherit; font-size: 13px; color: var(--text); background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all 120ms ease; }
+button:hover { background: var(--bg-elev-2); border-color: var(--cyan); }
+.seg { display: inline-flex; background: var(--bg-elev-1); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; padding: 6px 12px; border-radius: 999px; }
+.seg button.active { background: var(--cyan-soft); color: var(--cyan); }
+.control { margin-bottom: 14px; }
+.control-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.control-row .label { font-size: 12px; color: var(--text-dim); }
+.control-row .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.refs { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ref-chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev-2); color: var(--text-dim); cursor: pointer; border: 1px solid var(--panel-border); transition: all 120ms ease; }
+.ref-chip:hover { color: var(--cyan); border-color: var(--cyan); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.readout { background: var(--bg-elev-1); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid var(--panel-border); }
+.readout .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.readout .lbl[title] { cursor: help; border-bottom: 1px dashed var(--text-faint); }
+.readout .val { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; }
+.readout .val.cyan { color: var(--cyan); }
+.readout .val.amber { color: var(--amber); }
+.readout .val.green { color: var(--green); }
+.readout .val.violet { color: var(--violet); }
+.readout .val.rose { color: var(--rose); }
+.canvas-wrap { position: relative; width: 100%; height: 420px; cursor: ew-resize; }
+canvas { width: 100%; height: 100%; display: block; }
+.legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; }
+.explainer { background: var(--bg-elev-1); border-left: 2px solid var(--cyan); padding: 12px; font-size: 13px; color: var(--text-dim); border-radius: var(--r-sm); margin-top: 16px; line-height: 1.5; }
+.explainer .k { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+.title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.title-row h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.insight-banner { font-style: italic; font-size: 13px; color: var(--text-dim); border-left: 2px solid var(--cyan); padding: 6px 0 6px 10px; margin: 10px 0 0; line-height: 1.5; }
+.try-panel-section { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+.try-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 10px; }
+.try-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-buttons button { font-size: 12px; padding: 7px 12px; }
+.try-note { margin-top: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; opacity: 0; transition: opacity 250ms ease; }
+.try-note:not(:empty) { opacity: 1; }
+.try-note:empty { display: none; }
+.try-note strong { color: var(--text); }
+.related-footer { max-width: 1200px; margin: 48px auto 32px; padding: 24px; border-top: 1px solid var(--panel-border); }
+.related-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
+.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+.related-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--r-md); padding: 14px 16px; text-decoration: none; color: inherit; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; display: block; }
+.related-card:hover { border-color: var(--cyan); background: var(--bg-elev-2); transform: translateY(-1px); }
+.related-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.related-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.related-back { display: inline-block; color: var(--text-dim); font-size: 12px; text-decoration: none; margin-top: 8px; }
+.related-back:hover { color: var(--cyan); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.badge.good { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+.badge.poor { background: var(--rose-soft); color: var(--rose); border: 1px solid var(--rose); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="back" aria-label="Back to all simulations">← All simulations</a>
+  <div class="title-block">
+    <h1>Binomial &amp; Normal Distributions</h1>
+    <p class="sub">B(n, p), normal approximation, and cumulative probabilities</p>
+    <p class="insight-banner">The normal approximation N(np, np(1−p)) becomes valid when np ≥ 5 and n(1−p) ≥ 5. Drag k to read off cumulative probabilities P(X ≤ k).</p>
+  </div>
+  <button class="kbd-indicator" id="kbdHelpBtn" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+</header>
+
+<div class="kbd-modal" id="kbdModal" role="dialog" aria-modal="true" aria-labelledby="kbdModalTitle">
+  <div class="kbd-card">
+    <h3 id="kbdModalTitle">Keyboard shortcuts</h3>
+    <div class="kbd-list">
+      <span class="kbd-key">← →</span><span>Move k left / right</span>
+      <span class="kbd-key">↑ ↓</span><span>Increase / decrease n</span>
+      <span class="kbd-key">N</span><span>Toggle normal overlay</span>
+      <span class="kbd-key">R</span><span>Reset to defaults</span>
+      <span class="kbd-key">?</span><span>Show this help</span>
+      <span class="kbd-key">Esc</span><span>Close help</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <div class="title-row">
+        <h3 id="mainTitle">Binomial B(n, p)</h3>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span id="approxBadge"></span>
+          <label style="font-size:12px;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="showNormal" checked style="accent-color:var(--amber);"> Normal overlay
+          </label>
+        </div>
+      </div>
+      <div class="canvas-wrap" id="mainWrap"><canvas id="main"></canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--cyan)"></span>P(X = k) binomial</span>
+        <span class="legend-item"><span class="swatch" style="background:rgba(244,63,94,0.7)"></span>P(X ≤ k) cumulative region</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Normal approximation</span>
+        <span class="legend-item"><span class="swatch" style="background:rgba(167,139,250,0.7)"></span>Mean np</span>
+      </div>
+    </div>
+    <div class="explainer" id="explainer"></div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <p class="section-label">Distribution parameters</p>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="n: number of independent Bernoulli trials">Trials n</span>
+          <span class="value num" id="vN">20</span>
+        </div>
+        <input type="range" id="sliderN" min="1" max="60" step="1" value="20">
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="p: probability of success on each trial">Probability p</span>
+          <span class="value num" id="vP">0.50</span>
+        </div>
+        <input type="range" id="sliderP" min="0.01" max="0.99" step="0.01" value="0.50">
+        <div class="refs">
+          <span class="ref-chip" data-p="0.5">Fair coin</span>
+          <span class="ref-chip" data-p="0.167">Die 6</span>
+          <span class="ref-chip" data-p="0.1">Rare event</span>
+          <span class="ref-chip" data-p="0.9">High p</span>
+        </div>
+      </div>
+      <div class="control">
+        <div class="control-row">
+          <span class="label" title="k: threshold for the cumulative probability P(X ≤ k)">Threshold k</span>
+          <span class="value num" id="vK">10</span>
+        </div>
+        <input type="range" id="sliderK" min="0" max="60" step="1" value="10">
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <p class="section-label">Readouts</p>
+      <div class="readouts">
+        <div class="readout"><div class="lbl" title="Mean of the binomial distribution">Mean μ = np</div><div class="val cyan" id="rMean">10.00</div></div>
+        <div class="readout"><div class="lbl" title="Variance σ² = np(1−p)">Variance σ²</div><div class="val amber" id="rVar">5.00</div></div>
+        <div class="readout"><div class="lbl" title="Standard deviation σ = √(np(1−p))">Std dev σ</div><div class="val green" id="rSd">2.236</div></div>
+        <div class="readout"><div class="lbl" title="P(X = k): exact probability of exactly k successes">P(X = k)</div><div class="val violet" id="rPk">0.1762</div></div>
+        <div class="readout" style="grid-column:1/-1;"><div class="lbl" title="P(X ≤ k): cumulative distribution function">P(X ≤ k)</div><div class="val rose" id="rCdf" style="font-size:22px;">0.5881</div></div>
+      </div>
+    </div>
+
+    <div class="try-panel-section" style="margin-top:16px;">
+      <div class="try-label">Try this</div>
+      <div class="try-buttons">
+        <button data-try="fair_coin">Fair coin n=20</button>
+        <button data-try="skewed_small">Skewed, n small</button>
+        <button data-try="large_n">Large n, p=0.5</button>
+        <button data-try="rare_event">Rare event</button>
+      </div>
+      <div class="try-note" id="tryNote"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function fitCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+
+const state = {
+  n: 20,
+  p: 0.5,
+  k: 10,
+  showNormal: true
+};
+
+// ---- Maths ----
+
+// Log-binomial coefficient for numerical stability
+function logBinomCoeff(n, k) {
+  if (k < 0 || k > n) return -Infinity;
+  if (k === 0 || k === n) return 0;
+  let v = 0;
+  for (let i = 0; i < k; i++) v += Math.log(n - i) - Math.log(i + 1);
+  return v;
+}
+
+function binomPMF(n, p, k) {
+  if (k < 0 || k > n || !Number.isInteger(k)) return 0;
+  if (p === 0) return k === 0 ? 1 : 0;
+  if (p === 1) return k === n ? 1 : 0;
+  const lp = logBinomCoeff(n, k) + k * Math.log(p) + (n - k) * Math.log(1 - p);
+  return Math.exp(lp);
+}
+
+function normalPDF(x, mu, sigma) {
+  if (sigma <= 0) return 0;
+  const z = (x - mu) / sigma;
+  return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
+}
+
+// Error function approximation (Abramowitz & Stegun 7.1.26)
+function erf(x) {
+  const t = 1 / (1 + 0.3275911 * Math.abs(x));
+  const poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+  const v = 1 - poly * Math.exp(-x * x);
+  return x >= 0 ? v : -v;
+}
+
+function normalCDF(x, mu, sigma) {
+  return 0.5 * (1 + erf((x - mu) / (sigma * Math.sqrt(2))));
+}
+
+function computeAll() {
+  const { n, p } = state;
+  const pmf = [];
+  for (let x = 0; x <= n; x++) pmf.push(binomPMF(n, p, x));
+
+  const mu = n * p;
+  const variance = n * p * (1 - p);
+  const sigma = Math.sqrt(variance);
+
+  // Cumulative sum up to k
+  let cdf_k = 0;
+  for (let x = 0; x <= state.k && x <= n; x++) cdf_k += pmf[x];
+
+  const pk = state.k >= 0 && state.k <= n ? pmf[state.k] : 0;
+
+  return { pmf, mu, variance, sigma, cdf_k, pk };
+}
+
+function fmt4(v) { return isFinite(v) ? v.toFixed(4) : '—'; }
+function fmt3(v) { return isFinite(v) ? v.toFixed(3) : '—'; }
+
+function isGoodApprox() {
+  const { n, p } = state;
+  return n * p >= 5 && n * (1 - p) >= 5;
+}
+
+// ---- Draw ----
+function draw() {
+  const c = $('main');
+  const ctx = fitCanvas(c);
+  const W = c.getBoundingClientRect().width;
+  const H = c.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  const { n, p, k } = state;
+  const data = computeAll();
+  const { pmf, mu, sigma } = data;
+
+  const pad = { l: 52, r: 16, t: 20, b: 40 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const maxProb = Math.max(...pmf) * 1.15 || 0.01;
+
+  const xAt = x => pad.l + (x / n) * pw; // centered position for bar index x
+  const barW = pw / (n + 1);
+  const yAt = prob => pad.t + ph * (1 - prob / maxProb);
+
+  // Grid
+  ctx.strokeStyle = '#1a2230'; ctx.lineWidth = 1;
+  const yTicks = 5;
+  for (let i = 0; i <= yTicks; i++) {
+    const pv = maxProb * (yTicks - i) / yTicks;
+    const y = pad.t + ph * i / yTicks;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    ctx.fillStyle = '#5b6573'; ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(pv.toFixed(3), pad.l - 5, y);
+  }
+
+  // x-axis labels (skip some if n is large)
+  const step = n <= 20 ? 1 : n <= 40 ? 2 : 5;
+  ctx.fillStyle = '#5b6573'; ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let x = 0; x <= n; x += step) {
+    const cx = pad.l + (x + 0.5) * barW;
+    ctx.fillText(x, cx, H - pad.b + 4);
+  }
+  ctx.fillStyle = '#97a1b0'; ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('k (successes)', pad.l + pw / 2, H - pad.b + 20);
+
+  // Cumulative shading (region x <= k)
+  for (let x = 0; x <= n; x++) {
+    const bx = pad.l + x * barW;
+    const by = yAt(pmf[x]);
+    const bh = H - pad.b - by;
+    if (bh <= 0) continue;
+    if (x <= k) {
+      ctx.fillStyle = 'rgba(244,63,94,0.38)';
+      ctx.fillRect(bx, by, barW - 1, bh);
+    }
+  }
+
+  // Binomial bars
+  for (let x = 0; x <= n; x++) {
+    const bx = pad.l + x * barW;
+    const by = yAt(pmf[x]);
+    const bh = H - pad.b - by;
+    if (bh <= 0) continue;
+    const isK = x === k;
+    ctx.fillStyle = isK ? '#22d3ee' : x <= k ? 'rgba(34,211,238,0.55)' : 'rgba(34,211,238,0.30)';
+    ctx.fillRect(bx + 1, by, barW - 2, bh);
+    ctx.strokeStyle = isK ? '#22d3ee' : 'rgba(34,211,238,0.5)';
+    ctx.lineWidth = isK ? 1.5 : 0.5;
+    ctx.strokeRect(bx + 1, by, barW - 2, bh);
+  }
+
+  // Normal overlay
+  if (state.showNormal && sigma > 0) {
+    ctx.beginPath();
+    const NP = 400;
+    let first = true;
+    for (let i = 0; i <= NP; i++) {
+      const xv = -0.5 + (n + 1) * i / NP; // over full range
+      const yv = normalPDF(xv, mu, sigma);
+      const cx = pad.l + (xv + 0.5) * barW;
+      // Normal PDF evaluated in bar-index units (bar width = 1), so P(X=k) ≈ PDF(k)×1
+      const scaledY = yAt(yv);
+      if (scaledY < pad.t || scaledY > H - pad.b) { first = true; continue; }
+      if (first) { ctx.moveTo(cx, scaledY); first = false; } else ctx.lineTo(cx, scaledY);
+    }
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2.2; ctx.stroke();
+  }
+
+  // Mean line
+  const meanX = pad.l + (mu + 0.5) * barW;
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(meanX, pad.t); ctx.lineTo(meanX, H - pad.b); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#a78bfa'; ctx.font = 'bold 11px JetBrains Mono';
+  ctx.textAlign = meanX > pad.l + pw * 0.7 ? 'right' : 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('μ = ' + mu.toFixed(2), meanX + (meanX > pad.l + pw * 0.7 ? -5 : 5), pad.t + 4);
+
+  // k indicator
+  if (k >= 0 && k <= n) {
+    const kx = pad.l + (k + 0.5) * barW;
+    ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px JetBrains Mono';
+    ctx.textAlign = kx > pad.l + pw * 0.75 ? 'right' : 'center';
+    ctx.textBaseline = 'bottom';
+    const ky = Math.min(yAt(pmf[k]) - 4, H - pad.b - 20);
+    ctx.fillText('k=' + k, kx, ky);
+  }
+
+  // Border
+  ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l, pad.t, pw, ph);
+}
+
+function updateReadouts() {
+  const data = computeAll();
+  const { mu, variance, sigma, cdf_k, pk } = data;
+  const { n, p, k } = state;
+
+  $('vN').textContent = n;
+  $('vP').textContent = p.toFixed(2);
+  $('vK').textContent = k;
+
+  $('rMean').textContent = mu.toFixed(3);
+  $('rVar').textContent = variance.toFixed(3);
+  $('rSd').textContent = sigma.toFixed(3);
+  $('rPk').textContent = fmt4(pk);
+  $('rCdf').textContent = fmt4(cdf_k);
+
+  const good = isGoodApprox();
+  const badge = $('approxBadge');
+  badge.className = 'badge ' + (good ? 'good' : 'poor');
+  badge.textContent = good ? 'Good normal approx' : 'Poor normal approx';
+  $('mainTitle').textContent = `Binomial B(${n}, ${p.toFixed(2)})`;
+
+  // Adjust k slider max
+  $('sliderK').max = n;
+  if (state.k > n) { state.k = n; $('sliderK').value = n; $('vK').textContent = n; }
+
+  const normCDF_k = normalCDF(k + 0.5, mu, sigma); // continuity correction
+
+  let txt = `<span class="k">X ~ B(${n}, ${p.toFixed(2)})</span> — mean <span class="k">μ = np = ${mu.toFixed(3)}</span>, variance <span class="k">σ² = np(1−p) = ${variance.toFixed(3)}</span>. `;
+  txt += `<span class="k">P(X = ${k}) = C(${n},${k}) × ${p.toFixed(2)}^${k} × ${(1-p).toFixed(2)}^${n-k} = ${fmt4(pk)}</span>. `;
+  txt += `Cumulative <span class="k">P(X ≤ ${k}) = ${fmt4(cdf_k)}</span>. `;
+  if (state.showNormal && sigma > 0) {
+    txt += `Normal approx (with continuity correction) gives <span class="k">Φ((${k}+0.5 − ${mu.toFixed(2)}) / ${sigma.toFixed(3)}) = ${normCDF_k.toFixed(4)}</span>. `;
+    if (!good) txt += '<span class="k">np = ' + mu.toFixed(1) + '</span> or <span class="k">n(1−p) = ' + (n*(1-p)).toFixed(1) + '</span> is below 5 — the normal fit is poor.';
+    else txt += 'Both np ≥ 5 and n(1−p) ≥ 5, so the normal approximation is reliable.';
+  }
+  $('explainer').innerHTML = txt;
+}
+
+function redraw() {
+  draw();
+  updateReadouts();
+}
+
+// ---- Controls ----
+$('sliderN').addEventListener('input', e => {
+  state.n = parseInt(e.target.value);
+  if (state.k > state.n) state.k = state.n;
+  $('sliderK').max = state.n;
+  $('sliderK').value = state.k;
+  redraw();
+});
+$('sliderP').addEventListener('input', e => {
+  state.p = parseFloat(e.target.value);
+  redraw();
+});
+$('sliderK').addEventListener('input', e => {
+  state.k = parseInt(e.target.value);
+  redraw();
+});
+$('showNormal').addEventListener('change', e => {
+  state.showNormal = e.target.checked;
+  redraw();
+});
+
+document.querySelectorAll('.ref-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    const p = parseFloat(c.dataset.p);
+    state.p = p;
+    $('sliderP').value = p;
+    redraw();
+  });
+});
+
+// Drag on canvas to set k
+(function setupDrag() {
+  const wrap = $('mainWrap');
+  let dragging = false;
+  function kFromX(e) {
+    const rect = wrap.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const pad_l = 52;
+    const barW = (rect.width - pad_l - 16) / (state.n + 1);
+    const idx = Math.round((clientX - rect.left - pad_l) / barW - 0.5);
+    return Math.max(0, Math.min(state.n, idx));
+  }
+  wrap.addEventListener('mousedown', e => { dragging = true; state.k = kFromX(e); $('sliderK').value = state.k; redraw(); });
+  window.addEventListener('mousemove', e => { if (!dragging) return; state.k = kFromX(e); $('sliderK').value = state.k; redraw(); });
+  window.addEventListener('mouseup', () => { dragging = false; });
+  wrap.addEventListener('touchstart', e => { dragging = true; state.k = kFromX(e); $('sliderK').value = state.k; redraw(); }, { passive: true });
+  window.addEventListener('touchmove', e => { if (!dragging) return; state.k = kFromX(e); $('sliderK').value = state.k; redraw(); }, { passive: true });
+  window.addEventListener('touchend', () => { dragging = false; });
+})();
+
+// ---- Try this ----
+const tryPresets = {
+  fair_coin: { n: 20, p: 0.5, k: 10,
+    note: '<strong>B(20, 0.5)</strong>: symmetric, np = 10, n(1−p) = 10. Both ≥ 5 so the normal N(10, 5) is an excellent fit.' },
+  skewed_small: { n: 8, p: 0.1, k: 2,
+    note: '<strong>B(8, 0.1)</strong>: np = 0.8, well below 5 — the distribution is strongly skewed and the normal approximation fails.' },
+  large_n: { n: 50, p: 0.5, k: 25,
+    note: '<strong>B(50, 0.5)</strong>: with large n the bars almost perfectly follow the bell curve. The Central Limit Theorem in action.' },
+  rare_event: { n: 40, p: 0.1, k: 6,
+    note: '<strong>B(40, 0.1)</strong>: np = 4, n(1−p) = 36. Just below the threshold — note the mild right skew despite the large sample.' }
+};
+
+document.querySelectorAll('.try-buttons button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = tryPresets[b.dataset.try];
+    if (!cfg) return;
+    state.n = cfg.n; $('sliderN').value = cfg.n;
+    state.p = cfg.p; $('sliderP').value = cfg.p;
+    state.k = Math.min(cfg.k, cfg.n); $('sliderK').value = state.k; $('sliderK').max = cfg.n;
+    redraw();
+    $('tryNote').innerHTML = cfg.note;
+  });
+});
+
+// ---- Keyboard ----
+(function setupKbd() {
+  const modal = $('kbdModal');
+  const openModal = () => modal.classList.add('open');
+  const closeModal = () => modal.classList.remove('open');
+  $('kbdHelpBtn').addEventListener('click', openModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  function reset() {
+    state.n = 20; state.p = 0.5; state.k = 10; state.showNormal = true;
+    $('sliderN').value = 20; $('sliderP').value = 0.5; $('sliderK').value = 10; $('sliderK').max = 20;
+    $('showNormal').checked = true;
+    redraw();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === '?') { e.preventDefault(); openModal(); return; }
+    if (modal.classList.contains('open')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const key = e.key;
+    if (key === 'ArrowRight') {
+      state.k = Math.min(state.n, state.k + 1);
+      $('sliderK').value = state.k; redraw();
+    } else if (key === 'ArrowLeft') {
+      state.k = Math.max(0, state.k - 1);
+      $('sliderK').value = state.k; redraw();
+    } else if (key === 'ArrowUp') {
+      e.preventDefault();
+      state.n = Math.min(60, state.n + 1);
+      $('sliderN').value = state.n; $('sliderK').max = state.n; redraw();
+    } else if (key === 'ArrowDown') {
+      e.preventDefault();
+      state.n = Math.max(1, state.n - 1);
+      if (state.k > state.n) state.k = state.n;
+      $('sliderN').value = state.n; $('sliderK').max = state.n; $('sliderK').value = state.k; redraw();
+    } else if (key.toLowerCase() === 'n') {
+      state.showNormal = !state.showNormal;
+      $('showNormal').checked = state.showNormal;
+      redraw();
+    } else if (key.toLowerCase() === 'r') {
+      reset();
+    }
+  });
+})();
+
+window.addEventListener('resize', redraw);
+redraw();
+</script>
+
+<footer class="related-footer">
+  <div class="related-label">EXPLORE NEXT</div>
+  <div class="related-grid">
+    <a class="related-card" href="derivative_slope.html">
+      <div class="related-title">Differentiation: The Slope of a Curve</div>
+      <div class="related-desc">Tangent lines and the gradient function — foundation of calculus</div>
+    </a>
+    <a class="related-card" href="clt_sampler.html">
+      <div class="related-title">Central Limit Theorem</div>
+      <div class="related-desc">Why sample means are normally distributed regardless of the parent distribution</div>
+    </a>
+    <a class="related-card" href="eigenvalue_vis.html">
+      <div class="related-title">Eigenvalues &amp; Eigenvectors</div>
+      <div class="related-desc">Visualise how matrices transform space and find invariant directions</div>
+    </a>
+  </div>
+  <a class="related-back" href="index.html">← Back to all simulations</a>
+</footer>
+</body>
+</html>
