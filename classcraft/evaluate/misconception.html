@@ -21,11 +21,17 @@
   .em-opt-letter { display:inline-block; font-family:'DM Mono',monospace; font-size:11px; font-weight:700; color:var(--accent); margin-right:10px; letter-spacing:1px; }
   .em-opt:hover { border-color:var(--accent); background:var(--accent-soft); }
   .em-opt.selected { border-color:var(--accent); background:var(--accent-soft); }
-  .em-opt.correct-mc { border-color:#0a6b5e; background:rgba(10,107,94,0.12); }
-  .em-opt.wrong-pick { border-color:#c2410c; background:rgba(194,65,12,0.10); }
+  /* Picked correctly (you spotted the misconception) — green tick */
+  .em-opt.picked-correct { border-color:#0a6b5e; background:rgba(10,107,94,0.14); box-shadow:0 0 0 3px rgba(10,107,94,0.10); }
+  /* Picked wrong (you picked the correct fact, or a random wrong) — red cross */
+  .em-opt.picked-wrong { border-color:#c2410c; background:rgba(194,65,12,0.10); }
+  /* The misconception you SHOULD have spotted, when you picked something else — amber highlight */
+  .em-opt.is-misconception { border-color:#d97706; background:rgba(217,119,6,0.10); }
+  /* The factually correct answer — calm neutral teal border (so the truth never looks "wrong") */
+  .em-opt.is-correct-fact { border-color:rgba(10,107,94,0.45); background:rgba(10,107,94,0.04); }
   .em-tag { display:inline-block; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.2px; text-transform:uppercase; font-weight:700; padding:2px 8px; border-radius:4px; margin-left:8px; vertical-align:middle; }
   .em-tag-correct { background:#0a6b5e; color:#fff; }
-  .em-tag-misconception { background:#c2410c; color:#fff; }
+  .em-tag-misconception { background:#d97706; color:#fff; }
   .em-tag-random { background:var(--text-muted); color:#fff; }
   .em-btn { background:var(--velvet-gradient); color:#fff; border:none; padding:14px 24px; border-radius:10px; font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer; box-shadow:0 4px 12px var(--accent-glow); }
   .em-btn:disabled { opacity:0.45; cursor:not-allowed; }
@@ -174,14 +180,23 @@
 
     submit.addEventListener('click', () => {
       const correct = picked === 'misconception';
-      // Reveal: tag each option (disable both pointer + keyboard activation)
+      // Reveal: colour each option by what it IS, then overlay the picked state.
+      // Rule: green only ever means "you got the game right" (you picked the misconception).
+      // The misconception itself, when you missed it, gets amber. The correct fact never goes red.
+      const userWasRight = picked === 'misconception';
       root.querySelectorAll('.em-opt').forEach(b => {
         b.style.pointerEvents = 'none';
         b.disabled = true;
         const role = b.dataset.role;
-        if (role === 'misconception') b.classList.add('correct-mc');
-        else if (role === picked) b.classList.add('wrong-pick');
-        const tag = role === 'misconception' ? 'misconception' : role === 'correct' ? 'correct' : 'random wrong';
+        const isPicked = role === picked;
+        // Base colour by role
+        if (role === 'correct') b.classList.add('is-correct-fact');
+        else if (role === 'misconception' && !isPicked) b.classList.add('is-misconception');
+        // Picked overlay
+        if (isPicked) {
+          b.classList.add(userWasRight ? 'picked-correct' : 'picked-wrong');
+        }
+        const tag = role === 'misconception' ? 'misconception' : role === 'correct' ? 'correct fact' : 'random wrong';
         const cls = role === 'misconception' ? 'em-tag-misconception' : role === 'correct' ? 'em-tag-correct' : 'em-tag-random';
         b.insertAdjacentHTML('beforeend', `<span class="em-tag ${cls}">${tag}</span>`);
       });
