@@ -112,6 +112,28 @@
     return;
   }
 
+  // Detect placeholder content — refuse to render rather than serve template-y MCQs.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const placeholderCount = (spec.concepts || []).filter(c => PLACEHOLDER_DEF_RE.test(c.def || '')).length;
+  if (placeholderCount >= 2) {
+    const topicName = spec.topic_display || spec.title || stem;
+    const levelLbl = (spec.level || '').toUpperCase().replace('A-LEVEL','A-Level');
+    const subjLbl = (spec.subject || '').replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+    root.innerHTML = `
+      <div class="eq-badge">E · Evaluate · Confidence Quiz</div>
+      <h1 class="eq-title">${escapeHtml(topicName)}</h1>
+      <p class="eq-sub">Topic-specific questions for this concept set are still being authored — generic placeholder questions wouldn't earn their place on the site. Come back soon.</p>
+      <div class="eq-meta">${escapeHtml(levelLbl)} · ${escapeHtml(subjLbl)} · In production</div>
+      <div class="eq-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">📝</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;margin:0 0 8px">Questions in production</h2>
+        <p style="color:var(--text-secondary);margin:0 0 18px;font-size:15px;">A confidence-calibrated quiz needs distinctive, topic-specific MCQs. The question set for this exact topic hasn't been authored at the required depth yet.</p>
+        <a href="../../subjects.html" style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
   // Build the question list: 2 MCQs + 1 numerical + 1 free-text from the spec
   const questions = [];
   (spec.mcqs || []).slice(0, 2).forEach(m => {

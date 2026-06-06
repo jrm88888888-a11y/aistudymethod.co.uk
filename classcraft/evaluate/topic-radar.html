@@ -109,6 +109,27 @@
     root.innerHTML = '<div class="er-error">Not enough concepts in this spec to build a radar.</div>';
     return;
   }
+  // Detect placeholder defs — these produce visibly poor MCQs as 4 options.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const placeholderCount = concepts.filter(c => PLACEHOLDER_DEF_RE.test(c.def || '')).length;
+  if (placeholderCount >= 2) {
+    const topicName = spec.topic_display || spec.title || stem;
+    const levelLbl = (spec.level || '').toUpperCase().replace('A-LEVEL','A-Level');
+    const subjLbl = (spec.subject || '').replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+    root.innerHTML = `
+      <div class="er-badge">E · Evaluate · Topic Radar</div>
+      <h1 class="er-title">${escapeHtml(topicName)}</h1>
+      <p class="er-sub">Topic-specific concepts for the radar are still being authored for this topic — generic placeholders wouldn't earn their place. Come back soon.</p>
+      <div class="er-meta">${escapeHtml(levelLbl)} · ${escapeHtml(subjLbl)} · In production</div>
+      <div class="er-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">📡</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;margin:0 0 8px">Concepts in production</h2>
+        <p style="color:var(--text-secondary);margin:0 0 18px;font-size:15px;">A topic radar needs six distinctive concepts to plot. The concept set for this topic hasn't been authored at the required depth yet.</p>
+        <p style="font-size:13px;color:var(--text-muted);">In the meantime, try the <a href="confidence-quiz.html?spec=${encodeURIComponent(stem)}" style="color:var(--accent);">Confidence Quiz</a> for the same topic.</p>
+      </div>
+    `;
+    return;
+  }
 
   const topic = spec.topic_display || spec.title || 'this topic';
   const level = (spec.level || '').toUpperCase().replace('A-LEVEL','A-Level');

@@ -1161,6 +1161,7 @@ a.resource-card:focus-visible { outline: 2px solid var(--accent); outline-offset
 
 <script src="script.js"></script>
 <script src="classcraft/evaluate/misconception-ready.js"></script>
+<script src="classcraft/evaluate/real-content-ready.js"></script>
 <script src="classcraft/explore/edge-case-ready.js"></script>
 <script src="classcraft/explore/historical-context-ready.js"></script>
 <script src="resources.js"></script>
@@ -3004,6 +3005,23 @@ function showFilteredView() {
    if (r.typeDisplay === 'Historical Context' && window.HISTORICAL_CONTEXT_READY) {
      const stem = (r.id || '').replace(/-historical-context$/, '');
      if (!window.HISTORICAL_CONTEXT_READY.has(stem)) return false;
+   }
+   // Mini-Lessons + Confidence Quiz + Topic Radar all use the spec's concept defs as MCQ options.
+   // If the spec has placeholder defs ("A central idea in X"), those MCQs look terrible —
+   // gate them behind the real-content whitelist so they don't appear in browse.
+   if (window.REAL_CONTENT_READY) {
+     if (r.typeDisplay === 'Mini-Lesson') {
+       const stem = (r.id || '').replace(/-(learn|verify|view|evaluate|explore|transform)$/, '');
+       if (!window.REAL_CONTENT_READY.has(stem)) return false;
+     }
+     if (r.typeDisplay === 'Confidence Quiz') {
+       const stem = (r.id || '').replace(/-confidence-quiz$/, '');
+       if (!window.REAL_CONTENT_READY.has(stem)) return false;
+     }
+     if (r.typeDisplay === 'Topic Radar') {
+       const stem = (r.id || '').replace(/-topic-radar$/, '');
+       if (!window.REAL_CONTENT_READY.has(stem)) return false;
+     }
    }
    return (state.subject  === 'all' || r.subject  === state.subject)
        && (state.level    === 'all' || r.level    === state.level)
