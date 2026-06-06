@@ -203,9 +203,11 @@
     conf.addEventListener('input', () => confDisp.textContent = conf.value + '%');
 
     let chosen = null;
+    let phase = 'answer'; // 'answer' or 'next'
     if (q.kind === 'mcq') {
       root.querySelectorAll('.eq-opt').forEach(b => {
         b.addEventListener('click', () => {
+          if (phase !== 'answer') return;
           root.querySelectorAll('.eq-opt').forEach(x => x.classList.remove('selected'));
           b.classList.add('selected');
           chosen = parseInt(b.dataset.idx);
@@ -215,58 +217,63 @@
     } else {
       const ans = document.getElementById('ans');
       ans.addEventListener('input', () => {
+        if (phase !== 'answer') return;
         chosen = ans.value;
         submit.disabled = !ans.value.trim();
       });
     }
 
     submit.addEventListener('click', () => {
-      let correct = false;
-      let userText = '';
-      if (q.kind === 'mcq') {
-        correct = chosen === q.correctIdx;
-        userText = q.options[chosen]?.text || '';
-        root.querySelectorAll('.eq-opt').forEach((b, i) => {
-          b.style.pointerEvents = 'none';
-          if (i === q.correctIdx) b.classList.add('correct');
-          else if (i === chosen) b.classList.add('wrong');
-        });
-      } else if (q.kind === 'num') {
-        const v = parseFloat(chosen);
-        correct = !isNaN(v) && Math.abs(v - q.answer) <= (q.tolerance || 0.0001);
-        userText = String(chosen);
-      } else {
-        const u = String(chosen || '').trim().toLowerCase();
-        const ans = String(q.answer || '').toLowerCase();
-        // Exact match, or whole-word match for answers >= 4 chars (avoid "h" matching "the")
-        let wordMatch = false;
-        if (ans.length >= 4) {
-          const safe = ans.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          wordMatch = new RegExp(`\\b${safe}\\b`).test(u);
+      if (phase === 'answer') {
+        // Reveal phase — assess answer + show feedback
+        let correct = false;
+        let userText = '';
+        if (q.kind === 'mcq') {
+          correct = chosen === q.correctIdx;
+          userText = q.options[chosen]?.text || '';
+          root.querySelectorAll('.eq-opt').forEach((b, i) => {
+            b.style.pointerEvents = 'none';
+            b.disabled = true;
+            if (i === q.correctIdx) b.classList.add('correct');
+            else if (i === chosen) b.classList.add('wrong');
+          });
+        } else if (q.kind === 'num') {
+          const v = parseFloat(chosen);
+          correct = !isNaN(v) && Math.abs(v - q.answer) <= (q.tolerance || 0.0001);
+          userText = String(chosen);
+        } else {
+          const u = String(chosen || '').trim().toLowerCase();
+          const ans = String(q.answer || '').toLowerCase();
+          // Exact match, or whole-word match for answers >= 4 chars (avoid "h" matching "the")
+          let wordMatch = false;
+          if (ans.length >= 4) {
+            const safe = ans.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            wordMatch = new RegExp(`\\b${safe}\\b`).test(u);
+          }
+          correct = u === ans || wordMatch;
+          userText = String(chosen);
         }
-        correct = u === ans || wordMatch;
-        userText = String(chosen);
-      }
-      const confidence = parseInt(conf.value);
-      state.answers.push({ q: q.q, correct, confidence, userText, kind: q.kind });
+        const confidence = parseInt(conf.value);
+        state.answers.push({ q: q.q, correct, confidence, userText, kind: q.kind });
 
-      const fb = document.getElementById('fb');
-      fb.className = 'eq-feedback ' + (correct ? 'ok' : 'no');
-      const right = q.kind === 'mcq' ? q.options[q.correctIdx].text : String(q.answer);
-      fb.innerHTML = correct
-        ? `<strong>Correct.</strong> You said you were ${confidence}% sure.`
-        : `<strong>Not quite.</strong> Correct answer: <em>${escapeHtml(right)}</em>. You said you were ${confidence}% sure.`;
+        const fb = document.getElementById('fb');
+        fb.className = 'eq-feedback ' + (correct ? 'ok' : 'no');
+        const right = q.kind === 'mcq' ? q.options[q.correctIdx].text : String(q.answer);
+        fb.innerHTML = correct
+          ? `<strong>Correct.</strong> You said you were ${confidence}% sure.`
+          : `<strong>Not quite.</strong> Correct answer: <em>${escapeHtml(right)}</em>. You said you were ${confidence}% sure.`;
 
-      submit.textContent = state.idx + 1 < questions.length ? 'Next →' : 'See calibration report →';
-      submit.disabled = false;
-      const nextStep = () => {
+        submit.textContent = state.idx + 1 < questions.length ? 'Next →' : 'See calibration report →';
+        submit.disabled = false;
+        phase = 'next';
+      } else {
+        // Advance phase
         if (state.idx + 1 < questions.length) {
           state.idx++; renderQuestion();
         } else {
           renderSummary();
         }
-      };
-      submit.onclick = nextStep;
+      }
     });
   }
 

@@ -187,8 +187,10 @@
     self.addEventListener('input', () => selfDisp.textContent = self.value + ' / 5');
 
     let chosen = null;
+    let phase = 'answer'; // 'answer' or 'next'
     root.querySelectorAll('.er-opt').forEach(b => {
       b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
         root.querySelectorAll('.er-opt').forEach(x => x.classList.remove('selected'));
         b.classList.add('selected');
         chosen = parseInt(b.dataset.idx);
@@ -197,22 +199,27 @@
     });
 
     submit.addEventListener('click', () => {
-      const correct = chosen === q.correctIdx;
-      root.querySelectorAll('.er-opt').forEach((b, i) => {
-        b.style.pointerEvents = 'none';
-        if (i === q.correctIdx) b.classList.add('correct');
-        else if (i === chosen) b.classList.add('wrong');
-      });
-      state.scores.push(correct ? 1 : 0);
-      state.selfRatings.push(parseInt(self.value));
-      submit.textContent = state.idx + 1 < questions.length ? 'Next →' : 'See the radar →';
-      submit.onclick = () => {
+      if (phase === 'answer') {
+        // Reveal phase
+        const correct = chosen === q.correctIdx;
+        root.querySelectorAll('.er-opt').forEach((b, i) => {
+          b.style.pointerEvents = 'none';
+          b.disabled = true;
+          if (i === q.correctIdx) b.classList.add('correct');
+          else if (i === chosen) b.classList.add('wrong');
+        });
+        state.scores.push(correct ? 1 : 0);
+        state.selfRatings.push(parseInt(self.value));
+        submit.textContent = state.idx + 1 < questions.length ? 'Next →' : 'See the radar →';
+        phase = 'next';
+      } else {
+        // Advance phase
         if (state.idx + 1 < questions.length) {
           state.idx++; renderQuestion();
         } else {
           renderSummary();
         }
-      };
+      }
     });
   }
 

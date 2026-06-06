@@ -169,8 +169,10 @@
 
     const submit = document.getElementById('submit');
     let picked = null;
+    let phase = 'answer'; // 'answer' or 'next'
     root.querySelectorAll('.em-opt').forEach(b => {
       b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
         root.querySelectorAll('.em-opt').forEach(x => x.classList.remove('selected'));
         b.classList.add('selected');
         picked = b.dataset.role;
@@ -179,42 +181,41 @@
     });
 
     submit.addEventListener('click', () => {
-      const correct = picked === 'misconception';
-      // Reveal: colour each option by what it IS, then overlay the picked state.
-      // Rule: green only ever means "you got the game right" (you picked the misconception).
-      // The misconception itself, when you missed it, gets amber. The correct fact never goes red.
-      const userWasRight = picked === 'misconception';
-      root.querySelectorAll('.em-opt').forEach(b => {
-        b.style.pointerEvents = 'none';
-        b.disabled = true;
-        const role = b.dataset.role;
-        const isPicked = role === picked;
-        // Base colour by role
-        if (role === 'correct') b.classList.add('is-correct-fact');
-        else if (role === 'misconception' && !isPicked) b.classList.add('is-misconception');
-        // Picked overlay
-        if (isPicked) {
-          b.classList.add(userWasRight ? 'picked-correct' : 'picked-wrong');
-        }
-        const tag = role === 'misconception' ? 'misconception' : role === 'correct' ? 'correct fact' : 'random wrong';
-        const cls = role === 'misconception' ? 'em-tag-misconception' : role === 'correct' ? 'em-tag-correct' : 'em-tag-random';
-        b.insertAdjacentHTML('beforeend', `<span class="em-tag ${cls}">${tag}</span>`);
-      });
+      if (phase === 'answer') {
+        // Reveal phase
+        const correct = picked === 'misconception';
+        const userWasRight = picked === 'misconception';
+        root.querySelectorAll('.em-opt').forEach(b => {
+          b.style.pointerEvents = 'none';
+          b.disabled = true;
+          const role = b.dataset.role;
+          const isPicked = role === picked;
+          if (role === 'correct') b.classList.add('is-correct-fact');
+          else if (role === 'misconception' && !isPicked) b.classList.add('is-misconception');
+          if (isPicked) {
+            b.classList.add(userWasRight ? 'picked-correct' : 'picked-wrong');
+          }
+          const tag = role === 'misconception' ? 'misconception' : role === 'correct' ? 'correct fact' : 'random wrong';
+          const cls = role === 'misconception' ? 'em-tag-misconception' : role === 'correct' ? 'em-tag-correct' : 'em-tag-random';
+          b.insertAdjacentHTML('beforeend', `<span class="em-tag ${cls}">${tag}</span>`);
+        });
 
-      state.results.push({ q: item.q, correct, misconception: item.misconception, why: item.why || '' });
+        state.results.push({ q: item.q, correct, misconception: item.misconception, why: item.why || '' });
 
-      const fb = document.getElementById('fb');
-      fb.className = 'em-feedback ' + (correct ? 'ok' : 'no');
-      fb.innerHTML = correct
-        ? `<strong>You spotted it.</strong> ${item.why ? `<div class="em-why">${escapeHtml(item.why)}</div>` : ''}`
-        : `<strong>Not quite.</strong> The classic misconception was: <em>${escapeHtml(item.misconception)}</em>. ${item.why ? `<div class="em-why">${escapeHtml(item.why)}</div>` : ''}`;
+        const fb = document.getElementById('fb');
+        fb.className = 'em-feedback ' + (correct ? 'ok' : 'no');
+        fb.innerHTML = correct
+          ? `<strong>You spotted it.</strong> ${item.why ? `<div class="em-why">${escapeHtml(item.why)}</div>` : ''}`
+          : `<strong>Not quite.</strong> The classic misconception was: <em>${escapeHtml(item.misconception)}</em>. ${item.why ? `<div class="em-why">${escapeHtml(item.why)}</div>` : ''}`;
 
-      submit.textContent = state.idx + 1 < items.length ? 'Next →' : 'See summary →';
-      submit.disabled = false;
-      submit.onclick = () => {
+        submit.textContent = state.idx + 1 < items.length ? 'Next →' : 'See summary →';
+        submit.disabled = false;
+        phase = 'next';
+      } else {
+        // Advance phase
         if (state.idx + 1 < items.length) { state.idx++; renderItem(); }
         else renderSummary();
-      };
+      }
     });
   }
 
