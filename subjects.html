@@ -2930,10 +2930,48 @@ function esc(s) {
    .replace(/'/g, '&#39;');
 }
 
-// Build the HTML for a single resource card from a RESOURCES entry
+// One href can be served by multiple RESOURCES entries that differ only in stage —
+// e.g. each Mini-Lesson HTML file has a "Learn" entry AND a "Verify" entry. Rather
+// than rendering two near-identical cards in the catalog, we collapse them into one
+// card that shows ALL stage tags the lesson serves. HREF_STAGES is a precomputed
+// lookup so cardHTML doesn't scan RESOURCES on every call.
+let _HREF_STAGES = null;
+function getHrefStages() {
+ if (_HREF_STAGES) return _HREF_STAGES;
+ const m = new Map();
+ for (const r of RESOURCES) {
+   if (!r.href) continue;
+   if (!m.has(r.href)) m.set(r.href, []);
+   const list = m.get(r.href);
+   if (r.stageDisplay && !list.includes(r.stageDisplay)) list.push(r.stageDisplay);
+ }
+ _HREF_STAGES = m;
+ return m;
+}
+
+// Remove entries that share an href with a previously-seen entry — keeps the first.
+// Used after filtering so a Learn/Verify mini-lesson appears once, not twice.
+function dedupeByHref(items) {
+ const seen = new Set();
+ return items.filter(r => {
+   const key = r.href || ('__noh__' + Math.random());
+   if (seen.has(key)) return false;
+   seen.add(key);
+   return true;
+ });
+}
+
+// Build the HTML for a single resource card from a RESOURCES entry.
+// All stages this href serves are rendered as separate badges so a Mini-Lesson
+// that doubles as Learn + Verify displays both tags, not just one.
 function cardHTML(r) {
  const isBook = r.type === 'prompt-book';
  const targetAttrs = isBook ? ' target="_blank" rel="noopener"' : '';
+ const stages = (r.href && getHrefStages().get(r.href)) || [r.stageDisplay];
+ const stageBadges = stages
+   .filter(Boolean)
+   .map(s => '<span class="card-badge badge-stage">' + esc(s) + '</span>')
+   .join('');
  return '<a href="' + esc(r.href) + '" class="resource-card"' + targetAttrs
    + ' data-subject="' + esc(r.subject) + '"'
    + ' data-level="'   + esc(r.level)   + '"'
@@ -2943,7 +2981,7 @@ function cardHTML(r) {
    + '<div class="card-badges">'
      + '<span class="card-badge badge-type">'  + esc(r.typeDisplay)  + '</span>'
      + '<span class="card-badge badge-level">' + esc(r.levelDisplay) + '</span>'
-     + '<span class="card-badge badge-stage">' + esc(r.stageDisplay) + '</span>'
+     + stageBadges
    + '</div>'
    + '<div class="card-subject">' + esc(r.subjectDisplay) + '</div>'
    + '<div class="card-title">'   + esc(r.title)          + '</div>'
@@ -3053,8 +3091,13 @@ function showFilteredView() {
    return;
  }
 
+ // Same href, multiple stages → one card. cardHTML pulls every stage tag from
+ // HREF_STAGES so a Mini-Lesson tagged Learn + Verify renders as a single
+ // card with both badges, instead of two near-identical entries.
+ const deduped = dedupeByHref(matching);
+
  noRes.classList.remove('visible');
- grid.innerHTML = matching.map(cardHTML).join('');
+ grid.innerHTML = deduped.map(cardHTML).join('');
 
  const parts = [];
  if (state.format !== 'all') {
@@ -3074,8 +3117,8 @@ function showFilteredView() {
  }
 
  document.getElementById('filteredTitle').textContent = parts.length ? parts.join(' · ') : 'All Resources';
- document.getElementById('resultCount').textContent  = matching.length + ' resource' + (matching.length !== 1 ? 's' : '');
- document.getElementById('filterCount').textContent  = matching.length + ' result'   + (matching.length !== 1 ? 's' : '');
+ document.getElementById('resultCount').textContent  = deduped.length + ' resource' + (deduped.length !== 1 ? 's' : '');
+ document.getElementById('filterCount').textContent  = deduped.length + ' result'   + (deduped.length !== 1 ? 's' : '');
 
  filtView.classList.add('visible');
 }
