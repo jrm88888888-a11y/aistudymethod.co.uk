@@ -2991,6 +2991,17 @@ function showFilteredView() {
      state.board === 'all' ||
      boardList.includes(state.board) ||
      (state.board !== 'general' && boardList.includes('general'));
+   // Deduplicate: each topic has -adventure-1/-2/-3 specs. Mini-Lessons and the engine
+   // cards (Confidence Quiz / Topic Radar / Misconception / Edge-Case / Historical Context)
+   // are byte-identical across the 3 adventures since the library has one entry per topic.
+   // Show only the -adventure-1 variant in browse; direct URLs to -2/-3 still resolve.
+   const DEDUPE_TYPES = ['Mini-Lesson','Confidence Quiz','Topic Radar','Misconception Detector','Edge-Case Showcase','Historical Context'];
+   if (DEDUPE_TYPES.includes(r.typeDisplay)) {
+     // Card id looks like: <subject>-<level>-<board>-<topic>-adventure-<n>-<suffix>
+     // Suffix is -learn / -verify for mini-lessons, -confidence-quiz / -topic-radar / etc for engines
+     if (!/-adventure-1-/.test(r.id || '')) return false;
+   }
+
    // Hide low-quality / not-yet-authored content from browse. Engine files still exist
    // and serve their "in production" state if visited directly, but we don't dangle
    // irrelevant cards in front of students.
