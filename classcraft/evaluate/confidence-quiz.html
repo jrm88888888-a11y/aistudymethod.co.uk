@@ -134,18 +134,28 @@
     return;
   }
 
+  // Meta-question filter — these stems describe the lesson's internal structure
+  // ("How many key terms does this adventure introduce?") rather than testing
+  // real subject knowledge. They were generated as harness defaults for ~264
+  // STEM specs and would erode credibility if shown. Drop any question whose
+  // stem matches one of these patterns.
+  const META_Q_RE = /\b(this adventure|key terms? this|term chips?|adventure introduces?)\b/i;
+  const isMetaQ = q => META_Q_RE.test(String(q || ''));
+
   // Build the question list: 2 MCQs + 1 numerical + 1 free-text from the spec
   const questions = [];
   (spec.mcqs || []).slice(0, 2).forEach(m => {
-    if (!m.options) return;
+    if (!m.options || isMetaQ(m.q)) return;
     const opts = m.options.map(o => Array.isArray(o) ? { text: o[0], correct: !!o[1] } : o);
     const correctIdx = opts.findIndex(o => o.correct);
     questions.push({ kind: 'mcq', q: m.q, options: opts, correctIdx });
   });
   (spec.numericals || []).slice(0, 1).forEach(n => {
+    if (isMetaQ(n.q)) return;
     questions.push({ kind: 'num', q: n.q, answer: n.answer, tolerance: n.tolerance || 0, unit: n.unit || '' });
   });
   (spec.free_texts || []).slice(0, 1).forEach(f => {
+    if (isMetaQ(f.q)) return;
     questions.push({ kind: 'text', q: f.q, answer: String(f.answer || '').toLowerCase() });
   });
 

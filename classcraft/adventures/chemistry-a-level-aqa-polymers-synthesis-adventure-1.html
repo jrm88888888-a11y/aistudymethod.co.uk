@@ -208,19 +208,6 @@
     </section>
 
     <section class="screen">
-      <span class="tag">Game · Number</span>
-      <h2>Counting challenge 1</h2>
-      <div class="activity">
-        <div class="qline"><span class="qnum">1</span><span>How many key terms does this adventure introduce?</span></div>
-        <div class="numopts" data-c="c1" data-answer="6">
-          <button class="nbtn">4</button><button class="nbtn">5</button><button class="nbtn">6</button><button class="nbtn">8</button>
-        </div>
-        <div class="hint">Hint: Count the term chips you&#x27;ll see throughout the walkthrough.</div>
-        <div class="feedback" id="fb-c1"></div>
-      </div>
-    </section>
-
-    <section class="screen">
       <span class="tag">Game · Type your answer</span>
       <h2>Type the answer 1</h2>
       <div class="activity">
@@ -295,15 +282,10 @@ const screens=[...document.querySelectorAll('.screen')];
 let cur=0;let score=0;
 const bar=document.getElementById('bar'),scoreEl=document.getElementById('score'),nextBtn=document.getElementById('next'),backBtn=document.getElementById('back');
 function addScore(n){score+=n;scoreEl.textContent=score;}
-function show(i){screens[cur].classList.remove('active');cur=i;screens[cur].classList.add('active');bar.style.width=(cur/(screens.length-1)*100)+'%';backBtn.style.visibility=cur===0?'hidden':'visible';if(cur===0)nextBtn.textContent='Start! ➡';else if(cur===screens.length-1)nextBtn.style.visibility='hidden';else{nextBtn.textContent='Next ➡';nextBtn.style.visibility='visible';}refreshGate();window.scrollTo({top:0,behavior:'smooth'});if(cur===9)buildMemory();}
-const gates={4:()=>done.q1,
-  5:()=>done.q2,
-  6:()=>done.c1,
-  7:()=>done.t1,
-  8:()=>done.match,
-  9:()=>done.mem};
+function show(i){screens[cur].classList.remove('active');cur=i;screens[cur].classList.add('active');bar.style.width=(cur/(screens.length-1)*100)+'%';backBtn.style.visibility=cur===0?'hidden':'visible';if(cur===0)nextBtn.textContent='Start! ➡';else if(cur===screens.length-1)nextBtn.style.visibility='hidden';else{nextBtn.textContent='Next ➡';nextBtn.style.visibility='visible';}refreshGate();window.scrollTo({top:0,behavior:'smooth'});if(cur===8)buildMemory();}
+const gates={4:()=>done.q1,5:()=>done.q2,6:()=>done.t1,7:()=>done.match,8:()=>done.mem};
 function refreshGate(){const g=gates[cur];if(g&&!g()){nextBtn.classList.add('locked');nextBtn.textContent='Finish the game first 🙂';}else if(cur!==0&&cur!==screens.length-1){nextBtn.classList.remove('locked');nextBtn.textContent='Next ➡';}}
-const done={q1:false,q2:false,c1:false,t1:false,match:false,mem:false};
+const done={q1:false,q2:false,t1:false,match:false,mem:false};
 nextBtn.addEventListener('click',()=>{if(cur<screens.length-1&&!nextBtn.classList.contains('locked'))show(cur+1);});
 backBtn.addEventListener('click',()=>{if(cur>0)show(cur-1);});
 function setupMCQ(qkey){const box=document.querySelector(`.opts[data-q="${qkey}"]`);const fb=document.getElementById('fb-'+qkey);box.querySelectorAll('.opt').forEach(btn=>{btn.addEventListener('click',()=>{if(done[qkey])return;const ok=btn.dataset.correct==='1';box.querySelectorAll('.opt').forEach(b=>b.classList.add('lock'));if(ok){btn.classList.add('correct');fb.textContent='🎉 Correct! +1 star';fb.className='feedback good';addScore(1);done[qkey]=true;refreshGate();}else{btn.classList.add('wrong');fb.textContent='Not this one. Try again 💪';fb.className='feedback bad';box.querySelectorAll('.opt').forEach(b=>{if(b!==btn)b.classList.remove('lock');});btn.classList.add('lock');}});});}
@@ -312,7 +294,6 @@ setupMCQ('q2');
 function setupText(tkey){const box=document.querySelector(`.textans[data-t="${tkey}"]`);const ans=(box.dataset.answer||'').trim().toLowerCase();const input=box.querySelector('input');const btn=box.querySelector('.checkbtn');const fb=document.getElementById('fb-'+tkey);function check(){if(done[tkey])return;const v=(input.value||'').trim().toLowerCase();if(!v){fb.textContent='Type your answer first ✍️';fb.className='feedback';return;}if(v===ans){input.classList.add('correct');input.disabled=true;btn.disabled=true;fb.textContent='🎉 Correct! +1 star';fb.className='feedback good';addScore(1);done[tkey]=true;refreshGate();}else{input.classList.add('wrong');fb.textContent='Not quite. Re-check and try again 💪';fb.className='feedback bad';setTimeout(()=>{input.classList.remove('wrong');input.focus();input.select();},600);}}btn.addEventListener('click',check);input.addEventListener('keydown',e=>{if(e.key==='Enter')check();});}
 setupText('t1');
 function setupCount(ckey){const box=document.querySelector(`.numopts[data-c="${ckey}"]`);const ans=String(box.dataset.answer);const fb=document.getElementById('fb-'+ckey);box.querySelectorAll('.nbtn').forEach(b=>{b.addEventListener('click',()=>{if(done[ckey])return;if(b.textContent.trim()===ans){b.classList.add('correct');fb.textContent='🎉 Yes! +1 star';fb.className='feedback good';box.querySelectorAll('.nbtn').forEach(x=>x.disabled=true);addScore(1);done[ckey]=true;refreshGate();}else{b.classList.add('wrong');b.disabled=true;fb.textContent='Try again! 🔢';fb.className='feedback bad';}});});}
-setupCount('c1');
 (function(){const game=document.getElementById('matchGame');const fb=document.getElementById('fb-match');let selL=null,pairs=0;const total=game.querySelectorAll('[data-side="L"]').length;game.querySelectorAll('.mitem').forEach(it=>{it.addEventListener('click',()=>{if(it.classList.contains('done'))return;if(it.dataset.side==='L'){game.querySelectorAll('[data-side="L"]').forEach(x=>x.classList.remove('sel'));it.classList.add('sel');selL=it;}else{if(!selL){fb.textContent='First tap a term on the left ⬅';fb.className='feedback';return;}if(selL.dataset.key===it.dataset.key){selL.classList.add('done');it.classList.add('done');selL.classList.remove('sel');selL=null;pairs++;addScore(1);fb.textContent='✅ Great match! +1 star';fb.className='feedback good';if(pairs===total){done.match=true;fb.textContent='🌟 All matched! Brilliant!';refreshGate();}}else{it.classList.add('miss');setTimeout(()=>it.classList.remove('miss'),400);fb.textContent='Hmm, not a pair. Try again 🤔';fb.className='feedback bad';}}});});})();
 const memPairs = [
   ["Addition polymer", "Formed from alkene monomers joining without loss of atoms; e.g. poly(ethene), poly(propene)."],
