@@ -146,12 +146,16 @@
 
   function renderItem() {
     const item = items[state.idx];
-    // Build 3 options with semantic role; shuffle deterministically by hash.
+    // Two genuinely-plausible options — the correct fact + the classic misconception.
+    // The previous third option ("random_wrong") was so obviously absurd that students
+    // could eliminate it instantly, collapsing the task to a 50/50. A forced binary
+    // between the *right* statement and the *almost-right* statement is harder and
+    // more diagnostic. Randomise per session so position can't be memorised.
     const labeled = [
       { text: item.correct, role: 'correct' },
       { text: item.misconception, role: 'misconception' },
-      { text: item.random_wrong, role: 'random' },
-    ].sort((a,b) => hashStr(item.q + a.text) - hashStr(item.q + b.text));
+    ];
+    if (Math.random() < 0.5) labeled.reverse();
 
     root.innerHTML = `
       ${header(`Item ${state.idx + 1} of ${items.length}`)}
@@ -159,11 +163,11 @@
         <div class="em-prompt-label">Item ${state.idx + 1}</div>
         <p class="em-prompt">${escapeHtml(item.q)}</p>
         <p class="em-task">Which of these answers is the classic <em>misconception</em>?</p>
-        <div class="em-options">
-          ${labeled.map((o, i) => `<button class="em-opt" data-role="${o.role}" data-idx="${i}"><span class="em-opt-letter">${'ABC'[i]}.</span>${escapeHtml(o.text)}</button>`).join('')}
+        <div class="em-options" role="radiogroup" aria-label="Pick the misconception">
+          ${labeled.map((o, i) => `<button class="em-opt" data-role="${o.role}" data-idx="${i}" role="radio" aria-checked="false"><span class="em-opt-letter">${'AB'[i]}.</span>${escapeHtml(o.text)}</button>`).join('')}
         </div>
         <button class="em-btn" id="submit" disabled>Submit →</button>
-        <div id="fb"></div>
+        <div id="fb" aria-live="polite"></div>
       </div>
     `;
 
@@ -173,8 +177,12 @@
     root.querySelectorAll('.em-opt').forEach(b => {
       b.addEventListener('click', () => {
         if (phase !== 'answer') return;
-        root.querySelectorAll('.em-opt').forEach(x => x.classList.remove('selected'));
+        root.querySelectorAll('.em-opt').forEach(x => {
+          x.classList.remove('selected');
+          x.setAttribute('aria-checked', 'false');
+        });
         b.classList.add('selected');
+        b.setAttribute('aria-checked', 'true');
         picked = b.dataset.role;
         submit.disabled = false;
       });
@@ -195,8 +203,9 @@
           if (isPicked) {
             b.classList.add(userWasRight ? 'picked-correct' : 'picked-wrong');
           }
-          const tag = role === 'misconception' ? 'misconception' : role === 'correct' ? 'correct fact' : 'random wrong';
-          const cls = role === 'misconception' ? 'em-tag-misconception' : role === 'correct' ? 'em-tag-correct' : 'em-tag-random';
+          // Icon + text label so feedback isn't colour-only (WCAG 1.4.1).
+          const tag = role === 'misconception' ? '⚠️ misconception' : '✓ correct fact';
+          const cls = role === 'misconception' ? 'em-tag-misconception' : 'em-tag-correct';
           b.insertAdjacentHTML('beforeend', `<span class="em-tag ${cls}">${tag}</span>`);
         });
 

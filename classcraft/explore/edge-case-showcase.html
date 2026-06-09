@@ -140,8 +140,12 @@
     const item = items[state.idx];
     // 4 options: 1 correct (the surprising truth) + 3 wrong (the naive predictions and red herrings)
     const options = item.options.map((o, i) => ({ text: o.text, isTrue: !!o.isTrue, i }));
-    // Deterministic shuffle by stem+idx
-    options.sort((a, b) => hashStr(stem + state.idx + a.text) - hashStr(stem + state.idx + b.text));
+    // Per-session randomisation: previously a deterministic hash kept the correct
+    // letter fixed forever, so returning learners memorised position rather than content.
+    for (let i = options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [options[i], options[j]] = [options[j], options[i]];
+    }
     const correctIdx = options.findIndex(o => o.isTrue);
 
     root.innerHTML = `
@@ -151,11 +155,11 @@
         <h2 class="ec-h">${escapeHtml(item.title)}</h2>
         <div class="ec-claim">${escapeHtml(item.claim)}</div>
         <p class="ec-prompt">${escapeHtml(item.prompt || 'What do you think actually happens?')}</p>
-        <div class="ec-options">
-          ${options.map((o,i)=>`<button class="ec-opt" data-i="${i}"><span class="ec-opt-letter">${'ABCD'[i]}.</span>${escapeHtml(o.text)}</button>`).join('')}
+        <div class="ec-options" role="radiogroup" aria-label="Pick what you think actually happens">
+          ${options.map((o,i)=>`<button class="ec-opt" data-i="${i}" role="radio" aria-checked="false"><span class="ec-opt-letter">${'ABCD'[i]}.</span>${escapeHtml(o.text)}</button>`).join('')}
         </div>
         <button class="ec-btn" id="submit" disabled>Reveal →</button>
-        <div id="reveal"></div>
+        <div id="reveal" aria-live="polite"></div>
       </div>
     `;
 
@@ -165,8 +169,12 @@
     root.querySelectorAll('.ec-opt').forEach(b => {
       b.addEventListener('click', () => {
         if (phase !== 'answer') return;
-        root.querySelectorAll('.ec-opt').forEach(x => x.classList.remove('selected'));
+        root.querySelectorAll('.ec-opt').forEach(x => {
+          x.classList.remove('selected');
+          x.setAttribute('aria-checked', 'false');
+        });
         b.classList.add('selected');
+        b.setAttribute('aria-checked', 'true');
         picked = parseInt(b.dataset.i);
         submit.disabled = false;
       });

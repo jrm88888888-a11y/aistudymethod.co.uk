@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Dependency Sequence: order the units of a subject so each one only uses what's already been learned.">
 <title>Dependency Sequence — AI Study Method</title>
 <link rel="stylesheet" href="../../style.css">
@@ -217,12 +217,17 @@ const DS = (function(){
       document.querySelectorAll('.ds-slot').forEach(s => s.classList.remove('over'));
       if (slot) {
         const slotIdx = +slot.dataset.slot;
-        // If unit was already placed elsewhere, remove from old slot
+        // If unit was already placed elsewhere, remember its old slot so we can swap.
         const existing = slots.indexOf(dragging.id);
         if (existing >= 0) slots[existing] = null;
-        // If target slot occupied, swap
+        // If target slot is occupied, send the displaced unit back to where the
+        // dragged unit came from (if it was a track swap), or to the bank
+        // (existing < 0 means it came from the bank — leave displaced in bank).
         const cur = slots[slotIdx];
-        if (cur) slots[existing >= 0 ? existing : slots.indexOf(null)] = cur;
+        if (cur) {
+          if (existing >= 0) slots[existing] = cur;          // genuine swap
+          // else: drop displaced back to bank — it'll reappear because slots[] no longer holds it
+        }
         slots[slotIdx] = dragging.id;
         lastCheckOK = null;
       }

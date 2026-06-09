@@ -159,8 +159,26 @@
     questions.push({ kind: 'text', q: f.q, answer: String(f.answer || '').toLowerCase() });
   });
 
-  if (questions.length === 0) {
-    root.innerHTML = '<div class="eq-error">No questions found in this spec.</div>';
+  // Refuse to render below 3 items — calibration is noisy with too few items.
+  // (The Topic Radar engine has the same gate at <4 concepts.) If the spec has
+  // been stripped of meta-questions or has too few authored items, surface the
+  // "in production" template rather than a stub quiz.
+  if (questions.length < 3) {
+    const topicName = spec.topic_display || spec.title || stem;
+    const levelLbl = (spec.level || '').toUpperCase().replace('A-LEVEL','A-Level');
+    const subjLbl = (spec.subject || '').replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+    root.innerHTML = `
+      <div class="eq-header">
+        <div class="eq-badge">E · Evaluate · Confidence Quiz</div>
+        <h1 class="eq-title">${escapeHtml(topicName)}</h1>
+        <p class="eq-sub">A confidence-calibrated quiz needs at least three distinctive, topic-specific questions. This topic doesn't yet have enough authored items to run reliably. Come back soon.</p>
+        <div class="eq-meta">${escapeHtml(levelLbl)} · ${escapeHtml(subjLbl)}</div>
+      </div>
+      <div class="eq-card">
+        <p style="color:var(--text-secondary);margin:0 0 18px;font-size:15px;">Try one of these working tools for now:</p>
+        <a href="../../subjects.html" style="display:inline-block;margin-right:12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);text-decoration:none;">← Browse subjects</a>
+      </div>
+    `;
     return;
   }
 
@@ -249,18 +267,34 @@
           });
         } else if (q.kind === 'num') {
           const v = parseFloat(chosen);
-          correct = !isNaN(v) && Math.abs(v - q.answer) <= (q.tolerance || 0.0001);
+          // Default to a 1% tolerance on the answer's magnitude so rounded answers
+          // ("1.7 billion" matches a calculated 1.69) don't get rejected. The old
+          // 0.0001 default was punishing for any non-integer answer.
+          const tol = (q.tolerance != null && q.tolerance > 0)
+            ? q.tolerance
+            : Math.max(0.01, Math.abs(q.answer || 0) * 0.01);
+          correct = !isNaN(v) && Math.abs(v - q.answer) <= tol;
           userText = String(chosen);
         } else {
-          const u = String(chosen || '').trim().toLowerCase();
-          const ans = String(q.answer || '').toLowerCase();
-          // Exact match, or whole-word match for answers >= 4 chars (avoid "h" matching "the")
-          let wordMatch = false;
-          if (ans.length >= 4) {
-            const safe = ans.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            wordMatch = new RegExp(`\\b${safe}\\b`).test(u);
+          // Free-text grader. The old "whole-word substring" approach let
+          // "I think it's prokaryote" mark correct, which destroys calibration
+          // validity (the student didn't commit to one answer). We now require
+          // the user's input to be the answer (or a short superset like
+          // "the prokaryote") — capped at 2× the answer length.
+          const u = String(chosen || '').trim().toLowerCase().replace(/[.!?,;:]+$/,'');
+          const ans = String(q.answer || '').toLowerCase().trim();
+          // Normalise punctuation/whitespace so "rate determining step" matches
+          // "rate-determining step" and trailing spaces don't hurt.
+          const norm = s => s.replace(/[-_]/g,' ').replace(/\s+/g,' ').trim();
+          const uN = norm(u), ansN = norm(ans);
+          let match = false;
+          if (uN === ansN) match = true;
+          else if (ansN.length >= 4 && uN.length <= ansN.length * 2 + 6) {
+            // Allow short prefix/suffix wrappers like "the X", "X is correct"
+            const safe = ansN.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            match = new RegExp(`(^|\\s)${safe}(\\s|$)`).test(uN);
           }
-          correct = u === ans || wordMatch;
+          correct = match;
           userText = String(chosen);
         }
         const confidence = parseInt(conf.value);
