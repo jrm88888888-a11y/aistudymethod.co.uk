@@ -203,6 +203,13 @@
 // ── STATE ──
 let sel = { subject: null, board: null, topic: null };
 
+// ── DEEP-LINK SUPPORT ──
+// e.g. vocab-hub.html?game=pacman&subject=french — preselects the subject and
+// auto-launches the named game once a topic is chosen.
+const _dlParams = new URLSearchParams(location.search);
+let pendingGame = (_dlParams.get('game') || '').toLowerCase() || null;
+const _dlSubject = (_dlParams.get('subject') || '').toLowerCase();
+
 // ── GAME TYPES ──
 const GAMES = [
   { id:'pairs',         icon:'🃏', name:'Memory Match',    desc:'Flip cards to match terms with definitions.',        file:'game-pairs.html',          ready:true  },
@@ -218,6 +225,12 @@ const GAMES = [
 // ── INIT ──
 window.addEventListener('DOMContentLoaded', () => {
   buildSubjectGrid();
+  // Deep link: jump straight to board selection for the requested subject
+  if (_dlSubject && typeof VOCAB !== 'undefined' && VOCAB[_dlSubject] && Object.keys(VOCAB[_dlSubject]).length > 0) {
+    sel.subject = _dlSubject;
+    sel.board = null; sel.topic = null;
+    goTo(2);
+  }
 });
 
 // ── STEP NAVIGATION ──
@@ -325,6 +338,13 @@ function buildGameGrid() {
   const grid = document.getElementById('game-grid');
   grid.innerHTML = '';
   const vocab = getVocab(sel.subject, sel.board, sel.topic);
+
+  // Deep link: launch the requested game straight away (one-shot)
+  if (pendingGame && vocab.length > 0) {
+    const g = GAMES.find(x => x.id === pendingGame && x.ready);
+    pendingGame = null;
+    if (g) { launchGame(g.file, vocab); return; }
+  }
 
   document.getElementById('game-sub').textContent =
     `Pick how you want to practise "${sel.topic}" vocabulary.`;
