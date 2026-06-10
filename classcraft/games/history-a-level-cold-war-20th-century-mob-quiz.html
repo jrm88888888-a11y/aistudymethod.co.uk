@@ -397,15 +397,36 @@ let playerX = 0.5;       // normalised 0..1 across track
 let playerTargetX = 0.5; // smoothed
 let dragOffsetX = 0;
 let isDragging = false;
+let prevPlayerX = 0.5;        // for velocity-based squash + eye direction
+let playerSquash = 0;         // 0 = relaxed, 1 = max stretch
+let playerTrail = [];         // {x, life}
 
 // Gates (questions approaching)
-let gates = [];          // { qIdx, y, options[], correct, settled, result }
+let gates = [];          // { qIdx, y, options[], correct, settled, result, dissolveT, settleX }
 let nextSpawnDist = 0;   // distance until next gate spawns
+
+// Power-ups
+let powerUps = [];       // {x, y, type, collected, life}
+
+// Background reaction pulse (radial flash at player on answer)
+let bgPulseT = 0;        // 0..1 seconds remaining
+let bgPulseColor = '#4ade9a';
+
+// Combo / score multiplier
+let aismMaxStreak = 0;
+let aismMultiplier = 1;  // 1, 1.5, 2, 3
+const MULT_TIERS = [
+  { streak: 8, mult: 3.0, label: 'INFERNO', color: '#ff8a3d' },
+  { streak: 5, mult: 2.0, label: 'BLAZING', color: '#ffd24d' },
+  { streak: 3, mult: 1.5, label: 'HOT',     color: '#4ade9a' },
+  { streak: 0, mult: 1.0, label: '',        color: '#9aa3b2' }
+];
+function getMultTier() { return MULT_TIERS.find(t => aismStreak >= t.streak); }
 
 // Animation
 let lastFrame = 0;
 let animId = null;
-let particles = [];
+let particles = [];      // {x, y, vx, vy, life, size, color, shape?}
 
 /* ============================================================
    CANVAS SETUP
@@ -514,12 +535,19 @@ function startGame() {
   maxSpeed = speed;
   correctCount = 0;
   aismStreak = 0;
+  aismMaxStreak = 0;
+  aismMultiplier = 1;
   shakeT = 0;
   totalAnswered = 0;
   playerX = 0.5;
   playerTargetX = 0.5;
+  prevPlayerX = 0.5;
+  playerSquash = 0;
+  playerTrail = [];
   gates = [];
   particles = [];
+  powerUps = [];
+  bgPulseT = 0;
   nextSpawnDist = 0;
 
   // Show game screen
@@ -587,8 +615,22 @@ function animate(now) {
 }
 
 function update(dt) {
-  // Smooth player movement
+  // Smooth player movement + squash/stretch when accelerating sideways
+  prevPlayerX = playerX;
   playerX += (playerTargetX - playerX) * 0.2 * dt;
+  const lateralV = Math.abs(playerX - prevPlayerX);
+  playerSquash = Math.max(playerSquash * Math.pow(0.85, dt), Math.min(1, lateralV * 60));
+
+  // Player trail — push current position, decay older entries
+  if (Math.floor(performance.now() / 16) % 2 === 0) {
+    playerTrail.push({ x: playerX, life: 14 });
+  }
+  playerTrail.forEach(t => { t.life -= dt; });
+  playerTrail = playerTrail.filter(t => t.life > 0);
+  if (playerTrail.length > 18) playerTrail.shift();
+
+  // Background pulse decay
+  if (bgPulseT > 0) bgPulseT = Math.max(0, bgPulseT - dt * 0.04);
 
   // Scroll: gates move down (toward player)
   const scrollPx = DIFF_SETTINGS[difficulty].baseScrollPx * speed * dt;
@@ -600,23 +642,48 @@ function update(dt) {
     p.x += p.vx * dt;
     p.life -= dt;
     p.vy += 0.05 * dt;
+    if (p.spin != null) p.angle = (p.angle || 0) + p.spin * dt;
   });
   particles = particles.filter(p => p.life > 0);
 
-  // Move gates
-  const playerY = canvas.height / (window.devicePixelRatio || 1) - 80;
+  // Move power-ups & detect collection
+  const screenH = canvas.height / (window.devicePixelRatio || 1);
+  const playerY = screenH - 80;
+  powerUps.forEach(pu => {
+    if (pu.collected) return;
+    pu.y += scrollPx * 0.85;     // slightly slower than gates so they're catchable
+    pu.x += Math.sin(pu.y * 0.012 + pu.phase) * 0.0015 * dt;  // wobble
+    pu.x = Math.max(0.08, Math.min(0.92, pu.x));
+    // Collection: when in player vertical band AND within horizontal tolerance
+    if (pu.y >= playerY - 30 && pu.y <= playerY + 30) {
+      if (Math.abs(pu.x - playerX) < 0.07) {
+        pu.collected = true;
+        score += 75;
+        try { AISM_SFX.correct(aismStreak + 1); } catch (e) {}
+        emitParticles(pu.x, 0.85, '#ffd24d', 18, 'star');
+        flashMessage('★ +75 BONUS', false);
+        updateHUD();
+      }
+    }
+  });
+  // Remove off-screen or collected power-ups after a short delay
+  powerUps = powerUps.filter(pu => !(pu.collected && pu.collectedFade > 0.5) && pu.y < screenH + 60);
+  powerUps.forEach(pu => { if (pu.collected) pu.collectedFade = (pu.collectedFade || 0) + dt * 0.05; });
+
+  // Move gates — only un-settled gates scroll; settled gates dissolve in place
   gates.forEach(g => {
-    if (g.settled) return;
+    if (g.settled) {
+      g.dissolveT += dt * 0.07;   // ~0.45s total dissolve at 60fps
+      return;
+    }
     g.y += scrollPx;
-    // Check if gate has reached player
-    if (g.y >= playerY && !g.settled) {
+    if (g.y >= playerY) {
       settleGate(g);
     }
   });
 
-  // Remove settled gates that have scrolled off
-  const screenH = canvas.height / (window.devicePixelRatio || 1);
-  gates = gates.filter(g => g.y < screenH + 100);
+  // Remove dissolved gates immediately (fixes pile-up at the bottom)
+  gates = gates.filter(g => !g.settled || g.dissolveT < 1);
 
   // Spawn next gate
   if (nextSpawnDist <= 0 && currentIdx < questions.length) {
@@ -624,7 +691,7 @@ function update(dt) {
   }
 
   // Check end
-  if (currentIdx >= questions.length && gates.every(g => g.settled && g.y > screenH)) {
+  if (currentIdx >= questions.length && gates.length === 0) {
     endGame();
   }
   if (lives <= 0) {
@@ -634,35 +701,68 @@ function update(dt) {
 
 function settleGate(gate) {
   gate.settled = true;
+  gate.dissolveT = 0;
+  gate.settleX = playerX;
   totalAnswered++;
 
   // Determine which door player is in
   const numOptions = gate.options.length;
   const laneWidth = 1.0 / numOptions;
   const playerLane = Math.min(numOptions - 1, Math.max(0, Math.floor(playerX / laneWidth)));
+  gate.playerLane = playerLane;
 
   if (playerLane === gate.correct) {
-    // Correct
-    score += 100;
+    // Correct → bump streak, apply multiplier, score
+    aismStreak++;
+    if (aismStreak > aismMaxStreak) aismMaxStreak = aismStreak;
+    aismMultiplier = getMultTier().mult;
+    const earned = Math.round(100 * aismMultiplier);
+    score += earned;
     correctCount++;
+    // Cap speed at 2× the starting speed so consecutive correct answers don't
+    // shrink the reading window beyond the point the question is legible.
     const cap = DIFF_SETTINGS[difficulty].startSpeed * 2.0;
     speed = Math.min(cap, speed + DIFF_SETTINGS[difficulty].speedGain);
     if (speed > maxSpeed) maxSpeed = speed;
     gate.result = 'correct';
-    aismStreak++;
     try { AISM_SFX.correct(aismStreak); } catch (e) {}
-    flashMessage(aismStreak >= 3 ? '+100 · 🔥 ' + aismStreak + ' streak' : '+100', false);
-    emitParticles(playerX, 0.85, '#4ade9a', aismStreak >= 3 ? 28 : 18);
+    const tier = getMultTier();
+    const msg = aismStreak >= 3
+      ? '+' + earned + ' · ' + tier.label + ' ×' + aismMultiplier
+      : '+' + earned;
+    flashMessage(msg, false);
+    // Burst green sparkles from gate centre — more particles at higher streaks
+    emitParticles(playerX, 0.85, '#4ade9a', aismStreak >= 5 ? 36 : aismStreak >= 3 ? 28 : 18);
+    // Background reaction pulse — green, scaled by streak
+    bgPulseT = aismStreak >= 5 ? 1.0 : 0.6;
+    bgPulseColor = aismStreak >= 8 ? '#ff8a3d' : aismStreak >= 5 ? '#ffd24d' : '#4ade9a';
+    // Star power-up — chance to spawn after a streak of 3+
+    if (aismStreak >= 3 && Math.random() < 0.35) {
+      const W = canvas.width / (window.devicePixelRatio || 1);
+      powerUps.push({
+        x: 0.15 + Math.random() * 0.7,
+        y: -40,
+        type: 'star',
+        phase: Math.random() * Math.PI * 2,
+        collected: false,
+        collectedFade: 0
+      });
+    }
   } else {
-    // Wrong
+    // Wrong → break streak + life loss
     lives--;
     speed = Math.max(0.6, speed - 0.15);
     gate.result = 'wrong';
+    const wasOnStreak = aismStreak >= 3;
     aismStreak = 0;
+    aismMultiplier = 1;
     try { AISM_SFX.wrong(); } catch (e) {}
-    aismShake(7);
-    flashMessage('✗ ' + gate.options[gate.correct], true);
-    emitParticles(playerX, 0.85, '#ff5a5f', 12);
+    aismShake(wasOnStreak ? 11 : 7);
+    flashMessage(wasOnStreak ? 'COMBO BROKEN · ' + gate.options[gate.correct] : '✗ ' + gate.options[gate.correct], true);
+    // Red shard burst at gate centre
+    emitParticles(playerX, 0.85, '#ff5a5f', 16, 'shard');
+    bgPulseT = 0.7;
+    bgPulseColor = '#ff5a5f';
   }
   updateHUD();
 }
@@ -685,16 +785,31 @@ function draw() {
     ctx.transform(1, 0, 0, 1, (Math.random() - 0.5) * mS, (Math.random() - 0.5) * mS);
   }
 
-  // Background gradient
+  // Background gradient — when player is on a streak, tinted with multiplier colour.
+  const tier = getMultTier();
+  const baseTop = tier.streak >= 5 ? '#1f1a2a' : '#1a1d27';
   const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#1a1d27');
+  grad.addColorStop(0, baseTop);
   grad.addColorStop(1, '#0f1117');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // Track edges
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  ctx.lineWidth = 2;
+  // Background reaction pulse — radial flash at player position on answer
+  if (bgPulseT > 0) {
+    const pulseX = 20 + playerX * (W - 40);
+    const pulseY = H - 80;
+    const r = Math.max(W, H) * (1 - bgPulseT) * 1.2;
+    const opacity = Math.min(0.32, bgPulseT * 0.5);
+    const pg = ctx.createRadialGradient(pulseX, pulseY, 0, pulseX, pulseY, r);
+    pg.addColorStop(0, bgPulseColor + Math.round(opacity * 255).toString(16).padStart(2,'0'));
+    pg.addColorStop(0.6, bgPulseColor + '00');
+    ctx.fillStyle = pg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Track edges — pulse with streak colour
+  ctx.strokeStyle = tier.streak >= 5 ? tier.color + '40' : 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = tier.streak >= 5 ? 3 : 2;
   ctx.beginPath();
   ctx.moveTo(20, 0); ctx.lineTo(20, H);
   ctx.moveTo(W - 20, 0); ctx.lineTo(W - 20, H);
@@ -710,20 +825,64 @@ function draw() {
   ctx.stroke();
   ctx.setLineDash([]);
 
+  // Power-ups (stars)
+  powerUps.forEach(pu => drawPowerUp(pu, W, H));
+
   // Gates
   gates.forEach(g => drawGate(g, W, H));
 
-  // Player
+  // Player trail (oldest to newest, faint to bright)
   const playerY = H - 80;
   const pxScreen = 20 + playerX * (W - 40);
+  playerTrail.forEach((t, i) => {
+    const tx = 20 + t.x * (W - 40);
+    const alpha = (t.life / 14) * 0.18;
+    const trailCol = tier.streak >= 3 ? tier.color : '#4ade9a';
+    ctx.fillStyle = trailCol + Math.round(alpha * 255).toString(16).padStart(2,'0');
+    ctx.beginPath();
+    ctx.arc(tx, playerY + 4, 14 - i * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Player
   drawPlayer(pxScreen, playerY);
 
   // Particles
   particles.forEach(p => {
-    ctx.fillStyle = p.color + Math.round(Math.max(0, p.life * 25)).toString(16).padStart(2,'0');
-    ctx.beginPath();
-    ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
-    ctx.fill();
+    const alpha = Math.round(Math.max(0, p.life * 25)).toString(16).padStart(2,'0');
+    ctx.fillStyle = p.color + alpha;
+    if (p.shape === 'shard') {
+      // Triangular shards for wrong-answer shatter
+      ctx.save();
+      ctx.translate(p.x * W, p.y * H);
+      ctx.rotate(p.angle || 0);
+      ctx.beginPath();
+      ctx.moveTo(-p.size, p.size);
+      ctx.lineTo(p.size, 0);
+      ctx.lineTo(-p.size, -p.size);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    } else if (p.shape === 'star') {
+      // 4-pt star sparkle for correct + power-ups
+      ctx.save();
+      ctx.translate(p.x * W, p.y * H);
+      ctx.rotate(p.angle || 0);
+      ctx.beginPath();
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2;
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(a) * p.size * 1.5, Math.sin(a) * p.size * 1.5);
+      }
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
   });
 }
 
@@ -734,8 +893,37 @@ function drawGate(g, W, H) {
   const numOptions = g.options.length;
   const laneW = trackW / numOptions;
 
+  // Settled gates dissolve: shrink + fade + emit residual sparkles. Once
+  // dissolveT >= 1 the gate is removed in update(), preventing pile-up.
+  const dissolving = g.settled;
+  const dt = dissolving ? Math.min(1, g.dissolveT || 0) : 0;
+  const scale = dissolving ? 1 - dt * 0.35 : 1;            // shrinks to 65%
+  const alpha = dissolving ? Math.max(0, 1 - dt * 1.15) : 1;
+  // Emit a couple of residual particles each frame while dissolving
+  if (dissolving && dt < 0.6 && Math.random() < 0.4) {
+    const colour = g.result === 'correct' ? '#4ade9a' : '#ff5a5f';
+    const py = (g.y - gateH / 2) / H;
+    const px = (trackLeft + laneW * (g.correct + 0.5)) / W;
+    particles.push({
+      x: px + (Math.random() - 0.5) * 0.05,
+      y: py + (Math.random() - 0.5) * 0.05,
+      vx: (Math.random() - 0.5) * 0.01,
+      vy: -Math.random() * 0.01,
+      life: 14 + Math.random() * 10,
+      size: 2 + Math.random() * 2,
+      color: colour,
+      shape: g.result === 'correct' ? 'star' : 'shard',
+      angle: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 0.2
+    });
+  }
+
+  // Apply global alpha for dissolve fade
+  const prevAlpha = ctx.globalAlpha;
+  ctx.globalAlpha = alpha * prevAlpha;
+
   // Question banner (above gate)
-  if (g.y > 50) {
+  if (g.y > 50 && !dissolving) {
     ctx.fillStyle = 'rgba(15,17,23,0.85)';
     const qY = Math.max(8, top - 50);
     const qW = Math.min(W - 30, 480);
@@ -747,20 +935,33 @@ function drawGate(g, W, H) {
     ctx.font = '700 14px Nunito, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // Truncate long questions
     const maxChars = Math.floor(qW / 8);
     let qText = g.q;
     if (qText.length > maxChars) qText = qText.slice(0, maxChars - 1) + '…';
     ctx.fillText(qText, W / 2, qY + 19);
   }
 
-  // Doors
+  // Doors — when dissolving, draw centred & scaled
+  const cy = top + gateH / 2;
   for (let i = 0; i < numOptions; i++) {
-    const x = trackLeft + i * laneW;
+    const xCentre = trackLeft + (i + 0.5) * laneW;
+    const w = (laneW - 6) * scale;
+    const h = gateH * scale;
+    const x = xCentre - w / 2;
+    const y = cy - h / 2;
+
     let fill, edge;
     if (g.settled) {
-      if (i === g.correct) { fill = 'rgba(74,222,154,0.25)'; edge = '#4ade9a'; }
-      else { fill = 'rgba(255,255,255,0.04)'; edge = 'rgba(255,255,255,0.1)'; }
+      if (i === g.correct) {
+        fill = 'rgba(74,222,154,0.35)';
+        edge = '#4ade9a';
+      } else if (i === g.playerLane && g.result === 'wrong') {
+        fill = 'rgba(255,90,95,0.3)';
+        edge = '#ff5a5f';
+      } else {
+        fill = 'rgba(255,255,255,0.04)';
+        edge = 'rgba(255,255,255,0.1)';
+      }
     } else {
       fill = 'rgba(123,111,255,0.18)';
       edge = 'rgba(123,111,255,0.5)';
@@ -768,42 +969,97 @@ function drawGate(g, W, H) {
     ctx.fillStyle = fill;
     ctx.strokeStyle = edge;
     ctx.lineWidth = 2;
-    roundRect(ctx, x + 3, top, laneW - 6, gateH, 8);
+    roundRect(ctx, x, y, w, h, 8 * scale);
     ctx.fill();
     ctx.stroke();
 
     // Option text
-    ctx.fillStyle = g.settled && i === g.correct ? '#4ade9a' : '#e8eaf0';
+    ctx.fillStyle = g.settled && i === g.correct ? '#4ade9a'
+                  : g.settled && i === g.playerLane && g.result === 'wrong' ? '#ff5a5f'
+                  : '#e8eaf0';
     ctx.font = '700 13px Nunito, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    wrapText(ctx, g.options[i], x + laneW / 2, top + gateH / 2, laneW - 12, 16);
+    if (!dissolving || dt < 0.5) {
+      wrapText(ctx, g.options[i], xCentre, cy, w - 12, 16);
+    }
   }
+
+  ctx.globalAlpha = prevAlpha;
+}
+
+function drawPowerUp(pu, W, H) {
+  const x = 20 + pu.x * (W - 40);
+  const y = pu.y;
+  const t = performance.now() / 200;
+  const pulse = 1 + Math.sin(t + pu.phase) * 0.08;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.sin(t * 0.6 + pu.phase) * 0.2);
+  // Glow
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 24);
+  g.addColorStop(0, 'rgba(255,210,77,0.6)');
+  g.addColorStop(1, 'rgba(255,210,77,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, 0, 24, 0, Math.PI * 2);
+  ctx.fill();
+  // Star
+  ctx.fillStyle = '#ffd24d';
+  ctx.strokeStyle = '#b48a1a';
+  ctx.lineWidth = 1.5;
+  const sp = 12 * pulse;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a1 = (i / 5) * Math.PI * 2 - Math.PI / 2;
+    const a2 = ((i + 0.5) / 5) * Math.PI * 2 - Math.PI / 2;
+    ctx.lineTo(Math.cos(a1) * sp, Math.sin(a1) * sp);
+    ctx.lineTo(Math.cos(a2) * sp * 0.45, Math.sin(a2) * sp * 0.45);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawPlayer(x, y) {
-  // Glow
-  const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, 35);
-  glowGrad.addColorStop(0, 'rgba(74,222,154,0.5)');
+  // Squash/stretch: when moving fast laterally, stretch horizontally.
+  const sx = 1 + playerSquash * 0.3;
+  const sy = 1 - playerSquash * 0.15;
+  const moveDir = (playerX - prevPlayerX);  // negative = moving left
+  const eyeNudge = Math.max(-3, Math.min(3, moveDir * 200));
+  const tier = getMultTier();
+
+  // Glow — colour grows hotter with streak tier
+  const glowCol = tier.streak >= 8 ? 'rgba(255,138,61,0.6)'
+                : tier.streak >= 5 ? 'rgba(255,210,77,0.55)'
+                : 'rgba(74,222,154,0.5)';
+  const glowR = 35 + tier.streak * 0.7;
+  const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, glowR);
+  glowGrad.addColorStop(0, glowCol);
   glowGrad.addColorStop(1, 'rgba(74,222,154,0)');
   ctx.fillStyle = glowGrad;
   ctx.beginPath();
-  ctx.arc(x, y, 35, 0, Math.PI * 2);
+  ctx.arc(x, y, glowR, 0, Math.PI * 2);
   ctx.fill();
 
-  // Body (pill)
-  ctx.fillStyle = '#4ade9a';
+  // Body (pill) — colour shifts on streak
+  const bodyCol = tier.streak >= 8 ? '#ff8a3d'
+                : tier.streak >= 5 ? '#ffd24d'
+                : '#4ade9a';
+  ctx.fillStyle = bodyCol;
   ctx.strokeStyle = '#2d8f5a';
   ctx.lineWidth = 2;
-  roundRect(ctx, x - 18, y - 22, 36, 44, 18);
+  const w = 36 * sx, h = 44 * sy;
+  roundRect(ctx, x - w / 2, y - h / 2, w, h, 18);
   ctx.fill();
   ctx.stroke();
 
-  // Eye
+  // Eyes — look in the direction of movement
   ctx.fillStyle = '#0f1117';
   ctx.beginPath();
-  ctx.arc(x - 6, y - 6, 3, 0, Math.PI * 2);
-  ctx.arc(x + 6, y - 6, 3, 0, Math.PI * 2);
+  ctx.arc(x - 6 + eyeNudge, y - 6, 3, 0, Math.PI * 2);
+  ctx.arc(x + 6 + eyeNudge, y - 6, 3, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -838,15 +1094,25 @@ function wrapText(ctx, text, x, y, maxW, lineH) {
   lines.slice(0, 4).forEach((l, i) => ctx.fillText(l, x, startY + i * lineH));
 }
 
-function emitParticles(nx, ny, color, n) {
+function emitParticles(nx, ny, color, n, shape) {
   for (let i = 0; i < n; i++) {
+    // Star + shard shapes get wider velocity spread + spin for visual variety.
+    const angle = Math.random() * Math.PI * 2;
+    const speed = shape === 'shard' ? 0.022 + Math.random() * 0.018
+                : shape === 'star'  ? 0.012 + Math.random() * 0.014
+                : 0.012 + Math.random() * 0.012;
     particles.push({
       x: nx, y: ny,
-      vx: (Math.random() - 0.5) * 0.015,
-      vy: -Math.random() * 0.02 - 0.01,
-      life: 30 + Math.random() * 20,
-      size: 3 + Math.random() * 3,
-      color: color
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (shape === 'star' ? 0.005 : 0.008),
+      life: 28 + Math.random() * 22,
+      size: shape === 'shard' ? 4 + Math.random() * 3
+          : shape === 'star'  ? 3 + Math.random() * 3
+          : 3 + Math.random() * 3,
+      color: color,
+      shape: shape || null,
+      angle: shape ? Math.random() * Math.PI * 2 : 0,
+      spin: shape ? (Math.random() - 0.5) * 0.4 : 0
     });
   }
 }
@@ -857,8 +1123,50 @@ function emitParticles(nx, ny, color, n) {
 function updateHUD() {
   document.getElementById('hud-score').textContent = score;
   document.getElementById('hud-progress').textContent = totalAnswered + '/' + questions.length;
-  document.getElementById('hud-lives').textContent = '♥'.repeat(Math.max(0, lives)) + '<br>'.replace('<br>','');
+  document.getElementById('hud-lives').textContent = '♥'.repeat(Math.max(0, lives));
   document.getElementById('hud-speed').textContent = '×' + speed.toFixed(1);
+  // Combo / multiplier badge — created lazily so existing pages don't have to
+  // ship updated HUD HTML. Inserts a 5th HUD item next to "Speed".
+  let comboEl = document.getElementById('hud-combo');
+  if (!comboEl) {
+    const speedItem = document.getElementById('hud-speed') && document.getElementById('hud-speed').closest('.hud-item');
+    if (speedItem && speedItem.parentNode) {
+      const wrap = document.createElement('div');
+      wrap.className = 'hud-item hud-combo-item';
+      wrap.innerHTML = '<div class="hud-num" id="hud-combo">×1.0</div><div class="hud-label">Combo</div>';
+      speedItem.parentNode.insertBefore(wrap, speedItem.nextSibling);
+      comboEl = document.getElementById('hud-combo');
+      // Add styles for combo + critical-life pulse if not already present
+      if (!document.getElementById('hud-combo-styles')) {
+        const st = document.createElement('style');
+        st.id = 'hud-combo-styles';
+        st.textContent = `
+          .hud-combo-item .hud-num { transition: color 0.2s, transform 0.2s; }
+          .hud-combo-item.mult-hot     .hud-num { color: #4ade9a; }
+          .hud-combo-item.mult-blazing .hud-num { color: #ffd24d; text-shadow: 0 0 8px rgba(255,210,77,0.6); }
+          .hud-combo-item.mult-inferno .hud-num { color: #ff8a3d; text-shadow: 0 0 12px rgba(255,138,61,0.8); animation: comboShake 0.3s ease infinite; }
+          @keyframes comboShake { 0%,100% {transform: scale(1);} 50% {transform: scale(1.08);} }
+          .hud-lives.critical .hud-num { animation: lifeBlip 0.6s ease infinite; }
+          @keyframes lifeBlip { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.1); } }
+        `;
+        document.head.appendChild(st);
+      }
+    }
+  }
+  if (comboEl) {
+    const tier = getMultTier();
+    comboEl.textContent = aismMultiplier === 1 ? '×1.0' : ('×' + aismMultiplier.toFixed(1));
+    const item = comboEl.closest('.hud-item');
+    if (item) {
+      item.classList.remove('mult-hot','mult-blazing','mult-inferno');
+      if (aismStreak >= 8) item.classList.add('mult-inferno');
+      else if (aismStreak >= 5) item.classList.add('mult-blazing');
+      else if (aismStreak >= 3) item.classList.add('mult-hot');
+    }
+  }
+  // Critical life: pulse hearts when on last life
+  const livesItem = document.getElementById('hud-lives') && document.getElementById('hud-lives').closest('.hud-item');
+  if (livesItem) livesItem.classList.toggle('critical', lives === 1);
 }
 
 function flashMessage(text, isWrong) {
@@ -883,12 +1191,38 @@ function endGame() {
   document.getElementById('end-accuracy').textContent = accuracy + '%';
   document.getElementById('end-speed').textContent = '×' + maxSpeed.toFixed(1);
 
+  // Rank: combines accuracy + max streak. S+ = perfect + ≥6 streak.
+  let rank = 'C';
+  if (accuracy >= 100 && aismMaxStreak >= 6) rank = 'S+';
+  else if (accuracy === 100) rank = 'S';
+  else if (accuracy >= 90 && aismMaxStreak >= 5) rank = 'A+';
+  else if (accuracy >= 85) rank = 'A';
+  else if (accuracy >= 70) rank = 'B';
+
   let emoji = '🏆', title = 'Run complete!';
   if (lives <= 0) { emoji = '💥'; title = 'Out of lives!'; }
-  else if (accuracy === 100) { emoji = '🌟'; title = 'Perfect run!'; }
-  else if (accuracy >= 75) { emoji = '🚀'; title = 'Strong run!'; }
+  else if (rank === 'S+') { emoji = '🌟'; title = 'Flawless. ' + rank + ' rank.'; }
+  else if (rank === 'S') { emoji = '🌟'; title = 'Perfect — ' + rank + ' rank.'; }
+  else if (rank === 'A+' || rank === 'A') { emoji = '🚀'; title = rank + ' rank!'; }
+  else if (rank === 'B') { emoji = '🎯'; title = 'B rank — keep going.'; }
   document.getElementById('end-emoji').textContent = emoji;
   document.getElementById('end-title').textContent = title;
+
+  // Inject max-streak + rank line into the stats block (lazily, no HTML changes
+  // needed in stamped files).
+  if (!document.getElementById('end-streak-line')) {
+    const titleEl = document.getElementById('end-title');
+    if (titleEl) {
+      const line = document.createElement('div');
+      line.id = 'end-streak-line';
+      line.style.cssText = 'margin:6px 0 4px;font-family:"DM Mono",monospace;font-size:11px;color:var(--text-mid);letter-spacing:1.4px;text-transform:uppercase;';
+      titleEl.parentNode.insertBefore(line, titleEl.nextSibling);
+    }
+  }
+  const streakLine = document.getElementById('end-streak-line');
+  if (streakLine) {
+    streakLine.textContent = 'Max streak ' + aismMaxStreak + '  ·  Rank ' + rank;
+  }
 
   /* Personal best — stored locally per game */
   try {
