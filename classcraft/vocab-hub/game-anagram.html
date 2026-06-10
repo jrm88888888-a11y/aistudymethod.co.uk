@@ -178,6 +178,43 @@
     .btn-play-again{font-family:var(--font-d);font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.65rem 1rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);width:100%;}
     .btn-play-again:hover{border-color:var(--accent2);color:var(--accent2);}
 
+    /* ── Juice: tactile tiles, FLIP, sparkles, streak, transitions ── */
+    .tile:active{transform:scale(0.92);}
+    .tile.empty:active{transform:none;}
+    .tile.flipping{transition:none;}
+    @keyframes tilePop{0%{transform:scale(0.55);opacity:0.4}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+    .tile.pop{animation:tilePop 0.22s ease;}
+    @keyframes hintGlow{0%{box-shadow:0 0 0 rgba(74,222,154,0)}40%{box-shadow:0 0 18px rgba(74,222,154,0.55)}100%{box-shadow:0 0 0 rgba(74,222,154,0)}}
+    .tile.hint-pop{animation:tilePop 0.25s ease,hintGlow 0.8s ease;}
+    @keyframes tileWave{0%{transform:translateY(0)}35%{transform:translateY(-12px) scale(1.1)}70%{transform:translateY(2px)}100%{transform:translateY(0)}}
+    .tile.wave{animation:tileWave 0.5s cubic-bezier(0.34,1.56,0.64,1);}
+    .sparkle{position:fixed;width:6px;height:6px;border-radius:50%;pointer-events:none;z-index:600;animation:sparkleFly 0.7s ease-out forwards;}
+    @keyframes sparkleFly{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0.2)}}
+    .float-pts{position:fixed;font-family:var(--font-d);font-size:1.25rem;font-weight:800;color:var(--correct);pointer-events:none;z-index:550;text-shadow:0 0 14px rgba(74,222,154,0.6);animation:floatUp 1s ease-out forwards;}
+    @keyframes floatUp{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-48px)}}
+    .stat-pill.streak{color:#ffd166;border-color:rgba(255,209,102,0.35);background:rgba(255,209,102,0.08);display:none;}
+    .stat-pill.streak.on{display:inline-block;animation:streakIn 0.18s ease;}
+    @keyframes streakIn{from{transform:scale(0.6);opacity:0}to{transform:scale(1);opacity:1}}
+    .bonus-pill{font-family:var(--font-d);font-size:0.68rem;font-weight:700;color:#ffd166;background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.3);border-radius:20px;padding:0.12rem 0.6rem;transition:opacity 0.3s ease;}
+    .bonus-pill.urgent{color:var(--warn);border-color:rgba(255,107,107,0.4);animation:bonusPulse 0.5s ease infinite alternate;}
+    @keyframes bonusPulse{from{opacity:1}to{opacity:0.4}}
+    .bonus-pill.gone{opacity:0;}
+    @keyframes roundOut{to{opacity:0;transform:translateX(-36px)}}
+    @keyframes roundIn{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+    #screen-game.round-out>*{animation:roundOut 0.2s ease forwards;}
+    #screen-game.round-in>*{animation:roundIn 0.3s cubic-bezier(0.25,0.46,0.45,0.94);}
+    .confetti{position:fixed;top:-14px;width:8px;height:13px;z-index:520;pointer-events:none;border-radius:2px;animation:confettiFall linear forwards;}
+    @keyframes confettiFall{to{transform:translateY(112vh) rotate(720deg);opacity:0.6}}
+    .action-wrap{display:flex;flex-direction:column;align-items:center;gap:0.45rem;flex-shrink:0;}
+    .action-row{flex-wrap:wrap;justify-content:center;}
+    .kbd-hint{font-family:var(--font-d);font-size:0.62rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);}
+    @media(pointer:coarse){.kbd-hint{display:none;}}
+    .result-delta{font-family:var(--font-d);font-size:0.9rem;font-weight:800;color:var(--correct);}
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:0.001s !important;animation-iteration-count:1 !important;transition-duration:0.001s !important;}
+      .sparkle,.confetti{display:none;}
+    }
+
     /* Responsive */
     @media(max-width:400px){
       .hd{padding:0 0.85rem;}
@@ -215,9 +252,11 @@
 <span class="hd-sep">·</span>
 <span class="hd-title" id="hd-title">Anagram</span>
 </div>
-<div class="hd-right" id="hd-right" style="display:none;">
-<div class="stat-pill">Word <span id="word-num">1</span>/<span id="word-total">10</span></div>
-<div class="stat-pill">Score: <span id="score-display">0</span></div>
+<div class="hd-right" id="hd-right">
+<div class="stat-pill hd-stat" style="display:none;">Word <span id="word-num">1</span>/<span id="word-total">10</span></div>
+<div class="stat-pill streak" id="streak-pill">🔥 ×2</div>
+<div class="stat-pill hd-stat" style="display:none;">Score: <span id="score-display">0</span></div>
+<button class="btn-hd" id="btn-mute" title="Toggle sound (M)">🔊</button>
 <button class="btn-hd" id="btn-quit">✕ Quit</button>
 </div>
 </header>
@@ -228,10 +267,10 @@
 <div class="start-topic" id="start-topic"></div>
 <p class="start-sub">The definition is your clue. Unscramble the letters to spell the correct term.</p>
 <div class="start-info">
-<div class="start-info-row"><span class="start-info-icon">🔀</span><span>Letters are scrambled — click to place them in order</span></div>
-<div class="start-info-row"><span class="start-info-icon">💡</span><span>Use hints to reveal a letter (costs points)</span></div>
-<div class="start-info-row"><span class="start-info-icon">🔄</span><span>Clear resets your answer without penalty</span></div>
-<div class="start-info-row"><span class="start-info-icon">🎯</span><span>Fewer hints = more points per word</span></div>
+<div class="start-info-row"><span class="start-info-icon">🔀</span><span>Letters are scrambled — click or type to place them in order</span></div>
+<div class="start-info-row"><span class="start-info-icon">⚡</span><span>Solve fast for a <strong>speed bonus</strong> · chain words for a <strong>🔥 streak bonus</strong></span></div>
+<div class="start-info-row"><span class="start-info-icon">💡</span><span>Hints reveal a letter (costs points) · Shuffle rearranges the rack</span></div>
+<div class="start-info-row"><span class="start-info-icon">⌨️</span><span>Type letters · Backspace removes · Enter checks · M mute</span></div>
 </div>
 <button class="btn-start" onclick="startGame()">Start Game →</button>
 </div>
@@ -242,6 +281,7 @@
 <div class="clue-box" id="clue-box"></div>
 <div class="round-info">
 <span class="round-badge" id="round-badge">Word 1 of 10</span>
+<span class="bonus-pill" id="bonus-pill">⚡ Speed bonus +10</span>
 </div>
 </div>
 <!-- Answer slots -->
@@ -255,10 +295,15 @@
 <div class="letter-bank" id="letter-bank"></div>
 </div>
 <!-- Actions -->
+<div class="action-wrap">
 <div class="action-row">
 <button class="btn-check" id="btn-check" onclick="checkAnswer()">Check ✓</button>
+<button class="btn-clear" id="btn-shuffle" onclick="shuffleBank()">Shuffle 🔀</button>
 <button class="btn-clear" onclick="clearAnswer()">Clear ↺</button>
 <button class="btn-hint" id="btn-hint" onclick="useHint()">Hint 💡 <span class="hint-count" id="hint-count">(3 left)</span></button>
+<button class="btn-clear" id="btn-skip" onclick="skipWord()">Skip →</button>
+</div>
+<div class="kbd-hint">Type letters · Backspace removes · Enter checks · M mutes</div>
 </div>
 </div>
 <!-- Per-word result -->
@@ -268,6 +313,7 @@
 <div class="result-heading" id="word-heading">Correct!</div>
 <div class="result-word" id="word-answer"></div>
 <div class="result-def" id="word-def"></div>
+<div class="result-delta" id="word-delta"></div>
 <div class="result-score">Score: <span id="word-score">0</span></div>
 <div class="result-btns">
 <button class="btn-next-word" id="btn-next-word">Next Word →</button>
@@ -280,6 +326,7 @@
 <div class="result-card">
 <span class="result-emoji" id="final-emoji">🏆</span>
 <div class="result-heading" id="final-heading">Game Over!</div>
+<div class="result-def" id="final-sub"></div>
 <div class="final-stats">
 <div class="final-stat"><div class="final-stat-val good" id="final-correct">0</div><div class="final-stat-label">Correct</div></div>
 <div class="final-stat"><div class="final-stat-val bad" id="final-wrong">0</div><div class="final-stat-label">Skipped</div></div>
@@ -304,7 +351,90 @@ if (META.topic) {
   document.getElementById('start-topic').textContent  = `${META.subject || ''} · ${META.board || ''}`;
 }
 
-const MAX_HINTS = 3;
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============================================================
+   AUDIO — tiny WebAudio synth, no assets, mutable (persisted)
+   ============================================================ */
+const AudioFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.4;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'square';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.15, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+
+  function noise(dur, vol, filterFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const len = Math.max(1, Math.floor(actx.sampleRate * dur));
+      const buf = actx.createBuffer(1, len, actx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const f = actx.createBiquadFilter(); f.type = 'lowpass';
+      f.frequency.setValueAtTime(filterFreq || 1200, t0);
+      f.frequency.exponentialRampToValueAtTime(120, t0 + dur);
+      const g = actx.createGain();
+      g.gain.setValueAtTime(vol || 0.25, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t0);
+    } catch (e) {}
+  }
+
+  return {
+    unlock() { ensure(); },
+    get muted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    place()    { tone(420, 0.06, 'triangle', 0.12, 540); },
+    drop()     { tone(520, 0.06, 'triangle', 0.1, 360); },
+    shuffleFx(){ noise(0.28, 0.18, 2600); tone(300, 0.2, 'sine', 0.06, 620); },
+    hint()     { tone(740, 0.09, 'sine', 0.13, 980); setTimeout(() => tone(1100, 0.14, 'sine', 0.11), 90); },
+    solve()    { tone(523, 0.1, 'sine', 0.15); setTimeout(() => tone(659, 0.1, 'sine', 0.15), 90); setTimeout(() => tone(784, 0.12, 'sine', 0.15), 180); setTimeout(() => tone(1047, 0.22, 'sine', 0.16), 280); },
+    streak()   { tone(660, 0.08, 'triangle', 0.12); setTimeout(() => tone(880, 0.14, 'triangle', 0.12), 80); },
+    wrong()    { tone(220, 0.18, 'sawtooth', 0.12, 110); setTimeout(() => tone(180, 0.22, 'sawtooth', 0.1, 90), 140); },
+    tick()     { tone(1050, 0.04, 'square', 0.05); },
+    over()     { tone(392, 0.12, 'triangle', 0.14); setTimeout(() => tone(523, 0.12, 'triangle', 0.14), 120); setTimeout(() => tone(659, 0.12, 'triangle', 0.14), 240); setTimeout(() => tone(784, 0.25, 'triangle', 0.15), 360); },
+  };
+})();
+
+const MAX_HINTS    = 3;
+const BONUS_MAX    = 10;   // speed bonus points at the instant the word appears
+const BONUS_TIME   = 30;   // seconds for the speed bonus to decay to zero
+const BONUS_URGENT = 5;    // final seconds: pill turns red + ticks
 
 // ── STATE ──
 let wordList    = [];
@@ -320,6 +450,10 @@ let correct     = 0;
 let skipped     = 0;
 let gameActive  = false;
 let tileIdCounter = 0;
+let streak      = 0;
+let bestStreak  = 0;
+let bonusElapsed = 0;       // seconds the current word has been on screen (frozen while tab hidden)
+let lastTickSecond = -1;
 
 function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
@@ -336,11 +470,15 @@ function scramble(word) {
 
 // ── START ──
 function startGame() {
+  AudioFX.unlock();
   wordList = shuffle([...VOCAB_DATA]);
   wordIndex = 0; score = 0; correct = 0; skipped = 0;
+  streak = 0; bestStreak = 0;
   document.getElementById('screen-start').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
-  document.getElementById('hd-right').style.display = 'flex';
+  document.querySelectorAll('.hd-stat').forEach(el => el.style.display = '');
+  document.getElementById('score-display').textContent = '0';
+  updateStreakPill();
   document.getElementById('word-total').textContent = wordList.length;
   loadWord(0);
 }
@@ -377,6 +515,10 @@ function loadWord(idx) {
   document.getElementById('btn-hint').disabled       = false;
   document.getElementById('overlay-word').classList.remove('open');
 
+  bonusElapsed = 0;
+  lastTickSecond = -1;
+  updateBonusPill();
+
   renderAnswerSlots();
   renderBank();
   updateCheckBtn();
@@ -397,6 +539,7 @@ function renderAnswerSlots() {
       tile.className = 'tile' + (placed ? (isHint ? ' hint-tile' : ' placed') : ' empty');
       tile.dataset.wi = wi;
       tile.dataset.li = li;
+      if (placed) tile.dataset.tileId = placed.tileId;
       tile.textContent = placed ? placed.letter : '';
       // Hint tiles cannot be returned; placed tiles can
       if (placed && !isHint) tile.addEventListener('click', () => returnToBank(wi, li));
@@ -448,7 +591,7 @@ function placeFromBank(tileId) {
     if (placed) break;
   }
 
-  if (placed) { renderAnswerSlots(); renderBank(); updateCheckBtn(); }
+  if (placed) { AudioFX.place(); rerender(); }
 }
 
 // ── RETURN LETTER FROM ANSWER → BANK ──
@@ -460,9 +603,8 @@ function returnToBank(wi, li) {
   // Use tileId for precise lookup — avoids duplicate-letter confusion
   const tile = bankTiles.find(t => t.id === slot.tileId);
   if (tile) tile.used = false;
-  renderAnswerSlots();
-  renderBank();
-  updateCheckBtn();
+  AudioFX.drop();
+  rerender();
 }
 
 // ── CLEAR ──
@@ -478,9 +620,8 @@ function clearAnswer() {
       }
     }
   }
-  renderAnswerSlots();
-  renderBank();
-  updateCheckBtn();
+  AudioFX.drop();
+  rerender();
 }
 
 // ── HINT — reveal one correct letter ──
@@ -499,9 +640,10 @@ function useHint() {
         hintsLeft--;
         document.getElementById('hint-count').textContent = `(${hintsLeft} left)`;
         if (hintsLeft <= 0) document.getElementById('btn-hint').disabled = true;
-        renderAnswerSlots();
-        renderBank();
-        updateCheckBtn();
+        AudioFX.hint();
+        rerender();
+        const hintEl = document.querySelector(`#answer-groups .tile[data-wi="${wi}"][data-li="${li}"]`);
+        if (hintEl && !REDUCED_MOTION) hintEl.classList.add('hint-pop');
         return;
       }
     }
@@ -516,21 +658,35 @@ function checkAnswer() {
 
   const groups = document.getElementById('answer-groups');
   if (isCorrect) {
-    // Flash correct
-    groups.classList.add('flash-correct');
-    document.querySelectorAll('#answer-groups .tile.placed, #answer-groups .tile.hint-tile').forEach(t => t.classList.add('correct'));
-    setTimeout(() => {
-      groups.classList.remove('flash-correct');
-      gameActive = false;
-      const hintsUsed = MAX_HINTS - hintsLeft;
-      const wordScore = Math.max(10, 20 - hintsUsed * 5);
-      score += wordScore;
-      correct++;
-      document.getElementById('score-display').textContent = score;
-      showWordResult(true, wordScore);
-    }, 400);
+    gameActive = false;
+    const hintsUsed   = MAX_HINTS - hintsLeft;
+    const base        = Math.max(10, 20 - hintsUsed * 5);
+    const speedBonus  = currentBonus();
+    streak++;
+    bestStreak = Math.max(bestStreak, streak);
+    const streakBonus = Math.min(10, (streak - 1) * 2);
+    const wordScore   = base + speedBonus + streakBonus;
+    score += wordScore;
+    correct++;
+    document.getElementById('score-display').textContent = score;
+    updateStreakPill();
+    AudioFX.solve();
+    if (streak >= 3) setTimeout(() => AudioFX.streak(), 500);
+
+    // Green wave + sparkle burst across the solved word
+    const tiles = groups.querySelectorAll('.tile');
+    tiles.forEach((t, i) => {
+      setTimeout(() => {
+        t.classList.add('correct');
+        if (!REDUCED_MOTION) { t.classList.add('wave'); spawnSparkles(t, 3); }
+      }, REDUCED_MOTION ? 0 : i * 45);
+    });
+    spawnFloatPts('+' + wordScore);
+    setTimeout(() => showWordResult(true, wordScore, { base, speedBonus, streakBonus }),
+               REDUCED_MOTION ? 350 : Math.min(1500, tiles.length * 45 + 700));
   } else {
-    // Shake wrong
+    // Shake wrong + buzz
+    AudioFX.wrong();
     groups.classList.add('flash-wrong');
     document.querySelectorAll('#answer-groups .tile.placed').forEach(t => t.classList.add('wrong'));
     setTimeout(() => {
@@ -546,11 +702,25 @@ function updateCheckBtn() {
 }
 
 // ── WORD RESULT ──
-function showWordResult(won, wordScore) {
+function showWordResult(won, wordScore, detail) {
   document.getElementById('word-emoji').textContent   = won ? (hintsLeft === MAX_HINTS ? '🏆' : '🎉') : '😬';
   document.getElementById('word-heading').textContent = won ? 'Correct!' : 'Not quite!';
   document.getElementById('word-answer').textContent  = currentTerm;
   document.getElementById('word-def').textContent     = currentDef;
+  const deltaEl = document.getElementById('word-delta');
+  if (won) {
+    let txt = `+${wordScore} points`;
+    if (detail) {
+      const bits = [];
+      if (detail.speedBonus > 0)  bits.push(`⚡ speed +${detail.speedBonus}`);
+      if (detail.streakBonus > 0) bits.push(`🔥 streak +${detail.streakBonus}`);
+      if (bits.length) txt += ' · ' + bits.join(' · ');
+    }
+    deltaEl.textContent = txt;
+    deltaEl.style.display = '';
+  } else {
+    deltaEl.style.display = 'none';
+  }
   document.getElementById('word-score').textContent   = score;
   const isLast = wordIndex >= wordList.length - 1;
   document.getElementById('btn-next-word').textContent = isLast ? 'See Final Score →' : 'Next Word →';
@@ -560,8 +730,17 @@ function showWordResult(won, wordScore) {
 function nextWord() {
   document.getElementById('overlay-word').classList.remove('open');
   wordIndex++;
-  if (wordIndex >= wordList.length) showFinalScore();
-  else loadWord(wordIndex);
+  if (wordIndex >= wordList.length) { showFinalScore(); return; }
+  if (REDUCED_MOTION) { loadWord(wordIndex); return; }
+  // Smooth slide to the next word
+  const scr = document.getElementById('screen-game');
+  scr.classList.add('round-out');
+  setTimeout(() => {
+    scr.classList.remove('round-out');
+    loadWord(wordIndex);
+    scr.classList.add('round-in');
+    setTimeout(() => scr.classList.remove('round-in'), 380);
+  }, 200);
 }
 
 // ── SKIP (end early button on per-word screen) ──
@@ -572,9 +751,10 @@ document.getElementById('btn-end-early').addEventListener('click', () => {
 
 // ── FINAL ──
 function showFinalScore() {
+  gameActive = false;
   document.getElementById('progress-fill').style.width = '100%';
   const total = wordList.length;
-  const pct = Math.round(correct / total * 100);
+  const pct = total ? Math.round(correct / total * 100) : 0;
   const [emoji, heading] = pct === 100 ? ['🏆','Perfect!']
     : pct >= 80 ? ['🎉','Excellent!']
     : pct >= 60 ? ['👍','Well done!']
@@ -584,7 +764,37 @@ function showFinalScore() {
   document.getElementById('final-heading').textContent  = heading;
   document.getElementById('final-correct').textContent  = correct;
   document.getElementById('final-wrong').textContent    = total - correct;
-  document.getElementById('final-score').textContent    = score;
+
+  // Score count-up
+  const scoreEl = document.getElementById('final-score');
+  if (REDUCED_MOTION || score <= 0) {
+    scoreEl.textContent = score;
+  } else {
+    const t0 = performance.now(), dur = 900, target = score;
+    (function cu(now) {
+      const k = Math.min(1, (now - t0) / dur);
+      scoreEl.textContent = Math.round(target * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(cu);
+    })(t0);
+  }
+
+  /* Personal best — stored locally per topic */
+  let subText = bestStreak >= 2 ? `Best streak: 🔥 ${bestStreak} in a row.` : '';
+  try {
+    const bestKey = `aism-best:anagram:${META.subject || ''}:${META.topic || ''}`;
+    const prevRaw = localStorage.getItem(bestKey);
+    const prev = prevRaw == null ? null : parseInt(prevRaw, 10);
+    const isNew = prev == null || score > prev;
+    if (isNew) localStorage.setItem(bestKey, String(score));
+    if (prev != null) {
+      subText += (subText ? ' ' : '') +
+        (isNew ? `🎉 New personal best (was ${prev})!` : `Personal best: ${prev}.`);
+    }
+  } catch (e) {}
+  document.getElementById('final-sub').textContent = subText;
+
+  AudioFX.over();
+  if (!REDUCED_MOTION && pct >= 80) launchConfetti();
   document.getElementById('overlay-word').classList.remove('open');
   document.getElementById('overlay-final').classList.add('open');
 }
@@ -597,6 +807,216 @@ function restartGame() {
 
 document.getElementById('btn-next-word').addEventListener('click', nextWord);
 document.getElementById('btn-quit').addEventListener('click', () => window.location.href = 'vocab-hub.html');
+
+/* ============================================================
+   FLIP — tiles glide between rack and answer row
+   ============================================================ */
+function captureRects() {
+  const m = {};
+  document.querySelectorAll('#answer-groups .tile[data-tile-id], #letter-bank .tile[data-tile-id]')
+    .forEach(el => { m[el.dataset.tileId] = el.getBoundingClientRect(); });
+  return m;
+}
+
+function playFLIP(before) {
+  document.querySelectorAll('#answer-groups .tile[data-tile-id], #letter-bank .tile[data-tile-id]')
+    .forEach(el => {
+      const old = before[el.dataset.tileId];
+      if (!old) {                                 // brand-new tile — pop in
+        el.classList.add('pop');
+        setTimeout(() => el.classList.remove('pop'), 250);
+        return;
+      }
+      const now = el.getBoundingClientRect();
+      const dx = old.left - now.left, dy = old.top - now.top;
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+      el.classList.add('flipping');
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        el.classList.remove('flipping');
+        el.style.transition = 'transform 0.26s cubic-bezier(0.25,0.46,0.45,0.94)';
+        el.style.transform = '';
+        setTimeout(() => { el.style.transition = ''; }, 300);
+      }));
+    });
+}
+
+function rerender() {
+  const before = REDUCED_MOTION ? null : captureRects();
+  renderAnswerSlots();
+  renderBank();
+  updateCheckBtn();
+  if (before) playFLIP(before);
+}
+
+// ── SHUFFLE — rack visibly rearranges ──
+function shuffleBank() {
+  if (!gameActive) return;
+  const before = REDUCED_MOTION ? null : captureRects();
+  bankTiles = shuffle(bankTiles);
+  renderBank();
+  if (before) playFLIP(before);
+  AudioFX.shuffleFx();
+}
+
+// ── SKIP ──
+function skipWord() {
+  if (!gameActive) return;
+  gameActive = false;
+  skipped++;
+  streak = 0;
+  updateStreakPill();
+  AudioFX.drop();
+  showWordResult(false, 0);
+  document.getElementById('word-heading').textContent = 'Skipped!';
+}
+
+function removeLastPlaced() {
+  for (let wi = answerSlots.length - 1; wi >= 0; wi--) {
+    for (let li = answerSlots[wi].length - 1; li >= 0; li--) {
+      const s = answerSlots[wi][li];
+      if (s && !s.isHint) { returnToBank(wi, li); return; }
+    }
+  }
+}
+
+/* ============================================================
+   STREAK + SPEED BONUS (timer freezes while tab hidden)
+   ============================================================ */
+function updateStreakPill() {
+  const el = document.getElementById('streak-pill');
+  if (streak >= 2) { el.textContent = `🔥 ×${streak}`; el.classList.add('on'); }
+  else el.classList.remove('on');
+}
+
+function currentBonus() {
+  return Math.max(0, Math.ceil(BONUS_MAX * (1 - bonusElapsed / BONUS_TIME)));
+}
+
+function updateBonusPill() {
+  const el = document.getElementById('bonus-pill');
+  if (!el) return;
+  const b = currentBonus();
+  if (b <= 0) { el.classList.add('gone'); el.classList.remove('urgent'); return; }
+  el.classList.remove('gone');
+  el.textContent = `⚡ Speed bonus +${b}`;
+  const remaining = BONUS_TIME - bonusElapsed;
+  const urgent = remaining <= BONUS_URGENT;
+  el.classList.toggle('urgent', urgent);
+  if (urgent) {
+    const whole = Math.ceil(remaining);
+    if (whole !== lastTickSecond) { lastTickSecond = whole; AudioFX.tick(); }
+  }
+}
+
+setInterval(() => {
+  if (!gameActive || document.hidden) return;                       // frozen while tab hidden
+  if (document.getElementById('overlay-word').classList.contains('open')) return;
+  if (document.getElementById('overlay-final').classList.contains('open')) return;
+  const study = document.getElementById('aism-study-overlay');
+  if (study && study.dataset.show === '1') return;
+  if (bonusElapsed >= BONUS_TIME) return;
+  bonusElapsed += 0.2;
+  updateBonusPill();
+}, 200);
+
+/* ============================================================
+   FX HELPERS
+   ============================================================ */
+function spawnSparkles(el, n) {
+  if (REDUCED_MOTION) return;
+  const r = el.getBoundingClientRect();
+  const colours = ['#4ade9a', '#7b6fff', '#ffd166', '#ffffff'];
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('span');
+    s.className = 'sparkle';
+    s.style.left = (r.left + r.width / 2) + 'px';
+    s.style.top  = (r.top + r.height / 2) + 'px';
+    s.style.background = colours[Math.floor(Math.random() * colours.length)];
+    s.style.setProperty('--dx', (Math.random() * 90 - 45) + 'px');
+    s.style.setProperty('--dy', (-20 - Math.random() * 60) + 'px');
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 800);
+  }
+}
+
+function spawnFloatPts(text) {
+  if (REDUCED_MOTION) return;
+  const anchor = document.getElementById('answer-groups');
+  if (!anchor) return;
+  const r = anchor.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'float-pts';
+  el.textContent = text;
+  el.style.left = (r.left + r.width / 2) + 'px';
+  el.style.top  = (r.top - 10) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+
+function launchConfetti() {
+  const colours = ['#4ade9a', '#7b6fff', '#ffd166', '#ff6b6b', '#5ac8ff'];
+  for (let i = 0; i < 70; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = colours[i % colours.length];
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.transform = `rotate(${Math.random() * 360}deg)`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 4200);
+  }
+}
+
+/* ── Mute ── */
+const muteBtn = document.getElementById('btn-mute');
+muteBtn.textContent = AudioFX.muted ? '🔇' : '🔊';
+muteBtn.addEventListener('click', () => {
+  muteBtn.textContent = AudioFX.toggleMute() ? '🔇' : '🔊';
+});
+
+/* ============================================================
+   PHYSICAL KEYBOARD — letters place tiles, Backspace removes,
+   Enter submits. Ignored when modifiers held or overlays open.
+   ============================================================ */
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const study = document.getElementById('aism-study-overlay');
+  if (study && study.dataset.show === '1') return;          // study overlay open — ignore
+
+  if (document.getElementById('overlay-final').classList.contains('open')) {
+    if (e.key === 'm' || e.key === 'M') muteBtn.click();
+    return;
+  }
+  if (document.getElementById('overlay-word').classList.contains('open')) {
+    if (e.key === 'Enter') { e.preventDefault(); nextWord(); }
+    else if (e.key === 'm' || e.key === 'M') muteBtn.click();
+    return;
+  }
+  if (!gameActive) {
+    if (e.key === 'm' || e.key === 'M') muteBtn.click();
+    else if (e.key === 'Enter' && document.getElementById('screen-start').classList.contains('active')) startGame();
+    return;
+  }
+
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (document.getElementById('btn-check').classList.contains('ready')) checkAnswer();
+    return;
+  }
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+    removeLastPlaced();
+    return;
+  }
+  if (/^[a-zA-Z0-9]$/.test(e.key)) {
+    const upper = e.key.toUpperCase();
+    const tile = bankTiles.find(t => !t.used && t.letter.toUpperCase() === upper);
+    if (tile) placeFromBank(tile.id);
+    else if (upper === 'M') muteBtn.click();   // M mutes only when no M tile is available
+  }
+});
 </script>
 <!-- aism-study-screen:v1 -->
 <style id="aism-study-css">

@@ -327,5 +327,140 @@ const origShow=show;
 show=function(i){origShow(i);if(i===screens.length-1){document.getElementById('finalScore').textContent=score;document.getElementById('finalMax').textContent=totalPoints;const pct=score/totalPoints;document.getElementById('finalStars').textContent=pct>=0.9?'⭐⭐⭐':pct>=0.6?'⭐⭐':'⭐';}};
 backBtn.style.visibility='hidden';bar.style.width='0%';
 </script>
+<script>
+/* ── AISM juice layer: audio + celebration (shared 'aism-muted' pref) ── */
+const AISM_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const AISM_SFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.28;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.1, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+  return {
+    unlock() { ensure(); },
+    isMuted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    ok()      { tone(587, 0.08, 'sine', 0.11); setTimeout(() => tone(740, 0.1, 'sine', 0.1), 70); },
+    bad()     { tone(220, 0.15, 'sawtooth', 0.05, 165); },
+    fanfare() { tone(523, 0.1, 'triangle', 0.13); setTimeout(() => tone(659, 0.1, 'triangle', 0.13), 100); setTimeout(() => tone(784, 0.22, 'triangle', 0.13), 200); },
+  };
+})();
+function aismConfetti() {
+  if (AISM_REDUCED) return;
+  let st = document.getElementById('aism-confetti-style');
+  if (!st) {
+    st = document.createElement('style');
+    st.id = 'aism-confetti-style';
+    st.textContent = '@keyframes aismCfFall{from{transform:translateY(-10vh) rotate(0)}to{transform:translateY(110vh) rotate(720deg)}}.aism-cf{position:fixed;top:0;width:8px;height:12px;z-index:950;pointer-events:none;animation:aismCfFall linear both;}@keyframes aismPop{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}';
+    document.head.appendChild(st);
+  }
+  const colours = ['#4ade9a', '#7b6fff', '#ffd166', '#ff6b6b', '#5ac8ff'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'aism-cf';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colours[i % colours.length];
+    c.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.borderRadius = Math.random() < 0.5 ? '50%' : '2px';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3600);
+  }
+}
+/* correct-answer chime + score pop (wraps the engine's global addScore) */
+try {
+  const _aismAddScore = addScore;
+  addScore = function (n) {
+    _aismAddScore(n);
+    try {
+      AISM_SFX.ok();
+      if (!AISM_REDUCED && typeof scoreEl !== 'undefined' && scoreEl && scoreEl.animate) {
+        scoreEl.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.4)' }, { transform: 'scale(1)' }], { duration: 250 });
+      }
+    } catch (e) {}
+  };
+} catch (e) {}
+/* finale fanfare + confetti (wraps the engine's global show) */
+try {
+  const _aismShow = show;
+  show = function (i) {
+    _aismShow(i);
+    try {
+      if (i === screens.length - 1 && !window._aismCheered) {
+        window._aismCheered = true;
+        AISM_SFX.fanfare();
+        aismConfetti();
+      }
+    } catch (e) {}
+  };
+} catch (e) {}
+/* wrong-answer buzz via delegation (engine marks elements with .wrong) */
+document.addEventListener('click', e => {
+  const el = e.target && e.target.closest ? e.target.closest('.opt, .nbtn, .checkbtn') : null;
+  if (!el) return;
+  setTimeout(() => {
+    try {
+      if (el.classList.contains('wrong')) { AISM_SFX.bad(); return; }
+      const ta = el.closest('.textans');
+      if (ta && ta.querySelector('input.wrong')) AISM_SFX.bad();
+    } catch (e2) {}
+  }, 40);
+}, true);
+/* mute button + audio unlock */
+(function () {
+  function add() {
+    if (document.getElementById('aism-mute')) return;
+    const b = document.createElement('button');
+    b.id = 'aism-mute';
+    b.type = 'button';
+    b.title = 'Toggle sound (M)';
+    b.textContent = AISM_SFX.isMuted() ? '🔇' : '🔊';
+    b.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:900;background:rgba(26,29,39,0.92);border:1px solid rgba(255,255,255,0.16);color:#fff;border-radius:10px;padding:8px 11px;font-size:15px;cursor:pointer;line-height:1;';
+    b.addEventListener('click', () => { b.textContent = AISM_SFX.toggleMute() ? '🔇' : '🔊'; });
+    document.body.appendChild(b);
+  }
+  if (document.body) add(); else window.addEventListener('DOMContentLoaded', add);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const t = e.target || {};
+      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return;
+      const b = document.getElementById('aism-mute');
+      if (b) b.click();
+    }
+  });
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => AISM_SFX.unlock(), { once: true, capture: true }));
+})();
+</script>
 </body>
 </html>

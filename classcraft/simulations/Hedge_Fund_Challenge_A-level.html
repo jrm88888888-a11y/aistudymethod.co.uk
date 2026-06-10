@@ -175,6 +175,22 @@ body{font-family:'Nunito',sans-serif;background:var(--offwh);color:var(--dgrey);
 .curriculum-card .c-topic{font-weight:600;color:var(--navy);font-size:0.95rem;}
 .curriculum-card .c-spec{font-size:0.8rem;color:var(--grey);margin-top:0.15rem;}
 .curriculum-card .c-how{font-size:0.9rem;color:var(--dgrey);margin-top:0.3rem;line-height:1.4;}
+
+/* ── AISM responsive + polish layer ── */
+@media (max-width: 768px) {
+  body { flex-direction: column; overflow: auto; height: auto; }
+  .sidebar { width: 100%; min-width: 0; height: auto; }
+  .sidebar-nav { display: flex; overflow-x: auto; padding: 0.2rem 0.4rem; -webkit-overflow-scrolling: touch; }
+  .sidebar-nav button { width: auto; white-space: nowrap; padding: 0.6rem 0.9rem; border-left: none; flex-shrink: 0; }
+  .sidebar-nav button.active { border-left: none; border-bottom: 3px solid var(--gold); }
+  .sidebar-sep { display: none; }
+  .main { height: auto; min-height: 60vh; }
+}
+button { transition: transform 0.1s ease, box-shadow 0.15s ease; }
+button:active { transform: scale(0.98); }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
 </style>
 <!-- aism-rebranded:v1 --></head>
 <body><nav>
@@ -565,6 +581,7 @@ function renderEntry(r, rd) {
 function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
 
 function pickChoice(r, t, did, ch) {
+  try { AISM_SFX.tick(); } catch (e) {}
   if (!G.roundDecisions[r]) G.roundDecisions[r] = {};
   if (!G.roundDecisions[r][t]) G.roundDecisions[r][t] = {};
   G.roundDecisions[r][t][did] = ch;
@@ -712,6 +729,7 @@ function getScore(t) {
 
 function renderLeaderboard(c) {
   if (!G.started) { c.innerHTML = '<div class="screen active"><div class="card"><h2>Start the game first</h2></div></div>'; return; }
+  try { if (!G._aismCheered) { G._aismCheered = true; AISM_SFX.fanfare(); } } catch (e) {}
   const ranked = G.teams.map((name, i) => ({ name, idx: i, score: getScore(i) })).sort((a, b) => b.score - a.score);
   let h = '<div class="screen active"><div class="card"><h2>LEADERBOARD</h2></div>';
   const medals = ['&#129351;','&#129352;','&#129353;'];
@@ -790,6 +808,76 @@ function renderDebrief(c) {
 
 // ======================== INIT ========================
 render();
+</script>
+
+<script>
+/* ── AISM audio layer (shared 'aism-muted' preference) ── */
+const AISM_SFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.25;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.1, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+  return {
+    unlock() { ensure(); },
+    isMuted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    tick()    { tone(620, 0.05, 'sine', 0.07, 700); },
+    fanfare() { tone(523, 0.1, 'triangle', 0.12); setTimeout(() => tone(659, 0.1, 'triangle', 0.12), 100); setTimeout(() => tone(784, 0.2, 'triangle', 0.12), 200); },
+  };
+})();
+(function aismMuteBtn() {
+  function add() {
+    if (document.getElementById('aism-mute')) return;
+    const b = document.createElement('button');
+    b.id = 'aism-mute';
+    b.type = 'button';
+    b.title = 'Toggle sound (M)';
+    b.textContent = AISM_SFX.isMuted() ? '🔇' : '🔊';
+    b.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:900;background:rgba(26,29,39,0.92);border:1px solid rgba(255,255,255,0.16);color:#fff;border-radius:10px;padding:8px 11px;font-size:15px;cursor:pointer;line-height:1;';
+    b.addEventListener('click', () => { b.textContent = AISM_SFX.toggleMute() ? '🔇' : '🔊'; });
+    document.body.appendChild(b);
+  }
+  if (document.body) add(); else window.addEventListener('DOMContentLoaded', add);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const b = document.getElementById('aism-mute');
+      if (b) b.click();
+    }
+  });
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => AISM_SFX.unlock(), { once: true, capture: true }));
+})();
 </script>
 </body>
 </html>

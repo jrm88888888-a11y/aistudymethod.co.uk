@@ -285,6 +285,88 @@ function shuffle(arr) {
 }
 
 /* ============================================================
+   AISM JUICE LAYER — synth audio, screen shake, streaks
+   ============================================================ */
+const AISM_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let aismStreak = 0;
+let shakeT = 0, shakeMag = 0;
+function aismShake(m) { if (AISM_REDUCED) return; shakeMag = m; shakeT = 0.3; }
+
+const AISM_SFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.35;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'square';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.15, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+  return {
+    unlock() { ensure(); },
+    isMuted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    correct(streak) {
+      const base = Math.min(880, 523 + (streak || 0) * 40);
+      tone(base, 0.09, 'sine', 0.14);
+      setTimeout(() => tone(base * 1.25, 0.12, 'sine', 0.13), 80);
+    },
+    wrong()   { tone(196, 0.22, 'sawtooth', 0.11, 98); },
+    fanfare() { tone(523, 0.1, 'triangle', 0.15); setTimeout(() => tone(659, 0.1, 'triangle', 0.15), 100); setTimeout(() => tone(784, 0.2, 'triangle', 0.15), 200); },
+    over()    { tone(330, 0.22, 'triangle', 0.13, 240); setTimeout(() => tone(220, 0.35, 'triangle', 0.12, 120), 220); },
+  };
+})();
+
+(function aismMuteBtn() {
+  function add() {
+    if (document.getElementById('aism-mute')) return;
+    const b = document.createElement('button');
+    b.id = 'aism-mute';
+    b.type = 'button';
+    b.title = 'Toggle sound (M)';
+    b.textContent = AISM_SFX.isMuted() ? '🔇' : '🔊';
+    b.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:900;background:rgba(26,29,39,0.92);border:1px solid rgba(255,255,255,0.16);color:#e8eaf0;border-radius:10px;padding:8px 11px;font-size:15px;cursor:pointer;line-height:1;';
+    b.addEventListener('click', () => { b.textContent = AISM_SFX.toggleMute() ? '🔇' : '🔊'; });
+    document.body.appendChild(b);
+  }
+  if (document.body) add(); else window.addEventListener('DOMContentLoaded', add);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const b = document.getElementById('aism-mute');
+      if (b) b.click();
+    }
+  });
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => AISM_SFX.unlock(), { once: true, capture: true }));
+})();
+
+/* ============================================================
    STATE
    ============================================================ */
 let canvas, ctx;
@@ -426,6 +508,8 @@ function startGame() {
   speed = DIFF_SETTINGS[difficulty].startSpeed;
   maxSpeed = speed;
   correctCount = 0;
+  aismStreak = 0;
+  shakeT = 0;
   totalAnswered = 0;
   playerX = 0.5;
   playerTargetX = 0.5;
@@ -564,13 +648,18 @@ function settleGate(gate) {
     speed = Math.min(cap, speed + DIFF_SETTINGS[difficulty].speedGain);
     if (speed > maxSpeed) maxSpeed = speed;
     gate.result = 'correct';
-    flashMessage('+100', false);
-    emitParticles(playerX, 0.85, '#4ade9a', 18);
+    aismStreak++;
+    try { AISM_SFX.correct(aismStreak); } catch (e) {}
+    flashMessage(aismStreak >= 3 ? '+100 · 🔥 ' + aismStreak + ' streak' : '+100', false);
+    emitParticles(playerX, 0.85, '#4ade9a', aismStreak >= 3 ? 28 : 18);
   } else {
     // Wrong
     lives--;
     speed = Math.max(0.6, speed - 0.15);
     gate.result = 'wrong';
+    aismStreak = 0;
+    try { AISM_SFX.wrong(); } catch (e) {}
+    aismShake(7);
     flashMessage('✗ ' + gate.options[gate.correct], true);
     emitParticles(playerX, 0.85, '#ff5a5f', 12);
   }
@@ -583,6 +672,17 @@ function settleGate(gate) {
 function draw() {
   const W = canvas.width  / (window.devicePixelRatio || 1);
   const H = canvas.height / (window.devicePixelRatio || 1);
+
+  /* screen shake — absolute transform each frame, no restore needed */
+  const dprS = window.devicePixelRatio || 1;
+  ctx.setTransform(dprS, 0, 0, dprS, 0, 0);
+  if (shakeT > 0) {
+    ctx.fillStyle = '#0f1117';
+    ctx.fillRect(0, 0, W, H);
+    shakeT = Math.max(0, shakeT - 0.016);
+    const mS = shakeMag * (shakeT / 0.3);
+    ctx.transform(1, 0, 0, 1, (Math.random() - 0.5) * mS, (Math.random() - 0.5) * mS);
+  }
 
   // Background gradient
   const grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -776,6 +876,7 @@ function endGame() {
   gameState = 'over';
   if (animId) cancelAnimationFrame(animId);
   const accuracy = totalAnswered > 0 ? Math.round(100 * correctCount / totalAnswered) : 0;
+  try { (accuracy >= 75 ? AISM_SFX.fanfare : AISM_SFX.over)(); } catch (e) {}
 
   document.getElementById('end-score').textContent = score;
   document.getElementById('end-accuracy').textContent = accuracy + '%';
@@ -787,6 +888,28 @@ function endGame() {
   else if (accuracy >= 75) { emoji = '🚀'; title = 'Strong run!'; }
   document.getElementById('end-emoji').textContent = emoji;
   document.getElementById('end-title').textContent = title;
+
+  /* Personal best — stored locally per game */
+  try {
+    const bestKey = 'aism-best:' + location.pathname;
+    const prevRaw = localStorage.getItem(bestKey);
+    const prevBest = prevRaw == null ? null : parseInt(prevRaw, 10);
+    const isNewBest = prevBest == null || score > prevBest;
+    if (isNewBest) localStorage.setItem(bestKey, String(score));
+    let bestEl = document.getElementById('end-best');
+    if (!bestEl) {
+      bestEl = document.createElement('div');
+      bestEl.id = 'end-best';
+      bestEl.style.cssText = 'margin:2px 0 14px;font-size:13px;font-weight:700;color:var(--accent-bright);';
+      const titleEl = document.getElementById('end-title');
+      if (titleEl && titleEl.parentNode) titleEl.parentNode.insertBefore(bestEl, titleEl.nextSibling);
+    }
+    if (bestEl) {
+      bestEl.textContent = prevBest == null ? ''
+        : isNewBest ? '\ud83c\udf89 New personal best \u2014 previous ' + prevBest
+        : 'Personal best: ' + prevBest;
+    }
+  } catch (e) {}
 
   document.getElementById('screen-game').classList.remove('active');
   document.getElementById('screen-end').classList.add('active');

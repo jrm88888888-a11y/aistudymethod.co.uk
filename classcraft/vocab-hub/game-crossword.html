@@ -18,7 +18,7 @@
       --text:#e8eaf0; --text-mid:#8b90a8; --text-dim:#4a4f68;
       --correct:#4ade9a; --wrong:#ff6b6b;
       --cell-bg:#e8eaf0; --cell-text:#0f1117;
-      --cell-selected:#c8d8ff; --cell-word:#dde8ff;
+      --cell-selected:#aac6ff; --cell-word:#dde8ff;
       --cell-correct:#b8f0cc; --cell-wrong:#ffd0d0;
       --font-d:'Nunito',sans-serif; --font-b:'Nunito',sans-serif;
       --r:10px; --trans:0.15s ease;
@@ -97,10 +97,24 @@
       transition:background var(--trans);
     }
     .cw-cell.black{background:#1a1a1a;cursor:default;border-color:#111;}
-    .cw-cell.selected{background:var(--cell-selected)!important;}
+    .cw-cell.selected{background:var(--cell-selected)!important;box-shadow:inset 0 0 0 2px var(--accent2);z-index:1;}
     .cw-cell.in-word{background:var(--cell-word);}
     .cw-cell.correct{background:var(--cell-correct)!important;}
     .cw-cell.wrong{background:var(--cell-wrong)!important;}
+
+    /* Feedback animations */
+    .cw-cell.shake{animation:cellShake 0.4s ease;}
+    @keyframes cellShake{0%,100%{transform:none}20%{transform:translateX(-3px)}40%{transform:translateX(3px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
+    .cw-cell.flash-good{animation:cellFlash 0.5s ease;}
+    @keyframes cellFlash{0%{background:var(--cell-correct);transform:scale(1.14);box-shadow:0 0 10px rgba(74,222,154,0.55);z-index:2;}100%{transform:none;}}
+    .cell-letter.reveal{animation:letterIn 0.5s ease both;}
+    @keyframes letterIn{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:none}}
+    .confetti-piece{position:fixed;top:-18px;z-index:600;pointer-events:none;animation-name:confettiFall;animation-timing-function:linear;animation-fill-mode:forwards;}
+    @keyframes confettiFall{to{transform:translateY(108vh) rotate(720deg);opacity:0.85;}}
+    @media(prefers-reduced-motion:reduce){
+      .cw-cell.shake,.cw-cell.flash-good,.cell-letter.reveal,.confetti-piece{animation:none!important;}
+      .result-card{animation:none!important;}
+    }
 
     .cell-num{
       position:absolute;
@@ -157,14 +171,17 @@
       display:flex;gap:0.4rem;
       padding:0.3rem 0.4rem;
       border-radius:5px;
+      border-left:2px solid transparent;
       cursor:pointer;
-      transition:background var(--trans);
+      transition:background var(--trans),border-color var(--trans);
       font-size:0.75rem;
       line-height:1.35;
     }
-    .clue-item:hover{background:rgba(255,255,255,0.05);}
-    .clue-item.active{background:rgba(123,111,255,0.15);}
+    .clue-item:hover{background:rgba(255,255,255,0.05);border-left-color:var(--text-dim);}
+    .clue-item.active{background:rgba(123,111,255,0.15);border-left-color:var(--accent2);}
+    .clue-item.active .clue-text{color:var(--text);}
     .clue-item.done{opacity:0.5;}
+    .clue-item.done .clue-text{text-decoration:line-through;}
     .clue-num{font-family:var(--font-d);font-weight:800;color:var(--accent2);min-width:18px;flex-shrink:0;font-size:0.72rem;}
     .clue-text{color:var(--text-mid);}
 
@@ -184,6 +201,7 @@
     .result-stat-val.bad{color:var(--wrong);}
     .result-stat-val.neutral{color:var(--accent2);}
     .result-stat-label{font-size:0.62rem;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;}
+    .result-meta{font-family:var(--font-d);font-size:0.74rem;font-weight:600;color:var(--text-mid);}
     .result-btns{display:flex;gap:0.65rem;}
     .btn-new-puzzle{font-family:var(--font-d);font-size:0.82rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.75rem 1.5rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);flex:1;}
     .btn-new-puzzle:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 18px rgba(74,222,154,0.3);}
@@ -235,6 +253,7 @@
 </div>
 <div class="hd-right" id="hd-right" style="display:none;">
 <div class="stat-pill">Words: <span id="words-done">0</span>/<span id="words-total">0</span></div>
+<button class="btn-hd" id="btn-mute" title="Toggle sound (M)">🔊</button>
 <button class="btn-hd" id="btn-quit">✕ Quit</button>
 </div>
 </header>
@@ -291,6 +310,7 @@
 <div class="result-stat"><div class="result-stat-val bad" id="res-wrong">0</div> <div class="result-stat-label">Wrong</div></div>
 <div class="result-stat"><div class="result-stat-val neutral" id="res-empty">0</div> <div class="result-stat-label">Blank</div></div>
 </div>
+<div class="result-meta" id="res-meta"></div>
 <div class="result-btns">
 <button class="btn-new-puzzle" onclick="newPuzzle()">New Puzzle</button>
 <button class="btn-hub" onclick="window.location.href='vocab-hub.html'">← Hub</button>
@@ -312,6 +332,83 @@ if (META.topic) {
   document.getElementById('start-topic').textContent = `${META.subject || ''} · ${META.board || ''}`;
 }
 
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============================================================
+   AUDIO — tiny WebAudio synth, no assets, mutable (persisted)
+   ============================================================ */
+const AudioFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.4;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'square';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.15, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+
+  function noise(dur, vol, filterFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const len = Math.max(1, Math.floor(actx.sampleRate * dur));
+      const buf = actx.createBuffer(1, len, actx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const f = actx.createBiquadFilter(); f.type = 'lowpass';
+      f.frequency.setValueAtTime(filterFreq || 1200, t0);
+      f.frequency.exponentialRampToValueAtTime(120, t0 + dur);
+      const g = actx.createGain();
+      g.gain.setValueAtTime(vol || 0.25, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t0);
+    } catch (e) {}
+  }
+
+  return {
+    unlock() { ensure(); },
+    get muted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    /* Crossword sounds — deliberately quiet; this is a thinking game */
+    tick()     { tone(720, 0.045, 'sine', 0.045); },
+    wordDone() { tone(523, 0.09, 'sine', 0.07); setTimeout(() => tone(784, 0.14, 'sine', 0.07), 90); },
+    buzz()     { tone(170, 0.18, 'sine', 0.06, 130); },
+    reveal()   { tone(440, 0.1, 'sine', 0.05, 330); },
+    fanfare()  { tone(523, 0.12, 'sine', 0.09); setTimeout(() => tone(659, 0.12, 'sine', 0.09), 120); setTimeout(() => tone(784, 0.12, 'sine', 0.09), 240); setTimeout(() => tone(1047, 0.3, 'sine', 0.1), 360); },
+  };
+})();
+
 // ── CONSTANTS ──
 const MAX_GRID = 15;
 
@@ -323,6 +420,9 @@ let selectedCell  = null; // {r, c}
 let selectedDir   = 'across';
 let cellSize      = 36;
 let submitted     = false;
+let puzzleStart   = 0;          // timestamp of puzzle render — for the time stat
+let hintsUsed     = 0;          // letters filled in by Reveal All
+const completedWords = new Set(); // "dir-number" keys of words confirmed correct
 
 function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
@@ -344,6 +444,7 @@ function selectSize(el) {
 // ── START ──
 function startGame() {
   if (!selectedWords) return;
+  AudioFX.unlock();
   document.getElementById('screen-start').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
   document.getElementById('hd-right').style.display = 'flex';
@@ -381,6 +482,9 @@ function generateAndRender() {
     document.getElementById('words-done').textContent  = '0';
     document.getElementById('progress-fill').style.width = '0%';
     submitted = false;
+    puzzleStart = Date.now();
+    hintsUsed = 0;
+    completedWords.clear();
   }, 50);
 }
 
@@ -710,7 +814,11 @@ function selectCell(r, c, dir) {
         const el = document.querySelector(`.cw-cell[data-r="${wr}"][data-c="${wc}"]`);
         el?.classList.add('in-word');
       }
-      document.getElementById(`clue-${word.dir}-${word.number}`)?.classList.add('active');
+      const clueEl = document.getElementById(`clue-${word.dir}-${word.number}`);
+      if (clueEl) {
+        clueEl.classList.add('active');
+        try { clueEl.scrollIntoView({ block: 'nearest', behavior: REDUCED_MOTION ? 'auto' : 'smooth' }); } catch (e) {}
+      }
     }
     // Highlight selected cell on top
     document.querySelector(`.cw-cell[data-r="${r}"][data-c="${c}"]`)?.classList.add('selected');
@@ -719,7 +827,7 @@ function selectCell(r, c, dir) {
   if (!submitted) {
     const inp = document.getElementById('tablet-input');
     inp.value = '';
-    inp.focus();
+    try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); }
   }
 }
 
@@ -741,6 +849,8 @@ document.addEventListener('keydown', e => {
     if (grid[r][c].inputLetter) {
       grid[r][c].inputLetter = '';
       updateCellDisplay(r, c);
+      updateProgress();
+      syncWordState(r, c, true);
     } else {
       moveCursor(-1);
     }
@@ -763,7 +873,9 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     grid[r][c].inputLetter = ch;
     updateCellDisplay(r, c);
+    AudioFX.tick();
     updateProgress();
+    syncWordState(r, c);
     moveCursor(1);
   }
 });
@@ -806,8 +918,87 @@ function updateProgress() {
   document.getElementById('progress-fill').style.width = (filled/total*100) + '%';
 }
 
+// ── LIVE WORD COMPLETION ──
+function isWordCorrect(w) {
+  for (let i = 0; i < w.word.length; i++) {
+    const r = w.dir==='down'   ? w.row+i : w.row;
+    const c = w.dir==='across' ? w.col+i : w.col;
+    if (grid[r][c].inputLetter !== grid[r][c].letter) return false;
+  }
+  return true;
+}
+
+/* After any letter change in (r,c): celebrate newly-correct words,
+   un-mark broken ones, keep the header counter live, auto-finish. */
+function syncWordState(r, c, silent) {
+  if (!grid[r] || !grid[r][c]) return;
+  (grid[r][c].wordIds || []).forEach(wi => {
+    const w = placedWords[wi];
+    if (!w) return;
+    const key = `${w.dir}-${w.number}`;
+    const complete = isWordCorrect(w);
+    if (complete && !completedWords.has(key)) {
+      completedWords.add(key);
+      if (!silent) celebrateWord(w);
+      document.getElementById(`clue-${w.dir}-${w.number}`)?.classList.add('done');
+    } else if (!complete && completedWords.has(key)) {
+      completedWords.delete(key);
+      document.getElementById(`clue-${w.dir}-${w.number}`)?.classList.remove('done');
+    }
+  });
+  document.getElementById('words-done').textContent = completedWords.size;
+  // Whole puzzle solved without hints → celebrate and show results
+  if (!submitted && hintsUsed === 0 && completedWords.size === placedWords.length) {
+    setTimeout(() => {
+      if (!submitted) {
+        AudioFX.fanfare();
+        confettiBurst();
+        submitCrossword(true);
+      }
+    }, REDUCED_MOTION ? 120 : 600);
+  }
+}
+
+function celebrateWord(w) {
+  AudioFX.wordDone();
+  if (REDUCED_MOTION) return;
+  // Quick green flash sweeping along the word
+  for (let i = 0; i < w.word.length; i++) {
+    const r = w.dir==='down'   ? w.row+i : w.row;
+    const c = w.dir==='across' ? w.col+i : w.col;
+    const el = document.querySelector(`.cw-cell[data-r="${r}"][data-c="${c}"]`);
+    if (!el) continue;
+    setTimeout(() => {
+      el.classList.add('flash-good');
+      setTimeout(() => el.classList.remove('flash-good'), 520);
+    }, i * 45);
+  }
+}
+
+// ── CONFETTI (DOM particles, self-cleaning) ──
+function confettiBurst() {
+  if (REDUCED_MOTION) return;
+  const colours = ['#4ade9a','#7b6fff','#ffd166','#5ac8ff','#ff6b6b'];
+  const pieces = [];
+  for (let i = 0; i < 80; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText =
+      `left:${Math.random()*100}vw;` +
+      `background:${colours[i % colours.length]};` +
+      `width:${6 + Math.random()*6}px;height:${8 + Math.random()*8}px;` +
+      `border-radius:${Math.random() < 0.4 ? '50%' : '2px'};` +
+      `transform:rotate(${Math.random()*360}deg);` +
+      `animation-duration:${(1.8 + Math.random()*1.6).toFixed(2)}s;` +
+      `animation-delay:${(Math.random()*0.4).toFixed(2)}s;`;
+    document.body.appendChild(p);
+    pieces.push(p);
+  }
+  setTimeout(() => pieces.forEach(p => p.remove()), 4200);
+}
+
 // ── CHECK ANSWERS ──
-function submitCrossword() {
+function submitCrossword(fromAuto) {
   submitted = true;
   let correct=0, wrong=0, empty=0, wordsCorrect=0;
 
@@ -823,6 +1014,10 @@ function submitCrossword() {
       correct++;
     } else {
       el?.classList.add('wrong');
+      if (el && !REDUCED_MOTION) {
+        el.classList.add('shake');
+        setTimeout(() => el.classList.remove('shake'), 450);
+      }
       // Show correct letter
       const letEl = document.getElementById(`cell-${r}-${c}`);
       if (letEl) { letEl.textContent = cell.letter; letEl.style.color='#c00'; }
@@ -859,17 +1054,62 @@ function submitCrossword() {
   document.getElementById('res-correct').textContent = correct;
   document.getElementById('res-wrong').textContent   = wrong;
   document.getElementById('res-empty').textContent   = empty;
-  document.getElementById('overlay').classList.add('open');
+
+  // Check feedback sounds (auto-completion already played its fanfare)
+  if (!fromAuto) {
+    if (wrong > 0) AudioFX.buzz();
+    else if (pct === 100) { AudioFX.fanfare(); confettiBurst(); }
+  }
+
+  // Time + hints
+  const elapsed = puzzleStart ? Math.max(0, Math.round((Date.now() - puzzleStart) / 1000)) : 0;
+  const mm = Math.floor(elapsed / 60), ss = String(elapsed % 60).padStart(2, '0');
+  const metaEl = document.getElementById('res-meta');
+  if (metaEl) metaEl.textContent = `⏱ ${mm}:${ss} · 💡 ${hintsUsed} hint${hintsUsed === 1 ? '' : 's'} used`;
+
+  /* Personal best — stored locally per topic (no-hint runs only) */
+  try {
+    if (hintsUsed === 0) {
+      const bestKey = `aism-best:crossword:${META.subject || ''}:${META.topic || ''}`;
+      const prevRaw = localStorage.getItem(bestKey);
+      const prev = prevRaw == null ? null : parseInt(prevRaw, 10);
+      const isNew = prev == null || pct > prev;
+      if (isNew) localStorage.setItem(bestKey, String(pct));
+      if (prev != null) {
+        document.getElementById('res-sub').textContent +=
+          isNew ? ` 🎉 New personal best (was ${prev}%)!` : ` Personal best: ${prev}%.`;
+      }
+    }
+  } catch (e) {}
+
+  // Let the shake / flash feedback read before the card covers the grid
+  const delay = (!REDUCED_MOTION && (wrong > 0 || pct === 100)) ? 700 : 80;
+  setTimeout(() => document.getElementById('overlay').classList.add('open'), delay);
 }
 
 // ── REVEAL ALL ──
 function revealAll() {
+  let revealed = 0;
   grid.forEach((row, r) => row.forEach((cell, c) => {
     if (!cell.isBlack) {
+      const wasCorrect = cell.inputLetter === cell.letter;
       cell.inputLetter = cell.letter;
       updateCellDisplay(r, c);
+      if (!wasCorrect) {
+        revealed++;
+        const letEl = document.getElementById(`cell-${r}-${c}`);
+        if (letEl && !REDUCED_MOTION) {
+          letEl.classList.add('reveal');
+          setTimeout(() => letEl.classList.remove('reveal'), 600);
+        }
+      }
     }
   }));
+  if (revealed > 0) { hintsUsed += revealed; AudioFX.reveal(); }
+  placedWords.forEach(w => {
+    completedWords.add(`${w.dir}-${w.number}`);
+    document.getElementById(`clue-${w.dir}-${w.number}`)?.classList.add('done');
+  });
   updateProgress();
   selectedCell = null;
   document.querySelectorAll('.cw-cell:not(.black)').forEach(el => el.classList.remove('selected','in-word'));
@@ -885,7 +1125,9 @@ document.getElementById('tablet-input').addEventListener('input', e => {
     const {r, c} = selectedCell;
     grid[r][c].inputLetter = ch;
     updateCellDisplay(r, c);
+    AudioFX.tick();
     updateProgress();
+    syncWordState(r, c);
     moveCursor(1);
   }
   e.target.value = ''; // clear so next input is always detected
@@ -899,6 +1141,8 @@ document.getElementById('tablet-input').addEventListener('keydown', e => {
     if (grid[r][c].inputLetter) {
       grid[r][c].inputLetter = '';
       updateCellDisplay(r, c);
+      updateProgress();
+      syncWordState(r, c, true);
     } else {
       moveCursor(-1);
     }
@@ -906,6 +1150,17 @@ document.getElementById('tablet-input').addEventListener('keydown', e => {
 });
 
 document.getElementById('btn-quit').addEventListener('click', () => window.location.href = 'vocab-hub.html');
+
+/* ── Mute ── */
+const muteBtn = document.getElementById('btn-mute');
+muteBtn.textContent = AudioFX.muted ? '🔇' : '🔊';
+muteBtn.addEventListener('click', () => {
+  muteBtn.textContent = AudioFX.toggleMute() ? '🔇' : '🔊';
+});
+// M toggles mute — but never while typing into the grid (M is a letter!)
+document.addEventListener('keydown', e => {
+  if ((e.key === 'm' || e.key === 'M') && (!selectedCell || submitted)) muteBtn.click();
+});
 </script>
 <!-- aism-study-screen:v1 -->
 <style id="aism-study-css">

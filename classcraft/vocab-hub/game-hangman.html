@@ -72,8 +72,9 @@
     /* SVG hangman */
     .hangman-wrap{flex-shrink:0;}
     .hangman-svg{width:140px;height:160px;}
-    .hm-part{stroke:#e8eaf0;stroke-width:3;stroke-linecap:round;fill:none;opacity:0;transition:opacity 0.3s;}
-    .hm-part.visible{opacity:1;}
+    /* Parts use pathLength="1" so each stroke draws itself in on reveal */
+    .hm-part{stroke:#e8eaf0;stroke-width:3;stroke-linecap:round;fill:none;opacity:0;stroke-dasharray:1;stroke-dashoffset:1;transition:opacity 0.2s ease,stroke-dashoffset 0.55s cubic-bezier(0.25,0.46,0.45,0.94) 0.05s;}
+    .hm-part.visible{opacity:1;stroke-dashoffset:0;}
     .hm-part.wrong{stroke:var(--wrong);}
 
     /* Word display */
@@ -82,7 +83,11 @@
     .letter-slot{display:flex;flex-direction:column;align-items:center;gap:0.2rem;}
     .letter-char{font-family:var(--font-d);font-size:clamp(1.4rem,3vw,2.2rem);font-weight:800;color:var(--accent);line-height:1;min-width:1.2rem;text-align:center;transition:all 0.2s;}
     .letter-char.blank{color:transparent;}
-    .letter-char.wrong-reveal{color:var(--wrong);}
+    .letter-char.reveal-soft{color:var(--accent2);transition:color 0.45s ease;}
+    .letter-char.pop{animation:letterPop 0.35s cubic-bezier(0.34,1.56,0.64,1);}
+    @keyframes letterPop{0%{transform:scale(0.2)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+    .letter-char.wave{animation:letterWave 0.5s ease;}
+    @keyframes letterWave{0%,100%{transform:translateY(0)}40%{transform:translateY(-14px)}}
     .letter-underline{width:100%;height:2px;background:rgba(255,255,255,0.2);border-radius:1px;}
     .space-slot{width:0.6rem;}
 
@@ -101,9 +106,12 @@
       cursor:pointer;color:var(--text);transition:all var(--trans);
       text-align:center;user-select:none;
     }
-    .kb-key:hover:not(.used){border-color:var(--accent2);background:rgba(123,111,255,0.1);}
-    .kb-key.correct{background:rgba(74,222,154,0.15);border-color:var(--correct);color:var(--correct);cursor:default;}
-    .kb-key.wrong{background:rgba(255,107,107,0.1);border-color:rgba(255,107,107,0.3);color:rgba(255,107,107,0.5);cursor:default;}
+    .kb-key:hover:not(.used){border-color:var(--accent2);background:rgba(123,111,255,0.1);transform:translateY(-1px);}
+    .kb-key:active:not(.used){transform:translateY(1px) scale(0.95);}
+    .kb-key.pressed{animation:keyPress 0.18s ease;}
+    @keyframes keyPress{50%{transform:translateY(2px) scale(0.92)}}
+    .kb-key.correct{background:rgba(74,222,154,0.18);border-color:var(--correct);color:var(--correct);cursor:default;transform:translateY(1px);box-shadow:inset 0 2px 5px rgba(0,0,0,0.35);}
+    .kb-key.wrong{background:rgba(255,107,107,0.06);border-color:rgba(255,107,107,0.2);color:rgba(255,107,107,0.4);cursor:default;opacity:0.55;}
     .kb-key.used{pointer-events:none;}
 
     /* Result overlay */
@@ -143,6 +151,32 @@
     @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}60%{transform:translateX(6px)}}
     .shake{animation:shake 0.3s ease;}
 
+    /* Hint button */
+    .btn-hint{font-family:var(--font-d);font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.35);color:#ffd166;padding:0.25rem 0.7rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);margin-left:auto;}
+    .btn-hint:hover:not(:disabled){background:rgba(255,209,102,0.18);transform:translateY(-1px);}
+    .btn-hint:disabled{opacity:0.35;cursor:default;}
+
+    /* Streak */
+    .result-streak{font-family:var(--font-d);font-size:0.85rem;font-weight:800;color:#ffd166;}
+
+    /* Round transition */
+    .round-in{animation:roundIn 0.4s cubic-bezier(0.25,0.46,0.45,0.94) both;}
+    @keyframes roundIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+    /* Confetti */
+    .confetti-burst{position:fixed;inset:0;pointer-events:none;z-index:600;overflow:hidden;}
+    .confetti-piece{position:absolute;top:-16px;border-radius:2px;animation:confettiFall linear forwards;}
+    @keyframes confettiFall{to{transform:translateY(110vh) rotate(740deg);opacity:0.6;}}
+
+    /* Reduced motion: calm everything down */
+    @media(prefers-reduced-motion:reduce){
+      .hm-part{stroke-dasharray:none;stroke-dashoffset:0;transition:opacity 0.2s;}
+      .letter-char.pop,.letter-char.wave,.shake,.round-in,.kb-key.pressed{animation:none!important;}
+      .letter-char.reveal-soft{transition:none;}
+      .confetti-burst{display:none;}
+      .kb-key,.kb-key:hover:not(.used),.kb-key:active:not(.used){transform:none;}
+    }
+
     /* Responsive */
     @media(max-width:400px){
       .hd{padding:0 0.85rem;}
@@ -180,10 +214,14 @@
 <span class="hd-sep">·</span>
 <span class="hd-title" id="hd-title">Hangman</span>
 </div>
+<div class="hd-right">
 <div class="hd-right" id="hd-right" style="display:none;">
+<div class="stat-pill" id="streak-pill" style="display:none;">🔥 0</div>
 <div class="stat-pill">Word <span id="word-num">1</span>/<span id="word-total">10</span></div>
 <div class="stat-pill">Score: <span id="score-display">0</span></div>
 <button class="btn-hd" id="btn-quit">✕ Quit</button>
+</div>
+<button class="btn-hd" id="btn-mute" title="Toggle sound (M)">🔊</button>
 </div>
 </header>
 <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
@@ -194,8 +232,10 @@
 <p class="start-sub">The definition is your clue. Guess the term letter by letter before the hangman is complete.</p>
 <div class="start-info">
 <div class="start-info-row"><span class="start-info-icon">❤️</span><span>You have <strong>7 lives</strong> per word</span></div>
-<div class="start-info-row"><span class="start-info-icon">💡</span><span>Multi-word terms show spaces between words</span></div>
-<div class="start-info-row"><span class="start-info-icon">⌨️</span><span>Click the on-screen keyboard or type on your keyboard</span></div>
+<div class="start-info-row"><span class="start-info-icon">🔤</span><span>Multi-word terms show spaces between words</span></div>
+<div class="start-info-row"><span class="start-info-icon">💡</span><span>Stuck? <strong>Hint</strong> reveals a letter for <strong>−5 pts</strong></span></div>
+<div class="start-info-row"><span class="start-info-icon">🔥</span><span>Solve words back-to-back to build a <strong>streak</strong></span></div>
+<div class="start-info-row"><span class="start-info-icon">⌨️</span><span>Click the on-screen keyboard or type on yours</span></div>
 <div class="start-info-row"><span class="start-info-icon">🎯</span><span>Score points for each word guessed correctly</span></div>
 </div>
 <button class="btn-start" onclick="startGame()">Start Game →</button>
@@ -208,6 +248,7 @@
 <div class="round-info">
 <span class="round-badge" id="round-badge">Word 1 of 10</span>
 <div class="lives-row" id="lives-row"></div>
+<button class="btn-hint" id="btn-hint" onclick="useHint()" title="Reveal a letter (−5 pts)">💡 Hint −5</button>
 </div>
 </div>
 <div class="game-mid">
@@ -220,14 +261,14 @@
 <line stroke="#3a4060" stroke-linecap="round" stroke-width="3" x1="30" x2="85" y1="10" y2="10"></line>
 <line stroke="#3a4060" stroke-linecap="round" stroke-width="3" x1="85" x2="85" y1="10" y2="30"></line>
 <!-- Body parts — revealed one by one on wrong guesses -->
-<circle class="hm-part" cx="85" cy="42" id="hm-head" r="12"></circle>
-<line class="hm-part" id="hm-body" x1="85" x2="85" y1="54" y2="100"></line>
-<line class="hm-part" id="hm-arm-l" x1="85" x2="65" y1="65" y2="85"></line>
-<line class="hm-part" id="hm-arm-r" x1="85" x2="105" y1="65" y2="85"></line>
-<line class="hm-part" id="hm-leg-l" x1="85" x2="65" y1="100" y2="125"></line>
-<line class="hm-part" id="hm-leg-r" x1="85" x2="105" y1="100" y2="125"></line>
+<circle class="hm-part" cx="85" cy="42" id="hm-head" pathLength="1" r="12"></circle>
+<line class="hm-part" id="hm-body" pathLength="1" x1="85" x2="85" y1="54" y2="100"></line>
+<line class="hm-part" id="hm-arm-l" pathLength="1" x1="85" x2="65" y1="65" y2="85"></line>
+<line class="hm-part" id="hm-arm-r" pathLength="1" x1="85" x2="105" y1="65" y2="85"></line>
+<line class="hm-part" id="hm-leg-l" pathLength="1" x1="85" x2="65" y1="100" y2="125"></line>
+<line class="hm-part" id="hm-leg-r" pathLength="1" x1="85" x2="105" y1="100" y2="125"></line>
 <!-- Optional 7th: rope goes taut -->
-<line class="hm-part" id="hm-rope" stroke-width="2" x1="85" x2="85" y1="20" y2="30"></line>
+<line class="hm-part" id="hm-rope" pathLength="1" stroke-width="2" x1="85" x2="85" y1="20" y2="30"></line>
 </svg>
 </div>
 <!-- Word + wrong letters -->
@@ -247,6 +288,7 @@
 <div class="result-heading" id="word-heading">Correct!</div>
 <div class="result-word" id="word-answer"></div>
 <div class="result-def" id="word-def"></div>
+<div class="result-streak" id="word-streak" style="display:none;"></div>
 <div class="result-score">Score: <span id="word-score">0</span></div>
 <div class="result-btns">
 <button class="btn-next-word" id="btn-next-word">Next Word →</button>
@@ -264,6 +306,7 @@
 <div class="final-stat"><div class="final-stat-val bad" id="final-wrong">0</div><div class="final-stat-label">Failed</div></div>
 <div class="final-stat"><div class="final-stat-val neutral" id="final-score">0</div><div class="final-stat-label">Score</div></div>
 </div>
+<div class="result-def" id="final-best" style="display:none;"></div>
 <button class="btn-hub" onclick="window.location.href='vocab-hub.html'">← Back to Hub</button>
 <button class="btn-play-again" onclick="restartGame()">Play Again</button>
 </div>
@@ -283,6 +326,89 @@ if (META.topic) {
   document.getElementById('start-topic').textContent = `${META.subject || ''} · ${META.board || ''}`;
 }
 
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============================================================
+   AUDIO — tiny WebAudio synth, no assets, mutable (persisted)
+   ============================================================ */
+const AudioFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.4;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'square';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.15, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+
+  function noise(dur, vol, filterFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const len = Math.max(1, Math.floor(actx.sampleRate * dur));
+      const buf = actx.createBuffer(1, len, actx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const f = actx.createBiquadFilter(); f.type = 'lowpass';
+      f.frequency.setValueAtTime(filterFreq || 1200, t0);
+      f.frequency.exponentialRampToValueAtTime(120, t0 + dur);
+      const g = actx.createGain();
+      g.gain.setValueAtTime(vol || 0.25, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t0);
+    } catch (e) {}
+  }
+
+  return {
+    unlock() { ensure(); },
+    get muted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    tick()    { tone(640, 0.04, 'square', 0.05, 520); },
+    pop()     { tone(523, 0.08, 'sine', 0.16, 880); },
+    thud()    { noise(0.14, 0.2, 480); tone(140, 0.18, 'sine', 0.14, 60); },
+    fanfare() { tone(523, 0.12, 'sine', 0.15); setTimeout(() => tone(659, 0.12, 'sine', 0.15), 110); setTimeout(() => tone(784, 0.12, 'sine', 0.15), 220); setTimeout(() => tone(1047, 0.25, 'sine', 0.16), 330); },
+    fail()    { tone(392, 0.22, 'triangle', 0.13, 330); setTimeout(() => tone(294, 0.28, 'triangle', 0.12, 240), 220); setTimeout(() => tone(220, 0.4, 'triangle', 0.11, 160), 460); },
+  };
+})();
+
+/* ── Mute ── */
+const muteBtn = document.getElementById('btn-mute');
+muteBtn.textContent = AudioFX.muted ? '🔇' : '🔊';
+muteBtn.addEventListener('click', () => {
+  muteBtn.textContent = AudioFX.toggleMute() ? '🔇' : '🔊';
+});
+
 const MAX_WRONG = 7;
 const HM_PARTS  = ['hm-head','hm-body','hm-arm-l','hm-arm-r','hm-leg-l','hm-leg-r','hm-rope'];
 const KB_ROWS   = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
@@ -298,14 +424,19 @@ let score      = 0;
 let correct    = 0;
 let failed     = 0;
 let gameActive = false;
+let streak     = 0;
+let lastReveal = '';
 
 // Fisher-Yates
 function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 // ── START ──
 function startGame() {
+  AudioFX.unlock();
   wordList = shuffle([...VOCAB_DATA]);
-  wordIndex = 0; score = 0; correct = 0; failed = 0;
+  wordIndex = 0; score = 0; correct = 0; failed = 0; streak = 0;
+  updateStreakPill();
+  document.getElementById('score-display').textContent = '0';
   document.getElementById('screen-start').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
   document.getElementById('hd-right').style.display = 'flex';
@@ -333,6 +464,17 @@ function loadWord(idx) {
   renderWord();
   renderKeyboard();
   renderWrongLetters();
+  updateHintBtn();
+
+  // Smooth slide/fade into the new round
+  if (!REDUCED_MOTION) {
+    document.querySelectorAll('#screen-game .game-top, #screen-game .game-mid, #screen-game .keyboard').forEach((el, i) => {
+      el.classList.remove('round-in');
+      void el.offsetWidth;
+      el.style.animationDelay = (i * 0.06) + 's';
+      el.classList.add('round-in');
+    });
+  }
 }
 
 // ── RENDER ──
@@ -369,6 +511,7 @@ function renderWord() {
       slot.className = 'letter-slot';
       const charEl = document.createElement('div');
       charEl.className = 'letter-char' + (guessed.has(ch) || ch === '-' ? '' : ' blank');
+      if (lastReveal && ch === lastReveal && !REDUCED_MOTION) charEl.classList.add('pop');
       charEl.textContent = ch;
       const underline = document.createElement('div');
       underline.className = 'letter-underline';
@@ -423,20 +566,36 @@ function renderWrongLetters() {
 function guessLetter(ch) {
   if (!gameActive || guessed.has(ch)) return;
   guessed.add(ch);
+  AudioFX.tick();
 
   const keyEl = document.getElementById('key-' + ch);
+  if (keyEl && !REDUCED_MOTION) {
+    keyEl.classList.remove('pressed');
+    void keyEl.offsetWidth;
+    keyEl.classList.add('pressed');
+  }
   const inWord = currentWord.replace(/ /g,'').replace(/-/g,'').includes(ch);
 
   if (inWord) {
     keyEl?.classList.add('correct','used');
+    setTimeout(() => AudioFX.pop(), 60);
+    lastReveal = ch;
     renderWord();
+    lastReveal = '';
+    updateHintBtn();
     // Check win
     const letters = new Set(currentWord.replace(/ /g,'').replace(/-/g,'').split(''));
     const allGuessed = [...letters].every(l => guessed.has(l));
-    if (allGuessed) { gameActive = false; setTimeout(() => showWordResult(true), 300); }
+    if (allGuessed) {
+      gameActive = false;
+      updateHintBtn();
+      celebrateWin();
+      setTimeout(() => showWordResult(true), REDUCED_MOTION ? 400 : 1200);
+    }
   } else {
     wrongCount++;
     keyEl?.classList.add('wrong','used');
+    setTimeout(() => AudioFX.thud(), 60);
     // Shake word display
     const disp = document.getElementById('word-display');
     disp.classList.remove('shake');
@@ -445,8 +604,83 @@ function guessLetter(ch) {
     renderHangman();
     renderLives();
     renderWrongLetters();
-    if (wrongCount >= MAX_WRONG) { gameActive = false; setTimeout(() => showWordResult(false), 400); }
+    if (wrongCount >= MAX_WRONG) {
+      gameActive = false;
+      updateHintBtn();
+      revealWordGently();
+      AudioFX.fail();
+      setTimeout(() => showWordResult(false), REDUCED_MOTION ? 500 : 1400);
+    }
   }
+}
+
+// ── JUICE ──
+function celebrateWin() {
+  AudioFX.fanfare();
+  if (REDUCED_MOTION) return;
+  document.querySelectorAll('#word-display .letter-char').forEach((el, i) => {
+    el.classList.remove('pop');
+    el.style.animationDelay = (i * 0.06) + 's';
+    el.classList.add('wave');
+  });
+  confettiBurst();
+}
+
+function confettiBurst() {
+  const colours = ['#4ade9a', '#7b6fff', '#ffd166', '#5ac8ff', '#ff6b6b'];
+  const burst = document.createElement('div');
+  burst.className = 'confetti-burst';
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement('span');
+    p.className = 'confetti-piece';
+    p.style.left = (Math.random() * 100) + '%';
+    p.style.background = colours[Math.floor(Math.random() * colours.length)];
+    p.style.width = (6 + Math.random() * 5) + 'px';
+    p.style.height = (8 + Math.random() * 6) + 'px';
+    p.style.animationDuration = (1 + Math.random() * 0.9) + 's';
+    p.style.animationDelay = (Math.random() * 0.25) + 's';
+    burst.appendChild(p);
+  }
+  document.body.appendChild(burst);
+  setTimeout(() => burst.remove(), 2400);
+}
+
+// Gentle staggered reveal of the missing letters — it's revision, not punishment
+function revealWordGently() {
+  document.querySelectorAll('#word-display .letter-char.blank').forEach((el, i) => {
+    el.style.transitionDelay = REDUCED_MOTION ? '0ms' : (i * 70) + 'ms';
+    el.classList.add('reveal-soft');
+  });
+}
+
+// ── HINT ──
+function useHint() {
+  if (!gameActive) return;
+  const distinct = [...new Set(currentWord.replace(/[ -]/g, '').split(''))];
+  const unrevealed = distinct.filter(l => !guessed.has(l));
+  if (unrevealed.length <= 1) return;          // a hint never finishes the word
+  const firstLetter = currentWord.replace(/[ -]/g, '')[0];
+  const ch = !guessed.has(firstLetter) ? firstLetter
+           : unrevealed[Math.floor(Math.random() * unrevealed.length)];
+  score = Math.max(0, score - 5);
+  document.getElementById('score-display').textContent = score;
+  guessLetter(ch);
+  updateHintBtn();
+}
+
+function updateHintBtn() {
+  const btn = document.getElementById('btn-hint');
+  if (!btn) return;
+  const distinct = [...new Set(currentWord.replace(/[ -]/g, '').split(''))];
+  const unrevealed = distinct.filter(l => !guessed.has(l));
+  btn.disabled = !gameActive || unrevealed.length <= 1;
+}
+
+function updateStreakPill() {
+  const pill = document.getElementById('streak-pill');
+  if (!pill) return;
+  if (streak >= 2) { pill.style.display = ''; pill.textContent = `🔥 ${streak}`; }
+  else pill.style.display = 'none';
 }
 
 // ── WORD RESULT ──
@@ -456,17 +690,21 @@ function showWordResult(won) {
     const wordScore = 10 + livesLeft * 5;
     score += wordScore;
     correct++;
+    streak++;
     document.getElementById('word-emoji').textContent   = livesLeft >= 5 ? '🏆' : livesLeft >= 3 ? '🎉' : '👍';
-    document.getElementById('word-heading').textContent = won ? 'Correct!' : '';
+    document.getElementById('word-heading').textContent = 'Correct!';
     document.getElementById('word-score').textContent   = score;
   } else {
     failed++;
-    // Reveal wrong letters in red
-    document.querySelectorAll('.letter-char.blank').forEach(el => el.classList.add('wrong-reveal'));
-    document.getElementById('word-emoji').textContent   = '💀';
-    document.getElementById('word-heading').textContent = 'Out of lives!';
+    streak = 0;
+    document.getElementById('word-emoji').textContent   = '📖';
+    document.getElementById('word-heading').textContent = 'The word was…';
     document.getElementById('word-score').textContent   = score;
   }
+  const streakEl = document.getElementById('word-streak');
+  if (won && streak >= 2) { streakEl.style.display = ''; streakEl.textContent = `🔥 ${streak} words in a row!`; }
+  else streakEl.style.display = 'none';
+  updateStreakPill();
   document.getElementById('word-answer').textContent = currentWord;
   document.getElementById('word-def').textContent    = currentDef;
   document.getElementById('score-display').textContent = score;
@@ -498,6 +736,22 @@ function showFinalScore() {
   document.getElementById('final-correct').textContent = correct;
   document.getElementById('final-wrong').textContent   = failed;
   document.getElementById('final-score').textContent   = score;
+
+  /* Personal best — stored locally per topic */
+  try {
+    const bestKey = `aism-best:hangman:${META.subject || ''}:${META.topic || ''}`;
+    const prevRaw = localStorage.getItem(bestKey);
+    const prev = prevRaw == null ? null : parseInt(prevRaw, 10);
+    const isNew = prev == null || score > prev;
+    if (isNew) localStorage.setItem(bestKey, String(score));
+    const bestEl = document.getElementById('final-best');
+    if (prev != null) {
+      bestEl.style.display = '';
+      bestEl.textContent = isNew ? `🎉 New personal best (was ${prev})!` : `Personal best: ${prev}.`;
+    } else {
+      bestEl.style.display = 'none';
+    }
+  } catch (e) {}
   document.getElementById('overlay-word').classList.remove('open');
   document.getElementById('overlay-final').classList.add('open');
 }
@@ -509,9 +763,27 @@ function restartGame() {
 }
 
 // ── KEYBOARD INPUT ──
+// A–Z guesses while playing; never fires while an overlay is open or a
+// modifier is held. M toggles mute when a guess isn't possible (M is a letter).
 document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const wordOpen  = document.getElementById('overlay-word').classList.contains('open');
+  const finalOpen = document.getElementById('overlay-final').classList.contains('open');
+  const study     = document.getElementById('aism-study-overlay');
+  const studyOpen = !!(study && study.dataset.show === '1');
+
+  if (e.key === 'Enter' && wordOpen) {
+    e.preventDefault();
+    document.getElementById('btn-next-word').click();
+    return;
+  }
+
   const ch = e.key.toUpperCase();
-  if (/^[A-Z]$/.test(ch) && gameActive) guessLetter(ch);
+  if (gameActive && !wordOpen && !finalOpen && !studyOpen) {
+    if (/^[A-Z]$/.test(ch)) guessLetter(ch);
+    return;
+  }
+  if (ch === 'M') muteBtn.click();
 });
 
 // ── BUTTONS ──

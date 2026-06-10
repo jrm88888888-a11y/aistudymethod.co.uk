@@ -55,6 +55,12 @@
   .em-insight { font-style:italic; font-size:14px; color:var(--text-secondary); margin-top:18px; padding:14px 16px; background:var(--bg-primary); border-radius:10px; border-left:3px solid var(--accent); }
   .em-back { color:var(--accent); text-decoration:none; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; display:inline-block; margin-top:24px; }
   .em-back:hover { text-decoration:underline; }
+  .em-progress { display:flex; gap:6px; margin-bottom:24px; }
+  .em-progress span { height:5px; flex:1; border-radius:3px; background:var(--border); transition:background 0.2s ease; }
+  .em-progress span.done { background:var(--accent); }
+  .em-progress span.now { background:var(--accent); opacity:0.45; }
+  .em-kbd-hint { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-top:10px; }
+  @media (hover:none) { .em-kbd-hint { display:none; } }
   .em-error, .em-pending { padding:20px; border-radius:10px; font-size:14px; }
   .em-error { background:rgba(194,65,12,0.05); border:1px solid rgba(194,65,12,0.2); color:#c2410c; }
   .em-pending { background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); }
@@ -90,6 +96,98 @@
 </div>
 
 <script>
+/* ── AISM audio + confetti (shared 'aism-muted' preference) ── */
+const AISM_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const AISM_SFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.28;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.1, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+  return {
+    unlock() { ensure(); },
+    isMuted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    ok()      { tone(587, 0.08, 'sine', 0.1); setTimeout(() => tone(740, 0.1, 'sine', 0.09), 70); },
+    bad()     { tone(220, 0.15, 'sawtooth', 0.05, 165); },
+    fanfare() { tone(523, 0.1, 'triangle', 0.12); setTimeout(() => tone(659, 0.1, 'triangle', 0.12), 100); setTimeout(() => tone(784, 0.2, 'triangle', 0.12), 200); },
+  };
+})();
+function aismConfetti() {
+  if (AISM_REDUCED) return;
+  let st = document.getElementById('aism-confetti-style');
+  if (!st) {
+    st = document.createElement('style');
+    st.id = 'aism-confetti-style';
+    st.textContent = '@keyframes aismCfFall{from{transform:translateY(-10vh) rotate(0)}to{transform:translateY(110vh) rotate(720deg)}}.aism-cf{position:fixed;top:0;width:8px;height:12px;z-index:950;pointer-events:none;animation:aismCfFall linear both;}';
+    document.head.appendChild(st);
+  }
+  const colours = ['#0a6b5e', '#7b6fff', '#ffd166', '#c2410c', '#5ac8ff'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'aism-cf';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colours[i % colours.length];
+    c.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.borderRadius = Math.random() < 0.5 ? '50%' : '2px';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3600);
+  }
+}
+(function aismMuteBtn() {
+  function add() {
+    if (document.getElementById('aism-mute')) return;
+    const b = document.createElement('button');
+    b.id = 'aism-mute';
+    b.type = 'button';
+    b.title = 'Toggle sound (M)';
+    b.textContent = AISM_SFX.isMuted() ? '🔇' : '🔊';
+    b.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:900;background:rgba(26,29,39,0.92);border:1px solid rgba(255,255,255,0.16);color:#e8eaf0;border-radius:10px;padding:8px 11px;font-size:15px;cursor:pointer;line-height:1;';
+    b.addEventListener('click', () => { b.textContent = AISM_SFX.toggleMute() ? '🔇' : '🔊'; });
+    document.body.appendChild(b);
+  }
+  if (document.body) add(); else window.addEventListener('DOMContentLoaded', add);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const b = document.getElementById('aism-mute');
+      if (b) b.click();
+    }
+  });
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => AISM_SFX.unlock(), { once: true, capture: true }));
+})();
+
 (async function() {
   const params = new URLSearchParams(location.search);
   const stem = params.get('spec');
@@ -159,6 +257,8 @@
 
     root.innerHTML = `
       ${header(`Item ${state.idx + 1} of ${items.length}`)}
+      <div class="em-progress" aria-hidden="true">${items.map((_, i) =>
+        `<span class="${i < state.idx ? 'done' : i === state.idx ? 'now' : ''}"></span>`).join('')}</div>
       <div class="em-card">
         <div class="em-prompt-label">Item ${state.idx + 1}</div>
         <p class="em-prompt">${escapeHtml(item.q)}</p>
@@ -167,6 +267,7 @@
           ${labeled.map((o, i) => `<button class="em-opt" data-role="${o.role}" data-idx="${i}" role="radio" aria-checked="false"><span class="em-opt-letter">${'AB'[i]}.</span>${escapeHtml(o.text)}</button>`).join('')}
         </div>
         <button class="em-btn" id="submit" disabled>Submit →</button>
+        <div class="em-kbd-hint">Keyboard: A / B to pick · Enter to submit</div>
         <div id="fb" aria-live="polite"></div>
       </div>
     `;
@@ -192,6 +293,7 @@
       if (phase === 'answer') {
         // Reveal phase
         const correct = picked === 'misconception';
+        try { correct ? AISM_SFX.ok() : AISM_SFX.bad(); } catch (e) {}
         const userWasRight = picked === 'misconception';
         root.querySelectorAll('.em-opt').forEach(b => {
           b.style.pointerEvents = 'none';
@@ -232,6 +334,7 @@
     const total = state.results.length;
     const correct = state.results.filter(r => r.correct).length;
     const pct = Math.round((correct / total) * 100);
+    try { if (pct >= 80) { AISM_SFX.fanfare(); aismConfetti(); } } catch (e) {}
 
     const mcRows = state.results.map(r => `
       <div class="em-mc-row ${r.correct ? '' : 'em-mc-row-bad'}">
@@ -264,6 +367,23 @@
 
   function escapeHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function hashStr(s) { let h=0; for (let i=0;i<s.length;i++) h = ((h<<5)-h + s.charCodeAt(i)) | 0; return h; }
+
+  // Keyboard shortcuts: A/B (or 1/2) select an option, Enter submits/advances.
+  document.addEventListener('keydown', e => {
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    const map = { a: 0, b: 1, '1': 0, '2': 1 };
+    if (k in map) {
+      const opts = root.querySelectorAll('.em-opt');
+      const b = opts[map[k]];
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+    } else if (k === 'enter') {
+      if (e.target && e.target.classList && e.target.classList.contains('em-opt')) return; // let Enter activate the focused option
+      const submit = document.getElementById('submit');
+      if (submit && !submit.disabled) { e.preventDefault(); submit.click(); }
+    }
+  });
 
   renderItem();
 })();

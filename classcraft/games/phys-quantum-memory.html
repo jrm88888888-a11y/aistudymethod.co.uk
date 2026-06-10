@@ -173,6 +173,56 @@
       .hd-sep,.hd-crumb,.hd-title{display:none;}
       .difficulty-grid{grid-template-columns:repeat(2,1fr);}
     }
+
+    /* AISM juice — card deal-in + confetti */
+    @media (prefers-reduced-motion: no-preference) {
+      @keyframes cardDealIn{from{opacity:0;transform:translateY(14px) scale(0.92)}to{opacity:1;transform:none}}
+      .card{animation:cardDealIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;}
+    .card:nth-child(1){animation-delay:0.018s}
+    .card:nth-child(2){animation-delay:0.036s}
+    .card:nth-child(3){animation-delay:0.054s}
+    .card:nth-child(4){animation-delay:0.072s}
+    .card:nth-child(5){animation-delay:0.090s}
+    .card:nth-child(6){animation-delay:0.108s}
+    .card:nth-child(7){animation-delay:0.126s}
+    .card:nth-child(8){animation-delay:0.144s}
+    .card:nth-child(9){animation-delay:0.162s}
+    .card:nth-child(10){animation-delay:0.180s}
+    .card:nth-child(11){animation-delay:0.198s}
+    .card:nth-child(12){animation-delay:0.216s}
+    .card:nth-child(13){animation-delay:0.234s}
+    .card:nth-child(14){animation-delay:0.252s}
+    .card:nth-child(15){animation-delay:0.270s}
+    .card:nth-child(16){animation-delay:0.288s}
+    .card:nth-child(17){animation-delay:0.306s}
+    .card:nth-child(18){animation-delay:0.324s}
+    .card:nth-child(19){animation-delay:0.342s}
+    .card:nth-child(20){animation-delay:0.360s}
+    .card:nth-child(21){animation-delay:0.378s}
+    .card:nth-child(22){animation-delay:0.396s}
+    .card:nth-child(23){animation-delay:0.414s}
+    .card:nth-child(24){animation-delay:0.432s}
+    .card:nth-child(25){animation-delay:0.450s}
+    .card:nth-child(26){animation-delay:0.468s}
+    .card:nth-child(27){animation-delay:0.486s}
+    .card:nth-child(28){animation-delay:0.504s}
+    .card:nth-child(29){animation-delay:0.522s}
+    .card:nth-child(30){animation-delay:0.540s}
+    .card:nth-child(31){animation-delay:0.558s}
+    .card:nth-child(32){animation-delay:0.576s}
+    .card:nth-child(33){animation-delay:0.594s}
+    .card:nth-child(34){animation-delay:0.612s}
+    .card:nth-child(35){animation-delay:0.630s}
+    .card:nth-child(36){animation-delay:0.648s}
+    .card:nth-child(37){animation-delay:0.666s}
+    .card:nth-child(38){animation-delay:0.684s}
+    .card:nth-child(39){animation-delay:0.702s}
+    .card:nth-child(40){animation-delay:0.720s}
+    }
+    @keyframes aismConfettiFall{from{transform:translateY(-10vh) rotate(0deg)}to{transform:translateY(110vh) rotate(720deg)}}
+    .aism-confetti{position:fixed;top:0;width:8px;height:12px;z-index:950;pointer-events:none;animation:aismConfettiFall linear both;}
+    @keyframes aismStreakPop{0%{opacity:0;transform:translate(-50%,0) scale(0.6)}20%{opacity:1;transform:translate(-50%,-8px) scale(1.1)}80%{opacity:1;transform:translate(-50%,-16px) scale(1)}100%{opacity:0;transform:translate(-50%,-28px) scale(0.95)}}
+    .aism-streak{position:fixed;left:50%;top:22%;z-index:950;pointer-events:none;font-weight:800;font-size:1.1rem;color:#ffd166;text-shadow:0 2px 10px rgba(0,0,0,0.6);animation:aismStreakPop 1.1s ease both;}
   </style>
 <!-- aism-rebranded:v1 --></head>
 <body><nav>
@@ -350,6 +400,7 @@ function selectDifficulty(el) {
 }
 
 function startGame() {
+  aismStreak = 0;
   if (!selectedPairs || selectedPairs > ALL_PAIRS.length) return;
   document.getElementById('screen-start').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
@@ -429,11 +480,118 @@ function buildGrid() {
   });
 }
 
+/* ============================================================
+   AISM JUICE LAYER — synth audio, streaks, confetti
+   ============================================================ */
+const AISM_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let aismStreak = 0;
+
+const AISM_SFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.32;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.12, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+  return {
+    unlock() { ensure(); },
+    isMuted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    flip()  { tone(640, 0.05, 'sine', 0.07, 720); },
+    match(streak) {
+      const base = Math.min(900, 523 + (streak || 0) * 45);
+      tone(base, 0.08, 'sine', 0.13);
+      setTimeout(() => tone(base * 1.3, 0.12, 'sine', 0.12), 80);
+    },
+    mismatch() { tone(220, 0.16, 'sawtooth', 0.07, 150); },
+    fanfare() { tone(523, 0.1, 'triangle', 0.15); setTimeout(() => tone(659, 0.1, 'triangle', 0.15), 100); setTimeout(() => tone(784, 0.2, 'triangle', 0.15), 200); },
+    over()    { tone(392, 0.18, 'triangle', 0.12); setTimeout(() => tone(330, 0.28, 'triangle', 0.11), 180); },
+  };
+})();
+
+function aismStreakPop(n) {
+  if (AISM_REDUCED) return;
+  const el = document.createElement('div');
+  el.className = 'aism-streak';
+  el.textContent = '🔥 ' + n + ' in a row!';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
+function aismConfetti() {
+  if (AISM_REDUCED) return;
+  const colours = ['#4ade9a', '#7b6fff', '#ffd166', '#ff6b6b', '#5ac8ff'];
+  for (let i = 0; i < 45; i++) {
+    const c = document.createElement('div');
+    c.className = 'aism-confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colours[i % colours.length];
+    c.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.borderRadius = Math.random() < 0.5 ? '50%' : '2px';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3600);
+  }
+}
+
+(function aismMuteBtn() {
+  function add() {
+    if (document.getElementById('aism-mute')) return;
+    const b = document.createElement('button');
+    b.id = 'aism-mute';
+    b.type = 'button';
+    b.title = 'Toggle sound (M)';
+    b.textContent = AISM_SFX.isMuted() ? '🔇' : '🔊';
+    b.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:900;background:rgba(26,29,39,0.92);border:1px solid rgba(255,255,255,0.16);color:#e8eaf0;border-radius:10px;padding:8px 11px;font-size:15px;cursor:pointer;line-height:1;';
+    b.addEventListener('click', () => { b.textContent = AISM_SFX.toggleMute() ? '🔇' : '🔊'; });
+    document.body.appendChild(b);
+  }
+  if (document.body) add(); else window.addEventListener('DOMContentLoaded', add);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const b = document.getElementById('aism-mute');
+      if (b) b.click();
+    }
+  });
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => AISM_SFX.unlock(), { once: true, capture: true }));
+})();
+
 function onCardClick(card) {
   if (locked || gameOver) return;
   if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
   if (flipped.length >= 2) return;
   card.classList.add('flipped');
+  try { AISM_SFX.flip(); } catch (e) {}
   flipped.push(card);
   if (flipped.length === 2) checkMatch();
 }
@@ -445,6 +603,9 @@ function checkMatch() {
   const [a, b] = flipped;
   const isMatch = a.dataset.pairId === b.dataset.pairId && a.dataset.type !== b.dataset.type;
   if (isMatch) {
+    aismStreak++;
+    try { AISM_SFX.match(aismStreak); } catch (e) {}
+    if (aismStreak >= 3) aismStreakPop(aismStreak);
     setTimeout(() => {
       a.classList.add('matched','just-matched');
       b.classList.add('matched','just-matched');
@@ -457,7 +618,8 @@ function checkMatch() {
       if (matched.size === selectedPairs) setTimeout(endGame, 500);
     }, 300);
   } else {
-    setTimeout(() => { a.classList.add('wrong'); b.classList.add('wrong'); }, 800);
+    aismStreak = 0;
+    setTimeout(() => { try { AISM_SFX.mismatch(); } catch (e) {} a.classList.add('wrong'); b.classList.add('wrong'); }, 800);
     setTimeout(() => {
       a.classList.remove('flipped','wrong');
       b.classList.remove('flipped','wrong');
@@ -475,6 +637,7 @@ function endGame() {
   if (gameOver) return;
   gameOver = true; stopTimer();
   const accuracy = attempts > 0 ? Math.round(selectedPairs / attempts * 100) : 100;
+  try { (accuracy >= 80 ? AISM_SFX.fanfare : AISM_SFX.over)(); if (accuracy >= 80) aismConfetti(); } catch (e) {}
   const [emoji,h,s] = accuracy === 100
     ? ['🏆','Perfect!','First attempt on every pair — outstanding!']
     : accuracy >= 80 ? ['🎉','Excellent!','Really strong performance.']
@@ -486,6 +649,20 @@ function endGame() {
   document.getElementById('res-pairs').textContent = matched.size;
   document.getElementById('res-attempts').textContent = attempts;
   document.getElementById('res-accuracy').textContent = accuracy + '%';
+
+  /* Personal best accuracy — stored locally per game */
+  try {
+    const bestKey = 'aism-best:' + location.pathname;
+    const prevRaw = localStorage.getItem(bestKey);
+    const prevBest = prevRaw == null ? null : parseInt(prevRaw, 10);
+    const isNewBest = prevBest == null || accuracy > prevBest;
+    if (isNewBest) localStorage.setItem(bestKey, String(accuracy));
+    if (prevRaw != null) {
+      document.getElementById('res-sub').textContent +=
+        isNewBest ? ' \ud83c\udf89 New best accuracy \u2014 previous ' + prevBest + '%.'
+                  : ' Best accuracy so far: ' + prevBest + '%.';
+    }
+  } catch (e) {}
   document.getElementById('overlay').classList.add('open');
 }
 

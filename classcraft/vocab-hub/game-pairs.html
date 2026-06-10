@@ -121,7 +121,29 @@
     .btn-change{font-family:var(--font-d);font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.6rem 2rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);width:100%;}
     .btn-change:hover{border-color:var(--accent2);color:var(--accent2);}
 
+    /* ── Juice: deal-in, match glow, streak, particles ── */
+    .card.deal{animation:dealIn 0.42s cubic-bezier(0.34,1.56,0.64,1) both;}
+    @keyframes dealIn{from{opacity:0;transform:translateY(26px) scale(0.72);}to{opacity:1;transform:none;}}
+    .card.just-matched .card-front{animation:matchGlow 0.9s ease 0.42s both;}
+    @keyframes matchGlow{0%{box-shadow:0 0 0 rgba(74,222,154,0);}35%{box-shadow:0 0 18px rgba(74,222,154,0.6),0 0 4px rgba(74,222,154,0.8);}100%{box-shadow:0 0 0 rgba(74,222,154,0);}}
+    .streak-pill{display:none;color:#ffd166;border-color:rgba(255,209,102,0.35);background:rgba(255,209,102,0.1);}
+    .streak-pill.on{display:inline-block;animation:comboIn 0.18s ease;}
+    @keyframes comboIn{from{transform:scale(0.6);opacity:0}to{transform:scale(1);opacity:1}}
+    .combo-float{position:fixed;z-index:600;font-family:var(--font-d);font-weight:800;color:#ffd166;text-shadow:0 2px 10px rgba(0,0,0,0.65);pointer-events:none;white-space:nowrap;}
+    .fx-bit{position:fixed;z-index:650;pointer-events:none;border-radius:2px;}
+
+    @media (prefers-reduced-motion: reduce){
+      .card-inner{transition-duration:0.01s!important;}
+      .card.deal{animation:none!important;}
+      .card.wrong .card-inner,.card.just-matched .card-inner{animation:none!important;}
+      .card.just-matched .card-front{animation:none!important;}
+      .progress-fill{transition:none!important;}
+    }
+
     /* Responsive */
+    @media(max-width:640px){
+      .pill-acc,.timer-label{display:none;}
+    }
     @media(max-width:400px){
       .hd{padding:0 0.85rem;}
       .hd-sep,.hd-title{display:none;}
@@ -159,6 +181,7 @@
 <span class="hd-sep">·</span>
 <span class="hd-title" id="hd-title">Memory Match</span>
 </div>
+<div class="hd-right">
 <div class="hd-right" id="hd-right" style="display:none;">
 <div class="timer-wrap">
 <span class="timer-label">Timer</span>
@@ -166,8 +189,12 @@
 </div>
 <div class="hd-timer" id="hd-timer">3:00</div>
 <div class="stat-pill">Pairs: <span id="match-count">0</span>/<span id="pair-total">12</span></div>
-<div class="stat-pill">Attempts: <span id="attempt-count">0</span></div>
+<div class="stat-pill">Moves: <span id="attempt-count">0</span></div>
+<div class="stat-pill pill-acc">Accuracy: <span id="accuracy-live">—</span></div>
+<div class="stat-pill streak-pill" id="streak-pill">🔥 ×<span id="streak-count">2</span></div>
 <button class="btn-hd" id="btn-restart">↺ Change level</button>
+</div>
+<button class="btn-hd" id="btn-mute" title="Toggle sound (M)">🔊</button>
 </div>
 </header>
 <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
@@ -215,6 +242,97 @@ if (META.topic) {
   document.getElementById('start-topic').textContent = `${META.subject || ''} · ${META.board || ''}`;
 }
 
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============================================================
+   AUDIO — tiny WebAudio synth, no assets, mutable (persisted)
+   (base copied from game-spaceinvaders.html — shared 'aism-muted' key)
+   ============================================================ */
+const AudioFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.4;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'square';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.15, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+
+  function noise(dur, vol, filterFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const len = Math.max(1, Math.floor(actx.sampleRate * dur));
+      const buf = actx.createBuffer(1, len, actx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const f = actx.createBiquadFilter(); f.type = 'lowpass';
+      f.frequency.setValueAtTime(filterFreq || 1200, t0);
+      f.frequency.exponentialRampToValueAtTime(120, t0 + dur);
+      const g = actx.createGain();
+      g.gain.setValueAtTime(vol || 0.25, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t0);
+    } catch (e) {}
+  }
+
+  return {
+    unlock() { ensure(); },
+    get muted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    flip()     { tone(640, 0.05, 'sine', 0.07, 540); },
+    match()    { tone(523, 0.1, 'sine', 0.14); setTimeout(() => tone(784, 0.16, 'sine', 0.14), 95); },
+    mismatch() { tone(185, 0.22, 'sawtooth', 0.08, 95); },
+    fanfare()  { tone(523, 0.12, 'sine', 0.15); setTimeout(() => tone(659, 0.12, 'sine', 0.15), 110); setTimeout(() => tone(784, 0.12, 'sine', 0.15), 220); setTimeout(() => tone(1047, 0.32, 'sine', 0.16), 330); },
+  };
+})();
+
+/* ── Mute button + M key ── */
+const muteBtn = document.getElementById('btn-mute');
+if (muteBtn) {
+  muteBtn.textContent = AudioFX.muted ? '🔇' : '🔊';
+  muteBtn.addEventListener('click', () => {
+    muteBtn.textContent = AudioFX.toggleMute() ? '🔇' : '🔊';
+    muteBtn.blur();
+  });
+  document.addEventListener('keydown', (e) => {
+    if ((e.key === 'm' || e.key === 'M') && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      muteBtn.textContent = AudioFX.toggleMute() ? '🔇' : '🔊';
+    }
+  });
+}
+
 // ── Difficulty options ──
 const DIFF_OPTIONS = [
   { icon:'🌱', label:'Starter',   pairs:4  },
@@ -230,8 +348,8 @@ const GRID_ROWS = { 4:2, 6:3, 8:4, 10:4, 12:4 };
 const TIMER_SECS = { 4:90, 6:120, 8:150, 10:180, 12:210 };
 
 let selectedPairs=0, flipped=[], matched=new Set(), attempts=0;
-let locked=false, gameOver=false;
-let timerOn=false, timerSecs=120, timerInterval=null;
+let locked=false, gameOver=false, streak=0, dealToken=0;
+let timerOn=false, timerSecs=120, timerInterval=null, timerPausedByTab=false;
 
 // Build difficulty grid
 const diffGrid = document.getElementById('diff-grid');
@@ -255,6 +373,7 @@ function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Mat
 
 function startGame(){
   if(!selectedPairs)return;
+  AudioFX.unlock();
   document.getElementById('screen-start').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
   document.getElementById('hd-right').style.display='flex';
@@ -265,7 +384,8 @@ function startGame(){
 }
 
 function resetState(){
-  flipped=[];matched=new Set();attempts=0;locked=false;gameOver=false;
+  flipped=[];matched=new Set();attempts=0;locked=false;gameOver=false;streak=0;
+  updateStreak();updateAccuracy();
   document.getElementById('match-count').textContent='0';
   document.getElementById('attempt-count').textContent='0';
   document.getElementById('progress-fill').style.width='0%';
@@ -299,15 +419,30 @@ function buildGrid(){
     cards.push({pairId:i,type:'def', text:item.definition});
   });
   cards=shuffle(cards);
-  cards.forEach(c=>{
+  cards.forEach((c,idx)=>{
     const card=document.createElement('div');
     card.className='card';
     card.dataset.pairId=c.pairId;
     card.dataset.type=c.type;
     card.innerHTML=`<div class="card-inner"><div class="card-face card-back"><div class="card-back-inner"><div class="card-back-pattern"></div><span class="card-back-logo">ME</span></div></div><div class="card-face card-front ${c.type}"><span class="card-type-badge">${c.type==='term'?'Term':'Definition'}</span><span class="card-text" style="font-size:${fs}">${c.text}</span></div></div>`;
     card.addEventListener('click',()=>onCardClick(card));
+    if(!REDUCED_MOTION){
+      const delay=Math.min(idx*35,1100);
+      card.classList.add('deal');
+      card.style.animationDelay=delay+'ms';
+      card.addEventListener('animationend',function h(e){
+        if(e.animationName==='dealIn'){card.classList.remove('deal');card.style.animationDelay='';card.removeEventListener('animationend',h);}
+      });
+    }
     grid.appendChild(card);
   });
+  // Brief input lock while the deal-in plays (no flipping mid-deal)
+  if(!REDUCED_MOTION){
+    locked=true;
+    const token=++dealToken;
+    const dealTotal=Math.min((cards.length-1)*35,1100)+460;
+    setTimeout(()=>{if(token===dealToken&&!gameOver&&flipped.length===0)locked=false;},dealTotal);
+  }
 }
 
 function onCardClick(card){
@@ -315,6 +450,7 @@ function onCardClick(card){
   if(card.classList.contains('flipped')||card.classList.contains('matched'))return;
   if(flipped.length>=2)return;
   card.classList.add('flipped');
+  AudioFX.flip();
   flipped.push(card);
   if(flipped.length===2)checkMatch();
 }
@@ -325,18 +461,23 @@ function checkMatch(){
   const[a,b]=flipped;
   const isMatch=a.dataset.pairId===b.dataset.pairId&&a.dataset.type!==b.dataset.type;
   if(isMatch){
+    streak++;
     setTimeout(()=>{
       a.classList.add('matched','just-matched');b.classList.add('matched','just-matched');
       a.classList.remove('flipped');b.classList.remove('flipped');
-      setTimeout(()=>{a.classList.remove('just-matched');b.classList.remove('just-matched');},900);
+      setTimeout(()=>{a.classList.remove('just-matched');b.classList.remove('just-matched');},1400);
       matched.add(parseInt(a.dataset.pairId));
       flipped=[];locked=false;
-      updateProgress();
+      AudioFX.match();
+      sparkleBurst(a,'#4ade9a');sparkleBurst(b,'#4ade9a');
+      comboFloat(a,b);
+      updateStreak();updateProgress();updateAccuracy();
       if(matched.size===selectedPairs)setTimeout(endGame,500);
     },300);
   }else{
-    setTimeout(()=>{a.classList.add('wrong');b.classList.add('wrong');},150);
-    setTimeout(()=>{a.classList.remove('flipped','wrong');b.classList.remove('flipped','wrong');flipped=[];locked=false;},950);
+    streak=0;
+    setTimeout(()=>{a.classList.add('wrong');b.classList.add('wrong');AudioFX.mismatch();},150);
+    setTimeout(()=>{a.classList.remove('flipped','wrong');b.classList.remove('flipped','wrong');flipped=[];locked=false;updateStreak();updateAccuracy();},950);
   }
 }
 
@@ -345,21 +486,137 @@ function updateProgress(){
   document.getElementById('match-count').textContent=matched.size;
 }
 
+function updateAccuracy(){
+  const el=document.getElementById('accuracy-live');
+  if(el)el.textContent=attempts>0?Math.round(matched.size/attempts*100)+'%':'—';
+}
+
+function updateStreak(){
+  const pill=document.getElementById('streak-pill');
+  if(!pill)return;
+  if(streak>=2){document.getElementById('streak-count').textContent=streak;pill.classList.add('on');}
+  else pill.classList.remove('on');
+}
+
+/* ── DOM particle FX (all self-cleaning, reduced-motion gated) ── */
+function sparkleBurst(el,colour){
+  if(REDUCED_MOTION||!el)return;
+  const r=el.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  for(let i=0;i<8;i++){
+    const b=document.createElement('div');
+    b.className='fx-bit';
+    const size=3+Math.random()*4;
+    b.style.cssText=`left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;background:${colour};border-radius:50%;box-shadow:0 0 6px ${colour};`;
+    document.body.appendChild(b);
+    if(!b.animate){b.remove();return;}
+    const ang=Math.random()*Math.PI*2, dist=28+Math.random()*48;
+    const anim=b.animate(
+      [{transform:'translate(0,0) scale(1)',opacity:1},
+       {transform:`translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist-14}px) scale(0)`,opacity:0}],
+      {duration:450+Math.random()*250,easing:'cubic-bezier(0.25,0.46,0.45,0.94)'});
+    anim.onfinish=()=>b.remove();
+    setTimeout(()=>b.remove(),1000);
+  }
+}
+
+function comboFloat(elA,elB){
+  if(streak<2)return;
+  const ra=elA.getBoundingClientRect(),rb=elB.getBoundingClientRect();
+  const x=(ra.left+ra.width/2+rb.left+rb.width/2)/2;
+  const y=Math.min(ra.top,rb.top);
+  const f=document.createElement('div');
+  f.className='combo-float';
+  f.textContent=`🔥 ×${streak}`;
+  f.style.cssText=`left:${x}px;top:${y}px;font-size:${Math.min(1.6,0.95+streak*0.1)}rem;transform:translate(-50%,-100%);`;
+  document.body.appendChild(f);
+  if(!REDUCED_MOTION&&f.animate){
+    const a=f.animate(
+      [{transform:'translate(-50%,-100%) scale(0.7)',opacity:0},
+       {transform:'translate(-50%,-135%) scale(1)',opacity:1,offset:0.25},
+       {transform:'translate(-50%,-195%) scale(1)',opacity:0}],
+      {duration:850,easing:'ease-out'});
+    a.onfinish=()=>f.remove();
+    setTimeout(()=>f.remove(),1300);
+  }else{
+    setTimeout(()=>f.remove(),700);
+  }
+}
+
+function confettiBurst(){
+  if(REDUCED_MOTION)return;
+  const colours=['#4ade9a','#7b6fff','#ffd166','#5ac8ff','#ff6b6b'];
+  const bits=[];
+  for(let i=0;i<70;i++){
+    const b=document.createElement('div');
+    b.className='fx-bit';
+    const w=5+Math.random()*5;
+    b.style.cssText=`left:${Math.random()*100}vw;top:-14px;width:${w}px;height:${w*0.45}px;background:${colours[i%colours.length]};`;
+    document.body.appendChild(b);bits.push(b);
+    if(!b.animate){b.remove();continue;}
+    const a=b.animate(
+      [{transform:'translate(0,0) rotate(0deg)',opacity:1},
+       {transform:`translate(${(Math.random()*2-1)*130}px,${window.innerHeight+50}px) rotate(${(Math.random()*2-1)*720}deg)`,opacity:0.7}],
+      {duration:1400+Math.random()*1400,delay:Math.random()*250,easing:'cubic-bezier(0.3,0.4,0.6,1)',fill:'forwards'});
+    a.onfinish=()=>b.remove();
+  }
+  setTimeout(()=>bits.forEach(b=>b.remove()),3400);
+}
+
+function countUp(el,target,suffix){
+  if(REDUCED_MOTION||!window.requestAnimationFrame){el.textContent=target+(suffix||'');return;}
+  const t0=performance.now(),dur=700;
+  function step(now){
+    const k=Math.min(1,(now-t0)/dur);
+    el.textContent=Math.round(target*(1-Math.pow(1-k,3)))+(suffix||'');
+    if(k<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 function endGame(){
   if(gameOver)return;gameOver=true;stopTimer();
-  const accuracy=attempts>0?Math.round(selectedPairs/attempts*100):100;
-  const[emoji,h,s]=accuracy===100?['🏆','Perfect!','First attempt on every pair!']:accuracy>=80?['🎉','Excellent!','Really strong performance.']:accuracy>=60?['👍','Well done!','Keep practising.']:['📚','Keep going!','Review and try again.'];
+  const won=matched.size===selectedPairs;
+  const accuracy=attempts>0?Math.round(matched.size/attempts*100):(won?100:0);
+  const[emoji,h,s]=!won?['⏰','Time\'s up!','You matched '+matched.size+' of '+selectedPairs+' pairs.']:accuracy===100?['🏆','Perfect!','First attempt on every pair!']:accuracy>=80?['🎉','Excellent!','Really strong performance.']:accuracy>=60?['👍','Well done!','Keep practising.']:['📚','Keep going!','Review and try again.'];
   document.getElementById('res-emoji').textContent=emoji;
   document.getElementById('res-heading').textContent=h;
   document.getElementById('res-sub').textContent=s;
-  document.getElementById('res-pairs').textContent=matched.size;
-  document.getElementById('res-attempts').textContent=attempts;
-  document.getElementById('res-accuracy').textContent=accuracy+'%';
+  countUp(document.getElementById('res-pairs'),matched.size,'');
+  countUp(document.getElementById('res-attempts'),attempts,'');
+  countUp(document.getElementById('res-accuracy'),accuracy,'%');
+
+  /* Personal best — stored locally per topic (best accuracy %) */
+  try {
+    const bestKey = `aism-best:pairs:${META.subject || ''}:${META.topic || ''}`;
+    const prevRaw = localStorage.getItem(bestKey);
+    const prev = prevRaw == null ? null : parseInt(prevRaw, 10);
+    const isNew = prev == null || accuracy > prev;
+    if (isNew && won) localStorage.setItem(bestKey, String(accuracy));
+    if (prev != null) {
+      document.getElementById('res-sub').textContent +=
+        (isNew && won) ? ` 🎉 New personal best (was ${prev}%)!` : ` Personal best: ${prev}%.`;
+    }
+  } catch (e) {}
+
+  if(won){AudioFX.fanfare();confettiBurst();}
   document.getElementById('overlay').classList.add('open');
 }
 
-function startTimer(){timerSecs=TIMER_SECS[selectedPairs]||180;updateTimerDisplay();timerInterval=setInterval(()=>{timerSecs--;updateTimerDisplay();if(timerSecs<=0){stopTimer();endGame();}},1000);}
+function timerTick(){timerSecs--;updateTimerDisplay();if(timerSecs<=0){stopTimer();endGame();}}
+function startTimer(){timerSecs=TIMER_SECS[selectedPairs]||180;updateTimerDisplay();stopTimer();timerInterval=setInterval(timerTick,1000);}
+function resumeTimer(){stopTimer();timerInterval=setInterval(timerTick,1000);}
 function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
+
+/* Freeze countdown while the tab is hidden */
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    if(timerInterval){stopTimer();timerPausedByTab=true;}
+  }else if(timerPausedByTab){
+    timerPausedByTab=false;
+    if(timerOn&&!gameOver)resumeTimer();
+  }
+});
 function updateTimerDisplay(){const m=Math.floor(timerSecs/60),s=timerSecs%60;const el=document.getElementById('hd-timer');if(!el)return;el.textContent=`${m}:${s.toString().padStart(2,'0')}`;el.classList.toggle('urgent',timerSecs<=20);}
 document.getElementById('timer-toggle').addEventListener('change',function(){timerOn=this.checked;document.getElementById('hd-timer').classList.toggle('active',timerOn);stopTimer();if(timerOn&&!gameOver)startTimer();});
 

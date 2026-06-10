@@ -162,6 +162,7 @@
         <h3 class="hc-prompt-h">A question to take with you</h3>
         <p class="hc-prompt-q">${escapeHtml(reflection)}</p>
         <textarea class="hc-reflect" id="reflect" aria-label="Your reflection" placeholder="Your reflection (saved in your browser, just for you)…"></textarea>
+        <div id="reflect-saved" aria-live="polite" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-top:6px;opacity:0;transition:opacity 0.3s ease;">Saved ✓</div>
       </div>` : ''}
     <a href="../../subjects.html" class="hc-back">← Back to subjects</a>
   `;
@@ -173,8 +174,18 @@
     try {
       const saved = localStorage.getItem(key);
       if (saved) reflectEl.value = saved;
+      const savedEl = document.getElementById('reflect-saved');
+      let savedTimer = null;
       reflectEl.addEventListener('input', () => {
-        try { localStorage.setItem(key, reflectEl.value); } catch(e){}
+        try {
+          localStorage.setItem(key, reflectEl.value);
+          // Brief "Saved ✓" confirmation so the auto-save is visible.
+          if (savedEl) {
+            savedEl.style.opacity = '1';
+            clearTimeout(savedTimer);
+            savedTimer = setTimeout(() => { savedEl.style.opacity = '0'; }, 1200);
+          }
+        } catch(e){}
       });
     } catch(e){}
   }
