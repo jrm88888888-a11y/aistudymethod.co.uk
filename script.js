@@ -64,6 +64,10 @@
       navLinks.appendChild(drawerCta);
     }
 
+    // iOS Safari scroll-lock: `overflow:hidden` on body alone doesn't lock the
+    // page (it still scrolls), AND jumps the scroll position on close. Use the
+    // `position: fixed` body pattern: snapshot scrollY on open, restore on close.
+    let savedScrollY = 0;
     function setOpen(open) {
       navLinks.classList.toggle('mobile-open', open);
       backdrop.classList.toggle('open', open);
@@ -72,7 +76,19 @@
       btn.innerHTML = open
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M6 18L18 6"/></svg>'
         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
-      document.body.style.overflow = open ? 'hidden' : '';
+      if (open) {
+        savedScrollY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${savedScrollY}px`;
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, savedScrollY);
+      }
     }
 
     btn.addEventListener('click', () => setOpen(!navLinks.classList.contains('mobile-open')));
