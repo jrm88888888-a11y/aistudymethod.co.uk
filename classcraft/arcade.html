@@ -266,7 +266,7 @@ const SUBJECT_ICONS = {
 const QUIZ_GAMES = [
   { id:'two-truths',   n:'TWO TRUTHS<br>ONE LIE', i:'🕵️', c:'c1', d:'Three claims. One is a misconception built to fool you. Call the lie.', stage:'VERIFY', best: s => 'aism-tt-best:' + s },
   { id:'connections',  n:'CONNECTIONS<br>GRID',   i:'🧩', c:'c2', d:'Six cards, four belong to your topic, two are smuggled decoys. Lock in four.', stage:'VERIFY' },
-  { id:'sequence',     n:'SORT THE<br>SEQUENCE',  i:'🪜', c:'c3', d:'Drag the events into the one true order. One shot, one second wind.', stage:'VERIFY', best: s => 'aism-seq-best:' + s },
+  { id:'sequence',     n:'SORT THE<br>SEQUENCE',  i:'🪜', c:'c3', d:'Drag the events into the one true order. One shot, one second wind.', stage:'VERIFY', needsSeq: true, best: s => 'aism-seq-best:' + s },
   { id:'wager',        n:'WAGER',                 i:'💰', c:'c4', d:'Stake your chips before you see the choices. Survive double-or-nothing.', stage:'EVALUATE', best: s => 'aism-wager-best:' + s },
   { id:'higher-lower', n:'HIGHER OR<br>LOWER',    i:'📈', c:'c5', d:'Call it — bigger or smaller? Bank the pot or push your luck.', stage:'VERIFY', best: s => 'aism-hl-best:' + s },
   { id:'falling-words',n:'FALLING<br>WORDS',      i:'☄️', c:'c6', d:'Terms rain from the sky. Snipe the one that matches the definition.', stage:'VERIFY' },
@@ -387,14 +387,14 @@ function syncStrip() {
   });
 }
 
-function cabinetHtml(g, kind, enabled, hs) {
+function cabinetHtml(g, kind, enabled, hs, lockText) {
   return `
     <button type="button" class="cabinet ${g.c} ${enabled ? 'enabled' : ''}" data-kind="${kind}" data-id="${g.id}">
       <div class="cab-marquee">${g.n}</div>
       <div class="cab-screen">${g.stage ? `<span class="stage-tag">${g.stage}</span>` : ''}<span class="icon" aria-hidden="true">${g.i}</span></div>
       <div class="cab-desc">${E(g.d)}</div>
       <div class="cab-hs">${hs}</div>
-      <div class="cab-lock">🔒 PICK A MISSION</div>
+      <div class="cab-lock">${lockText || '🔒 PICK A MISSION'}</div>
     </button>`;
 }
 
@@ -412,7 +412,13 @@ function renderCabinets() {
   $('grid-quiz').innerHTML =
     QUIZ_GAMES.map(g => {
       const best = bestFor(g, stem);
-      return cabinetHtml(g, 'quiz', !!stem, best != null ? `HI-SCORE ${best}` : (stem ? 'NEW GAME' : 'HI-SCORE —'));
+      // Sequence needs authored ordered content — a few topics have no
+      // honest ordering, so the cabinet stays locked rather than dead-ending.
+      const blocked = g.needsSeq && t && !t.q;
+      const on = !!stem && !blocked;
+      return cabinetHtml(g, 'quiz', on,
+        best != null ? `HI-SCORE ${best}` : (on ? 'NEW GAME' : 'HI-SCORE —'),
+        blocked ? 'NO TRUE ORDER FOR THIS TOPIC' : undefined);
     }).join('') +
     cabinetHtml({ id:'daily-drill', n:'DAILY<br>DRILL', i:'📚', c:'c5',
       d:'Five questions. Same five for everyone on Earth today. Protect the streak.', stage:'DAILY' },

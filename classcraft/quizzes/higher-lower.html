@@ -202,6 +202,25 @@
     }
   });
 
+  // Backfill from the subject+level number pool (every authored numerical
+  // across the subject) so a thin topic still gets a full comparison chain.
+  if (pool.length < 8 && spec && spec.subject && spec.level) {
+    try {
+      const r = await fetch(`../arcade/numbers/${encodeURIComponent(spec.subject)}-${encodeURIComponent(spec.level)}.json`);
+      if (r.ok) {
+        const packCards = ((await r.json()).cards || []);
+        for (const n of packCards) {
+          const card = toCard(n, n.src || 'Across the subject');
+          if (card && !seen.has(card.q + '|' + card.value)) {
+            seen.add(card.q + '|' + card.value);
+            pool.push(card);
+            if (pool.length >= 16) break;
+          }
+        }
+      }
+    } catch (e) { /* pool is optional — fall through to the gate */ }
+  }
+
   const distinctValues = new Set(pool.map(c => c.value)).size;
   if (pool.length < 3 || distinctValues < 2) {
     inProduction('Higher or Lower needs at least three numerical answers from this topic and its sibling topics to build a fair comparison chain. Not enough have been authored yet.');
