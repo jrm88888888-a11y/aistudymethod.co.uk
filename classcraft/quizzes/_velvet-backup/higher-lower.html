@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Higher or Lower — AI Study Method</title>
+<meta name="description" content="Two numerical facts from your topic. Is the hidden answer higher or lower than the one you can see? Endless streak mode — trust your feel for the numbers.">
+<link rel="stylesheet" href="../../style.css">
+<style>
+  .hl-wrap { max-width: 860px; margin: 0 auto; padding: calc(var(--nav-h) + 36px) 1.5rem 80px; }
+  .hl-topline { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+  .hl-badge { display:inline-flex; align-items:center; gap:8px; background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; padding:4px 12px; border-radius:30px; font-family:'DM Mono',monospace; margin-bottom:14px; }
+  .hl-title { font-family:'Playfair Display',serif; font-size:clamp(1.7rem,3vw,2.4rem); line-height:1.15; margin:0 0 10px; }
+  .hl-sub { color:var(--text-secondary); font-size:15px; margin:0 0 22px; line-height:1.55; max-width:60ch; }
+  .hl-meta { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:24px; }
+  .hl-streak { font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1.4px; text-transform:uppercase; color:var(--text-muted); white-space:nowrap; padding:8px 14px; border:1px solid var(--border); border-radius:30px; background:var(--bg-card); transition:all 0.25s ease; }
+  .hl-streak.hot { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; letter-spacing:0; text-transform:none; color:var(--accent); border-color:var(--border-accent); background:var(--accent-soft); box-shadow:0 4px 12px var(--accent-glow); }
+  .hl-stage { display:flex; gap:14px; align-items:stretch; margin-bottom:8px; }
+  .hl-col { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .hl-vs { align-self:center; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); flex:0 0 auto; padding:0 2px; }
+  .hl-card { position:relative; flex:1; background:var(--bg-card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:14px; padding:22px 24px; box-shadow:0 4px 14px rgba(10,107,94,0.06); display:flex; flex-direction:column; will-change:transform,opacity; }
+  .hl-card.mystery { border-left-color:#c2410c; }
+  .hl-card.enter { animation:hlFadeIn 0.45s ease both; }
+  @keyframes hlFadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  .hl-card-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:10px; }
+  .hl-card.mystery .hl-card-label { color:#c2410c; }
+  .hl-card-q { font-size:15.5px; font-weight:600; color:var(--text-primary); line-height:1.45; margin-bottom:auto; padding-bottom:18px; }
+  .hl-card-ans { font-family:'Playfair Display',serif; font-size:clamp(2rem,4.5vw,3rem); font-weight:700; line-height:1; color:var(--accent); word-break:break-word; }
+  .hl-card.mystery .hl-card-ans { color:var(--text-muted); }
+  .hl-card.mystery.revealed .hl-card-ans { color:var(--accent); }
+  .hl-card.mystery.revealed.busted .hl-card-ans { color:#c2410c; }
+  .hl-unit { font-family:'DM Mono',monospace; font-size:13px; font-weight:400; letter-spacing:0.5px; color:var(--text-muted); margin-left:7px; }
+  .hl-wrong-overlay { position:absolute; inset:0; border-radius:13px; background:rgba(194,65,12,0.88); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; animation:hlFadeIn 0.25s ease both; }
+  .hl-wrong-overlay small { font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:1.4px; text-transform:uppercase; font-weight:400; opacity:0.9; }
+  .hl-controls { display:flex; gap:12px; margin-top:14px; }
+  .hl-pill { flex:1; border:none; padding:16px 20px; border-radius:40px; font-family:'DM Mono',monospace; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; color:#fff; cursor:pointer; transition:transform 0.15s ease, opacity 0.2s ease; }
+  .hl-pill:hover { transform:translateY(-2px); }
+  .hl-pill:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+  .hl-higher { background:var(--velvet-gradient); box-shadow:0 4px 14px var(--accent-glow); }
+  .hl-lower { background:linear-gradient(135deg,#c2410c 0%,#e85d2a 100%); box-shadow:0 4px 14px rgba(194,65,12,0.3); }
+  .hl-kbd-hint { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-top:14px; text-align:right; }
+  @media (hover:none) { .hl-kbd-hint { display:none; } }
+  .hl-btn { background:var(--velvet-gradient); color:#fff; border:none; padding:14px 24px; border-radius:10px; font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer; box-shadow:0 4px 12px var(--accent-glow); transition:transform 0.15s; }
+  .hl-btn:hover { transform:translateY(-1px); }
+  .hl-btn-ghost { background:none; border:1.5px solid var(--border-accent); color:var(--accent); box-shadow:none; }
+  .hl-summary { margin-top:24px; padding:28px; background:var(--bg-card); border:1px solid var(--border); border-radius:14px; text-align:center; }
+  .hl-summary h2 { font-family:'Playfair Display',serif; font-size:1.5rem; margin:0 0 16px; }
+  .hl-big-stat { font-family:'Playfair Display',serif; font-size:56px; font-weight:700; line-height:1; color:var(--accent); }
+  .hl-big-lbl { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:var(--text-muted); margin:8px 0 4px; }
+  .hl-best { display:inline-block; margin-top:10px; font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--accent); background:var(--accent-soft); border:1px solid var(--border-accent); border-radius:20px; padding:4px 12px; }
+  .hl-insight { font-style:italic; font-size:14px; color:var(--text-secondary); margin:20px auto 0; padding:14px 16px; background:var(--bg-primary); border-radius:10px; border-left:3px solid var(--accent); text-align:left; max-width:54ch; }
+  .hl-ctas { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:24px; }
+  .hl-ctas a.hl-btn { text-decoration:none; display:inline-block; }
+  .hl-error { padding:20px; background:rgba(194,65,12,0.05); border:1px solid rgba(194,65,12,0.2); border-radius:10px; color:#c2410c; font-size:14px; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  @media (max-width: 560px) {
+    .hl-stage { flex-direction:column; }
+    .hl-vs { padding:2px 0; }
+    .hl-card { min-height:150px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="hl-wrap" id="root">
+  <div class="hl-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script>
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+(async function() {
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  if (!stem) {
+    root.innerHTML = '<div class="hl-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  // Some on-disk stems contain a colon the URL param drops (e.g.
+  // "history-gcse-edexcel:-superpower…"). Try the plain stem first,
+  // then every possible colon-insertion before a dash.
+  const stemCandidates = [stem];
+  for (let i = 0; i < stem.length; i++) {
+    if (stem[i] === '-') stemCandidates.push(stem.slice(0, i) + ':' + stem.slice(i));
+  }
+  async function fetchJson(dir) {
+    for (const cand of stemCandidates) {
+      try {
+        const r = await fetch(`${dir}/${encodeURIComponent(cand)}.json`);
+        if (r.ok) return await r.json();
+      } catch (e) {}
+    }
+    return null;
+  }
+  async function fetchSpec(siblingStem) {
+    try {
+      const r = await fetch(`../adventures/_specs/${encodeURIComponent(siblingStem)}.json`);
+      if (r.ok) return await r.json();
+    } catch (e) {}
+    return null;
+  }
+
+  const spec = await fetchJson('../adventures/_specs');
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // ── Pool building ─────────────────────────────────────────────────────
+  // A card is usable when its answer is a finite number in a sane display
+  // range. Questions that mention a year get tagged so we never ask a
+  // student to compare 1908 against 9.81 m/s² — categories only mix when
+  // both cards are years or both aren't.
+  const YEAR_RE = /\byear\b|\bcentury did\b|\bwhen did\b.*\b(1\d{3}|20\d{2})\b/i;
+  function toCard(n, srcLabel) {
+    if (!n || typeof n.q !== 'string' || !n.q.trim()) return null;
+    const v = Number(n.answer);
+    if (!isFinite(v)) return null;
+    const abs = Math.abs(v);
+    if (abs < 0.01 || abs > 1e9) return null;
+    return {
+      q: n.q.trim(),
+      value: v,
+      unit: typeof n.unit === 'string' ? n.unit.trim() : '',
+      year: YEAR_RE.test(n.q),
+      decs: Math.min(4, (String(n.answer).split('.')[1] || '').length),
+      src: srcLabel,
+    };
+  }
+
+  function inProduction(reason) {
+    root.innerHTML = `
+      <div class="hl-badge">V · Verify · Higher or Lower</div>
+      <h1 class="hl-title">${escapeHtml(topic)}</h1>
+      <p class="hl-sub">This game runs on real numerical answers drawn from across the subject — padding it with filler numbers wouldn't earn its place on the site. Come back soon.</p>
+      <div class="hl-meta">${escapeHtml([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="hl-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">⚖️</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;margin:0 0 8px">Numbers in production</h2>
+        <p style="color:var(--text-secondary);margin:0 0 18px;font-size:15px;">${escapeHtml(reason)}</p>
+        <a href="../../subjects.html" style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">← Back to subjects</a>
+      </div>
+    `;
+  }
+
+  const ownCards = ((spec && spec.numericals) || []).map(n => toCard(n, topic)).filter(Boolean);
+  if (!spec || ownCards.length === 0) {
+    inProduction('Higher or Lower needs authored numerical questions with genuinely numeric answers for this topic. That set hasn’t been written at the required depth yet.');
+    return;
+  }
+
+  // ── Sibling discovery ─────────────────────────────────────────────────
+  // The full catalog (resources.js) is far too large to fetch usefully, so
+  // we lean on a baked-in hint table of known-good topic stems per subject
+  // prefix. Many candidates will 404 — that's fine, we just skip them.
+  const SIBLING_HINTS = {
+    'physics-a-level': ['aqa-electricity','aqa-fields-their-consequences','aqa-further-mechanics-thermal-physics','aqa-measurements-errors','aqa-mechanics-materials','aqa-nuclear-physics','aqa-particles-radiation','aqa-waves','astrophysics','capacitance--capacitors','cosmology--hubbles-law','edexcel-electric-circuits','edexcel-electric-magnetic-fields','edexcel-further-mechanics','ccea-waves-photons-astronomy','ccea-forces-energy-electricity'],
+    'chemistry-a-level': ['acids-bases--buffers','aqa-atomic-structure','aqa-bonding-energetics','aqa-inorganic-chemistry','aqa-kinetics-equilibria','aqa-physical-chemistry','aqa-polymers-synthesis','aqa-rate-equations','aqa-thermodynamics','atomic-structure--bonding','edexcel-acid-base-equilibria','edexcel-atomic-structure-periodic-table','edexcel-bonding-structure','edexcel-energetics','edexcel-formulae-equations-amounts','ccea-physical-chemistry'],
+    'biology-a-level': ['aqa-cells','aqa-control-of-gene-expression','aqa-energy-transfers','aqa-genetic-information-variation','aqa-genetics-populations-ecosystems','aqa-organisms-exchange-substances','aqa-organisms-respond-to-changes','biological-molecules','cells--transport','dna-replication','ecology--populations','edexcel-biodiversity-natural-resources','edexcel-genes-health','ccea-molecules-cells','ccea-biochemistry-genetics-evolution'],
+    'maths-a-level': ['aqa-algebra-functions','aqa-coordinate-geometry','aqa-differentiation','aqa-exponentials-logarithms','aqa-integration','aqa-kinematics','aqa-moments','aqa-probability','aqa-sequences-series','aqa-statistical-distributions','aqa-trigonometry','aqa-vectors','aqa-forces-newtons-laws','aqa-numerical-methods','aqa-proof'],
+    'history-a-level': ['ancient--medieval','aqa-democracy-nazism-germany-1918-1945','aqa-france-in-revolution-1774-1815','aqa-industrialisation-the-people-britain-c1783-1885','aqa-stuart-britain-the-crisis-of-monarchy-1603-1702','aqa-the-age-of-the-crusades-c1071-1204','aqa-the-american-dream-reality-illusion-1945-1980','aqa-the-making-of-modern-britain-1951-2007','aqa-tudors-england-1485-1603','aqa:-cold-war-1945-91','aqa:-russia-1855-1964','aqa:-tudors-1485-1603','aqa:-usa-1865-1975','british-empire-in-india','ccea-germany-1919-45','ccea-partition-of-ireland-1900-25'],
+    'history-gcse': ['american-west-1840-95','aqa-america-1840-1895-expansion-consolidation','aqa-britain-health-the-people-c1000-to-present-day','aqa-conflict-tension-1918-1939','aqa-conflict-tension-between-east-west-1945-1972','aqa-elizabethan-england-c1568-1603','aqa-germany-1890-1945-democracy-dictatorship','aqa-norman-england-c1066-c1100','aqa-power-the-people-c1170-to-present-day','aqa:-conflict--tension-1894-1918','aqa:-elizabethan-england-1568-1603','aqa:-health--the-people','aqa:-power--the-people','cambridge-igcse-depth-study-germany-1918-45','cambridge-igcse-depth-study-russia-1905-41','cambridge-igcse-core-content-the-20th-century-1919-1990'],
+    'geography-a-level': ['aqa-ecosystems-under-stress','aqa-global-systems-global-governance','aqa-population-the-environment','aqa-resource-security','aqa:-changing-places','aqa:-coastal-systems','aqa:-global-governance','aqa:-water-and-carbon-cycles','carbon-cycle','ccea-human-geography-population','ccea-human-geography-development','ccea-human-geography-settlement','ccea-physical-geography-atmosphere','ccea-physical-geography-ecosystems','ccea-physical-geography-fluvial-coastal-environments','ccea-contemporary-issues-tectonic-environments'],
+    'geography-gcse': ['aqa-physical-landscapes-in-the-uk','aqa-the-challenge-of-natural-hazards','aqa-the-challenge-of-resource-management','aqa-the-changing-economic-world','aqa-the-living-world','aqa-urban-issues-challenges','aqa:-changing-economic-world','aqa:-resource-management-water','aqa:-tropical-rainforests','aqa:-uk-coastal-landscapes','cambridge-igcse-population-settlement','cambridge-igcse-the-natural-environment','ccea-changing-urban-areas','ccea-coastal-environments','ccea-contrasts-in-world-development','ccea-managing-our-environment'],
+    'physics-gcse': ['aqa-atomic-structure','aqa-magnetism-electromagnetism','aqa-particle-model-of-matter','aqa-space-physics','cambridge-igcse-electricity-magnetism','cambridge-igcse-motion-forces-energy','cambridge-igcse-nuclear-physics','cambridge-igcse-space-physics','cambridge-igcse-thermal-physics','ccea-atomic-nuclear-physics','ccea-density-pressure','ccea-space-physics','domestic-electricity--power','edexcel-astronomy','edexcel-conservation-of-energy','edexcel-electricity-circuits'],
+    'chemistry-gcse': ['aqa-atomic-structure-the-periodic-table','aqa-bonding-structure-properties','aqa-chemistry-of-the-atmosphere','aqa-rate-extent-of-change','atomic-structure','bonding','cambridge-igcse-acids-bases-salts','cambridge-igcse-atoms-elements-compounds','cambridge-igcse-chemical-energetics','cambridge-igcse-electrochemistry','cambridge-igcse-metals','cambridge-igcse-states-of-matter','cambridge-igcse-stoichiometry','ccea-acids-bases-salts','ccea-formulae-equations','ccea-materials'],
+    'biology-gcse': ['aqa-inheritance-variation-evolution','bioenergetics','cambridge-igcse-biological-molecules','cambridge-igcse-characteristics-classification','cambridge-igcse-coordination-response','cambridge-igcse-diseases-immunity','cambridge-igcse-enzymes','cambridge-igcse-gas-exchange-respiration','cambridge-igcse-human-nutrition','cambridge-igcse-plant-nutrition','cambridge-igcse-transport-in-animals','cambridge-igcse-transport-in-plants','ccea-breathing-respiration','ccea-cell-division-genetics','ccea-cells','ccea-coordination-control'],
+    'maths-gcse': ['algebra','aqa-geometry-measures','aqa-number','aqa-probability','aqa-ratio-proportion-rates-of-change','cambridge-igcse-algebra-graphs','cambridge-igcse-coordinate-geometry','cambridge-igcse-geometry','cambridge-igcse-mensuration','cambridge-igcse-number','cambridge-igcse-probability','cambridge-igcse-transformations-vectors','cambridge-igcse-trigonometry','ccea-geometry-measures','ccea-handling-data','edexcel-geometry-measures'],
+  };
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Same-topic sibling adventures first (adventure-1..3), then ~10 stems
+  // from the hint table for this subject prefix.
+  const base = stem.replace(/-adventure-\d+$/, '');
+  const candidates = new Set();
+  for (let n = 1; n <= 3; n++) {
+    const s = `${base}-adventure-${n}`;
+    if (s !== stem) candidates.add(s);
+  }
+  const prefixKey = Object.keys(SIBLING_HINTS).find(k => stem.startsWith(k + '-'));
+  if (prefixKey) {
+    shuffle(SIBLING_HINTS[prefixKey]).slice(0, 10).forEach(t => {
+      const s = `${prefixKey}-${t}-adventure-1`;
+      if (s !== stem) candidates.add(s);
+    });
+  }
+
+  const siblingSpecs = await Promise.all([...candidates].map(fetchSpec));
+  const pool = ownCards.slice();
+  const seen = new Set(pool.map(c => c.q + '|' + c.value));
+  siblingSpecs.forEach(s => {
+    if (!s || !Array.isArray(s.numericals)) return;
+    const label = s.topic_display || s.title || 'Sibling topic';
+    for (const n of s.numericals) {
+      const card = toCard(n, label);
+      if (card && !seen.has(card.q + '|' + card.value)) {
+        seen.add(card.q + '|' + card.value);
+        pool.push(card);
+        break; // first valid numerical per sibling spec
+      }
+    }
+  });
+
+  const distinctValues = new Set(pool.map(c => c.value)).size;
+  if (pool.length < 3 || distinctValues < 2) {
+    inProduction('Higher or Lower needs at least three numerical answers from this topic and its sibling topics to build a fair comparison chain. Not enough have been authored yet.');
+    return;
+  }
+
+  // ── Game ──────────────────────────────────────────────────────────────
+  const BEST_KEY = 'aism-hl-best:' + stem;
+  const sameVal = (a, b) => Math.abs(a - b) < 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
+
+  let queue = [];
+  function refill(exclude) { queue = shuffle(pool.filter(c => c !== exclude)); }
+  function takeFrom(pred) {
+    const i = queue.findIndex(pred);
+    return i > -1 ? queue.splice(i, 1)[0] : null;
+  }
+  // Prefer a card in the same category (year vs quantity) with a different
+  // value; identical answers are skipped outright. Only mix categories when
+  // the current category has nothing left to offer.
+  function drawNext(current) {
+    const strict = c => c.year === current.year && !sameVal(c.value, current.value);
+    const loose  = c => !sameVal(c.value, current.value);
+    let c = takeFrom(strict);
+    if (!c) { refill(current); c = takeFrom(strict) || takeFrom(loose); }
+    return c;
+  }
+
+  function fmt(v, card) {
+    if (card.year) return String(Math.round(v));
+    if (card.decs > 0) return Number(v.toFixed(card.decs)).toLocaleString('en-GB', { minimumFractionDigits: card.decs, maximumFractionDigits: card.decs });
+    return Math.round(v).toLocaleString('en-GB');
+  }
+
+  let state, stats;
+
+  function startGame() {
+    refill(null);
+    const left = queue.shift();
+    const right = drawNext(left);
+    state = { left, right, streak: 0, busy: false };
+    stats = { overshoot: 0, undershoot: 0, yearRounds: 0, yearRight: 0, lastWrongGuess: null };
+    renderGame();
+  }
+
+  function headerHtml() {
+    return `
+      <div class="hl-topline">
+        <div>
+          <div class="hl-badge">V · Verify · Higher or Lower</div>
+          <h1 class="hl-title">${escapeHtml(topic)}</h1>
+        </div>
+        <div class="hl-streak ${state.streak >= 3 ? 'hot' : ''}" id="streakBox">Streak: ${state.streak}</div>
+      </div>
+      <p class="hl-sub">Is the next answer bigger or smaller? Trust your feel for the numbers.</p>
+      <div class="hl-meta">${escapeHtml([level, subj].filter(Boolean).join(' · '))} · Endless · ${pool.length} facts in play</div>
+    `;
+  }
+
+  function cardHtml(card, mystery, extraClass) {
+    const ans = mystery
+      ? '<span class="hl-num">?</span>'
+      : `<span class="hl-num">${escapeHtml(fmt(card.value, card))}</span>${card.unit ? `<span class="hl-unit">${escapeHtml(card.unit)}</span>` : ''}`;
+    return `
+      <article class="hl-card ${mystery ? 'mystery' : ''} ${extraClass || ''}">
+        <div class="hl-card-label">${escapeHtml(mystery ? '? · ' + card.src : card.src)}</div>
+        <div class="hl-card-q">${escapeHtml(card.q)}</div>
+        <div class="hl-card-ans">${ans}</div>
+      </article>
+    `;
+  }
+
+  function renderGame(enterRight) {
+    root.innerHTML = `
+      ${headerHtml()}
+      <div class="hl-stage" id="stage">
+        <div class="hl-col" id="colL">${cardHtml(state.left, false)}</div>
+        <div class="hl-vs" aria-hidden="true">vs</div>
+        <div class="hl-col" id="colR">
+          ${cardHtml(state.right, true, enterRight ? 'enter' : '')}
+          <div class="hl-controls">
+            <button type="button" class="hl-pill hl-higher" id="btnHigher" aria-label="Guess the hidden answer is higher">↑ Higher</button>
+            <button type="button" class="hl-pill hl-lower" id="btnLower" aria-label="Guess the hidden answer is lower">↓ Lower</button>
+          </div>
+        </div>
+      </div>
+      <div class="hl-kbd-hint">Keyboard: ↑ higher · ↓ lower</div>
+    `;
+    document.getElementById('btnHigher').addEventListener('click', () => guess('higher'));
+    document.getElementById('btnLower').addEventListener('click', () => guess('lower'));
+  }
+
+  // Flip the "?" to the real number with an eased count-up that starts from
+  // the visible card's value — the number literally climbs or falls to its
+  // answer, which is the whole drama of the game.
+  function countUp(el, card, fromVal, done) {
+    const t0 = performance.now(), dur = 700, target = card.value;
+    function tick(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3); // ease-out cubic
+      el.textContent = fmt(fromVal + (target - fromVal) * e, card);
+      if (p < 1) requestAnimationFrame(tick);
+      else { el.textContent = fmt(target, card); if (done) done(); }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function guess(dir) {
+    if (state.busy) return;
+    state.busy = true;
+    const { left, right } = state;
+    const isHigher = right.value > left.value;
+    const correct = (dir === 'higher') === isHigher;
+
+    if (right.year) { stats.yearRounds++; if (correct) stats.yearRight++; }
+    if (!correct) {
+      stats.lastWrongGuess = dir;
+      if (dir === 'higher') stats.overshoot++; else stats.undershoot++;
+    }
+
+    ['btnHigher', 'btnLower'].forEach(id => { document.getElementById(id).disabled = true; });
+
+    const cardR = root.querySelector('#colR .hl-card');
+    cardR.classList.add('revealed');
+    if (!correct) cardR.classList.add('busted');
+    const numEl = cardR.querySelector('.hl-num');
+    if (right.unit) numEl.insertAdjacentHTML('afterend', `<span class="hl-unit">${escapeHtml(right.unit)}</span>`);
+
+    countUp(numEl, right, left.value, () => {
+      const revealed = fmt(right.value, right) + (right.unit ? ' ' + right.unit : '');
+      if (correct) {
+        state.streak++;
+        announce.textContent = `Correct — the answer was ${revealed}, which is ${isHigher ? 'higher' : 'lower'}. Streak ${state.streak}.`;
+        const streakBox = document.getElementById('streakBox');
+        streakBox.textContent = 'Streak: ' + state.streak;
+        if (state.streak >= 3) streakBox.classList.add('hot');
+        setTimeout(slideAndAdvance, 350);
+      } else {
+        announce.textContent = `Wrong — the answer was ${revealed}, which is ${isHigher ? 'higher' : 'lower'}. Final streak ${state.streak}.`;
+        setTimeout(() => {
+          cardR.insertAdjacentHTML('beforeend', '<div class="hl-wrong-overlay">✕ Wrong<small>it was ' + (isHigher ? 'higher' : 'lower') + '</small></div>');
+          setTimeout(renderSummary, 1300);
+        }, 500);
+      }
+    });
+  }
+
+  // The right card physically slides into the left slot over 0.5s (rect
+  // deltas make this work in both the side-by-side and the stacked mobile
+  // layouts), then the board re-renders with a fresh mystery card fading in.
+  function slideAndAdvance() {
+    const cardL = root.querySelector('#colL .hl-card');
+    const cardR = root.querySelector('#colR .hl-card');
+    const rL = cardL.getBoundingClientRect();
+    const rR = cardR.getBoundingClientRect();
+    cardR.style.transition = 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+    cardR.style.transform = `translate(${rL.left - rR.left}px, ${rL.top - rR.top}px)`;
+    cardR.style.zIndex = '2';
+    cardL.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    cardL.style.opacity = '0';
+    cardL.style.transform = 'translateX(-26px)';
+    root.querySelectorAll('.hl-pill').forEach(b => { b.style.opacity = '0.3'; });
+
+    setTimeout(() => {
+      const next = drawNext(state.right);
+      if (!next) { renderSummary(true); return; }
+      state.left = state.right;
+      state.right = next;
+      state.busy = false;
+      renderGame(true);
+    }, 520);
+  }
+
+  function numberSenseInsight(streak) {
+    const datesGood = stats.yearRounds >= 2 && stats.yearRight === stats.yearRounds;
+    if (streak >= 10) return `A ${streak}-card run is real number sense — you're estimating magnitudes, not guessing. That instinct is exactly what the Verify stage is built to train.`;
+    if (stats.lastWrongGuess === 'higher') {
+      return datesGood
+        ? 'Good sense for time scales — the dates never fooled you. But you overshot on the quantities: when in doubt, real answers are usually smaller than they feel.'
+        : 'You overshot — you called "Higher" when the number was smaller. Quantities in this subject run more modest than intuition suggests; anchor on the units before you commit.';
+    }
+    if (stats.lastWrongGuess === 'lower') {
+      return datesGood
+        ? 'Good sense for time scales, but you undershot on the quantities — some of these numbers are bigger than they feel. Note which scales surprised you.'
+        : 'You undershot — the hidden number was bigger than you expected. Magnitudes in this topic run larger than intuition suggests; that surprise is worth a flashcard.';
+    }
+    return 'Every card here is a real numerical answer from the syllabus. The ones that surprised you are the ones worth writing down — number sense is built one calibrated guess at a time.';
+  }
+
+  function renderSummary(exhausted) {
+    const streak = state.streak;
+    let prevBest = null;
+    try { prevBest = parseInt(localStorage.getItem(BEST_KEY)); } catch (e) {}
+    if (isNaN(prevBest)) prevBest = null;
+    const newBest = prevBest === null || streak > prevBest;
+    if (newBest) { try { localStorage.setItem(BEST_KEY, String(streak)); } catch (e) {} }
+
+    root.innerHTML = `
+      <div class="hl-topline">
+        <div>
+          <div class="hl-badge">V · Verify · Higher or Lower</div>
+          <h1 class="hl-title">${escapeHtml(topic)}</h1>
+        </div>
+      </div>
+      <p class="hl-sub">Is the next answer bigger or smaller? Trust your feel for the numbers.</p>
+      <div class="hl-meta">${escapeHtml([level, subj].filter(Boolean).join(' · '))} · ${exhausted ? 'Deck cleared' : 'Run over'}</div>
+      <div class="hl-summary">
+        <h2>${exhausted ? 'You cleared the whole deck' : 'Number sense report'}</h2>
+        <div class="hl-big-stat">${streak}</div>
+        <div class="hl-big-lbl">final streak</div>
+        ${newBest
+          ? '<div class="hl-best">★ New personal best</div>'
+          : prevBest !== null ? `<div class="hl-best" style="opacity:0.7">Personal best: ${prevBest}</div>` : ''}
+        <div class="hl-insight">${escapeHtml(numberSenseInsight(streak))}</div>
+        <div class="hl-ctas">
+          <button class="hl-btn" id="again">Play again</button>
+          <a class="hl-btn hl-btn-ghost" href="../../subjects.html">More games</a>
+        </div>
+      </div>
+    `;
+    announce.textContent = `Game over. Final streak ${streak}.` + (newBest ? ' New personal best.' : '');
+    document.getElementById('again').addEventListener('click', startGame);
+  }
+
+  // Keyboard: ↑ = Higher, ↓ = Lower.
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      const btn = document.getElementById(e.key === 'ArrowUp' ? 'btnHigher' : 'btnLower');
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

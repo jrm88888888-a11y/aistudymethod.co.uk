@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Drill — AI Study Method</title>
+<meta name="description" content="Five questions. Same five for everyone on Earth today. 15 seconds each, one shot per day — keep the 🔥 streak alive. The Daily Drill from AI Study Method.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Streak strip */
+  .dd-streak-strip { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; background: var(--ar-grad-card); border: 1px solid var(--ar-border); border-radius: var(--ar-r); padding: 14px 18px; margin-bottom: 16px; }
+  .dd-streak-big { font-family: var(--ar-font); font-size: 24px; font-weight: 700; line-height: 1.1; white-space: nowrap; color: var(--ar-gold); text-shadow: 0 0 18px rgba(255,214,10,0.4); }
+  .dd-streak-big small { display: block; font-family: var(--ar-mono); font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ar-muted); font-weight: 400; margin-top: 4px; text-shadow: none; }
+  .dd-week { display: flex; gap: 6px; }
+  .dd-day { width: 34px; }
+  .dd-day-sq { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid var(--ar-border); background: var(--ar-card); display: flex; align-items: center; justify-content: center; font-family: var(--ar-mono); font-size: 12px; font-weight: 600; color: var(--ar-muted); box-sizing: border-box; }
+  .dd-day-sq.played { background: var(--ar-mint); border-color: var(--ar-mint); color: #06121c; box-shadow: 0 0 12px rgba(0,255,163,0.4); }
+  .dd-day-sq.today-pending { border-style: dashed; border-color: var(--ar-cyan); color: var(--ar-cyan); animation: arBreathe 1.6s ease-in-out infinite; }
+  .dd-day-lbl { font-family: var(--ar-mono); font-size: 8.5px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--ar-muted); text-align: center; margin-top: 4px; }
+
+  /* Filters */
+  .dd-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .dd-chip { background: var(--ar-card); border: 1.5px solid var(--ar-border); border-radius: 30px; padding: 7px 14px; font-family: var(--ar-mono); font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 600; color: var(--ar-text2); cursor: pointer; transition: all 0.15s ease; }
+  .dd-chip:hover { border-color: var(--ar-cyan); color: var(--ar-cyan); }
+  .dd-chip[aria-pressed="true"] { background: var(--ar-mint); border-color: var(--ar-mint); color: #06121c; }
+  .dd-subject-select { font-family: var(--ar-mono); font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; padding: 8px 12px; border: 1.5px solid var(--ar-border); border-radius: 10px; background: var(--ar-card); color: var(--ar-text); max-width: 100%; cursor: pointer; }
+  .dd-subject-select:focus { outline: none; border-color: var(--ar-cyan); }
+  @media (max-width: 540px) {
+    .dd-chip { padding: 6px 11px; font-size: 10px; }
+    .dd-week { gap: 4px; }
+    .dd-day { width: 30px; }
+    .dd-day-sq { width: 30px; height: 30px; font-size: 11px; }
+  }
+
+  .dd-options { display: flex; flex-direction: column; gap: 10px; }
+  .dd-date { font-family: var(--ar-mono); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--ar-cyan); font-weight: 600; margin-bottom: 6px; text-shadow: 0 0 14px rgba(0,229,255,0.4); }
+  .dd-loading { padding: 30px 20px; text-align: center; color: var(--ar-muted); font-family: var(--ar-mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .dd-countdown { font-family: var(--ar-mono); font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ar-cyan); margin-top: 16px; }
+  .dd-countdown b { font-size: 16px; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
+  .dd-back { color: var(--ar-cyan); text-decoration: none; font-family: var(--ar-mono); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; display: inline-block; margin-top: 22px; }
+  .dd-back:hover { text-decoration: underline; }
+</style>
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="dd-loading">Loading today's drill…</div>
+</div>
+<div class="sr-only" aria-live="polite" id="srLive"></div>
+
+<script src="../evaluate/real-content-ready.js"></script>
+<script src="arcade.js"></script>
+<script>
+(async function() {
+  'use strict';
+  const root = document.getElementById('root');
+  const srLive = document.getElementById('srLive');
+  const esc = Arcade.escapeHtml;
+
+  Arcade.mountMuteButton();
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      const b = document.querySelector('.ar-mute');
+      if (b) b.click();
+    }
+  });
+
+  function announce(msg) { try { srLive.textContent = msg; } catch (e) {} }
+
+  /* ── Seeded PRNG: xmur3 string hash → mulberry32 ──
+     (kept byte-identical to the original so today's drill stays the same
+     set worldwide and across this redesign) */
+  function xmur3(str) {
+    let h = 1779033703 ^ str.length;
+    for (let i = 0; i < str.length; i++) {
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return function() {
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      return (h ^= h >>> 16) >>> 0;
+    };
+  }
+  function mulberry32(a) {
+    return function() {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function seededShuffle(arr, rng) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* ── Dates (UTC — so every visitor worldwide gets the same daily set) ── */
+  const DAY_MS = 86400000;
+  function utcISO(d) { return d.toISOString().slice(0, 10); }
+  const now = new Date();
+  const today = utcISO(now);
+  const yesterday = utcISO(new Date(now.getTime() - DAY_MS));
+
+  /* Wordle-style drill number: days since the 2026-01-01 epoch (UTC). */
+  const DRILL_EPOCH_DAY = Math.floor(Date.UTC(2026, 0, 1) / DAY_MS);
+  const drillNo = Math.max(1, Arcade.dayNumber() - DRILL_EPOCH_DAY + 1);
+
+  /* ── localStorage helpers ── */
+  const LS = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+  function getHistory() {
+    try {
+      const h = JSON.parse(LS.get('aism-daily-history') || '{}');
+      return (h && typeof h === 'object' && !Array.isArray(h)) ? h : {};
+    } catch (e) { return {}; }
+  }
+  function saveHistory(h) {
+    // prune anything older than 30 days
+    const cutISO = utcISO(new Date(now.getTime() - 30 * DAY_MS));
+    const pruned = {};
+    Object.keys(h).forEach(k => { if (k >= cutISO) pruned[k] = h[k]; });
+    LS.set('aism-daily-history', JSON.stringify(pruned));
+  }
+
+  /* ── Streak store: 'aism-daily-streak' holds one JSON object
+     { lastPlayedDate, streak, totalDays, lastResult: { date, correct, total } }.
+     Legacy format (bare number + side keys) is migrated on first read. ── */
+  function loadStreak() {
+    let o = null;
+    try { o = JSON.parse(LS.get('aism-daily-streak') || 'null'); } catch (e) { o = null; }
+    if (typeof o === 'number') {
+      const lastDate = LS.get('aism-daily-last-date');
+      const doneDate = LS.get('aism-daily-completed') || lastDate;
+      const lastScore = parseInt(LS.get('aism-daily-last-score') || '', 10);
+      o = {
+        lastPlayedDate: lastDate || null,
+        streak: o,
+        totalDays: o,
+        lastResult: doneDate ? { date: doneDate, correct: isNaN(lastScore) ? 0 : lastScore, total: 5 } : null,
+      };
+    }
+    if (!o || typeof o !== 'object' || Array.isArray(o)) {
+      o = { lastPlayedDate: null, streak: 0, totalDays: 0, lastResult: null };
+    }
+    o.streak = parseInt(o.streak, 10) || 0;
+    o.totalDays = parseInt(o.totalDays, 10) || 0;
+    if (!o.lastResult || typeof o.lastResult !== 'object') o.lastResult = null;
+    return o;
+  }
+  function saveStreak(o) {
+    LS.set('aism-daily-streak', JSON.stringify(o));
+    try {
+      ['aism-daily-last-date', 'aism-daily-last-score', 'aism-daily-completed']
+        .forEach(k => localStorage.removeItem(k)); // retire legacy keys
+    } catch (e) {}
+  }
+
+  /* Streak as it stands right now (before today's play is recorded) */
+  function currentStreak() {
+    const s = loadStreak();
+    if (s.lastPlayedDate === today || s.lastPlayedDate === yesterday) return s.streak;
+    return 0; // gap > 1 day, or never played → streak broken / fresh
+  }
+
+  /* ── URL params + filters ── */
+  const params = new URLSearchParams(location.search);
+  const subjectFilter = (params.get('subject') || '').toLowerCase().trim();
+  const levelFilter = (params.get('level') || '').toLowerCase().trim();
+
+  const LEVELS = ['ks3', 'gcse', 'a-level', 'ibdp'];
+  const LEVEL_LABELS = { 'ks3': 'KS3', 'gcse': 'GCSE', 'a-level': 'A-Level', 'ibdp': 'IBDP' };
+  function levelLabel(l) { return LEVEL_LABELS[String(l || '').toLowerCase()] || String(l || '').toUpperCase(); }
+  function subjectLabel(s) {
+    s = String(s || '');
+    if (s === 'pe') return 'PE';
+    return s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  /* ── Pool assembly from REAL_CONTENT_READY (hard-coded fallback if the
+     whitelist script failed to load) ── */
+  const FALLBACK_STEMS = [
+    'art-design-a-level-aqa-art-craft-and-design-adventure-1',
+    'astronomy-a-level-black-holes--relativity-adventure-1',
+    'biology-a-level-aqa-cells-adventure-1',
+    'business-studies-a-level-ansoff--porter-adventure-1',
+    'chemistry-a-level-acids-bases--buffers-adventure-1',
+    'computer-science-a-level-ai--machine-learning-adventure-1',
+    'design-technology-a-level-aqa-design-communication-adventure-1',
+    'economics-a-level-aqa-economic-principles-and-issues-adventure-1',
+    'english-language-a-level-aqa-non-exam-assessment-language-in-action-adventure-1',
+    'english-literature-a-level-aqa-non-exam-assessment-independent-critical-study-texts-across-time-adventure-1',
+    'environmental-science-a-level-aqa-biological-resources-adventure-1',
+    'food-technology-a-level-advanced-nutrition-science-adventure-1',
+    'french-a-level-advanced-grammar-terms-adventure-1',
+    'geography-a-level-aqa-ecosystems-under-stress-adventure-1',
+    'german-a-level-aqa-artistic-culture-in-the-german-speaking-world-adventure-1',
+    'history-a-level-ancient--medieval-adventure-1',
+    'maths-a-level-aqa-algebra-functions-adventure-1',
+    'music-a-level-20th-century--modernism-adventure-1',
+    'pe-a-level-anatomy--physiology-adventure-1',
+    'physics-a-level-aqa-electricity-adventure-1',
+  ];
+  let READY = window.REAL_CONTENT_READY;
+  if (!READY || !(READY instanceof Set) || READY.size === 0) READY = new Set(FALLBACK_STEMS);
+  const STEM_RE = /^(.*?)-(a-level|gcse|ks3|ibdp)-/;
+  const allStems = [];
+  const subjectsSet = new Set();
+  READY.forEach(stem => {
+    const m = STEM_RE.exec(stem);
+    if (!m) return;
+    allStems.push({ stem, subject: m[1], level: m[2] });
+    subjectsSet.add(m[1]);
+  });
+  const allSubjects = Array.from(subjectsSet).sort();
+
+  const pool = allStems.filter(s =>
+    (!subjectFilter || s.subject === subjectFilter) &&
+    (!levelFilter || s.level === levelFilter)
+  ).map(s => s.stem).sort(); // sort → stable base order before seeded shuffle
+
+  /* ── Shared header / streak / filter rendering ── */
+  function filterDesc() {
+    const bits = [];
+    if (subjectFilter) bits.push(subjectLabel(subjectFilter));
+    if (levelFilter) bits.push(levelLabel(levelFilter));
+    return bits.length ? bits.join(' · ') : 'All subjects · All levels';
+  }
+  function prettyDate() {
+    try {
+      return now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    } catch (e) { return today; }
+  }
+  function headerHtml(metaExtra) {
+    return `
+      <div class="ar-badge">V · Verify · Daily Drill #${drillNo}</div>
+      <h1 class="ar-title">Daily Drill</h1>
+      <p class="ar-sub">Five questions, 15 seconds each. Same five for everyone on Earth today. One shot — then it locks until tomorrow.</p>
+      <div class="dd-date">${esc(prettyDate())}</div>
+      <div class="ar-meta">${esc(filterDesc())}${metaExtra || ''}</div>
+    `;
+  }
+  function weekGridHtml(includeTodayPending) {
+    const history = getHistory();
+    const cells = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * DAY_MS);
+      const iso = utcISO(d);
+      const dayLbl = ['Su','Mo','Tu','We','Th','Fr','Sa'][d.getUTCDay()];
+      const score = history[iso];
+      let cls = '', inner = '·', title = iso + ' — missed';
+      if (score != null) {
+        cls = 'played'; inner = String(score); title = iso + ' — played, ' + score + '/5';
+      } else if (iso === today && includeTodayPending) {
+        cls = 'today-pending'; inner = '?'; title = 'Today — not played yet';
+      }
+      cells.push(`<div class="dd-day"><div class="dd-day-sq ${cls}" title="${esc(title)}">${inner}</div><div class="dd-day-lbl">${dayLbl}</div></div>`);
+    }
+    return `<div class="dd-week" role="img" aria-label="Last seven days of Daily Drill activity">${cells.join('')}</div>`;
+  }
+  function streakStripHtml(streakVal, includeTodayPending) {
+    return `
+      <div class="dd-streak-strip">
+        <div class="dd-streak-big">🔥 ${streakVal}-day streak<small>Play daily to keep it</small></div>
+        ${weekGridHtml(includeTodayPending)}
+      </div>
+    `;
+  }
+  function buildUrl(subj, lvl) {
+    const p = new URLSearchParams();
+    if (subj) p.set('subject', subj);
+    if (lvl) p.set('level', lvl);
+    const q = p.toString();
+    return location.pathname + (q ? '?' + q : '');
+  }
+  function filtersHtml() {
+    const chips = [`<button class="dd-chip" data-level="" aria-pressed="${!levelFilter}">All levels</button>`]
+      .concat(LEVELS.map(l =>
+        `<button class="dd-chip" data-level="${l}" aria-pressed="${levelFilter === l}">${LEVEL_LABELS[l]}</button>`));
+    const opts = ['<option value="">All subjects</option>']
+      .concat(allSubjects.map(s =>
+        `<option value="${esc(s)}"${subjectFilter === s ? ' selected' : ''}>${esc(subjectLabel(s))}</option>`));
+    return `
+      <div class="dd-filters" role="group" aria-label="Drill filters">
+        ${chips.join('')}
+        <select class="dd-subject-select" id="subjSelect" aria-label="Filter by subject">${opts.join('')}</select>
+      </div>
+    `;
+  }
+  function wireFilters() {
+    root.querySelectorAll('.dd-chip').forEach(b => {
+      b.addEventListener('click', () => {
+        const lvl = b.dataset.level || '';
+        if (lvl === levelFilter) return;
+        location.href = buildUrl(subjectFilter, lvl);
+      });
+    });
+    const sel = document.getElementById('subjSelect');
+    if (sel) sel.addEventListener('change', () => {
+      location.href = buildUrl(sel.value, levelFilter);
+    });
+  }
+
+  /* ── Countdown to the next drill (midnight UTC — when the seed rolls) ── */
+  let countdownInterval = null;
+  function mountCountdown(el) {
+    if (countdownInterval) clearInterval(countdownInterval);
+    function tick() {
+      const n = new Date();
+      const next = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1);
+      let ms = Math.max(0, next - n.getTime());
+      const h = Math.floor(ms / 3600000); ms -= h * 3600000;
+      const m = Math.floor(ms / 60000); ms -= m * 60000;
+      const s = Math.floor(ms / 1000);
+      const pad = x => String(x).padStart(2, '0');
+      el.innerHTML = 'Next drill in <b>' + pad(h) + ':' + pad(m) + ':' + pad(s) + '</b>';
+    }
+    tick();
+    countdownInterval = setInterval(tick, 1000);
+  }
+
+  /* ── Share lines (Wordle-style — the feature) ── */
+  function shareLinesFor(correct, grid, streakVal) {
+    return [
+      '📚 Daily Drill #' + drillNo,
+      (grid ? grid + ' ' : '') + correct + '/5 · 🔥 ' + streakVal + '-day streak',
+    ];
+  }
+
+  /* ── Daily question assembly (deterministic, identical to the original) ── */
+  const seedStr = today + '|' + (subjectFilter || 'all') + '|' + (levelFilter || 'all');
+  const META_Q_RE = /\b(this adventure|key terms? this|term chips?|adventure introduces?)\b/i;
+  function validMcqs(spec) {
+    return (spec.mcqs || []).filter(m => {
+      if (!m || !m.q || META_Q_RE.test(String(m.q))) return false;
+      const opts = m.options;
+      if (!Array.isArray(opts) || opts.length < 2) return false;
+      const nCorrect = opts.filter(o => Array.isArray(o) ? !!o[1] : !!(o && o.correct)).length;
+      return nCorrect === 1;
+    });
+  }
+
+  /* Concept-def explanation: find an authored concept whose term appears in
+     the correct answer (or the question stem) and surface its definition. */
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  function explanationFor(spec, correctText, qText) {
+    const concepts = (spec.concepts || []).filter(c =>
+      c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+    const hay = (correctText + ' ' + qText).toLowerCase();
+    let best = null;
+    for (const c of concepts) {
+      const t = String(c.term).toLowerCase();
+      if (t.length >= 4 && hay.includes(t) && (!best || t.length > best.term.length)) best = c;
+    }
+    return best ? `${best.term} — ${best.def}` : '';
+  }
+
+  async function assembleQuestions() {
+    const rng = mulberry32(xmur3(seedStr)());
+    const shuffled = seededShuffle(pool, rng);
+    const qs = [];
+    const MAX_ATTEMPTS = 30;
+    for (let i = 0; i < shuffled.length && i < MAX_ATTEMPTS && qs.length < 5; i++) {
+      const stem = shuffled[i];
+      const spec = await Arcade.fetchSpecJson(stem, '../adventures/_specs');
+      if (!spec) continue; // failed to load — skip to the 6th, 7th, … stem
+      const mcqs = validMcqs(spec);
+      if (!mcqs.length) continue; // deterministic skip — same for every student
+      // Deterministic per-(date, stem) MCQ index, independent of fetch order
+      const qRng = mulberry32(xmur3(seedStr + '|' + stem)());
+      const mcqIndex = Math.floor(qRng() * mcqs.length);
+      const m = mcqs[mcqIndex];
+      const opts = m.options.map(o => Array.isArray(o)
+        ? { text: String(o[0]), correct: !!o[1] }
+        : { text: String(o.text), correct: !!o.correct });
+      const correctOpt = opts.find(o => o.correct);
+      qs.push({
+        q: String(m.q),
+        options: Arcade.shuffle(opts), // option order is per-session only
+        subject: subjectLabel(spec.subject || ''),
+        level: levelLabel(spec.level || ''),
+        topic: String(spec.topic_display || spec.title || ''),
+        explain: explanationFor(spec, correctOpt ? correctOpt.text : '', String(m.q)),
+      });
+    }
+    return qs;
+  }
+
+  /* ── No pool / can't-assemble fallback ── */
+  function renderNoDrill(msg) {
+    root.innerHTML = `
+      ${headerHtml('')}
+      ${streakStripHtml(currentStreak(), true)}
+      ${filtersHtml()}
+      <div class="ar-error">${msg}</div>
+      <a href="../../subjects.html" class="dd-back">← Back to subjects</a>
+    `;
+    wireFilters();
+    announce('No daily drill is available for these filters today.');
+  }
+
+  /* ── Drill state ── */
+  let questions = [];
+  const state = { idx: 0, score: 0 };
+  let results = [];        // '🟩' | '🟥' per question
+  let practice = false;
+  let qTimer = null;
+
+  function insightText(score, streak) {
+    const accLine =
+      score === 5 ? 'A perfect five — across five different corners of the curriculum, that’s genuine range.' :
+      score === 4 ? 'Four of five across mixed subjects is a strong showing — the one that got away is revision, not weakness.' :
+      score === 3 ? 'Three of five — solid core knowledge, with a couple of areas asking for a second look.' :
+      score >= 1  ? 'A tough mix today. Wrong answers in a drill are cheap; the same gaps in an exam are expensive — you just bought them at the cheap price.' :
+                    'A blank scorecard today — but showing up is the hard part, and you did that.';
+    const streakLine =
+      streak >= 7 ? ` ${streak} straight days: the habit is doing the heavy lifting now.` :
+      streak >= 3 ? ` ${streak} days running — streaks like this are how five-minute drills quietly turn into exam marks.` :
+      streak === 2 ? ' Two days in a row — tomorrow makes it a pattern.' :
+      ' Day one of the streak. The drill only works if you come back — see you tomorrow.';
+    return accLine + streakLine;
+  }
+
+  /* ── Question flow: tap to answer, 15s soft timer, dramatic reveal ── */
+  function renderQuestion() {
+    const q = questions[state.idx];
+    const context = `Q${state.idx + 1} · ${q.subject} ${q.level}` + (q.topic ? ` · ${q.topic}` : '');
+    root.innerHTML = `
+      ${headerHtml(practice ? ' · Practice replay — not recorded' : ` · Question ${state.idx + 1} of 5`)}
+      ${streakStripHtml(currentStreak(), !practice)}
+      ${filtersHtml()}
+      <div class="ar-dots" aria-hidden="true">${questions.map((_, i) =>
+        `<span class="${i < results.length ? (results[i] === '🟩' ? 'done' : 'fail') : i === state.idx ? 'now' : ''}"></span>`).join('')}</div>
+      <div class="ar-card">
+        <div class="ar-label">${esc(context)}</div>
+        <p class="ar-prompt">${esc(q.q)}</p>
+        <div class="ar-timer" aria-hidden="true"><i id="q-timer"></i></div>
+        <div class="dd-options ar-stagger" role="group" aria-label="Answer options — tap to answer">${q.options.map((o, i) =>
+          `<button class="ar-tile" data-idx="${i}" type="button">${esc(o.text)}</button>`).join('')}</div>
+        <div id="fb"></div>
+        <div class="ar-kbd-hint">1–${q.options.length} to answer · Enter for next · 15s on the clock</div>
+      </div>
+    `;
+    wireFilters();
+    announce(`Question ${state.idx + 1} of 5. ${q.subject} ${q.level}${q.topic ? ', ' + q.topic : ''}. ${q.q}. 15 seconds.`);
+
+    let done = false;
+    if (qTimer) qTimer.stop();
+    qTimer = Arcade.timer(document.getElementById('q-timer'), 15000, {
+      onEnd() { if (!done) settle(null); },
+    });
+
+    function settle(chosenIdx) {
+      done = true;
+      qTimer.stop();
+      const correctIdx = q.options.findIndex(o => o.correct);
+      const correct = chosenIdx === correctIdx;
+      const tiles = root.querySelectorAll('.dd-options .ar-tile');
+      tiles.forEach(b => { b.disabled = true; });
+      if (chosenIdx != null) tiles[chosenIdx].classList.add('selected');
+
+      // Dramatic beat before the verdict lands.
+      setTimeout(() => {
+        tiles.forEach((b, i) => {
+          if (i === correctIdx) b.classList.add('correct');
+          else if (i === chosenIdx) b.classList.add('wrong');
+          else b.classList.add('dim');
+        });
+        results.push(correct ? '🟩' : '🟥');
+        const dots = root.querySelectorAll('.ar-dots span');
+        if (dots[state.idx]) { dots[state.idx].classList.remove('now'); dots[state.idx].classList.add(correct ? 'done' : 'fail'); }
+
+        if (correct) {
+          state.score++;
+          Arcade.sfx.correct(state.score);
+          Arcade.popTextOver(tiles[correctIdx], '+1', '#00ffa3');
+          Arcade.vibrate(20);
+          if (state.score === 5) Arcade.confettiBurst({ count: 70 });
+        } else if (chosenIdx == null) {
+          Arcade.sfx.timeup();
+          Arcade.shake();
+        } else {
+          Arcade.sfx.wrong();
+          Arcade.shake();
+          Arcade.vibrate([40, 30, 40]);
+        }
+
+        const fb = document.getElementById('fb');
+        const explain = q.explain ? ' ' + esc(q.explain) : '';
+        fb.className = 'ar-feedback ' + (correct ? 'ok' : 'no');
+        fb.innerHTML = correct
+          ? '<strong>Correct.</strong>' + (explain || ' Sharp work — next one.')
+          : (chosenIdx == null ? '<strong>⏰ Time’s up.</strong>' : '<strong>Not quite.</strong>')
+            + ` Correct answer: <em>${esc(q.options[correctIdx].text)}</em>.` + (explain || ' Worth a flashcard — get the next one.');
+        announce((correct
+          ? `Correct. Score so far: ${state.score} of ${state.idx + 1}.`
+          : (chosenIdx == null ? 'Time is up. ' : 'Not quite. ') + `The correct answer was: ${q.options[correctIdx].text}.`)
+          + (q.explain ? ' ' + q.explain : ''));
+
+        const next = document.createElement('button');
+        next.className = 'ar-btn';
+        next.id = 'next-btn';
+        next.style.marginTop = '14px';
+        next.textContent = state.idx + 1 < questions.length ? 'Next →' : 'Finish drill →';
+        next.addEventListener('click', () => {
+          Arcade.sfx.click();
+          if (state.idx + 1 < questions.length) { state.idx++; renderQuestion(); }
+          else completeDrill();
+        });
+        fb.after(next);
+      }, chosenIdx == null ? 80 : 450);
+    }
+
+    root.querySelectorAll('.dd-options .ar-tile').forEach(b => {
+      b.addEventListener('click', () => {
+        if (done) return;
+        Arcade.sfx.click();
+        settle(parseInt(b.dataset.idx, 10));
+      });
+    });
+  }
+
+  /* ── Completion: record streak (first attempt only) + arcade end card ── */
+  function startPracticeRun() {
+    practice = true;
+    state.idx = 0; state.score = 0;
+    results = [];
+    renderQuestion();
+  }
+
+  function appendCountdown(container) {
+    const inner = container.querySelector('.ar-end-inner');
+    const ctas = container.querySelector('.ar-ctas');
+    if (!inner || !ctas) return;
+    const d = document.createElement('div');
+    d.className = 'dd-countdown';
+    inner.insertBefore(d, ctas);
+    mountCountdown(d);
+  }
+
+  function completeDrill() {
+    if (qTimer) qTimer.stop();
+    const grid = results.join('');
+
+    if (practice) {
+      const s = loadStreak();
+      const official = (s.lastResult && s.lastResult.date === today) ? s.lastResult : null;
+      root.innerHTML = headerHtml(' · Practice complete') + streakStripHtml(s.streak, false) + '<div id="end-root"></div>';
+      const card = Arcade.renderEndCard(document.getElementById('end-root'), {
+        gameName: 'Daily Drill',
+        gameEmoji: '📚',
+        topic: filterDesc(),
+        meta: 'Drill #' + drillNo + ' · practice — not recorded',
+        pct: state.score * 20,
+        big: state.score,
+        bigLabel: 'out of 5 · practice run',
+        rows: official
+          ? [{ v: official.correct + '/5', l: 'official today' }, { v: '🔥 ' + s.streak, l: 'day streak' }]
+          : [{ v: '🔥 ' + s.streak, l: 'day streak' }],
+        emojiGrid: grid,
+        insight: 'Practice reps don’t touch your streak — but they do touch your memory. Every retrieval, scored or not, makes tomorrow’s drill cheaper.',
+        shareLines: official
+          ? shareLinesFor(official.correct, official.grid || '', s.streak)
+          : shareLinesFor(state.score, grid, s.streak),
+        onAgain: startPracticeRun,
+      });
+      const againBtn = document.querySelector('#ar-again');
+      if (againBtn) againBtn.textContent = '🎯 Practice again';
+      appendCountdown(document.getElementById('end-root'));
+      announce(`Practice run complete. ${state.score} out of 5 — not recorded. Your official streak is ${s.streak} days.`);
+      return;
+    }
+
+    const s = loadStreak();
+    let newStreak;
+    if (s.lastResult && s.lastResult.date === today) {
+      newStreak = s.streak; // already recorded (e.g. second tab) — don't double-count
+    } else {
+      newStreak = (s.lastPlayedDate === yesterday) ? s.streak + 1 : 1;
+      s.streak = newStreak;
+      s.lastPlayedDate = today;
+      s.totalDays = (s.totalDays || 0) + 1;
+      s.lastResult = { date: today, correct: state.score, total: 5, grid: grid };
+      saveStreak(s);
+      const h = getHistory();
+      h[today] = state.score;
+      saveHistory(h);
+    }
+    const extended = newStreak > 1;
+    const insight = insightText(state.score, newStreak);
+
+    root.innerHTML = headerHtml(' · Complete') + streakStripHtml(newStreak, false) + '<div id="end-root"></div>';
+
+    Arcade.renderEndCard(document.getElementById('end-root'), {
+      gameName: 'Daily Drill',
+      gameEmoji: '📚',
+      topic: filterDesc(),
+      meta: 'Drill #' + drillNo,
+      pct: state.score * 20,
+      big: newStreak,
+      bigLabel: '🔥 day streak',
+      rows: [
+        { v: state.score + '/5', l: 'today’s score' },
+        { v: s.totalDays || newStreak, l: 'days played' },
+      ],
+      emojiGrid: grid,
+      insight,
+      shareLines: shareLinesFor(state.score, grid, newStreak),
+      onAgain: startPracticeRun,
+    });
+    const againBtn = document.querySelector('#ar-again');
+    if (againBtn) againBtn.textContent = '🎯 Practice replay';
+    appendCountdown(document.getElementById('end-root'));
+    if (extended) setTimeout(() => Arcade.flashMsg('🔥 ' + newStreak + '-DAY STREAK', '#ffd60a'), 700);
+    announce(`Drill complete. You got ${state.score} out of 5. Your streak is now ${newStreak} days. ${insight} A fresh drill lands at midnight UTC.`);
+  }
+
+  /* ── Keyboard shortcuts: 1–6 answer instantly, Enter advances ── */
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const inField = e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+    if (e.key === 'Enter') {
+      if (inField) return;
+      if (e.target && e.target.tagName === 'BUTTON') return; // native activation
+      const next = document.getElementById('next-btn');
+      if (next) { e.preventDefault(); next.click(); }
+      return;
+    }
+    if (inField) return;
+    const map = { '1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5 };
+    if (e.key in map) {
+      const opts = root.querySelectorAll('.dd-options .ar-tile');
+      const b = opts[map[e.key]];
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+    }
+  });
+
+  /* ── Already played today? Locked until the next drill ── */
+  const storedStreak = loadStreak();
+  if (storedStreak.lastResult && storedStreak.lastResult.date === today) {
+    const lr = storedStreak.lastResult;
+    const streak = currentStreak();
+    root.innerHTML = `
+      ${headerHtml(' · Done for today')}
+      ${streakStripHtml(streak, false)}
+      <div class="ar-card" style="text-align:center;">
+        <div class="ar-label">Already played today</div>
+        <div class="ar-end-big" style="margin-top:8px;">${lr.correct}/${lr.total || 5}</div>
+        <div class="ar-end-lbl">today’s official score</div>
+        ${lr.grid ? `<div class="ar-emoji-grid">${esc(lr.grid)}</div>` : ''}
+        <div class="ar-insight" style="margin-left:auto;margin-right:auto;">One drill per day — that’s the deal. A fresh set of five arrives at midnight UTC, and your ${streak}-day streak is safe until then. Practice runs below don’t count, but they do compound.</div>
+        <div class="dd-countdown" id="dd-countdown"></div>
+        <div class="ar-ctas">
+          <button class="ar-btn" id="btn-practice" type="button">🎯 Practice replay</button>
+          <button class="ar-btn ghost" id="btn-share" type="button">📋 Copy result</button>
+          <a class="ar-btn ghost" href="../../subjects.html">More games</a>
+        </div>
+      </div>
+    `;
+    mountCountdown(document.getElementById('dd-countdown'));
+    announce(`You've already played today's Daily Drill. You scored ${lr.correct} out of ${lr.total || 5}. Your streak is ${streak} days. Come back tomorrow, or run a practice replay.`);
+
+    document.getElementById('btn-practice').addEventListener('click', async () => {
+      Arcade.sfx.click();
+      root.innerHTML = headerHtml(' · Practice replay') + '<div class="dd-loading">Assembling today’s five questions…</div>';
+      questions = await assembleQuestions();
+      if (questions.length < 5) {
+        renderNoDrill(`No daily drill is available for <strong>${esc(filterDesc())}</strong> today — we couldn’t assemble five questions. Try a different subject or level, or come back tomorrow.`);
+        return;
+      }
+      startPracticeRun();
+    });
+    const shareBtn = document.getElementById('btn-share');
+    shareBtn.addEventListener('click', async () => {
+      const lines = shareLinesFor(lr.correct, lr.grid || '', streak);
+      lines.push('🎓 aistudymethod.co.uk');
+      const text = lines.join('\n');
+      let ok = false;
+      try {
+        if (navigator.share) { await navigator.share({ text }); ok = true; }
+        else if (navigator.clipboard) { await navigator.clipboard.writeText(text); ok = true; }
+      } catch (err) {
+        try { await navigator.clipboard.writeText(text); ok = true; } catch (err2) {}
+      }
+      if (ok) {
+        shareBtn.textContent = '✅ Copied!';
+        Arcade.sfx.coin();
+        setTimeout(() => { shareBtn.textContent = '📋 Copy result'; }, 1800);
+      }
+    });
+    return;
+  }
+
+  /* ── Fresh play: assemble + run ── */
+  if (pool.length === 0) {
+    renderNoDrill(`No daily drill is available for <strong>${esc(filterDesc())}</strong> today. Try a different subject or level combination.`);
+    return;
+  }
+
+  root.innerHTML = headerHtml('') + '<div class="dd-loading">Assembling today’s five questions…</div>';
+  questions = await assembleQuestions();
+  if (questions.length < 5) {
+    renderNoDrill(`No daily drill is available for <strong>${esc(filterDesc())}</strong> today — we couldn’t assemble five questions. Try a different subject or level, or come back tomorrow.`);
+    return;
+  }
+
+  renderQuestion();
+})();
+</script>
+<script src="../../script.js" defer></script>
+
+</body>
+</html>

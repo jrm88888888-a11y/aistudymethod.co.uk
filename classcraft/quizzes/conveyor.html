@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conveyor Belt — AI Study Method</title>
+<meta name="description" content="60 seconds. Statements fly in — is it TRUTH or is it cap? Sort fast, stack combos, and learn exactly which misconception fooled you.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* ---- screens ---- */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---- sort stage ---- */
+  .cv-stage { position: relative; min-height: 300px; margin-bottom: 10px; }
+  .cv-card-slot { padding: 14px 80px; min-height: 300px; display: flex; align-items: center; justify-content: center; }
+  .cv-statement {
+    background: var(--ar-grad-card); border: 2px solid var(--ar-border-hi);
+    border-radius: var(--ar-r-lg); padding: 26px 18px; width: 100%;
+    font-size: 17px; font-weight: 700; line-height: 1.4; text-align: center;
+    color: var(--ar-text); box-shadow: 0 18px 50px rgba(0,0,0,0.5);
+    touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none;
+    will-change: transform; position: relative; z-index: 2;
+  }
+  .cv-statement:active { cursor: grabbing; }
+  .cv-ctx { font-family: var(--ar-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.6px; color: var(--ar-text2); margin-bottom: 8px; line-height: 1.4; }
+  .cv-statement.enter { animation: cvEnter var(--cv-enter, 0.45s) cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+  .cv-statement.out-truth { animation: cvOutLeft 0.28s ease-in both; }
+  .cv-statement.out-cap   { animation: cvOutRight 0.28s ease-in both; }
+  .cv-statement.snap { transition: transform 0.18s cubic-bezier(0.2, 1.4, 0.4, 1); }
+  @keyframes cvEnter    { from { opacity: 0; transform: translateX(130%) rotate(5deg); } to { opacity: 1; transform: none; } }
+  @keyframes cvOutLeft  { to { opacity: 0; transform: translateX(-130%) rotate(-9deg); } }
+  @keyframes cvOutRight { to { opacity: 0; transform: translateX(130%) rotate(9deg); } }
+
+  .cv-zone {
+    position: absolute; top: 0; bottom: 0; width: 70px; z-index: 1;
+    border-radius: var(--ar-r); border: 2px dashed; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    font-family: var(--ar-mono); font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    background: var(--ar-card); transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    padding: 0;
+  }
+  .cv-zone .z-emoji { font-size: 28px; line-height: 1; }
+  .cv-zone .z-lbl { writing-mode: vertical-rl; text-orientation: mixed; }
+  .cv-zone.truth { left: 0; border-color: rgba(0,255,163,0.45); color: var(--ar-mint); }
+  .cv-zone.cap   { right: 0; border-color: rgba(255,46,136,0.45); color: var(--ar-pink); }
+  .cv-zone.truth:hover, .cv-zone.truth.hot-target { background: var(--ar-mint-dim); border-style: solid; transform: scale(1.04); box-shadow: 0 0 24px rgba(0,255,163,0.3); }
+  .cv-zone.cap:hover, .cv-zone.cap.hot-target { background: var(--ar-pink-dim); border-style: solid; transform: scale(1.04); box-shadow: 0 0 24px rgba(255,46,136,0.3); }
+  .cv-zone:focus-visible { outline: 2px solid var(--ar-cyan); outline-offset: 2px; }
+  .cv-zone:disabled { opacity: 0.5; cursor: default; }
+
+  #cv-why { min-height: 0; }
+  #cv-why .ar-feedback { margin-top: 0; }
+
+  @media (max-width: 480px) {
+    .cv-card-slot { padding: 12px 72px; }
+    .cv-zone { width: 62px; }
+    .cv-statement { font-size: 15.5px; padding: 22px 14px; }
+  }
+</style>
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error" id="loading-msg">Loading…</div>
+
+  <div id="game-shell" style="display:none;">
+    <div class="ar-badge">V · Verify · Conveyor Belt</div>
+    <h1 class="ar-title" id="page-title">Conveyor Belt</h1>
+    <p class="ar-sub" id="page-sub">60 seconds on the belt. Statements fly in — sort each one: TRUTH ✅ or CAP 🧢. The belt only gets faster.</p>
+    <div class="ar-meta" id="page-meta"></div>
+
+    <!-- START SCREEN -->
+    <div id="screen-start" class="screen active">
+      <div class="ar-card" style="text-align:center;">
+        <div class="ar-label">60-second shift</div>
+        <p class="ar-prompt" style="margin-bottom:10px;">Sort as many as you can before the clock dies.</p>
+        <p class="ar-sub" style="margin:0 auto 18px;">Tap a zone or swipe the card. Real facts go to <strong style="color:var(--ar-mint)">TRUTH ✅</strong>, fakes go to <strong style="color:var(--ar-pink)">CAP 🧢</strong>. Consecutive correct sorts stack a combo multiplier — a wrong sort breaks it and flashes the why, so even an L teaches you something.</p>
+        <button id="btn-start" class="ar-btn big" type="button">▶ Start the belt</button>
+        <div class="ar-kbd-hint">Keyboard: ← truth · → cap · M mute</div>
+      </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="screen-game" class="screen">
+      <div class="ar-hud">
+        <div class="ar-hud-stat">score <b id="hud-score">0</b></div>
+        <div class="ar-hud-stat">sorted <b id="hud-sorted">0</b></div>
+        <div class="ar-hud-stat" id="hud-combo-wrap">combo <b id="hud-combo">×1</b></div>
+        <div class="ar-hud-stat" id="hud-time-wrap">time <b id="hud-time">60</b></div>
+      </div>
+      <div class="ar-timer" aria-hidden="true"><i id="timer-fill"></i></div>
+      <div class="cv-stage">
+        <button class="cv-zone truth" id="zone-truth" type="button" aria-label="Sort this statement as a truth">
+          <span class="z-emoji" aria-hidden="true">✅</span><span class="z-lbl" aria-hidden="true">TRUTH</span>
+        </button>
+        <div class="cv-card-slot">
+          <div class="cv-statement" id="cv-card"></div>
+        </div>
+        <button class="cv-zone cap" id="zone-cap" type="button" aria-label="Sort this statement as a misconception — cap">
+          <span class="z-emoji" aria-hidden="true">🧢</span><span class="z-lbl" aria-hidden="true">CAP</span>
+        </button>
+      </div>
+      <div id="cv-why" aria-hidden="true"></div>
+      <div class="ar-kbd-hint">← = truth · → = cap · swipe works too</div>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="screen-end" class="screen">
+      <div id="end-root"></div>
+    </div>
+  </div>
+</div>
+
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script>
+'use strict';
+const esc = Arcade.escapeHtml;
+Arcade.mountMuteButton();
+document.addEventListener('keydown', e => {
+  if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const b = document.querySelector('.ar-mute');
+    if (b) b.click();
+  }
+});
+
+function announce(text) {
+  const a = document.getElementById('announce');
+  if (a) a.textContent = text;
+}
+
+/* ============================================================
+   DATA LOAD — ?spec={stem} with colon-fallback (two-truths pattern)
+   Adapter: spec.concepts[].def + bank.items[].correct  → TRUTH bin
+            bank.items[].misconception                  → CAP bin
+   ============================================================ */
+let TRUTHS = [];          // [{text, kind:'truth', why}]
+let MISCS = [];           // [{text, kind:'misc',  why}]
+let TOPIC = 'Conveyor Belt';
+
+function truncateStatement(s, max) {
+  s = String(s || '').trim();
+  if (s.length <= max) return s;
+  let cut = s.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  if (sp > max * 0.6) cut = cut.slice(0, sp);
+  return cut.replace(/[\s,;:.—-]+$/, '') + '…';
+}
+
+(async function init() {
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const loadingMsg = document.getElementById('loading-msg');
+
+  if (!stem) {
+    loadingMsg.innerHTML = 'Missing <code>?spec=</code> parameter.';
+    return;
+  }
+
+  const [spec, bank] = await Promise.all([
+    Arcade.fetchSpecJson(stem, '../adventures/_specs'),
+    Arcade.fetchSpecJson(stem, '../evaluate/misconception-banks'),
+  ]);
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Placeholder concept defs would make hollow "truths" — treat as unauthored.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  const bankItems = ((bank && bank.items) || []).filter(it => it && it.misconception);
+
+  // Each entry: truncated text → {ctx, why}. ctx is a short context line
+  // (the term or the question) rendered above the claim — bank answers like
+  // "Oil" or "1967" are unjudgeable without their question.
+  const truthMap = new Map();
+  concepts.forEach(c => {
+    const t = truncateStatement(c.def, 60);
+    if (!truthMap.has(t)) truthMap.set(t, { ctx: c.term, why: c.term + ' — ' + c.def });
+  });
+  bankItems.forEach(it => {
+    if (it.correct) {
+      const t = truncateStatement(it.correct, 60);
+      if (!truthMap.has(t)) truthMap.set(t, { ctx: truncateStatement(it.q, 80), why: it.why || '' });
+    }
+  });
+  const truths = [...truthMap.keys()].filter(t => t.length > 1);
+  const miscMap = new Map();
+  bankItems.forEach(it => {
+    const t = truncateStatement(it.misconception, 60);
+    if (!miscMap.has(t) && !truthMap.has(t)) miscMap.set(t, { ctx: truncateStatement(it.q, 80), why: it.why || (it.correct ? 'The accurate version: ' + it.correct : '') });
+  });
+  const miscs = [...miscMap.keys()].filter(t => t.length > 1);
+
+  // Note: every misconception bank on the site ships exactly 3 items, so the
+  // gate is 3 — the 60-second rush recycles shuffled pools anyway.
+  if (!spec || truths.length < 4 || miscs.length < 3) {
+    root.innerHTML = `
+      <div class="ar-badge">V · Verify · Conveyor Belt</div>
+      <h1 class="ar-title">${esc(topic)}</h1>
+      <p class="ar-sub">This game needs a full set of authored truths plus a bank of researched misconceptions — generic filler wouldn't earn its place on the site. Come back soon.</p>
+      <div class="ar-meta">${esc([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="ar-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">🏭</div>
+        <h2 style="font-size:1.3rem;margin:0 0 8px;font-weight:700;">Belt in production</h2>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Conveyor Belt needs at least four authored truths and three researched misconceptions for this exact topic. That set hasn't been written at the required depth yet.</p>
+        <a href="../../subjects.html" style="color:var(--ar-cyan);font-family:var(--ar-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">← Back to subjects</a>
+      </div>
+    `;
+    announce('This topic is still in production — no game available yet.');
+    return;
+  }
+
+  TRUTHS = truths.map(text => ({ text, kind: 'truth', ctx: truthMap.get(text).ctx, why: truthMap.get(text).why }));
+  MISCS  = miscs.map(text => ({ text, kind: 'misc', ctx: miscMap.get(text).ctx, why: miscMap.get(text).why }));
+  TOPIC = topic;
+  document.title = `Conveyor Belt — ${topic} — AI Study Method`;
+  document.getElementById('page-title').textContent = topic;
+  document.getElementById('page-sub').textContent =
+    `60 seconds. Statements about ${topic} fly onto the belt — sort each one: TRUTH ✅ or CAP 🧢. The belt only gets faster.`;
+  document.getElementById('page-meta').textContent = [level, subj].filter(Boolean).join(' · ');
+  loadingMsg.style.display = 'none';
+  document.getElementById('game-shell').style.display = '';
+})();
+
+/* ============================================================
+   GAME STATE — 60-second rush
+   ============================================================ */
+const RUN_MS = 60000;
+let gameState = 'idle';       // idle | running | over
+let current = null;           // current item {text, kind, why}
+let lastText = '';
+let locked = false;           // mid-verdict, ignore input
+let timeUp = false;
+let timerCtl = null;
+let whyTimeout = null;
+
+let score = 0, sorted = 0, correctCount = 0;
+let combo = 0, bestCombo = 0, level = 0;
+let results = [];             // '🟩' | '🟥'
+let lastFoolerMisc = null;    // most recently missed misconception
+let lastMissAny = null;
+
+let cycleT = [], cycleM = [];
+
+function multiplier() { return combo >= 8 ? 3 : combo >= 5 ? 2 : combo >= 3 ? 1.5 : 1; }
+
+function drawItem() {
+  // Roughly 50/50 truth vs cap, cycling shuffled per-kind pools.
+  let kind = Math.random() < 0.5 ? 'truth' : 'misc';
+  for (let tries = 0; tries < 4; tries++) {
+    const pool = kind === 'truth' ? cycleT : cycleM;
+    if (!pool.length) {
+      if (kind === 'truth') cycleT = Arcade.shuffle(TRUTHS);
+      else cycleM = Arcade.shuffle(MISCS);
+    }
+    const next = (kind === 'truth' ? cycleT : cycleM).pop();
+    if (next.text !== lastText || (TRUTHS.length + MISCS.length) < 3) return next;
+    // immediate repeat — flip kind and retry
+    (kind === 'truth' ? cycleT : cycleM).unshift(next);
+    kind = kind === 'truth' ? 'misc' : 'truth';
+  }
+  return (cycleT.length ? cycleT : cycleM).pop();
+}
+
+/* ============================================================
+   FLOW
+   ============================================================ */
+function startGame() {
+  Arcade.sfx.click();
+  gameState = 'running';
+  score = 0; sorted = 0; correctCount = 0;
+  combo = 0; bestCombo = 0; level = 0;
+  results = []; lastFoolerMisc = null; lastMissAny = null;
+  locked = false; timeUp = false; lastText = '';
+  cycleT = Arcade.shuffle(TRUTHS);
+  cycleM = Arcade.shuffle(MISCS);
+  clearTimeout(whyTimeout);
+  document.getElementById('cv-why').innerHTML = '';
+
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-end').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+  updateHUD();
+
+  if (timerCtl) timerCtl.stop();
+  timerCtl = Arcade.timer(document.getElementById('timer-fill'), RUN_MS, {
+    onSecond(s) {
+      const t = document.getElementById('hud-time');
+      if (t) t.textContent = s;
+      if (s === 10) { Arcade.flashMsg('10 SECONDS ⏳', '#ffd60a'); announce('Ten seconds left.'); }
+      if (s <= 5 && s > 0) Arcade.sfx.heartbeat();
+    },
+    onEnd() {
+      timeUp = true;
+      Arcade.sfx.timeup();
+      Arcade.flashMsg('TIME ⏰', '#ffd60a');
+      if (!locked) endGame();
+    },
+  });
+  document.getElementById('hud-time').textContent = '60';
+  announce('Belt started. 60 seconds. Sort each statement: truth left, cap right. Use left and right arrow keys.');
+  nextCard();
+}
+
+function nextCard() {
+  if (timeUp || gameState !== 'running') { endGame(); return; }
+  current = drawItem();
+  lastText = current.text;
+  locked = false;
+  const card = document.getElementById('cv-card');
+  card.style.transform = '';
+  card.classList.remove('out-truth', 'out-cap', 'snap', 'enter');
+  void card.offsetWidth;
+  // Belt speeds up every 5 sorts — cards slide in faster.
+  const dur = Math.max(0.18, 0.5 - level * 0.05);
+  card.style.setProperty('--cv-enter', dur + 's');
+  card.innerHTML = (current.ctx
+    ? '<div class="cv-ctx">' + esc(current.ctx) + '</div>'
+    : '') + '<div>' + esc(current.text) + '</div>';
+  card.classList.add('enter');
+  Arcade.sfx.swoosh();
+  announce('New statement: ' + (current.ctx ? current.ctx + ' — ' : '') + current.text + '. Truth or cap?');
+}
+
+function verdict(guessKind, zoneEl) {
+  if (gameState !== 'running' || locked || !current) return;
+  locked = true;
+  Arcade.sfx.click();
+  const item = current;
+  const ok = item.kind === guessKind;
+  sorted++;
+  results.push(ok ? '🟩' : '🟥');
+  const card = document.getElementById('cv-card');
+  const kindLabel = item.kind === 'truth' ? 'TRUTH ✅' : 'CAP 🧢';
+
+  if (ok) {
+    combo++;
+    if (combo > bestCombo) bestCombo = combo;
+    const earned = Math.round(100 * multiplier());
+    score += earned;
+    correctCount++;
+    Arcade.sfx.correct(combo);
+    Arcade.popTextOver(card, '+' + earned, combo >= 3 ? '#ffd60a' : '#00ffa3');
+    Arcade.streakCall(combo);
+    if (combo === 5 || combo === 10) Arcade.confettiBurst({ count: combo === 10 ? 80 : 40 });
+    Arcade.vibrate(20);
+    card.classList.add(guessKind === 'truth' ? 'out-truth' : 'out-cap');
+    announce('Correct — that was a ' + (item.kind === 'truth' ? 'truth' : 'misconception') + '. Plus ' + earned + ' points. Combo ' + combo + '.');
+    updateHUD();
+    maybeSpeedUp();
+    setTimeout(nextCard, 300);
+  } else {
+    const hadCombo = combo >= 3;
+    combo = 0;
+    if (item.kind === 'misc') lastFoolerMisc = item;
+    lastMissAny = item;
+    Arcade.sfx.wrong();
+    Arcade.shake();
+    Arcade.vibrate([40, 30, 40]);
+    if (hadCombo) Arcade.flashMsg('COMBO BROKEN 💔', '#ff2e88');
+    card.classList.add(guessKind === 'truth' ? 'out-truth' : 'out-cap');
+    // The learning beat: flash the why before the next card.
+    const whyEl = document.getElementById('cv-why');
+    whyEl.innerHTML = `<div class="ar-feedback no"><strong>That was a ${esc(kindLabel)}.</strong> ${esc(item.why || '')}</div>`;
+    announce('Wrong. That was a ' + (item.kind === 'truth' ? 'truth' : 'misconception') + '. ' + (item.why || ''));
+    updateHUD();
+    maybeSpeedUp();
+    clearTimeout(whyTimeout);
+    whyTimeout = setTimeout(() => {
+      whyEl.innerHTML = '';
+      nextCard();
+    }, 1600);
+  }
+  if (zoneEl) {
+    zoneEl.classList.add('hot-target');
+    setTimeout(() => zoneEl.classList.remove('hot-target'), 250);
+  }
+}
+
+function maybeSpeedUp() {
+  const newLevel = Math.floor(sorted / 5);
+  if (newLevel > level) {
+    level = newLevel;
+    Arcade.flashMsg('BELT SPEED UP ⏩', '#00e5ff');
+    Arcade.sfx.coin();
+    announce('Belt speed up. Cards arrive faster now.');
+  }
+}
+
+function bump(el) {
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+function updateHUD() {
+  const s = document.getElementById('hud-score');
+  s.textContent = score; bump(s);
+  document.getElementById('hud-sorted').textContent = sorted;
+  const c = document.getElementById('hud-combo');
+  c.textContent = '×' + (multiplier() === 1 ? '1' : multiplier().toFixed(1).replace('.0', ''));
+  const wrap = document.getElementById('hud-combo-wrap');
+  wrap.classList.toggle('gold', combo >= 5);
+  wrap.classList.toggle('hot', combo >= 3 && combo < 5);
+  if (combo > 0) bump(c);
+}
+
+/* ============================================================
+   END — shareable arcade end card
+   ============================================================ */
+function endGame() {
+  if (gameState === 'over') return;
+  gameState = 'over';
+  if (timerCtl) timerCtl.stop();
+  clearTimeout(whyTimeout);
+  document.getElementById('cv-why').innerHTML = '';
+  const accuracy = sorted > 0 ? Math.round(100 * correctCount / sorted) : 0;
+
+  let insight;
+  if (lastFoolerMisc) {
+    insight = 'The one that fooled you: ' + (lastFoolerMisc.ctx ? '(' + lastFoolerMisc.ctx + ') ' : '') + '“' + lastFoolerMisc.text + '” — ' + (lastFoolerMisc.why || 'it sounds right, but it isn’t.');
+  } else if (lastMissAny) {
+    insight = 'You capped a real one: ' + (lastMissAny.ctx ? '(' + lastMissAny.ctx + ') ' : '') + '“' + lastMissAny.text + '” — ' + (lastMissAny.why || 'that statement was actually true.');
+  } else if (sorted > 0) {
+    insight = 'Clean sheet — not a single misconception got past you. Next run: same accuracy, higher belt speed, longer combo.';
+  } else {
+    insight = 'The belt waits for no one — get a sort in next run.';
+  }
+
+  const grid = results.slice(0, 20).join('') + (results.length > 20 ? '…' : '');
+
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-end').classList.add('active');
+
+  Arcade.renderEndCard(document.getElementById('end-root'), {
+    gameName: 'Conveyor Belt',
+    gameEmoji: '🏭',
+    topic: TOPIC,
+    meta: '60-second shift',
+    pct: accuracy,
+    big: score,
+    bigLabel: 'points',
+    rows: [
+      { v: sorted, l: 'sorted' },
+      { v: accuracy + '%', l: 'accuracy' },
+      { v: '×' + bestCombo, l: 'best combo' },
+    ],
+    emojiGrid: grid,
+    bestKey: 'aism-best:' + location.pathname,
+    bestValue: score,
+    bestSuffix: ' pts',
+    insight,
+    shareLines: [
+      '🏭 Conveyor Belt · ' + TOPIC,
+      sorted + ' sorted in 60s · ' + accuracy + '% accuracy · 🔥 best combo ×' + bestCombo,
+      grid,
+    ],
+    onAgain: startGame,
+  });
+
+  announce('Shift over. You sorted ' + sorted + ' statements with ' + accuracy + ' percent accuracy. Score ' + score + ', best combo ' + bestCombo + '. ' + insight);
+}
+
+/* ============================================================
+   INPUT — tap zones, swipe the card, arrow keys
+   ============================================================ */
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('zone-truth').addEventListener('click', () => verdict('truth', document.getElementById('zone-truth')));
+document.getElementById('zone-cap').addEventListener('click', () => verdict('misc', document.getElementById('zone-cap')));
+
+document.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if (gameState !== 'running') return;
+  if (e.key === 'ArrowLeft') { e.preventDefault(); verdict('truth', document.getElementById('zone-truth')); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); verdict('misc', document.getElementById('zone-cap')); }
+});
+
+(function setupSwipe() {
+  const card = document.getElementById('cv-card');
+  let startX = 0, dx = 0, dragging = false, pid = null;
+  const THRESHOLD = 70;
+
+  card.addEventListener('pointerdown', e => {
+    if (gameState !== 'running' || locked) return;
+    dragging = true;
+    pid = e.pointerId;
+    startX = e.clientX;
+    dx = 0;
+    card.classList.remove('snap', 'enter');
+    try { card.setPointerCapture(pid); } catch (err) {}
+    e.preventDefault();
+  });
+  card.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    dx = e.clientX - startX;
+    card.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx * 0.05) + 'deg)';
+    document.getElementById('zone-truth').classList.toggle('hot-target', dx < -THRESHOLD);
+    document.getElementById('zone-cap').classList.toggle('hot-target', dx > THRESHOLD);
+  });
+  function release() {
+    if (!dragging) return;
+    dragging = false;
+    document.getElementById('zone-truth').classList.remove('hot-target');
+    document.getElementById('zone-cap').classList.remove('hot-target');
+    if (gameState === 'running' && !locked && Math.abs(dx) > THRESHOLD) {
+      card.style.transform = '';
+      verdict(dx < 0 ? 'truth' : 'misc', null);
+    } else {
+      card.classList.add('snap');
+      card.style.transform = '';
+    }
+  }
+  card.addEventListener('pointerup', release);
+  card.addEventListener('pointercancel', release);
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

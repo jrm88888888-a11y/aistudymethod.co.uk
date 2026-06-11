@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Falling Words — AI Study Method</title>
+<meta name="description" content="Neon terms rain down the screen — snipe the one that matches the definition before it falls away. Chain catches for combo multipliers and prove your recall under pressure.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* ============ Falling-Words-specific layer on top of arcade.css ============ */
+  .screen { display:none; }
+  .screen.active { display:block; }
+
+  /* ---- Start screen ---- */
+  .start-card { text-align:center; }
+  .start-card h2 { font-family:var(--ar-font); font-size:1.3rem; margin:0 0 8px; }
+  .start-card p { color:var(--ar-text2); font-size:14.5px; line-height:1.55; margin:0 0 22px; }
+  .diff-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:20px; }
+  .diff-btn { background:var(--ar-card); border:2px solid var(--ar-border); border-radius:14px; padding:14px 8px; cursor:pointer; transition:transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease; color:var(--ar-text); font-family:var(--ar-font); }
+  .diff-btn:hover { transform:translateY(-2px); }
+  .diff-btn:focus-visible { outline:2px solid var(--ar-cyan); outline-offset:2px; }
+  .diff-btn[data-diff="easy"].selected   { border-color:var(--ar-mint); background:var(--ar-mint-dim); box-shadow:0 0 22px rgba(0,255,163,0.25); }
+  .diff-btn[data-diff="medium"].selected { border-color:var(--ar-cyan); background:var(--ar-cyan-dim); box-shadow:0 0 22px rgba(0,229,255,0.25); }
+  .diff-btn[data-diff="hard"].selected   { border-color:var(--ar-pink); background:var(--ar-pink-dim); box-shadow:0 0 22px rgba(255,46,136,0.25); }
+  .diff-icon { font-size:24px; line-height:1; }
+  .diff-label { font-size:13px; font-weight:700; margin-top:5px; letter-spacing:0.5px; }
+  .diff-meta { font-size:9.5px; color:var(--ar-muted); margin-top:2px; font-family:var(--ar-mono); letter-spacing:0.8px; text-transform:uppercase; }
+  .how-it-works { margin-top:18px; font-size:13px; color:var(--ar-text2); line-height:1.6; text-align:left; padding:13px 15px; background:var(--ar-card); border-radius:var(--ar-r); border:1px solid var(--ar-border); }
+  .how-it-works b { color:var(--ar-text); }
+
+  /* ---- Game screen ---- */
+  #screen-game { margin:0 -4px; }
+  .game-frame { background:var(--ar-bg2); border:1px solid var(--ar-border-hi); border-radius:18px; padding:8px; box-shadow:0 18px 50px rgba(0,0,0,0.55); }
+  .hud { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:10px 12px; background:var(--ar-card); border:1px solid var(--ar-border); border-radius:12px; margin-bottom:8px; }
+  .hud-item { text-align:center; min-width:0; }
+  .hud-num { font-family:var(--ar-font); font-size:20px; font-weight:700; line-height:1; color:var(--ar-text); }
+  .hud-label { font-size:9px; color:var(--ar-muted); text-transform:uppercase; letter-spacing:1.2px; margin-top:3px; font-family:var(--ar-mono); }
+  .hud-speed .hud-num { color:var(--ar-cyan); text-shadow:0 0 10px rgba(0,229,255,0.5); }
+  .hud-lives .hud-num { font-size:15px; letter-spacing:1px; }
+  .hud-lives.critical .hud-num { animation:lifeBlip 0.6s ease infinite; }
+  @keyframes lifeBlip { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(1.1); } }
+  .hud-combo-item .hud-num { transition:color 0.2s, transform 0.2s; }
+  .hud-combo-item.mult-hot .hud-num { color:var(--ar-mint); text-shadow:0 0 10px rgba(0,255,163,0.6); }
+  .hud-combo-item.mult-blazing .hud-num { color:var(--ar-gold); text-shadow:0 0 10px rgba(255,214,10,0.7); }
+  .hud-combo-item.mult-inferno .hud-num { color:var(--ar-pink); text-shadow:0 0 14px rgba(255,46,136,0.8); animation:comboShake 0.3s ease infinite; }
+  @keyframes comboShake { 0%,100% { transform:scale(1); } 50% { transform:scale(1.08); } }
+
+  #canvas-wrap { position:relative; border-radius:12px; overflow:hidden; background:#06060f; border:1px solid var(--ar-border-hi); height:min(640px, max(440px, 62vh)); }
+  #game-canvas { display:block; width:100%; height:100%; touch-action:manipulation; cursor:pointer; }
+
+  .floating-msg { position:absolute; top:54%; left:50%; transform:translate(-50%,-50%) scale(0.7); padding:12px 22px; background:rgba(0,255,163,0.92); color:#051418; border-radius:14px; font-size:19px; font-weight:700; font-family:var(--ar-font); opacity:0; pointer-events:none; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); z-index:10; white-space:nowrap; max-width:90%; overflow:hidden; text-overflow:ellipsis; box-shadow:0 0 30px rgba(0,255,163,0.4); }
+  .floating-msg.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  .floating-msg.wrong { background:rgba(255,46,136,0.92); color:#fff; box-shadow:0 0 30px rgba(255,46,136,0.4); }
+  @media (prefers-reduced-motion: reduce) {
+    .floating-msg { transition:opacity 0.2s ease; }
+    .hud-combo-item.mult-inferno .hud-num, .hud-lives.critical .hud-num { animation:none; }
+  }
+
+  @media (max-width:480px) {
+    .hud { padding:8px 6px; }
+    .hud-num { font-size:16px; }
+    .hud-lives .hud-num { font-size:13px; }
+    .hud-label { letter-spacing:0.8px; }
+  }
+</style>
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error" id="loading-msg">Loading…</div>
+
+  <div id="game-shell" style="display:none;">
+    <div class="ar-badge">V · Verify · Falling Words</div>
+    <h1 class="ar-title" id="page-title">Falling Words</h1>
+    <p class="ar-sub" id="page-sub">Terms rain down the screen. The banner shows a definition — snipe the matching term before it falls away.</p>
+    <div class="ar-meta" id="page-meta"></div>
+
+    <!-- START SCREEN -->
+    <div id="screen-start" class="screen active">
+      <div class="ar-card start-card">
+        <h2>Choose your pace</h2>
+        <p>Tap the term whose definition is in the banner. Wrong taps and missed answers cost a life — you have three.</p>
+
+        <div class="diff-grid">
+          <button class="diff-btn" data-diff="easy" type="button">
+            <div class="diff-icon">🐢</div>
+            <div class="diff-label">Easy</div>
+            <div class="diff-meta">gentle drift</div>
+          </button>
+          <button class="diff-btn selected" data-diff="medium" type="button">
+            <div class="diff-icon">⚡</div>
+            <div class="diff-label">Medium</div>
+            <div class="diff-meta">balanced</div>
+          </button>
+          <button class="diff-btn" data-diff="hard" type="button">
+            <div class="diff-icon">🔥</div>
+            <div class="diff-label">Hard</div>
+            <div class="diff-meta">fast &amp; crowded</div>
+          </button>
+        </div>
+
+        <button id="btn-start" class="ar-btn big" type="button">▶ Start Round</button>
+
+        <div class="how-it-works">
+          <b>How it works:</b> A definition appears in the banner at the top. Several terms fall down the screen — only one matches. Tap it to score (combo multiplies your points: ×1.5 at 3, ×2 at 5, ×3 at 8). Tap a wrong term or let the right one fall off the bottom and you lose a life. 12 definitions per round, 3 lives.
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="screen-game" class="screen">
+      <div class="game-frame">
+        <div class="hud">
+          <div class="hud-item">
+            <div class="hud-num" id="hud-score">0</div>
+            <div class="hud-label">Score</div>
+          </div>
+          <div class="hud-item">
+            <div class="hud-num" id="hud-progress">0/12</div>
+            <div class="hud-label">Progress</div>
+          </div>
+          <div class="hud-item hud-lives">
+            <div class="hud-num" id="hud-lives">❤️❤️❤️</div>
+            <div class="hud-label">Lives</div>
+          </div>
+          <div class="hud-item hud-speed">
+            <div class="hud-num" id="hud-speed">×1.0</div>
+            <div class="hud-label">Speed</div>
+          </div>
+          <div class="hud-item hud-combo-item">
+            <div class="hud-num" id="hud-combo">×1.0</div>
+            <div class="hud-label">Combo</div>
+          </div>
+        </div>
+        <div id="canvas-wrap">
+          <canvas id="game-canvas" aria-label="Falling Words game area — tap the term that matches the definition in the banner"></canvas>
+          <div id="floating-msg" class="floating-msg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="screen-end" class="screen">
+      <div id="end-root"></div>
+    </div>
+  </div>
+</div>
+
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script>
+'use strict';
+const escapeHtml = Arcade.escapeHtml;
+const AISM_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* In-canvas screen shake (kept from the original feel) — Arcade.shake() adds
+   the full-page jolt on top for the big misses. */
+let aismStreak = 0;
+let shakeT = 0, shakeMag = 0;
+function aismShake(m) { if (AISM_REDUCED) return; shakeMag = m; shakeT = 0.3; }
+
+/* ============================================================
+   DATA LOAD — ?spec={stem} with colon-fallback
+   ============================================================ */
+let CONCEPTS = [];
+let TOPIC = 'Falling Words';
+let META = '';
+
+(async function init() {
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const loadingMsg = document.getElementById('loading-msg');
+
+  Arcade.mountMuteButton();
+
+  if (!stem) {
+    loadingMsg.innerHTML = 'Missing <code>?spec=</code> parameter.';
+    return;
+  }
+
+  // Spec fetch with colon-stem fallback (shared engine handles the candidates).
+  const spec = await Arcade.fetchSpecJson(stem, '../adventures/_specs');
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Placeholder concept defs would make hollow questions — treat as unauthored.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+
+  if (!spec || concepts.length < 5) {
+    root.innerHTML = `
+      <div class="ar-badge">V · Verify · Falling Words</div>
+      <h1 class="ar-title">${escapeHtml(topic)}</h1>
+      <p class="ar-sub">This game needs a full set of authored concept definitions — generic filler wouldn't earn its place on the site. Come back soon.</p>
+      <div class="ar-meta">${escapeHtml([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="ar-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">🪂</div>
+        <h2 style="font-size:1.3rem;margin:0 0 8px">Terms in production</h2>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Falling Words needs at least five authored term–definition pairs for this exact topic. That set hasn't been written at the required depth yet.</p>
+        <a href="../../subjects.html" style="color:var(--ar-cyan);font-family:var(--ar-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
+  CONCEPTS = concepts;
+  TOPIC = topic;
+  META = [level, subj].filter(Boolean).join(' · ');
+  document.title = `Falling Words — ${topic} — AI Study Method`;
+  document.getElementById('page-title').textContent = topic;
+  document.getElementById('page-meta').textContent = META;
+  loadingMsg.style.display = 'none';
+  document.getElementById('game-shell').style.display = '';
+  setupCanvas();
+  setupInput();
+})();
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+let canvas, ctx, canvasReady = false;
+let gameState = 'idle';   // idle | running | over
+let questions = [];       // [{term, def}]
+let qIdx = 0;             // index of current (or next-to-spawn) question
+let resolvedCount = 0;    // questions resolved (tap-correct or missed)
+let correctCount = 0;
+let score = 0;
+let lives = 3;
+let speed = 1.0;
+let maxSpeed = 1.0;
+let difficulty = 'medium';
+
+const TOTAL_QUESTIONS = 12;
+const DIFF_SETTINGS = {
+  easy:   { startSpeed: 0.7,  speedGain: 0.05, baseScrollPx: 0.95, wrongCount: 2, speedVar: 0.22 },
+  medium: { startSpeed: 1.0,  speedGain: 0.07, baseScrollPx: 1.30, wrongCount: 3, speedVar: 0.35 },
+  hard:   { startSpeed: 1.35, speedGain: 0.09, baseScrollPx: 1.70, wrongCount: 3, speedVar: 0.50 }
+};
+// Neon identity per difficulty — drives word glow, particles, banner accents.
+const DIFF_NEON = {
+  easy:   { hex: '#00ffa3', icon: '🐢', label: 'Easy' },
+  medium: { hex: '#00e5ff', icon: '⚡', label: 'Medium' },
+  hard:   { hex: '#ff2e88', icon: '🔥', label: 'Hard' }
+};
+
+// Combo / score multiplier
+let aismMaxStreak = 0;
+let aismMultiplier = 1;   // 1, 1.5, 2, 3
+const MULT_TIERS = [
+  { streak: 8, mult: 3.0, label: 'INFERNO', color: '#ff2e88' },
+  { streak: 5, mult: 2.0, label: 'BLAZING', color: '#ffd60a' },
+  { streak: 3, mult: 1.5, label: 'HOT',     color: '#00ffa3' },
+  { streak: 0, mult: 1.0, label: '',        color: '#767ca8' }
+];
+function getMultTier() { return MULT_TIERS.find(t => aismStreak >= t.streak); }
+
+// Falling words
+// faller: { term, isCorrect, qIdx, x (centre px), y (centre px), w, h, speedFactor,
+//           phase, fontSize, displayTerm, state: 'live'|'dying'|'stale', dieT, staleFade }
+let fallers = [];
+let waveActive = false;   // a wave for the current question is on screen & unresolved
+let nextSpawnDist = 0;    // px of screen travel until next wave may spawn
+const WAVE_SPACING = 480; // ~px of screen travel between waves
+let bannerText = '';
+let bannerIsDef = true;   // false while showing interstitial "next one incoming"
+
+// FX
+let particles = [];       // {x, y (normalised 0..1), vx, vy, life, size, color, shape, angle, spin}
+let bgPulseT = 0;
+let bgPulseColor = '#00ffa3';
+let lastSwoosh = 0;       // throttle for despawn swooshes
+
+// Starfield — regenerated on resize so it always fills the canvas.
+let stars = [];
+function seedStars() {
+  const W = cssW(), H = cssH();
+  stars = [];
+  const n = Math.round((W * H) / 9000);
+  for (let i = 0; i < n; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 0.6 + Math.random() * 1.4,
+      tw: 0.4 + Math.random() * 0.6,
+      ph: Math.random() * Math.PI * 2,
+      drift: 4 + Math.random() * 14,
+    });
+  }
+}
+
+// Animation
+let lastFrame = 0;
+let animId = null;
+
+/* ============================================================
+   CANVAS SETUP (DPR-aware)
+   ============================================================ */
+function setupCanvas() {
+  canvas = document.getElementById('game-canvas');
+  ctx = canvas.getContext('2d');
+  canvasReady = true;
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+}
+
+function resizeCanvas() {
+  if (!canvasReady) return;
+  const wrap = document.getElementById('canvas-wrap');
+  const rect = wrap.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, rect.width * dpr);
+  canvas.height = Math.max(1, rect.height * dpr);
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  seedStars();
+}
+
+function cssW() { return canvas.width  / (window.devicePixelRatio || 1); }
+function cssH() { return canvas.height / (window.devicePixelRatio || 1); }
+
+/* ============================================================
+   INPUT — tap to pick a falling word
+   ============================================================ */
+function setupInput() {
+  canvas.addEventListener('pointerdown', e => {
+    if (gameState !== 'running') return;
+    const rect = canvas.getBoundingClientRect();
+    handleTap(e.clientX - rect.left, e.clientY - rect.top);
+  });
+}
+
+function handleTap(px, py) {
+  // Hit-test from newest (drawn on top) to oldest; expand to 44px min target.
+  for (let i = fallers.length - 1; i >= 0; i--) {
+    const f = fallers[i];
+    if (f.state !== 'live') continue;
+    const hw = Math.max(f.w, 44) / 2 + 6;
+    const hh = Math.max(f.h, 44) / 2 + 6;
+    if (px >= f.x - hw && px <= f.x + hw && py >= f.y - hh && py <= f.y + hh) {
+      tapFaller(f);
+      return;
+    }
+  }
+}
+
+function tapFaller(f) {
+  const neon = DIFF_NEON[difficulty].hex;
+  if (f.isCorrect && f.qIdx === qIdx && waveActive) {
+    // ---- CORRECT ----
+    aismStreak++;
+    if (aismStreak > aismMaxStreak) aismMaxStreak = aismStreak;
+    aismMultiplier = getMultTier().mult;
+    const earned = Math.round(100 * aismMultiplier);
+    score += earned;
+    correctCount++;
+    const cap = DIFF_SETTINGS[difficulty].startSpeed * 2.0;
+    speed = Math.min(cap, speed + DIFF_SETTINGS[difficulty].speedGain);
+    if (speed > maxSpeed) maxSpeed = speed;
+
+    Arcade.sfx.correct(aismStreak);
+    Arcade.streakCall(aismStreak);
+    Arcade.vibrate([18]);
+    const tier = getMultTier();
+    flashMessage(aismStreak >= 3 ? '+' + earned + ' · ' + tier.label + ' ×' + aismMultiplier : '+' + earned, false);
+    emitParticles(f.x / cssW(), f.y / cssH(), neon, aismStreak >= 5 ? 40 : aismStreak >= 3 ? 30 : 20, 'star');
+    bgPulseT = aismStreak >= 5 ? 1.0 : 0.6;
+    bgPulseColor = aismStreak >= 8 ? '#ff2e88' : aismStreak >= 5 ? '#ffd60a' : neon;
+    announce('Correct — ' + f.term + '. Combo ' + aismStreak + '.');
+
+    // Remove the tapped word instantly (it "explodes" into the particles)
+    fallers = fallers.filter(x => x !== f);
+    resolveQuestion(true, f.term);
+  } else {
+    // ---- WRONG ----
+    if (f.state !== 'live') return;
+    f.state = 'dying';
+    f.dieT = 0;
+    lives--;
+    const wasOnStreak = aismStreak >= 3;
+    aismStreak = 0;
+    aismMultiplier = 1;
+    speed = Math.max(0.6, speed - 0.1);
+    Arcade.sfx.wrong();
+    Arcade.shake();
+    Arcade.vibrate([60, 40, 60]);
+    aismShake(wasOnStreak ? 11 : 7);
+    flashMessage(wasOnStreak ? 'COMBO BROKEN · not “' + f.term + '”' : '✗ not “' + f.term + '”', true);
+    emitParticles(f.x / cssW(), f.y / cssH(), '#ff2e88', 16, 'shard');
+    bgPulseT = 0.7;
+    bgPulseColor = '#ff2e88';
+    announce('Wrong — ' + f.term + ' does not match. ' + Math.max(0, lives) + ' lives left.');
+    updateHUD();
+  }
+}
+
+/* ============================================================
+   GAME START / RESET
+   ============================================================ */
+function selectDifficulty(d) {
+  difficulty = d;
+  document.querySelectorAll('.diff-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.diff === d);
+  });
+}
+document.querySelectorAll('.diff-btn').forEach(b => {
+  b.addEventListener('click', () => { Arcade.sfx.click(); selectDifficulty(b.dataset.diff); });
+});
+
+const shuffle = Arcade.shuffle;
+
+function startGame() {
+  if (!CONCEPTS.length) return;
+  questions = shuffle(CONCEPTS).slice(0, Math.min(TOTAL_QUESTIONS, CONCEPTS.length));
+
+  qIdx = 0;
+  resolvedCount = 0;
+  correctCount = 0;
+  score = 0;
+  lives = 3;
+  speed = DIFF_SETTINGS[difficulty].startSpeed;
+  maxSpeed = speed;
+  aismStreak = 0;
+  aismMaxStreak = 0;
+  aismMultiplier = 1;
+  shakeT = 0;
+  fallers = [];
+  particles = [];
+  waveActive = false;
+  nextSpawnDist = 30;   // first wave arrives almost immediately
+  bannerText = questions[0].def;
+  bannerIsDef = true;
+  bgPulseT = 0;
+
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-end').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+  resizeCanvas();
+  updateHUD();
+  announce('Round started. Tap the term matching the definition in the banner.');
+
+  gameState = 'running';
+  lastFrame = performance.now();
+  if (animId) cancelAnimationFrame(animId);
+  animate();
+}
+
+function resetGame() {
+  gameState = 'idle';
+  if (animId) cancelAnimationFrame(animId);
+  document.getElementById('screen-end').classList.remove('active');
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-start').classList.add('active');
+}
+
+document.getElementById('btn-start').addEventListener('click', () => { Arcade.sfx.click(); startGame(); });
+
+/* ============================================================
+   WAVE SPAWNING — correct term + 2-3 wrong terms together
+   ============================================================ */
+function measureTerm(term) {
+  // Returns {displayTerm, fontSize, w, h} for a pill ~140px wide.
+  let fontSize = 15;
+  ctx.font = '700 ' + fontSize + 'px "Space Grotesk", sans-serif';
+  let tw = ctx.measureText(term).width;
+  if (tw > 150) {
+    fontSize = 13;
+    ctx.font = '700 13px "Space Grotesk", sans-serif';
+    tw = ctx.measureText(term).width;
+  }
+  let displayTerm = term;
+  const maxTextW = Math.min(cssW() - 60, 190);
+  while (tw > maxTextW && displayTerm.length > 4) {
+    displayTerm = displayTerm.slice(0, -2).trimEnd();
+    tw = ctx.measureText(displayTerm + '…').width;
+  }
+  if (displayTerm !== term) displayTerm += '…';
+  const w = Math.max(96, Math.min(tw + 36, cssW() - 24));
+  const h = 44;   // ≥44px touch target
+  return { displayTerm, fontSize, w, h };
+}
+
+function spawnWave() {
+  const q = questions[qIdx];
+  const cfg = DIFF_SETTINGS[difficulty];
+  bannerText = q.def;
+  bannerIsDef = true;
+
+  // Pick wrong terms: distinct concepts other than the correct one.
+  const wrongs = shuffle(CONCEPTS.filter(c => c.term !== q.term))
+    .slice(0, cfg.wrongCount)
+    .map(c => c.term);
+  const terms = shuffle([{ term: q.term, isCorrect: true }]
+    .concat(wrongs.map(t => ({ term: t, isCorrect: false }))));
+
+  // Lay out across distinct horizontal slots with jitter; stagger spawn depth
+  // so the wave doesn't arrive as a single neat row.
+  const W = cssW();
+  const n = terms.length;
+  const slotW = W / n;
+  const slots = shuffle(Array.from({ length: n }, (_, i) => i));
+
+  terms.forEach((t, i) => {
+    const m = measureTerm(t.term);
+    const slot = slots[i];
+    const minX = slot * slotW + m.w / 2 + 6;
+    const maxX = (slot + 1) * slotW - m.w / 2 - 6;
+    const x = minX >= maxX ? slot * slotW + slotW / 2 : minX + Math.random() * (maxX - minX);
+    fallers.push({
+      term: t.term,
+      displayTerm: m.displayTerm,
+      fontSize: m.fontSize,
+      isCorrect: t.isCorrect,
+      qIdx: qIdx,
+      x: Math.max(m.w / 2 + 4, Math.min(W - m.w / 2 - 4, x)),
+      y: -40 - i * 95 - Math.random() * 60,   // staggered above the screen
+      w: m.w,
+      h: m.h,
+      speedFactor: 1 + (Math.random() * 2 - 1) * cfg.speedVar,
+      phase: Math.random() * Math.PI * 2,
+      state: 'live',
+      dieT: 0,
+      staleFade: 1
+    });
+  });
+
+  waveActive = true;
+  nextSpawnDist = WAVE_SPACING;
+}
+
+/* Resolve the current question (correct tap, or correct term fell off). */
+function resolveQuestion(success, term) {
+  if (!waveActive) return;
+  waveActive = false;
+  resolvedCount++;
+  // Remaining live fallers from this wave fade out, non-interactive.
+  fallers.forEach(f => { if (f.state === 'live') f.state = 'stale'; });
+  qIdx++;
+  if (qIdx < questions.length) {
+    // Don't make quick players wait the full spacing — but keep a small beat.
+    nextSpawnDist = Math.min(nextSpawnDist, 140);
+    bannerText = success ? '✓ ' + term + ' — next definition incoming…' : 'Next definition incoming…';
+    bannerIsDef = false;
+  }
+  updateHUD();
+}
+
+/* ============================================================
+   ANIMATION LOOP
+   ============================================================ */
+function animate(now) {
+  if (!now) now = performance.now();
+  const dt = Math.min((now - lastFrame) / 16.67, 3);  // ~60fps clamp
+  lastFrame = now;
+
+  if (gameState === 'running') update(dt);
+  draw();
+  if (gameState === 'running') animId = requestAnimationFrame(animate);
+}
+
+function update(dt) {
+  const H = cssH();
+  const scrollPx = DIFF_SETTINGS[difficulty].baseScrollPx * speed * dt;
+  nextSpawnDist -= scrollPx;
+
+  if (bgPulseT > 0) bgPulseT = Math.max(0, bgPulseT - dt * 0.04);
+
+  // Move fallers
+  let missedCorrect = null;
+  let despawned = false;
+  fallers.forEach(f => {
+    if (f.state === 'dying') {
+      f.dieT += dt * 0.08;            // ~0.2s death wobble + fade
+      return;
+    }
+    if (f.state === 'stale') {
+      f.staleFade -= dt * 0.05;       // gentle fade-out for leftover wave
+    }
+    f.y += scrollPx * f.speedFactor;
+    if (f.y - f.h / 2 > H + 10) {
+      f.offscreen = true;
+      if (f.isCorrect && f.state === 'live' && f.qIdx === qIdx && waveActive) {
+        missedCorrect = f;            // the answer escaped — costs a life
+      } else {
+        despawned = true;             // a decoy slipped away — just a swoosh
+      }
+    }
+  });
+
+  // Soft swoosh when uncaught words despawn (missed opportunity, not a life).
+  if (despawned && performance.now() - lastSwoosh > 650) {
+    lastSwoosh = performance.now();
+    Arcade.sfx.swoosh();
+  }
+
+  if (missedCorrect) {
+    lives--;
+    const wasOnStreak = aismStreak >= 3;
+    aismStreak = 0;
+    aismMultiplier = 1;
+    Arcade.sfx.wrong();
+    Arcade.shake();
+    Arcade.vibrate([60, 40, 60]);
+    aismShake(wasOnStreak ? 11 : 7);
+    flashMessage('MISSED · it was “' + missedCorrect.term + '”', true);
+    bgPulseT = 0.7;
+    bgPulseColor = '#ff2e88';
+    announce('Missed — the answer was ' + missedCorrect.term + '. ' + Math.max(0, lives) + ' lives left.');
+    resolveQuestion(false, missedCorrect.term);
+  }
+
+  // Cull finished fallers
+  fallers = fallers.filter(f =>
+    !f.offscreen &&
+    !(f.state === 'dying' && f.dieT >= 1) &&
+    !(f.state === 'stale' && f.staleFade <= 0));
+
+  // Move particles (normalised coords)
+  particles.forEach(p => {
+    p.y += p.vy * dt;
+    p.x += p.vx * dt;
+    p.life -= dt;
+    p.vy += 0.0005 * dt;   // light gravity
+    if (p.spin != null) p.angle = (p.angle || 0) + p.spin * dt;
+  });
+  particles = particles.filter(p => p.life > 0);
+
+  // Spawn next wave — steady cadence, only once current question is resolved
+  if (!waveActive && nextSpawnDist <= 0 && qIdx < questions.length && lives > 0) {
+    spawnWave();
+  }
+
+  // End checks
+  if (lives <= 0) { endGame(); return; }
+  if (resolvedCount >= questions.length && fallers.length === 0 && particles.length === 0) {
+    endGame();
+  }
+}
+
+/* ============================================================
+   DRAWING
+   ============================================================ */
+function draw() {
+  const W = cssW(), H = cssH();
+  const neon = DIFF_NEON[difficulty].hex;
+
+  // Screen shake — absolute transform each frame, no restore needed
+  const dprS = window.devicePixelRatio || 1;
+  ctx.setTransform(dprS, 0, 0, dprS, 0, 0);
+  if (shakeT > 0) {
+    ctx.fillStyle = '#06060f';
+    ctx.fillRect(0, 0, W, H);
+    shakeT = Math.max(0, shakeT - 0.016);
+    const mS = shakeMag * (shakeT / 0.3);
+    ctx.transform(1, 0, 0, 1, (Math.random() - 0.5) * mS, (Math.random() - 0.5) * mS);
+  }
+
+  // Background — deep arcade dark, tinted at high combo
+  const tier = getMultTier();
+  const baseTop = tier.streak >= 5 ? '#130820' : '#0a0a1a';
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, baseTop);
+  grad.addColorStop(1, '#06060f');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle perspective grid
+  ctx.strokeStyle = 'rgba(139,92,246,0.07)';
+  ctx.lineWidth = 1;
+  for (let gx = 0; gx <= W; gx += 48) {
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+  }
+  for (let gy = 0; gy <= H; gy += 48) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+  }
+
+  // Twinkling starfield, drifting gently downward
+  if (!AISM_REDUCED) {
+    const t = performance.now() * 0.001;
+    for (const s of stars) {
+      const y = (s.y + t * s.drift) % (H + 8);
+      const a = 0.12 + 0.18 * (0.5 + 0.5 * Math.sin(t * s.tw * 2 + s.ph));
+      ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.arc(s.x, y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Background reaction pulse — radial flash on answer
+  if (bgPulseT > 0) {
+    const r = Math.max(W, H) * (1 - bgPulseT) * 1.2;
+    const opacity = Math.min(0.32, bgPulseT * 0.5);
+    const pg = ctx.createRadialGradient(W / 2, H * 0.4, 0, W / 2, H * 0.4, Math.max(1, r));
+    pg.addColorStop(0, bgPulseColor + Math.round(opacity * 255).toString(16).padStart(2, '0'));
+    pg.addColorStop(0.6, bgPulseColor + '00');
+    ctx.fillStyle = pg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Danger line at the bottom
+  ctx.strokeStyle = 'rgba(255,46,136,0.3)';
+  ctx.setLineDash([8, 8]);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(10, H - 14);
+  ctx.lineTo(W - 10, H - 14);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Falling words
+  fallers.forEach(f => drawFaller(f, W, H));
+
+  // Particles (star + shard shapes)
+  particles.forEach(p => {
+    const alpha = Math.round(Math.max(0, Math.min(255, p.life * 25))).toString(16).padStart(2, '0');
+    ctx.fillStyle = p.color + alpha;
+    if (p.shape === 'shard') {
+      ctx.save();
+      ctx.translate(p.x * W, p.y * H);
+      ctx.rotate(p.angle || 0);
+      ctx.beginPath();
+      ctx.moveTo(-p.size, p.size);
+      ctx.lineTo(p.size, 0);
+      ctx.lineTo(-p.size, -p.size);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    } else if (p.shape === 'star') {
+      ctx.save();
+      ctx.translate(p.x * W, p.y * H);
+      ctx.rotate(p.angle || 0);
+      ctx.beginPath();
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2;
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(a) * p.size * 1.5, Math.sin(a) * p.size * 1.5);
+      }
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+  // Definition banner — drawn last so words slide beneath it
+  drawBanner(W, H, neon);
+
+  // Combo badge — on-canvas, under the banner, glows with the tier colour
+  if (aismStreak >= 2 && gameState === 'running') {
+    const label = '×' + aismMultiplier.toFixed(1) + (tier.label ? ' ' + tier.label : '') + ' · ' + aismStreak + '🔗';
+    ctx.font = '700 12px "Space Grotesk", sans-serif';
+    const tw = ctx.measureText(label).width;
+    const bw = tw + 24, bh = 26;
+    const bx = W - bw - 12, by = 78;
+    ctx.save();
+    ctx.shadowColor = tier.color;
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = 'rgba(6,6,15,0.85)';
+    roundRect(ctx, bx, by, bw, bh, 13);
+    ctx.fill();
+    ctx.strokeStyle = tier.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = tier.color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, bx + bw / 2, by + bh / 2 + 1);
+    ctx.restore();
+  }
+}
+
+function drawBanner(W, H, neon) {
+  const pad = 10;
+  const bW = W - pad * 2;
+  const bX = pad, bY = pad;
+
+  ctx.font = '700 14px "Space Grotesk", sans-serif';
+  const lines = wrapLines(bannerText || '', bW - 28, 2);
+  const bH = lines.length > 1 ? 66 : 48;
+
+  ctx.save();
+  ctx.shadowColor = bannerIsDef ? neon : 'transparent';
+  ctx.shadowBlur = bannerIsDef ? 16 : 0;
+  ctx.fillStyle = 'rgba(6,6,15,0.9)';
+  roundRect(ctx, bX, bY, bW, bH, 12);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = bannerIsDef ? neon : 'rgba(255,255,255,0.14)';
+  ctx.globalAlpha = bannerIsDef ? 0.55 : 1;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // Tiny label
+  ctx.fillStyle = bannerIsDef ? neon : '#767ca8';
+  ctx.font = '700 8.5px "Space Grotesk", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(bannerIsDef ? 'FIND THE TERM FOR' : 'GET READY', bX + 14, bY + 15);
+
+  // Definition text (max 2 lines, ellipsised)
+  ctx.fillStyle = '#f2f3ff';
+  ctx.font = '700 14px "Space Grotesk", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const startY = bY + 31;
+  lines.forEach((l, i) => ctx.fillText(l, W / 2, startY + i * 17));
+}
+
+/* Wrap text into at most maxLines lines that fit maxW; ellipsise the last. */
+function wrapLines(text, maxW, maxLines) {
+  const words = String(text).split(' ');
+  const lines = [];
+  let line = '';
+  for (let i = 0; i < words.length; i++) {
+    const test = line ? line + ' ' + words[i] : words[i];
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line);
+      line = words[i];
+      if (lines.length === maxLines) break;
+    } else {
+      line = test;
+    }
+  }
+  if (lines.length < maxLines && line) lines.push(line);
+  if (lines.length > maxLines) lines.length = maxLines;
+  // Ellipsise final line if the text didn't all fit
+  const joined = lines.join(' ');
+  if (joined.length < String(text).length) {
+    let last = lines[lines.length - 1];
+    while (ctx.measureText(last + '…').width > maxW && last.length > 2) last = last.slice(0, -1);
+    lines[lines.length - 1] = last + '…';
+  }
+  return lines.length ? lines : [''];
+}
+
+function drawFaller(f, W, H) {
+  const t = performance.now() / 1000;
+  const bob = AISM_REDUCED ? 0 : Math.sin(t * 2.1 + f.phase) * 6;
+  const rot = AISM_REDUCED ? 0 : Math.sin(t * 1.4 + f.phase) * 0.05;
+  const neon = DIFF_NEON[difficulty].hex;
+
+  let x = f.x + bob;
+  let y = f.y;
+  let alpha = 1;
+  let fill = '#11112b';
+  let edge = neon;
+  let textCol = '#f2f3ff';
+  let glow = neon;
+  let glowBlur = 18;
+
+  if (f.state === 'dying') {
+    // Redden + shake + fade, then removed in update()
+    const d = Math.min(1, f.dieT);
+    alpha = 1 - d;
+    fill = '#2b0e1c';
+    edge = '#ff2e88';
+    textCol = '#ff9cc4';
+    glow = '#ff2e88';
+    glowBlur = 24;
+    if (!AISM_REDUCED) {
+      x += (Math.random() - 0.5) * 8 * (1 - d);
+      y += (Math.random() - 0.5) * 4 * (1 - d);
+    }
+  } else if (f.state === 'stale') {
+    alpha = Math.max(0, f.staleFade) * 0.5;
+    edge = 'rgba(255,255,255,0.18)';
+    textCol = '#767ca8';
+    glow = 'transparent';
+    glowBlur = 0;
+  }
+
+  if (y + f.h / 2 < -120 || alpha <= 0) return;  // not on screen yet / gone
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+
+  // Neon trail — a fading streak above the word while it's live
+  if (f.state === 'live' && !AISM_REDUCED) {
+    const trailH = 64;
+    const tg = ctx.createLinearGradient(0, -f.h / 2 - trailH, 0, -f.h / 2);
+    tg.addColorStop(0, neon + '00');
+    tg.addColorStop(1, neon + '2e');
+    ctx.fillStyle = tg;
+    roundRect(ctx, -f.w / 2 + 10, -f.h / 2 - trailH, f.w - 20, trailH + 6, 10);
+    ctx.fill();
+  }
+
+  ctx.rotate(rot);
+
+  // Neon glow + drop shadow
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = glowBlur;
+  ctx.shadowOffsetY = 3;
+
+  // Pill body
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = edge;
+  ctx.lineWidth = 2;
+  roundRect(ctx, -f.w / 2, -f.h / 2, f.w, f.h, f.h / 2);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.stroke();
+
+  // Subtle top highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  roundRect(ctx, -f.w / 2 + 4, -f.h / 2 + 3, f.w - 8, f.h / 2 - 4, (f.h / 2 - 4) / 2);
+  ctx.fill();
+
+  // Term text
+  ctx.fillStyle = textCol;
+  ctx.font = '700 ' + f.fontSize + 'px "Space Grotesk", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(f.displayTerm, 0, 1);
+
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+}
+
+function emitParticles(nx, ny, color, n, shape) {
+  if (AISM_REDUCED) n = Math.min(n, 8);
+  for (let i = 0; i < n; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = shape === 'shard' ? 0.022 + Math.random() * 0.018
+                : shape === 'star'  ? 0.012 + Math.random() * 0.014
+                : 0.012 + Math.random() * 0.012;
+    particles.push({
+      x: nx, y: ny,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (shape === 'star' ? 0.005 : 0.008),
+      life: 28 + Math.random() * 22,
+      size: shape === 'shard' ? 4 + Math.random() * 3
+          : shape === 'star'  ? 3 + Math.random() * 3
+          : 3 + Math.random() * 3,
+      color: color,
+      shape: shape || null,
+      angle: shape ? Math.random() * Math.PI * 2 : 0,
+      spin: shape ? (Math.random() - 0.5) * 0.4 : 0
+    });
+  }
+}
+
+/* ============================================================
+   HUD — Score · Progress · Lives · Speed · Combo
+   ============================================================ */
+function updateHUD() {
+  document.getElementById('hud-score').textContent = score;
+  document.getElementById('hud-progress').textContent = resolvedCount + '/' + questions.length;
+  document.getElementById('hud-lives').textContent =
+    '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - Math.max(0, lives)));
+  document.getElementById('hud-speed').textContent = '×' + speed.toFixed(1);
+
+  const comboEl = document.getElementById('hud-combo');
+  comboEl.textContent = aismMultiplier === 1 ? '×1.0' : ('×' + aismMultiplier.toFixed(1));
+  const item = comboEl.closest('.hud-item');
+  item.classList.remove('mult-hot', 'mult-blazing', 'mult-inferno');
+  if (aismStreak >= 8) item.classList.add('mult-inferno');
+  else if (aismStreak >= 5) item.classList.add('mult-blazing');
+  else if (aismStreak >= 3) item.classList.add('mult-hot');
+
+  const livesItem = document.getElementById('hud-lives').closest('.hud-item');
+  livesItem.classList.toggle('critical', lives === 1);
+}
+
+function flashMessage(text, isWrong) {
+  const m = document.getElementById('floating-msg');
+  m.textContent = text;
+  m.classList.toggle('wrong', isWrong);
+  m.classList.add('show');
+  clearTimeout(flashMessage._t);
+  flashMessage._t = setTimeout(() => m.classList.remove('show'), 900);
+}
+
+function announce(text) {
+  const a = document.getElementById('announce');
+  if (a) a.textContent = text;
+}
+
+/* ============================================================
+   END GAME — rank, max combo, accuracy, shareable end card
+   ============================================================ */
+function endGame() {
+  if (gameState === 'over') return;
+  gameState = 'over';
+  if (animId) cancelAnimationFrame(animId);
+  const accuracy = resolvedCount > 0 ? Math.round(100 * correctCount / resolvedCount) : 0;
+  const diff = DIFF_NEON[difficulty];
+  const outOfLives = lives <= 0;
+  if (outOfLives) Arcade.sfx.timeup();
+
+  // Rank: combines accuracy + max combo. S+ = perfect + ≥6 combo.
+  let rank = 'C';
+  if (accuracy >= 100 && aismMaxStreak >= 6) rank = 'S+';
+  else if (accuracy === 100) rank = 'S';
+  else if (accuracy >= 90 && aismMaxStreak >= 5) rank = 'A+';
+  else if (accuracy >= 85) rank = 'A';
+  else if (accuracy >= 70) rank = 'B';
+
+  const misses = Math.max(0, resolvedCount - correctCount);
+  const hearts = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - Math.max(0, lives)));
+  const emojiGrid = diff.icon + ' ' + hearts + ' ⚡×' + aismMaxStreak;
+
+  const insight = outOfLives
+    ? 'Out of lives, but every wrong tap just showed you exactly which definitions are blurry. ' + misses + ' term' + (misses === 1 ? '' : 's') + ' got past you — write those down while they sting. That is the fastest flashcard deck you will ever make.'
+    : misses === 0
+      ? 'Clean sheet — every definition matched under time pressure. That is active recall at speed, the highest-value rep there is. Bump the difficulty and see if it survives the heat.'
+      : 'Every catch was a definition you matched under pressure — real active recall, not re-reading. The ' + misses + ' that slipped past are your next flashcards: the terms that fool you at speed are the ones exams catch you on.';
+
+  const endRoot = document.getElementById('end-root');
+  Arcade.renderEndCard(endRoot, {
+    gameName: 'Falling Words',
+    gameEmoji: '🪂',
+    topic: TOPIC,
+    meta: (META ? META + ' · ' : '') + diff.label + ' mode',
+    pct: accuracy,
+    hot: outOfLives,
+    big: score,
+    bigLabel: outOfLives ? 'score — out of lives' : 'final score',
+    rows: [
+      { v: '⚡×' + aismMaxStreak, l: 'max combo' },
+      { v: accuracy + '%', l: 'accuracy' },
+      { v: '×' + maxSpeed.toFixed(1), l: 'top speed' },
+      { v: rank, l: 'rank' },
+    ],
+    emojiGrid: emojiGrid,
+    bestKey: 'aism-best:' + location.pathname,
+    bestValue: score,
+    bestSuffix: ' pts',
+    insight: insight,
+    shareLines: [
+      '🪂 Falling Words — ' + TOPIC,
+      '🎯 ' + score + ' pts · ' + accuracy + '% · combo ×' + aismMaxStreak + ' · ' + diff.label,
+      emojiGrid,
+    ],
+    onAgain: startGame,
+  });
+
+  // Extra CTA: change difficulty (slot it before the "More games" link).
+  const ctas = endRoot.querySelector('.ar-ctas');
+  if (ctas) {
+    const diffBtn = document.createElement('button');
+    diffBtn.className = 'ar-btn ghost';
+    diffBtn.type = 'button';
+    diffBtn.textContent = '🎚 Change difficulty';
+    diffBtn.addEventListener('click', () => { Arcade.sfx.click(); resetGame(); });
+    ctas.insertBefore(diffBtn, ctas.lastElementChild);
+  }
+
+  announce('Round over. Score ' + score + ', accuracy ' + accuracy + ' percent, max combo ' + aismMaxStreak + ', rank ' + rank + '.');
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-end').classList.add('active');
+}
+
+/* Keyboard: M toggles the arcade mute button (kept from the original). */
+document.addEventListener('keydown', e => {
+  if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    const b = document.querySelector('.ar-mute');
+    if (b) b.click();
+  }
+});
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

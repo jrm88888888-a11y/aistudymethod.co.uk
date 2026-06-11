@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Web — AI Study Method</title>
+<meta name="description" content="Rebuild the topic's concept web. Six neon spokes around the hub — match each definition to its term and light the whole schema up.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* ── SVG web stage ── */
+  .ww-stage { background:var(--ar-grad-card); border:1px solid var(--ar-border); border-radius:var(--ar-r-lg); padding:8px; box-shadow:0 18px 50px rgba(0,0,0,0.45); margin-bottom:16px; }
+  .ww-stage svg { display:block; width:100%; height:auto; }
+  .ww-guide { stroke:rgba(255,255,255,0.10); stroke-width:1.5; stroke-dasharray:4 7; }
+  .ww-link { stroke:var(--ar-mint); stroke-width:2.5; fill:none; transition:stroke-dashoffset 0.7s ease; filter:drop-shadow(0 0 5px rgba(0,255,163,0.65)); }
+  .ww-spoke { cursor:pointer; transform-box:fill-box; transform-origin:center; }
+  .ww-spoke circle { fill:var(--ar-card); stroke:var(--ar-border-hi); stroke-width:2; stroke-dasharray:6 5; transition:stroke 0.18s ease, fill 0.18s ease; }
+  .ww-spoke:hover:not(.filled):not(.missed) circle, .ww-spoke:focus-visible circle { stroke:var(--ar-cyan); fill:rgba(0,229,255,0.12); }
+  .ww-spoke:focus-visible { outline:none; }
+  .ww-spoke:focus-visible circle { stroke-width:3.5; stroke:var(--ar-cyan); }
+  .ww-spoke.active circle { stroke:var(--ar-cyan); fill:rgba(0,229,255,0.12); stroke-dasharray:none; filter:drop-shadow(0 0 8px rgba(0,229,255,0.5)); }
+  .ww-qmark { fill:var(--ar-muted); font-family:var(--ar-font); font-size:28px; font-weight:700; pointer-events:none; }
+  .ww-spokeno { fill:var(--ar-muted); font-family:var(--ar-mono); font-size:12px; letter-spacing:1px; text-transform:uppercase; pointer-events:none; }
+  .ww-spoke:hover:not(.filled):not(.missed) .ww-qmark, .ww-spoke.active .ww-qmark { fill:var(--ar-cyan); }
+  .ww-spoke.filled, .ww-spoke.missed { cursor:default; }
+  .ww-spoke.filled circle { fill:rgba(0,255,163,0.12); stroke:var(--ar-mint); stroke-dasharray:none; filter:drop-shadow(0 0 8px rgba(0,255,163,0.5)); }
+  .ww-spoke .ww-term { fill:var(--ar-mint); font-family:var(--ar-font); font-weight:600; pointer-events:none; }
+  .ww-spoke.missed circle { fill:rgba(255,214,10,0.10); stroke:var(--ar-gold); stroke-dasharray:none; filter:drop-shadow(0 0 8px rgba(255,214,10,0.4)); }
+  .ww-spoke.missed .ww-term { fill:var(--ar-gold); }
+  @keyframes wwPop { 0%{transform:scale(0.55)} 65%{transform:scale(1.12)} 100%{transform:scale(1)} }
+  .ww-spoke.pop { animation:wwPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  .ww-spoke.wrongflash circle { stroke:var(--ar-pink); fill:rgba(255,46,136,0.14); }
+  @keyframes wwShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+  .ww-spoke.shake { animation:wwShake 0.4s ease; }
+  .ww-hub-name { fill:#ffffff; font-family:var(--ar-font); font-weight:700; pointer-events:none; }
+  .ww-hub-kicker { fill:rgba(255,255,255,0.8); font-family:var(--ar-mono); font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600; pointer-events:none; }
+  @keyframes wwHubPulse { 0%,100%{transform:scale(1)} 45%{transform:scale(1.06)} }
+  .ww-hub { transform-box:fill-box; transform-origin:center; }
+  .ww-hub.pulse { animation:wwHubPulse 0.9s ease 3; }
+  svg.ww-complete .ww-link { filter:drop-shadow(0 0 9px rgba(0,255,163,0.9)); }
+  svg.ww-complete .ww-spoke.filled circle { filter:drop-shadow(0 0 12px rgba(0,255,163,0.7)); }
+
+  /* ── MCQ card ── */
+  .ww-def { font-size:15px; color:var(--ar-text); margin:0 0 16px; line-height:1.55; padding:13px 15px; background:var(--ar-card); border-radius:var(--ar-r); border-left:3px solid var(--ar-cyan); font-style:italic; }
+  .ww-options { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+  .ww-options .ar-tile { display:flex; align-items:center; gap:10px; font-weight:600; }
+  .ww-key { font-family:var(--ar-mono); font-size:11px; font-weight:700; color:var(--ar-cyan); border:1px solid rgba(0,229,255,0.4); border-radius:6px; padding:2px 7px; flex:none; }
+  .ar-tile.wrong .ww-key { color:var(--ar-pink); border-color:rgba(255,46,136,0.4); }
+  .ww-quiz-foot { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .ww-tries { font-family:var(--ar-mono); font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ar-muted); }
+  .ww-idle { color:var(--ar-text2); font-size:15px; line-height:1.55; display:flex; align-items:center; gap:12px; }
+  .ww-idle-icon { font-size:30px; line-height:1; }
+
+  /* ── re-read list under the end card ── */
+  .ww-deflist { display:flex; flex-direction:column; gap:10px; margin:16px 0 0; text-align:left; }
+  .ww-defrow { padding:12px 14px; background:var(--ar-card); border-radius:var(--ar-r); border-left:3px solid var(--ar-mint); }
+  .ww-defrow.was-missed { border-left-color:var(--ar-gold); }
+  .ww-defrow strong { font-size:14px; color:var(--ar-text); display:block; margin-bottom:3px; }
+  .ww-defrow span { font-size:13px; color:var(--ar-text2); line-height:1.5; }
+  .ww-retry-tag { font-family:var(--ar-mono); font-size:10px; color:var(--ar-gold); font-weight:600; margin-left:6px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ww-link, .ww-spoke circle { transition:none; }
+    .ww-spoke.pop, .ww-spoke.shake, .ww-hub.pulse { animation:none; }
+    svg.ww-complete .ww-link, svg.ww-complete .ww-spoke.filled circle { filter:none; }
+  }
+</style>
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script>
+(async function() {
+  const escapeHtml = Arcade.escapeHtml;
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const liveRegion = document.getElementById('announce');
+
+  Arcade.mountMuteButton();
+
+  function announce(msg) {
+    liveRegion.textContent = '';
+    setTimeout(() => { liveRegion.textContent = msg; }, 30);
+  }
+  const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!stem) {
+    root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  const spec = await Arcade.fetchSpecJson(stem, '../adventures/_specs');
+  if (!spec) {
+    root.innerHTML = `<div class="ar-error">Couldn't load the concept set for <code>${escapeHtml(stem)}</code>.</div>`;
+    return;
+  }
+
+  const topic = spec.topic_display || spec.title || stem;
+  const level = (spec.level || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subjDisplay = (spec.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Placeholder defs would make hollow questions — treat them as unauthored.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const allConcepts = ((spec.concepts) || [])
+    .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(String(c.def)))
+    .map(c => ({ term: String(c.term).trim(), def: String(c.def).trim() }))
+    .filter(c => c.term && c.def);
+
+  if (allConcepts.length < 6) {
+    root.innerHTML = `
+      <div class="ar-badge">L · Learn · Word Web</div>
+      <h1 class="ar-title">${escapeHtml(topic)}</h1>
+      <p class="ar-sub">A word web needs six distinctive, topic-specific concepts — generic filler wouldn't earn its place on the site. Come back soon.</p>
+      <div class="ar-meta">${escapeHtml([level, subjDisplay, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="ar-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">🕸️</div>
+        <h2 style="font-size:1.3rem;margin:0 0 8px">Web in production</h2>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Word Web needs six authored concept definitions for this exact topic. That set hasn't been written at the required depth yet.</p>
+        <a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
+  const BEST_KEY = 'aism-wordweb-best:' + location.pathname;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const N = 6, CX = 300, CY = 250, HUB_R = 65, NODE_R = 55, RING_R = 175;
+
+  function svgEl(name, attrs, parent) {
+    const n = document.createElementNS(SVGNS, name);
+    if (attrs) for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  // Word-wrap into tspans that fit a spoke circle (min font 12px).
+  function wrapLines(text, maxChars) {
+    const words = String(text).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+      if (!cur) cur = w;
+      else if ((cur + ' ' + w).length <= maxChars) cur += ' ' + w;
+      else { lines.push(cur); cur = w; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+  function setSpokeTerm(textNode, term, x) {
+    let maxChars = 12;
+    let lines = wrapLines(term, maxChars);
+    while (lines.length > 3 && maxChars < 40) { maxChars += 3; lines = wrapLines(term, maxChars); }
+    lines = lines.slice(0, 3).map(l => l.length > 14 ? l.slice(0, 13) + '…' : l);
+    const fs = 12; // never below 12px inside spokes
+    const lh = fs * 1.18;
+    const startDy = -((lines.length - 1) / 2) * lh;
+    while (textNode.firstChild) textNode.removeChild(textNode.firstChild);
+    lines.forEach((ln, i) => {
+      const ts = svgEl('tspan', { x, dy: i === 0 ? startDy : lh }, textNode);
+      ts.textContent = ln;
+    });
+    textNode.setAttribute('font-size', fs);
+  }
+
+  const fmtTime = ms => {
+    const s = Math.round(ms / 1000);
+    return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
+  };
+
+  function bump(el) {
+    if (!el) return;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 350);
+  }
+
+  /* ── game state ── */
+  let state = null;
+  let spokeEls = [];      // per-spoke { g, circle, qmark, no, term, link, x, y }
+  let svgRoot = null, hubG = null;
+  let activeSpoke = null; // index of the spoke whose MCQ is showing
+  let chosenTerm = null;  // currently selected option in the MCQ
+
+  function spokeAria(i) {
+    const sp = state.spokes[i];
+    if (sp.status === 'done') return `Spoke ${i + 1}: filled with ${sp.term}`;
+    if (sp.status === 'missed') return `Spoke ${i + 1}: revealed as ${sp.term} after two tries`;
+    return `Empty spoke ${i + 1} — tap to fill`;
+  }
+
+  function renderHeader() {
+    return `
+      <div class="ar-badge">L · Learn · Word Web</div>
+      <h1 class="ar-title">${escapeHtml(topic)}</h1>
+      <p class="ar-sub">Every topic is a web of connected ideas. The hub is <strong>${escapeHtml(topic)}</strong>; the six dark bubbles are its key concepts. Tap a bubble, read the definition, pick the right term — no timer, no pressure. Light up all six.</p>
+      <div class="ar-meta">${escapeHtml([level, subjDisplay].filter(Boolean).join(' · '))} · 6 spokes</div>
+    `;
+  }
+
+  /* ── build the SVG web ── */
+  function buildWeb() {
+    svgRoot = svgEl('svg', {
+      viewBox: '0 0 600 500',
+      xmlns: SVGNS,
+      role: 'group',
+      'aria-label': `Word web for ${topic}: six concept spokes around a central hub`,
+    });
+
+    // Neon gradient for the hub
+    const defs = svgEl('defs', null, svgRoot);
+    const grad = svgEl('linearGradient', { id: 'wwNeon', x1: '0%', y1: '0%', x2: '100%', y2: '100%' }, defs);
+    svgEl('stop', { offset: '0%', 'stop-color': '#8b5cf6' }, grad);
+    svgEl('stop', { offset: '100%', 'stop-color': '#00b3cc' }, grad);
+
+    const guidesG = svgEl('g', { 'aria-hidden': 'true' }, svgRoot);
+    const linksG = svgEl('g', { 'aria-hidden': 'true' }, svgRoot);
+    const spokesG = svgEl('g', null, svgRoot);
+    spokeEls = [];
+
+    for (let i = 0; i < N; i++) {
+      const a = (i * 60) * Math.PI / 180; // 0°, 60°, … 300°
+      const x = CX + RING_R * Math.cos(a);
+      const y = CY + RING_R * Math.sin(a);
+      const x1 = CX + HUB_R * Math.cos(a), y1 = CY + HUB_R * Math.sin(a);
+      const x2 = x - NODE_R * Math.cos(a), y2 = y - NODE_R * Math.sin(a);
+      const len = Math.hypot(x2 - x1, y2 - y1);
+
+      // Faint dashed guide; neon link drawn on success.
+      svgEl('line', { x1, y1, x2, y2, class: 'ww-guide' }, guidesG);
+      const link = svgEl('line', { x1, y1, x2, y2, class: 'ww-link' }, linksG);
+      link.style.strokeDasharray = `${len} ${len}`;
+      link.style.strokeDashoffset = String(len);
+
+      const g = svgEl('g', {
+        class: 'ww-spoke',
+        role: 'button',
+        tabindex: '0',
+        'aria-label': `Empty spoke ${i + 1} — tap to fill`,
+      }, spokesG);
+      const circle = svgEl('circle', { cx: x, cy: y, r: NODE_R }, g);
+      const no = svgEl('text', { x, y: y - 20, 'text-anchor': 'middle', class: 'ww-spokeno' }, g);
+      no.textContent = String(i + 1);
+      const qmark = svgEl('text', { x, y: y + 16, 'text-anchor': 'middle', class: 'ww-qmark' }, g);
+      qmark.textContent = '?';
+      const term = svgEl('text', { x, y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', class: 'ww-term' }, g);
+
+      g.addEventListener('click', () => activateSpoke(i));
+      g.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateSpoke(i); }
+      });
+      spokeEls.push({ g, circle, qmark, no, term, link, x, y });
+    }
+
+    // Hub last so it sits on top of the guide lines.
+    hubG = svgEl('g', { class: 'ww-hub', 'aria-hidden': 'true' }, svgRoot);
+    svgEl('circle', { cx: CX, cy: CY, r: HUB_R, fill: 'url(#wwNeon)', stroke: 'rgba(255,255,255,0.4)', 'stroke-width': '2' }, hubG);
+    const kicker = svgEl('text', { x: CX, y: CY - 16, 'text-anchor': 'middle', class: 'ww-hub-kicker' }, hubG);
+    kicker.textContent = 'Topic';
+    const name = svgEl('text', { x: CX, y: CY + 10, 'text-anchor': 'middle', class: 'ww-hub-name' }, hubG);
+    const label = topic.length > 14 ? topic.slice(0, 14).trimEnd() + '…' : topic;
+    name.textContent = label;
+    name.setAttribute('font-size', Math.max(12, Math.min(17, Math.round(116 / Math.max(label.length, 1) * 1.7))));
+
+    return svgRoot;
+  }
+
+  /* ── MCQ card ── */
+  function activateSpoke(i) {
+    if (!state || state.done) return;
+    const sp = state.spokes[i];
+    if (sp.status !== 'empty') return;
+    Arcade.sfx.click();
+    activeSpoke = i;
+    chosenTerm = null;
+    spokeEls.forEach((el, j) => el.g.classList.toggle('active', j === i));
+    renderQuiz();
+    announce(`Spoke ${i + 1} selected. ${sp.variant === 0 ? 'Which term has this definition?' : 'Which term means:'} ${sp.def}`);
+  }
+
+  function renderQuiz() {
+    const quiz = document.getElementById('wwQuiz');
+    if (!quiz) return;
+
+    if (activeSpoke == null) {
+      const remaining = state.spokes.filter(s => s.status === 'empty').length;
+      quiz.innerHTML = state.done ? '' : `
+        <div class="ww-idle">
+          <span class="ww-idle-icon" aria-hidden="true">🕸️</span>
+          <span>Tap a dark spoke on the web to reveal its question. <strong>${remaining}</strong> of 6 still to light up.</span>
+        </div>
+        <div class="ar-kbd-hint">Tab to a spoke · Enter opens · 1–4 picks an answer · Enter confirms</div>
+      `;
+      return;
+    }
+
+    const i = activeSpoke;
+    const sp = state.spokes[i];
+    const heading = sp.variant === 0 ? 'Which term has this definition?' : 'Which term means:';
+    quiz.innerHTML = `
+      <div class="ar-label">Spoke ${i + 1} of 6 · ${sp.tries === 0 ? 'first try +100' : 'second try +50'}</div>
+      <h2 class="ar-prompt" id="wwQuizQ" style="font-size:17px;">${heading}</h2>
+      <blockquote class="ww-def">“${escapeHtml(sp.def)}”</blockquote>
+      <div class="ww-options ar-stagger" role="group" aria-labelledby="wwQuizQ">
+        ${sp.options.map((t, k) => `
+          <button type="button" class="ar-tile${sp.wrongPicks.includes(t) ? ' wrong dim' : ''}" data-term="${escapeHtml(t)}" ${sp.wrongPicks.includes(t) ? 'disabled' : ''} aria-pressed="false">
+            <span class="ww-key" aria-hidden="true">${k + 1}</span><span>${escapeHtml(t)}</span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="ww-quiz-foot">
+        <button type="button" class="ar-btn" id="wwConfirm" disabled>Lock it in →</button>
+        <span class="ww-tries">${sp.tries === 0 ? '2 tries left' : '1 try left'}</span>
+      </div>
+      <div id="wwFb"></div>
+    `;
+
+    const confirm = document.getElementById('wwConfirm');
+    quiz.querySelectorAll('.ww-options .ar-tile').forEach(b => {
+      b.addEventListener('click', () => {
+        if (b.disabled) return;
+        Arcade.sfx.click();
+        quiz.querySelectorAll('.ww-options .ar-tile').forEach(x => { x.classList.remove('selected'); x.setAttribute('aria-pressed', 'false'); });
+        b.classList.add('selected');
+        b.setAttribute('aria-pressed', 'true');
+        chosenTerm = b.dataset.term;
+        confirm.disabled = false;
+      });
+    });
+    confirm.addEventListener('click', confirmAnswer);
+  }
+
+  function confirmAnswer() {
+    if (activeSpoke == null || chosenTerm == null) return;
+    const i = activeSpoke;
+    const sp = state.spokes[i];
+    const quiz = document.getElementById('wwQuiz');
+    const fb = document.getElementById('wwFb');
+    sp.tries++;
+
+    if (chosenTerm === sp.term) {
+      const firstTry = sp.tries === 1;
+      const pts = firstTry ? 100 : 50;
+      sp.status = 'done';
+      sp.firstTry = firstTry;
+      state.score += pts;
+      if (firstTry) state.firstTryCount++;
+      let correctBtn = null;
+      quiz.querySelectorAll('.ww-options .ar-tile').forEach(b => {
+        b.disabled = true;
+        if (b.dataset.term === sp.term) { b.classList.add('correct'); correctBtn = b; }
+      });
+      document.getElementById('wwConfirm').disabled = true;
+      Arcade.sfx.correct(state.filledCount + 1);
+      if (correctBtn) Arcade.popTextOver(correctBtn, '+' + pts, firstTry ? '#00ffa3' : '#ffd60a');
+      fb.className = 'ar-feedback ok';
+      fb.innerHTML = `<strong>Connected — +${pts}.</strong> “${escapeHtml(sp.term)}” joins the web.`;
+      announce(`Correct. Spoke ${i + 1} filled with ${sp.term}. Score ${state.score}.`);
+      fillSpoke(i, false);
+    } else {
+      state.retries++;
+      sp.wrongPicks.push(chosenTerm);
+      flashWrong(i);
+      Arcade.sfx.wrong();
+      if (sp.tries >= 2) {
+        // Out of tries: reveal the answer, fill the spoke in amber.
+        sp.status = 'missed';
+        quiz.querySelectorAll('.ww-options .ar-tile').forEach(b => {
+          b.disabled = true;
+          if (b.dataset.term === sp.term) b.classList.add('correct');
+          else if (b.dataset.term === chosenTerm) b.classList.add('wrong');
+        });
+        document.getElementById('wwConfirm').disabled = true;
+        fb.className = 'ar-feedback mid';
+        fb.innerHTML = `<strong>No stress — it was “${escapeHtml(sp.term)}”.</strong> It joins the web unscored. Its definition is in the re-read list at the end; that's the one to lock in.`;
+        announce(`Out of tries. Spoke ${i + 1} was ${sp.term}.`);
+        fillSpoke(i, true);
+      } else {
+        const wrongBtn = quiz.querySelector(`.ww-options .ar-tile.selected`);
+        if (wrongBtn) { wrongBtn.classList.remove('selected'); wrongBtn.classList.add('wrong', 'dim'); wrongBtn.disabled = true; }
+        chosenTerm = null;
+        document.getElementById('wwConfirm').disabled = true;
+        quiz.querySelector('.ww-tries').textContent = '1 try left';
+        quiz.querySelector('.ar-label').textContent = `Spoke ${i + 1} of 6 · second try +50`;
+        fb.className = 'ar-feedback no';
+        fb.innerHTML = `<strong>Not that one.</strong> That term belongs on a different spoke — read the definition again, you've got one more try.`;
+        announce(`Wrong term for spoke ${i + 1}. One try left.`);
+      }
+    }
+    updateStats();
+  }
+
+  function flashWrong(i) {
+    const el = spokeEls[i];
+    el.g.classList.add('wrongflash');
+    if (!REDUCED) {
+      el.g.classList.remove('shake');
+      void el.g.getBoundingClientRect();
+      el.g.classList.add('shake');
+    }
+    setTimeout(() => el.g.classList.remove('wrongflash', 'shake'), 500);
+  }
+
+  function fillSpoke(i, missed) {
+    const sp = state.spokes[i];
+    const el = spokeEls[i];
+    state.filledCount++;
+
+    el.qmark.remove();
+    el.no.remove();
+    setSpokeTerm(el.term, sp.term, el.x);
+    el.g.classList.remove('active');
+    el.g.classList.add(missed ? 'missed' : 'filled');
+    if (!REDUCED) el.g.classList.add('pop');
+    el.g.setAttribute('aria-label', spokeAria(i));
+    el.g.setAttribute('aria-disabled', 'true');
+    el.g.setAttribute('tabindex', '-1');
+
+    // Permanent hub→spoke neon line, revealed with a dash-offset draw.
+    requestAnimationFrame(() => { el.link.style.strokeDashoffset = '0'; });
+
+    // Confetti right where the spoke lit up.
+    if (!missed) {
+      const r = el.circle.getBoundingClientRect();
+      Arcade.confettiBurst({ x: r.left + r.width / 2, y: r.top + r.height / 2, count: 26 });
+    }
+
+    activeSpoke = null;
+    chosenTerm = null;
+
+    if (state.filledCount === N) {
+      setTimeout(finishGame, REDUCED ? 250 : 1100);
+    } else {
+      // Linger on the feedback, then invite the next spoke.
+      setTimeout(() => {
+        if (state.done || activeSpoke != null) return; // player already moved on
+        renderQuiz();
+        const next = state.spokes.findIndex((s, j) => s.status === 'empty' && j > i);
+        const tgt = spokeEls[next !== -1 ? next : state.spokes.findIndex(s => s.status === 'empty')];
+        if (tgt) tgt.g.focus();
+      }, REDUCED ? 400 : 1600);
+    }
+  }
+
+  function updateStats() {
+    const sc = document.getElementById('wwScoreNum');
+    const ft = document.getElementById('wwFirstTryNum');
+    const sp = document.getElementById('wwSpokeNum');
+    if (sc && sc.textContent !== String(state.score)) { sc.textContent = state.score; bump(sc); }
+    if (ft) ft.textContent = `${state.firstTryCount}/6`;
+    if (sp) { sp.textContent = `${state.filledCount}/6`; bump(sp); }
+  }
+
+  /* ── end of game ── */
+  function finishGame() {
+    state.done = true;
+    state.elapsed = Date.now() - state.t0;
+    if (svgRoot) svgRoot.classList.add('ww-complete');
+    if (hubG && !REDUCED) hubG.classList.add('pulse');
+
+    const pct = Math.round((state.firstTryCount / N) * 100);
+    const emoji = state.spokes.map(s => s.status === 'missed' ? '⚪' : s.firstTry ? '🟢' : '🟡').join('');
+    const missed = state.spokes.filter(s => s.status === 'missed');
+
+    let insight;
+    if (state.retries === 0) {
+      insight = `Every spoke connected on the first touch — you don't just recognise the terms of ${topic}, you hold the whole schema as one connected map. That's exactly the layer exams reward when questions cut across concepts.`;
+    } else {
+      insight = `${state.retries} ${state.retries === 1 ? 'retry' : 'retries'} means a few term–definition wires are crossed${missed.length ? `, and ${missed.length} ${missed.length === 1 ? 'spoke' : 'spokes'} had to be revealed` : ''}. Re-read the definitions below — the amber ones first — then spin the web again and aim for all green.`;
+    }
+
+    const quiz = document.getElementById('wwQuiz');
+    if (quiz) quiz.innerHTML = `<div class="ww-idle"><span class="ww-idle-icon" aria-hidden="true">✨</span><span>Web complete — results below.</span></div>`;
+
+    const panel = document.getElementById('wwPanel');
+    Arcade.renderEndCard(panel, {
+      gameName: 'Word Web',
+      gameEmoji: '🕸️',
+      topic: topic,
+      meta: [level, subjDisplay].filter(Boolean).join(' · '),
+      pct: pct,
+      big: state.score,
+      bigLabel: 'points',
+      rows: [
+        { v: `${state.firstTryCount}/6`, l: 'first try' },
+        { v: String(state.retries), l: 'retries' },
+        { v: fmtTime(state.elapsed), l: 'time' },
+      ],
+      emojiGrid: emoji,
+      bestKey: BEST_KEY,
+      bestValue: state.score,
+      bestSuffix: ' pts',
+      insight: insight,
+      shareLines: [
+        '🕸️ Word Web — ' + topic,
+        `Score ${state.score} pts · first-try ${state.firstTryCount}/6`,
+        emoji,
+      ],
+      onAgain: startGame,
+    });
+    panel.insertAdjacentHTML('beforeend', `
+      <div class="ww-deflist">
+        ${state.spokes.map(s => `
+          <div class="ww-defrow${s.status === 'missed' ? ' was-missed' : ''}">
+            <strong>${escapeHtml(s.term)}${s.status === 'missed' ? '<span class="ww-retry-tag">· revealed</span>' : s.firstTry === false ? '<span class="ww-retry-tag">· 2nd try</span>' : ''}</strong>
+            <span>${escapeHtml(s.def)}</span>
+          </div>
+        `).join('')}
+      </div>
+    `);
+    announce(`Web complete. Score ${state.score} points. First-try ${state.firstTryCount} of 6 — ${pct} percent. ${state.retries} retries.`);
+    if (panel.scrollIntoView) panel.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  /* ── boot / reboot ── */
+  function startGame() {
+    const picked = Arcade.shuffle(allConcepts).slice(0, N);
+    state = {
+      spokes: picked.map(c => {
+        const distractors = Arcade.shuffle(picked.filter(o => o.term !== c.term).map(o => o.term)).slice(0, 3);
+        return {
+          term: c.term,
+          def: c.def,
+          options: Arcade.shuffle([c.term, ...distractors]),
+          variant: Math.random() < 0.5 ? 0 : 1, // 0 = "has this definition?", 1 = "means:"
+          tries: 0,
+          wrongPicks: [],
+          status: 'empty',
+          firstTry: null,
+        };
+      }),
+      score: 0,
+      firstTryCount: 0,
+      retries: 0,
+      filledCount: 0,
+      done: false,
+      t0: Date.now(),
+      elapsed: 0,
+    };
+    activeSpoke = null;
+    chosenTerm = null;
+
+    root.innerHTML = `
+      ${renderHeader()}
+      <div class="ww-stage" id="wwStage"></div>
+      <div class="ar-hud">
+        <div class="ar-hud-stat">Score <b id="wwScoreNum">0</b></div>
+        <div class="ar-hud-stat">First-try <b id="wwFirstTryNum">0/6</b></div>
+        <div class="ar-hud-stat gold">Spokes <b id="wwSpokeNum">0/6</b></div>
+      </div>
+      <div class="ar-card" id="wwQuiz"></div>
+      <div id="wwPanel"></div>
+    `;
+    document.getElementById('wwStage').appendChild(buildWeb());
+    renderQuiz();
+  }
+
+  // Keyboard: 1–4 pick an option, Enter confirms (when the MCQ is live).
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (activeSpoke == null || !state || state.done) return;
+    const map = { '1': 0, '2': 1, '3': 2, '4': 3 };
+    if (e.key in map) {
+      const opts = document.querySelectorAll('#wwQuiz .ww-options .ar-tile');
+      const b = opts[map[e.key]];
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+      return;
+    }
+    if (e.key === 'Enter') {
+      // Let native button activation handle Enter on options/Confirm itself.
+      if (e.target && (e.target.id === 'wwConfirm' || (e.target.classList && e.target.classList.contains('ar-tile')))) return;
+      const confirm = document.getElementById('wwConfirm');
+      if (confirm && !confirm.disabled) { e.preventDefault(); confirm.click(); }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

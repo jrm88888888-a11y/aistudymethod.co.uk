@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conveyor Belt — AI Study Method</title>
+<meta name="description" content="Statements ride a conveyor belt across the screen — drag each one into the TRUTH bin or the MISCONCEPTION bin before it falls off the edge.">
+<link rel="stylesheet" href="../../style.css">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* ============ Page chrome (cream theme, matches two-truths) ============ */
+  .cb-wrap { max-width: 680px; margin: 0 auto; padding: calc(var(--nav-h) + 36px) 1.25rem 60px; }
+  .cb-badge { display:inline-flex; align-items:center; gap:8px; background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; padding:4px 12px; border-radius:30px; font-family:'DM Mono',monospace; margin-bottom:14px; }
+  .cb-title { font-family:'Playfair Display',serif; font-size:clamp(1.7rem,3vw,2.4rem); line-height:1.15; margin:0 0 10px; }
+  .cb-sub { color:var(--text-secondary); font-size:15px; margin:0 0 22px; line-height:1.55; max-width:60ch; }
+  .cb-meta { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:24px; }
+  .cb-error { padding:20px; background:rgba(194,65,12,0.05); border:1px solid rgba(194,65,12,0.2); border-radius:10px; color:#c2410c; font-size:14px; }
+  .cb-card { background:var(--bg-card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:14px; padding:24px 26px; box-shadow:0 4px 14px rgba(10,107,94,0.06); margin-bottom:18px; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+  /* ============ Screens ============ */
+  .screen { display:none; }
+  .screen.active { display:block; }
+
+  /* ---- Start screen ---- */
+  .start-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:28px 26px; text-align:center; box-shadow:0 4px 14px rgba(10,107,94,0.06); }
+  .start-card h2 { font-family:'Playfair Display',serif; font-size:1.45rem; margin:0 0 8px; }
+  .start-card p { color:var(--text-secondary); font-size:14.5px; line-height:1.55; margin:0 0 24px; }
+  .diff-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:22px; }
+  .diff-btn { background:var(--bg-primary); border:2px solid var(--border); border-radius:12px; padding:14px 8px; cursor:pointer; transition:all 0.15s ease; color:var(--text-primary); font-family:inherit; }
+  .diff-btn:hover { border-color:var(--accent); }
+  .diff-btn.selected { border-color:var(--accent); background:var(--accent-soft); }
+  .diff-icon { font-size:22px; line-height:1; }
+  .diff-label { font-size:12px; font-weight:700; margin-top:4px; letter-spacing:0.5px; }
+  .diff-meta { font-size:10px; color:var(--text-muted); margin-top:2px; font-family:'DM Mono',monospace; }
+  .cb-btn { background:var(--velvet-gradient); color:#fff; border:none; padding:14px 24px; border-radius:10px; font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer; box-shadow:0 4px 12px var(--accent-glow); transition:transform 0.15s; width:100%; }
+  .cb-btn:hover { transform:translateY(-1px); }
+  .cb-btn-ghost { background:none; border:1.5px solid var(--border-accent); color:var(--accent); box-shadow:none; }
+  .how-it-works { margin-top:20px; font-size:12.5px; color:var(--text-muted); line-height:1.6; text-align:left; padding:14px 16px; background:var(--bg-primary); border-radius:10px; border:1px solid var(--border); }
+  .how-it-works b { color:var(--text-secondary); }
+
+  /* ---- Game screen (dark card framing, matches falling-words / mob-quiz) ---- */
+  #screen-game { margin:0 -4px; }
+  .game-frame { background:#1a1d27; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:8px; box-shadow:0 10px 30px rgba(10,15,25,0.35); }
+  .hud { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(15,17,23,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; margin-bottom:8px; }
+  .hud-item { text-align:center; min-width:0; }
+  .hud-num { font-family:'Playfair Display',serif; font-size:21px; font-weight:800; line-height:1; color:#e8eaf0; }
+  .hud-label { font-size:9px; color:#9aa3b2; text-transform:uppercase; letter-spacing:1.2px; margin-top:3px; font-family:'DM Mono',monospace; }
+  .hud-speed .hud-num { color:#4ade9a; }
+  .hud-lives .hud-num { color:#ff5a5f; }
+  .hud-lives.critical .hud-num { animation:lifeBlip 0.6s ease infinite; }
+  @keyframes lifeBlip { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(1.1); } }
+  .hud-combo-item .hud-num { transition:color 0.2s, transform 0.2s; }
+  .hud-combo-item.mult-hot .hud-num { color:#4ade9a; }
+  .hud-combo-item.mult-blazing .hud-num { color:#ffd24d; text-shadow:0 0 8px rgba(255,210,77,0.6); }
+  .hud-combo-item.mult-inferno .hud-num { color:#ff8a3d; text-shadow:0 0 12px rgba(255,138,61,0.8); animation:comboShake 0.3s ease infinite; }
+  @keyframes comboShake { 0%,100% { transform:scale(1); } 50% { transform:scale(1.08); } }
+
+  #canvas-wrap { position:relative; border-radius:12px; overflow:hidden; background:linear-gradient(180deg,#1a1d27 0%,#0f1117 100%); border:1px solid rgba(255,255,255,0.08); height:min(600px, max(440px, 62vh)); }
+  #game-canvas { display:block; width:100%; height:100%; touch-action:none; cursor:grab; }
+  #game-canvas.dragging { cursor:grabbing; }
+
+  .floating-msg { position:absolute; top:18%; left:50%; transform:translate(-50%,-50%) scale(0.7); padding:12px 22px; background:#2d8f5a; color:white; border-radius:14px; font-size:20px; font-weight:900; font-family:'Nunito',sans-serif; opacity:0; pointer-events:none; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); z-index:10; white-space:nowrap; max-width:90%; overflow:hidden; text-overflow:ellipsis; }
+  .floating-msg.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  .floating-msg.wrong { background:#ff5a5f; }
+  .controls-hint { position:absolute; bottom:calc(24% + 8px); left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); color:#9aa3b2; padding:6px 14px; border-radius:20px; font-size:11px; font-family:'Nunito',sans-serif; pointer-events:none; opacity:0; transition:opacity 0.3s; z-index:5; white-space:nowrap; }
+  .controls-hint.visible { opacity:1; }
+  @media (prefers-reduced-motion: reduce) {
+    .floating-msg { transition:opacity 0.2s ease; }
+    .hud-combo-item.mult-inferno .hud-num, .hud-lives.critical .hud-num { animation:none; }
+  }
+
+  /* ---- End screen (mob-quiz end layout, cream-styled) ---- */
+  .end-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:28px 24px; text-align:center; box-shadow:0 4px 14px rgba(10,107,94,0.06); }
+  .end-emoji { font-size:54px; margin-bottom:6px; line-height:1; }
+  .end-title { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; margin:0 0 6px; }
+  .end-streak-line { margin:6px 0 4px; font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); letter-spacing:1.4px; text-transform:uppercase; }
+  .end-best { margin:4px 0 16px; font-size:13px; font-weight:700; color:var(--accent); min-height:1em; }
+  .end-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:22px; }
+  .end-stat { background:var(--bg-primary); border:1px solid var(--border); border-radius:12px; padding:14px 8px; }
+  .end-stat-num { font-family:'Playfair Display',serif; font-size:25px; font-weight:800; color:var(--accent); line-height:1; }
+  .end-stat-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; margin-top:4px; font-family:'DM Mono',monospace; }
+  .end-btns { display:flex; gap:10px; flex-wrap:wrap; }
+  .end-btns .cb-btn { flex:1; min-width:140px; width:auto; }
+
+  @media (max-width:480px) {
+    .cb-wrap { padding-left:0.6rem; padding-right:0.6rem; }
+    .hud { padding:8px 8px; }
+    .hud-num { font-size:17px; }
+    .hud-label { letter-spacing:0.8px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="cb-wrap" id="root">
+  <div class="cb-error" id="loading-msg">Loading…</div>
+
+  <div id="game-shell" style="display:none;">
+    <div class="cb-badge">V · Verify · Conveyor Belt</div>
+    <h1 class="cb-title" id="page-title">Conveyor Belt</h1>
+    <p class="cb-sub" id="page-sub">Statements ride the belt from right to left. Drag each one into the TRUTH bin or the MISCONCEPTION bin before it falls off the edge.</p>
+    <div class="cb-meta" id="page-meta"></div>
+
+    <!-- START SCREEN -->
+    <div id="screen-start" class="screen active">
+      <div class="start-card">
+        <h2>Choose your pace</h2>
+        <p>Sort each statement into the right bin. Wrong bins and statements that fall off the belt cost a life — you have three.</p>
+
+        <div class="diff-grid">
+          <button class="diff-btn" data-diff="easy" type="button">
+            <div class="diff-icon">🐢</div>
+            <div class="diff-label">Easy</div>
+            <div class="diff-meta">1 card · hints</div>
+          </button>
+          <button class="diff-btn selected" data-diff="medium" type="button">
+            <div class="diff-icon">⚡</div>
+            <div class="diff-label">Medium</div>
+            <div class="diff-meta">2 cards · faint hints</div>
+          </button>
+          <button class="diff-btn" data-diff="hard" type="button">
+            <div class="diff-icon">🔥</div>
+            <div class="diff-label">Hard</div>
+            <div class="diff-meta">3 cards · no hints</div>
+          </button>
+        </div>
+
+        <button id="btn-start" class="cb-btn" type="button">Start the Belt →</button>
+
+        <div class="how-it-works">
+          <b>How it works:</b> Statements roll across the conveyor belt. Drag each one down into the <b>TRUTH</b> bin (left) or the <b>MISCONCEPTION</b> bin (right). Correct sorting scores points — streaks multiply them (×1.5 at 3, ×2 at 5, ×3 at 8). Drop into the wrong bin, or let a card fall off the left edge, and you lose a life. 12 statements per run, 3 lives.
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="screen-game" class="screen">
+      <div class="game-frame">
+        <div class="hud">
+          <div class="hud-item">
+            <div class="hud-num" id="hud-score">0</div>
+            <div class="hud-label">Score</div>
+          </div>
+          <div class="hud-item">
+            <div class="hud-num" id="hud-progress">0/12</div>
+            <div class="hud-label">Progress</div>
+          </div>
+          <div class="hud-item hud-lives">
+            <div class="hud-num" id="hud-lives">♥♥♥</div>
+            <div class="hud-label">Lives</div>
+          </div>
+          <div class="hud-item hud-speed">
+            <div class="hud-num" id="hud-speed">×1.0</div>
+            <div class="hud-label">Speed</div>
+          </div>
+          <div class="hud-item hud-combo-item">
+            <div class="hud-num" id="hud-combo">×1.0</div>
+            <div class="hud-label">Combo</div>
+          </div>
+        </div>
+        <div id="canvas-wrap">
+          <canvas id="game-canvas" aria-label="Conveyor Belt game area — drag each statement card into the truth bin or the misconception bin"></canvas>
+          <div id="floating-msg" class="floating-msg"></div>
+          <div id="controls-hint" class="controls-hint">Drag each card into a bin before it falls off the belt</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="screen-end" class="screen">
+      <div class="end-card">
+        <div class="end-emoji" id="end-emoji">🏆</div>
+        <h2 class="end-title" id="end-title">Shift complete!</h2>
+        <div class="end-streak-line" id="end-streak-line"></div>
+        <div class="end-best" id="end-best"></div>
+        <div class="end-stats">
+          <div class="end-stat">
+            <div class="end-stat-num" id="end-score">0</div>
+            <div class="end-stat-label">Score</div>
+          </div>
+          <div class="end-stat">
+            <div class="end-stat-num" id="end-accuracy">0%</div>
+            <div class="end-stat-label">Accuracy</div>
+          </div>
+          <div class="end-stat">
+            <div class="end-stat-num" id="end-speed">×1.0</div>
+            <div class="end-stat-label">Max Speed</div>
+          </div>
+        </div>
+        <div class="end-btns">
+          <button class="cb-btn cb-btn-ghost" type="button" id="btn-change-diff">Change difficulty</button>
+          <button class="cb-btn" type="button" id="btn-again">Play again →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script>
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ============================================================
+   AISM JUICE LAYER — synth audio, screen shake (from mob-quiz)
+   ============================================================ */
+const AISM_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let aismStreak = 0;
+let shakeT = 0, shakeMag = 0;
+function aismShake(m) { if (AISM_REDUCED) return; shakeMag = m; shakeT = 0.3; }
+
+const AISM_SFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.35;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'square';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.15, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+  return {
+    unlock() { ensure(); },
+    isMuted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    correct(streak) {
+      const base = Math.min(880, 523 + (streak || 0) * 40);
+      tone(base, 0.09, 'sine', 0.14);
+      setTimeout(() => tone(base * 1.25, 0.12, 'sine', 0.13), 80);
+    },
+    wrong()   { tone(196, 0.22, 'sawtooth', 0.11, 98); },
+    fanfare() { tone(523, 0.1, 'triangle', 0.15); setTimeout(() => tone(659, 0.1, 'triangle', 0.15), 100); setTimeout(() => tone(784, 0.2, 'triangle', 0.15), 200); },
+    over()    { tone(330, 0.22, 'triangle', 0.13, 240); setTimeout(() => tone(220, 0.35, 'triangle', 0.12, 120), 220); },
+  };
+})();
+
+(function aismMuteBtn() {
+  function add() {
+    if (document.getElementById('aism-mute')) return;
+    const b = document.createElement('button');
+    b.id = 'aism-mute';
+    b.type = 'button';
+    b.title = 'Toggle sound (M)';
+    b.textContent = AISM_SFX.isMuted() ? '🔇' : '🔊';
+    b.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:900;background:rgba(26,29,39,0.92);border:1px solid rgba(255,255,255,0.16);color:#e8eaf0;border-radius:10px;padding:8px 11px;font-size:15px;cursor:pointer;line-height:1;';
+    b.addEventListener('click', () => { b.textContent = AISM_SFX.toggleMute() ? '🔇' : '🔊'; });
+    document.body.appendChild(b);
+  }
+  if (document.body) add(); else window.addEventListener('DOMContentLoaded', add);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const b = document.getElementById('aism-mute');
+      if (b) b.click();
+    }
+  });
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => AISM_SFX.unlock(), { once: true, capture: true }));
+})();
+
+/* ============================================================
+   DATA LOAD — ?spec={stem} with colon-fallback (two-truths pattern)
+   Adapter: spec.concepts[].def + bank.items[].correct  → TRUTH bin
+            bank.items[].misconception                  → MISCONCEPTION bin
+   ============================================================ */
+let TRUTHS = [];        // [text]
+let MISCONCEPTIONS = [];
+let TOPIC = 'Conveyor Belt';
+let TOPIC_SHORT = '';
+
+function truncateStatement(s, max) {
+  s = String(s || '').trim();
+  if (s.length <= max) return s;
+  let cut = s.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  if (sp > max * 0.6) cut = cut.slice(0, sp);
+  return cut.replace(/[\s,;:.—-]+$/, '') + '…';
+}
+
+(async function init() {
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const loadingMsg = document.getElementById('loading-msg');
+
+  if (!stem) {
+    loadingMsg.innerHTML = 'Missing <code>?spec=</code> parameter.';
+    return;
+  }
+
+  // Some on-disk stems contain a colon the URL param drops (e.g.
+  // "history-gcse-edexcel:-superpower…"). Try the plain stem first,
+  // then every possible colon-insertion before a dash.
+  const stemCandidates = [stem];
+  for (let i = 0; i < stem.length; i++) {
+    if (stem[i] === '-') stemCandidates.push(stem.slice(0, i) + ':' + stem.slice(i));
+  }
+  async function fetchJson(dir) {
+    for (const cand of stemCandidates) {
+      try {
+        const r = await fetch(`${dir}/${encodeURIComponent(cand)}.json`);
+        if (r.ok) return await r.json();
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  const [spec, bank] = await Promise.all([
+    fetchJson('../adventures/_specs'),
+    fetchJson('../evaluate/misconception-banks'),
+  ]);
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Placeholder concept defs would make hollow "truths" — treat as unauthored.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  const bankItems = ((bank && bank.items) || []).filter(it => it && it.misconception);
+
+  const truthSet = new Set();
+  concepts.forEach(c => truthSet.add(truncateStatement(c.def, 60)));
+  bankItems.forEach(it => { if (it.correct) truthSet.add(truncateStatement(it.correct, 60)); });
+  const truths = [...truthSet].filter(t => t.length > 3);
+  const miscs = [...new Set(bankItems.map(it => truncateStatement(it.misconception, 60)))].filter(t => t.length > 3);
+
+  if (!spec || truths.length < 4 || miscs.length < 4) {
+    root.innerHTML = `
+      <div class="cb-badge">V · Verify · Conveyor Belt</div>
+      <h1 class="cb-title">${escapeHtml(topic)}</h1>
+      <p class="cb-sub">This game needs a full set of authored truths plus a bank of researched misconceptions — generic filler wouldn't earn its place on the site. Come back soon.</p>
+      <div class="cb-meta">${escapeHtml([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="cb-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">🏭</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;margin:0 0 8px">Belt in production</h2>
+        <p style="color:var(--text-secondary);margin:0 0 18px;font-size:15px;">Conveyor Belt needs at least four authored truths and four researched misconceptions for this exact topic. That set hasn't been written at the required depth yet.</p>
+        <a href="../../subjects.html" style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
+  TRUTHS = truths;
+  MISCONCEPTIONS = miscs;
+  TOPIC = topic;
+  TOPIC_SHORT = truncateStatement(topic, 26);
+  document.title = `Conveyor Belt — ${topic} — AI Study Method`;
+  document.getElementById('page-title').textContent = topic;
+  document.getElementById('page-sub').textContent =
+    `Statements about ${topic} ride the belt from right to left. Drag each one into the TRUTH bin or the MISCONCEPTION bin before it falls off the edge.`;
+  document.getElementById('page-meta').textContent = [level, subj].filter(Boolean).join(' · ');
+  loadingMsg.style.display = 'none';
+  document.getElementById('game-shell').style.display = '';
+  setupCanvas();
+  setupInput();
+})();
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+let canvas, ctx, canvasReady = false;
+let gameState = 'idle';   // idle | running | over
+let runItems = [];        // the 12 statements for this run: [{text, kind}]
+let nextQ = 0;            // index of next statement to put on the belt
+let resolvedCount = 0;
+let correctCount = 0;
+let score = 0;
+let lives = 3;
+let speed = 1.0;
+let maxSpeed = 1.0;
+let difficulty = 'medium';
+
+const TOTAL_ITEMS = 12;
+const DIFF_SETTINGS = {
+  easy:   { startSpeed: 0.8,  speedGain: 0.05, beltPx: 0.85, maxItems: 1, stripeAlpha: 0.50 },
+  medium: { startSpeed: 1.0,  speedGain: 0.07, beltPx: 1.05, maxItems: 2, stripeAlpha: 0.16 },
+  hard:   { startSpeed: 1.2,  speedGain: 0.09, beltPx: 1.45, maxItems: 3, stripeAlpha: 0 }
+};
+
+// Combo / score multiplier (same tier pattern as mob-quiz)
+let aismMaxStreak = 0;
+let aismMultiplier = 1;   // 1, 1.5, 2, 3
+const MULT_TIERS = [
+  { streak: 8, mult: 3.0, label: 'INFERNO', color: '#ff8a3d' },
+  { streak: 5, mult: 2.0, label: 'BLAZING', color: '#ffd24d' },
+  { streak: 3, mult: 1.5, label: 'HOT',     color: '#4ade9a' },
+  { streak: 0, mult: 1.0, label: '',        color: '#9aa3b2' }
+];
+function getMultTier() { return MULT_TIERS.find(t => aismStreak >= t.streak); }
+
+// Items on the canvas
+// item: { text, kind:'truth'|'misc', lines[], fontSize, x, y (centre px), w, h, phase,
+//         state:'belt'|'drag'|'resolving', resolveT, fromX, fromY, toX, toY, resolveOk }
+let items = [];
+let dragged = null;       // the item currently held by the pointer
+let dragDX = 0, dragDY = 0;
+let pointerX = 0, pointerY = 0;
+let spawnGap = 0;         // px of belt travel until the next card may spawn
+let beltDist = 0;         // accumulated belt travel — drives the rolling hatch
+
+// Bins — geometry recomputed every frame; state persists per kind
+let bins = [];
+let binState = { truth: { count: 0, flashT: 0, flashOk: true }, misc: { count: 0, flashT: 0, flashOk: true } };
+
+// FX
+let particles = [];       // {x, y (normalised 0..1), vx, vy, life, size, color, shape, angle, spin}
+let bgPulseT = 0;
+let bgPulseColor = '#4ade9a';
+
+// Animation
+let lastFrame = 0;
+let animId = null;
+
+/* ============================================================
+   CANVAS SETUP (DPR-aware)
+   ============================================================ */
+function setupCanvas() {
+  canvas = document.getElementById('game-canvas');
+  ctx = canvas.getContext('2d');
+  canvasReady = true;
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+}
+
+function resizeCanvas() {
+  if (!canvasReady) return;
+  const wrap = document.getElementById('canvas-wrap');
+  const rect = wrap.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, rect.width * dpr);
+  canvas.height = Math.max(1, rect.height * dpr);
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function cssW() { return canvas.width  / (window.devicePixelRatio || 1); }
+function cssH() { return canvas.height / (window.devicePixelRatio || 1); }
+
+/* ============================================================
+   LAYOUT — belt band + two bins
+   ============================================================ */
+function beltTop()    { return Math.round(cssH() * 0.36); }
+function beltHeight() { return 58; }
+function beltMidY()   { return beltTop() + beltHeight() / 2; }
+
+function computeBins() {
+  const W = cssW(), H = cssH();
+  const binH = Math.max(80, Math.round(H * 0.20));   // ≥80px tall (mobile-friendly)
+  const binY = H - binH - 12;
+  const gap = 18, edge = 12;
+  const binW = (W - edge * 2 - gap) / 2;
+  return [
+    { x: edge,              y: binY, w: binW, h: binH, kind: 'truth' },
+    { x: edge + binW + gap, y: binY, w: binW, h: binH, kind: 'misc'  }
+  ];
+}
+
+function binAt(px, py) {
+  return bins.find(b => px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) || null;
+}
+
+/* ============================================================
+   INPUT — pointer drag (touch + mouse, no pinch-zoom block:
+   touch-action is restricted on the canvas only)
+   ============================================================ */
+function setupInput() {
+  canvas.addEventListener('pointerdown', e => {
+    if (gameState !== 'running') return;
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+    pointerX = px; pointerY = py;
+    // Hit-test from newest (drawn on top) to oldest; pad to ≥44px target.
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      if (it.state !== 'belt') continue;
+      const hw = Math.max(it.w, 44) / 2 + 8;
+      const hh = Math.max(it.h, 44) / 2 + 10;
+      if (px >= it.x - hw && px <= it.x + hw && py >= it.y - hh && py <= it.y + hh) {
+        dragged = it;
+        it.state = 'drag';
+        dragDX = it.x - px;
+        dragDY = it.y - py;
+        canvas.classList.add('dragging');
+        try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+        showHint(false);
+        e.preventDefault();
+        return;
+      }
+    }
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!dragged || gameState !== 'running') return;
+    const rect = canvas.getBoundingClientRect();
+    pointerX = e.clientX - rect.left;
+    pointerY = e.clientY - rect.top;
+    dragged.x = Math.max(20, Math.min(cssW() - 20, pointerX + dragDX));
+    dragged.y = Math.max(20, Math.min(cssH() - 16, pointerY + dragDY));
+    e.preventDefault();
+  });
+
+  function release(e) {
+    if (!dragged) return;
+    const it = dragged;
+    dragged = null;
+    canvas.classList.remove('dragging');
+    if (gameState !== 'running') { it.state = 'belt'; return; }
+    const bin = binAt(pointerX, pointerY) || binAt(it.x, it.y + it.h / 2);
+    if (bin) {
+      dropIntoBin(it, bin);
+    } else {
+      // Dropped elsewhere — card returns to the belt at its current X.
+      it.state = 'belt';
+      it.x = Math.max(it.w / 2 - 10, Math.min(cssW() - 10, it.x));
+      announce('Card returned to the belt.');
+    }
+  }
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+}
+
+let hintTimer = null;
+function showHint(visible) {
+  const h = document.getElementById('controls-hint');
+  if (!h) return;
+  if (visible) {
+    h.classList.add('visible');
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => h.classList.remove('visible'), 3000);
+  } else {
+    h.classList.remove('visible');
+  }
+}
+
+/* ============================================================
+   DROP RESOLUTION
+   ============================================================ */
+function dropIntoBin(it, bin) {
+  const ok = it.kind === bin.kind;
+  it.state = 'resolving';
+  it.resolveT = 0;
+  it.fromX = it.x; it.fromY = it.y;
+  it.toX = bin.x + bin.w / 2;
+  it.toY = bin.y + bin.h / 2;
+  it.resolveOk = ok;
+  resolvedCount++;
+
+  const bs = binState[bin.kind];
+  bs.count++;
+  bs.flashT = 1;
+  bs.flashOk = ok;
+
+  const kindLabel = it.kind === 'truth' ? 'TRUTH' : 'MISCONCEPTION';
+  if (ok) {
+    aismStreak++;
+    if (aismStreak > aismMaxStreak) aismMaxStreak = aismStreak;
+    aismMultiplier = getMultTier().mult;
+    const earned = Math.round(100 * aismMultiplier);
+    score += earned;
+    correctCount++;
+    const cap = DIFF_SETTINGS[difficulty].startSpeed * 2.0;
+    speed = Math.min(cap, speed + DIFF_SETTINGS[difficulty].speedGain);
+    if (speed > maxSpeed) maxSpeed = speed;
+    try { AISM_SFX.correct(aismStreak); } catch (e) {}
+    const tier = getMultTier();
+    flashMessage(aismStreak >= 3 ? '+' + earned + ' · ' + tier.label + ' ×' + aismMultiplier : '+' + earned, false);
+    emitParticles(it.toX / cssW(), it.toY / cssH(), '#4ade9a', aismStreak >= 5 ? 36 : aismStreak >= 3 ? 28 : 18, 'star');
+    bgPulseT = aismStreak >= 5 ? 1.0 : 0.6;
+    bgPulseColor = aismStreak >= 8 ? '#ff8a3d' : aismStreak >= 5 ? '#ffd24d' : '#4ade9a';
+    announce('Correct — that was a ' + kindLabel.toLowerCase() + '.');
+  } else {
+    lives--;
+    const wasOnStreak = aismStreak >= 3;
+    aismStreak = 0;
+    aismMultiplier = 1;
+    speed = Math.max(0.6, speed - 0.1);
+    try { AISM_SFX.wrong(); } catch (e) {}
+    aismShake(wasOnStreak ? 11 : 7);
+    flashMessage(wasOnStreak ? 'COMBO BROKEN · that was a ' + kindLabel : '✗ that was a ' + kindLabel, true);
+    emitParticles(it.toX / cssW(), it.toY / cssH(), '#ff8a3d', 16, 'shard');
+    bgPulseT = 0.7;
+    bgPulseColor = '#ff5a5f';
+    announce('Wrong bin — that statement was a ' + kindLabel.toLowerCase() + '. ' + Math.max(0, lives) + ' lives left.');
+  }
+  updateHUD();
+}
+
+/* ============================================================
+   GAME START / RESET
+   ============================================================ */
+function selectDifficulty(d) {
+  difficulty = d;
+  document.querySelectorAll('.diff-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.diff === d);
+  });
+}
+document.querySelectorAll('.diff-btn').forEach(b => {
+  b.addEventListener('click', () => selectDifficulty(b.dataset.diff));
+});
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* Build a balanced run: roughly half truths, half misconceptions (≥4 of each
+   guaranteed by the load gate), backfilling from the larger pool if needed. */
+function buildRunItems() {
+  const t = shuffle(TRUTHS), m = shuffle(MISCONCEPTIONS);
+  const half = Math.floor(TOTAL_ITEMS / 2);
+  let takeM = Math.min(half, m.length);
+  let takeT = Math.min(TOTAL_ITEMS - takeM, t.length);
+  takeM = Math.min(TOTAL_ITEMS - takeT, m.length);   // backfill if truth pool small
+  const out = t.slice(0, takeT).map(text => ({ text, kind: 'truth' }))
+    .concat(m.slice(0, takeM).map(text => ({ text, kind: 'misc' })));
+  return shuffle(out);
+}
+
+function startGame() {
+  if (!TRUTHS.length || !MISCONCEPTIONS.length) return;
+  runItems = buildRunItems();
+
+  nextQ = 0;
+  resolvedCount = 0;
+  correctCount = 0;
+  score = 0;
+  lives = 3;
+  speed = DIFF_SETTINGS[difficulty].startSpeed;
+  maxSpeed = speed;
+  aismStreak = 0;
+  aismMaxStreak = 0;
+  aismMultiplier = 1;
+  shakeT = 0;
+  items = [];
+  dragged = null;
+  particles = [];
+  spawnGap = 10;          // first card arrives almost immediately
+  beltDist = 0;
+  bgPulseT = 0;
+  binState = { truth: { count: 0, flashT: 0, flashOk: true }, misc: { count: 0, flashT: 0, flashOk: true } };
+
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-end').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+  resizeCanvas();
+  bins = computeBins();
+  updateHUD();
+  showHint(true);
+  announce('Belt started. Drag each statement into the truth bin or the misconception bin.');
+
+  gameState = 'running';
+  lastFrame = performance.now();
+  if (animId) cancelAnimationFrame(animId);
+  animate();
+}
+
+function resetGame() {
+  gameState = 'idle';
+  if (animId) cancelAnimationFrame(animId);
+  document.getElementById('screen-end').classList.remove('active');
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-start').classList.add('active');
+}
+
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('btn-again').addEventListener('click', startGame);
+document.getElementById('btn-change-diff').addEventListener('click', resetGame);
+
+/* ============================================================
+   CARD SPAWNING — measure text, wrap to ≤3 lines, place off-right
+   ============================================================ */
+function measureCard(text) {
+  const W = cssW();
+  const fontSize = 11.5;
+  ctx.font = '700 ' + fontSize + 'px Nunito, sans-serif';
+  const maxTextW = Math.min(168, W * 0.42);
+  const lines = wrapLines(text, maxTextW, 3);
+  let widest = 0;
+  lines.forEach(l => { widest = Math.max(widest, ctx.measureText(l).width); });
+  const w = Math.max(116, Math.min(widest + 30, W * 0.5));
+  const h = Math.max(46, lines.length * 15 + 18);
+  return { lines, fontSize, w, h };
+}
+
+function spawnCard() {
+  const q = runItems[nextQ];
+  const m = measureCard(q.text);
+  items.push({
+    text: q.text,
+    kind: q.kind,
+    lines: m.lines,
+    fontSize: m.fontSize,
+    x: cssW() + m.w / 2 + 8,   // just off the right edge
+    y: beltMidY(),
+    w: m.w,
+    h: m.h,
+    phase: Math.random() * Math.PI * 2,
+    state: 'belt',
+    resolveT: 0
+  });
+  nextQ++;
+  spawnGap = m.w + 150 + Math.random() * 80;   // belt travel before the next card
+}
+
+/* ============================================================
+   ANIMATION LOOP
+   ============================================================ */
+function animate(now) {
+  if (!now) now = performance.now();
+  const dt = Math.min((now - lastFrame) / 16.67, 3);  // ~60fps clamp
+  lastFrame = now;
+
+  if (gameState === 'running') update(dt);
+  draw();
+  if (gameState === 'running') animId = requestAnimationFrame(animate);
+}
+
+function update(dt) {
+  bins = computeBins();
+  const cfg = DIFF_SETTINGS[difficulty];
+  // prefers-reduced-motion: gentler belt scroll
+  const motionScale = AISM_REDUCED ? 0.6 : 1;
+  const scrollPx = cfg.beltPx * speed * dt * motionScale;
+  beltDist += scrollPx;
+  spawnGap -= scrollPx;
+
+  if (bgPulseT > 0) bgPulseT = Math.max(0, bgPulseT - dt * 0.04);
+  Object.values(binState).forEach(bs => { if (bs.flashT > 0) bs.flashT = Math.max(0, bs.flashT - dt * 0.05); });
+
+  // Move belt cards leftwards; ease dropped-back cards onto the band
+  let fell = null;
+  items.forEach(it => {
+    if (it.state === 'belt') {
+      it.x -= scrollPx;
+      it.y += (beltMidY() - it.y) * Math.min(1, 0.18 * dt);   // settle back onto belt
+      if (it.x + it.w / 2 < -4) fell = it;
+    } else if (it.state === 'resolving') {
+      it.resolveT += dt * 0.09;   // ~0.18s fly-into-bin
+    }
+  });
+
+  // A card escaped off the left edge — costs a life
+  if (fell) {
+    items = items.filter(x => x !== fell);
+    resolvedCount++;
+    lives--;
+    const wasOnStreak = aismStreak >= 3;
+    aismStreak = 0;
+    aismMultiplier = 1;
+    try { AISM_SFX.wrong(); } catch (e) {}
+    aismShake(wasOnStreak ? 11 : 7);
+    const kindLabel = fell.kind === 'truth' ? 'TRUTH' : 'MISCONCEPTION';
+    flashMessage('FELL OFF · it was a ' + kindLabel, true);
+    emitParticles(0.04, fell.y / cssH(), '#ff8a3d', 18, 'shard');
+    bgPulseT = 0.7;
+    bgPulseColor = '#ff5a5f';
+    announce('A card fell off the belt — it was a ' + kindLabel.toLowerCase() + '. ' + Math.max(0, lives) + ' lives left.');
+    updateHUD();
+  }
+
+  // Remove cards that finished flying into a bin
+  items = items.filter(it => !(it.state === 'resolving' && it.resolveT >= 1));
+
+  // Move particles (normalised coords, mob-quiz pattern)
+  particles.forEach(p => {
+    p.y += p.vy * dt;
+    p.x += p.vx * dt;
+    p.life -= dt;
+    p.vy += 0.0005 * dt;   // light gravity
+    if (p.spin != null) p.angle = (p.angle || 0) + p.spin * dt;
+  });
+  particles = particles.filter(p => p.life > 0);
+
+  // Spawn the next card when there's room on the belt
+  const activeCount = items.filter(it => it.state !== 'resolving').length;
+  if (activeCount < cfg.maxItems && spawnGap <= 0 && nextQ < runItems.length && lives > 0) {
+    spawnCard();
+  }
+
+  // End checks
+  if (lives <= 0) { endGame(); return; }
+  if (resolvedCount >= runItems.length && items.length === 0 && particles.length === 0) {
+    endGame();
+  }
+}
+
+/* ============================================================
+   DRAWING
+   ============================================================ */
+function draw() {
+  const W = cssW(), H = cssH();
+
+  // Screen shake — absolute transform each frame, no restore needed
+  const dprS = window.devicePixelRatio || 1;
+  ctx.setTransform(dprS, 0, 0, dprS, 0, 0);
+  if (shakeT > 0) {
+    ctx.fillStyle = '#0f1117';
+    ctx.fillRect(0, 0, W, H);
+    shakeT = Math.max(0, shakeT - 0.016);
+    const mS = shakeMag * (shakeT / 0.3);
+    ctx.transform(1, 0, 0, 1, (Math.random() - 0.5) * mS, (Math.random() - 0.5) * mS);
+  }
+
+  // Background gradient — tinted by streak tier
+  const tier = getMultTier();
+  const baseTop = tier.streak >= 5 ? '#1f1a2a' : '#1a1d27';
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, baseTop);
+  grad.addColorStop(1, '#0f1117');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Faint drifting backdrop dots above the belt (factory dust)
+  if (!AISM_REDUCED) {
+    const t = performance.now() * 0.001;
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    for (let i = 0; i < 14; i++) {
+      const dx = ((i * 173.5 - t * (6 + (i % 4) * 5)) % (W + 30) + W + 30) % (W + 30) - 15;
+      const dy = (i * 97.3) % Math.max(40, beltTop() - 28) + 28;
+      ctx.beginPath();
+      ctx.arc(dx, dy, 1.2 + (i % 3) * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Background reaction pulse — radial flash on answer
+  if (bgPulseT > 0) {
+    const r = Math.max(W, H) * (1 - bgPulseT) * 1.2;
+    const opacity = Math.min(0.32, bgPulseT * 0.5);
+    const pg = ctx.createRadialGradient(W / 2, H * 0.55, 0, W / 2, H * 0.55, Math.max(1, r));
+    pg.addColorStop(0, bgPulseColor + Math.round(opacity * 255).toString(16).padStart(2, '0'));
+    pg.addColorStop(0.6, bgPulseColor + '00');
+    ctx.fillStyle = pg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Top instruction strip
+  ctx.fillStyle = '#9aa3b2';
+  ctx.font = '800 9px Nunito, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('SORT EACH STATEMENT — TRUTH LEFT · MISCONCEPTION RIGHT', W / 2, 20);
+
+  drawBelt(W, H);
+
+  // Bins (under the cards, so a lifted card floats over them)
+  bins.forEach(b => drawBin(b));
+
+  // Cards — belt cards first, dragged card last (on top)
+  items.forEach(it => { if (it.state !== 'drag') drawCard(it); });
+  items.forEach(it => { if (it.state === 'drag') drawCard(it); });
+
+  // Particles (mob-quiz star + shard shapes)
+  particles.forEach(p => {
+    const alpha = Math.round(Math.max(0, Math.min(255, p.life * 25))).toString(16).padStart(2, '0');
+    ctx.fillStyle = p.color + alpha;
+    if (p.shape === 'shard') {
+      ctx.save();
+      ctx.translate(p.x * W, p.y * H);
+      ctx.rotate(p.angle || 0);
+      ctx.beginPath();
+      ctx.moveTo(-p.size, p.size);
+      ctx.lineTo(p.size, 0);
+      ctx.lineTo(-p.size, -p.size);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    } else if (p.shape === 'star') {
+      ctx.save();
+      ctx.translate(p.x * W, p.y * H);
+      ctx.rotate(p.angle || 0);
+      ctx.beginPath();
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2;
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(a) * p.size * 1.5, Math.sin(a) * p.size * 1.5);
+      }
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+/* ---- Conveyor belt: band + rolling diagonal hatch + rollers ---- */
+function drawBelt(W, H) {
+  const bT = beltTop(), bH = beltHeight();
+
+  // Band body
+  ctx.fillStyle = '#222636';
+  ctx.fillRect(0, bT, W, bH);
+
+  // Rolling diagonal hatch — offset driven by accumulated belt travel,
+  // so the lines scroll left at exactly the speed the cards move.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, bT, W, bH);
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 6;
+  const spacing = 26;
+  const offset = -(beltDist % spacing);
+  for (let x = offset - bH; x < W + bH; x += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(x, bT + bH + 4);
+    ctx.lineTo(x + bH, bT - 4);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Edge rails
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(0, bT - 3, W, 3);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fillRect(0, bT + bH, W, 3);
+
+  // Rollers under the belt — spokes rotate with belt travel
+  ctx.fillStyle = '#181b26';
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.lineWidth = 1.5;
+  for (let x = 26; x < W; x += 64) {
+    ctx.beginPath();
+    ctx.arc(x, bT + bH + 12, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    const a = -(beltDist * 0.14) + x;
+    ctx.beginPath();
+    ctx.moveTo(x, bT + bH + 12);
+    ctx.lineTo(x + Math.cos(a) * 5, bT + bH + 12 + Math.sin(a) * 5);
+    ctx.stroke();
+  }
+
+  // Hazard zone at the left edge of the belt
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, bT, 30, bH);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(255,90,95,0.10)';
+  ctx.fillRect(0, bT, 30, bH);
+  ctx.strokeStyle = 'rgba(255,90,95,0.35)';
+  ctx.lineWidth = 3;
+  for (let y = bT - 8; y < bT + bH + 8; y += 12) {
+    ctx.beginPath();
+    ctx.moveTo(-4, y + 12);
+    ctx.lineTo(14, y - 6);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ---- Bins ---- */
+function drawBin(b) {
+  const isTruth = b.kind === 'truth';
+  const bs = binState[b.kind];
+  const flash = bs.flashT > 0 ? bs.flashT : 0;
+  const baseEdge = isTruth ? 'rgba(74,222,154,0.55)' : 'rgba(255,138,61,0.55)';
+  const baseFill = isTruth ? 'rgba(74,222,154,0.10)' : 'rgba(255,138,61,0.10)';
+  const accent   = isTruth ? '#4ade9a' : '#ff8a3d';
+
+  // Hover target glow while dragging
+  const hovered = dragged && binAt(pointerX, pointerY) === b;
+
+  ctx.save();
+  if (flash > 0) {
+    const fc = bs.flashOk ? accent : '#ff5a5f';
+    ctx.shadowColor = fc;
+    ctx.shadowBlur = 24 * flash;
+  } else if (hovered) {
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 18;
+  }
+  ctx.fillStyle = baseFill;
+  ctx.strokeStyle = hovered ? accent : baseEdge;
+  ctx.lineWidth = hovered ? 3 : 2;
+  roundRect(ctx, b.x, b.y, b.w, b.h, 14);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.stroke();
+
+  // Bin mouth — darker slot along the top
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  roundRect(ctx, b.x + 8, b.y + 6, b.w - 16, 8, 4);
+  ctx.fill();
+
+  // Labels
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const cx = b.x + b.w / 2;
+  if (isTruth) {
+    ctx.fillStyle = accent;
+    ctx.font = '900 15px Nunito, sans-serif';
+    ctx.fillText('✓ TRUTH', cx, b.y + b.h * 0.38);
+    ctx.fillStyle = '#9aa3b2';
+    ctx.font = '700 10px Nunito, sans-serif';
+    let about = 'about ' + TOPIC_SHORT;
+    while (ctx.measureText(about).width > b.w - 18 && about.length > 8) about = about.slice(0, -2).trimEnd() + '…';
+    ctx.fillText(about, cx, b.y + b.h * 0.60);
+  } else {
+    ctx.fillStyle = accent;
+    let fs = 15;
+    ctx.font = '900 ' + fs + 'px Nunito, sans-serif';
+    while (ctx.measureText('✗ MISCONCEPTION').width > b.w - 16 && fs > 10) {
+      fs--; ctx.font = '900 ' + fs + 'px Nunito, sans-serif';
+    }
+    ctx.fillText('✗ MISCONCEPTION', cx, b.y + b.h * 0.38);
+    ctx.fillStyle = '#9aa3b2';
+    ctx.font = '700 10px Nunito, sans-serif';
+    ctx.fillText('sounds right — isn’t', cx, b.y + b.h * 0.60);
+  }
+
+  // Received count
+  ctx.fillStyle = '#e8eaf0';
+  ctx.font = '800 11px Nunito, sans-serif';
+  ctx.fillText(bs.count + ' sorted', cx, b.y + b.h - 14);
+  ctx.restore();
+}
+
+/* ---- Statement cards ---- */
+function drawCard(it) {
+  const W = cssW();
+  const t = performance.now() / 1000;
+  let x = it.x, y = it.y, scale = 1, alpha = 1;
+
+  if (it.state === 'belt') {
+    // Tiny vibration from the belt machinery
+    if (!AISM_REDUCED) y += Math.sin(t * 9 + it.phase) * 1.1;
+  } else if (it.state === 'drag') {
+    scale = 1.07;   // lifted: small scale + glow
+  } else if (it.state === 'resolving') {
+    const d = Math.min(1, it.resolveT);
+    const ease = 1 - Math.pow(1 - d, 3);
+    x = it.fromX + (it.toX - it.fromX) * ease;
+    y = it.fromY + (it.toY - it.fromY) * ease;
+    scale = 1 - d * 0.55;
+    alpha = 1 - d * d;
+  }
+
+  if (alpha <= 0 || x - it.w / 2 > W + 20) return;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+
+  // Glow + shadow — stronger while held
+  if (it.state === 'drag') {
+    ctx.shadowColor = 'rgba(123,111,255,0.65)';
+    ctx.shadowBlur = 26;
+    ctx.shadowOffsetY = 8;
+  } else {
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 4;
+  }
+
+  // Card body
+  ctx.fillStyle = it.state === 'drag' ? '#2a2f44' : '#222636';
+  ctx.strokeStyle = it.state === 'drag' ? 'rgba(123,111,255,0.85)' : 'rgba(123,111,255,0.45)';
+  ctx.lineWidth = 2;
+  roundRect(ctx, -it.w / 2, -it.h / 2, it.w, it.h, 10);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.stroke();
+
+  // Watermark stripe on the left edge — VERY subtle category hint.
+  // Easy: visible · Medium: dim · Hard: hidden entirely.
+  const stripeAlpha = DIFF_SETTINGS[difficulty].stripeAlpha;
+  if (stripeAlpha > 0) {
+    ctx.save();
+    roundRect(ctx, -it.w / 2, -it.h / 2, it.w, it.h, 10);
+    ctx.clip();
+    ctx.globalAlpha = alpha * stripeAlpha;
+    ctx.fillStyle = it.kind === 'truth' ? '#4ade9a' : '#ff8a3d';
+    ctx.fillRect(-it.w / 2, -it.h / 2, 4, it.h);
+    ctx.restore();
+  }
+
+  // Subtle top highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  roundRect(ctx, -it.w / 2 + 4, -it.h / 2 + 3, it.w - 8, it.h / 2 - 4, 6);
+  ctx.fill();
+
+  // Statement text
+  ctx.fillStyle = '#e8eaf0';
+  ctx.font = '700 ' + it.fontSize + 'px Nunito, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const lineH = 15;
+  const startY = -((it.lines.length - 1) / 2) * lineH;
+  it.lines.forEach((l, i) => ctx.fillText(l, 0, startY + i * lineH + 1));
+
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+}
+
+/* Wrap text into at most maxLines lines that fit maxW; ellipsise the last. */
+function wrapLines(text, maxW, maxLines) {
+  const words = String(text).split(' ');
+  const lines = [];
+  let line = '';
+  for (let i = 0; i < words.length; i++) {
+    const test = line ? line + ' ' + words[i] : words[i];
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line);
+      line = words[i];
+      if (lines.length === maxLines) break;
+    } else {
+      line = test;
+    }
+  }
+  if (lines.length < maxLines && line) lines.push(line);
+  if (lines.length > maxLines) lines.length = maxLines;
+  const joined = lines.join(' ');
+  if (joined.length < String(text).length) {
+    let last = lines[lines.length - 1];
+    while (ctx.measureText(last + '…').width > maxW && last.length > 2) last = last.slice(0, -1);
+    lines[lines.length - 1] = last + '…';
+  }
+  return lines.length ? lines : [''];
+}
+
+function emitParticles(nx, ny, color, n, shape) {
+  if (AISM_REDUCED) n = Math.min(n, 8);
+  for (let i = 0; i < n; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = shape === 'shard' ? 0.022 + Math.random() * 0.018
+                : shape === 'star'  ? 0.012 + Math.random() * 0.014
+                : 0.012 + Math.random() * 0.012;
+    particles.push({
+      x: nx, y: ny,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (shape === 'star' ? 0.005 : 0.008),
+      life: 28 + Math.random() * 22,
+      size: shape === 'shard' ? 4 + Math.random() * 3
+          : shape === 'star'  ? 3 + Math.random() * 3
+          : 3 + Math.random() * 3,
+      color: color,
+      shape: shape || null,
+      angle: shape ? Math.random() * Math.PI * 2 : 0,
+      spin: shape ? (Math.random() - 0.5) * 0.4 : 0
+    });
+  }
+}
+
+/* ============================================================
+   HUD — Score · Progress · Lives · Speed · Combo
+   ============================================================ */
+function updateHUD() {
+  document.getElementById('hud-score').textContent = score;
+  document.getElementById('hud-progress').textContent = resolvedCount + '/' + runItems.length;
+  document.getElementById('hud-lives').textContent = '♥'.repeat(Math.max(0, lives)) || '—';
+  document.getElementById('hud-speed').textContent = '×' + speed.toFixed(1);
+
+  const comboEl = document.getElementById('hud-combo');
+  comboEl.textContent = aismMultiplier === 1 ? '×1.0' : ('×' + aismMultiplier.toFixed(1));
+  const item = comboEl.closest('.hud-item');
+  item.classList.remove('mult-hot', 'mult-blazing', 'mult-inferno');
+  if (aismStreak >= 8) item.classList.add('mult-inferno');
+  else if (aismStreak >= 5) item.classList.add('mult-blazing');
+  else if (aismStreak >= 3) item.classList.add('mult-hot');
+
+  const livesItem = document.getElementById('hud-lives').closest('.hud-item');
+  livesItem.classList.toggle('critical', lives === 1);
+}
+
+function flashMessage(text, isWrong) {
+  const m = document.getElementById('floating-msg');
+  m.textContent = text;
+  m.classList.toggle('wrong', isWrong);
+  m.classList.add('show');
+  clearTimeout(flashMessage._t);
+  flashMessage._t = setTimeout(() => m.classList.remove('show'), 900);
+}
+
+function announce(text) {
+  const a = document.getElementById('announce');
+  if (a) a.textContent = text;
+}
+
+/* ============================================================
+   END GAME — rank, max streak, personal best
+   ============================================================ */
+function endGame() {
+  if (gameState === 'over') return;
+  gameState = 'over';
+  if (animId) cancelAnimationFrame(animId);
+  dragged = null;
+  canvas.classList.remove('dragging');
+  const accuracy = resolvedCount > 0 ? Math.round(100 * correctCount / resolvedCount) : 0;
+  try { (accuracy >= 75 ? AISM_SFX.fanfare : AISM_SFX.over)(); } catch (e) {}
+
+  document.getElementById('end-score').textContent = score;
+  document.getElementById('end-accuracy').textContent = accuracy + '%';
+  document.getElementById('end-speed').textContent = '×' + maxSpeed.toFixed(1);
+
+  // Rank: combines accuracy + max streak. S+ = perfect + ≥6 streak.
+  let rank = 'C';
+  if (accuracy >= 100 && aismMaxStreak >= 6) rank = 'S+';
+  else if (accuracy === 100) rank = 'S';
+  else if (accuracy >= 90 && aismMaxStreak >= 5) rank = 'A+';
+  else if (accuracy >= 85) rank = 'A';
+  else if (accuracy >= 70) rank = 'B';
+
+  let emoji = '🏆', title = 'Shift complete!';
+  if (lives <= 0) { emoji = '💥'; title = 'Out of lives!'; }
+  else if (rank === 'S+') { emoji = '🌟'; title = 'Flawless. ' + rank + ' rank.'; }
+  else if (rank === 'S') { emoji = '🌟'; title = 'Perfect — ' + rank + ' rank.'; }
+  else if (rank === 'A+' || rank === 'A') { emoji = '🚀'; title = rank + ' rank!'; }
+  else if (rank === 'B') { emoji = '🎯'; title = 'B rank — keep going.'; }
+  document.getElementById('end-emoji').textContent = emoji;
+  document.getElementById('end-title').textContent = title;
+  document.getElementById('end-streak-line').textContent = 'Max streak ' + aismMaxStreak + '  ·  Rank ' + rank;
+
+  /* Personal best — stored locally per game */
+  try {
+    const bestKey = 'aism-best:' + location.pathname;
+    const prevRaw = localStorage.getItem(bestKey);
+    const prevBest = prevRaw == null ? null : parseInt(prevRaw, 10);
+    const isNewBest = prevBest == null || isNaN(prevBest) || score > prevBest;
+    if (isNewBest) localStorage.setItem(bestKey, String(score));
+    const bestEl = document.getElementById('end-best');
+    bestEl.textContent = prevBest == null || isNaN(prevBest) ? ''
+      : isNewBest ? '🎉 New personal best — previous ' + prevBest
+      : 'Personal best: ' + prevBest;
+  } catch (e) {}
+
+  announce('Shift over. Score ' + score + ', accuracy ' + accuracy + ' percent, rank ' + rank + '.');
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-end').classList.add('active');
+}
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

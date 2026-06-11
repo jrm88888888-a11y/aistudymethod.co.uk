@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connections Grid — AI Study Method</title>
+<meta name="description" content="Six cards. Four belong to the topic, two are decoys smuggled in from elsewhere in the subject. Lock in the four that belong before the clock runs out.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  .cg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+  @media (max-width:480px) { .cg-grid { grid-template-columns:repeat(2,1fr); } }
+  .cg-grid .ar-tile { min-height:76px; display:flex; align-items:center; justify-content:center; text-align:center; padding:14px 10px; font-size:14px; font-weight:600; line-height:1.35; }
+  .cg-mark { position:absolute; top:6px; right:9px; font-family:var(--ar-mono); font-size:13px; font-weight:700; line-height:1; }
+  .cg-mark.tick { color:var(--ar-mint); }
+  .cg-mark.cross { color:var(--ar-pink); }
+  .ar-tile.missed-in { border-style:dashed; border-color:rgba(0,255,163,0.6); }
+</style>
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script>
+(async function() {
+  const esc = Arcade.escapeHtml;
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  Arcade.mountMuteButton();
+
+  if (!stem) {
+    root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  const spec = await Arcade.fetchSpecJson(stem, '../adventures/_specs');
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subjKey = (spec && spec.subject) || '';
+  const subj = subjKey.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Decoy glossaries — short, evocative, real terms from elsewhere in each
+  // subject. Anything that fuzzy-matches a concept in the live spec is
+  // filtered out before play, so terms never collide with the topic itself.
+  const SUBJECT_GLOSSARY = {
+    'physics': ['Capacitance','Photoelectric effect','Standing wave','Magnetic flux','Red shift','Terminal velocity','Half-life','Diffraction grating','Escape velocity','Superposition','Centripetal force','Lenz’s law','Stress-strain curve','de Broglie wavelength','Simple harmonic motion'],
+    'chemistry': ['Electronegativity','Activation energy','Buffer solution','Fractional distillation','Ionic lattice','Rate constant','Empirical formula','Hydrogen bonding','Oxidation state','Titration curve','Enthalpy change','Avogadro constant','Mole fraction','Le Chatelier’s principle','Catalytic converter'],
+    'biology': ['Osmosis','Natural selection','Mitochondrion','Phloem','Antibody','Trophic level','Crossing over','Action potential','Carbon fixation','Homeostasis','Genetic drift','Active transport','Nitrogen cycle','Stem cell','Hormone receptor'],
+    'history': ['Appeasement','Suffrage','Détente','Reformation','Feudalism','Abdication','Armistice','Propaganda poster','Enclosure','Home front','Iron curtain','Papal authority','Trench warfare','Witch hunt','Show trial'],
+    'maths': ['Binomial expansion','Standard deviation','Radian measure','Chain rule','Vector product','Arithmetic series','Modulus function','Normal distribution','Proof by induction','Discriminant','Parametric equations','Logarithm laws','Unit circle','Iteration formula','Implicit differentiation'],
+    'geography': ['Longshore drift','Urbanisation','Plate margin','Hydrograph','Carbon sink','Soil erosion','Glacial trough','Food miles','Megacity','Rain shadow','Coastal squeeze','Desertification','Gentrification','Water stress','Counter-urbanisation'],
+    'religious-studies': ['Covenant','Pilgrimage','Reincarnation','Atonement','Secularisation','Eightfold Path','Divine command','Sanctity of life','Free will','Liturgy','Karma','Prophethood','Natural law','Agape','Trinity'],
+    'english-literature': ['Dramatic irony','Unreliable narrator','Pathetic fallacy','Iambic pentameter','Tragic flaw','Foreshadowing','Soliloquy','Extended metaphor','Gothic setting','Caesura','Bildungsroman','Volta','Motif','Frame narrative','Blank verse'],
+    'english-language': ['Phoneme','Register','Sociolect','Anaphora','Discourse marker','Received Pronunciation','Code-switching','Pragmatics','Semantic field','Hedging','Idiolect','Taboo language','Overextension','Covert prestige','Garden-path sentence'],
+    'music': ['Syncopation','Cadence','Ostinato','Word painting','Counterpoint','Sonata form','Pedal note','Ground bass','Chromaticism','Tierce de Picardie','Hemiola','Strophic form','Circle of fifths','Diminished seventh','Call and response'],
+    'art-design': ['Chiaroscuro','Negative space','Complementary colours','Mixed media','Vanishing point','Impasto','Monoprint','Visual hierarchy','Found object','Colour theory','Mark making','Golden ratio','Texture rubbing','Contextual study','Tonal range'],
+    'computer-science': ['Binary search','Cache memory','Recursion','Logic gate','Hash table','Bandwidth','Compiler','Two’s complement','Packet switching','SQL injection','Finite state machine','Lossless compression','Boolean algebra','Virtual memory','Stack frame'],
+    'design-technology': ['Tolerance','Cantilever','Injection moulding','Anthropometrics','Smart material','Tensile strength','Planned obsolescence','Ergonomics','Batch production','Knock-down fitting','Quality control','Laminating','Jig','Finite resource','CAD model'],
+    'psychology': ['Operant conditioning','Working memory','Cognitive dissonance','Attachment style','Demand characteristics','Neurotransmitter','Conformity','Schema','Ecological validity','Reinforcement schedule','Fight or flight','Social desirability','Localisation of function','Standardised procedure','Pilot study'],
+    'sociology': ['Socialisation','Labelling theory','Nuclear family','Cultural capital','Moral panic','Meritocracy','Hidden curriculum','Patriarchy','Social mobility','Subculture','Value consensus','Glass ceiling','Ethnocentrism','Functionalism','Crime statistics'],
+    'business-studies': ['Cash flow forecast','Market segmentation','Break-even point','Economies of scale','Brand loyalty','Profit margin','Sole trader','Just-in-time','Stakeholder','Dividend','Product life cycle','Trade credit','Niche market','Quality assurance','Span of control'],
+    'economics': ['Opportunity cost','Price elasticity','Fiscal policy','Market failure','Quantitative easing','Comparative advantage','Externality','Monopoly power','Exchange rate','Aggregate demand','Supply shock','Progressive tax','Trade deficit','Multiplier effect','Inflation target'],
+    'environmental-science': ['Eutrophication','Carrying capacity','Albedo effect','Bioaccumulation','Keystone species','Ozone depletion','Carbon footprint','Rewilding','Acid rain','Greenhouse gas','Habitat corridor','Renewable energy','Succession','Topsoil erosion','Biotic index'],
+    'pe': ['VO2 max','Lactic acid','Fast-twitch fibres','Plyometrics','Goal setting','Cardiac output','Periodisation','Reaction time','Aerobic threshold','Biomechanics','Vasodilation','Overtraining','Motor skill','Hypertrophy','Interval training'],
+    'astronomy': ['Light year','Main sequence','Event horizon','Parallax','Solar wind','Cepheid variable','Exoplanet','Dark matter','Supernova','Hubble constant','Lunar eclipse','Accretion disc','Asteroid belt','Retrograde motion','Nebula'],
+    'food-technology': ['Gelatinisation','Maillard reaction','Emulsification','Food provenance','Cross-contamination','Fortification','Raising agent','Denaturation','Shortening','Sensory analysis','Caramelisation','Food miles','Macronutrient','Coagulation','Enzymic browning'],
+    'spanish': ['El pretérito','Ser y estar','El subjuntivo','El futuro simple','Las preposiciones','El imperfecto','Los pronombres','La concordancia','El condicional','Los verbos reflexivos','El imperativo','La voz pasiva','Los comparativos','Los adjetivos'],
+    'french': ['Le passé composé','L’imparfait','Le subjonctif','Les pronoms relatifs','Le conditionnel','La négation','Les verbes pronominaux','Le futur simple','L’article partitif','Les adjectifs possessifs','Le plus-que-parfait','La voix passive','Les comparatifs','L’accord du participe'],
+    'german': ['Der Akkusativ','Die Wortstellung','Das Perfekt','Der Konjunktiv','Die Modalverben','Der Dativ','Die trennbaren Verben','Das Präteritum','Die Adjektivendungen','Der Genitiv','Die Nebensätze','Das Passiv','Die Präpositionen','Der Imperativ'],
+  };
+  const GENERIC_GLOSSARY = ['Primary source','Hypothesis','Correlation','Case study','Qualitative data','Peer review','Control group','Synthesis','Annotation','Citation','Sampling','Triangulation','Inference','Validity','Abstract'];
+
+  // Placeholder concept defs would make hollow cards — treat as unauthored.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+
+  // Decoys must never fuzzy-match a real concept term. We reject any
+  // candidate whose normalised form contains / is contained by a concept
+  // term, or whose character-bigram overlap is 50% or more.
+  function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9à-öø-ÿœ]/g, ''); }
+  function bigrams(s) {
+    const set = new Set();
+    for (let i = 0; i < s.length - 1; i++) set.add(s.slice(i, i + 2));
+    return set;
+  }
+  function tooSimilar(a, b) {
+    const x = norm(a), y = norm(b);
+    if (!x || !y) return true;
+    if (x.includes(y) || y.includes(x)) return true;
+    const bx = bigrams(x), by = bigrams(y);
+    if (!bx.size || !by.size) return x === y;
+    let shared = 0;
+    bx.forEach(g => { if (by.has(g)) shared++; });
+    return (2 * shared) / (bx.size + by.size) >= 0.5;
+  }
+
+  const glossary = SUBJECT_GLOSSARY[subjKey] || GENERIC_GLOSSARY;
+  const allTerms = ((spec && spec.concepts) || []).map(c => c && c.term).filter(Boolean);
+  const decoyPool = glossary.filter(d => !allTerms.some(t => tooSimilar(d, t)));
+
+  if (!spec || concepts.length < 4 || decoyPool.length < 2) {
+    root.innerHTML = `
+      <div class="ar-badge">V · Verify · Connections Grid</div>
+      <h1 class="ar-title">${esc(topic)}</h1>
+      <p class="ar-sub">This game needs a full set of authored concepts plus clean decoy terms from the wider subject — generic filler wouldn't earn its place on the site. Come back soon.</p>
+      <div class="ar-meta">${esc([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="ar-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">🧩</div>
+        <h2 style="font-size:1.3rem;margin:0 0 8px">Grid in production</h2>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Connections Grid needs at least four authored concepts for this exact topic, plus two decoys from elsewhere in the subject that don't overlap with them. That set isn't ready at the required depth yet.</p>
+        <a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
+  const ROUNDS = 4;
+  const PICK = 4;
+  const ROUND_MS = 35000;
+  const BEST_KEY = 'aism-connections-best:' + location.pathname;
+
+  // Build rounds: each takes 4 random in-topic concepts and 2 decoys from
+  // the subject glossary, then shuffles all six positions. Decoys are drawn
+  // without repeats until the pool runs dry, then it reshuffles.
+  function buildRounds() {
+    let bag = Arcade.shuffle(decoyPool);
+    const built = [];
+    for (let r = 0; r < ROUNDS; r++) {
+      if (bag.length < 2) bag = Arcade.shuffle(decoyPool);
+      const decoys = bag.splice(0, 2);
+      const inSet = Arcade.shuffle(concepts).slice(0, PICK);
+      const cards = Arcade.shuffle([
+        ...inSet.map(c => ({ label: c.term, isIn: true })),
+        ...decoys.map(d => ({ label: d, isIn: false })),
+      ]);
+      built.push({ cards, decoys });
+    }
+    return built;
+  }
+
+  let rounds, state, timerCtl = null;
+
+  function startGame() {
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    rounds = buildRounds();
+    state = { idx: 0, score: 0, hits: 0, perfects: 0, streak: 0, bestStreak: 0, grid: [] };
+    renderRound();
+  }
+
+  function bump(el) {
+    if (!el) return;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 350);
+  }
+
+  function renderHeader(metaTail) {
+    return `
+      <div class="ar-badge">V · Verify · Connections Grid</div>
+      <h1 class="ar-title">${esc(topic)}</h1>
+      <p class="ar-sub">Four of these belong to ${esc(topic)}. Two are decoys smuggled in from elsewhere in ${esc(subj || 'the subject')}. 35 seconds — pick the four, lock them in.</p>
+      <div class="ar-meta">${esc([level, subj].filter(Boolean).join(' · '))} · ${esc(metaTail)}</div>
+    `;
+  }
+
+  function hudHtml() {
+    return `
+      <div class="ar-hud">
+        <div class="ar-hud-stat">Score <b id="hudScore">${state.score}</b></div>
+        <div class="ar-hud-stat${state.streak >= 2 ? ' hot' : ''}">Streak <b id="hudStreak">${state.streak}${state.streak >= 2 ? '🔥' : ''}</b></div>
+        <div class="ar-hud-stat gold">Round <b>${state.idx + 1}/${ROUNDS}</b></div>
+      </div>
+    `;
+  }
+
+  function renderRound() {
+    const round = rounds[state.idx];
+
+    root.innerHTML = `
+      ${renderHeader(`Round ${state.idx + 1} of ${ROUNDS}`)}
+      ${hudHtml()}
+      <div class="ar-dots" aria-hidden="true">${rounds.map((_, i) => {
+        if (i < state.idx) return `<span class="${state.grid[i] === '🟩🟩🟩🟩' ? 'done' : 'fail'}"></span>`;
+        return `<span class="${i === state.idx ? 'now' : ''}"></span>`;
+      }).join('')}</div>
+      <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
+      <div class="ar-card">
+        <div class="ar-label">Round ${state.idx + 1} · find the four</div>
+        <div class="ar-prompt">Which four belong to ${esc(topic)}?</div>
+        <div class="cg-grid ar-stagger" role="group" aria-label="Six cards — pick the four that belong to the topic">
+          ${round.cards.map((c, i) => `
+            <button type="button" class="ar-tile" aria-pressed="false" data-idx="${i}">
+              ${esc(c.label)}<span class="cg-mark-slot"></span>
+            </button>
+          `).join('')}
+        </div>
+        <button class="ar-btn big" id="submit" disabled>Pick 4 to arm · 0/${PICK}</button>
+        <div class="ar-kbd-hint">Keyboard: 1–6 toggles a card · Enter locks in</div>
+        <div id="fb"></div>
+        <div id="nextWrap" style="margin-top:14px;"></div>
+      </div>
+    `;
+
+    const submit = document.getElementById('submit');
+    const tiles = Array.from(root.querySelectorAll('.cg-grid .ar-tile'));
+    const picked = new Set();
+    let phase = 'answer';
+
+    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+      onEnd: () => {
+        if (phase !== 'answer') return;
+        Arcade.sfx.timeup();
+        reveal(true);
+      },
+    });
+
+    function syncSubmit() {
+      if (picked.size === PICK) {
+        submit.disabled = false;
+        submit.textContent = 'LOCK IN 🔒';
+      } else {
+        submit.disabled = true;
+        submit.textContent = `Pick 4 to arm · ${picked.size}/${PICK}`;
+      }
+    }
+
+    tiles.forEach(b => {
+      b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
+        const i = parseInt(b.dataset.idx);
+        if (picked.has(i)) {
+          picked.delete(i);
+          b.classList.remove('selected');
+          b.setAttribute('aria-pressed', 'false');
+        } else {
+          if (picked.size >= PICK) return;
+          picked.add(i);
+          b.classList.add('selected');
+          b.setAttribute('aria-pressed', 'true');
+        }
+        Arcade.sfx.click();
+        syncSubmit();
+        announce.textContent = `Selected ${picked.size} of ${PICK}.`;
+      });
+    });
+
+    submit.addEventListener('click', () => {
+      if (phase !== 'answer' || picked.size !== PICK) return;
+      reveal(false);
+    });
+
+    function reveal(timedOut) {
+      if (phase !== 'answer') return;
+      phase = 'reveal';
+      const remaining = timedOut ? 0 : timerCtl.remaining;
+      timerCtl.stop();
+      submit.disabled = true;
+
+      let hits = 0, wrongPicks = 0;
+      round.cards.forEach((c, i) => {
+        if (picked.has(i) && c.isIn) hits++;
+        else if (picked.has(i) && !c.isIn) wrongPicks++;
+      });
+      const perfect = hits === PICK;
+
+      tiles.forEach(b => { b.disabled = true; b.style.pointerEvents = 'none'; });
+
+      // Tile-by-tile verdict reveal — the suspense beat.
+      tiles.forEach((b, i) => {
+        setTimeout(() => {
+          Arcade.sfx.tick();
+          const card = round.cards[i];
+          const slot = b.querySelector('.cg-mark-slot');
+          b.classList.remove('selected');
+          if (picked.has(i) && card.isIn) {
+            b.classList.add('correct');
+            if (slot) slot.outerHTML = '<span class="cg-mark tick" aria-hidden="true">✓</span>';
+          } else if (picked.has(i) && !card.isIn) {
+            b.classList.add('wrong');
+            if (slot) slot.outerHTML = '<span class="cg-mark cross" aria-hidden="true">✕</span>';
+          } else if (!picked.has(i) && card.isIn) {
+            b.classList.add('missed-in');
+          } else {
+            b.classList.add('dim');
+          }
+        }, i * 140);
+      });
+
+      setTimeout(() => verdict(hits, wrongPicks, perfect, remaining, timedOut), tiles.length * 140 + 180);
+    }
+
+    function verdict(hits, wrongPicks, perfect, remaining, timedOut) {
+      let pts;
+      if (perfect) {
+        state.streak++;
+        state.bestStreak = Math.max(state.bestStreak, state.streak);
+        state.perfects++;
+        const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
+        const speed = Math.round(50 * (remaining / ROUND_MS));
+        pts = Math.round((hits * 25 + 100 + speed) * mult);
+        Arcade.sfx.correct(state.streak);
+        if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg('PERFECT GRID ✨', '#00ffa3');
+        Arcade.streakCall(state.streak);
+        Arcade.confettiBurst({ count: 90 });
+        Arcade.vibrate(25);
+      } else {
+        state.streak = 0;
+        pts = hits * 25;
+        Arcade.sfx.wrong();
+        Arcade.shake();
+        Arcade.vibrate([40, 30, 40]);
+        Arcade.flashMsg(timedOut ? "TIME'S UP ⏱" : hits >= 3 ? 'SO CLOSE' : 'GRID SCRAMBLED', hits >= 3 ? '#ffd60a' : '#ff2e88');
+      }
+
+      state.score += pts;
+      state.hits += hits;
+      state.grid.push('🟩'.repeat(hits) + '🟥'.repeat(wrongPicks) + '⬛'.repeat(Math.max(0, PICK - hits - wrongPicks)));
+
+      const hudS = document.getElementById('hudScore');
+      hudS.textContent = state.score;
+      if (pts) bump(hudS);
+      const hudSt = document.getElementById('hudStreak');
+      hudSt.textContent = state.streak + (state.streak >= 2 ? '🔥' : '');
+      bump(hudSt);
+      hudSt.parentElement.classList.toggle('hot', state.streak >= 2);
+      if (pts) Arcade.popTextOver(submit, '+' + pts, perfect ? '#00ffa3' : '#ffd60a');
+
+      const [d1, d2] = round.decoys;
+      const decoyTxt = perfect
+        ? `Clean separation — you weren't fooled by “${esc(d1)}” or “${esc(d2)}”, both real ${esc(subj || 'subject')} terms that simply live in a different topic.`
+        : `The decoys were “${esc(d1)}” and “${esc(d2)}” — genuine ${esc(subj || 'subject')} terms, just not part of ${esc(topic)}. Knowing where an idea <em>doesn't</em> belong is half of knowing it.`;
+
+      const fb = document.getElementById('fb');
+      fb.className = 'ar-feedback ' + (perfect ? 'ok' : 'no');
+      fb.innerHTML = `<strong>${hits}/${PICK} found · +${pts} pts.</strong> ` + decoyTxt;
+      announce.textContent = `You found ${hits} of ${PICK}. Plus ${pts} points. The decoys were ${d1} and ${d2} — real ${subj || 'subject'} terms from a different topic.`;
+
+      const last = state.idx + 1 >= ROUNDS;
+      document.getElementById('nextWrap').innerHTML =
+        `<button class="ar-btn big" id="next">${last ? 'See your score →' : 'Next round →'}</button>`;
+      const nextBtn = document.getElementById('next');
+      nextBtn.addEventListener('click', () => {
+        Arcade.sfx.swoosh();
+        if (state.idx + 1 < ROUNDS) {
+          state.idx++;
+          renderRound();
+        } else {
+          renderEnd();
+        }
+      });
+      nextBtn.focus({ preventScroll: true });
+    }
+  }
+
+  function renderEnd() {
+    const total = ROUNDS * PICK;
+    const pct = Math.round((state.hits / total) * 100);
+
+    let insight;
+    if (pct === 100) insight = `Four perfect grids. Every decoy was a real ${subj || 'subject'} term chosen to sound at home in ${topic} — and you put all of them on the right side of the line. That boundary-drawing is exactly what examiners reward.`;
+    else if (pct >= 75) insight = `Strong sorting. The cards that slipped past you mark the fuzzy edge of your mental map of ${topic} — for each one, ask why it does or doesn't belong, then run the grid again.`;
+    else insight = `The decoys in this game are designed to feel like they belong — mixing them up just shows you precisely where the borders of ${topic} are still blurry. Revisit the concept list, then come back and redraw the lines.`;
+
+    root.innerHTML = renderHeader('Results') + '<div id="end"></div>';
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'Connections Grid',
+      gameEmoji: '🧩',
+      topic: topic,
+      meta: [level, subj].filter(Boolean).join(' · '),
+      pct: pct,
+      big: state.score,
+      bigLabel: 'points',
+      rows: [
+        { v: `${state.hits}/${total}`, l: 'right picks' },
+        { v: `${state.perfects}/${ROUNDS}`, l: 'perfect grids' },
+        { v: '🔥 ' + state.bestStreak, l: 'best streak' },
+      ],
+      emojiGrid: state.grid.join(' '),
+      bestKey: BEST_KEY,
+      bestValue: state.score,
+      bestSuffix: ' pts',
+      insight: insight,
+      shareLines: [
+        '🧩 Connections Grid — ' + topic,
+        `Score ${state.score} pts · ${state.perfects} perfect grid${state.perfects === 1 ? '' : 's'}`,
+        ...state.grid,
+      ],
+      onAgain: startGame,
+    });
+    announce.textContent = `Game over. Score ${state.score} points. ${state.hits} of ${total} correct picks — ${pct} percent.`;
+  }
+
+  // Keyboard: 1–6 toggle a card, Enter locks in / advances. Cards already
+  // handle Space and Enter natively as buttons.
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'Enter') {
+      if (e.target && e.target.tagName === 'BUTTON') return; // native activation
+      const next = document.getElementById('next');
+      if (next) { e.preventDefault(); next.click(); return; }
+      const submit = document.getElementById('submit');
+      if (submit && !submit.disabled) { e.preventDefault(); submit.click(); }
+      return;
+    }
+    const map = { '1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5 };
+    if (e.key in map) {
+      const b = root.querySelectorAll('.cg-grid .ar-tile')[map[e.key]];
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

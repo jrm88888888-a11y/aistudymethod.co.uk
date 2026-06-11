@@ -853,6 +853,22 @@ a.resource-card:focus-visible { outline: 2px solid var(--accent); outline-offset
  <button class="format-pill" data-format="nature-gallery" onclick="setFormat('nature-gallery')">Nature Gallery</button>
  <a class="format-pill format-pill--link" href="classcraft/draw-it.html">Draw It →</a>
  </div>
+ <!-- New spec-driven quiz games: 10 standalone experiences, one HTML per game,
+      each fed by the per-topic spec JSON. Grouped on a second row so the
+      original pills remain familiar. -->
+ <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-family:'DM Sans',sans-serif;font-size:12px;align-items:center;">
+ <span style="color:var(--text-muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;align-self:center;margin-right:4px;">New quiz games:</span>
+ <button class="format-pill" data-format="two-truths-one-lie" onclick="setFormat('two-truths-one-lie')">Two Truths One Lie</button>
+ <button class="format-pill" data-format="connections-grid"   onclick="setFormat('connections-grid')">Connections Grid</button>
+ <button class="format-pill" data-format="sort-sequence"      onclick="setFormat('sort-sequence')">Sort the Sequence</button>
+ <button class="format-pill" data-format="wager-quiz"         onclick="setFormat('wager-quiz')">Wager</button>
+ <button class="format-pill" data-format="higher-or-lower"    onclick="setFormat('higher-or-lower')">Higher or Lower</button>
+ <button class="format-pill" data-format="falling-words"      onclick="setFormat('falling-words')">Falling Words</button>
+ <button class="format-pill" data-format="conveyor-belt"      onclick="setFormat('conveyor-belt')">Conveyor Belt</button>
+ <button class="format-pill" data-format="word-web"           onclick="setFormat('word-web')">Word Web</button>
+ <button class="format-pill" data-format="reveal-race"        onclick="setFormat('reveal-race')">Reveal Race</button>
+ <a class="format-pill format-pill--link" href="classcraft/quizzes/daily-drill.html">Daily Drill →</a>
+ </div>
  </div>
  <div class="subjects-right">
  <a href="books.html" class="prompt-books-cta">
@@ -1181,19 +1197,47 @@ let state = {
 
 // Human-readable labels for each format key
 const FORMAT_LABELS = {
- 'mini-lesson':    'Mini-Lessons',
- 'concept-map':    'Concept Maps',
- 'quiz-game':      'Quiz Games',
- 'terms-tester':   'Terms Tester',
- 'evaluate-tool':  'Evaluate Tools',
- 'explore-tool':   'Explore Tools',
- 'simulation':     'Simulations',
- 'roleplay':       'Roleplay Stories',
- 'competition':    'Competitions',
- 'prompt-book':    'Prompt Books',
- 'joke-pack':      'Jokes',
- 'nature-gallery': 'Nature Gallery'
+ 'mini-lesson':        'Mini-Lessons',
+ 'concept-map':        'Concept Maps',
+ 'quiz-game':          'Quiz Games',
+ 'terms-tester':       'Terms Tester',
+ 'evaluate-tool':      'Evaluate Tools',
+ 'explore-tool':       'Explore Tools',
+ 'simulation':         'Simulations',
+ 'roleplay':           'Roleplay Stories',
+ 'competition':        'Competitions',
+ 'prompt-book':        'Prompt Books',
+ 'joke-pack':          'Jokes',
+ 'nature-gallery':     'Nature Gallery',
+ // The new spec-driven quiz games — one HTML each at classcraft/quizzes/.
+ 'two-truths-one-lie': 'Two Truths One Lie',
+ 'connections-grid':   'Connections Grid',
+ 'sort-sequence':      'Sort the Sequence',
+ 'wager-quiz':         'Wager',
+ 'higher-or-lower':    'Higher or Lower',
+ 'falling-words':      'Falling Words',
+ 'conveyor-belt':      'Conveyor Belt',
+ 'word-web':           'Word Web',
+ 'reveal-race':        'Reveal Race',
+ 'daily-drill':        'Daily Drill'
 };
+
+// The "Quiz Games" pill is a family filter: it matches the legacy quiz-game
+// cards AND every spec-driven arcade game. Individual game pills still
+// filter to just that game.
+const QUIZ_GAME_TYPES = new Set([
+ 'quiz-game', 'two-truths-one-lie', 'connections-grid', 'sort-sequence',
+ 'wager-quiz', 'higher-or-lower', 'falling-words', 'conveyor-belt',
+ 'word-web', 'reveal-race', 'daily-drill'
+]);
+
+// Format match: exact type, or family expansion for the quiz-game pill.
+function formatMatches(type, fmt) {
+ if (fmt === 'all') return true;
+ if (type === fmt) return true;
+ if (fmt === 'quiz-game' && QUIZ_GAME_TYPES.has(type)) return true;
+ return false;
+}
 
 // How many cards to show per stage section in the default view.
 const DEFAULT_PER_SECTION = 12;
@@ -3077,7 +3121,7 @@ function showFilteredView() {
    return (state.subject  === 'all' || r.subject  === state.subject)
        && (state.level    === 'all' || r.level    === state.level)
        && (state.stage    === 'all' || r.stage    === state.stage)
-       && (state.format   === 'all' || r.type     === state.format)
+       && formatMatches(r.type, state.format)
        && boardOK
        && (ignoreTopic    || state.subtopic === 'all' || r.subtopic === state.subtopic);
  });
@@ -3099,7 +3143,7 @@ function showFilteredView() {
  const deduped = dedupeByHref(matching);
 
  noRes.classList.remove('visible');
- grid.innerHTML = deduped.map(cardHTML).join('');
+ renderGridBatched(grid, deduped);
 
  const parts = [];
  if (state.format !== 'all') {
@@ -3123,6 +3167,29 @@ function showFilteredView() {
  document.getElementById('filterCount').textContent  = deduped.length + ' result'   + (deduped.length !== 1 ? 's' : '');
 
  filtView.classList.add('visible');
+}
+
+// Render results in batches so huge filters (e.g. the Quiz Games family,
+// 20k+ cards) don't lock up the page. First batch paints instantly; a
+// "Show more" button appends the next slice on demand.
+const GRID_BATCH = 60;
+function renderGridBatched(grid, items) {
+ let shown = 0;
+ grid.innerHTML = '';
+ const moreWrap = document.createElement('div');
+ moreWrap.style.cssText = 'grid-column:1/-1;text-align:center;padding:18px 0;';
+ function renderMore() {
+   const slice = items.slice(shown, shown + GRID_BATCH);
+   shown += slice.length;
+   moreWrap.remove();
+   grid.insertAdjacentHTML('beforeend', slice.map(cardHTML).join(''));
+   if (shown < items.length) {
+     moreWrap.innerHTML = '<button type="button" class="format-pill" style="font-size:13px;padding:10px 22px;cursor:pointer;">Show more · ' + (items.length - shown).toLocaleString() + ' remaining</button>';
+     moreWrap.querySelector('button').addEventListener('click', renderMore);
+     grid.appendChild(moreWrap);
+   }
+ }
+ renderMore();
 }
 
 function seeAllStage(stage) {

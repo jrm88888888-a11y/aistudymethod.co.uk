@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two Truths One Lie — AI Study Method</title>
+<meta name="description" content="Three statements about the topic — two are true, one is a misconception built to fool you. 20 seconds on the clock. Call the lie, stack the streak, share the score.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  .tt-stmts { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+  .tt-q { font-family:var(--ar-mono); font-size:10.5px; letter-spacing:0.8px; text-transform:uppercase; color:var(--ar-muted); margin-bottom:6px; line-height:1.5; }
+  .tt-a { line-height:1.5; }
+</style>
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script>
+(async function() {
+  const esc = Arcade.escapeHtml;
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  Arcade.mountMuteButton();
+
+  if (!stem) {
+    root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  const [spec, bank] = await Promise.all([
+    Arcade.fetchSpecJson(stem, '../adventures/_specs'),
+    Arcade.fetchSpecJson(stem, '../evaluate/misconception-banks'),
+  ]);
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Placeholder concept defs would make hollow "truths" — treat as unauthored.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  const bankItems = ((bank && bank.items) || []).filter(it => it && it.q && it.misconception);
+
+  if (!spec || !bank || concepts.length < 4 || bankItems.length < 2) {
+    root.innerHTML = `
+      <div class="ar-badge">V · Verify · Two Truths One Lie</div>
+      <h1 class="ar-title">${esc(topic)}</h1>
+      <p class="ar-sub">This game needs a full set of concept definitions plus a bank of researched misconceptions — generic filler wouldn't earn its place on the site. Come back soon.</p>
+      <div class="ar-meta">${esc([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="ar-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">🕵️</div>
+        <h2 style="font-size:1.3rem;margin:0 0 8px">Statements in production</h2>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Two Truths One Lie needs at least four authored concept definitions and two researched misconceptions for this exact topic. That set hasn't been written at the required depth yet.</p>
+        <a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
+  const BEST_KEY = 'aism-tt-best:' + stem;
+  const ROUND_MS = 20000;
+  const ROUNDS = 5;
+
+  // Build rounds: each pairs one misconception (the lie) with two
+  // randomly-drawn concept definitions (the truths). Every statement is
+  // shown as a prompt + claim so the lie isn't given away by format.
+  // Hand-written bank items (no `src` marker) lead; MCQ-derived items
+  // only backfill the remaining rounds.
+  function buildRounds() {
+    const authored = Arcade.shuffle(bankItems.filter(it => !it.src));
+    const derived  = Arcade.shuffle(bankItems.filter(it => it.src));
+    return Arcade.shuffle(authored.concat(derived).slice(0, ROUNDS)).map(item => {
+      const [c1, c2] = Arcade.shuffle(concepts);
+      const statements = Arcade.shuffle([
+        { lie: true,  prompt: item.q, claim: item.misconception, why: item.why || '' },
+        { lie: false, prompt: `What does “${c1.term}” mean?`, claim: c1.def },
+        { lie: false, prompt: `What does “${c2.term}” mean?`, claim: c2.def },
+      ]);
+      return { statements, lieIdx: statements.findIndex(s => s.lie) };
+    });
+  }
+
+  let rounds, state, timerCtl = null;
+
+  function startGame() {
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    rounds = buildRounds();
+    state = { idx: 0, caught: 0, score: 0, streak: 0, bestStreak: 0, grid: [] };
+    renderRound();
+  }
+
+  function bump(el) {
+    if (!el) return;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 350);
+  }
+
+  function renderHeader(metaTail) {
+    return `
+      <div class="ar-badge">V · Verify · Two Truths One Lie</div>
+      <h1 class="ar-title">${esc(topic)}</h1>
+      <p class="ar-sub">Three claims about ${esc(topic)}. Two are true — one is a misconception built to fool you. 20 seconds. Call the lie.</p>
+      <div class="ar-meta">${esc([level, subj].filter(Boolean).join(' · '))} · ${esc(metaTail)}</div>
+    `;
+  }
+
+  function hudHtml() {
+    return `
+      <div class="ar-hud">
+        <div class="ar-hud-stat">Score <b id="hudScore">${state.score}</b></div>
+        <div class="ar-hud-stat${state.streak >= 3 ? ' hot' : ''}">Streak <b id="hudStreak">${state.streak}${state.streak >= 3 ? '🔥' : ''}</b></div>
+        <div class="ar-hud-stat gold">Round <b>${state.idx + 1}/${rounds.length}</b></div>
+      </div>
+    `;
+  }
+
+  function renderRound() {
+    const round = rounds[state.idx];
+
+    root.innerHTML = `
+      ${renderHeader('Round ' + (state.idx + 1) + ' of ' + rounds.length)}
+      ${hudHtml()}
+      <div class="ar-dots" aria-hidden="true">${rounds.map((_, i) => {
+        if (i < state.idx) return `<span class="${state.grid[i] === '🟩' ? 'done' : 'fail'}"></span>`;
+        return `<span class="${i === state.idx ? 'now' : ''}"></span>`;
+      }).join('')}</div>
+      <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
+      <div class="ar-card">
+        <div class="ar-label">Round ${state.idx + 1} · tap to lock your call</div>
+        <div class="ar-prompt">Which one is the lie?</div>
+        <div class="tt-stmts ar-stagger" role="radiogroup" aria-label="Three statements — pick the lie">
+          ${round.statements.map((s, i) => `
+            <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">
+              <div class="tt-q">${esc(s.prompt)}</div>
+              <div class="tt-a">${esc(s.claim)}</div>
+              <span class="tt-pill-slot"></span>
+            </button>
+          `).join('')}
+        </div>
+        <div class="ar-kbd-hint">Keyboard: 1–3 locks your call · Enter for next round</div>
+        <div id="fb"></div>
+        <div id="nextWrap" style="margin-top:14px;"></div>
+      </div>
+    `;
+
+    const tiles = Array.from(root.querySelectorAll('.tt-stmts .ar-tile'));
+    let phase = 'answer';
+
+    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+      onEnd: () => { if (phase === 'answer') settle(null, true); },
+    });
+
+    function settle(chosen, timedOut) {
+      if (phase !== 'answer') return;
+      phase = 'verdict';
+      const remaining = timedOut ? 0 : timerCtl.remaining;
+      timerCtl.stop();
+
+      const correct = !timedOut && chosen === round.lieIdx;
+      const lie = round.statements[round.lieIdx];
+
+      tiles.forEach((b, i) => {
+        b.disabled = true;
+        b.style.pointerEvents = 'none';
+        b.setAttribute('aria-checked', String(i === chosen));
+        const slot = b.querySelector('.tt-pill-slot');
+        if (i === round.lieIdx) {
+          b.classList.add('correct');
+          slot.outerHTML = '<span class="ar-pill bad" style="margin-top:8px;display:inline-block;">⚠ the lie</span>';
+        } else {
+          if (i === chosen) b.classList.add('wrong');
+          else b.classList.add('dim');
+          slot.outerHTML = '<span class="ar-pill good" style="margin-top:8px;display:inline-block;">✓ truth</span>';
+        }
+      });
+
+      let pts = 0;
+      if (correct) {
+        state.caught++;
+        state.streak++;
+        state.bestStreak = Math.max(state.bestStreak, state.streak);
+        const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
+        const speed = Math.round(50 * (remaining / ROUND_MS));
+        pts = Math.round((100 + speed) * mult);
+        state.score += pts;
+        state.grid.push('🟩');
+        Arcade.sfx.correct(state.streak);
+        if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg('CAUGHT IT', '#00ffa3');
+        Arcade.streakCall(state.streak);
+        Arcade.confettiBurst({ count: 40 });
+        Arcade.popTextOver(tiles[round.lieIdx], '+' + pts, '#00ffa3');
+        Arcade.vibrate(20);
+      } else {
+        state.streak = 0;
+        state.grid.push(timedOut ? '⬛' : '🟥');
+        if (timedOut) {
+          Arcade.sfx.timeup();
+          Arcade.flashMsg("TIME'S UP ⏱", '#ffd60a');
+        } else {
+          Arcade.sfx.wrong();
+          Arcade.flashMsg('NOT EVEN CLOSE', '#ff2e88');
+        }
+        Arcade.shake();
+        Arcade.vibrate([40, 30, 40]);
+      }
+
+      const hudS = document.getElementById('hudScore');
+      hudS.textContent = state.score;
+      if (pts) bump(hudS);
+      const hudSt = document.getElementById('hudStreak');
+      hudSt.textContent = state.streak + (state.streak >= 3 ? '🔥' : '');
+      bump(hudSt);
+      hudSt.parentElement.classList.toggle('hot', state.streak >= 3);
+
+      const fb = document.getElementById('fb');
+      fb.className = 'ar-feedback ' + (correct ? 'ok' : 'no');
+      fb.innerHTML = (correct
+        ? `<strong>Caught it. +${pts} pts.</strong> `
+        : timedOut
+          ? `<strong>The clock beat you.</strong> The lie was: <em>${esc(lie.claim)}</em>. `
+          : `<strong>That one was true.</strong> The lie was: <em>${esc(lie.claim)}</em>. `)
+        + esc(lie.why || '');
+      announce.textContent = (correct
+        ? `Correct — you caught the lie. Plus ${pts} points. `
+        : timedOut ? 'Time up — round lost. ' : 'Incorrect — that statement was true. ')
+        + (lie.why || '');
+
+      const last = state.idx + 1 >= rounds.length;
+      document.getElementById('nextWrap').innerHTML =
+        `<button class="ar-btn big" id="next">${last ? 'See your score →' : 'Next →'}</button>`;
+      const nextBtn = document.getElementById('next');
+      nextBtn.addEventListener('click', advance);
+      nextBtn.focus({ preventScroll: true });
+    }
+
+    function advance() {
+      Arcade.sfx.swoosh();
+      if (state.idx + 1 < rounds.length) {
+        state.idx++;
+        renderRound();
+      } else {
+        renderEnd();
+      }
+    }
+
+    tiles.forEach(b => {
+      b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
+        Arcade.sfx.click();
+        settle(parseInt(b.dataset.idx), false);
+      });
+    });
+  }
+
+  function renderEnd() {
+    const total = rounds.length;
+    const pct = Math.round((state.caught / total) * 100);
+
+    let insight;
+    if (pct === 100) insight = `Clean sweep. Every lie in this set is a misconception that trips real students in real exams — and none of them got past you. Final boss: explain WHY each lie is wrong to someone else. If you can teach ${topic}, you own it.`;
+    else if (pct >= 60) insight = 'Sharp detecting. The lies that slipped through were chosen because they feel true — that feeling is the trap. Re-read the why explanations on your misses, then run it back and catch all five.';
+    else insight = `These lies are engineered to sound right — falling for them just exposed exactly which ideas in ${topic} need rebuilding. Re-read each explanation, revisit the definitions, then come back and call every lie.`;
+
+    root.innerHTML = renderHeader('Results') + '<div id="end"></div>';
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'Two Truths One Lie',
+      gameEmoji: '🕵️',
+      topic: topic,
+      meta: [level, subj].filter(Boolean).join(' · '),
+      pct: pct,
+      big: state.score,
+      bigLabel: 'points',
+      rows: [
+        { v: `${state.caught}/${total}`, l: 'lies caught' },
+        { v: '🔥 ' + state.bestStreak, l: 'best streak' },
+        { v: pct + '%', l: 'accuracy' },
+      ],
+      emojiGrid: state.grid.join(''),
+      bestKey: BEST_KEY,
+      bestValue: state.score,
+      bestSuffix: ' pts',
+      insight: insight,
+      shareLines: [
+        '🕵️ Two Truths One Lie — ' + topic,
+        `Score ${state.score} pts · 🔥 best streak ${state.bestStreak}`,
+        state.grid.join(''),
+      ],
+      onAgain: startGame,
+    });
+    announce.textContent = `Game over. Score ${state.score} points. You caught ${state.caught} of ${total} lies — ${pct} percent.`;
+  }
+
+  // Keyboard shortcuts: 1–3 lock a statement, Enter advances.
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'Enter') {
+      if (e.target && e.target.tagName === 'BUTTON') return; // native activation
+      const next = document.getElementById('next');
+      if (next) { e.preventDefault(); next.click(); }
+      return;
+    }
+    const map = { '1': 0, '2': 1, '3': 2 };
+    if (e.key in map) {
+      const b = root.querySelectorAll('.tt-stmts .ar-tile')[map[e.key]];
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wager — AI Study Method</title>
+<meta name="description" content="Bet on what you know. Stake chips before you see the choices, survive the double-or-nothing finale, and find out if your confidence actually matches your knowledge.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* Wager-specific layer on top of arcade.css */
+  .wg-chips { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-bottom:18px; }
+  .wg-chip {
+    position:relative; min-height:74px; border-radius:14px;
+    border:2px solid var(--ar-border); background:var(--ar-card);
+    cursor:pointer; color:var(--ar-text); font-family:var(--ar-font);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    padding:10px 4px; transition:transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  }
+  .wg-chip:hover:not(:disabled) { border-color:var(--ar-gold); transform:translateY(-2px); box-shadow:0 6px 20px rgba(255,214,10,0.18); }
+  .wg-chip:active:not(:disabled) { transform:scale(0.97); }
+  .wg-chip:focus-visible { outline:2px solid var(--ar-cyan); outline-offset:2px; }
+  .wg-chip.selected { border-color:var(--ar-gold); background:var(--ar-gold-dim); box-shadow:0 0 0 3px rgba(255,214,10,0.18), 0 0 22px rgba(255,214,10,0.28); }
+  .wg-chip:disabled { opacity:0.3; cursor:not-allowed; }
+  .wg-chip-face { font-size:21px; font-weight:700; line-height:1; color:var(--ar-gold); text-shadow:0 0 14px rgba(255,214,10,0.4); }
+  .wg-chip-sub { font-family:var(--ar-mono); font-size:9px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ar-muted); }
+  .wg-chip.allin { grid-column:1/-1; min-height:60px; flex-direction:row; gap:10px; border-color:rgba(255,46,136,0.45); background:linear-gradient(135deg, rgba(255,46,136,0.12), rgba(255,214,10,0.08)); }
+  .wg-chip.allin .wg-chip-face { font-size:18px; color:var(--ar-pink); text-shadow:0 0 14px rgba(255,46,136,0.5); letter-spacing:1px; }
+  .wg-chip.allin:hover:not(:disabled) { border-color:var(--ar-pink); box-shadow:0 6px 22px rgba(255,46,136,0.25); }
+  .wg-chip.allin.selected { border-color:var(--ar-pink); background:var(--ar-pink-dim); box-shadow:0 0 0 3px rgba(255,46,136,0.2), 0 0 26px rgba(255,46,136,0.35); }
+  .wg-suspense { text-align:center; font-size:38px; font-weight:700; letter-spacing:10px; color:var(--ar-gold); text-shadow:0 0 24px rgba(255,214,10,0.6); margin:18px 0 6px; animation:arBreathe 0.55s ease-in-out infinite; }
+  .wg-stmts { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+  .wg-finale-btns { display:flex; flex-direction:column; gap:12px; margin-top:18px; }
+  @media (max-width:480px) { .wg-chip { min-height:64px; } .wg-chip-face { font-size:18px; } }
+</style>
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script>
+(async function() {
+  'use strict';
+  const E = Arcade.escapeHtml;
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  Arcade.mountMuteButton();
+
+  if (!stem) {
+    root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  // Spec fetch with colon-stem fallback (shared engine handles the candidates).
+  const spec = await Arcade.fetchSpecJson(stem, '../adventures/_specs');
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Each MCQ: { q, options: [[text, isCorrect], …] }. The engine treats an
+  // option as correct when String(isCorrect) === '1' (the dataset.correct
+  // mapping), so [text, true] and [text, 1] both count.
+  const mcqs = ((spec && spec.mcqs) || []).filter(m =>
+    m && m.q && Array.isArray(m.options) && m.options.length >= 2 &&
+    m.options.some(o => String(o[1]) === '1' || o[1] === true)
+  );
+
+  if (!spec || mcqs.length < 2) {
+    root.innerHTML = `
+      <div class="ar-badge">E · Evaluate · Wager</div>
+      <h1 class="ar-title">${E(topic)}</h1>
+      <p class="ar-sub">Wager needs a researched bank of multiple-choice questions for this exact topic — generic filler wouldn't earn its place on the site. Come back soon.</p>
+      <div class="ar-meta">${E([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="ar-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">🎰</div>
+        <h2 style="font-size:1.3rem;margin:0 0 8px">Questions in production</h2>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Wager needs at least two authored multiple-choice questions for this topic. That set hasn't been written at the required depth yet.</p>
+        <a href="../../subjects.html" style="color:var(--ar-cyan);font-family:var(--ar-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
+  const BEST_KEY = 'aism-wager-best:' + stem;
+  const ROUNDS = 5;
+  const START_BANK = 500;
+  const CHIPS = [
+    { key: '25',    face: 25,   allin: false },
+    { key: '50',    face: 50,   allin: false },
+    { key: '100',   face: 100,  allin: false },
+    { key: '250',   face: 250,  allin: false },
+    { key: 'allin', face: null, allin: true  },
+  ];
+
+  // Build a 5-round question queue. With a small bank the questions recycle,
+  // but never the same question twice in a row, and every appearance gets a
+  // fresh option shuffle so repeats aren't exact.
+  function buildRounds() {
+    const queue = [];
+    let pool = Arcade.shuffle(mcqs);
+    while (queue.length < ROUNDS) {
+      if (!pool.length) {
+        pool = Arcade.shuffle(mcqs);
+        // avoid an immediate repeat across the reshuffle boundary
+        if (mcqs.length > 1 && queue.length && pool[0] === queue[queue.length - 1].src) {
+          pool.push(pool.shift());
+        }
+      }
+      const src = pool.shift();
+      const options = Arcade.shuffle(src.options.map(o => ({
+        text: o[0],
+        correct: String(o[1]) === '1' || o[1] === true,
+      })));
+      queue.push({ src, q: src.q, options, correctIdx: options.findIndex(o => o.correct) });
+    }
+    return queue;
+  }
+
+  let rounds, state;
+
+  function startGame() {
+    rounds = buildRounds();
+    state = {
+      idx: 0,
+      bank: START_BANK,
+      correct: 0,
+      streak: 0,
+      bankedOut: false,
+      history: [],   // { stakeKey, stake, delta, correct, bankBefore }
+    };
+    renderRound();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function headerHtml(metaTail) {
+    return `
+      <div class="ar-badge">E · Evaluate · Wager</div>
+      <h1 class="ar-title">${E(topic)}</h1>
+      <p class="ar-sub">Stake your chips before you see the choices. Big confidence, big payout — if it's real.</p>
+      <div class="ar-meta">${E([level, subj].filter(Boolean).join(' · '))} · ${E(metaTail)}</div>
+    `;
+  }
+
+  function dotsHtml() {
+    return `<div class="ar-dots" aria-hidden="true">${rounds.map((_, i) => {
+      const h = state.history[i];
+      let cls = '';
+      if (h) cls = h.correct ? 'done' : 'fail';
+      else if (i === state.idx) cls = 'now';
+      return `<span class="${cls}"></span>`;
+    }).join('')}</div>`;
+  }
+
+  function hudHtml() {
+    return `
+      <div class="ar-hud">
+        <div class="ar-hud-stat gold">🪙 Bank <b id="bank-val">${state.bank}</b></div>
+        <div class="ar-hud-stat">Round <b>${Math.min(state.idx + 1, ROUNDS)}/${ROUNDS}</b></div>
+        <div class="ar-hud-stat ${state.streak >= 2 ? 'hot' : ''}">Streak <b>${state.streak}</b></div>
+      </div>
+    `;
+  }
+
+  // Animated count-up/down on the bank value, with a bump.
+  function animateBank(from, to) {
+    const el = document.getElementById('bank-val');
+    if (!el) return;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    const dur = 750;
+    const t0 = performance.now();
+    (function tick(t) {
+      const p = Math.min(1, (t - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(from + (to - from) * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    })(performance.now());
+  }
+
+  function renderRound() {
+    if (state.idx === ROUNDS - 1) { renderFinale(); return; }
+    const round = rounds[state.idx];
+    const chips = CHIPS.map(c => ({
+      ...c,
+      amount: c.allin ? state.bank : c.face,
+      disabled: !c.allin && state.bank < c.face,
+    }));
+
+    root.innerHTML = `
+      ${headerHtml('Round ' + (state.idx + 1) + ' of ' + ROUNDS)}
+      ${dotsHtml()}
+      ${hudHtml()}
+      <div class="ar-card">
+        <div id="stake-phase">
+          <div class="ar-label">Place your stake — before you see the choices</div>
+          <div class="wg-chips ar-stagger" role="radiogroup" aria-label="Choose your stake">
+            ${chips.map((c, i) => `
+              <button type="button" class="wg-chip${c.allin ? ' allin' : ''}" role="radio" aria-checked="false"
+                      data-i="${i}" ${c.disabled ? 'disabled' : ''}
+                      aria-label="${c.allin ? 'All in — stake your whole bank of ' + c.amount : 'Stake ' + c.amount + ' chips'}">
+                <span class="wg-chip-face">${c.allin ? 'ALL IN 🔥' : c.face}</span>
+                <span class="wg-chip-sub">${c.allin ? 'stake ' + c.amount : 'chips'}</span>
+              </button>
+            `).join('')}
+          </div>
+          <button class="ar-btn big" id="confirm-stake" disabled>Confirm stake →</button>
+          <div class="ar-kbd-hint">Keyboard: 1–5 pick a chip · Enter to confirm</div>
+        </div>
+
+        <div id="answer-phase" hidden>
+          <span class="ar-pill gold" id="stake-tag"></span>
+          <p class="ar-prompt" style="margin-top:12px">${E(round.q)}</p>
+          <div class="wg-stmts ar-stagger" role="radiogroup" aria-label="Answer options">
+            ${round.options.map((o, i) => `
+              <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">
+                ${E(o.text)}
+                <span class="wg-verdict-slot"></span>
+              </button>
+            `).join('')}
+          </div>
+          <div class="wg-suspense" id="suspense" hidden aria-hidden="true">···</div>
+          <button class="ar-btn big" id="lock-in" disabled>🔒 Lock it in</button>
+          <div class="ar-kbd-hint">Keyboard: 1–4 to pick · Enter to lock in</div>
+          <div id="fb"></div>
+        </div>
+      </div>
+    `;
+
+    // ---------- Stake phase ----------
+    const chipBtns = Array.from(root.querySelectorAll('.wg-chip'));
+    const confirmStake = document.getElementById('confirm-stake');
+    let chosenChip = null;
+
+    chipBtns.forEach(b => {
+      b.addEventListener('click', () => {
+        Arcade.sfx.click();
+        chipBtns.forEach(x => { x.classList.remove('selected'); x.setAttribute('aria-checked', 'false'); });
+        b.classList.add('selected');
+        b.setAttribute('aria-checked', 'true');
+        chosenChip = chips[parseInt(b.dataset.i)];
+        confirmStake.disabled = false;
+      });
+    });
+
+    confirmStake.addEventListener('click', () => {
+      if (!chosenChip) return;
+      Arcade.sfx.click();
+      round.chip = chosenChip;
+      round.stake = chosenChip.allin ? state.bank : chosenChip.face;
+      document.getElementById('stake-phase').hidden = true;
+      const ap = document.getElementById('answer-phase');
+      ap.hidden = false;
+      const tag = document.getElementById('stake-tag');
+      tag.textContent = chosenChip.allin
+        ? '🔥 ALL IN — ' + round.stake + ' on the table'
+        : '🪙 Stake: ' + round.stake;
+      if (chosenChip.allin) { tag.className = 'ar-pill bad'; }
+      announce.textContent = 'Stake confirmed: ' + round.stake + '. Question: ' + round.q;
+      const first = ap.querySelector('.ar-tile');
+      if (first) first.focus();
+    });
+
+    // ---------- Answer + suspense + reveal phases ----------
+    const stmts = Array.from(root.querySelectorAll('.ar-tile'));
+    const lockIn = document.getElementById('lock-in');
+    let chosen = null;
+    let phase = 'answer';
+
+    stmts.forEach(b => {
+      b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
+        Arcade.sfx.click();
+        stmts.forEach(x => { x.classList.remove('selected'); x.setAttribute('aria-checked', 'false'); });
+        b.classList.add('selected');
+        b.setAttribute('aria-checked', 'true');
+        chosen = parseInt(b.dataset.idx);
+        lockIn.disabled = false;
+      });
+    });
+
+    function reveal() {
+      document.getElementById('suspense').hidden = true;
+      const chip = round.chip;
+      const stake = round.stake;
+      const correct = chosen === round.correctIdx;
+      const prevBank = state.bank;
+      let delta, busted = false;
+
+      if (correct) {
+        delta = stake;
+        state.bank += delta;
+        state.correct++;
+        state.streak++;
+      } else {
+        delta = -stake;
+        state.bank = Math.max(0, state.bank - stake);
+        state.streak = 0;
+        if (state.bank === 0) busted = true;
+      }
+      state.history.push({ stakeKey: chip.key, stake, delta, correct, busted, bankBefore: prevBank });
+
+      stmts.forEach((b, i) => {
+        b.style.pointerEvents = 'none';
+        b.disabled = true;
+        const slot = b.querySelector('.wg-verdict-slot');
+        if (i === round.correctIdx) {
+          b.classList.add('correct');
+          if (slot) slot.outerHTML = ' <span class="ar-pill good">✓ correct</span>';
+        } else if (i === chosen) {
+          b.classList.add('wrong');
+          if (slot) slot.outerHTML = ' <span class="ar-pill bad">✗ your pick</span>';
+        } else {
+          b.classList.add('dim');
+          if (slot) slot.outerHTML = '';
+        }
+      });
+
+      const bankEl = document.getElementById('bank-val');
+      animateBank(prevBank, state.bank);
+
+      if (correct) {
+        Arcade.sfx.correct(state.streak);
+        Arcade.sfx.coin();
+        Arcade.vibrate([25]);
+        if (bankEl) Arcade.popTextOver(bankEl, '+' + delta, '#ffd60a');
+        // Confetti sized by how bold the stake was relative to the bank.
+        const boldness = prevBank > 0 ? stake / prevBank : 1;
+        Arcade.confettiBurst({ count: Math.round(30 + 90 * Math.min(1, boldness)) });
+        if (chip.allin) {
+          Arcade.flashMsg('JACKPOT 💰', '#ffd60a');
+          Arcade.confettiRain(1600);
+          Arcade.sfx.fanfare();
+        } else {
+          Arcade.streakCall(state.streak);
+        }
+      } else {
+        Arcade.sfx.wrong();
+        Arcade.shake();
+        Arcade.vibrate([60, 40, 60]);
+        if (bankEl) Arcade.popTextOver(bankEl, '−' + stake, '#ff2e88');
+        if (busted) Arcade.flashMsg('BUSTED 💥', '#ff2e88');
+      }
+
+      const fb = document.getElementById('fb');
+      fb.className = 'ar-feedback ' + (correct ? 'ok' : 'no');
+      fb.innerHTML = correct
+        ? `<strong>Right.</strong> Your ${stake}-chip stake pays out <strong>+${delta}</strong>. Bank: ${state.bank}.`
+        : busted
+          ? `<strong>Busted.</strong> You staked everything and lost the lot. The correct answer was “${E(round.options[round.correctIdx].text)}”.`
+          : `<strong>Wrong.</strong> You lose your stake of ${stake}. The correct answer was “${E(round.options[round.correctIdx].text)}”. Bank: ${state.bank}.`;
+
+      announce.textContent = (correct
+        ? 'Correct. You win ' + delta + '. '
+        : busted
+          ? 'Wrong, and you went bust. '
+          : 'Wrong. You lose ' + stake + '. ')
+        + 'Bank is now ' + state.bank + '.';
+
+      lockIn.textContent = busted ? 'See the damage →' : 'Next round →';
+      lockIn.disabled = false;
+      phase = 'next';
+    }
+
+    lockIn.addEventListener('click', () => {
+      if (phase === 'answer') {
+        if (chosen === null) return;
+        // Suspense beat — ~1.2s riser before the verdict lands.
+        phase = 'suspense';
+        lockIn.disabled = true;
+        stmts.forEach(b => { b.disabled = true; });
+        document.getElementById('suspense').hidden = false;
+        Arcade.sfx.riser();
+        announce.textContent = 'Answer locked. Revealing…';
+        setTimeout(reveal, 1200);
+      } else if (phase === 'next') {
+        Arcade.sfx.click();
+        const last = state.history[state.history.length - 1];
+        if (last && last.busted) { renderSummary(); return; }
+        state.idx++;
+        renderRound();
+      }
+    });
+  }
+
+  // ---------- Final round: DOUBLE OR NOTHING ----------
+  function renderFinale() {
+    root.innerHTML = `
+      ${headerHtml('Final round')}
+      ${dotsHtml()}
+      ${hudHtml()}
+      <div class="ar-card">
+        <div class="ar-label">Round 5 — the finale</div>
+        <p class="ar-prompt">DOUBLE OR NOTHING 🎲</p>
+        <p style="color:var(--ar-text2);font-size:14.5px;line-height:1.55;margin:0 0 4px;">
+          Walk away with <strong style="color:var(--ar-gold)">${state.bank}</strong> chips…
+          or answer one final question with your <em>entire bank</em> on the line.
+          Right doubles it. Wrong takes everything.
+        </p>
+        <div class="wg-finale-btns">
+          <button class="ar-btn big hot" id="btn-double">🎲 Double or nothing — risk ${state.bank}</button>
+          <button class="ar-btn big ghost" id="btn-bank">🏦 Bank it — walk with ${state.bank}</button>
+        </div>
+        <div class="ar-kbd-hint">Keyboard: D double · B bank</div>
+      </div>
+    `;
+    announce.textContent = 'Final round. Double or nothing: bank your ' + state.bank + ' chips, or risk them all on one last question.';
+    Arcade.sfx.heartbeat();
+
+    document.getElementById('btn-bank').addEventListener('click', () => {
+      Arcade.sfx.coin();
+      state.bankedOut = true;
+      announce.textContent = 'You banked ' + state.bank + ' chips and walked away.';
+      renderSummary();
+    });
+    document.getElementById('btn-double').addEventListener('click', () => {
+      Arcade.sfx.riser();
+      renderDoubleRound();
+    });
+  }
+
+  function renderDoubleRound() {
+    const round = rounds[ROUNDS - 1];
+    root.innerHTML = `
+      ${headerHtml('Final round · all of it on the line')}
+      ${dotsHtml()}
+      ${hudHtml()}
+      <div class="ar-card">
+        <span class="ar-pill bad">🎲 DOUBLE OR NOTHING — ${state.bank} at stake</span>
+        <p class="ar-prompt" style="margin-top:12px">${E(round.q)}</p>
+        <div class="wg-stmts ar-stagger" role="radiogroup" aria-label="Answer options">
+          ${round.options.map((o, i) => `
+            <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">
+              ${E(o.text)}
+              <span class="wg-verdict-slot"></span>
+            </button>
+          `).join('')}
+        </div>
+        <div class="wg-suspense" id="suspense" hidden aria-hidden="true">···</div>
+        <button class="ar-btn big hot" id="lock-in" disabled>🔒 Lock it in</button>
+        <div class="ar-kbd-hint">Keyboard: 1–4 to pick · Enter to lock in</div>
+        <div id="fb"></div>
+      </div>
+    `;
+    announce.textContent = 'Double or nothing question: ' + round.q;
+
+    const stmts = Array.from(root.querySelectorAll('.ar-tile'));
+    const lockIn = document.getElementById('lock-in');
+    let chosen = null;
+    let phase = 'answer';
+
+    stmts.forEach(b => {
+      b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
+        Arcade.sfx.click();
+        stmts.forEach(x => { x.classList.remove('selected'); x.setAttribute('aria-checked', 'false'); });
+        b.classList.add('selected');
+        b.setAttribute('aria-checked', 'true');
+        chosen = parseInt(b.dataset.idx);
+        lockIn.disabled = false;
+      });
+    });
+
+    function reveal() {
+      document.getElementById('suspense').hidden = true;
+      const stake = state.bank;
+      const prevBank = state.bank;
+      const correct = chosen === round.correctIdx;
+      let busted = false;
+
+      if (correct) {
+        state.bank = state.bank * 2;
+        state.correct++;
+        state.streak++;
+      } else {
+        state.bank = 0;
+        state.streak = 0;
+        busted = true;
+      }
+      state.history.push({ stakeKey: 'double', stake, delta: correct ? stake : -stake, correct, busted, bankBefore: prevBank });
+
+      stmts.forEach((b, i) => {
+        b.style.pointerEvents = 'none';
+        b.disabled = true;
+        const slot = b.querySelector('.wg-verdict-slot');
+        if (i === round.correctIdx) {
+          b.classList.add('correct');
+          if (slot) slot.outerHTML = ' <span class="ar-pill good">✓ correct</span>';
+        } else if (i === chosen) {
+          b.classList.add('wrong');
+          if (slot) slot.outerHTML = ' <span class="ar-pill bad">✗ your pick</span>';
+        } else {
+          b.classList.add('dim');
+          if (slot) slot.outerHTML = '';
+        }
+      });
+
+      const bankEl = document.getElementById('bank-val');
+      animateBank(prevBank, state.bank);
+
+      const fb = document.getElementById('fb');
+      if (correct) {
+        Arcade.flashMsg('JACKPOT 💰', '#ffd60a');
+        Arcade.confettiRain(2200);
+        Arcade.sfx.fanfare();
+        Arcade.sfx.coin();
+        Arcade.vibrate([30, 40, 80]);
+        if (bankEl) Arcade.popTextOver(bankEl, '+' + stake, '#ffd60a');
+        fb.className = 'ar-feedback ok';
+        fb.innerHTML = `<strong>DOUBLED.</strong> ${stake} becomes <strong>${state.bank}</strong>. Ice in your veins.`;
+        announce.textContent = 'Correct! Your bank doubled to ' + state.bank + '.';
+      } else {
+        Arcade.sfx.wrong();
+        Arcade.shake();
+        Arcade.vibrate([80, 50, 80]);
+        Arcade.flashMsg('BUSTED 💥', '#ff2e88');
+        if (bankEl) Arcade.popTextOver(bankEl, '−' + stake, '#ff2e88');
+        fb.className = 'ar-feedback no';
+        fb.innerHTML = `<strong>Busted.</strong> The whole bank, gone. The correct answer was “${E(round.options[round.correctIdx].text)}”.`;
+        announce.textContent = 'Wrong. You lost everything. The correct answer was ' + round.options[round.correctIdx].text + '.';
+      }
+
+      lockIn.textContent = correct ? 'Collect your winnings →' : 'See the damage →';
+      lockIn.disabled = false;
+      phase = 'next';
+    }
+
+    lockIn.addEventListener('click', () => {
+      if (phase === 'answer') {
+        if (chosen === null) return;
+        phase = 'suspense';
+        lockIn.disabled = true;
+        stmts.forEach(b => { b.disabled = true; });
+        document.getElementById('suspense').hidden = false;
+        Arcade.sfx.riser();
+        Arcade.sfx.heartbeat();
+        announce.textContent = 'Answer locked. Everything on the line. Revealing…';
+        setTimeout(reveal, 1400);
+      } else if (phase === 'next') {
+        Arcade.sfx.click();
+        renderSummary();
+      }
+    });
+  }
+
+  // Classify the player's betting style — Wager's metacognitive payoff:
+  // how well did stake size track actual knowledge?
+  function classify() {
+    const h = state.history;
+    const busted = state.bank <= 0;
+    const acc = h.length ? state.correct / h.length : 0;
+    const allIns = h.filter(x => x.stakeKey === 'allin' || x.stakeKey === 'double').length;
+    const smalls = h.filter(x => x.stakeKey === '25').length;
+    const bigBets = h.filter(x => x.stakeKey === 'allin' || x.stakeKey === 'double' || x.stakeKey === '250');
+    const bigBetAcc = bigBets.length ? bigBets.filter(x => x.correct).length / bigBets.length : null;
+
+    if (busted) {
+      return { label: 'Overexposed', text: `Going broke here is useful data: your certainty outran your knowledge. In an exam, that's the question you "definitely had" — and didn't. Big stakes should follow genuine certainty, not vibes. Run it back and only shove when you could defend the answer out loud.` };
+    }
+    if (allIns >= 2 && (acc < 0.6 || (bigBetAcc !== null && bigBetAcc < 0.6))) {
+      return { label: 'Reckless', text: `You shoved your chips in ${allIns} time${allIns > 1 ? 's' : ''} but only answered ${Math.round(acc * 100)}% correctly. Big stakes should follow genuine certainty, not hope — in an exam, that gap between confidence and knowledge is exactly what costs marks. Save the all-in for questions you'd bet your grade on.` };
+    }
+    if (smalls >= 3 && acc >= 0.8) {
+      return { label: 'Conservative', text: `You got ${Math.round(acc * 100)}% right but mostly bet the minimum — you knew more than you were willing to back. Under-betting sure things is its own calibration error: it means you don't yet trust what you know. When you're certain, act certain.` };
+    }
+    if (bigBetAcc !== null && bigBetAcc >= 0.75 && bigBets.length >= 2) {
+      return { label: 'Calibrated', text: `Your big stakes landed ${Math.round(bigBetAcc * 100)}% of the time — you bet heavy when you were right to, and held back when you weren't. That match between confidence and correctness is the exact skill this game exists to train. Keep it.` };
+    }
+    return { label: acc >= 0.6 ? 'Finding the range' : 'Recalibrating', text: `You answered ${Math.round(acc * 100)}% correctly with a mixed betting pattern. The goal is for stake size to track real certainty: minimum chips on shaky ground, heavy chips only where you'd stake your grade. Play again and bet what you actually know.` };
+  }
+
+  function renderSummary() {
+    const h = state.history;
+    const answered = h.length;
+    const finalBank = state.bank;
+    const busted = finalBank <= 0;
+    const net = finalBank - START_BANK;
+    const wins = h.filter(x => x.delta > 0).map(x => x.delta);
+    const losses = h.filter(x => x.delta < 0).map(x => x.delta);
+    const biggestWin = wins.length ? Math.max(...wins) : 0;
+    const biggestLoss = losses.length ? Math.min(...losses) : 0;
+    const verdict = classify();
+    const pct = answered ? Math.round(100 * state.correct / answered) : 0;
+
+    // Emoji grid: verdict row + stake-size row (▪ = bold bet ≥ half the bank
+    // or all-in/double, ▫ = small bet, 🏦 = banked the finale).
+    const row1 = rounds.map((_, i) => {
+      const x = h[i];
+      if (x) return x.correct ? '🟩' : '🟥';
+      return state.bankedOut && i === ROUNDS - 1 ? '🏦' : '';
+    }).join('');
+    const row2 = h.map(x =>
+      (x.stakeKey === 'allin' || x.stakeKey === 'double') ? '🔥'
+        : (x.bankBefore > 0 && x.stake >= x.bankBefore / 2) ? '▪' : '▫'
+    ).join('') + (state.bankedOut ? '🏦' : '');
+
+    root.innerHTML = `
+      ${headerHtml(busted ? 'Busted' : 'Cashed out')}
+      <div class="ar-dots" aria-hidden="true">${rounds.map((_, i) => {
+        const x = h[i];
+        return `<span class="${x ? (x.correct ? 'done' : 'fail') : (state.bankedOut && i === ROUNDS - 1 ? 'done' : '')}"></span>`;
+      }).join('')}</div>
+      <div id="end"></div>
+    `;
+
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'Wager',
+      gameEmoji: '🎰',
+      topic: topic,
+      meta: [level, subj].filter(Boolean).join(' · '),
+      pct: pct,
+      hot: busted,
+      big: finalBank,
+      bigLabel: busted
+        ? 'BUSTED — final bank · started with ' + START_BANK
+        : 'final bank · started with ' + START_BANK + ' (' + (net >= 0 ? '+' : '−') + Math.abs(net) + ')',
+      rows: [
+        { v: biggestWin ? '+' + biggestWin : '—', l: 'biggest win' },
+        { v: biggestLoss ? '−' + Math.abs(biggestLoss) : '—', l: 'biggest loss' },
+        { v: state.correct + '/' + answered, l: 'right' },
+        { v: verdict.label, l: 'calibration' },
+      ],
+      emojiGrid: row1 + ' · 💰' + row2,
+      bestKey: BEST_KEY,
+      bestValue: finalBank,
+      bestSuffix: ' chips',
+      insight: verdict.text,
+      shareLines: [
+        '🎰 Wager — ' + topic,
+        busted ? '💥 BUSTED · started ' + START_BANK : '🪙 ' + finalBank + ' chips · started ' + START_BANK,
+        row1,
+        '💰 ' + row2,
+      ],
+      onAgain: startGame,
+    });
+
+    announce.textContent = 'Game over. Final bank ' + finalBank + ', started with ' + START_BANK + '. '
+      + state.correct + ' of ' + answered + ' correct. Calibration verdict: ' + verdict.label + '.'
+      + (busted ? ' You went bust.' : '');
+  }
+
+  // Keyboard shortcuts: 1–5 pick a chip, 1–4 an answer (whichever phase is
+  // live), Enter confirms/locks/advances, B/D drive the finale choice.
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'Enter') {
+      const t = e.target;
+      if (t && t.classList && (t.classList.contains('wg-chip') || t.classList.contains('ar-tile') || t.classList.contains('ar-btn'))) return; // native activation
+      const stakePhase = document.getElementById('stake-phase');
+      const btn = (stakePhase && !stakePhase.hidden)
+        ? document.getElementById('confirm-stake')
+        : document.getElementById('lock-in');
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+      return;
+    }
+    if (e.key === 'b' || e.key === 'B') {
+      const b = document.getElementById('btn-bank');
+      if (b) { e.preventDefault(); b.click(); }
+      return;
+    }
+    if (e.key === 'd' || e.key === 'D') {
+      const b = document.getElementById('btn-double');
+      if (b) { e.preventDefault(); b.click(); }
+      return;
+    }
+    const map = { '1': 0, '2': 1, '3': 2, '4': 3, '5': 4 };
+    if (e.key in map) {
+      const stakePhase = document.getElementById('stake-phase');
+      const sel = (stakePhase && !stakePhase.hidden) ? '.wg-chip' : '.ar-tile';
+      const b = root.querySelectorAll(sel)[map[e.key]];
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

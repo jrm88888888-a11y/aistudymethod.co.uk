@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wager — AI Study Method</title>
+<meta name="description" content="Bet on what you know. Stake chips before each question — the bigger your stake, the bigger the payoff if you're right. A calibration game for the Evaluate stage.">
+<link rel="stylesheet" href="../../style.css">
+<style>
+  .tt-wrap { max-width: 760px; margin: 0 auto; padding: calc(var(--nav-h) + 36px) 1.5rem 80px; }
+  .tt-badge { display:inline-flex; align-items:center; gap:8px; background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; padding:4px 12px; border-radius:30px; font-family:'DM Mono',monospace; margin-bottom:14px; }
+  .tt-title { font-family:'Playfair Display',serif; font-size:clamp(1.7rem,3vw,2.4rem); line-height:1.15; margin:0 0 10px; }
+  .tt-sub { color:var(--text-secondary); font-size:15px; margin:0 0 22px; line-height:1.55; max-width:60ch; }
+  .tt-meta { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:24px; }
+  .tt-progress { display:flex; gap:6px; margin-bottom:24px; }
+  .tt-progress span { height:5px; flex:1; border-radius:3px; background:var(--border); transition:background 0.2s ease; }
+  .tt-progress span.done { background:var(--accent); }
+  .tt-progress span.now { background:var(--accent); opacity:0.45; }
+  .tt-card { background:var(--bg-card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:14px; padding:24px 26px; box-shadow:0 4px 14px rgba(10,107,94,0.06); margin-bottom:18px; position:relative; }
+  .tt-round-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--accent); font-weight:600; }
+
+  /* ---- Bank (poker-chip stack, top-right) ---- */
+  .wg-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
+  .wg-bank { position:relative; text-align:right; flex-shrink:0; }
+  .wg-bank-lbl { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.6px; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
+  .wg-bank-stack { display:inline-flex; align-items:center; gap:9px; background:var(--bg-primary); border:1.5px solid var(--border-accent); border-radius:30px; padding:6px 14px 6px 8px; }
+  .wg-chipicon { position:relative; width:30px; height:30px; flex-shrink:0; }
+  .wg-chipicon span { position:absolute; left:0; width:30px; height:30px; border-radius:50%; background:var(--velvet-gradient); border:2.5px dashed rgba(255,255,255,0.55); box-shadow:0 1px 3px rgba(0,0,0,0.25); box-sizing:border-box; }
+  .wg-chipicon span:nth-child(1) { top:5px; opacity:0.55; }
+  .wg-chipicon span:nth-child(2) { top:2.5px; opacity:0.8; }
+  .wg-chipicon span:nth-child(3) { top:0; }
+  .wg-bank-val { font-family:'DM Mono',monospace; font-size:22px; font-weight:600; color:var(--accent); line-height:1; min-width:64px; text-align:right; font-variant-numeric:tabular-nums; }
+  .wg-bank.flash-up .wg-bank-val { color:#0a6b5e; }
+  .wg-bank.flash-down .wg-bank-val { color:#c2410c; }
+  .wg-float { position:absolute; right:8px; top:-6px; font-family:'DM Mono',monospace; font-size:18px; font-weight:700; pointer-events:none; opacity:0; }
+  .wg-float.go { animation: wg-float-up 1.4s ease-out forwards; }
+  .wg-float.win { color:#0a6b5e; }
+  .wg-float.loss { color:#c2410c; }
+  @keyframes wg-float-up {
+    0% { opacity:0; transform:translateY(6px); }
+    15% { opacity:1; }
+    100% { opacity:0; transform:translateY(-34px); }
+  }
+
+  /* ---- Stake chips ---- */
+  .wg-phase-lbl { font-size:17px; font-weight:600; color:var(--text-primary); margin:0 0 16px; line-height:1.4; }
+  .wg-chips { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  .wg-chip { position:relative; min-height:88px; border-radius:14px; border:1.5px solid var(--border); background:var(--bg-primary); cursor:pointer; font-family:inherit; color:var(--text-primary); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:12px 6px; transition:all 0.15s ease; }
+  .wg-chip:hover:not(:disabled) { border-color:var(--accent); background:var(--accent-soft); transform:translateY(-2px); }
+  .wg-chip:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .wg-chip.selected { border-color:var(--accent); background:var(--accent-soft); box-shadow:0 0 0 1.5px var(--accent) inset; }
+  .wg-chip:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
+  .wg-chip-coin { width:44px; height:44px; border-radius:50%; background:var(--velvet-gradient); border:3px dashed rgba(255,255,255,0.55); box-sizing:border-box; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'DM Mono',monospace; font-size:13px; font-weight:700; box-shadow:0 2px 6px var(--accent-glow); }
+  .wg-chip-face { font-family:'DM Mono',monospace; font-size:15px; font-weight:700; letter-spacing:0.5px; }
+  .wg-chip-mult { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1px; color:var(--text-muted); }
+  .wg-chip.allin { border:2px solid #b8860b; background:linear-gradient(160deg, rgba(184,134,11,0.10), rgba(184,134,11,0.03)); min-height:96px; }
+  .wg-chip.allin .wg-chip-coin { width:52px; height:52px; background:linear-gradient(145deg,#b8860b,#8a6508); border-color:rgba(255,235,180,0.7); box-shadow:0 2px 8px rgba(184,134,11,0.4); font-size:11px; }
+  .wg-chip.allin .wg-chip-face { color:#8a6508; }
+  .wg-chip.allin.selected { background:rgba(184,134,11,0.16); box-shadow:0 0 0 1.5px #b8860b inset; border-color:#b8860b; }
+  .wg-chip.allin:hover:not(:disabled) { border-color:#b8860b; background:rgba(184,134,11,0.14); }
+
+  /* ---- MCQ options ---- */
+  .wg-stake-tag { display:inline-block; font-family:'DM Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; padding:3px 10px; border-radius:20px; background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); margin-bottom:12px; }
+  .wg-stake-tag.allin { background:rgba(184,134,11,0.12); border-color:rgba(184,134,11,0.4); color:#8a6508; }
+  .tt-stmts { display:flex; flex-direction:column; gap:10px; margin-bottom:22px; }
+  .tt-stmt { background:var(--bg-primary); border:1.5px solid var(--border); border-radius:10px; padding:14px 16px; cursor:pointer; font-size:15px; transition:all 0.15s ease; text-align:left; font-family:inherit; color:var(--text-primary); width:100%; line-height:1.5; }
+  .tt-stmt:hover:not(:disabled) { border-color:var(--accent); background:var(--accent-soft); }
+  .tt-stmt:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .tt-stmt.selected { border-color:var(--accent); background:var(--accent-soft); }
+  .tt-stmt.is-right { border-color:#0a6b5e; background:rgba(10,107,94,0.08); }
+  .tt-stmt.is-wrong { border-color:#c2410c; background:rgba(194,65,12,0.08); }
+  .tt-verdict { display:inline-block; margin-top:8px; font-family:'DM Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; padding:2px 9px; border-radius:20px; }
+  .tt-verdict.right { background:rgba(10,107,94,0.12); color:#0a6b5e; border:1px solid var(--border-accent); }
+  .tt-verdict.wrong { background:rgba(194,65,12,0.12); color:#c2410c; border:1px solid rgba(194,65,12,0.3); }
+
+  .tt-btn { background:var(--velvet-gradient); color:#fff; border:none; padding:14px 24px; border-radius:10px; font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer; box-shadow:0 4px 12px var(--accent-glow); transition:transform 0.15s; }
+  .tt-btn:hover { transform:translateY(-1px); }
+  .tt-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+  .tt-btn-ghost { background:none; border:1.5px solid var(--border-accent); color:var(--accent); box-shadow:none; }
+  .tt-feedback { margin-top:14px; padding:12px 14px; border-radius:10px; font-size:14px; line-height:1.55; }
+  .tt-feedback.ok { background:rgba(10,107,94,0.08); color:var(--accent); border:1px solid var(--border-accent); }
+  .tt-feedback.no { background:rgba(194,65,12,0.08); color:#c2410c; border:1px solid rgba(194,65,12,0.25); }
+  .tt-kbd-hint { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-top:10px; }
+  @media (hover:none) { .tt-kbd-hint { display:none; } }
+
+  /* ---- Summary ---- */
+  .tt-summary { margin-top:24px; padding:28px; background:var(--bg-card); border:1px solid var(--border); border-radius:14px; text-align:center; }
+  .tt-summary h2 { font-family:'Playfair Display',serif; font-size:1.5rem; margin:0 0 16px; }
+  .tt-big-stat { font-family:'Playfair Display',serif; font-size:56px; font-weight:700; line-height:1; color:var(--accent); }
+  .tt-big-lbl { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:var(--text-muted); margin:8px 0 4px; }
+  .wg-stat-row { display:flex; justify-content:center; gap:26px; flex-wrap:wrap; margin-top:18px; }
+  .wg-stat { min-width:96px; }
+  .wg-stat-val { font-family:'DM Mono',monospace; font-size:20px; font-weight:600; color:var(--text-primary); }
+  .wg-stat-val.up { color:#0a6b5e; }
+  .wg-stat-val.down { color:#c2410c; }
+  .wg-stat-lbl { font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); margin-top:3px; }
+  .wg-verdict { display:inline-block; margin-top:18px; font-family:'DM Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; padding:6px 16px; border-radius:30px; background:var(--accent-soft); border:1px solid var(--border-accent); color:var(--accent); }
+  .tt-best { display:inline-block; margin-top:14px; font-family:'DM Mono',monospace; font-size:10.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--accent); background:var(--accent-soft); border:1px solid var(--border-accent); border-radius:20px; padding:4px 12px; }
+  .tt-insight { font-style:italic; font-size:14px; color:var(--text-secondary); margin:20px auto 0; padding:14px 16px; background:var(--bg-primary); border-radius:10px; border-left:3px solid var(--accent); text-align:left; max-width:54ch; }
+  .tt-ctas { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:24px; }
+  .tt-ctas a.tt-btn { text-decoration:none; display:inline-block; }
+  .tt-error { padding:20px; background:rgba(194,65,12,0.05); border:1px solid rgba(194,65,12,0.2); border-radius:10px; color:#c2410c; font-size:14px; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+  @media (max-width: 560px) {
+    .wg-chips { grid-template-columns:repeat(2,1fr); }
+    .wg-chip { min-height:56px; }
+    .wg-chip.allin { min-height:56px; }
+    .wg-card-head { flex-direction:column-reverse; align-items:flex-end; gap:8px; }
+    .wg-card-head .tt-round-label { align-self:flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="tt-wrap" id="root">
+  <div class="tt-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script>
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+(async function() {
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  if (!stem) {
+    root.innerHTML = '<div class="tt-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  // Some on-disk stems contain a colon the URL param drops (e.g.
+  // "history-gcse-edexcel:-superpower…"). Try the plain stem first,
+  // then every possible colon-insertion before a dash.
+  const stemCandidates = [stem];
+  for (let i = 0; i < stem.length; i++) {
+    if (stem[i] === '-') stemCandidates.push(stem.slice(0, i) + ':' + stem.slice(i));
+  }
+  async function fetchJson(dir) {
+    for (const cand of stemCandidates) {
+      try {
+        const r = await fetch(`${dir}/${encodeURIComponent(cand)}.json`);
+        if (r.ok) return await r.json();
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  const spec = await fetchJson('../adventures/_specs');
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Each MCQ: { q, options: [[text, isCorrect], …] }. The engine treats an
+  // option as correct when String(isCorrect) === '1' (the dataset.correct
+  // mapping), so [text, true] and [text, 1] both count.
+  const mcqs = ((spec && spec.mcqs) || []).filter(m =>
+    m && m.q && Array.isArray(m.options) && m.options.length >= 2 &&
+    m.options.some(o => String(o[1]) === '1' || o[1] === true)
+  );
+
+  if (!spec || mcqs.length < 2) {
+    root.innerHTML = `
+      <div class="tt-badge">E · Evaluate · Wager</div>
+      <h1 class="tt-title">${escapeHtml(topic)}</h1>
+      <p class="tt-sub">Wager needs a researched bank of multiple-choice questions for this exact topic — generic filler wouldn't earn its place on the site. Come back soon.</p>
+      <div class="tt-meta">${escapeHtml([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="tt-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">🎰</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;margin:0 0 8px">Questions in production</h2>
+        <p style="color:var(--text-secondary);margin:0 0 18px;font-size:15px;">Wager needs at least two authored multiple-choice questions for this topic. That set hasn't been written at the required depth yet.</p>
+        <a href="../../subjects.html" style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
+  const BEST_KEY = 'aism-wager-best:' + stem;
+  const ROUNDS = 5;
+  const START_BANK = 500;
+  const BUST_RESET = 50;
+  const CHIPS = [
+    { key: '10',    face: 10,   mult: 1.0, allin: false },
+    { key: '25',    face: 25,   mult: 1.2, allin: false },
+    { key: '50',    face: 50,   mult: 1.5, allin: false },
+    { key: 'allin', face: null, mult: 2.0, allin: true  },
+  ];
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Build a 5-round question queue. With a small bank the questions recycle,
+  // but never the same question twice in a row, and every appearance gets a
+  // fresh option shuffle so repeats aren't exact.
+  function buildRounds() {
+    const queue = [];
+    let pool = shuffle(mcqs);
+    while (queue.length < ROUNDS) {
+      if (!pool.length) {
+        pool = shuffle(mcqs);
+        // avoid an immediate repeat across the reshuffle boundary
+        if (mcqs.length > 1 && queue.length && pool[0] === queue[queue.length - 1].src) {
+          pool.push(pool.shift());
+        }
+      }
+      const src = pool.shift();
+      const options = shuffle(src.options.map(o => ({
+        text: o[0],
+        correct: String(o[1]) === '1' || o[1] === true,
+      })));
+      queue.push({ src, q: src.q, options, correctIdx: options.findIndex(o => o.correct) });
+    }
+    return queue;
+  }
+
+  let rounds, state;
+
+  function startGame() {
+    rounds = buildRounds();
+    state = {
+      idx: 0,
+      bank: START_BANK,
+      correct: 0,
+      history: [],   // { stakeKey, stake, delta, correct, busted }
+    };
+    renderRound();
+  }
+
+  function renderHeader(metaTail) {
+    return `
+      <div class="tt-badge">E · Evaluate · Wager</div>
+      <h1 class="tt-title">${escapeHtml(topic)}</h1>
+      <p class="tt-sub">Bet on what you know. The bigger your stake, the bigger the payoff — if you're right.</p>
+      <div class="tt-meta">${escapeHtml([level, subj].filter(Boolean).join(' · '))} · ${metaTail}</div>
+    `;
+  }
+
+  function bankHtml() {
+    return `
+      <div class="wg-bank" id="bank">
+        <div class="wg-bank-lbl">Bank</div>
+        <div class="wg-bank-stack">
+          <div class="wg-chipicon" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="wg-bank-val" id="bank-val">${state.bank}</div>
+        </div>
+        <div class="wg-float" id="bank-float" aria-hidden="true"></div>
+      </div>
+    `;
+  }
+
+  // Animated count-up/down on the bank value.
+  function animateBank(from, to) {
+    const el = document.getElementById('bank-val');
+    const bankEl = document.getElementById('bank');
+    if (!el || !bankEl) return;
+    bankEl.classList.toggle('flash-up', to > from);
+    bankEl.classList.toggle('flash-down', to < from);
+    const dur = 700;
+    const t0 = performance.now();
+    function tick(t) {
+      const p = Math.min(1, (t - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(from + (to - from) * eased);
+      if (p < 1) requestAnimationFrame(tick);
+      else setTimeout(() => bankEl.classList.remove('flash-up', 'flash-down'), 500);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function showFloat(delta) {
+    const f = document.getElementById('bank-float');
+    if (!f) return;
+    f.textContent = (delta >= 0 ? '+' : '−') + Math.abs(delta);
+    f.className = 'wg-float ' + (delta >= 0 ? 'win' : 'loss');
+    void f.offsetWidth; // restart the animation
+    f.classList.add('go');
+  }
+
+  function renderRound() {
+    const round = rounds[state.idx];
+    const chips = CHIPS.map(c => ({
+      ...c,
+      amount: c.allin ? state.bank : c.face,
+      disabled: !c.allin && state.bank < c.face,
+    }));
+
+    root.innerHTML = `
+      ${renderHeader(`Round ${state.idx + 1} of ${ROUNDS}`)}
+      <div class="tt-progress" aria-hidden="true">${rounds.map((_, i) =>
+        `<span class="${i < state.idx ? 'done' : i === state.idx ? 'now' : ''}"></span>`).join('')}</div>
+      <div class="tt-card">
+        <div class="wg-card-head">
+          <div class="tt-round-label">Round ${state.idx + 1} · ${state.correct} right so far</div>
+          ${bankHtml()}
+        </div>
+
+        <div id="stake-phase">
+          <div class="wg-phase-lbl">Place your stake — before you see the choices.</div>
+          <div class="wg-chips" role="radiogroup" aria-label="Choose your stake">
+            ${chips.map((c, i) => `
+              <button type="button" class="wg-chip${c.allin ? ' allin' : ''}" role="radio" aria-checked="false"
+                      data-i="${i}" ${c.disabled ? 'disabled' : ''}
+                      aria-label="${c.allin ? `All in — stake your whole bank of ${c.amount}, payout times 2` : `Stake ${c.amount}, payout times ${c.mult.toFixed(1)}`}">
+                <span class="wg-chip-coin" aria-hidden="true">${c.allin ? 'ALL' : c.face}</span>
+                <span class="wg-chip-face">${c.allin ? 'ALL IN' : c.face}</span>
+                <span class="wg-chip-mult">×${c.mult.toFixed(1)}${c.allin ? ` · ${c.amount}` : ''}</span>
+              </button>
+            `).join('')}
+          </div>
+          <button class="tt-btn" id="confirm-stake" disabled>Confirm stake →</button>
+          <div class="tt-kbd-hint">Keyboard: Tab between chips · Enter to pick · 1–4 also works</div>
+        </div>
+
+        <div id="answer-phase" hidden>
+          <span class="wg-stake-tag" id="stake-tag"></span>
+          <div class="wg-phase-lbl">${escapeHtml(round.q)}</div>
+          <div class="tt-stmts" role="radiogroup" aria-label="Answer options">
+            ${round.options.map((o, i) => `
+              <button type="button" class="tt-stmt" role="radio" aria-checked="false" data-idx="${i}">
+                ${escapeHtml(o.text)}
+                <span class="tt-verdict-slot"></span>
+              </button>
+            `).join('')}
+          </div>
+          <button class="tt-btn" id="lock-in" disabled>Lock in</button>
+          <div class="tt-kbd-hint">Keyboard: 1–4 to pick · Enter to lock in</div>
+          <div id="fb"></div>
+        </div>
+      </div>
+    `;
+
+    // ---------- Stake phase ----------
+    const chipBtns = Array.from(root.querySelectorAll('.wg-chip'));
+    const confirmStake = document.getElementById('confirm-stake');
+    let chosenChip = null;
+
+    chipBtns.forEach(b => {
+      b.addEventListener('click', () => {
+        chipBtns.forEach(x => { x.classList.remove('selected'); x.setAttribute('aria-checked', 'false'); });
+        b.classList.add('selected');
+        b.setAttribute('aria-checked', 'true');
+        chosenChip = chips[parseInt(b.dataset.i)];
+        confirmStake.disabled = false;
+      });
+    });
+
+    confirmStake.addEventListener('click', () => {
+      if (!chosenChip) return;
+      round.chip = chosenChip;
+      document.getElementById('stake-phase').hidden = true;
+      const ap = document.getElementById('answer-phase');
+      ap.hidden = false;
+      const tag = document.getElementById('stake-tag');
+      tag.textContent = chosenChip.allin
+        ? `All in — ${chosenChip.amount} on the table`
+        : `Stake: ${chosenChip.amount} · pays ×${chosenChip.mult.toFixed(1)}`;
+      if (chosenChip.allin) tag.classList.add('allin');
+      announce.textContent = `Stake confirmed: ${chosenChip.amount}. Question: ${round.q}`;
+      const first = ap.querySelector('.tt-stmt');
+      if (first) first.focus();
+    });
+
+    // ---------- Answer + reveal phases ----------
+    const stmts = Array.from(root.querySelectorAll('.tt-stmt'));
+    const lockIn = document.getElementById('lock-in');
+    let chosen = null;
+    let phase = 'answer';
+
+    stmts.forEach(b => {
+      b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
+        stmts.forEach(x => { x.classList.remove('selected'); x.setAttribute('aria-checked', 'false'); });
+        b.classList.add('selected');
+        b.setAttribute('aria-checked', 'true');
+        chosen = parseInt(b.dataset.idx);
+        lockIn.disabled = false;
+      });
+    });
+
+    lockIn.addEventListener('click', () => {
+      if (phase === 'answer') {
+        if (chosen === null) return;
+        const chip = round.chip;
+        const stake = chip.allin ? state.bank : chip.face;
+        const correct = chosen === round.correctIdx;
+        const prevBank = state.bank;
+        let delta, busted = false;
+
+        if (correct) {
+          delta = Math.round(stake * chip.mult);
+          state.bank += delta;
+          state.correct++;
+        } else {
+          delta = -stake;
+          state.bank = Math.max(0, state.bank - stake);
+          if (state.bank === 0) { busted = true; state.bank = BUST_RESET; }
+        }
+        state.history.push({ stakeKey: chip.key, stake, delta, correct, busted });
+
+        stmts.forEach((b, i) => {
+          b.style.pointerEvents = 'none';
+          b.disabled = true;
+          const slot = b.querySelector('.tt-verdict-slot');
+          if (i === round.correctIdx) {
+            b.classList.add('is-right');
+            slot.outerHTML = '<span class="tt-verdict right">✓ correct</span>';
+          } else if (i === chosen) {
+            b.classList.add('is-wrong');
+            slot.outerHTML = '<span class="tt-verdict wrong">✗ your pick</span>';
+          } else {
+            slot.outerHTML = '';
+          }
+        });
+
+        showFloat(delta);
+        animateBank(prevBank, state.bank);
+
+        const fb = document.getElementById('fb');
+        fb.className = 'tt-feedback ' + (correct ? 'ok' : 'no');
+        fb.innerHTML = correct
+          ? `<strong>Right.</strong> ${stake} × ${chip.mult.toFixed(1)} pays out <strong>+${delta}</strong>. Bank: ${state.bank}.`
+          : busted
+            ? `<strong>Busted.</strong> You went all in and lost the lot — the house staked you ${BUST_RESET} to keep playing. The correct answer was “${escapeHtml(round.options[round.correctIdx].text)}”.`
+            : `<strong>Wrong.</strong> You lose your stake of ${stake}. The correct answer was “${escapeHtml(round.options[round.correctIdx].text)}”. Bank: ${state.bank}.`;
+
+        announce.textContent = (correct
+          ? `Correct. You win ${delta}. `
+          : busted
+            ? `Wrong, and you went bust. The house reset your bank to ${BUST_RESET}. `
+            : `Wrong. You lose ${stake}. `)
+          + `Bank is now ${state.bank}.`;
+
+        lockIn.textContent = state.idx + 1 < ROUNDS ? 'Next round →' : 'Cash out →';
+        lockIn.disabled = false;
+        phase = 'next';
+      } else {
+        if (state.idx + 1 < ROUNDS) {
+          state.idx++;
+          renderRound();
+        } else {
+          renderSummary();
+        }
+      }
+    });
+  }
+
+  // Classify the player's betting style — Wager's metacognitive payoff,
+  // mirroring the Confidence Quiz's calibration feedback.
+  function classify() {
+    const h = state.history;
+    const allIns = h.filter(x => x.stakeKey === 'allin').length;
+    const smalls = h.filter(x => x.stakeKey === '10').length;
+    const acc = state.correct / h.length;
+    const bigBets = h.filter(x => x.stakeKey === 'allin' || x.stakeKey === '50');
+    const bigBetAcc = bigBets.length ? bigBets.filter(x => x.correct).length / bigBets.length : null;
+
+    if (allIns >= 2 && (acc < 0.6 || (bigBetAcc !== null && bigBetAcc < 0.6))) {
+      return { label: 'Reckless', text: `You shoved your chips in ${allIns} time${allIns > 1 ? 's' : ''} but only answered ${Math.round(acc * 100)}% correctly. Big stakes should follow genuine certainty, not hope — in an exam, that gap between confidence and knowledge is exactly what costs marks. Next run, save the all-in for questions you'd bet your grade on.` };
+    }
+    if (smalls >= 3 && acc >= 0.8) {
+      return { label: 'Conservative', text: `You got ${Math.round(acc * 100)}% right but mostly bet the minimum — you knew more than you were willing to back. Under-betting sure things is its own calibration error: it means you don't yet trust what you know. When you're certain, act certain.` };
+    }
+    if (bigBetAcc !== null && bigBetAcc >= 0.75 && bigBets.length >= 2) {
+      return { label: 'Calibrated', text: `Your big stakes landed ${Math.round(bigBetAcc * 100)}% of the time — you bet heavy when you were right to, and held back when you weren't. That match between confidence and correctness is the skill this game (and the Confidence Quiz) exists to train. Keep it.` };
+    }
+    return { label: acc >= 0.6 ? 'Finding the range' : 'Recalibrating', text: `You answered ${Math.round(acc * 100)}% correctly with a mixed betting pattern. The goal is for stake size to track real certainty: minimum chips on shaky ground, heavy chips only where you'd stake your grade. Play again and bet what you actually know.` };
+  }
+
+  function renderSummary() {
+    const h = state.history;
+    const finalBank = state.bank;
+    const net = finalBank - START_BANK;
+    const wins = h.filter(x => x.delta > 0).map(x => x.delta);
+    const losses = h.filter(x => x.delta < 0).map(x => x.delta);
+    const biggestWin = wins.length ? Math.max(...wins) : 0;
+    const biggestLoss = losses.length ? Math.min(...losses) : 0;
+    const verdict = classify();
+
+    let prevBest = null;
+    try { prevBest = parseInt(localStorage.getItem(BEST_KEY)); } catch (e) {}
+    if (isNaN(prevBest)) prevBest = null;
+    const newBest = prevBest === null || finalBank > prevBest;
+    if (newBest) { try { localStorage.setItem(BEST_KEY, String(finalBank)); } catch (e) {} }
+
+    root.innerHTML = `
+      ${renderHeader('Cashed out')}
+      <div class="tt-progress" aria-hidden="true">${rounds.map(() => '<span class="done"></span>').join('')}</div>
+      <div class="tt-summary">
+        <h2>Final count</h2>
+        <div class="tt-big-stat">${finalBank}</div>
+        <div class="tt-big-lbl">final bank · started with ${START_BANK} (${net >= 0 ? '+' : '−'}${Math.abs(net)})</div>
+        <div class="wg-stat-row">
+          <div class="wg-stat">
+            <div class="wg-stat-val up">${biggestWin ? '+' + biggestWin : '—'}</div>
+            <div class="wg-stat-lbl">Biggest win</div>
+          </div>
+          <div class="wg-stat">
+            <div class="wg-stat-val down">${biggestLoss ? '−' + Math.abs(biggestLoss) : '—'}</div>
+            <div class="wg-stat-lbl">Biggest loss</div>
+          </div>
+          <div class="wg-stat">
+            <div class="wg-stat-val">${state.correct}/${h.length}</div>
+            <div class="wg-stat-lbl">Answers right</div>
+          </div>
+        </div>
+        <div><span class="wg-verdict">Calibration verdict: ${verdict.label}</span></div>
+        ${newBest
+          ? '<div class="tt-best">★ New personal best bank</div>'
+          : prevBest !== null ? `<div class="tt-best" style="opacity:0.7">Personal best: ${prevBest}</div>` : ''}
+        <div class="tt-insight">${escapeHtml(verdict.text)}</div>
+        <div class="tt-ctas">
+          <button class="tt-btn" id="again">Play again</button>
+          <a class="tt-btn tt-btn-ghost" href="../../subjects.html">More games</a>
+        </div>
+      </div>
+    `;
+    announce.textContent = `Game over. Final bank ${finalBank}, started with ${START_BANK}. ${state.correct} of ${h.length} correct. Calibration verdict: ${verdict.label}.` + (newBest ? ' New personal best.' : '');
+    document.getElementById('again').addEventListener('click', startGame);
+  }
+
+  // Keyboard shortcuts: 1–4 pick a chip or an answer (whichever phase is
+  // live), Enter confirms/locks/advances. Tab + Enter works natively too.
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'Enter') {
+      const t = e.target;
+      if (t && t.classList && (t.classList.contains('wg-chip') || t.classList.contains('tt-stmt'))) return; // native activation
+      const stakePhase = document.getElementById('stake-phase');
+      const btn = (stakePhase && !stakePhase.hidden)
+        ? document.getElementById('confirm-stake')
+        : document.getElementById('lock-in');
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+      return;
+    }
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    const map = { '1': 0, '2': 1, '3': 2, '4': 3 };
+    if (e.key in map) {
+      const stakePhase = document.getElementById('stake-phase');
+      const sel = (stakePhase && !stakePhase.hidden) ? '.wg-chip' : '.tt-stmt';
+      const b = root.querySelectorAll(sel)[map[e.key]];
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>
