@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head><link href="../../style.css" rel="stylesheet"/>
+<script src="../../script.js" defer></script>
+
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TermGuess Vocabulary Game | Free Revision Quiz — AI Study Method</title>
+<meta content="Play TermGuess — a free vocabulary revision game for all subjects. No login required. Learn key terms and definitions the fun way. Try it now." name="description"/>
+<link rel="canonical" href="https://aistudymethod.co.uk/classcraft/vocab-hub/game-termguess.html">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+    :root {
+      --bg:#0f1117; --surface:#1a1d27; --surface2:#22253a;
+      --border:rgba(255,255,255,0.08); --border-hi:rgba(255,255,255,0.14);
+      --accent:#4ade9a; --accent2:#7b6fff; --warn:#ff6b6b; --gold:#ffd166;
+      --text:#e8eaf0; --text-mid:#8b90a8; --text-dim:#4a4f68;
+      --correct:#538d4e;   /* green  — right letter, right place  */
+      --present:#b59f3b;   /* yellow — right letter, wrong place  */
+      --absent:#3a3a3c;    /* dark   — letter not in word         */
+      --font-d:'Nunito',sans-serif; --font-b:'Nunito',sans-serif;
+      --r:10px; --trans:0.18s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;overflow:hidden;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:15px;line-height:1.5;display:flex;flex-direction:column;height:100vh;height:100dvh;}
+
+    /* ── Header ── */
+    .hd{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.25rem;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:0.75rem;}
+    .hd-left{display:flex;align-items:center;gap:0.85rem;min-width:0;}
+    .hd-logo{font-family:var(--font-d);font-size:1.05rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-0.02em;flex-shrink:0;}
+    .hd-logo span{color:var(--accent);}
+    .hd-title{font-family:var(--font-d);font-size:0.8rem;font-weight:600;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+    .hd-sep{color:var(--text-dim);flex-shrink:0;}
+    .hd-right{display:flex;align-items:center;gap:0.5rem;flex-shrink:0;}
+    .hd-stats{display:flex;align-items:center;gap:0.5rem;}
+    .stat-pill{font-family:var(--font-d);font-size:0.75rem;font-weight:700;color:var(--text);background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:0.22rem 0.6rem;white-space:nowrap;}
+    .stat-pill span{color:var(--accent);}
+    .stat-pill.streak-pill{color:var(--gold);border-color:rgba(255,209,102,0.4);background:rgba(255,209,102,0.08);}
+    .stat-pill.streak-pill span{color:var(--gold);}
+    .stat-pill.streak-pill.bump{animation:bumpIn 0.22s ease;}
+    @keyframes bumpIn{from{transform:scale(0.6)}60%{transform:scale(1.18)}to{transform:scale(1)}}
+    #score-display{display:inline-block;}
+    #score-display.pop{animation:scorePop 0.28s ease;}
+    @keyframes scorePop{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1)}}
+    .btn-hd{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.22rem 0.75rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);white-space:nowrap;}
+    .btn-hd:hover{border-color:var(--accent);color:var(--accent);}
+    .btn-hd:active{transform:scale(0.96);}
+    .progress-bar{height:3px;background:var(--surface2);flex-shrink:0;}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));width:0%;transition:width 0.4s ease;box-shadow:0 0 6px rgba(74,222,154,0.5);}
+
+    /* ── Screens ── */
+    .screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;min-height:0;}
+    .screen.active{display:flex;}
+
+    /* ── Start screen ── */
+    .start-title{font-family:var(--font-d);font-size:clamp(1.4rem,3vw,1.8rem);font-weight:800;letter-spacing:-0.03em;margin-bottom:0.25rem;text-align:center;}
+    .start-topic{font-family:var(--font-d);font-size:0.78rem;font-weight:600;color:var(--accent2);text-align:center;margin-bottom:1rem;letter-spacing:0.05em;}
+    .start-sub{color:var(--text-mid);font-size:0.85rem;margin-bottom:1.5rem;text-align:center;max-width:44ch;}
+    .legend{display:flex;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;justify-content:center;}
+    .legend-item{display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;color:var(--text-mid);}
+    .legend-tile{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:0.75rem;font-weight:800;color:#fff;}
+    .legend-tile.c{background:var(--correct);}
+    .legend-tile.p{background:var(--present);}
+    .legend-tile.a{background:var(--absent);}
+    .start-info{background:var(--surface);border:1px solid var(--border-hi);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:1.5rem;max-width:400px;width:100%;}
+    .start-info-row{display:flex;align-items:center;gap:0.75rem;font-size:0.82rem;color:var(--text-mid);}
+    .start-info-row+.start-info-row{margin-top:0.5rem;}
+    .start-info-icon{font-size:1.1rem;flex-shrink:0;}
+    .btn-start{font-family:var(--font-d);font-size:0.85rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.85rem 2.5rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);}
+    .btn-start:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 20px rgba(74,222,154,0.35);}
+    .btn-start:active{transform:translateY(0);box-shadow:none;}
+
+    /* ── Game screen ── */
+    #screen-game{
+      padding:0.75rem 1rem;
+      gap:0;
+      justify-content:space-between;
+      overflow:hidden;
+    }
+    /* Clue at top */
+    .clue-wrap{width:100%;max-width:640px;flex-shrink:0;margin-bottom:0.5rem;}
+    /* Grid centred in remaining space */
+    .grid-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.25rem;min-height:0;}
+    .grid-wrap.round-in{animation:roundIn 0.35s ease;}
+    @keyframes roundIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+    .clue-wrap.round-in{animation:roundIn 0.35s ease;}
+    /* Submit + keyboard pinned to bottom */
+    .kb-submit-wrap{
+      flex-shrink:0;
+      display:flex;
+      flex-direction:column;
+      gap:0.4rem;
+      width:100%;
+      max-width:500px;
+      padding-bottom:0.25rem;
+    }
+
+    /* Clue internals */
+    .clue-wrap-inner{width:100%;max-width:640px;}
+    .clue-label{font-family:var(--font-d);font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.35rem;}
+    .clue-box{background:var(--surface);border:1.5px solid var(--border-hi);border-radius:var(--r);padding:0.85rem 1.1rem;font-family:var(--font-d);font-size:clamp(0.85rem,1.5vw,1.05rem);font-weight:600;color:var(--text);line-height:1.4;}
+    .round-badge{font-family:var(--font-d);font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin-top:0.35rem;}
+
+    /* ── TermGuess grid ── */
+    /* grid-wrap layout handled by #screen-game rules above */
+
+    /* One guess row = a flex row of letter tiles + optional space tiles */
+    .guess-row{display:flex;gap:0.3rem;align-items:center;}
+
+    /* Letter tile */
+    .wl-tile{
+      width:40px;height:40px;
+      border:2px solid var(--border-hi);
+      border-radius:5px;
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--font-d);font-size:1.1rem;font-weight:800;
+      color:var(--text);
+      background:transparent;
+      transition:border-color 0.05s;
+      position:relative;
+    }
+    .wl-tile.active-row{border-color:rgba(255,255,255,0.3);}
+    .wl-tile.filled{border-color:rgba(255,255,255,0.5);}
+    /* Fixed tile — non-letter characters (hyphens etc.) given for free */
+    .wl-tile.fixed{border-color:var(--border);background:var(--surface2);color:var(--text-dim);}
+
+    /* Flip animation for reveal */
+    .wl-tile.flip{animation:flip 0.5s ease forwards;}
+    @keyframes flip{
+      0%  {transform:rotateX(0);   background:transparent;}
+      49% {transform:rotateX(90deg);background:transparent;}
+      50% {transform:rotateX(90deg);}
+      100%{transform:rotateX(0);}
+    }
+
+    /* State colours applied after flip */
+    .wl-tile.correct{background:var(--correct);border-color:var(--correct);color:#fff;}
+    .wl-tile.present{background:var(--present);border-color:var(--present);color:#fff;}
+    .wl-tile.absent {background:var(--absent); border-color:var(--absent); color:#fff;}
+
+    /* Winning-row dance */
+    .wl-tile.dance{animation:dance 0.55s ease both;}
+    @keyframes dance{0%,100%{transform:translateY(0)}40%{transform:translateY(-14px)}70%{transform:translateY(2px)}}
+
+    /* Space tile — just a narrow gap indicator */
+    .wl-space{
+      width:10px;height:40px;
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;
+    }
+    .wl-space-dot{width:4px;height:4px;border-radius:50%;background:var(--text-dim);}
+
+    /* Bounce on entry */
+    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    .wl-tile.bounce{animation:bounce 0.15s ease;}
+
+    /* Shake on invalid */
+    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}60%{transform:translateX(5px)}}
+    .shake-row{animation:shake 0.3s ease;}
+
+    /* ── Submit button ── */
+    .btn-submit-guess{
+      font-family:var(--font-d);font-size:0.82rem;font-weight:700;
+      letter-spacing:0.06em;text-transform:uppercase;
+      background:var(--accent2);color:#fff;border:none;
+      padding:0.6rem 2rem;border-radius:var(--r);
+      cursor:pointer;transition:all var(--trans);
+      width:100%;
+    }
+    .btn-submit-guess:hover{background:#9a8fff;transform:translateY(-1px);box-shadow:0 4px 16px rgba(123,111,255,0.3);}
+    .btn-submit-guess:active{transform:translateY(0);box-shadow:none;}
+
+    /* ── Keyboard ── */
+    .keyboard{flex-shrink:0;width:100%;max-width:500px;}
+    .kb-row{display:flex;justify-content:center;gap:0.3rem;margin-bottom:0.3rem;}
+    .kb-key{
+      font-family:var(--font-d);font-size:0.78rem;font-weight:700;
+      background:var(--surface2);border:1px solid var(--border-hi);
+      border-radius:5px;padding:0.55rem 0;min-width:34px;
+      cursor:pointer;color:var(--text);transition:all var(--trans);
+      text-align:center;user-select:none;-webkit-user-select:none;flex:1;max-width:40px;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .kb-key.wide{min-width:52px;max-width:60px;font-size:0.65rem;}
+    .kb-key:hover:not(.revealed){filter:brightness(1.3);transform:translateY(-1px);}
+    .kb-key:active{transform:scale(0.92);}
+    .kb-key.pressed{animation:keyPress 0.14s ease;}
+    @keyframes keyPress{50%{transform:scale(0.88);filter:brightness(1.6)}}
+    .kb-key.correct{background:var(--correct);border-color:var(--correct);color:#fff;}
+    .kb-key.present{background:var(--present);border-color:var(--present);color:#fff;}
+    .kb-key.absent {background:var(--absent); border-color:var(--absent); color:rgba(255,255,255,0.4);}
+    .kb-key.revealed{pointer-events:none;}
+
+    /* Toast message */
+    .toast{
+      position:fixed;top:64px;left:50%;transform:translateX(-50%);
+      background:var(--text);color:var(--bg);
+      font-family:var(--font-d);font-size:0.82rem;font-weight:700;
+      padding:0.5rem 1.25rem;border-radius:6px;
+      opacity:0;pointer-events:none;
+      transition:opacity 0.15s;
+      z-index:400;white-space:nowrap;
+    }
+    .toast.show{opacity:1;}
+
+    /* Floating +points */
+    .float-pts{
+      position:fixed;transform:translateX(-50%);
+      font-family:var(--font-d);font-size:1.25rem;font-weight:800;
+      color:var(--accent);z-index:600;pointer-events:none;
+      text-shadow:0 2px 14px rgba(74,222,154,0.55);
+      animation:floatUp 1s ease forwards;
+    }
+    @keyframes floatUp{from{opacity:1}to{opacity:0;transform:translateX(-50%) translateY(-64px)}}
+
+    /* Confetti */
+    .confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:650;overflow:hidden;}
+    .confetti{position:absolute;top:-14px;width:8px;height:8px;animation:confFall linear forwards;}
+    @keyframes confFall{to{transform:translate(var(--cx,0),105vh) rotate(var(--cr,360deg));opacity:0.85;}}
+
+    /* ── Result overlays ── */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(8,10,18,0.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:500;align-items:center;justify-content:center;padding:1.5rem;}
+    .overlay.open{display:flex;}
+    .result-card{background:var(--surface);border:1px solid var(--border-hi);border-radius:18px;padding:2rem 2.5rem;max-width:440px;width:100%;text-align:center;animation:slideUp 0.38s cubic-bezier(0.34,1.56,0.64,1);display:flex;flex-direction:column;gap:1rem;position:relative;overflow:hidden;}
+    .result-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));}
+    @keyframes slideUp{from{opacity:0;transform:translateY(28px) scale(0.95)}to{opacity:1;transform:none}}
+    .result-emoji{font-size:3rem;display:block;}
+    .result-heading{font-family:var(--font-d);font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;}
+    .result-word{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;}
+    .mini-tile{display:inline-flex;width:27px;height:27px;align-items:center;justify-content:center;background:var(--correct);border-radius:4px;color:#fff;font-family:var(--font-d);font-weight:800;font-size:0.85rem;animation:miniPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;}
+    .mini-tile.dim{background:var(--surface2);color:var(--text-mid);}
+    .mini-space{display:inline-block;width:10px;}
+    @keyframes miniPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+    .result-def{font-size:0.82rem;color:var(--text-mid);line-height:1.5;}
+    .result-tries{font-family:var(--font-d);font-size:0.78rem;color:var(--text-mid);}
+    .result-tries span{color:var(--accent);}
+    .result-sub{color:var(--text-mid);font-size:0.8rem;line-height:1.5;}
+    .result-btns{display:flex;gap:0.65rem;}
+    .btn-next{font-family:var(--font-d);font-size:0.82rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.75rem 1.5rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);flex:1;}
+    .btn-next:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 18px rgba(74,222,154,0.3);}
+    .btn-next:active{transform:translateY(0);box-shadow:none;}
+    .btn-end{font-family:var(--font-d);font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.65rem 1rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);flex:1;}
+    .btn-end:hover{border-color:var(--accent2);color:var(--accent2);}
+    .final-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0.55rem;}
+    @media(max-width:420px){.final-stats{grid-template-columns:repeat(2,1fr);}}
+    .final-stat{background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:0.75rem 0.4rem;}
+    .final-stat-val{font-family:var(--font-d);font-size:1.5rem;font-weight:800;line-height:1;margin-bottom:0.2rem;}
+    .final-stat-val.good{color:var(--accent);}
+    .final-stat-val.bad{color:var(--warn);}
+    .final-stat-val.neutral{color:var(--accent2);}
+    .final-stat-val.hot{color:var(--gold);}
+    .final-stat-label{font-size:0.62rem;color:var(--text-dim);letter-spacing:0.08em;text-transform:uppercase;}
+    .btn-hub{font-family:var(--font-d);font-size:0.82rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--accent);color:#0f1117;border:none;padding:0.75rem 1.5rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);width:100%;}
+    .btn-hub:hover{background:#6ef0b0;transform:translateY(-1px);box-shadow:0 4px 18px rgba(74,222,154,0.3);}
+    .btn-hub:active{transform:translateY(0);box-shadow:none;}
+    .btn-play-again{font-family:var(--font-d);font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;background:transparent;border:1px solid var(--border-hi);color:var(--text-mid);padding:0.65rem 1rem;border-radius:var(--r);cursor:pointer;transition:all var(--trans);width:100%;}
+    .btn-play-again:hover{border-color:var(--accent2);color:var(--accent2);}
+
+    /* Reduced motion: keep the game readable, drop the theatrics */
+    @media(prefers-reduced-motion:reduce){
+      .wl-tile.flip,.wl-tile.bounce,.wl-tile.dance,.shake-row,
+      .grid-wrap.round-in,.clue-wrap.round-in,.kb-key.pressed,
+      .mini-tile,.stat-pill.streak-pill.bump,#score-display.pop{animation:none!important;}
+      .float-pts{animation:floatFade 1s ease forwards;}
+      .progress-fill{transition:none;}
+      .result-card{animation:none;}
+    }
+    @keyframes floatFade{from{opacity:1}to{opacity:0}}
+
+    /* Responsive */
+    @media(max-width:400px){
+      .hd{padding:0 0.85rem;}
+      .hd-sep,.hd-title{display:none;}
+    }
+  </style>
+<!-- aism-rebranded:v1 --></head>
+<body><nav>
+<div class="nav-inner">
+<a class="logo" href="../../index.html">
+<div class="logo-mark">V</div>
+<div class="logo-text">
+<span class="logo-primary">AI Study Method</span>
+<span class="logo-secondary">The Velvet Method™</span>
+</div>
+</a>
+<ul class="nav-links">
+<li><a href="../../subjects.html">Subjects</a></li>
+<li><a href="../../velvet-method.html">The Velvet Method</a></li>
+<li><a href="../../courses.html">Courses</a></li>
+<li><a href="../../ai-study-guide.html">AI Lab</a></li>
+<li><a href="../../parents.html">Parents</a></li>
+<li><a href="../../about.html">About</a></li>
+</ul>
+<div class="nav-right">
+<a class="btn-primary" href="../../courses.html">View the Course →</a>
+</div>
+</div>
+</nav><div class="aism-back-strip" style="max-width:1280px;margin:0 auto;padding:14px 2rem 0;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;"><a href="../../subjects.html" style="color:#0a6b5e;text-decoration:none;">← Back to all subjects</a></div>
+
+
+<header class="hd">
+<div class="hd-left">
+<a class="hd-logo" href="vocab-hub.html">AI <span>Study</span></a>
+<span class="hd-sep">·</span>
+<span class="hd-title" id="hd-title">TermGuess</span>
+</div>
+<div class="hd-right">
+<button class="btn-hd" id="btn-mute" title="Toggle sound (M)">🔊</button>
+<div class="hd-stats" id="hd-right" style="display:none;">
+<div class="stat-pill streak-pill" id="streak-pill" style="display:none;">🔥 <span id="streak-num">0</span></div>
+<div class="stat-pill">Word <span id="word-num">1</span>/<span id="word-total">?</span></div>
+<div class="stat-pill">Score: <span id="score-display">0</span></div>
+<button class="btn-hd" id="btn-quit">✕ Quit</button>
+</div>
+</div>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+<!-- Start screen -->
+<div class="screen active" id="screen-start">
+<h1 class="start-title" id="start-title">TermGuess</h1>
+<div class="start-topic" id="start-topic"></div>
+<p class="start-sub">Guess the vocabulary term in 6 tries. The definition is your clue.</p>
+<div class="legend">
+<div class="legend-item"><div class="legend-tile c">A</div>Right letter, right place</div>
+<div class="legend-item"><div class="legend-tile p">B</div>Right letter, wrong place</div>
+<div class="legend-item"><div class="legend-tile a">C</div>Not in the word</div>
+</div>
+<div class="start-info">
+<div class="start-info-row"><span class="start-info-icon">⌨️</span><span>Type on your keyboard or tap the on-screen keys</span></div>
+<div class="start-info-row"><span class="start-info-icon">↩️</span><span>Press Enter to submit a guess</span></div>
+<div class="start-info-row"><span class="start-info-icon">🔡</span><span>Spaces are filled in automatically</span></div>
+<div class="start-info-row"><span class="start-info-icon">🎯</span><span>Fewer guesses = more points</span></div>
+<div class="start-info-row"><span class="start-info-icon">🔥</span><span>Solve words back-to-back to build a streak bonus</span></div>
+<div class="start-info-row"><span class="start-info-icon">🔊</span><span>Sound on by default — toggle with the speaker button</span></div>
+</div>
+<button class="btn-start" onclick="startGame()">Start Game →</button>
+</div>
+<!-- Game screen -->
+<div class="screen" id="screen-game">
+<div class="clue-wrap" id="clue-wrap">
+<div class="clue-label">Definition — guess the term:</div>
+<div class="clue-box" id="clue-box"></div>
+<div class="round-badge" id="round-badge"></div>
+</div>
+<div class="grid-wrap" id="grid-wrap"></div>
+<div class="kb-submit-wrap">
+<button class="btn-submit-guess" id="btn-submit-guess" onclick="submitGuess()">Submit ↵</button>
+<div class="keyboard" id="keyboard"></div>
+</div>
+</div>
+<!-- Per-word result -->
+<div class="overlay" id="overlay-word">
+<div class="result-card">
+<span class="result-emoji" id="word-emoji">🎉</span>
+<div class="result-heading" id="word-heading">Correct!</div>
+<div class="result-word" id="word-answer"></div>
+<div class="result-def" id="word-def"></div>
+<div class="result-tries" id="word-tries"></div>
+<div class="result-btns">
+<button class="btn-next" id="btn-next">Next Word →</button>
+<button class="btn-end" id="btn-end-early">End Game</button>
+</div>
+</div>
+</div>
+<!-- Final score -->
+<div class="overlay" id="overlay-final">
+<div class="result-card">
+<span class="result-emoji" id="final-emoji">🏆</span>
+<div class="result-heading" id="final-heading">Game Over!</div>
+<p class="result-sub" id="final-sub"></p>
+<div class="final-stats">
+<div class="final-stat"><div class="final-stat-val good" id="final-correct">0</div><div class="final-stat-label">Solved</div></div>
+<div class="final-stat"><div class="final-stat-val bad" id="final-failed">0</div> <div class="final-stat-label">Failed</div></div>
+<div class="final-stat"><div class="final-stat-val hot" id="final-streak">0</div> <div class="final-stat-label">Best Streak</div></div>
+<div class="final-stat"><div class="final-stat-val neutral" id="final-score">0</div> <div class="final-stat-label">Score</div></div>
+</div>
+<button class="btn-hub" onclick="window.location.href='vocab-hub.html'">← Back to Hub</button>
+<button class="btn-play-again" onclick="restartGame()">Play Again</button>
+</div>
+</div>
+<script>
+/* ============================================================
+   TERMGUESS — v2 engine
+   Staggered flip reveals · win dance · streak bonuses ·
+   floating points · confetti · synth audio · kind loss reveal
+   ============================================================ */
+
+// ── Load vocab ──
+const VOCAB_DATA = JSON.parse(sessionStorage.getItem('vocab') || '[]');
+const META       = JSON.parse(sessionStorage.getItem('vocabMeta') || '{}');
+
+if (!VOCAB_DATA.length) {
+  document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#8b90a8;font-family:sans-serif;text-align:center;padding:2rem;"><div><p style="font-size:1.2rem;margin-bottom:1rem">This game needs a vocabulary list first.</p><a href="vocab-hub.html?game=termguess" style="color:#4ade9a">Choose your subject &amp; topic →</a></div></div>';
+}
+
+if (META.topic) {
+  document.getElementById('hd-title').textContent    = `${META.topic} — TermGuess`;
+  document.getElementById('start-title').textContent = META.topic;
+  document.getElementById('start-topic').textContent = `${META.subject || ''} · ${META.board || ''}`;
+}
+
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============================================================
+   AUDIO — tiny WebAudio synth, no assets, mutable (persisted)
+   ============================================================ */
+const AudioFX = (() => {
+  let actx = null, master = null;
+  let muted = false;
+  try { muted = localStorage.getItem('aism-muted') === '1'; } catch (e) {}
+
+  function ensure() {
+    try {
+      if (!actx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        actx = new AC();
+        master = actx.createGain();
+        master.gain.value = 0.4;
+        master.connect(actx.destination);
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function tone(freq, dur, type, vol, endFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'square';
+      o.frequency.setValueAtTime(freq, t0);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), t0 + dur);
+      g.gain.setValueAtTime(vol || 0.15, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) {}
+  }
+
+  function noise(dur, vol, filterFreq) {
+    if (muted || !ensure()) return;
+    try {
+      const t0 = actx.currentTime;
+      const len = Math.max(1, Math.floor(actx.sampleRate * dur));
+      const buf = actx.createBuffer(1, len, actx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const f = actx.createBiquadFilter(); f.type = 'lowpass';
+      f.frequency.setValueAtTime(filterFreq || 1200, t0);
+      f.frequency.exponentialRampToValueAtTime(120, t0 + dur);
+      const g = actx.createGain();
+      g.gain.setValueAtTime(vol || 0.25, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      src.connect(f); f.connect(g); g.connect(master);
+      src.start(t0);
+    } catch (e) {}
+  }
+
+  return {
+    unlock() { ensure(); },
+    get muted() { return muted; },
+    toggleMute() {
+      muted = !muted;
+      try { localStorage.setItem('aism-muted', muted ? '1' : '0'); } catch (e) {}
+      return muted;
+    },
+    tick()    { tone(640, 0.045, 'square', 0.05, 560); },
+    del()     { tone(320, 0.05, 'square', 0.05, 230); },
+    flip(i, state) {
+      const base = state === 'correct' ? 660 : state === 'present' ? 500 : 290;
+      tone(base + i * 22, 0.06, 'triangle', state === 'absent' ? 0.045 : 0.08);
+    },
+    invalid() { tone(180, 0.18, 'sawtooth', 0.09, 90); noise(0.12, 0.07, 700); },
+    win()     { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, i === 3 ? 0.3 : 0.12, 'sine', 0.15), i * 95)); },
+    lose()    { tone(330, 0.22, 'triangle', 0.12, 260); setTimeout(() => tone(220, 0.35, 'triangle', 0.11, 140), 210); },
+    streak()  { tone(880, 0.08, 'sine', 0.12); setTimeout(() => tone(1175, 0.16, 'sine', 0.12), 90); },
+    fanfare() { [392, 523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, i === 4 ? 0.32 : 0.15, 'triangle', 0.14), i * 95)); },
+  };
+})();
+
+/* ── Mute button (header) ── */
+const muteBtn = document.getElementById('btn-mute');
+muteBtn.textContent = AudioFX.muted ? '🔇' : '🔊';
+function toggleMuteUI() {
+  muteBtn.textContent = AudioFX.toggleMute() ? '🔇' : '🔊';
+}
+muteBtn.addEventListener('click', toggleMuteUI);
+
+const MAX_GUESSES = 6;
+const KB_ROWS = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+
+// ── STATE ──
+let wordList    = [];
+let wordIndex   = 0;
+let target      = '';        // uppercase, e.g. "CELL MEMBRANE"
+let targetLetters = [];      // letters only (no spaces), e.g. ['C','E','L','L',...]
+let wordStructure = [];      // [{type:'letter',letter:'C'},{type:'space'},{type:'fixed',char:'-'},...]
+let currentRow  = 0;
+let currentInput = [];       // letters typed so far this row (no spaces)
+let keyStates   = {};        // A-Z → 'correct'|'present'|'absent'|undefined
+let gameActive  = false;
+let revealing   = false;     // true during the flip animation — input locked
+let score       = 0;
+let solved      = 0;
+let failed      = 0;
+let streak      = 0;
+let bestStreak  = 0;
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// ── START ──
+function startGame() {
+  AudioFX.unlock();
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  wordList = shuffle([...VOCAB_DATA]);
+  wordIndex = 0; score = 0; solved = 0; failed = 0; streak = 0; bestStreak = 0;
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+  document.getElementById('hd-right').style.display = 'flex';
+  document.getElementById('word-total').textContent = wordList.length;
+  document.getElementById('score-display').textContent = '0';
+  updateStreakPill(false);
+  loadWord(0);
+}
+
+function loadWord(idx) {
+  if (idx >= wordList.length) { showFinalScore(); return; }
+  const item = wordList[idx];
+  target = item.term.toUpperCase().trim();
+
+  // Build word structure: {type:'letter'} | {type:'space'} | {type:'fixed'} (hyphens etc.)
+  wordStructure = [];
+  targetLetters = [];
+  for (const ch of target) {
+    if (ch === ' ') {
+      wordStructure.push({ type:'space' });
+    } else if (/[A-Z]/.test(ch)) {
+      wordStructure.push({ type:'letter', letter:ch });
+      targetLetters.push(ch);
+    } else {
+      wordStructure.push({ type:'fixed', char:ch });
+    }
+  }
+
+  currentRow   = 0;
+  currentInput = [];
+  keyStates    = {};
+  gameActive   = true;
+  revealing    = false;
+
+  document.getElementById('word-num').textContent    = idx + 1;
+  document.getElementById('round-badge').textContent = `Word ${idx + 1} of ${wordList.length} · ${targetLetters.length} letters`;
+  document.getElementById('progress-fill').style.width = (idx / wordList.length * 100) + '%';
+  document.getElementById('clue-box').textContent    = item.definition;
+  document.getElementById('overlay-word').classList.remove('open');
+
+  buildGrid();
+  buildKeyboard();
+
+  // Smooth round transition
+  if (!REDUCED_MOTION) {
+    ['grid-wrap','clue-wrap'].forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('round-in');
+      void el.offsetWidth;
+      el.classList.add('round-in');
+    });
+  }
+}
+
+// ── BUILD GRID ──
+function buildGrid() {
+  const wrap = document.getElementById('grid-wrap');
+  wrap.innerHTML = '';
+
+  for (let r = 0; r < MAX_GUESSES; r++) {
+    const row = document.createElement('div');
+    row.className = 'guess-row';
+    row.id = `row-${r}`;
+
+    wordStructure.forEach((cell, ci) => {
+      if (cell.type === 'space') {
+        const sp = document.createElement('div');
+        sp.className = 'wl-space';
+        sp.innerHTML = '<div class="wl-space-dot"></div>';
+        row.appendChild(sp);
+      } else if (cell.type === 'fixed') {
+        const tile = document.createElement('div');
+        tile.className = 'wl-tile fixed';
+        tile.textContent = cell.char;
+        row.appendChild(tile);
+      } else {
+        const tile = document.createElement('div');
+        tile.className = 'wl-tile' + (r === 0 ? ' active-row' : '');
+        tile.id = `tile-${r}-${ci}`;
+        row.appendChild(tile);
+      }
+    });
+    wrap.appendChild(row);
+  }
+}
+
+// ── BUILD KEYBOARD ──
+function buildKeyboard() {
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = '';
+  KB_ROWS.forEach((rowStr, ri) => {
+    const row = document.createElement('div');
+    row.className = 'kb-row';
+    if (ri === 2) {
+      // Add Enter on left
+      const enter = document.createElement('div');
+      enter.className = 'kb-key wide';
+      enter.textContent = 'Enter';
+      enter.addEventListener('click', submitGuess);
+      row.appendChild(enter);
+    }
+    rowStr.split('').forEach(ch => {
+      const key = document.createElement('div');
+      key.className = 'kb-key';
+      key.id = 'kb-' + ch;
+      key.textContent = ch;
+      key.addEventListener('click', () => typeLetter(ch));
+      row.appendChild(key);
+    });
+    if (ri === 2) {
+      // Add Backspace on right
+      const bs = document.createElement('div');
+      bs.className = 'kb-key wide';
+      bs.textContent = '⌫';
+      bs.addEventListener('click', deleteLetter);
+      row.appendChild(bs);
+    }
+    kb.appendChild(row);
+  });
+}
+
+// ── INPUT ──
+function typeLetter(ch) {
+  if (!gameActive || revealing) return;
+  if (currentInput.length >= targetLetters.length) return;
+  currentInput.push(ch);
+  AudioFX.tick();
+  flashKey(ch);
+  updateActiveRow();
+}
+
+function deleteLetter() {
+  if (!gameActive || revealing) return;
+  if (currentInput.length === 0) return;
+  currentInput.pop();
+  AudioFX.del();
+  updateActiveRow();
+}
+
+function flashKey(ch) {
+  if (REDUCED_MOTION) return;
+  const key = document.getElementById('kb-' + ch);
+  if (!key) return;
+  key.classList.remove('pressed');
+  void key.offsetWidth;
+  key.classList.add('pressed');
+}
+
+// Render the current input into the active grid row
+function updateActiveRow() {
+  let inputIdx = 0;
+  wordStructure.forEach((cell, ci) => {
+    if (cell.type !== 'letter') return;
+    const tile = document.getElementById(`tile-${currentRow}-${ci}`);
+    if (!tile) return;
+    const letter = currentInput[inputIdx] || '';
+    tile.textContent = letter;
+    tile.className = 'wl-tile active-row' + (letter ? ' filled' : '');
+    if (letter && !REDUCED_MOTION) {
+      // Bounce animation
+      tile.classList.remove('bounce');
+      void tile.offsetWidth;
+      tile.classList.add('bounce');
+    }
+    inputIdx++;
+  });
+}
+
+// ── SUBMIT GUESS ──
+function submitGuess() {
+  if (!gameActive || revealing) return;
+  if (currentInput.length < targetLetters.length) {
+    showToast(`Need ${targetLetters.length} letters`);
+    shakeRow(currentRow);
+    AudioFX.invalid();
+    return;
+  }
+
+  const guess = [...currentInput]; // copy
+  const result = scoreGuess(guess, targetLetters);
+
+  // Reveal with flip animation
+  revealRow(currentRow, guess, result, () => {
+    // Update key colours
+    result.forEach((state, i) => {
+      const ch = guess[i];
+      const priority = { correct:3, present:2, absent:1 };
+      if ((priority[state] || 0) > (priority[keyStates[ch]] || 0)) {
+        keyStates[ch] = state;
+        updateKey(ch, state);
+      }
+    });
+
+    const won = result.every(s => s === 'correct');
+    if (won) {
+      gameActive = false;
+      const tries = currentRow + 1;
+      const base = Math.max(10, 60 - (tries - 1) * 10);
+      streak++;
+      bestStreak = Math.max(bestStreak, streak);
+      const bonus = streak >= 2 ? streak * 5 : 0;
+      const wordScore = base + bonus;
+      score += wordScore;
+      solved++;
+      updateScore();
+      updateStreakPill(true);
+      spawnFloat(`+${wordScore}` + (bonus ? ' 🔥' : ''));
+      AudioFX.win();
+      if (streak >= 2) setTimeout(() => AudioFX.streak(), 480);
+      danceRow(currentRow);
+      if (tries <= 2 || streak >= 3) spawnConfetti(tries === 1 ? 90 : 60);
+      setTimeout(() => showWordResult(true, tries), REDUCED_MOTION ? 300 : 1000);
+      return;
+    }
+
+    currentRow++;
+    currentInput = [];
+
+    if (currentRow >= MAX_GUESSES) {
+      gameActive = false;
+      failed++;
+      streak = 0;
+      updateStreakPill(false);
+      AudioFX.lose();
+      setTimeout(() => showWordResult(false, MAX_GUESSES), REDUCED_MOTION ? 200 : 400);
+    } else {
+      // Activate next row
+      activateRow(currentRow);
+    }
+  });
+}
+
+// ── SCORE A GUESS ──
+// Returns array of 'correct'|'present'|'absent' for each letter
+function scoreGuess(guess, target) {
+  const result = new Array(guess.length).fill('absent');
+  const targetRemaining = [...target];
+
+  // First pass: correct positions
+  for (let i = 0; i < guess.length; i++) {
+    if (guess[i] === targetRemaining[i]) {
+      result[i] = 'correct';
+      targetRemaining[i] = null;
+    }
+  }
+  // Second pass: present letters
+  for (let i = 0; i < guess.length; i++) {
+    if (result[i] === 'correct') continue;
+    const j = targetRemaining.indexOf(guess[i]);
+    if (j !== -1) {
+      result[i] = 'present';
+      targetRemaining[j] = null;
+    }
+  }
+  return result;
+}
+
+// ── REVEAL ROW (staggered flip + per-tile sound) ──
+function revealRow(rowIdx, guess, result, onComplete) {
+  revealing = true;
+  const tileEls = [];
+  wordStructure.forEach((cell, ci) => {
+    if (cell.type === 'letter') tileEls.push(document.getElementById(`tile-${rowIdx}-${ci}`));
+  });
+
+  const stagger = REDUCED_MOTION ? 0 : 120;
+  const midpoint = REDUCED_MOTION ? 0 : 250;
+  const tail = REDUCED_MOTION ? 40 : 300;
+
+  tileEls.forEach((tile, i) => {
+    setTimeout(() => {
+      if (!REDUCED_MOTION) tile.classList.add('flip');
+      AudioFX.flip(i, result[i]);
+      // Apply colour at midpoint of flip
+      setTimeout(() => {
+        tile.classList.remove('active-row','filled','bounce');
+        tile.classList.add(result[i]);
+      }, midpoint);
+      if (i === tileEls.length - 1) {
+        setTimeout(() => { revealing = false; onComplete(); }, tail);
+      }
+    }, i * stagger);
+  });
+}
+
+// ── WIN DANCE ──
+function danceRow(rowIdx) {
+  if (REDUCED_MOTION) return;
+  let i = 0;
+  wordStructure.forEach((cell, ci) => {
+    if (cell.type !== 'letter') return;
+    const tile = document.getElementById(`tile-${rowIdx}-${ci}`);
+    if (tile) {
+      tile.style.animationDelay = (i * 0.07) + 's';
+      tile.classList.remove('flip');
+      tile.classList.add('dance');
+    }
+    i++;
+  });
+}
+
+function activateRow(rowIdx) {
+  wordStructure.forEach((cell, ci) => {
+    if (cell.type === 'letter') {
+      const tile = document.getElementById(`tile-${rowIdx}-${ci}`);
+      if (tile) tile.classList.add('active-row');
+    }
+  });
+}
+
+function updateKey(ch, state) {
+  const key = document.getElementById('kb-' + ch);
+  if (key) { key.className = `kb-key ${state} revealed`; }
+}
+
+// ── SHAKE ROW ──
+function shakeRow(rowIdx) {
+  if (REDUCED_MOTION) return;
+  const row = document.getElementById(`row-${rowIdx}`);
+  if (!row) return;
+  row.classList.remove('shake-row');
+  void row.offsetWidth;
+  row.classList.add('shake-row');
+  setTimeout(() => row.classList.remove('shake-row'), 400);
+}
+
+// ── HUD ──
+function updateScore() {
+  const el = document.getElementById('score-display');
+  el.textContent = score;
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
+
+function updateStreakPill(bump) {
+  const pill = document.getElementById('streak-pill');
+  if (streak >= 2) {
+    pill.style.display = '';
+    document.getElementById('streak-num').textContent = streak;
+    if (bump && !REDUCED_MOTION) {
+      pill.classList.remove('bump');
+      void pill.offsetWidth;
+      pill.classList.add('bump');
+    }
+  } else {
+    pill.style.display = 'none';
+  }
+}
+
+// ── FLOATING +POINTS ──
+function spawnFloat(text) {
+  const el = document.createElement('div');
+  el.className = 'float-pts';
+  el.textContent = text;
+  const wrap = document.getElementById('grid-wrap');
+  const r = wrap.getBoundingClientRect();
+  el.style.left = (r.left + r.width / 2) + 'px';
+  el.style.top = (r.top + Math.min(60, r.height * 0.25)) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+
+// ── CONFETTI (DOM particles, cleaned up after) ──
+function spawnConfetti(n) {
+  if (REDUCED_MOTION) return;
+  const colours = ['#4ade9a','#7b6fff','#ffd166','#5ac8ff','#ff6b6b'];
+  const wrap = document.createElement('div');
+  wrap.className = 'confetti-wrap';
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti';
+    p.style.left = (5 + Math.random() * 90) + 'vw';
+    p.style.background = colours[i % colours.length];
+    const size = 5 + Math.random() * 6;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    if (Math.random() < 0.4) p.style.borderRadius = '50%';
+    p.style.animationDelay = (Math.random() * 0.35) + 's';
+    p.style.animationDuration = (1.4 + Math.random() * 1.2) + 's';
+    p.style.setProperty('--cx', (Math.random() * 140 - 70) + 'px');
+    p.style.setProperty('--cr', (Math.random() * 720 - 360) + 'deg');
+    wrap.appendChild(p);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.remove(), 3400);
+}
+
+// ── TOAST ──
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+// ── WORD RESULT ──
+function renderAnswerTiles(term, won) {
+  const wrap = document.getElementById('word-answer');
+  wrap.innerHTML = '';
+  let i = 0;
+  for (const ch of term) {
+    if (ch === ' ') {
+      const sp = document.createElement('span');
+      sp.className = 'mini-space';
+      wrap.appendChild(sp);
+      continue;
+    }
+    const t = document.createElement('span');
+    t.className = 'mini-tile' + (/[A-Z]/.test(ch) ? '' : ' dim');
+    t.textContent = ch;
+    if (!REDUCED_MOTION) t.style.animationDelay = (0.1 + i * 0.05) + 's';
+    wrap.appendChild(t);
+    i++;
+  }
+}
+
+function showWordResult(won, tries) {
+  if (won) {
+    const emojis = ['🏆','🎉','🎉','👍','👍','😅'];
+    document.getElementById('word-emoji').textContent    = emojis[tries - 1] || '👍';
+    document.getElementById('word-heading').textContent  = tries === 1 ? 'First try!' : 'Correct!';
+    document.getElementById('word-tries').innerHTML      = `Solved in <span>${tries}/${MAX_GUESSES}</span> ${tries === 1 ? 'guess' : 'guesses'}`
+      + (streak >= 2 ? ` · 🔥 streak <span>${streak}</span>` : '');
+  } else {
+    document.getElementById('word-emoji').textContent    = '📖';
+    document.getElementById('word-heading').textContent  = 'The term was…';
+    document.getElementById('word-tries').innerHTML      = `No worries — seeing the answer is revision too. You'll get it next time!`;
+  }
+  renderAnswerTiles(target, won);
+  document.getElementById('word-def').textContent = wordList[wordIndex].definition;
+  const isLast = wordIndex >= wordList.length - 1;
+  document.getElementById('btn-next').textContent = isLast ? 'See Final Score →' : 'Next Word →';
+  document.getElementById('overlay-word').classList.add('open');
+}
+
+function nextWord() {
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  document.getElementById('overlay-word').classList.remove('open');
+  wordIndex++;
+  if (wordIndex >= wordList.length) showFinalScore();
+  else loadWord(wordIndex);
+}
+
+// ── FINAL ──
+function showFinalScore() {
+  document.getElementById('progress-fill').style.width = '100%';
+  const total = wordList.length;
+  const pct = total ? Math.round(solved / total * 100) : 0;
+  const [emoji, heading] = pct === 100 ? ['🏆','Perfect!']
+    : pct >= 80 ? ['🎉','Excellent!']
+    : pct >= 60 ? ['👍','Well done!']
+    : pct >= 40 ? ['📖','Keep practising!']
+    : ['📚','More revision needed'];
+  document.getElementById('final-emoji').textContent   = emoji;
+  document.getElementById('final-heading').textContent = heading;
+  document.getElementById('final-correct').textContent = solved;
+  document.getElementById('final-failed').textContent  = failed;
+  document.getElementById('final-streak').textContent  = bestStreak;
+  document.getElementById('final-score').textContent   = score;
+
+  let subText = `You scored ${score} points across ${total} ${total === 1 ? 'term' : 'terms'}.`;
+  /* Personal best — stored locally per topic */
+  try {
+    const bestKey = `aism-best:termguess:${META.subject || ''}:${META.topic || ''}`;
+    const prevRaw = localStorage.getItem(bestKey);
+    const prev = prevRaw == null ? null : parseInt(prevRaw, 10);
+    const isNew = prev == null || score > prev;
+    if (isNew) localStorage.setItem(bestKey, String(score));
+    if (prev != null) {
+      subText += isNew ? ` 🎉 New personal best (was ${prev})!` : ` Personal best: ${prev}.`;
+    }
+  } catch (e) {}
+  document.getElementById('final-sub').textContent = subText;
+
+  if (pct >= 80) { AudioFX.fanfare(); spawnConfetti(120); }
+  else if (pct >= 50) AudioFX.win();
+  else AudioFX.lose();
+
+  document.getElementById('overlay-word').classList.remove('open');
+  document.getElementById('overlay-final').classList.add('open');
+}
+
+function restartGame() {
+  document.getElementById('overlay-final').classList.remove('open');
+  document.getElementById('overlay-word').classList.remove('open');
+  startGame();
+}
+
+// ── PHYSICAL KEYBOARD ──
+// Order matters: overlays and start screen are checked first so game
+// input never fires "through" a modal; modifier combos pass through.
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+
+  // Final overlay: keyboard inert (avoid accidental restarts), M still mutes
+  if (document.getElementById('overlay-final').classList.contains('open')) {
+    if (k === 'm' || k === 'M') toggleMuteUI();
+    return;
+  }
+  // Word-result overlay: Enter advances, M mutes, nothing else
+  if (document.getElementById('overlay-word').classList.contains('open')) {
+    if (k === 'Enter') { e.preventDefault(); nextWord(); }
+    else if (k === 'm' || k === 'M') toggleMuteUI();
+    return;
+  }
+  // Start screen: Enter starts, M mutes
+  if (document.getElementById('screen-start').classList.contains('active')) {
+    if (k === 'Enter') { e.preventDefault(); startGame(); }
+    else if (k === 'm' || k === 'M') toggleMuteUI();
+    return;
+  }
+
+  // In-game: letters (incl. M — terms need it!), Backspace, Enter
+  if (!gameActive) {
+    if (k === 'm' || k === 'M') toggleMuteUI();
+    return;
+  }
+  if (k === 'Enter') { e.preventDefault(); submitGuess(); return; }
+  if (k === 'Backspace') { e.preventDefault(); deleteLetter(); return; }
+  const ch = k.toUpperCase();
+  if (/^[A-Z]$/.test(ch)) typeLetter(ch);
+});
+
+// ── BUTTONS ──
+document.getElementById('btn-next').addEventListener('click', nextWord);
+document.getElementById('btn-end-early').addEventListener('click', () => {
+  if (gameActive) { failed++; gameActive = false; }
+  showFinalScore();
+});
+document.getElementById('btn-quit').addEventListener('click', () => window.location.href = 'vocab-hub.html');
+</script>
+</body>
+</html>

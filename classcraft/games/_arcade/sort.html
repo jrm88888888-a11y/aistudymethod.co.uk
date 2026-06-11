@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__TITLE__</title>
+<meta name="description" content="__META_DESC__">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="../quizzes/arcade.css">
+<style>
+  .so-stage { min-height:148px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; }
+  .so-card {
+    background:var(--ar-grad-card); border:2px solid var(--ar-border-hi);
+    border-radius:var(--ar-r-lg); padding:26px 22px; text-align:center;
+    width:100%; box-shadow:0 18px 50px rgba(0,0,0,0.45); position:relative;
+    transition:transform 0.12s ease;
+  }
+  .so-card-text { font-size:clamp(18px,5vw,26px); font-weight:700; line-height:1.3; overflow-wrap:anywhere; word-break:break-word; }
+  .so-card-hint { font-family:var(--ar-mono); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ar-muted); margin-top:10px; }
+  .so-card.fly  { animation:soFly 0.34s ease forwards; }
+  .so-card.in   { animation:soIn 0.26s ease; }
+  @keyframes soFly { to { transform:translateY(-60vh) scale(0.7); opacity:0; } }
+  @keyframes soIn  { from { transform:translateY(28px); opacity:0; } to { transform:none; opacity:1; } }
+
+  .so-bins { display:grid; gap:12px; margin-bottom:6px; }
+  .so-bins.n2 { grid-template-columns:1fr 1fr; }
+  .so-bins.n3 { grid-template-columns:1fr 1fr 1fr; }
+  .so-bins.n4 { grid-template-columns:1fr 1fr; }
+  @media (max-width:380px){ .so-bins.n3 { grid-template-columns:1fr; } }
+
+  .so-bin {
+    border:2px solid; border-radius:var(--ar-r); padding:16px 12px; cursor:pointer;
+    min-height:84px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    font-family:var(--ar-font); text-align:center; color:var(--ar-text); width:100%;
+    transition:transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  }
+  .so-bin:hover:not(:disabled) { transform:translateY(-2px); filter:brightness(1.15); }
+  .so-bin:active:not(:disabled) { transform:scale(0.97); }
+  .so-bin:focus-visible { outline:2px solid var(--ar-cyan); outline-offset:2px; }
+  .so-bin-key { font-family:var(--ar-mono); font-size:10px; opacity:0.7; }
+  .so-bin-name { font-size:clamp(13px,3.6vw,16px); font-weight:700; line-height:1.25; overflow-wrap:anywhere; word-break:break-word; }
+  .so-bin.c0 { background:rgba(0,229,255,0.12);  border-color:rgba(0,229,255,0.5);  color:var(--ar-cyan); }
+  .so-bin.c1 { background:rgba(255,46,136,0.12); border-color:rgba(255,46,136,0.5); color:var(--ar-pink); }
+  .so-bin.c2 { background:rgba(0,255,163,0.12);  border-color:rgba(0,255,163,0.5);  color:var(--ar-mint); }
+  .so-bin.c3 { background:rgba(255,214,10,0.12); border-color:rgba(255,214,10,0.5); color:var(--ar-gold); }
+  .so-bin.right { box-shadow:0 0 0 3px rgba(0,255,163,0.3), 0 0 30px rgba(0,255,163,0.4); animation:arPop 0.4s cubic-bezier(0.2,2,0.4,1); }
+  .so-bin.wrongbin { animation:arShakeX 0.4s ease; }
+</style>
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Subjects</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../ai-study-guide.html">AI Lab</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="../quizzes/arcade.js"></script>
+<script>
+(function () {
+  'use strict';
+  const GAME_DATA = __GAME_DATA__;
+  const esc = Arcade.escapeHtml;
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  Arcade.mountMuteButton();
+
+  const HEADING = "__HEADING__";
+  const CATEGORIES = (GAME_DATA.CATEGORIES || []).slice(0, 4);
+  const ALL_ITEMS = (GAME_DATA.ALL_ITEMS || []).filter(it => it && it.text != null && it.cat < CATEGORIES.length);
+  const RUN_SECS = GAME_DATA.TIMER_SECS || 75;
+  const RUN_MS = RUN_SECS * 1000;
+  const BEST_KEY = 'aism-best:' + location.pathname;
+
+  if (CATEGORIES.length < 2 || ALL_ITEMS.length < 1) {
+    root.innerHTML = '<div class="ar-error">No sorting set available for this topic yet.</div>';
+    return;
+  }
+
+  let queue, state, timerCtl = null, heartTimer = null, locked = false;
+
+  function startGame() {
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    if (heartTimer) { clearInterval(heartTimer); heartTimer = null; }
+    queue = Arcade.shuffle(ALL_ITEMS);
+    state = {
+      pos: 0, sorted: 0, correct: 0, combo: 0, bestCombo: 0,
+      grid: [], lastMiss: null,
+    };
+    locked = false;
+    renderGame();
+  }
+
+  function renderGame() {
+    const n = CATEGORIES.length;
+    root.innerHTML = `
+      <div class="ar-badge">📦 Arcade · Sorting Rush</div>
+      <h1 class="ar-title">${esc(HEADING)}</h1>
+      <p class="ar-sub">${esc(RUN_SECS)} seconds. Drop each item into the right bin. Chain correct sorts to grow your combo.</p>
+      <div class="ar-hud">
+        <div class="ar-hud-stat">Sorted <b id="hudSorted">0</b></div>
+        <div class="ar-hud-stat${state.combo >= 3 ? ' hot' : ''}">Combo <b id="hudCombo">×1</b></div>
+        <div class="ar-hud-stat gold">Time <b id="hudTime">${RUN_SECS}</b></div>
+      </div>
+      <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
+      <div class="so-stage">
+        <div class="so-card in" id="card">
+          <div class="so-card-text" id="cardText">—</div>
+          <div class="so-card-hint">Tap the right bin below</div>
+        </div>
+      </div>
+      <div class="so-bins n${n}" id="bins" role="group" aria-label="Category bins">
+        ${CATEGORIES.map((c, i) => `
+          <button type="button" class="so-bin c${i}" data-cat="${i}">
+            <span class="so-bin-key">${i + 1}</span>
+            <span class="so-bin-name">${esc(c)}</span>
+          </button>
+        `).join('')}
+      </div>
+      <div id="fb"></div>
+      <div class="ar-kbd-hint">Keyboard: press 1–${n} to sort</div>
+      <div id="endWrap"></div>
+    `;
+
+    const bins = Array.from(root.querySelectorAll('.so-bin'));
+    bins.forEach(b => b.addEventListener('click', () => sort(parseInt(b.dataset.cat))));
+
+    timerCtl = Arcade.timer(document.getElementById('tfill'), RUN_MS, {
+      onSecond: (s) => {
+        const t = document.getElementById('hudTime');
+        if (t) t.textContent = s;
+      },
+      onEnd: () => endGame(),
+    });
+
+    // Heartbeat in the final 10 seconds.
+    heartTimer = setInterval(() => {
+      if (!timerCtl) return;
+      if (timerCtl.remaining <= 10000 && timerCtl.remaining > 0) Arcade.sfx.heartbeat();
+    }, 1000);
+
+    showItem();
+  }
+
+  function curItem() { return queue[state.pos % queue.length]; }
+
+  function showItem() {
+    const item = curItem();
+    const card = document.getElementById('card');
+    const txt = document.getElementById('cardText');
+    card.classList.remove('fly', 'in');
+    void card.offsetWidth;
+    card.classList.add('in');
+    txt.textContent = item.text;
+    announce.textContent = 'Sort this item: ' + item.text;
+  }
+
+  function sort(catIdx) {
+    if (locked || !timerCtl) return;
+    locked = true;
+    const item = curItem();
+    const correct = item.cat === catIdx;
+    const bins = Array.from(root.querySelectorAll('.so-bin'));
+    const chosenBin = bins[catIdx];
+    const card = document.getElementById('card');
+
+    state.sorted++;
+    const fb = document.getElementById('fb');
+
+    if (correct) {
+      state.correct++;
+      state.combo++;
+      state.bestCombo = Math.max(state.bestCombo, state.combo);
+      state.grid.push('🟩');
+      Arcade.sfx.correct(state.combo);
+      chosenBin.classList.add('right');
+      card.classList.add('fly');
+      Arcade.popTextOver(chosenBin, '×' + state.combo, '#00ffa3');
+      Arcade.vibrate(15);
+      if (state.combo === 5 || state.combo === 10) { Arcade.streakCall(state.combo); Arcade.confettiBurst({ count: 45 }); }
+      fb.className = 'ar-feedback ok';
+      fb.innerHTML = `<strong>Correct!</strong> “${esc(item.text)}” belongs in <em>${esc(CATEGORIES[item.cat])}</em>.`;
+      announce.textContent = `Correct. ${item.text} is ${CATEGORIES[item.cat]}. Combo ${state.combo}.`;
+    } else {
+      state.combo = 0;
+      state.grid.push('🟥');
+      state.lastMiss = item;
+      Arcade.sfx.wrong();
+      chosenBin.classList.add('wrongbin');
+      Arcade.shake();
+      Arcade.vibrate([40, 30, 40]);
+      fb.className = 'ar-feedback no';
+      fb.innerHTML = `<strong>Nope.</strong> “${esc(item.text)}” actually belongs in <em>${esc(CATEGORIES[item.cat])}</em>, not ${esc(CATEGORIES[catIdx])}.`;
+      announce.textContent = `Incorrect. ${item.text} belongs in ${CATEGORIES[item.cat]}, not ${CATEGORIES[catIdx]}.`;
+    }
+
+    document.getElementById('hudSorted').textContent = state.sorted;
+    const comboEl = document.getElementById('hudCombo');
+    comboEl.textContent = '×' + Math.max(1, state.combo);
+    comboEl.parentElement.classList.toggle('hot', state.combo >= 3);
+
+    setTimeout(() => {
+      chosenBin.classList.remove('right', 'wrongbin');
+      state.pos++;
+      locked = false;
+      if (timerCtl) { showItem(); }
+    }, 360);
+  }
+
+  function endGame() {
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    if (heartTimer) { clearInterval(heartTimer); heartTimer = null; }
+    locked = true;
+
+    const pct = state.sorted ? Math.round((state.correct / state.sorted) * 100) : 0;
+    const gridStr = state.grid.slice(-20).join('');
+
+    let insight;
+    if (state.lastMiss) {
+      insight = `The one that fooled you: “${state.lastMiss.text}” actually belongs in ${CATEGORIES[state.lastMiss.cat]}. Lock that in and your next run will be cleaner.`;
+    } else if (state.correct > 0) {
+      insight = `Zero mistakes — you sorted every item into the right bin. Push for a bigger combo and more sorted next run.`;
+    } else {
+      insight = `Time ran out before you got going. Tap a bin to start sorting — speed comes with reps.`;
+    }
+
+    root.innerHTML = `
+      <div class="ar-badge">📦 Arcade · Sorting Rush</div>
+      <h1 class="ar-title">${esc(HEADING)}</h1>
+      <div id="end"></div>
+    `;
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'Sorting Rush',
+      gameEmoji: '📦',
+      topic: HEADING,
+      pct: pct,
+      big: state.correct,
+      bigLabel: 'sorted right',
+      rows: [
+        { v: state.sorted, l: 'sorted' },
+        { v: pct + '%', l: 'accuracy' },
+        { v: '🔥 ×' + state.bestCombo, l: 'best combo' },
+      ],
+      emojiGrid: gridStr,
+      bestKey: BEST_KEY,
+      bestValue: state.correct,
+      bestSuffix: '',
+      insight: insight,
+      shareLines: [
+        '📦 Sorting Rush — ' + HEADING,
+        `${state.correct} sorted right · ${pct}% · 🔥 best combo ×${state.bestCombo}`,
+        gridStr,
+      ],
+      onAgain: startGame,
+    });
+    announce.textContent = `Time up. You sorted ${state.correct} correctly out of ${state.sorted} — ${pct} percent. Best combo ${state.bestCombo}.`;
+  }
+
+  // Keyboard: number keys 1-4 sort into the matching bin.
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    const num = parseInt(e.key);
+    if (num >= 1 && num <= CATEGORIES.length) {
+      const bin = root.querySelectorAll('.so-bin')[num - 1];
+      if (bin) { e.preventDefault(); bin.click(); }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>
