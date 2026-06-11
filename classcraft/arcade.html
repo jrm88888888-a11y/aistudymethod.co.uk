@@ -302,7 +302,23 @@ function coinFlash(text) {
 function node(s) { return IDX.subjects.find(x => x.id === s); }
 function nodeL() { const s = node(state.subject); return s && s.levels.find(x => x.id === state.level); }
 function nodeB() { const l = nodeL(); return l && l.boards.find(x => x.id === state.board); }
-function nodeT() { const b = nodeB(); return b && b.topics.find(x => x.slug === state.topic); }
+// Board-agnostic ("general") topics are valid for every exam board — merge
+// them in so picking AQA never hides the topics that simply aren't
+// board-tagged. Board-specific topics list first.
+function topicsFor() {
+  const l = nodeL(), b = nodeB();
+  if (!l || !b) return [];
+  const seen = new Set();
+  const out = [];
+  const add = t => { if (!seen.has(t.slug)) { seen.add(t.slug); out.push(t); } };
+  b.topics.forEach(add);
+  if (b.id !== 'general') {
+    const gen = l.boards.find(x => x.id === 'general');
+    if (gen) gen.topics.forEach(add);
+  }
+  return out;
+}
+function nodeT() { return topicsFor().find(x => x.slug === state.topic); }
 
 /* ───────────────────────── renderers ───────────────────────── */
 function renderChoices(gridId, items, selectedId, onPick) {
@@ -334,13 +350,17 @@ function renderAll() {
 
   const l = nodeL();
   show('lbl-board', !!l); show('grid-board', !!l);
-  if (l) renderChoices('grid-board', l.boards.map(b => ({
-    id: b.id, d: b.d, meta: b.topics.length + ' topics',
-  })), state.board, pickBoard);
+  if (l) {
+    const genN = (l.boards.find(x => x.id === 'general') || { topics: [] }).topics.length;
+    renderChoices('grid-board', l.boards.map(b => ({
+      id: b.id, d: b.d,
+      meta: (b.id === 'general' ? b.topics.length : b.topics.length + genN) + ' topics',
+    })), state.board, pickBoard);
+  }
 
   const b = nodeB();
   show('lbl-topic', !!b); show('grid-topic', !!b);
-  if (b) renderChoices('grid-topic', b.topics.map(t => ({
+  if (b) renderChoices('grid-topic', topicsFor().map(t => ({
     id: t.slug, d: t.d,
   })), state.topic, pickTopic);
 
