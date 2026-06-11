@@ -185,6 +185,11 @@
       .hd{padding:0 0.85rem;}
       .hd-sep,.hd-title{display:none;}
     }
+    /* During play on phones, reclaim every pixel of height: the site nav and
+       back strip ate into 100dvh and left the battlefield too short. */
+    @media(max-width:720px){
+      body.playing nav, body.playing .aism-back-strip { display:none; }
+    }
   </style>
 <!-- aism-rebranded:v1 --></head>
 <body class="arcade"><nav>
@@ -296,7 +301,11 @@
    ============================================================ */
 
 // ── Load vocab ──
-const VOCAB_DATA = JSON.parse(sessionStorage.getItem('vocab') || '[]');
+// Normalise the definition field: hub/arcade hand-offs use `def`, some older
+// payloads used `definition`. Everything downstream reads `.def`.
+const VOCAB_DATA = JSON.parse(sessionStorage.getItem('vocab') || '[]')
+  .map(v => ({ term: v.term, def: v.def != null ? v.def : v.definition }))
+  .filter(v => v.term && v.def);
 const META       = JSON.parse(sessionStorage.getItem('vocabMeta') || '{}');
 
 if (!VOCAB_DATA.length) {
@@ -403,12 +412,18 @@ const VOCAB_INTERVAL     = 10;    // s between vocab carrier conversions
 const REINFORCE_INTERVAL = 35;    // s between reinforcement rows
 const MAX_VOCAB   = 20;
 const LIVES_MAX   = 3;
-const COLS        = 10;
 const ROWS        = 4;
-const ENEMY_W     = 36;
-const ENEMY_H     = 26;
-const GAP_X       = 14;
-const GAP_Y       = 14;
+// Formation geometry is responsive: a 10-wide grid at desktop sizes is ~486px,
+// wider than a phone — which used to make the edge-bounce flip every frame and
+// slam the formation straight down. layout() now sizes the grid to fit W.
+let COLS = 10, ENEMY_W = 36, ENEMY_H = 26, GAP_X = 14, GAP_Y = 14;
+function layoutFormation() {
+  if (W < 480) { ENEMY_W = 26; ENEMY_H = 19; GAP_X = 8;  GAP_Y = 10; }
+  else if (W < 700) { ENEMY_W = 31; ENEMY_H = 22; GAP_X = 11; GAP_Y = 12; }
+  else { ENEMY_W = 36; ENEMY_H = 26; GAP_X = 14; GAP_Y = 14; }
+  COLS = 10;
+  while (COLS > 6 && COLS * (ENEMY_W + GAP_X) - GAP_X > W - 70) COLS--;
+}
 const PLAYER_W    = 42;
 const PLAYER_H    = 26;
 const PLAYER_SPEED  = 380;        // px/s
@@ -456,6 +471,7 @@ let vocabQueue, vocabShownCount, vocabCorrect, vocabAnswered;
 let nextVocabAt, nextReinforceAt, nextDiveAt, nextShotAt, waveStartedAt;
 let shake, hitstop;
 let stars, particles, floatingTexts, rings, banner;
+let bunkers = [], ufo = null, nextUfoAt = 0;
 let keys = {};
 let touchLeft = false, touchRight = false, touchFire = false;
 let dragX = null;
@@ -496,6 +512,7 @@ function resizeCanvas() {
   canvas.style.width  = W + 'px';
   canvas.style.height = H + 'px';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  layoutFormation();
 }
 
 /* ── Parallax starfield ── */
@@ -543,6 +560,9 @@ function startGame() {
   initStars();
   initPlayer();
   spawnWave(true);
+  nextUfoAt = 12 + Math.random() * 8;
+  ufo = null;
+  document.body.classList.add('playing');
   updateHUD();
   updateTimerDisplay();
   document.getElementById('progress-fill').style.width = '0%';
@@ -552,8 +572,12 @@ function startGame() {
   if (animId) cancelAnimationFrame(animId);
   animId = requestAnimationFrame(gameLoop);
 
-  // Layout can settle a frame later (fonts, touch bar) — re-measure once.
-  requestAnimationFrame(() => { resizeCanvas(); if (player) player.y = H - PLAYER_H - 12; });
+  // Layout can settle a frame later (fonts, touch bar, hidden nav) — re-measure once.
+  requestAnimationFrame(() => {
+    resizeCanvas();
+    if (player) player.y = H - PLAYER_H - 12;
+    repositionBunkers();
+  });
 }
 
 function initPlayer() {
@@ -614,6 +638,7 @@ function spawnWave(first) {
     }
   }
   if (!first) AudioFX.wave();
+  makeBunkers();   // fresh shields every wave — earn the breathing room back
   showBanner(`WAVE ${wave}`);
 }
 
@@ -633,6 +658,75 @@ function spawnReinforcements() {
   }
   showBanner('REINFORCEMENTS!');
   AudioFX.wave();
+}
+
+/* ── Defender bunkers — erodible pixel shields (the classic green blocks) ──
+   Each bunker is a 22×14 grid of cells; bullets (both sides) blast organic
+   chunks out of it, and dive-bombers smash through, carving as they go. */
+const BUNKER_GRID_W = 22, BUNKER_GRID_H = 14;
+function bunkerShape() {
+  const shape = [];
+  for (let r = 0; r < BUNKER_GRID_H; r++) {
+    const row = [];
+    for (let c = 0; c < BUNKER_GRID_W; c++) {
+      let on = 1;
+      if (r < 4 && (c < 4 - r || c > 17 + r)) on = 0;          // rounded shoulders
+      if (r > 8 && c > 6 && c < 15) on = 0;                     // the arch
+      row.push(on);
+    }
+    shape.push(row);
+  }
+  return shape;
+}
+function makeBunkers() {
+  bunkers = [];
+  const n = W < 460 ? 3 : 4;
+  const px = clamp(Math.round(W / 150), 3, 5);
+  const bw = BUNKER_GRID_W * px;
+  const slot = W / n;
+  const by = player ? player.y - BUNKER_GRID_H * px - 30 : H - 130;
+  for (let i = 0; i < n; i++) {
+    bunkers.push({ x: slot * i + (slot - bw) / 2, y: by, px, grid: bunkerShape() });
+  }
+}
+function bunkerTopY() {
+  return bunkers.length ? bunkers[0].y : H - 130;
+}
+/* Erode a blob of cells around an impact point. dir: -1 hit from below, +1 from above. */
+function erodeBunker(k, gx, gy, dir, radius) {
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const yy = gy + dy + dir, xx = gx + dx;
+      if (k.grid[yy] && k.grid[yy][xx] === 1 && Math.random() < 0.78) {
+        k.grid[yy][xx] = 0;
+        if (Math.random() < 0.3) particles.push({
+          x: k.x + xx * k.px, y: k.y + yy * k.px,
+          vx: (Math.random() - 0.5) * 90, vy: dir * (40 + Math.random() * 80),
+          colour: COL.player, life: 0.3 + Math.random() * 0.2, maxLife: 0.5, size: k.px * 0.6,
+        });
+      }
+    }
+  }
+}
+/* Point-test a bullet/diver against every bunker; erode + return true on hit. */
+function hitBunkerAt(x, y, dir, radius) {
+  for (const k of bunkers) {
+    const gx = Math.floor((x - k.x) / k.px), gy = Math.floor((y - k.y) / k.px);
+    if (gx >= 0 && gx < BUNKER_GRID_W && gy >= 0 && gy < BUNKER_GRID_H &&
+        k.grid[gy] && k.grid[gy][gx] === 1) {
+      erodeBunker(k, gx, gy, dir, radius);
+      return true;
+    }
+  }
+  return false;
+}
+
+/* ── Bonus saucer — classic mystery UFO, 50–300 pts ── */
+function maybeSpawnUfo() {
+  if (ufo || gameTime < nextUfoAt) return;
+  const d = Math.random() < 0.5 ? 1 : -1;
+  ufo = { x: d > 0 ? -46 : W + 46, d, y: 16, w: 40, h: 16, beepT: 0 };
+  nextUfoAt = gameTime + 14 + Math.random() * 14;
 }
 
 /* ── Vocab carrier conversion ── */
@@ -734,8 +828,13 @@ function update(dt) {
       minX = Math.min(minX, formX + e.sx);
       maxX = Math.max(maxX, formX + e.sx + e.w);
     });
-    if (formDir === 1 && maxX > W - PADDING_X) { formDir = -1; formY += 16; }
-    else if (formDir === -1 && minX < PADDING_X) { formDir = 1; formY += 16; }
+    // Guard: if the live formation is somehow wider than the screen (e.g. a
+    // mid-game rotation), centre it and DON'T bounce — bouncing both edges on
+    // alternate frames is what used to slam the formation into the ground.
+    if (maxX - minX >= W - PADDING_X * 2 - 4) {
+      formX += ((W - (maxX - minX)) / 2) - minX;
+    } else if (formDir === 1 && maxX > W - PADDING_X) { formDir = -1; formY += 14; }
+    else if (formDir === -1 && minX < PADDING_X) { formDir = 1; formY += 14; }
   }
 
   // ── Per-enemy state ──
@@ -794,17 +893,62 @@ function update(dt) {
     nextShotAt = gameTime + Math.max(0.45, 1.7 - (wave - 1) * 0.16) * (0.75 + Math.random() * 0.5);
   }
 
-  // ── Player bullets vs enemies ──
+  // ── UFO ──
+  maybeSpawnUfo();
+  if (ufo) {
+    ufo.x += ufo.d * 120 * dt;
+    ufo.beepT += dt;
+    if (ufo.beepT > 0.4) { ufo.beepT = 0; AudioFX.armorHit(); }
+    if (ufo.x < -60 || ufo.x > W + 60) ufo = null;
+  }
+
+  // ── Player bullets vs enemies / UFO ──
   for (let bi = bullets.length - 1; bi >= 0; bi--) {
     const b = bullets[bi];
+    let hit = false;
     for (const e of enemies) {
       if (!e.alive) continue;
       if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
         bullets.splice(bi, 1);
         damageEnemy(e);
+        hit = true;
         break;
       }
     }
+    if (!hit && ufo &&
+        b.x < ufo.x + ufo.w / 2 && b.x + b.w > ufo.x - ufo.w / 2 &&
+        b.y < ufo.y + ufo.h && b.y + b.h > ufo.y - ufo.h) {
+      bullets.splice(bi, 1);
+      const pts = [50, 100, 150, 300][Math.floor(Math.random() * 4)];
+      score += pts;
+      spawnExplosion(ufo.x, ufo.y, '#ff2e88', 22);
+      rings.push({ x: ufo.x, y: ufo.y, r: 8, speed: 280, life: 0.4, colour: '#ff8ac2' });
+      spawnFloat(ufo.x, ufo.y, '+' + pts + ' MYSTERY!', '#ff8ac2', 1.25);
+      addShake(5);
+      AudioFX.explodeBig();
+      ufo = null;
+      updateHUD();
+    }
+  }
+
+  // ── Bullets vs bunkers (both sides erode the shields — classic rules) ──
+  for (let bi = bullets.length - 1; bi >= 0; bi--) {
+    const b = bullets[bi];
+    if (hitBunkerAt(b.x + b.w / 2, b.y, -1, 2)) {
+      bullets.splice(bi, 1);
+      AudioFX.armorHit();
+    }
+  }
+  for (let bi = enemyBullets.length - 1; bi >= 0; bi--) {
+    const b = enemyBullets[bi];
+    if (hitBunkerAt(b.x + b.w / 2, b.y + b.h, 1, 2)) {
+      enemyBullets.splice(bi, 1);
+      AudioFX.armorHit();
+    }
+  }
+  // Dive-bombers carve straight through the shields
+  for (const e of enemies) {
+    if (e.alive && e.state === 'diving') hitBunkerAt(e.x + e.w / 2, e.y + e.h, 1, 2);
   }
 
   // ── Enemy bullets vs player ──
@@ -833,11 +977,11 @@ function update(dt) {
     }
   }
 
-  // ── Formation reaching the player line ──
-  const breached = aliveForm.some(e => e.y + e.h >= player.y - 8);
+  // ── Formation reaching the shield line ──
+  const breached = aliveForm.some(e => e.y + e.h >= bunkerTopY() - 4);
   if (breached && player.invuln <= 0) {
     hitPlayer();
-    formY = Math.max(26, formY - 90);   // push back so it's tense, not hopeless
+    formY = Math.max(26, formY - 110);   // push back so it's tense, not hopeless
   }
 
   // ── Power-ups ──
@@ -1101,8 +1245,8 @@ function showQuestion(item) {
 
   const wrong = shuffle(VOCAB_DATA.filter(v => v.term !== item.term))
     .slice(0, 3)
-    .map(v => v.definition);
-  const options = shuffle([item.definition, ...wrong]);
+    .map(v => v.def);
+  const options = shuffle([item.def, ...wrong]);
 
   const cont = document.getElementById('q-options');
   cont.innerHTML = '';
@@ -1123,7 +1267,7 @@ function showQuestion(item) {
 }
 
 function answerQuestion(chosen, item, btn, cont) {
-  const correct = item.definition;
+  const correct = item.def;
   cont.querySelectorAll('.q-option').forEach(o => {
     o.style.pointerEvents = 'none';
     if (o.dataset.value === correct) o.classList.add('correct');
@@ -1209,6 +1353,7 @@ const muteBtn = { click() { const b = document.querySelector('.ar-mute'); if (b)
    ============================================================ */
 function endGame(reason) {
   state = 'over';
+  document.body.classList.remove('playing');
   if (animId) cancelAnimationFrame(animId);
 
   const topic = META.topic || 'Vocabulary';
@@ -1336,6 +1481,8 @@ function draw() {
 
   drawStars();
   drawGround();
+  drawBunkers();
+  drawUfo();
   drawPowerups();
   drawEnemies();
   drawPlayer();
@@ -1347,6 +1494,51 @@ function draw() {
 
   drawBanner();
   drawVignette();
+  drawWatermark();
+}
+
+function drawBunkers() {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,255,163,0.6)';
+  ctx.shadowBlur = 6;
+  ctx.fillStyle = COL.player;
+  for (const k of bunkers) {
+    for (let r = 0; r < BUNKER_GRID_H; r++) {
+      for (let c = 0; c < BUNKER_GRID_W; c++) {
+        if (k.grid[r][c]) ctx.fillRect(k.x + c * k.px, k.y + r * k.px, k.px, k.px);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawUfo() {
+  if (!ufo) return;
+  const t = gameTime || 0;
+  ctx.save();
+  ctx.translate(ufo.x, ufo.y + Math.sin(t * 6) * 2);
+  ctx.shadowColor = 'rgba(255,46,136,0.9)';
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = '#ff2e88';
+  ctx.beginPath(); ctx.ellipse(0, 2, 20, 7, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ff8ac2';
+  ctx.beginPath(); ctx.ellipse(0, -3, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  const lc = Math.floor(t * 6) % 2 === 0 ? '#ffd60a' : '#fff';
+  ctx.fillStyle = lc;
+  [-12, -4, 4, 12].forEach(lx => { ctx.beginPath(); ctx.arc(lx, 4, 1.8, 0, Math.PI * 2); ctx.fill(); });
+  ctx.restore();
+}
+
+function drawWatermark() {
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = '#767ca8';
+  ctx.font = `600 9px 'Space Grotesk', sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('AISTUDYMETHOD.CO.UK', W - 8, H - 6);
+  ctx.restore();
 }
 
 function drawStars() {
@@ -1750,8 +1942,24 @@ window.addEventListener('resize', () => {
     player.y = H - PLAYER_H - 12;
     player.x = clamp(player.x, 0, W - player.w);
   }
+  repositionBunkers();
   initStars();
 });
+
+// Keep bunker damage but re-anchor positions to the new geometry.
+function repositionBunkers() {
+  if (!bunkers.length || !player) return;
+  const n = bunkers.length;
+  const px = clamp(Math.round(W / 150), 3, 5);
+  const bw = BUNKER_GRID_W * px;
+  const slot = W / n;
+  const by = player.y - BUNKER_GRID_H * px - 30;
+  bunkers.forEach((k, i) => {
+    k.px = px;
+    k.x = slot * i + (slot - bw) / 2;
+    k.y = by;
+  });
+}
 </script>
 </body>
 </html>
