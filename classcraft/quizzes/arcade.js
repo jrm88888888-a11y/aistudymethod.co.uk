@@ -470,7 +470,7 @@
      Set Arcade.LB_URL to the deployed edge-script hostname to go live, e.g.
        Arcade.LB_URL = 'https://aism-leaderboard.b-cdn.net';
      While empty, every leaderboard feature is a silent no-op.            */
-  Arcade.LB_URL = '';
+  Arcade.LB_URL = 'https://aism-leaderboard-2dc3b.bunny.run';
 
   function lbGameId() {
     const base = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');

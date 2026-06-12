@@ -24,7 +24,10 @@ const env = (k) =>
   (typeof process !== "undefined" && process.env && process.env[k]) ||
   (typeof Deno !== "undefined" && Deno.env && Deno.env.get(k)) || "";
 
-const db = createClient({ url: env("DB_URL"), authToken: env("DB_TOKEN") });
+const db = createClient({
+  url: env("BUNNY_DATABASE_URL") || env("DB_URL"),
+  authToken: env("BUNNY_DATABASE_AUTH_TOKEN") || env("DB_TOKEN"),
+});
 
 /* ── config ──────────────────────────────────────────────────────────────── */
 const ALLOWED_ORIGINS = [
