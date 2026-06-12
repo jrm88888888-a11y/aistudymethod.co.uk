@@ -39,18 +39,18 @@
   <a href="courses.html" class="btn-primary">Learn the Full System →</a>
  </div>
  <figure class="vm-hero-video">
-  <div class="vm-hero-video-frame">
-   <!-- preload=false: video only starts downloading on click (was true, which
-        eagerly fetched a 2:15 1080p screen-recording on every page load and
-        made the page feel slow). The poster thumbnail still appears instantly. -->
-   <iframe
-     src="https://iframe.mediadelivery.net/embed/680127/ea0a1236-d739-4bce-95cb-efd2e92ce817?autoplay=false&preload=false&responsive=true"
-     loading="lazy"
-     title="The Velvet Method — introductory video"
-     allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-     allowfullscreen
-   ></iframe>
-  </div>
+  <!-- Custom poster + click-to-play: nothing from Bunny loads until the user
+       clicks. The Bunny iframe with autoplay replaces the poster on click. -->
+  <button type="button" class="vm-hero-video-frame vm-video-poster" id="vmVideoPoster"
+          aria-label="Play the Velvet Method introduction (2 minutes 15 seconds)">
+    <img src="images/velvet-video-poster.jpg"
+         alt="James Martin introducing the six Velvet Method steps — View, Evaluate, Learn, Verify, Explore, Transform"
+         loading="lazy" decoding="async">
+    <span class="vm-play-orb" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="32" height="32"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+    </span>
+    <span class="vm-play-meta" aria-hidden="true">Watch · 2:15</span>
+  </button>
  </figure>
  </div>
 </div>
@@ -80,6 +80,62 @@
    height: 100%;
    border: 0;
    display: block;
+ }
+ /* Poster button styling — looks like the iframe frame but is a tappable
+    surface. On click, replaced by the Bunny iframe (autoplay enabled). */
+ button.vm-video-poster {
+   appearance: none;
+   font: inherit;
+   color: inherit;
+   cursor: pointer;
+   padding: 0;
+ }
+ .vm-video-poster img {
+   position: absolute;
+   inset: 0;
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+   display: block;
+ }
+ .vm-play-orb {
+   position: absolute;
+   top: 50%; left: 50%;
+   transform: translate(-50%, -50%);
+   width: 78px; height: 78px;
+   border-radius: 50%;
+   background: rgba(15, 17, 23, 0.62);
+   backdrop-filter: blur(2px);
+   color: #fff;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,255,255,0.08);
+   transition: transform 0.2s ease, background 0.2s ease;
+   pointer-events: none;
+ }
+ .vm-play-orb svg { margin-left: 3px; /* visual centring of triangle */ }
+ .vm-video-poster:hover .vm-play-orb,
+ .vm-video-poster:focus-visible .vm-play-orb {
+   transform: translate(-50%, -50%) scale(1.08);
+   background: var(--accent);
+ }
+ .vm-play-meta {
+   position: absolute;
+   bottom: 12px; right: 12px;
+   font-family: 'DM Mono', monospace;
+   font-size: 10.5px;
+   letter-spacing: 1.4px;
+   text-transform: uppercase;
+   background: rgba(15, 17, 23, 0.72);
+   color: #fff;
+   padding: 4px 10px;
+   border-radius: 6px;
+   pointer-events: none;
+ }
+ @media (prefers-reduced-motion: reduce) {
+   .vm-video-poster:hover .vm-play-orb,
+   .vm-video-poster:focus-visible .vm-play-orb { transform: translate(-50%, -50%); }
  }
  @media (max-width: 900px) {
    .vm-hero-grid {
@@ -281,5 +337,29 @@
  </div>
  </div>
 </footer>
+<script>
+  // Click-to-play: replace the poster button with the Bunny iframe (autoplay) on
+  // first click. Nothing from Bunny is fetched until then.
+  (function() {
+    var btn = document.getElementById('vmVideoPoster');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+      var f = document.createElement('iframe');
+      f.src = 'https://iframe.mediadelivery.net/embed/680127/ea0a1236-d739-4bce-95cb-efd2e92ce817?autoplay=true&preload=true&responsive=true';
+      f.title = 'The Velvet Method — introductory video';
+      f.setAttribute('allow', 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;');
+      f.setAttribute('allowfullscreen', '');
+      f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;display:block;';
+      // Swap: keep the wrapper figure, but replace the button with the iframe
+      // inside a div that matches the original frame styling.
+      var wrap = document.createElement('div');
+      wrap.className = 'vm-hero-video-frame';
+      wrap.appendChild(f);
+      btn.parentNode.replaceChild(wrap, btn);
+      // Move focus into the new iframe for keyboard users.
+      f.focus && f.focus();
+    }, { once: true });
+  })();
+</script>
 <script src="script.js"></script></body>
 </html>
