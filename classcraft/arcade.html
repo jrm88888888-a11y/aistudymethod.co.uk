@@ -126,6 +126,23 @@ body::after{
 .cab-lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--px);font-size:8px;color:var(--dim);background:rgba(5,5,22,.55);letter-spacing:1px;z-index:2}
 .cabinet.enabled .cab-lock{display:none}
 
+/* hall of fame */
+.hof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+.hof-panel{background:linear-gradient(160deg,var(--panel),var(--bg2));border:2px solid #26266a;border-radius:10px;padding:14px}
+.hof-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--px);font-size:9px;color:var(--yellow);letter-spacing:1.5px;margin-bottom:10px}
+.hof-note{font-family:var(--vt);font-size:14px;color:var(--dim);letter-spacing:1px;text-transform:none}
+.hof-head select{background:var(--bg2);color:var(--cyan);border:2px solid #26266a;border-radius:6px;font-family:var(--vt);font-size:16px;padding:4px 8px;letter-spacing:1px}
+.hof-board{font-family:var(--vt);font-size:17px;color:var(--dim);letter-spacing:1px}
+.hof-board ol{list-style:none;margin:0;padding:0}
+.hof-board li{display:flex;gap:10px;align-items:baseline;padding:4px 8px;border-radius:6px}
+.hof-board li:nth-child(odd){background:rgba(255,255,255,.03)}
+.hof-board li.you{background:rgba(255,216,61,.1);border:1px solid rgba(255,216,61,.35);color:var(--text)}
+.hof-board .r{flex:0 0 34px;color:var(--dim)}
+.hof-board li:first-child .r{color:var(--yellow)}
+.hof-board .n{font-family:var(--px);font-size:11px;color:var(--text);letter-spacing:2px}
+.hof-board .m{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.hof-board .s{color:var(--cyan);font-weight:700}
+
 /* legacy mini-cards */
 .legacy-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
 .legacy-card{
@@ -207,6 +224,23 @@ body::after{
 
   <div class="row-label bn" id="lbl-legacy" hidden>🕹️ BONUS CABINETS — MORE FROM THIS SUBJECT</div>
   <div class="legacy-grid" id="grid-legacy" hidden></div>
+
+  <div id="hall-of-fame" hidden>
+    <div class="row-label" style="color:var(--yellow);text-shadow:0 0 8px rgba(255,216,61,.6)">👑 HALL OF FAME — THIS WEEK</div>
+    <div class="hof-grid">
+      <div class="hof-panel">
+        <div class="hof-head">ARCADE CHAMPION <span class="hof-note">best 5 games · F1 points</span></div>
+        <div id="hof-champion" class="hof-board">Loading…</div>
+      </div>
+      <div class="hof-panel">
+        <div class="hof-head">
+          <select id="hof-game" aria-label="Choose a game leaderboard"></select>
+          <span class="hof-note">weekly top 10</span>
+        </div>
+        <div id="hof-game-board" class="hof-board">Loading…</div>
+      </div>
+    </div>
+  </div>
 
   <div class="footer-note">
     <b>AISTUDYMETHOD.CO.UK</b> · THE VELVET METHOD™ · EVERY SUBJECT, EVERY VELVET STAGE · GOOD LUCK, PLAYER ONE
@@ -571,6 +605,37 @@ function syncUrl() {
       loadPack();
     }
   }
+})();
+
+/* ───────────────────────── Hall of Fame (live when Arcade.LB_URL is set) ── */
+(function hallOfFame() {
+  if (!Arcade.LB_URL) return;
+  $('hall-of-fame').hidden = false;
+  function rowsHtml(rows, scoreKey) {
+    if (!rows || !rows.length) return '<div>No runs yet this week — fire up a cabinet!</div>';
+    return '<ol>' + rows.map(r => `
+      <li class="${r.you ? 'you' : ''}">
+        <span class="r">${r.rank === 1 ? '👑' : '#' + r.rank}</span>
+        <span class="n">${E(r.initials)}</span>
+        <span class="m">${E(scoreKey === 'points' ? r.games + ' games' : (r.topic || ''))}</span>
+        <span class="s">${E(String(r[scoreKey]))}${scoreKey === 'points' ? ' pts' : ''}</span>
+      </li>`).join('') + '</ol>';
+  }
+  Arcade.lb.champion().then(res => {
+    $('hof-champion').innerHTML = rowsHtml(res.board.slice(0, 10), 'points');
+  }).catch(() => { $('hof-champion').textContent = 'Leaderboard warming up…'; });
+
+  const sel = $('hof-game');
+  sel.innerHTML = Object.entries(Arcade.lb.labels)
+    .map(([id, label]) => `<option value="${E(id)}">${E(label)}</option>`).join('');
+  function loadGameBoard() {
+    $('hof-game-board').textContent = 'Loading…';
+    Arcade.lb.top(sel.value, { n: 10 }).then(res => {
+      $('hof-game-board').innerHTML = rowsHtml(res.board, 'score');
+    }).catch(() => { $('hof-game-board').textContent = 'Leaderboard warming up…'; });
+  }
+  sel.addEventListener('change', () => { Arcade.sfx.click(); loadGameBoard(); });
+  loadGameBoard();
 })();
 
 Arcade.mountMuteButton();

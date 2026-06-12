@@ -466,5 +466,163 @@
     };
   };
 
+  /* ---------------- leaderboards (Bunny Edge + Bunny Database) ----------
+     Set Arcade.LB_URL to the deployed edge-script hostname to go live, e.g.
+       Arcade.LB_URL = 'https://aism-leaderboard.b-cdn.net';
+     While empty, every leaderboard feature is a silent no-op.            */
+  Arcade.LB_URL = '';
+
+  function lbGameId() {
+    const base = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');
+    return base.replace(/^game-/, '');
+  }
+  const LB_LABELS = {
+    'two-truths': 'Two Truths One Lie', 'connections': 'Connections Grid',
+    'sequence': 'Sort the Sequence', 'wager': 'Wager', 'higher-lower': 'Higher or Lower',
+    'falling-words': 'Falling Words', 'conveyor': 'Conveyor Belt', 'word-web': 'Word Web',
+    'reveal-race': 'Reveal Race', 'daily-drill': 'Daily Drill', 'quiz': 'Vocab Quiz',
+    'pairs': 'Matching Pairs', 'hangman': 'System Breach', 'termguess': 'Term Guess',
+    'anagram': 'Anagram', 'crossword': 'Crossword', 'pacman': 'Pac-Man Vocab',
+    'spaceinvaders': 'Space Invaders',
+  };
+
+  Arcade.lb = {
+    labels: LB_LABELS,
+    enabled() { return !!Arcade.LB_URL && !!LB_LABELS[lbGameId()]; },
+    device() {
+      let id = null;
+      try { id = localStorage.getItem('aism-device'); } catch (e) {}
+      if (!id) {
+        id = (crypto.randomUUID ? crypto.randomUUID()
+          : 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, c => {
+              const r = Math.random() * 16 | 0;
+              return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            }));
+        try { localStorage.setItem('aism-device', id); } catch (e) {}
+      }
+      return id;
+    },
+    initials(v) {
+      if (v !== undefined) { try { localStorage.setItem('aism-initials', v); } catch (e) {} }
+      let s = 'AAA';
+      try { s = localStorage.getItem('aism-initials') || 'AAA'; } catch (e) {}
+      return s;
+    },
+    async top(game, opts) {
+      const o = opts || {};
+      const p = new URLSearchParams({ game, week: o.week || 'current', n: String(o.n || 10), device: this.device() });
+      const r = await fetch(Arcade.LB_URL + '/top?' + p);
+      if (!r.ok) throw new Error('leaderboard unavailable');
+      return r.json();
+    },
+    async champion(week) {
+      const p = new URLSearchParams({ week: week || 'current', device: this.device() });
+      const r = await fetch(Arcade.LB_URL + '/champion?' + p);
+      if (!r.ok) throw new Error('leaderboard unavailable');
+      return r.json();
+    },
+    async submit(data) {
+      const r = await fetch(Arcade.LB_URL + '/submit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...data, device: this.device() }),
+      });
+      const out = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(out.error || 'submit failed');
+      return out;
+    },
+    boardHtml(rows, kind) {
+      const e = Arcade.escapeHtml;
+      if (!rows || !rows.length) {
+        return '<div class="ar-lb-empty">No runs yet this week — be the first on the board.</div>';
+      }
+      return '<ol class="ar-lb-list">' + rows.map(r => `
+        <li class="${r.you ? 'you' : ''}">
+          <span class="ar-lb-rank">${r.rank === 1 ? '👑' : '#' + r.rank}</span>
+          <span class="ar-lb-name">${e(r.initials)}</span>
+          <span class="ar-lb-meta">${e(kind === 'champion' ? (r.games + ' games') : (r.topic || ''))}</span>
+          <span class="ar-lb-score">${e(String(kind === 'champion' ? r.points + ' pts' : r.score))}</span>
+        </li>`).join('') + '</ol>';
+    },
+    /* Initials picker + submit + board, mounted under the end card. */
+    mount(container, run) {
+      const e = Arcade.escapeHtml;
+      const saved = this.initials();
+      container.innerHTML = `
+        <div class="ar-lb">
+          <div class="ar-lb-title">🏆 WEEKLY LEADERBOARD</div>
+          <div class="ar-lb-sub">Enter your initials — best run this week counts</div>
+          <div class="ar-lb-picker" role="group" aria-label="Enter three initials">
+            ${[0, 1, 2].map(i => `
+              <div class="ar-lb-slot">
+                <button type="button" class="ar-lb-arrow" data-i="${i}" data-d="1" aria-label="Letter ${i + 1} up">▲</button>
+                <div class="ar-lb-letter" data-i="${i}">${e(saved[i] || 'A')}</div>
+                <button type="button" class="ar-lb-arrow" data-i="${i}" data-d="-1" aria-label="Letter ${i + 1} down">▼</button>
+              </div>`).join('')}
+            <button type="button" class="ar-btn ar-lb-go" id="ar-lb-go">SUBMIT</button>
+          </div>
+          <div class="ar-lb-board" id="ar-lb-board"></div>
+        </div>`;
+
+      const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      const letters = [...container.querySelectorAll('.ar-lb-letter')];
+      container.querySelectorAll('.ar-lb-arrow').forEach(b =>
+        b.addEventListener('click', () => {
+          Arcade.sfx.tick();
+          const el = letters[+b.dataset.i];
+          const idx = (ALPHA.indexOf(el.textContent) + (+b.dataset.d) + ALPHA.length) % ALPHA.length;
+          el.textContent = ALPHA[idx];
+        }));
+
+      const go = container.querySelector('#ar-lb-go');
+      const board = container.querySelector('#ar-lb-board');
+      go.addEventListener('click', async () => {
+        const initials = letters.map(l => l.textContent).join('');
+        go.disabled = true;
+        go.textContent = '…';
+        try {
+          const res = await this.submit({ game: run.game, score: run.score, initials, topic: run.topic || '', stem: run.stem || '' });
+          this.initials(initials);
+          Arcade.sfx.fanfare();
+          if (res.rank && res.rank <= 3) Arcade.confettiBurst({ count: 70 });
+          container.querySelector('.ar-lb-picker').innerHTML =
+            `<div class="ar-lb-result">${res.rank === 1 ? '👑 #1 THIS WEEK!' : 'RANK #' + e(String(res.rank)) + ' THIS WEEK'}</div>`;
+          board.innerHTML = this.boardHtml(res.board);
+        } catch (err) {
+          go.disabled = false;
+          go.textContent = 'SUBMIT';
+          board.innerHTML = '<div class="ar-lb-empty">' + e(String(err.message || 'Could not reach the leaderboard.')) + '</div>';
+        }
+      });
+
+      // show the current board straight away
+      this.top(run.game).then(res => {
+        if (!board.querySelector('.ar-lb-list')) board.innerHTML = this.boardHtml(res.board);
+      }).catch(() => {});
+    },
+  };
+
+  // Hook: every end card with a numeric best value gets the leaderboard UI.
+  const _renderEndCard = Arcade.renderEndCard;
+  Arcade.renderEndCard = function (container, opts) {
+    const out = _renderEndCard(container, opts);
+    try {
+      if (Arcade.lb.enabled() && typeof opts.bestValue === 'number' && opts.bestValue > 0) {
+        const inner = container.querySelector('.ar-end-inner');
+        if (inner) {
+          const mountEl = document.createElement('div');
+          inner.insertBefore(mountEl, inner.querySelector('.ar-watermark'));
+          Arcade.lb.mount(mountEl, {
+            game: lbGameId(),
+            score: Math.floor(opts.bestValue),
+            topic: opts.topic || '',
+            stem: (new URLSearchParams(location.search)).get('spec') || '',
+          });
+        }
+      }
+    } catch (e) { /* leaderboards must never break an end card */ }
+    return out;
+  };
+
   window.Arcade = Arcade;
 })();
