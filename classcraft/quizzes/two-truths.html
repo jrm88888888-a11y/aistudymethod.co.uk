@@ -44,6 +44,7 @@
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
 <script src="arcade.js"></script>
+<script src="share-score.js"></script>
 <script>
 (async function() {
   const esc = Arcade.escapeHtml;
@@ -53,6 +54,8 @@
   const announce = document.getElementById('announce');
 
   Arcade.mountMuteButton();
+  // If this visit came from a shared score, drop in the "Your mate scored X — beat them" banner.
+  Arcade.maybeShowChallenge && Arcade.maybeShowChallenge();
 
   if (!stem) {
     root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
@@ -296,7 +299,7 @@
     else insight = `These lies are engineered to sound right — falling for them just exposed exactly which ideas in ${topic} need rebuilding. Re-read each explanation, revisit the definitions, then come back and call every lie.`;
 
     root.innerHTML = renderHeader('Results') + '<div id="end"></div>';
-    Arcade.renderEndCard(document.getElementById('end'), {
+    const endResult = Arcade.renderEndCard(document.getElementById('end'), {
       gameName: 'Two Truths One Lie',
       gameEmoji: '🕵️',
       topic: topic,
@@ -321,6 +324,47 @@
       ],
       onAgain: startGame,
     });
+
+    // Upgrade the default #ar-share "Copy result" button to call shareScore,
+    // which builds a PNG flex card and hands it to the native OS share sheet
+    // (mobile) or downloads + copies a challenge URL (desktop). Strip the old
+    // listener by cloning the node so we don't get double-fire.
+    if (Arcade.shareScore) {
+      const oldBtn = document.getElementById('ar-share');
+      if (oldBtn) {
+        const newBtn = oldBtn.cloneNode(false);
+        newBtn.textContent = '📤 Share my score';
+        oldBtn.replaceWith(newBtn);
+        newBtn.addEventListener('click', async () => {
+          Arcade.sfx && Arcade.sfx.click && Arcade.sfx.click();
+          newBtn.disabled = true;
+          const orig = newBtn.textContent;
+          newBtn.textContent = '… preparing';
+          try {
+            const r = await Arcade.shareScore({
+              gameName: 'Two Truths One Lie',
+              subject: subj,
+              level: level,
+              topic: topic,
+              score: state.score,
+              total: null,         // Two Truths score is a point total, not X/N
+              pct: pct,
+              rank: endResult && endResult.grade && endResult.grade.letter,
+              rankLine: endResult && endResult.grade && endResult.grade.line,
+              bigLabel: 'POINTS',
+              statLine: '🔥 best streak ' + state.bestStreak + '  ·  ' + pct + '% accuracy',
+            });
+            if (r && r.ok) newBtn.textContent = '✅ Shared!';
+            else newBtn.textContent = orig;
+          } catch (err) {
+            console.warn('[shareScore] failed', err);
+            newBtn.textContent = orig;
+          } finally {
+            setTimeout(() => { newBtn.disabled = false; newBtn.textContent = orig; }, 1800);
+          }
+        });
+      }
+    }
     announce.textContent = `Game over. Score ${state.score} points. You caught ${state.caught} of ${total} lies — ${pct} percent.`;
   }
 
