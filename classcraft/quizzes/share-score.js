@@ -32,7 +32,12 @@
   // we layer outline + shadow to land the arcade look.
   const MONO  = '"SF Mono", Menlo, Consolas, "Liberation Mono", "Courier New", monospace';
   const SERIF = '"Times New Roman", Georgia, serif';
-  const ARCADE_HEAD = '900 italic 0 / 0 "Arial Black", "Helvetica Neue", Impact, sans-serif';
+  // Heavy display stack for the marquee headline + score. Just the family list —
+  // size and weight are concatenated in by each caller (the previous version
+  // baked in `900 italic 0 / 0` which made the whole shorthand invalid, so the
+  // canvas silently kept the last successful font — that's why "AISTUDY METHOD"
+  // was rendering huge in serif and "148" was tiny in the default fallback).
+  const ARCADE_HEAD = '"Arial Black", "Helvetica Neue Black", Impact, "Franklin Gothic Heavy", sans-serif';
   // Subjects Arcade palette — pulled from the live marquee
   const PAL = {
     bgTop:    '#1a1340',
@@ -123,112 +128,116 @@
     ctx.lineWidth = 6;
     drawCornerBrackets(ctx, 36, 36, W - 72, H - 72, 56);
 
-    /* ---------- 5. Header: V badge + "AI STUDY METHOD" wordmark ----------- */
-    const badgeY = 80;
-    const badgeSize = 96;
-    const badgeX = W / 2 - 270;
-    drawVelvetBadge(ctx, badgeX, badgeY, badgeSize);
+    /* ---------- 5. Header: V badge + "AI STUDY METHOD" wordmark -----------
+       Compact header band: V badge at top-left of a centred group, wordmark
+       to the right, sub-line beneath. Sized so it never crowds the marquee. */
+    const badgeY = 70;
+    const badgeSize = 88;
+    const headerGroupW = 600;
+    const headerStartX = (W - headerGroupW) / 2;
+    drawVelvetBadge(ctx, headerStartX, badgeY, badgeSize);
 
-    // Wordmark to the right of the badge
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle = PAL.text;
-    ctx.font = '900 30px ' + ARCADE_HEAD;
-    ctx.fillText('AI STUDY METHOD', badgeX + badgeSize + 18, badgeY + 14);
+    ctx.font = '900 36px ' + ARCADE_HEAD;
+    ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
     ctx.fillStyle = PAL.cyan;
-    ctx.font = '700 18px ' + MONO;
-    ctx.fillText('THE VELVET METHOD™', badgeX + badgeSize + 18, badgeY + 56);
+    ctx.font = '700 17px ' + MONO;
+    ctx.fillText('THE VELVET METHOD™', headerStartX + badgeSize + 18, badgeY + 54);
+    ctx.textBaseline = 'alphabetic';
 
-    // "PRESENTS" caption beneath
+    // "Score transmission" caption beneath, centred
     ctx.textAlign = 'center';
     ctx.fillStyle = PAL.cyanDim;
-    ctx.font = '700 18px ' + MONO;
-    ctx.fillText('· · ·  SCORE TRANSMISSION  · · ·', W / 2, badgeY + badgeSize + 26);
+    ctx.font = '700 16px ' + MONO;
+    ctx.fillText('· · ·  SCORE TRANSMISSION  · · ·', W / 2, badgeY + badgeSize + 30);
 
-    /* ---------- 6. Game-name marquee (big yellow with black outline) ------ */
+    /* ---------- 6. Game-name marquee (huge yellow + pink shadow) ----------
+       This is the visual hero — student takes the screenshot for this. */
     const headlineText = (opts.gameName || 'Arcade Run').toUpperCase();
     drawMarqueeHeadline(ctx, headlineText, W / 2, 320);
 
-    /* ---------- 7. Subject / topic strip (cyan small caps) ---------------- */
+    /* ---------- 7. Subject / topic strip (cyan caps + topic in white) ----- */
     const subjectLine = [opts.level, opts.subject].filter(Boolean).join(' · ');
     ctx.textAlign = 'center';
-    ctx.fillStyle = PAL.cyan;
-    ctx.font = '700 22px ' + MONO;
-    if (subjectLine) ctx.fillText(subjectLine.toUpperCase(), W / 2, 376);
+    if (subjectLine) {
+      ctx.fillStyle = PAL.cyan;
+      ctx.font = '700 22px ' + MONO;
+      ctx.fillText(subjectLine.toUpperCase(), W / 2, 420);
+    }
     if (opts.topic) {
       ctx.fillStyle = PAL.text;
-      ctx.font = '700 28px ' + MONO;
+      ctx.font = '900 30px ' + ARCADE_HEAD;
       const topic = String(opts.topic);
-      const safeTopic = topic.length > 40 ? topic.slice(0, 39) + '…' : topic;
-      ctx.fillText(safeTopic, W / 2, 416);
+      const safeTopic = topic.length > 36 ? topic.slice(0, 35) + '…' : topic;
+      ctx.fillText(safeTopic, W / 2, 462);
     }
 
-    /* ---------- 8. Score panel: rounded card with score + label ------------ */
-    const panelX = 130, panelY = 466, panelW = W - 260, panelH = 260;
-    // Soft inner gradient
+    /* ---------- 8. Score panel: huge yellow score, lavender border ------- */
+    const panelX = 110, panelY = 500, panelW = W - 220, panelH = 270;
     const sg = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelH);
-    sg.addColorStop(0, 'rgba(126,109,255,0.18)');
-    sg.addColorStop(1, 'rgba(126,109,255,0.04)');
+    sg.addColorStop(0, 'rgba(126,109,255,0.22)');
+    sg.addColorStop(1, 'rgba(126,109,255,0.05)');
     ctx.fillStyle = sg;
-    roundRect(ctx, panelX, panelY, panelW, panelH, 18);
+    roundRect(ctx, panelX, panelY, panelW, panelH, 22);
     ctx.fill();
-    // border
     ctx.strokeStyle = PAL.border;
-    ctx.lineWidth = 2;
-    roundRect(ctx, panelX, panelY, panelW, panelH, 18);
+    ctx.lineWidth = 2.5;
+    roundRect(ctx, panelX, panelY, panelW, panelH, 22);
     ctx.stroke();
 
-    // "POINTS" / "SCORE" label at top of panel
+    // POINTS label
     ctx.textAlign = 'center';
     ctx.fillStyle = PAL.magenta;
-    ctx.font = '900 18px ' + MONO;
-    ctx.fillText((opts.bigLabel || 'SCORE').toUpperCase(), W / 2, panelY + 38);
+    ctx.font = '900 22px ' + MONO;
+    ctx.fillText((opts.bigLabel || 'SCORE').toUpperCase(), W / 2, panelY + 50);
 
-    // Huge yellow score number with marquee outline + drop shadow
+    // Huge yellow score — fills most of the panel
     const scoreText = (opts.score != null)
       ? (opts.total != null ? String(opts.score) + '/' + String(opts.total) : String(opts.score))
       : '—';
-    drawMarqueeScore(ctx, scoreText, W / 2, panelY + 178, panelW - 60);
+    drawMarqueeScore(ctx, scoreText, W / 2, panelY + 200, panelW - 60);
 
-    /* ---------- 9. Rank letter (serif, glowed) ----------------------------- */
+    /* ---------- 9. Rank letter (serif, white, yellow glow) --------------- */
     if (opts.rank) {
       ctx.shadowColor = PAL.yellow;
-      ctx.shadowBlur = 40;
+      ctx.shadowBlur = 38;
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.font = '900 130px ' + SERIF;
-      ctx.fillText(String(opts.rank), W / 2, 820);
+      ctx.font = '900 100px ' + SERIF;
+      ctx.fillText(String(opts.rank), W / 2, 866);
       ctx.shadowBlur = 0;
       if (opts.rankLine) {
         ctx.fillStyle = PAL.cyan;
-        ctx.font = '600 20px ' + MONO;
+        ctx.font = '600 18px ' + MONO;
         const line = String(opts.rankLine);
-        const safe = line.length > 60 ? line.slice(0, 59) + '…' : line;
-        ctx.fillText(safe, W / 2, 856);
+        const safe = line.length > 64 ? line.slice(0, 63) + '…' : line;
+        ctx.fillText(safe, W / 2, 898);
       }
     }
 
-    /* ---------- 10. Stat ribbon (magenta) --------------------------------- */
+    /* ---------- 10. Stat ribbon (magenta) — clearly below the rank ------ */
     if (opts.statLine) {
       ctx.fillStyle = PAL.magenta;
-      ctx.font = '700 22px ' + MONO;
+      ctx.font = '700 20px ' + MONO;
       const sl = String(opts.statLine);
       const safe = sl.length > 60 ? sl.slice(0, 59) + '…' : sl;
-      ctx.fillText(safe, W / 2, 906);
+      ctx.textAlign = 'center';
+      ctx.fillText(safe, W / 2, 938);
     }
 
-    /* ---------- 11. Challenge tagline (magenta arrows) -------------------- */
+    /* ---------- 11. Challenge tagline + footer --------------------------- */
     ctx.fillStyle = PAL.magenta;
     ctx.font = '900 24px ' + MONO;
-    ctx.fillText('▼  BEAT THIS SCORE  ▼', W / 2, 962);
+    ctx.fillText('▼  BEAT THIS SCORE  ▼', W / 2, 986);
 
-    /* ---------- 12. Footer (cyan url + velvet method™) -------------------- */
     ctx.fillStyle = PAL.cyan;
     ctx.font = '700 18px ' + MONO;
-    ctx.fillText('aistudymethod.co.uk', W / 2, 1006);
+    ctx.fillText('aistudymethod.co.uk', W / 2, 1024);
     ctx.fillStyle = PAL.textDim;
-    ctx.font = '500 16px ' + MONO;
-    ctx.fillText('· The Velvet Method™ ·', W / 2, 1036);
+    ctx.font = '500 15px ' + MONO;
+    ctx.fillText('· The Velvet Method™ ·', W / 2, 1050);
 
     const blob = await new Promise(resolve => c.toBlob(resolve, 'image/png', 0.95));
     if (!blob) throw new Error('toBlob returned null');
@@ -322,13 +331,14 @@
     ctx.textBaseline = 'alphabetic';
   }
 
-  // Marquee headline: yellow body with thick black outline + magenta drop shadow.
-  // Wraps to two lines if necessary (game names like "Two Truths One Lie").
+  // Marquee headline: chunky yellow with thick black outline + magenta drop
+  // shadow. Wraps to two lines for multi-word names ("Two Truths One Lie")
+  // and shrinks to fit a maximum width. Goes BIG by default because this is
+  // the hero of the share card.
   function drawMarqueeHeadline(ctx, text, cx, baseY) {
-    const MAX_WIDTH = CARD_SIZE - 160;
+    const MAX_WIDTH = CARD_SIZE - 130;
     let lines = [text];
-    let size = 84;
-    // Shrink-and-wrap pass: if too wide, wrap; if still too wide, shrink.
+    let size = 130;  // start big; shrink only if needed
     ctx.font = '900 ' + size + 'px ' + ARCADE_HEAD;
     if (ctx.measureText(text).width > MAX_WIDTH) {
       const words = text.split(' ');
@@ -337,30 +347,31 @@
         lines = [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
       }
     }
-    // Shrink-to-fit on the widest line
-    while (size > 36) {
+    // Shrink-to-fit on the widest line — but don't go below 60 so the
+    // headline always reads as the dominant element.
+    while (size > 60) {
       ctx.font = '900 ' + size + 'px ' + ARCADE_HEAD;
-      if (Math.max(...lines.map(l => ctx.measureText(l).width)) <= MAX_WIDTH) break;
+      if (Math.max.apply(Math, lines.map(function (l) { return ctx.measureText(l).width; })) <= MAX_WIDTH) break;
       size -= 6;
     }
-    const lineH = Math.round(size * 1.02);
+    const lineH = Math.round(size * 0.95);
     const startY = baseY - ((lines.length - 1) * lineH) / 2;
     ctx.textAlign = 'center';
-    lines.forEach((line, i) => {
+    lines.forEach(function (line, i) {
       const y = startY + i * lineH;
-      // Magenta drop shadow (3-stack for chunky neon feel)
+      // Magenta drop shadow (chunky neon offset)
       ctx.fillStyle = PAL.magenta;
-      ctx.fillText(line, cx + 5, y + 5);
+      ctx.fillText(line, cx + 7, y + 7);
       // Black outline (thick stroke)
-      ctx.lineWidth = Math.max(6, size * 0.09);
+      ctx.lineWidth = Math.max(8, size * 0.095);
       ctx.strokeStyle = '#1a0a00';
       ctx.lineJoin = 'round';
       ctx.miterLimit = 2;
       ctx.strokeText(line, cx, y);
-      // Yellow fill on top
+      // Yellow fill
       ctx.fillStyle = PAL.yellow;
       ctx.fillText(line, cx, y);
-      // Brighter highlight along the upper half (subtle gradient feel)
+      // Bright highlight along the upper half (gradient feel)
       const grad = ctx.createLinearGradient(0, y - size, 0, y + size * 0.3);
       grad.addColorStop(0, '#fff5b2');
       grad.addColorStop(1, 'rgba(255,210,77,0)');
@@ -369,21 +380,21 @@
     });
   }
 
-  // Marquee score: same outline+fill treatment as the headline but bigger and
-  // shrink-to-fit so 4-digit scores still read clean.
+  // Marquee score: same outline+fill treatment, but BIG so the score
+  // dominates the panel — that's what the student is screenshotting to flex.
   function drawMarqueeScore(ctx, text, cx, baseY, maxWidth) {
-    let size = 190;
+    let size = 260;
     ctx.font = '900 ' + size + 'px ' + ARCADE_HEAD;
-    while (size > 70 && ctx.measureText(text).width > maxWidth) {
-      size -= 10;
+    while (size > 80 && ctx.measureText(text).width > maxWidth) {
+      size -= 12;
       ctx.font = '900 ' + size + 'px ' + ARCADE_HEAD;
     }
     ctx.textAlign = 'center';
     // Drop shadow
     ctx.fillStyle = PAL.magenta;
-    ctx.fillText(text, cx + 6, baseY + 6);
+    ctx.fillText(text, cx + 8, baseY + 8);
     // Outline
-    ctx.lineWidth = Math.max(8, size * 0.07);
+    ctx.lineWidth = Math.max(10, size * 0.08);
     ctx.strokeStyle = '#1a0a00';
     ctx.lineJoin = 'round';
     ctx.miterLimit = 2;
@@ -391,7 +402,7 @@
     // Yellow fill
     ctx.fillStyle = PAL.yellow;
     ctx.fillText(text, cx, baseY);
-    // Highlight
+    // Highlight gradient
     const grad = ctx.createLinearGradient(0, baseY - size, 0, baseY + size * 0.2);
     grad.addColorStop(0, '#fff5b2');
     grad.addColorStop(1, 'rgba(255,210,77,0)');
