@@ -541,26 +541,26 @@ async function loadPack() {
 function termCount() {
   if (!vocabPack) return 0;
   const topic = vocabPack.topics[state.topic];
-  let n = topic ? topic.terms.length : 0;
-  if (n < 12) n = Math.min(24, Object.values(vocabPack.topics).reduce((a, t) => a + t.terms.length, 0));
-  return n;
+  // Only the authored terms for the chosen topic. Previously this padded
+  // to a 12-term minimum by pulling from other topics — that mixed
+  // Sound/Magnetism words into an Energy game and looked broken.
+  return topic ? topic.terms.length : 0;
 }
 function buildVocab() {
-  // topic terms first; backfill from the rest of the subject+level pack to 12+
+  // Topic-pure: every terms-game tests ONLY the terms the player selected.
+  // No backfill from other topics — players pick "Energy" expecting energy
+  // vocabulary, not whatever else lives in the same JSON. Smaller pools
+  // mean smaller grids / shorter runs, but every term is on-topic.
   const out = [];
   const seen = new Set();
-  // Send BOTH field names: the original vocab-data.js convention is
-  // `definition`, newer code reads `def` — every game accepts this payload.
-  const push = (t, d) => { const k = t.toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push({ term: t, def: d, definition: d }); } };
+  // Send BOTH field names: original vocab-data.js used `definition`,
+  // newer code reads `def` — accept both to stay compatible.
+  const push = (t, d) => {
+    const k = t.toLowerCase();
+    if (!seen.has(k)) { seen.add(k); out.push({ term: t, def: d, definition: d }); }
+  };
   const topic = vocabPack.topics[state.topic];
   if (topic) topic.terms.forEach(([t, d]) => push(t, d));
-  if (out.length < 12) {
-    const rest = Object.entries(vocabPack.topics).filter(([slug]) => slug !== state.topic);
-    for (const [, tt] of Arcade.shuffle(rest)) {
-      for (const [t, d] of tt.terms) { push(t, d); if (out.length >= 24) break; }
-      if (out.length >= 24) break;
-    }
-  }
   return out;
 }
 
