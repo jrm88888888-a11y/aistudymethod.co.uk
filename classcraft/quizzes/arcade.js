@@ -384,7 +384,17 @@
           <div class="ar-ctas">
             <button class="ar-btn" id="ar-again">▶ Run it back</button>
             <button class="ar-btn ghost" id="ar-share">📋 Copy result</button>
-            <a class="ar-btn ghost" href="../../subjects.html">More games</a>
+            ${(function() {
+              // When the player came in from arcade.html, send them back to it
+              // with their subject/level/board/topic still selected. Falls back
+              // to the subjects catalog if they reached the game any other way.
+              let ret = '';
+              try { ret = sessionStorage.getItem('aism-arcade-return'); } catch (e) {}
+              if (ret !== null && ret !== undefined) {
+                return '<a class="ar-btn ghost" href="../arcade.html' + ret + '">Back to arcade</a>';
+              }
+              return '<a class="ar-btn ghost" href="../../subjects.html">More games</a>';
+            })()}
           </div>
           <div class="ar-watermark">aistudymethod.co.uk</div>
         </div>
