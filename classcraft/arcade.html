@@ -610,7 +610,13 @@ function launch(kind, id) {
   // terms tester: seed sessionStorage exactly like vocab-hub does
   if (!vocabPack) return;
   const vocab = buildVocab();
-  if (vocab.length < 8) return;
+  // Real minimum is 4 unique terms (smallest MCQ + smallest memory grid). Used
+  // to be 8, which silently rejected legitimate 6-term topics. Below 4 we
+  // surface the reason instead of failing silently.
+  if (vocab.length < 4) {
+    coinFlash('TOPIC TOO THIN — PICK ANOTHER');
+    return;
+  }
   try {
     sessionStorage.setItem('vocab', JSON.stringify(vocab));
     sessionStorage.setItem('vocabMeta', JSON.stringify({
