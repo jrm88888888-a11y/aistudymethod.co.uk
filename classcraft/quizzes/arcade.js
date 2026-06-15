@@ -420,6 +420,59 @@
 
     const shareBtn = container.querySelector('#ar-share');
     shareBtn.addEventListener('click', async () => {
+      Arcade.sfx.click();
+      const SHARE_LABEL = '🔥 Challenge your mates';
+      // Modern path: build the PNG flex card via Arcade.shareScore. The opts
+      // object already carries everything the card needs; games can pass an
+      // `opts.share = { subject, level, total, statLine }` for extras the
+      // base opts don't cover.
+      if (Arcade.shareScore) {
+        shareBtn.disabled = true;
+        const orig = shareBtn.textContent;
+        shareBtn.textContent = '… preparing';
+        // Derive sensible defaults for any share field the consumer didn't pass.
+        const sh = opts.share || {};
+        // Fallback statLine: if rows[] exist, join the first two non-empty as a ribbon
+        let defaultStat = null;
+        if (Array.isArray(opts.rows) && opts.rows.length) {
+          defaultStat = opts.rows
+            .filter(r => r && r.v)
+            .slice(0, 2)
+            .map(r => r.v + (r.l ? ' ' + r.l : ''))
+            .join('  ·  ');
+        }
+        // Fallback subject/level: split opts.meta on the centred-dot separator
+        let defLevel = null, defSubject = null;
+        if (opts.meta && typeof opts.meta === 'string') {
+          const parts = opts.meta.split('·').map(p => p.trim()).filter(Boolean);
+          if (parts.length >= 1) defLevel = parts[0];
+          if (parts.length >= 2) defSubject = parts[1];
+        }
+        try {
+          const r = await Arcade.shareScore({
+            gameName: opts.gameName,
+            subject: sh.subject != null ? sh.subject : defSubject,
+            level:   sh.level   != null ? sh.level   : defLevel,
+            topic:   opts.topic,
+            score:   sh.score   != null ? sh.score   : opts.big,
+            total:   sh.total   != null ? sh.total   : null,
+            pct:     opts.pct,
+            rank:    g.letter,
+            rankLine: g.line,
+            bigLabel: opts.bigLabel,
+            statLine: sh.statLine != null ? sh.statLine : defaultStat,
+          });
+          if (r && r.ok) shareBtn.textContent = '✅ Sent!';
+          else shareBtn.textContent = orig;
+        } catch (err) {
+          console.warn('[shareScore] failed', err);
+          shareBtn.textContent = orig;
+        } finally {
+          setTimeout(() => { shareBtn.disabled = false; shareBtn.textContent = SHARE_LABEL; }, 1800);
+        }
+        return;
+      }
+      // Legacy fallback (used only if share-score.js failed to load): text share.
       const lines = (opts.shareLines && opts.shareLines.slice()) || [];
       lines.push('🎓 aistudymethod.co.uk');
       const text = lines.join('\n');
@@ -431,9 +484,9 @@
         try { await navigator.clipboard.writeText(text); ok = true; } catch (err2) {}
       }
       if (ok) {
-        shareBtn.textContent = '✅ Copied!';
+        shareBtn.textContent = '✅ Sent!';
         Arcade.sfx.coin();
-        setTimeout(() => { shareBtn.textContent = '📋 Copy result'; }, 1800);
+        setTimeout(() => { shareBtn.textContent = SHARE_LABEL; }, 1800);
       }
     });
 

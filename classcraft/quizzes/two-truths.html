@@ -327,51 +327,19 @@
         `Score ${state.score} pts · 🔥 best streak ${state.bestStreak}`,
         state.grid.join(''),
       ],
+      // Share-card extras (consumed by Arcade.shareScore inside renderEndCard).
+      share: {
+        subject: subj,
+        level: level,
+        bigLabel: 'POINTS',
+        statLine: '🔥 best streak ' + state.bestStreak + '  ·  ' + pct + '% accuracy',
+      },
       onAgain: startGame,
     });
 
-    // Upgrade the default #ar-share "Copy result" button to call shareScore,
-    // which builds a PNG flex card and hands it to the native OS share sheet
-    // (mobile) or downloads + copies a challenge URL (desktop). Strip the old
-    // listener by cloning the node so we don't get double-fire.
-    if (Arcade.shareScore) {
-      const oldBtn = document.getElementById('ar-share');
-      if (oldBtn) {
-        const newBtn = oldBtn.cloneNode(false);
-        // Match the new pulsing pink share button — clone preserves classes
-        // (ar-btn ar-btn-share) but we re-set the label after the relabel.
-        newBtn.textContent = '🔥 Challenge your mates';
-        oldBtn.replaceWith(newBtn);
-        newBtn.addEventListener('click', async () => {
-          Arcade.sfx && Arcade.sfx.click && Arcade.sfx.click();
-          newBtn.disabled = true;
-          const orig = newBtn.textContent;
-          newBtn.textContent = '… preparing';
-          try {
-            const r = await Arcade.shareScore({
-              gameName: 'Two Truths One Lie',
-              subject: subj,
-              level: level,
-              topic: topic,
-              score: state.score,
-              total: null,         // Two Truths score is a point total, not X/N
-              pct: pct,
-              rank: endResult && endResult.grade && endResult.grade.letter,
-              rankLine: endResult && endResult.grade && endResult.grade.line,
-              bigLabel: 'POINTS',
-              statLine: '🔥 best streak ' + state.bestStreak + '  ·  ' + pct + '% accuracy',
-            });
-            if (r && r.ok) newBtn.textContent = '✅ Sent!';
-            else newBtn.textContent = orig;
-          } catch (err) {
-            console.warn('[shareScore] failed', err);
-            newBtn.textContent = orig;
-          } finally {
-            setTimeout(() => { newBtn.disabled = false; newBtn.textContent = orig; }, 1800);
-          }
-        });
-      }
-    }
+    // Share button is now wired by Arcade.renderEndCard automatically — we
+    // just pass the share extras via opts.share above so the card has good
+    // copy. No per-game override needed any more.
     announce.textContent = `Game over. Score ${state.score} points. You caught ${state.caught} of ${total} lies — ${pct} percent.`;
   }
 
