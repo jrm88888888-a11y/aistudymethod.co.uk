@@ -196,7 +196,10 @@ function truncateStatement(s, max) {
   // Placeholder concept defs would make hollow "truths" — treat as unauthored.
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
-  const bankItems = ((bank && bank.items) || []).filter(it => it && it.misconception);
+  // Hard-suppress quality:"low" banks (over-level KS3 content was leaking through).
+  const bankItems = (bank && bank.quality === 'low')
+    ? []
+    : ((bank && bank.items) || []).filter(it => it && it.misconception);
 
   // Each entry: truncated text → {ctx, why}. ctx is a short context line
   // (the term or the question) rendered above the claim — bank answers like

@@ -75,8 +75,13 @@
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
   const bankItems = ((bank && bank.items) || []).filter(it => it && it.q && it.misconception);
+  // Hard-suppress quality:"low" banks. 96% of KS3 banks are tagged low because
+  // the generation pipeline routinely produced over-level content (quantum,
+  // spectroscopy, etc.). Without this gate the engine still drew items from
+  // them, so KS3 students were seeing A-Level misconceptions.
+  const bankIsLowQuality = bank && bank.quality === 'low';
 
-  if (!spec || !bank || concepts.length < 4 || bankItems.length < 2) {
+  if (!spec || !bank || bankIsLowQuality || concepts.length < 4 || bankItems.length < 2) {
     root.innerHTML = `
       <div class="ar-badge">V · Verify · Two Truths One Lie</div>
       <h1 class="ar-title">${esc(topic)}</h1>
@@ -333,7 +338,9 @@
       const oldBtn = document.getElementById('ar-share');
       if (oldBtn) {
         const newBtn = oldBtn.cloneNode(false);
-        newBtn.textContent = '📤 Share my score';
+        // Match the new pulsing pink share button — clone preserves classes
+        // (ar-btn ar-btn-share) but we re-set the label after the relabel.
+        newBtn.textContent = '🔥 Challenge your mates';
         oldBtn.replaceWith(newBtn);
         newBtn.addEventListener('click', async () => {
           Arcade.sfx && Arcade.sfx.click && Arcade.sfx.click();
@@ -354,7 +361,7 @@
               bigLabel: 'POINTS',
               statLine: '🔥 best streak ' + state.bestStreak + '  ·  ' + pct + '% accuracy',
             });
-            if (r && r.ok) newBtn.textContent = '✅ Shared!';
+            if (r && r.ok) newBtn.textContent = '✅ Sent!';
             else newBtn.textContent = orig;
           } catch (err) {
             console.warn('[shareScore] failed', err);

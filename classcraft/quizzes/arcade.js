@@ -382,8 +382,8 @@
             : best !== null ? `<div class="ar-best old">Personal best: ${e(best)}${opts.bestSuffix || '%'}</div>` : ''}
           ${opts.insight ? `<div class="ar-insight">${e(opts.insight)}</div>` : ''}
           <div class="ar-ctas">
-            <button class="ar-btn" id="ar-again">▶ Run it back</button>
-            <button class="ar-btn ghost" id="ar-share">📋 Copy result</button>
+            <button class="ar-btn ghost" id="ar-again">▶ Play again</button>
+            <button class="ar-btn ar-btn-share" id="ar-share">🔥 Challenge your mates</button>
             ${(function() {
               // When the player came in from arcade.html, send them back to it
               // with their subject/level/board/topic still selected. Falls back
