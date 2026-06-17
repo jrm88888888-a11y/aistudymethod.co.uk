@@ -129,7 +129,45 @@
 
   const glossary = SUBJECT_GLOSSARY[subjKey] || GENERIC_GLOSSARY;
   const allTerms = ((spec && spec.concepts) || []).map(c => c && c.term).filter(Boolean);
-  const decoyPool = glossary.filter(d => !allTerms.some(t => tooSimilar(d, t)));
+
+  // Prefer decoys drawn from REAL neighbouring topics in the same subject+level
+  // (same register, genuinely plausible near-misses) over the generic glossary.
+  // Only exclude candidates that actually collide with a live concept term; we
+  // deliberately keep superficially-similar terms so the correct set is no
+  // longer obvious from shape alone. Falls back to the glossary if no term
+  // bank exists for this subject+level.
+  function clashes(cand) {
+    const nd = norm(cand);
+    if (!nd) return true;
+    return allTerms.some(t => { const nt = norm(t); return nt && (nt === nd || nt.includes(nd) || nd.includes(nt)); });
+  }
+  let realDecoys = [];
+  try {
+    const tbKey = ((spec && spec.subject) || '') + '-' + ((spec && spec.level) || '');
+    const curSlug = (spec && spec.topic_slug) || '';
+    const tr = await fetch('../arcade/termbanks/' + encodeURIComponent(tbKey) + '.json');
+    if (tr.ok) {
+      const tb = await tr.json();
+      const seen = new Set();
+      realDecoys = ((tb && tb.terms) || [])
+        .filter(e => e && e.t && e.s !== curSlug && !clashes(e.t))
+        .map(e => e.t)
+        .filter(t => { const k = norm(t); if (seen.has(k)) return false; seen.add(k); return true; });
+    }
+  } catch (e) { /* fall back to glossary below */ }
+
+  const glossaryPool = glossary.filter(d => !allTerms.some(t => tooSimilar(d, t)));
+
+  // Blend decoys with the correct cards by SHAPE: prefer real neighbouring
+  // terms whose word-count and character length match the in-topic concepts,
+  // so the answer set can't be spotted from length/shape alone (the giveaway
+  // when 4 short verb forms sat next to 2 long phrases). Keep a roomy pool.
+  function _med(a){ a = a.slice().sort((x,y)=>x-y); return a.length ? a[Math.floor(a.length/2)] : 0; }
+  const _medW = _med(allTerms.map(t => String(t).trim().split(/\s+/).length));
+  const _medL = _med(allTerms.map(t => String(t).trim().length));
+  function _shape(t){ const w = String(t).trim().split(/\s+/).length, l = String(t).trim().length; return Math.abs(w - _medW) * 12 + Math.abs(l - _medL); }
+  const shapedDecoys = realDecoys.slice().sort((a,b)=>_shape(a)-_shape(b)).slice(0, 48);
+  const decoyPool = shapedDecoys.length >= 6 ? Arcade.shuffle(shapedDecoys) : glossaryPool;
 
   if (!spec || concepts.length < 4 || decoyPool.length < 2) {
     root.innerHTML = `
