@@ -382,17 +382,37 @@ function coinFlash(text) {
 function node(s) { return IDX.subjects.find(x => x.id === s); }
 function nodeL() { const s = node(state.subject); return s && s.levels.find(x => x.id === state.level); }
 function nodeB() { const l = nodeL(); return l && l.boards.find(x => x.id === state.board); }
-// Board-agnostic ("general") topics are valid for every exam board — merge
-// them in so picking AQA never hides the topics that simply aren't
-// board-tagged. Board-specific topics list first.
+// Subjects whose topics are mutually-exclusive exam-board OPTIONS rather than
+// shared content (verified June 2026: the per-board tags are accurate, but the
+// board-agnostic "general" pool for these is mostly OTHER boards' option names
+// plus duplicates). For these we do NOT merge "general" under a specific board,
+// so a student who picks e.g. AQA History sees only AQA's options — not Edexcel/
+// OCR ones. Other subjects keep the merge (general = genuinely shared content).
+const OPTION_BASED_SUBJECTS = new Set(['history', 'religious-studies']);
+// Normalised topic label for de-duplication. Collapses near-identical labels
+// ("Tudors 1485-1603" listed twice) but KEEPS dates so distinct date-bounded
+// options (Conflict & Tension 1894-1918 vs 1918-1939) are never merged.
+function normTopicName(s) {
+  return String(s || '').toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\b(?:the|of|and|to|in|a|an)\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+// Board-agnostic ("general") topics are merged in for shared-content subjects so
+// picking AQA never hides untagged topics. Board-specific topics list first and
+// win on de-dup. Option-based subjects skip the general merge (see above).
 function topicsFor() {
   const l = nodeL(), b = nodeB();
   if (!l || !b) return [];
-  const seen = new Set();
-  const out = [];
-  const add = t => { if (!seen.has(t.slug)) { seen.add(t.slug); out.push(t); } };
+  const seenSlug = new Set(), seenName = new Set(), out = [];
+  const add = t => {
+    const nm = normTopicName(t.d || t.slug);
+    if (seenSlug.has(t.slug) || (nm && seenName.has(nm))) return;
+    seenSlug.add(t.slug); if (nm) seenName.add(nm); out.push(t);
+  };
   b.topics.forEach(add);
-  if (b.id !== 'general') {
+  if (b.id !== 'general' && !OPTION_BASED_SUBJECTS.has(state.subject)) {
     const gen = l.boards.find(x => x.id === 'general');
     if (gen) gen.topics.forEach(add);
   }
