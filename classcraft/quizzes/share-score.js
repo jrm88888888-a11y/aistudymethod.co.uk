@@ -542,7 +542,7 @@
     banner.style.cssText =
       'background:linear-gradient(135deg,#1a1340 0%,#0d0a30 100%);' +
       'border:2px solid #7e6dff;border-radius:14px;padding:18px 24px;' +
-      'margin:0 auto 18px;max-width:760px;color:#ece8ff;' +
+      'margin:calc(var(--nav-h, 68px) + 16px) auto 18px;max-width:760px;color:#ece8ff;' +
       'font-family:ui-monospace,Menlo,Consolas,monospace;' +
       'box-shadow:0 10px 36px rgba(126,109,255,0.32);' +
       'display:flex;align-items:center;gap:14px;flex-wrap:wrap;';
