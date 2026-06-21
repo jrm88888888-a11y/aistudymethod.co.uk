@@ -695,4 +695,34 @@
   };
 
   window.Arcade = Arcade;
+
+  // Any game "← Back to subjects" link becomes "← Back to arcade", returning the
+  // player to the arcade picker with their subject/level/board/topic restored
+  // (the arcade saves its URL state to sessionStorage on launch and restores it).
+  (function () {
+    function arcadeHref() {
+      var ret = '';
+      try { ret = sessionStorage.getItem('aism-arcade-return') || ''; } catch (e) {}
+      return '../arcade.html' + ret;
+    }
+    function rewire() {
+      var as = document.getElementsByTagName('a');
+      for (var i = 0; i < as.length; i++) {
+        var a = as[i], t = (a.textContent || '').trim();
+        if (/back to subjects$/i.test(t)) {
+          a.setAttribute('href', arcadeHref());
+          a.textContent = t.replace(/subjects/i, 'arcade');
+        }
+      }
+    }
+    function init() {
+      rewire();
+      try {
+        var mo = new MutationObserver(function () { rewire(); });
+        mo.observe(document.body, { childList: true, subtree: true });
+      } catch (e) {}
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+  })();
 })();
