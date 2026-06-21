@@ -10,6 +10,9 @@
 <style>
   .rv-stage { position: relative; border-radius: var(--ar-r); overflow: hidden; background: #0f1117; border: 1px solid var(--ar-border-hi); box-shadow: 0 14px 40px rgba(0,0,0,0.5); }
   .rv-canvas { display: block; width: 100%; height: auto; }
+  .rv-defstage { min-height: 200px; display: flex; align-items: center; justify-content: center; padding: 8px; }
+  .rv-def { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 19px; line-height: 1.95; color: #eaeaff; padding: 22px 24px; text-align: center; max-width: 580px; }
+  .rv-def .rv-mask { display: inline-block; color: transparent; background: rgba(120,130,255,0.18); border-radius: 4px; letter-spacing: -1px; user-select: none; }
   .rv-reveal-tag { position: absolute; top: 10px; right: 10px; background: rgba(6,6,15,0.8); color: var(--ar-cyan); font-family: var(--ar-mono); font-size: 10px; letter-spacing: 1px; padding: 4px 10px; border-radius: 20px; pointer-events: none; border: 1px solid rgba(0,229,255,0.3); }
 
   .rv-pts-wrap { text-align: center; margin: 4px 0 12px; }
@@ -363,11 +366,11 @@ function renderPoster(term, subject, W, H) {
     root.innerHTML = `
       <div class="ar-badge">V · Verify · Reveal Race</div>
       <h1 class="ar-title">${esc(topic)}</h1>
-      <p class="ar-sub">Reveal Race needs at least four concept terms for this exact topic so it can build posters and decoys. That set hasn't been authored yet.</p>
+      <p class="ar-sub">Reveal Race needs at least four concept definitions for this exact topic so it can build clues and decoys. That set hasn't been authored yet.</p>
       <div class="ar-meta">${esc([level, subjDisplay, 'In production'].filter(Boolean).join(' · '))}</div>
       <div class="ar-card" style="text-align:center;padding:40px 28px;">
-        <div style="font-size:48px;line-height:1;margin-bottom:14px">🖼️</div>
-        <h2 style="font-size:1.3rem;margin:0 0 8px;font-weight:700;">Posters in production</h2>
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">💡</div>
+        <h2 style="font-size:1.3rem;margin:0 0 8px;font-weight:700;">Clues in production</h2>
         <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Check back soon — this topic's concept set is still being written at the required depth.</p>
         <a href="../../subjects.html" style="color:var(--ar-cyan);font-family:var(--ar-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">← Back to subjects</a>
       </div>
@@ -394,7 +397,9 @@ function renderPoster(term, subject, W, H) {
 
   // Build rounds: one per concept (shuffled), each with 3 decoy terms from the same spec.
   function buildRounds() {
-    const order = Arcade.shuffle(concepts).slice(0, TOTAL_ROUNDS);
+    const withDef = concepts.filter(c => c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+    const pool = withDef.length >= 4 ? withDef : concepts;
+    const order = Arcade.shuffle(pool).slice(0, TOTAL_ROUNDS);
     return order.map(target => {
       const decoys = Arcade.shuffle(concepts.filter(c => c.term !== target.term)).slice(0, 3);
       const options = Arcade.shuffle([target.term, ...decoys.map(c => c.term)]);
@@ -405,7 +410,7 @@ function renderPoster(term, subject, W, H) {
   let rounds, state;
   let phase = 'idle';        // idle | revealing | options | feedback | done
   let cellOrder = [], revealedCount = 0, revealedStages = 0;
-  let artCanvas = null, viewCtx = null;
+  let artCanvas = null, viewCtx = null, defTokens = null;
   let revealT0 = 0, revealElapsed = 0;
   let stageTimer = null, ptsRAF = null, lastBeat = 0;
   let frozenPts = START_PTS, frozenFrac = 0;
@@ -424,7 +429,7 @@ function renderPoster(term, subject, W, H) {
     return `
       <div class="ar-badge">V · Verify · Reveal Race</div>
       <h1 class="ar-title">${esc(topic)}</h1>
-      <p class="ar-sub">The poster reveals on its own — and 500 points drain away while it does. Buzz the second you know it. Wrong guess? The decay resumes. Two wrong guesses ends the round.</p>
+      <p class="ar-sub">A definition reveals word by word — and 500 points drain away while it does. Buzz the second you can name it. Wrong guess? The decay resumes. Two wrong guesses ends the round.</p>
       <div class="ar-meta">${esc([level, subjDisplay].filter(Boolean).join(' · '))} · ${esc(metaTail)}</div>
     `;
   }
@@ -452,14 +457,13 @@ function renderPoster(term, subject, W, H) {
         <div class="ar-hud-stat">named <b id="hud-named">${state.correct}</b></div>
       </div>
       <div class="ar-card">
-        <div class="ar-label">Which concept is this poster?</div>
+        <div class="ar-label">Which concept is being described?</div>
         <div class="rv-pts-wrap">
           <div class="rv-pts" id="pts">${START_PTS}</div>
           <div class="rv-pts-lbl">pts on the table — buzz to freeze</div>
         </div>
-        <div class="rv-stage">
-          <canvas class="rv-canvas" id="art" width="${ART_W}" height="${ART_H}" role="img"
-            aria-label="Abstract poster gradually revealing — buzz in when you can identify the concept"></canvas>
+        <div class="rv-stage rv-defstage">
+          <div class="rv-def" id="deftext" role="text" aria-label="A definition revealing word by word — buzz in when you can name the concept"></div>
           <div class="rv-reveal-tag" id="reveal-tag">0%</div>
         </div>
         <div class="rv-buzz-row" id="buzz-row">
@@ -475,28 +479,9 @@ function renderPoster(term, subject, W, H) {
       </div>
     `;
 
-    const viewCanvas = document.getElementById('art');
-    viewCtx = viewCanvas.getContext('2d');
-    artCanvas = renderPoster(round.target.term, subject, ART_W, ART_H);
-
-    // Seeded reveal order — deterministic per concept so replays feel fair.
-    const rnd = mulberry32(fnv1a('order|' + round.target.term + '|' + subject));
-    cellOrder = Array.from({ length: TOTAL_CELLS }, (_, i) => i);
-    for (let i = cellOrder.length - 1; i > 0; i--) {
-      const j = Math.floor(rnd() * (i + 1));
-      [cellOrder[i], cellOrder[j]] = [cellOrder[j], cellOrder[i]];
-    }
-
-    // Base layer: coarse pixelated mosaic, dimmed — the "covered" state.
-    const mosaic = document.createElement('canvas');
-    mosaic.width = GRID_COLS; mosaic.height = GRID_ROWS;
-    const mctx = mosaic.getContext('2d');
-    mctx.drawImage(artCanvas, 0, 0, GRID_COLS, GRID_ROWS);
-    viewCtx.imageSmoothingEnabled = false;
-    viewCtx.drawImage(mosaic, 0, 0, ART_W, ART_H);
-    viewCtx.imageSmoothingEnabled = true;
-    viewCtx.fillStyle = 'rgba(10,11,16,0.55)';
-    viewCtx.fillRect(0, 0, ART_W, ART_H);
+    // Definition reveal: split into word tokens, start fully masked.
+    defTokens = String(round.target.def || '').split(/\s+/).filter(Boolean);
+    revealCellsTo(0);
 
     document.getElementById('buzz').addEventListener('click', onBuzz);
     document.getElementById('slow-toggle').addEventListener('change', e => {
@@ -514,7 +499,7 @@ function renderPoster(term, subject, W, H) {
       announce(slowMode ? 'Slow mode on — reveal time doubled.' : 'Slow mode off.');
     });
 
-    announce('Round ' + (state.idx + 1) + ' of ' + TOTAL_ROUNDS + '. Poster revealing. 500 points on the table and falling. Press space to buzz.');
+    announce('Round ' + (state.idx + 1) + ' of ' + TOTAL_ROUNDS + '. Definition revealing. 500 points on the table and falling. Press space to buzz.');
     startReveal();
   }
 
@@ -565,15 +550,14 @@ function renderPoster(term, subject, W, H) {
   }
 
   function revealCellsTo(frac) {
-    const target = Math.floor(frac * TOTAL_CELLS);
-    const cw = ART_W / GRID_COLS, ch = ART_H / GRID_ROWS;
-    while (revealedCount < target && revealedCount < TOTAL_CELLS) {
-      const cell = cellOrder[revealedCount];
-      const cx = (cell % GRID_COLS) * cw;
-      const cy = Math.floor(cell / GRID_COLS) * ch;
-      viewCtx.drawImage(artCanvas, cx, cy, cw, ch, cx, cy, cw, ch);
-      revealedCount++;
-    }
+    const el = document.getElementById('deftext');
+    if (!el || !defTokens) return;
+    const n = Math.ceil(frac * defTokens.length);
+    el.innerHTML = defTokens.map((tok, i) =>
+      i < n
+        ? '<span class="rv-w">' + esc(tok) + '</span>'
+        : '<span class="rv-mask" aria-hidden="true">' + '█'.repeat(Math.min(10, Math.max(2, tok.length))) + '</span>'
+    ).join(' ');
   }
 
   function updateRevealUI(frac) {
