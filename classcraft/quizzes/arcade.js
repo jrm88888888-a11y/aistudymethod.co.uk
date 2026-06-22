@@ -363,6 +363,56 @@
   };
 
   // Shareable results card. Renders into `container` and wires buttons.
+  /* ---------------------------------------------------------------------- *
+   * Parent share — student sends their result + a link to the parent landing
+   * page (for-parents.html), which carries the £25 course pitch. This is the
+   * bridge from free player (the student) to buyer (the parent). Works in
+   * every game: native share sheet on mobile, clipboard copy on desktop.
+   * ---------------------------------------------------------------------- */
+  Arcade.shareWithParents = async function (opts) {
+    opts = opts || {};
+    let url;
+    try { url = new URL('../../for-parents.html', location.href); }
+    catch (e) { url = new URL('https://aistudymethod.co.uk/for-parents.html'); }
+    const p = url.searchParams;
+    if (opts.score != null) p.set('s', String(opts.score));
+    if (opts.total != null) p.set('t', String(opts.total));
+    if (opts.subject) p.set('subj', opts.subject);
+    if (opts.level)   p.set('level', opts.level);
+    if (opts.topic)   p.set('topic', opts.topic);
+    p.set('utm_source', 'arcade');
+    p.set('utm_medium', 'parent_share');
+    p.set('utm_campaign', 'parent_invite');
+    const link = url.toString();
+
+    const scoreStr = opts.score != null
+      ? (opts.total != null ? opts.score + '/' + opts.total : String(opts.score))
+      : null;
+    const topicBit = opts.topic ? (' ' + opts.topic) : '';
+    const msg = '📚 I’ve been revising' + topicBit + ' on AI Study Method'
+      + (scoreStr ? ' and just scored ' + scoreStr : '')
+      + '! Can we get the full Velvet Method course? It teaches you to revise any subject'
+      + ' using AI — built by teachers, £25 for life.';
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'AI Study Method', text: msg, url: link });
+        return { ok: true, method: 'native-share' };
+      } catch (err) {
+        if (err && err.name === 'AbortError') return { ok: false, cancelled: true };
+        // else fall through to clipboard
+      }
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(msg + '\n' + link);
+        return { ok: true, method: 'clipboard' };
+      }
+    } catch (err) { /* swallow */ }
+    try { window.open(link, '_blank'); return { ok: true, method: 'open' }; }
+    catch (err) { return { ok: false }; }
+  };
+
   Arcade.renderEndCard = function (container, opts) {
     const e = Arcade.escapeHtml;
     const g = Arcade.grade(opts.pct);
@@ -392,6 +442,7 @@
           <div class="ar-ctas">
             <button class="ar-btn ghost" id="ar-again">▶ Play again</button>
             <button class="ar-btn ar-btn-share" id="ar-share">🔥 Challenge your mates</button>
+            <button class="ar-btn" id="ar-parents" style="background:linear-gradient(135deg,#1fb89a 0%,#8b5cf6 100%);color:#fff;border:none;">📲 Show your parents</button>
             ${(function() {
               // When the player came in from arcade.html, send them back to it
               // with their subject/level/board/topic still selected. Falls back
@@ -497,6 +548,40 @@
         setTimeout(() => { shareBtn.textContent = SHARE_LABEL; }, 1800);
       }
     });
+
+    // Parent share — bridge to the £25 course via for-parents.html
+    const parentsBtn = container.querySelector('#ar-parents');
+    if (parentsBtn) {
+      const PARENT_LABEL = parentsBtn.textContent;
+      parentsBtn.addEventListener('click', async () => {
+        Arcade.sfx.click();
+        parentsBtn.disabled = true;
+        parentsBtn.textContent = '… preparing';
+        const sh = opts.share || {};
+        let defLevel = null, defSubject = null;
+        if (opts.meta && typeof opts.meta === 'string') {
+          const parts = opts.meta.split('·').map(x => x.trim()).filter(Boolean);
+          if (parts.length >= 1) defLevel = parts[0];
+          if (parts.length >= 2) defSubject = parts[1];
+        }
+        try {
+          const r = await Arcade.shareWithParents({
+            subject: sh.subject != null ? sh.subject : defSubject,
+            level:   sh.level   != null ? sh.level   : defLevel,
+            topic:   opts.topic,
+            score:   sh.score   != null ? sh.score   : opts.big,
+            total:   sh.total   != null ? sh.total   : null,
+          });
+          if (r && r.ok && r.method === 'clipboard') parentsBtn.textContent = '✅ Link copied!';
+          else if (r && r.ok) parentsBtn.textContent = '✅ Shared!';
+          else parentsBtn.textContent = PARENT_LABEL;
+        } catch (err) {
+          parentsBtn.textContent = PARENT_LABEL;
+        } finally {
+          setTimeout(() => { parentsBtn.disabled = false; parentsBtn.textContent = PARENT_LABEL; }, 2400);
+        }
+      });
+    }
 
     return { grade: g, newBest };
   };
