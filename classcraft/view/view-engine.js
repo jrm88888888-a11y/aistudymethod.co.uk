@@ -114,16 +114,23 @@ window.VW = (function(){
     const params = qs();
     const subject = params.subject || 'biology';
     const level   = params.level   || 'gcse';
-    const url = `curricula/${subject}-${level}.json`;
-    try {
-      const r = await fetch(url, { cache: 'no-cache' });
-      if (!r.ok) throw new Error('Curriculum not found: ' + r.status);
-      const c = await r.json();
-      c._params = { subject, level };
-      return c;
-    } catch (e) {
-      throw e;
+    const board   = params.board   || '';
+    // Prefer a board-specific curriculum (spec-accurate); fall back to the shared
+    // subject-level file for subjects not yet converted to board-specific.
+    const urls = [];
+    if (board) urls.push(`curricula/${subject}-${level}-${board}.json`);
+    urls.push(`curricula/${subject}-${level}.json`);
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const r = await fetch(url, { cache: 'no-cache' });
+        if (!r.ok) { lastErr = new Error('Curriculum not found: ' + r.status); continue; }
+        const c = await r.json();
+        c._params = { subject, level, board };
+        return c;
+      } catch (e) { lastErr = e; }
     }
+    throw lastErr || new Error('Curriculum not found');
   }
 
   function setMeta(curriculum, engineName, engineBlurb) {
