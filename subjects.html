@@ -3039,22 +3039,45 @@ function setStage(stage) {
  applyFilters();
 }
 
+// Which exam boards actually offer each subject at each level — derived from the
+// Specification Maps that exist (the authoritative "this board offers this subject"
+// source). Built once from RESOURCES. Key: "<subject>-<level>" → Set of board codes.
+let _specAvail = null;
+function specAvailability() {
+ if (_specAvail) return _specAvail;
+ _specAvail = {};
+ for (const r of RESOURCES) {
+   if (r.type !== 'spec-list') continue;
+   const k = r.subject + '-' + r.level;
+   (_specAvail[k] || (_specAvail[k] = new Set())).add(r.examBoard);
+ }
+ return _specAvail;
+}
+
 function updateBoardDropdown() {
  const sel = document.getElementById('filterBoard');
- const lvl = state.level;
+ const lvl = state.level, subj = state.subject;
  if (lvl === 'all' || !EXAM_BOARDS[lvl]) {
    sel.disabled = true;
    sel.innerHTML = '<option value="all">All Boards</option>';
    state.board = 'all';
    return;
  }
- // KS3 has only General — keep dropdown enabled but with one option
- sel.disabled = false;
  const current = sel.value;
- const boards = EXAM_BOARDS[lvl];
+ let boards = EXAM_BOARDS[lvl];
+ // Once a subject is chosen, show ONLY the boards that actually offer it at this
+ // level (i.e. that have a Specification Map). KS3 = General only, left unconstrained.
+ // IB Specification Maps use the board code "ib" and cover both SL and HL.
+ if (subj !== 'all' && lvl !== 'ks3') {
+   const avail = specAvailability()[subj + '-' + lvl] || new Set();
+   boards = (lvl === 'ibdp')
+     ? (avail.has('ib') ? EXAM_BOARDS['ibdp'] : [])
+     : boards.filter(b => avail.has(b.value));
+ }
+ sel.disabled = false;
  sel.innerHTML = '<option value="all">All Boards</option>' +
    boards.map(b => `<option value="${b.value}" ${current === b.value ? 'selected' : ''}>${b.label}</option>`).join('');
- // If current selection isn't in the new list, reset to 'all'
+ // If the current selection is no longer offered for this subject+level, reset.
  if (current !== 'all' && !boards.some(b => b.value === current)) {
    sel.value = 'all';
    state.board = 'all';
