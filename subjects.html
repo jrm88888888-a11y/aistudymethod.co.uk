@@ -930,15 +930,13 @@ a.resource-card:focus-visible { outline: 2px solid var(--accent); outline-offset
       original pills remain familiar. -->
  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-family:'DM Sans',sans-serif;font-size:12px;align-items:center;">
  <span style="color:var(--text-muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;align-self:center;margin-right:4px;">New quiz games:</span>
+ <!-- Arcade-only quiz games (Connections Grid, Wager, Higher or Lower, Falling Words,
+      Word Web, Reveal Race) are intentionally NOT shown in the subject filter — they
+      live in the Subjects Arcade for marketing reach. Only the filter-grade quiz games
+      remain here. -->
  <button class="format-pill" data-format="two-truths-one-lie" onclick="setFormat('two-truths-one-lie')">Two Truths One Lie</button>
- <button class="format-pill" data-format="connections-grid"   onclick="setFormat('connections-grid')">Connections Grid</button>
  <button class="format-pill" data-format="sort-sequence"      onclick="setFormat('sort-sequence')">Sort the Sequence</button>
- <button class="format-pill" data-format="wager-quiz"         onclick="setFormat('wager-quiz')">Wager</button>
- <button class="format-pill" data-format="higher-or-lower"    onclick="setFormat('higher-or-lower')">Higher or Lower</button>
- <button class="format-pill" data-format="falling-words"      onclick="setFormat('falling-words')">Falling Words</button>
  <button class="format-pill" data-format="conveyor-belt"      onclick="setFormat('conveyor-belt')">Conveyor Belt</button>
- <button class="format-pill" data-format="word-web"           onclick="setFormat('word-web')">Word Web</button>
- <button class="format-pill" data-format="reveal-race"        onclick="setFormat('reveal-race')">Reveal Race</button>
  <a class="format-pill format-pill--link" href="classcraft/quizzes/daily-drill.html">Daily Drill →</a>
  </div>
  </div>
@@ -1353,6 +1351,26 @@ function formatMatches(type, fmt) {
  if (type === fmt) return true;
  if (fmt === 'quiz-game' && QUIZ_GAME_TYPES.has(type)) return true;
  return false;
+}
+
+// ── Subject-filter curation ─────────────────────────────────────────────────
+// These activities are CUT from the subject filter (they remain live in the
+// Subjects Arcade and via direct URLs). Enforced at the render layer so the cut
+// is fully reversible and the underlying data file is untouched.
+//  • View tools (kept: Skill Tree, Zoom-In): connection-web, big-picture-sort,
+//    dependency-sequence, map-builder
+//  • Vocab games (kept: crossword, pairs, quiz, termguess): pacman, spaceinvaders,
+//    hangman, anagram
+//  • Mob Quiz (kept in the arcade as its own tile)
+const CUT_HREF_RE = /(view\/(connection-web|big-picture-sort|dependency-sequence|map-builder)\.html|vocab-hub\.html\?game=(pacman|spaceinvaders|hangman|anagram)|mob-quiz)/;
+// Arcade-only quiz games — cut from the filter, kept in the arcade.
+const CUT_TYPES = new Set(['connections-grid','wager-quiz','higher-or-lower','falling-words','word-web','reveal-race']);
+// Browse-only: shown ONLY when their own format chip is selected (kept out of the
+// default view and the general filtered results to reduce clutter).
+const BROWSE_ONLY_TYPES = new Set(['joke-pack','nature-gallery']);
+function isCutFromFilter(r) {
+ if (CUT_TYPES.has(r.type)) return true;
+ return CUT_HREF_RE.test(r.href || '');
 }
 
 // How many cards to show per stage section in the default view.
@@ -3160,7 +3178,7 @@ function renderDefaultView() {
  stages.forEach(stage => {
    const grid = document.getElementById('grid-' + stage);
    if (!grid) return;
-   const items = RESOURCES.filter(r => r.stage === stage).slice(0, DEFAULT_PER_SECTION);
+   const items = RESOURCES.filter(r => r.stage === stage && !isCutFromFilter(r) && !BROWSE_ONLY_TYPES.has(r.type)).slice(0, DEFAULT_PER_SECTION);
    grid.innerHTML = items.map(cardHTML).join('');
    // Hide whole section if no resources for this stage yet
    const section = document.getElementById('section-' + stage);
@@ -3181,6 +3199,10 @@ function showFilteredView() {
  // content is intentionally board-agnostic. When the user picks 'General'
  // explicitly, only general-tagged resources show.
  const matching = RESOURCES.filter(r => {
+   // Subject-filter curation: hide cut activities entirely; show browse-only
+   // types (Jokes, Nature Gallery) only when their own chip is selected.
+   if (isCutFromFilter(r)) return false;
+   if (BROWSE_ONLY_TYPES.has(r.type) && state.format !== r.type) return false;
    // examBoard may be a comma-separated list (e.g. "general,aqa,edexcel") so
    // an adventure can carry multiple board affiliations. The filter passes if:
    //   • user picked 'all' boards, OR
