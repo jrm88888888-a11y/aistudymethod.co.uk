@@ -53,13 +53,15 @@
     <div class="vw-hud-item"><div class="vw-hud-num" id="st-explored">0/0</div><div class="vw-hud-label">Explored</div></div>
     <div class="vw-hud-item"><div class="vw-hud-num" id="st-unlocked">0/0</div><div class="vw-hud-label">Unlocked</div></div>
     <div class="vw-hud-actions">
+      <button class="vw-btn" type="button" id="btn-zoomout" aria-label="Zoom out" title="Zoom out">&#8722;</button>
+      <button class="vw-btn" type="button" id="btn-zoomin" aria-label="Zoom in" title="Zoom in">+</button>
       <button class="vw-btn" type="button" id="btn-fit">Fit view</button>
       <button class="vw-btn" type="button" id="btn-reset">Reset</button>
     </div>
   </div>
 
   <div class="vw-stage st-stage">
-    <div class="st-help">Drag to pan · scroll/pinch to zoom · tap a node to explore</div>
+    <div class="st-help">Drag to pan · +/&#8722; or scroll to zoom · tap a node to explore</div>
     <svg id="st-svg" viewBox="0 0 1000 700"></svg>
     <div class="st-info" id="st-info" style="display:none">
       <div class="name" id="st-info-name"></div>
@@ -108,7 +110,7 @@ const ST = (function(){
     const stage = document.querySelector('.vw-stage');
     stage.classList.add('st-stage');
     stage.innerHTML = `
-      <div class="st-help">Drag to pan · scroll/pinch to zoom · tap a node to explore</div>
+      <div class="st-help">Drag to pan · +/&#8722; or scroll to zoom · tap a node to explore</div>
       <svg id="st-svg" viewBox="0 0 1000 700"></svg>
       <div class="st-info" id="st-info" style="display:none">
         <div class="name" id="st-info-name"></div>
@@ -275,6 +277,18 @@ const ST = (function(){
 
   function fit() { pan = { x: 0, y: 0, scale: 1 }; applyPan(); }
 
+  // Zoom to a target scale while keeping the current view centre fixed.
+  function zoomTo(newScale) {
+    newScale = Math.max(0.5, Math.min(2.5, newScale));
+    const vw = 1000 / pan.scale, vh = 700 / pan.scale;
+    const cx = -pan.x / pan.scale + vw / 2, cy = -pan.y / pan.scale + vh / 2;
+    pan.scale = newScale;
+    const nvw = 1000 / newScale, nvh = 700 / newScale;
+    pan.x = -(cx - nvw / 2) * newScale;
+    pan.y = -(cy - nvh / 2) * newScale;
+    applyPan();
+  }
+
   function setupInput() {
     svg.addEventListener('pointerdown', (e) => {
       const rect = e.target.closest('.st-node-bg');
@@ -290,10 +304,13 @@ const ST = (function(){
     window.addEventListener('pointerup', () => drag = null);
     svg.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const dz = e.deltaY < 0 ? 1.1 : 0.9;
-      pan.scale = Math.max(0.5, Math.min(2.5, pan.scale * dz));
-      applyPan();
+      // Gentle, proportional zoom — clamp per-event delta so a fast trackpad
+      // flick can't jump the whole zoom range in one gesture.
+      const d = Math.max(-40, Math.min(40, e.deltaY));
+      zoomTo(pan.scale * Math.exp(-d * 0.0018));
     }, { passive: false });
+    document.getElementById('btn-zoomin').onclick = () => zoomTo(pan.scale * 1.25);
+    document.getElementById('btn-zoomout').onclick = () => zoomTo(pan.scale / 1.25);
     document.getElementById('btn-fit').onclick = fit;
     document.getElementById('btn-reset').onclick = reset;
   }
