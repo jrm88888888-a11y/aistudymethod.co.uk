@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confidence Quiz — AI Study Method</title>
+<meta name="description" content="A spec-aligned confidence-calibrated diagnostic quiz: find your real strengths, weaknesses and study priorities.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+ :root{
+  --bg-primary:#faf9f7; --bg-secondary:#f3f1ed; --bg-card:#ffffff; --bg-alt:#f0ede8;
+  --accent:#0a6b5e; --accent-soft:rgba(10,107,94,0.08); --accent2:#4a3fa0;
+  --text-primary:#1a1a2e; --text-secondary:#4a5568; --text-muted:#9aa3b2;
+  --border:rgba(0,0,0,0.08); --border-accent:rgba(10,107,94,0.2);
+  --good:#0a6b5e; --good-soft:rgba(10,107,94,.10);
+  --flag:#b4452e; --flag-soft:rgba(180,69,46,.10);
+  --warn:#b8860b; --warn-soft:rgba(184,134,11,.12);
+  --info:#4a3fa0; --info-soft:rgba(74,63,160,.10);
+  --velvet-gradient:linear-gradient(135deg,#0a6b5e 0%,#4a3fa0 100%);
+  --shadow-card:0 4px 24px rgba(0,0,0,0.06);
+ }
+ *{box-sizing:border-box;margin:0;padding:0}
+ body{background:var(--bg-primary);color:var(--text-primary);font-family:'DM Sans',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;padding:0 0 80px}
+ .wrap{max-width:760px;margin:0 auto;padding:0 20px}
+ .topbar{border-bottom:1px solid var(--border);background:var(--bg-card)}
+ .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:58px;max-width:1080px}
+ .back{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--text-secondary);text-decoration:none;text-transform:uppercase}
+ .back:hover{color:var(--accent)}
+ .brand{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase}
+ .badge{display:inline-block;background:var(--accent-soft);border:1px solid var(--border-accent);border-radius:999px;padding:4px 12px;color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase}
+ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(26px,4vw,36px);line-height:1.12;letter-spacing:-0.5px;margin:14px 0 8px}
+ h2{font-family:'Playfair Display',serif;font-weight:600;font-size:22px;margin:0 0 4px}
+ .sub{color:var(--text-secondary);font-size:16px}
+ .meta{margin-top:14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);display:flex;gap:16px;flex-wrap:wrap}
+ .card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-card);padding:26px 24px;margin-top:20px}
+ .btn{display:inline-flex;align-items:center;gap:8px;background:var(--velvet-gradient);color:#fff;border:none;border-radius:10px;padding:13px 22px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:15px;cursor:pointer;text-decoration:none}
+ .btn:disabled{opacity:.4;cursor:not-allowed}
+ .btn.ghost{background:none;color:var(--accent);border:1px solid var(--border-accent)}
+ .btn.sm{padding:8px 14px;font-size:13px}
+ /* progress */
+ .pbar{height:6px;background:var(--bg-alt);border-radius:99px;overflow:hidden;margin:6px 0 2px}
+ .pbar>span{display:block;height:100%;background:var(--velvet-gradient);transition:width .3s}
+ .pnum{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted)}
+ /* question */
+ .qmeta{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;display:flex;gap:10px;align-items:center}
+ .qtype{background:var(--info-soft);color:var(--info);border-radius:6px;padding:2px 8px}
+ .qtext{font-size:19px;font-weight:600;line-height:1.4;margin-bottom:18px}
+ .opts{display:flex;flex-direction:column;gap:10px}
+ .opt{border:1.5px solid var(--border);background:var(--bg-card);border-radius:11px;padding:13px 16px;font-size:15.5px;text-align:left;cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:.12s}
+ .opt:hover{border-color:var(--border-accent);background:var(--accent-soft)}
+ .opt.sel{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent-soft)}
+ .opt .lt{font-family:'DM Mono',monospace;font-weight:600;color:var(--accent);flex:none}
+ .numin{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+ .numin input{font-family:'DM Mono',monospace;font-size:18px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;width:180px;background:var(--bg-card)}
+ .numin input:focus{outline:none;border-color:var(--accent)}
+ .numin .unit{font-family:'DM Mono',monospace;font-size:16px;color:var(--text-secondary)}
+ /* confidence pills */
+ .conf{margin-top:22px;padding-top:18px;border-top:1px dashed var(--border)}
+ .conf-q{font-size:13px;color:var(--text-secondary);font-weight:600;margin-bottom:10px}
+ .pills{display:flex;gap:8px;flex-wrap:wrap}
+ .pill{flex:1 1 0;min-width:84px;border:1.5px solid var(--border);background:var(--bg-card);border-radius:10px;padding:10px 6px;cursor:pointer;text-align:center;transition:.12s}
+ .pill .pe{font-size:18px;line-height:1}
+ .pill .pl{font-size:11.5px;color:var(--text-secondary);margin-top:3px;font-weight:600;line-height:1.2}
+ .pill:hover{border-color:var(--border-accent)}
+ .pill.sel{border-color:var(--accent2);background:var(--info-soft);box-shadow:0 0 0 2px var(--info-soft)}
+ .qnav{display:flex;justify-content:space-between;margin-top:24px;align-items:center}
+ /* report */
+ .scorebig{font-family:'Playfair Display',serif;font-size:46px;font-weight:700;line-height:1}
+ .scorebig small{font-size:20px;color:var(--text-muted);font-weight:400}
+ .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+ .quad{border-radius:12px;padding:14px 16px;border:1px solid var(--border)}
+ .quad .n{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1}
+ .quad .l{font-size:13px;font-weight:600;margin-top:2px}
+ .quad .d{font-size:12.5px;color:var(--text-secondary);margin-top:3px}
+ .quad.flag{background:var(--flag-soft);border-color:rgba(180,69,46,.25)} .quad.flag .n,.quad.flag .l{color:var(--flag)}
+ .quad.good{background:var(--good-soft);border-color:var(--border-accent)} .quad.good .n,.quad.good .l{color:var(--good)}
+ .quad.warn{background:var(--warn-soft);border-color:rgba(184,134,11,.3)} .quad.warn .n,.quad.warn .l{color:var(--warn)}
+ .quad.info{background:var(--info-soft);border-color:rgba(74,63,160,.25)} .quad.info .n,.quad.info .l{color:var(--info)}
+ .sectlbl{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin:26px 0 6px;display:flex;align-items:center;gap:8px}
+ .lo-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed var(--border)}
+ .lo-row:last-child{border-bottom:none}
+ .lo-bar{flex:1;height:8px;background:var(--bg-alt);border-radius:99px;overflow:hidden}
+ .lo-bar>span{display:block;height:100%;border-radius:99px}
+ .lo-name{font-size:14px;font-weight:600;min-width:0}
+ .lo-id{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted)}
+ .lo-score{font-family:'DM Mono',monospace;font-size:13px;color:var(--text-secondary);flex:none;width:42px;text-align:right}
+ .prio{border-left:3px solid var(--flag);background:var(--flag-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin-top:10px}
+ .prio.gap{border-left-color:var(--warn);background:var(--warn-soft)}
+ .prio .pt{font-weight:700;font-size:15px}
+ .prio .pd{font-size:13.5px;color:var(--text-secondary);margin-top:2px}
+ .prompt{background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:10px;display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+ .prompt code{font-family:'DM Mono',monospace;font-size:13px;color:var(--text-primary);line-height:1.5;display:block}
+ .copy{flex:none;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;background:var(--bg-card);border:1px solid var(--border-accent);color:var(--accent);border-radius:7px;padding:6px 10px;cursor:pointer}
+ .copy.done{background:var(--accent);color:#fff}
+ details.rev{border:1px solid var(--border);border-radius:10px;margin-top:10px;overflow:hidden}
+ details.rev>summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;gap:10px;align-items:center;font-weight:600;font-size:14.5px}
+ details.rev>summary::-webkit-details-marker{display:none}
+ .tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:6px;flex:none}
+ .tag.ok{background:var(--good-soft);color:var(--good)} .tag.no{background:var(--flag-soft);color:var(--flag)}
+ .revbody{padding:0 16px 14px;font-size:14px;color:var(--text-secondary)}
+ .revbody b{color:var(--text-primary)}
+ .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+ .state{padding:70px 0;text-align:center;color:var(--text-muted);font-family:'DM Mono',monospace;font-size:14px}
+ .state.err{color:#9a4a4a}
+ .calib{font-size:14.5px;line-height:1.55}
+ @media(max-width:560px){.grid2{grid-template-columns:1fr}.pill{min-width:62px}.pill .pl{font-size:10.5px}}
+</style>
+</head>
+<body>
+ <div class="topbar"><div class="wrap">
+   <a class="back" href="../../subjects.html">◀ All resources</a>
+   <span class="brand">The Velvet Method™ · Evaluate</span>
+ </div></div>
+ <main class="wrap" id="root"><div class="state" id="loading">Loading quiz…</div></main>
+
+<script src="confidence-quiz-v2.js"></script>
+</body>
+</html>
