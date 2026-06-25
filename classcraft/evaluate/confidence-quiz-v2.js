@@ -6,6 +6,8 @@
 (function () {
   'use strict';
   var root = document.getElementById('root');
+  // If this page was opened from a shared "beat my score" link, show the challenge banner.
+  try{ if(window.Arcade && Arcade.maybeShowChallenge) Arcade.maybeShowChallenge(); }catch(e){}
   var P = new URLSearchParams(location.search);
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function fail(m){ root.innerHTML = '<div class="state err">'+esc(m)+'</div>'; }
@@ -166,6 +168,13 @@
         +'<div><div class="scorebig">'+pct+'%<small> ('+correct+'/'+n+')</small></div></div>'
         +'<div class="calib" style="flex:1;min-width:220px">'+calib+'</div></div>';
 
+    // share / challenge — proud-of-this moment (works on every level via share-score.js)
+    html+='<div class="card">'
+        +'<h2>📣 Proud of this? Share it</h2>'
+        +'<p class="sub" style="font-size:15px;margin:6px 0 12px">Send your result to challenge a mate to beat it, or show your parents how you\'re getting on — they\'ll get a link to try the quiz and discover the Velvet Method too.</p>'
+        +'<div class="actions"><button class="btn" id="shareResult">📲 Share my result</button>'
+        +'<a class="btn ghost" href="../../velvet-method.html">About the Velvet Method</a></div></div>';
+
     // confidence quadrants
     html+='<div class="sectlbl">Confidence map</div>'
         +'<div class="grid2">'
@@ -249,6 +258,19 @@
       b.onclick=function(){ var t=b.getAttribute('data-t'); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent='Copied';b.classList.add('done');setTimeout(function(){b.textContent='Copy';b.classList.remove('done');},1400);},function(){}); };
     });
     var rt=document.getElementById('retake'); if(rt) rt.onclick=function(){ state.ans=qs.map(function(){return {choice:null,conf:null};}); state.i=0; renderQ(); window.scrollTo(0,0); };
+
+    // share / challenge button → renders a score card + native share (image fallback: download + copy link)
+    var sb=document.getElementById('shareResult');
+    if(sb) sb.onclick=function(){
+      if(!(window.Arcade && Arcade.shareScore)){ alert('Sharing isn\'t available in this browser.'); return; }
+      var band = pct>=80?'A':pct>=65?'B':pct>=50?'C':'D';
+      Arcade.shareScore({
+        gameName:'Confidence Quiz', subject:quiz.subjectDisplay, level:quiz.levelDisplay,
+        topic:quiz.topicDisplay, score:correct, total:n, pct:pct, bigLabel:'SCORE',
+        rank:band, rankLine:'on '+quiz.topicDisplay,
+        statLine: cat.secure+' secure · '+(cat.flag+cat.gap)+' to revise'
+      });
+    };
 
     // store last result (best-effort)
     try{ localStorage.setItem('cq2:'+(direct||subject+'-'+level+'-'+board+'-'+topic), JSON.stringify({pct:pct,date:Date.now()})); }catch(e){}
