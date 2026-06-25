@@ -211,18 +211,20 @@
     // AI prompts
     var strong=los.filter(function(o){return o.pctv>=0.75 && o.avgc>=4;}).slice(0,3);
     var weak=los.filter(function(o){return o.pctv<0.6 || o.flag>0;}).slice(0,3);
+    // Prompt templates: quiz can override (e.g. languages want translation/writing
+    // tasks, not "6-mark written question"). Placeholders: {lo} {board} {level} {subject} {topic}
+    var ctx={board:quiz.boardDisplay, level:quiz.levelDisplay, subject:quiz.subjectDisplay, topic:quiz.topicDisplay};
+    function fill(tpl,lo){ return tpl.replace(/\{lo\}/g,lo).replace(/\{board\}/g,ctx.board).replace(/\{level\}/g,ctx.level).replace(/\{subject\}/g,ctx.subject).replace(/\{topic\}/g,ctx.topic); }
+    var STR = quiz.promptStrong || 'Give me a 6-mark exam-style written question on {lo} for {board} {level} {subject} ({topic}), then mark my answer against the spec.';
+    var WK  = quiz.promptWeak   || 'Explain {lo} for {board} {level} {subject} simply, with a worked example and the most common mistake students make.';
     html+='<div class="sectlbl">🤖 AI prompts to go further</div><div class="card">';
     if(strong.length){
       html+='<p class="sub" style="font-size:14.5px;margin-bottom:2px"><b>Stretch your strong topics</b> — paste into any AI tutor to get exam-ready:</p>';
-      strong.forEach(function(o){
-        html+=prompt('Give me a 6-mark exam-style written question on '+loDisplay(o.id)+' for '+quiz.boardDisplay+' '+quiz.levelDisplay+' '+quiz.subjectDisplay+' ('+quiz.topicDisplay+'), then mark my answer against the spec.');
-      });
+      strong.forEach(function(o){ html+=prompt(fill(STR, loDisplay(o.id))); });
     }
     if(weak.length){
       html+='<p class="sub" style="font-size:14.5px;margin:16px 0 2px"><b>Shore up your weak spots</b>:</p>';
-      weak.forEach(function(o){
-        html+=prompt('Explain '+loDisplay(o.id)+' for '+quiz.boardDisplay+' '+quiz.levelDisplay+' '+quiz.subjectDisplay+' simply, with a worked example and the most common mistake students make.');
-      });
+      weak.forEach(function(o){ html+=prompt(fill(WK, loDisplay(o.id))); });
     }
     if(!strong.length && !weak.length){ html+='<p class="sub">Finish the quiz to get tailored prompts.</p>'; }
     html+='</div>';
