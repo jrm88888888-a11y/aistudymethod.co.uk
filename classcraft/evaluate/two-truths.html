@@ -92,29 +92,47 @@
  var PLACE=/^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
 
  (async function(){
+   // Prefer a hand-authored dedicated bank (meaning-focused, fully spec-checked).
+   // Falls back to auto-deriving from the adventure spec + misconception bank.
+   var ded=await fetchJson(stem,'../evaluate/two-truths-banks');
    var spec=await fetchJson(stem,'../adventures/_specs');
-   var bank=await fetchJson(stem,'../evaluate/misconception-banks');
-   var concepts=((spec&&spec.concepts)||[]).filter(function(c){return c&&c.term&&c.def&&!PLACE.test(c.def);});
-   var items=((bank&&bank.items)||[]).filter(function(it){return it&&it.q&&it.misconception&&it.correct;});
-   var topic=(spec&&(spec.topic_display||spec.title))||(bank&&bank.topic)||stem;
-   var subj=(spec&&spec.subject)||(bank&&bank.subject)||'';
-   var lvl=(spec&&spec.level)||(bank&&bank.level)||'';
-   if(concepts.length<4||items.length<2||(bank&&bank.quality==='low')){
-     root.innerHTML='<div style="padding:34px 0"><span class="badge">E · Evaluate · Two Truths, One Lie</span><h1>'+esc(topic)+'</h1>'
-       +'<p class="sub">A topic-specific set of statements for this exact topic is still being authored — generic ones wouldn\'t earn their place. Come back soon.</p>'
-       +'<div class="card" style="text-align:center;padding:40px 24px"><div style="font-size:46px">🕵️</div><h2 style="margin-top:12px">In production</h2><p class="sub" style="font-size:14px;margin-top:6px">Two Truths, One Lie needs distinctive, accurate statements for this topic.</p></div></div>';
-     return;
+   var topic, subj, lvl, rounds, learn;
+   if(ded && Array.isArray(ded.rounds) && ded.rounds.length){
+     topic=ded.topicDisplay||ded.topic||(spec&&spec.topic_display)||stem;
+     subj=ded.subject||(spec&&spec.subject)||''; lvl=ded.level||(spec&&spec.level)||'';
+     learn=ded.learnHref||null;
+     // each round: a lie statement + its why/truth + two true statements (full sentences, no prompt)
+     rounds=shuffle(ded.rounds).slice(0,12).map(function(rd){
+       var stmts=shuffle([
+         {lie:true, claim:rd.lie, why:rd.why||'', truth:rd.truth||''},
+         {lie:false, claim:(rd.truths&&rd.truths[0])||''},
+         {lie:false, claim:(rd.truths&&rd.truths[1])||''}
+       ]);
+       return {stmts:stmts, lieIdx:stmts.findIndex(function(s){return s.lie;})};
+     });
+   } else {
+     var bank=await fetchJson(stem,'../evaluate/misconception-banks');
+     var concepts=((spec&&spec.concepts)||[]).filter(function(c){return c&&c.term&&c.def&&!PLACE.test(c.def);});
+     var items=((bank&&bank.items)||[]).filter(function(it){return it&&it.q&&it.misconception&&it.correct;});
+     topic=(spec&&(spec.topic_display||spec.title))||(bank&&bank.topic)||stem;
+     subj=(spec&&spec.subject)||(bank&&bank.subject)||'';
+     lvl=(spec&&spec.level)||(bank&&bank.level)||'';
+     if(concepts.length<4||items.length<2||(bank&&bank.quality==='low')){
+       root.innerHTML='<div style="padding:34px 0"><span class="badge">E · Evaluate · Two Truths, One Lie</span><h1>'+esc(topic)+'</h1>'
+         +'<p class="sub">A topic-specific set of statements for this exact topic is still being authored — generic ones wouldn\'t earn their place. Come back soon.</p>'
+         +'<div class="card" style="text-align:center;padding:40px 24px"><div style="font-size:46px">🕵️</div><h2 style="margin-top:12px">In production</h2><p class="sub" style="font-size:14px;margin-top:6px">Two Truths, One Lie needs distinctive, accurate statements for this topic.</p></div></div>';
+       return;
+     }
+     rounds=shuffle(items).slice(0,10).map(function(it){
+       var pair=shuffle(concepts).slice(0,2);
+       var stmts=shuffle([
+         {lie:true, prompt:it.q, claim:it.misconception, why:it.why||'', truth:it.correct},
+         {lie:false, prompt:'What does “'+pair[0].term+'” mean?', claim:pair[0].def},
+         {lie:false, prompt:'What does “'+pair[1].term+'” mean?', claim:pair[1].def}
+       ]);
+       return {stmts:stmts, lieIdx:stmts.findIndex(function(s){return s.lie;})};
+     });
    }
-   // build rounds: one per misconception item (cap 10)
-   var rounds=shuffle(items).slice(0,10).map(function(it){
-     var pair=shuffle(concepts).slice(0,2);
-     var stmts=shuffle([
-       {lie:true, prompt:it.q, claim:it.misconception, why:it.why||'', truth:it.correct},
-       {lie:false, prompt:'What does “'+pair[0].term+'” mean?', claim:pair[0].def},
-       {lie:false, prompt:'What does “'+pair[1].term+'” mean?', claim:pair[1].def}
-     ]);
-     return {stmts:stmts, lieIdx:stmts.findIndex(function(s){return s.lie;})};
-   });
    var subjLbl=subj.replace(/-/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
    var lvlLbl=(lvl||'').toUpperCase().replace('A-LEVEL','A-Level');
    var state={i:0, answered:rounds.map(function(){return null;})};
@@ -139,7 +157,7 @@
        var cls='stmt';
        if(locked){ cls+=s.lie?' lie':' true'; }
        html+='<button class="'+cls+'" data-i="'+idx+'"'+(locked?' disabled':'')+'>'
-         +'<div class="pr">'+esc(s.prompt)+'</div><div class="cl">'+esc(s.claim)+'</div>'
+         +(s.prompt?'<div class="pr">'+esc(s.prompt)+'</div>':'')+'<div class="cl">'+esc(s.claim)+'</div>'
          +(locked?'<div class="verdict">'+(s.lie?'✗ The lie':'✓ True')+'</div>':'')+'</button>';
      });
      if(locked){
@@ -174,7 +192,7 @@
      var msg = missed.length===0 ? '<b>Flawless — you spotted every misconception.</b> These are exactly the traps that lose marks, so this is a strong sign for this topic.'
         : (caught>=n*0.6 ? '<b>Good instincts.</b> You caught most of them. The '+missed.length+' below slipped past — they\'re the ideas to nail down before the exam.'
         : '<b>Several misconceptions slipped past.</b> That\'s useful to know — the statements below are the ones to re-learn carefully.');
-     var learn = (spec&&spec._learnHref) || '../../subjects.html';
+     var learnTo = learn || (spec&&spec._learnHref) || '../../subjects.html';
      var html='<div style="padding:30px 0 4px"><span class="badge">E · Evaluate · Summary</span>'
        +'<h1>'+esc(topic)+'</h1></div>'
        +'<div class="card" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">'
@@ -191,7 +209,7 @@
        html+='<div class="sectlbl">✓ Misconceptions you spotted</div>';
        rounds.forEach(function(r,i){ if(state.answered[i]===r.lieIdx){ html+='<div class="ok-item">'+esc(r.stmts[r.lieIdx].claim)+'</div>'; } });
      }
-     html+='<div class="actions"><a class="btn" href="'+esc(learn)+'">Revise this topic in Learn →</a>'
+     html+='<div class="actions"><a class="btn" href="'+esc(learnTo)+'">Revise this topic in Learn →</a>'
        +'<button class="btn ghost" id="again">Play again</button>'
        +'<a class="btn ghost" href="../../subjects.html">← All resources</a></div>';
      root.innerHTML=html;
