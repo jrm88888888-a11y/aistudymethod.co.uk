@@ -763,8 +763,27 @@ table.vr-grid tbody td { padding: 4px; }
 
   function paintZoneC(e, topics, spec) {
     var units = (spec && spec.units) || [];
-    var byNorm = {};
-    units.forEach(function (u) { byNorm[normalise(u.n)] = u.subs || []; });
+    // Resolve a topic card's sub-points from the spec JSON. Chip display names
+    // vary from the spec's unit names (e.g. MFL chips pack the sub-themes into a
+    // trailing "(...)", and use ":" where the spec uses "—"), so match robustly:
+    // strip the trailing parenthetical, then accept exact match or one name being
+    // a prefix of the other (prefer the longest/exact). This restores the
+    // sub-points the old spec maps showed, wherever they exist in the data.
+    function stripParen(s) { return String(s).replace(/\s*\([^)]*\)\s*$/, ''); }
+    function subsForChip(display) {
+      var target = normalise(stripParen(display));
+      if (!target) return [];
+      var best = null, bestScore = -1;
+      units.forEach(function (u) {
+        var un = normalise(u.n); if (!un) return;
+        var score = -1;
+        if (un === target) score = 1e6;
+        else if (target.indexOf(un) === 0) score = un.length;        // unit name is a prefix of the chip
+        else if (un.indexOf(target) === 0) score = target.length - 1; // chip is a prefix of the unit (weaker)
+        if (score > bestScore) { bestScore = score; best = u; }
+      });
+      return (best && best.subs) || [];
+    }
 
     var specCode = (e.specCode || (spec && spec.specCode) || '').trim();
 
@@ -788,7 +807,7 @@ table.vr-grid tbody td { padding: 4px; }
       html += '<div class="vr-topics">';
       topics.forEach(function (pair) {
         var display = pair[0], slug = pair[1];
-        var subs = byNorm[normalise(display)] || [];
+        var subs = subsForChip(display);
         html += '<article class="vr-topic"><h3>' + esc(display) + '</h3>';
         if (subs.length) {
           html += '<ul class="vr-subs">';
