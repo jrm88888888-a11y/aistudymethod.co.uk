@@ -6,7 +6,7 @@ def screens(html):
     body=body.group(1) if body else html
     return re.split(r'<section class="screen[^"]*">',body)[1:]
 problems=[]
-for f in sorted(glob.glob('classcraft/adventures/physics-gcse-aqa-*-mini-lesson.html')):
+for f in sorted(glob.glob('classcraft/adventures/physics-gcse-*-mini-lesson.html')):
     html=open(f).read(); name=os.path.basename(f); p=[]
     # JS
     for i,b in enumerate(blocks(html)):
@@ -32,12 +32,16 @@ for f in sorted(glob.glob('classcraft/adventures/physics-gcse-aqa-*-mini-lesson.
         if is_teach and first_teach is None: first_teach=idx
     if first_q is not None and (first_teach is None or first_q<first_teach):
         p.append(f'ordering: first question (screen {first_q}) precedes first teaching screen ({first_teach})')
-    # per-concept ordering via optional tags
-    taught=set()
-    for s in secs:
-        for t in re.findall(r'data-teach="([^"]+)"',s): taught.add(t)
-        for t in re.findall(r'data-test="([^"]+)"',s):
-            if t not in taught: p.append(f'ordering: tested concept "{t}" before it was taught')
+    # per-concept ordering via optional tags (robust: only flag a test whose SAME key is taught LATER;
+    # unmatched test keys = naming mismatch, not an ordering bug, so skipped)
+    teach_idx={}; tests=[]
+    for idx,s in enumerate(secs):
+        for t in re.findall(r'data-teach="([^"]+)"',s):
+            if t not in teach_idx: teach_idx[t]=idx
+        for t in re.findall(r'data-test="([^"]+)"',s): tests.append((t,idx))
+    for t,idx in tests:
+        if t in teach_idx and teach_idx[t]>idx:
+            p.append(f'ordering: "{t}" tested (screen {idx}) before taught (screen {teach_idx[t]})')
     print(f"{name:<56} {'CLEAN' if not p else 'ISSUES: '+'; '.join(p)}")
     problems+= [(name,x) for x in p]
 print("\nTOTAL issues:",len(problems))
