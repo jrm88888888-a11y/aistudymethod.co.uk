@@ -26,6 +26,36 @@
 (function () {
   if (!window.Arcade) window.Arcade = {};
 
+  /* Parent share — bridge to the Velvet Method course via for-parents.html (the course pitch).
+     Native share sheet on mobile; clipboard copy / open on desktop. Mirrors arcade.js. */
+  Arcade.shareWithParents = async function (opts) {
+    opts = opts || {};
+    var url;
+    try { url = new URL('../../for-parents.html', location.href); }
+    catch (e) { url = new URL('https://aistudymethod.co.uk/for-parents.html'); }
+    var p = url.searchParams;
+    if (opts.score != null) p.set('s', String(opts.score));
+    if (opts.total != null) p.set('t', String(opts.total));
+    if (opts.subject) p.set('subj', opts.subject);
+    if (opts.level)   p.set('level', opts.level);
+    if (opts.topic)   p.set('topic', opts.topic);
+    p.set('utm_source', 'lesson'); p.set('utm_medium', 'parent_share'); p.set('utm_campaign', 'parent_invite');
+    var link = url.toString();
+    var scoreStr = opts.score != null ? (opts.total != null ? opts.score + '/' + opts.total : String(opts.score)) : null;
+    var topicBit = opts.topic ? (' ' + opts.topic) : '';
+    var msg = '📚 I’ve been revising' + topicBit + ' on AI Study Method'
+      + (scoreStr ? ' and just scored ' + scoreStr : '')
+      + '! Can we get the full Velvet Method course? It teaches you to revise any subject'
+      + ' using AI — built by teachers, £25 for life.';
+    if (navigator.share) {
+      try { await navigator.share({ title: 'AI Study Method', text: msg, url: link }); return { ok: true, method: 'native-share' }; }
+      catch (err) { if (err && err.name === 'AbortError') return { ok: false, cancelled: true }; }
+    }
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(msg + '\n' + link); if (window.Arcade.toast) Arcade.toast('Link copied — send it to a parent'); return { ok: true, method: 'clipboard' }; } } catch (err) {}
+    try { window.open(link, '_blank'); return { ok: true, method: 'open' }; } catch (err) { return { ok: false }; }
+  };
+
+
   const CARD_SIZE = 1080;
   // System monospaced + serif + bold-sans stacks — same-origin, no @font-face needed.
   // The bold-sans stack mimics the arcade marquee feel without bundling a pixel font;

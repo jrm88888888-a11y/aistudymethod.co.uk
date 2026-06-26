@@ -7,7 +7,7 @@
   'use strict';
   var root = document.getElementById('root');
   // If this page was opened from a shared "beat my score" link, show the challenge banner.
-  try{ if(window.Arcade && Arcade.maybeShowChallenge) Arcade.maybeShowChallenge(); }catch(e){}
+  /* no mate-challenge banner: the Confidence Quiz is a private diagnostic that exposes weaknesses, not a competitive share */
   var P = new URLSearchParams(location.search);
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function fail(m){ root.innerHTML = '<div class="state err">'+esc(m)+'</div>'; }
@@ -170,9 +170,9 @@
 
     // share / challenge — proud-of-this moment (works on every level via share-score.js)
     html+='<div class="card">'
-        +'<h2>📣 Proud of this? Share it</h2>'
-        +'<p class="sub" style="font-size:15px;margin:6px 0 12px">Send your result to challenge a mate to beat it, or show your parents how you\'re getting on — they\'ll get a link to try the quiz and discover the Velvet Method too.</p>'
-        +'<div class="actions"><button class="btn" id="shareResult">📲 Share my result</button>'
+        +'<h2>👪 Show your parents</h2>'
+        +'<p class="sub" style="font-size:15px;margin:6px 0 12px">Send your result to a parent or guardian — they\'ll get a link to the full Velvet Method course (built by teachers, £25 for life).</p>'
+        +'<div class="actions"><button class="btn" id="shareResult">📲 Show your parents</button>'
         +'<a class="btn ghost" href="../../velvet-method.html">About the Velvet Method</a></div></div>';
 
     // confidence quadrants
@@ -259,17 +259,11 @@
     });
     var rt=document.getElementById('retake'); if(rt) rt.onclick=function(){ state.ans=qs.map(function(){return {choice:null,conf:null};}); state.i=0; renderQ(); window.scrollTo(0,0); };
 
-    // share / challenge button → renders a score card + native share (image fallback: download + copy link)
+    // parent share → links to for-parents.html (the Velvet Method course pitch). No mate-challenge: a diagnostic shouldn't be competitive.
     var sb=document.getElementById('shareResult');
     if(sb) sb.onclick=function(){
-      if(!(window.Arcade && Arcade.shareScore)){ alert('Sharing isn\'t available in this browser.'); return; }
-      var band = pct>=80?'A':pct>=65?'B':pct>=50?'C':'D';
-      Arcade.shareScore({
-        gameName:'Confidence Quiz', subject:quiz.subjectDisplay, level:quiz.levelDisplay,
-        topic:quiz.topicDisplay, score:correct, total:n, pct:pct, bigLabel:'SCORE',
-        rank:band, rankLine:'on '+quiz.topicDisplay,
-        statLine: cat.secure+' secure · '+(cat.flag+cat.gap)+' to revise'
-      });
+      if(!(window.Arcade && Arcade.shareWithParents)){ alert('Sharing isn\'t available in this browser.'); return; }
+      Arcade.shareWithParents({ subject:quiz.subjectDisplay, level:quiz.levelDisplay, topic:quiz.topicDisplay, score:correct, total:n });
     };
 
     // store last result (best-effort)
