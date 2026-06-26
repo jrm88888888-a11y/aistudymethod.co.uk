@@ -414,6 +414,7 @@
    * Plain-text caption that rides alongside the image in the share sheet
    * ----------------------------------------------------------------------- */
   function buildShareText(opts) {
+    if (opts.shareText) return String(opts.shareText);
     const lines = [];
     const titleBits = [
       [opts.level, opts.subject].filter(Boolean).join(' '),
