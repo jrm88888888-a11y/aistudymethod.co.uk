@@ -414,7 +414,15 @@ table.vr-grid tbody td { padding: 4px; }
   content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
   border: 6px solid transparent; border-top-color: var(--text-primary);
 }
-.vr-view:hover .vr-tip, .vr-view:focus-visible .vr-tip { opacity: 1; }
+.vr-view:hover .vr-tip, .vr-view:focus-visible .vr-tip,
+.vr-soon:hover .vr-tip, .vr-soon:focus-visible .vr-tip { opacity: 1; }
+/* Learn not yet available = dimmed, non-link, "coming soon" tooltip */
+.vr-stage.vr-soon { cursor: default; opacity: 0.5; }
+.vr-stage.vr-soon:hover, .vr-stage.vr-soon:focus-visible {
+  background: color-mix(in srgb, var(--c) 8%, transparent); transform: none; box-shadow: none;
+}
+.vr-stage.vr-soon:hover .vr-letter, .vr-stage.vr-soon:hover .vr-word,
+.vr-stage.vr-soon:focus-visible .vr-letter, .vr-stage.vr-soon:focus-visible .vr-word { color: var(--c); }
 
 /* Browse-all link */
 .vr-browse { margin: 30px 0 0; text-align: center; }
@@ -592,6 +600,7 @@ table.vr-grid tbody td { padding: 4px; }
   var elSubjectSelect = document.getElementById('vrSubjectSelect');
   var elBoardChips = document.getElementById('vrBoardChips');
   var elZoneC = document.getElementById('vrZoneC');
+  var LEARN = {}; /* set of existing mini-lesson filenames, from learn-manifest.json */
 
   function keyOf(subject, level, board) { return subject + '-' + level + '-' + board; }
 
@@ -693,7 +702,7 @@ table.vr-grid tbody td { padding: 4px; }
     html += '</tbody></table>';
     elGridScroll.innerHTML = html;
     Array.prototype.forEach.call(elGridScroll.querySelectorAll('.vr-cell'), function (btn) {
-      btn.addEventListener('click', function () { selectCombo(btn.getAttribute('data-key')); });
+      btn.addEventListener('click', function () { selectCombo(btn.getAttribute('data-key'), true); });
     });
   }
 
@@ -726,12 +735,12 @@ table.vr-grid tbody td { padding: 4px; }
     if (!html) { html = '<span style="color:var(--text-muted);font-family:\'DM Sans\',sans-serif;font-size:13px;">No boards available.</span>'; }
     elBoardChips.innerHTML = html;
     Array.prototype.forEach.call(elBoardChips.querySelectorAll('.vr-chip'), function (btn) {
-      btn.addEventListener('click', function () { selectCombo(btn.getAttribute('data-key')); });
+      btn.addEventListener('click', function () { selectCombo(btn.getAttribute('data-key'), true); });
     });
   }
 
   /* ── selection ── */
-  function selectCombo(key) {
+  function selectCombo(key, scroll) {
     var e = BYKEY[key];
     if (!e) return;
     state.key = key;
@@ -748,6 +757,9 @@ table.vr-grid tbody td { padding: 4px; }
     renderGrid();
     renderMobile();
     renderZoneC(key);
+    if (scroll) {
+      try { elZoneC.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e4) {}
+    }
   }
 
   /* ── Zone C ── */
@@ -820,6 +832,10 @@ table.vr-grid tbody td { padding: 4px; }
             html += '<span class="vr-stage vr-view" tabindex="0" role="img" aria-label="View — you are on the spec map" style="--c:' + st.color + '">' +
               '<span class="vr-letter" aria-hidden="true">V</span><span class="vr-word">View</span>' +
               '<span class="vr-tip" role="tooltip">You\'re viewing the View — your whole-course spec map.</span></span>';
+          } else if (st.word === 'Learn' && !LEARN[e.subject + '-' + e.level + '-' + e.board + '-' + slug + '-mini-lesson.html']) {
+            html += '<span class="vr-stage vr-soon" tabindex="0" role="img" aria-label="Learn — coming soon" style="--c:' + st.color + '">' +
+              '<span class="vr-letter" aria-hidden="true">' + st.L + '</span><span class="vr-word">' + esc(st.word) + '</span>' +
+              '<span class="vr-tip" role="tooltip">Mini-lesson coming soon!</span></span>';
           } else {
             html += '<a class="vr-stage" target="_blank" rel="noopener" href="' + esc(urlFor(st.word, e, slug)) +
               '" style="--c:' + st.color + '" aria-label="' + esc(st.word + ' — ' + display) + '">' +
@@ -859,12 +875,15 @@ table.vr-grid tbody td { padding: 4px; }
     if (preKey) { selectCombo(preKey); }
   }
 
-  fetch('classcraft/specs-manifest.json')
-    .then(function (r) { return r.json(); })
-    .then(boot)
-    .catch(function () {
-      elZoneC.innerHTML = '<div class="vr-placeholder">Could not load the course list. Please refresh.</div>';
-    });
+  Promise.all([
+    fetch('classcraft/specs-manifest.json').then(function (r) { return r.json(); }),
+    fetch('classcraft/learn-manifest.json').then(function (r) { return r.json(); }).catch(function () { return []; })
+  ]).then(function (res) {
+    (res[1] || []).forEach(function (f) { LEARN[f] = 1; });
+    boot(res[0]);
+  }).catch(function () {
+    elZoneC.innerHTML = '<div class="vr-placeholder">Could not load the course list. Please refresh.</div>';
+  });
 })();
 </script>
 </body>
