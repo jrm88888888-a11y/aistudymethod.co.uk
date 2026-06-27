@@ -6,7 +6,7 @@ def screens(html):
     body=body.group(1) if body else html
     return re.split(r'<section class="screen[^"]*">',body)[1:]
 problems=[]
-for f in sorted(glob.glob('classcraft/adventures/physics-gcse-*-mini-lesson.html')):
+for f in sorted(glob.glob('classcraft/adventures/*-gcse-*-mini-lesson.html')):
     html=open(f).read(); name=os.path.basename(f); p=[]
     # JS
     for i,b in enumerate(blocks(html)):
