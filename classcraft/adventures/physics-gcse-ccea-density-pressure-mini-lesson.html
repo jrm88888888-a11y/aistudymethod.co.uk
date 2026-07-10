@@ -509,14 +509,6 @@ function setupMCQ(qkey){const box=document.querySelector(`.opts[data-q="${qkey}"
 function setupNum(nkey){const box=document.querySelector(`.numwrap[data-num="${nkey}"]`);if(!box)return;const ans=parseFloat(box.dataset.answer);const tol=parseFloat(box.dataset.tol||'0.5');const input=box.querySelector('input');const btn=box.querySelector('.checkbtn');const fb=document.getElementById('fb-'+nkey);let tries=0;function check(){if(done[nkey])return;const raw=(input.value||'').replace(/[, ]/g,'').replace(/j|w|%/gi,'').trim();if(raw===''){fb.textContent='Type your answer first ✍️';fb.className='feedback';return;}const v=parseFloat(raw);if(!isNaN(v)&&Math.abs(v-ans)<=tol){input.classList.add('correct');input.disabled=true;btn.disabled=true;fb.textContent='🎉 Correct! +1 star';fb.className='feedback good';addScore(1);done[nkey]=true;refreshGate();}else{tries++;input.classList.add('wrong');fb.textContent=tries>=2?('Answer: '+ans+'. Check your working and move on.'):'Not quite — recalculate and try again 💪';fb.className='feedback bad';if(tries>=2){done[nkey]=true;input.value=ans;input.disabled=true;btn.disabled=true;refreshGate();}else{setTimeout(()=>{input.classList.remove('wrong');input.focus();input.select();},500);}}}btn.addEventListener('click',check);input.addEventListener('keydown',e=>{if(e.key==='Enter')check();});}
 ['n1','n2','n3','n4','n5','n6'].forEach(setupNum);
 
-// classify game
-const classifyData=[
-  {s:'A child slides down a slide',a:'Mechanically',o:['Mechanically','Electrically','By radiation']},
-  {s:'A phone charges from the mains',a:'Electrically',o:['By heating','Electrically','Mechanically']},
-  {s:'A radiator warms a cold room',a:'By heating',o:['By heating','Electrically','Mechanically']}
-];
-(function(){const wrap=document.getElementById('classify');if(!wrap)return;const fb=document.getElementById('fb-cl');let idx=0,got=0;function render(){const d=classifyData[idx];wrap.innerHTML='<div class="qline"><span class="qnum">'+(idx+1)+'</span><span>'+d.s+'</span></div><div class="opts" id="clopts"></div>';const ob=document.getElementById('clopts');d.o.forEach(opt=>{const b=document.createElement('button');b.className='opt';b.innerHTML=opt+' <span class="mk"></span>';b.addEventListener('click',()=>{if(b.classList.contains('lock'))return;if(opt===d.a){ob.querySelectorAll('.opt').forEach(x=>x.classList.add('lock'));b.classList.add('correct');b.querySelector('.mk').textContent='✅';addScore(1);got++;if(idx<classifyData.length-1){fb.textContent='✅ Yes! Next one…';fb.className='feedback good';setTimeout(()=>{idx++;render();fb.textContent='';},700);}else{fb.textContent='🌟 All three correct!';fb.className='feedback good';done.cl=true;refreshGate();}}else{b.classList.add('wrong','lock');b.querySelector('.mk').textContent='❌';fb.textContent='Not that pathway — try again 🤔';fb.className='feedback bad';}});ob.appendChild(b);});}render();})();
-
 // match game — density & pressure terms ↔ meanings
 const matchPairs=[
   {l:'Density',r:'Mass ÷ volume (ρ = m ÷ V)'},
@@ -545,7 +537,6 @@ const matchPairs=[
 // totals
 const totalPoints=document.querySelectorAll('.opts[data-q]').length
   +document.querySelectorAll('.numwrap[data-num]').length
-  +(typeof classifyData!=='undefined'?classifyData.length:0)
   +(typeof resData!=='undefined'?resData.length:0)
   +(typeof matchPairs!=='undefined'?matchPairs.length:0);
 const origShow=show;show=function(i){origShow(i);if(i===screens.length-1){document.getElementById('finalScore').textContent=score;document.getElementById('finalMax').textContent=totalPoints;const pct=score/totalPoints;document.getElementById('finalStars').textContent=pct>=0.85?'⭐⭐⭐':pct>=0.55?'⭐⭐':'⭐';}};

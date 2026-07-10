@@ -1,0 +1,21 @@
+<script>
+const screens=[...document.querySelectorAll('.screen')];
+let cur=0,score=0;
+const bar=document.getElementById('bar'),scoreEl=document.getElementById('score'),nextBtn=document.getElementById('next'),backBtn=document.getElementById('back');
+const done={};
+function addScore(n){score+=n;scoreEl.textContent=score;}
+// gating auto-detects from each screen's content — no index map needed
+function screenGated(scr){
+  var q=scr.querySelector('.opts[data-q]'); if(q && !done[q.dataset.q]) return true;
+  var n=scr.querySelector('.numwrap[data-num]'); if(n && !done[n.dataset.num]) return true;
+  var t=scr.querySelector('.textans[data-t]'); if(t && !done[t.dataset.t]) return true;
+  if(scr.querySelector('#cellChips') && !done.cell) return true;
+  if(scr.querySelector('#mLeft') && !done.match) return true;
+  return false;
+}
+function refreshGate(){if(screenGated(screens[cur])){nextBtn.classList.add('locked');nextBtn.textContent='Answer to continue 🙂';}else if(cur!==0&&cur!==screens.length-1){nextBtn.classList.remove('locked');nextBtn.textContent='Next ➡';}}
+function show(i){screens[cur].classList.remove('active');cur=i;screens[cur].classList.add('active');bar.style.width=(cur/(screens.length-1)*100)+'%';backBtn.style.visibility=cur===0?'hidden':'visible';if(cur===0){nextBtn.style.visibility='visible';nextBtn.textContent='Start ➡';}else if(cur===screens.length-1){nextBtn.style.visibility='hidden';}else{nextBtn.style.visibility='visible';nextBtn.textContent='Next ➡';}refreshGate();window.scrollTo({top:0,behavior:'smooth'});}
+nextBtn.addEventListener('click',()=>{if(cur<screens.length-1&&!nextBtn.classList.contains('locked'))show(cur+1);});
+backBtn.addEventListener('click',()=>{if(cur>0)show(cur-1);});
+
+function setupMCQ(qkey){const box=document.querySelector(`.opts[data-q="${qkey}"]`);if(!box)return;const fb=document.getElementById('fb-'+qkey);const why=box.dataset.why||'';box.querySelectorAll('.opt').forEach(btn=>{btn.addEventListener('click',()=>{if(done[qkey])return;const ok=btn.dataset.correct==='1';if(ok){box.querySelectorAll('.opt').forEach(b=>b.classList.add('lock'));btn.classList.add('correct');fb.innerHTML='🎉 Correct! +1 star<span class="why">'+why+'</span>';fb.className='feedback good';addScore(1);done[qkey]=true;refreshGate();}else{btn.classList.add('wrong','lock');fb.textContent='Not quite — try another 💪';fb.className='feedback bad';}});});}
