@@ -480,29 +480,40 @@
       localStorage.setItem('aism-results', JSON.stringify(hist));
     } catch (err) { /* result log is best-effort */ }
 
-    /* Near-miss line — when the run lands within 5 points below a grade
-       threshold (S 95 / A 80 / B 60), say exactly how close it was. */
-    let nearMiss = '';
+    /* Near-miss line — when the run lands within 5 points below a rank
+       threshold (Rank S 95 / Rank A 80 / Rank B 60), say exactly how close
+       it was. Speaks "Rank" (gaming), never "grade" (school). */
+    let nearMiss = '', nearGap = null, nearLetter = '';
     try {
       const pctNum = Number(opts.pct);
       if (isFinite(pctNum)) {
-        const rungs = [[95, 'an S'], [80, 'an A'], [60, 'a B']];
+        const rungs = [[95, 'S'], [80, 'A'], [60, 'B']];
         for (let ri = 0; ri < rungs.length; ri++) {
           const gap = Math.round((rungs[ri][0] - pctNum) * 10) / 10;
           if (gap > 0 && gap <= 5) {
+            nearGap = gap;
+            nearLetter = rungs[ri][1];
             nearMiss = '<div class="ar-near-miss" style="font-size:12.5px;letter-spacing:.4px;color:var(--ar-gold,#ffd60a);margin:-8px 0 14px;">'
-              + e(gap + '% from ' + rungs[ri][1] + ' — one more run') + '</div>';
+              + e(gap + '% from Rank ' + rungs[ri][1] + ' — one more run') + '</div>';
             break;
           }
         }
       }
-    } catch (err) { nearMiss = ''; }
+    } catch (err) { nearMiss = ''; nearGap = null; nearLetter = ''; }
+
+    /* Primary CTA — Play again carries the near-miss hook when one applies,
+       so the card points the player at the replay, not just the share. */
+    let againLabel = '▶ Play again';
+    if (nearGap != null && nearLetter) {
+      againLabel = '▶ Play again — ' + nearGap + '% from Rank ' + nearLetter;
+    }
 
     container.innerHTML = `
       <div class="ar-end ${hot ? 'hot' : ''}">
         <div class="ar-end-inner">
           <h2>${e(opts.gameEmoji || '🎮')} ${e(opts.gameName)}</h2>
           <div class="ar-end-topic">${e(opts.topic)}${opts.meta ? ' · ' + e(opts.meta) : ''}</div>
+          <div class="ar-rank-cap" style="font-family:var(--ar-mono,ui-monospace,Menlo,Consolas,monospace);font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ar-muted,#8a8fa3);margin-top:6px;">RANK</div>
           <div class="ar-grade ${g.cls}">${g.letter}</div>
           <div class="ar-grade-line">${e(g.line)}</div>
           ${nearMiss}
@@ -513,9 +524,8 @@
             : best !== null ? `<div class="ar-best old">Personal best: ${e(best)}${opts.bestSuffix || '%'}</div>` : ''}
           ${opts.insight ? `<div class="ar-insight">${e(opts.insight)}</div>` : ''}
           <div class="ar-ctas">
-            <button class="ar-btn ghost" id="ar-again">▶ Play again</button>
-            <button class="ar-btn ar-btn-share" id="ar-share">🔥 Challenge your mates</button>
-            <button class="ar-btn" id="ar-parents" style="background:linear-gradient(135deg,#1fb89a 0%,#8b5cf6 100%);color:#fff;border:none;">📲 Show your parents</button>
+            <button class="ar-btn" id="ar-again">${e(againLabel)}</button>
+            <button class="ar-btn ar-btn-share" id="ar-share">🔥 Send it — reckon they beat that?</button>
             ${(function() {
               // When the player came in from arcade.html, send them back to it
               // with their subject/level/board/topic still selected. Falls back
@@ -528,6 +538,7 @@
               return '<a class="ar-btn ghost" href="../../subjects.html">More games</a>';
             })()}
           </div>
+          <button type="button" id="ar-parents" class="ar-parents-link" style="background:none;border:none;box-shadow:none;display:inline-block;margin-top:12px;padding:4px 8px;font-family:var(--ar-mono,ui-monospace,Menlo,Consolas,monospace);font-size:11px;font-weight:600;letter-spacing:1px;color:var(--ar-muted,#8a8fa3);text-decoration:underline;text-underline-offset:3px;cursor:pointer;">📲 Show your parents</button>
           <div class="ar-watermark">aistudymethod.co.uk</div>
         </div>
       </div>
@@ -553,7 +564,7 @@
     const shareBtn = container.querySelector('#ar-share');
     shareBtn.addEventListener('click', async () => {
       Arcade.sfx.click();
-      const SHARE_LABEL = '🔥 Challenge your mates';
+      const SHARE_LABEL = '🔥 Send it — reckon they beat that?';
       // Modern path: build the PNG flex card via Arcade.shareScore. The opts
       // object already carries everything the card needs; games can pass an
       // `opts.share = { subject, level, total, statLine }` for extras the

@@ -223,17 +223,34 @@
     roundRect(ctx, panelX, panelY, panelW, panelH, 22);
     ctx.stroke();
 
-    // POINTS label
+    // POINTS label — sits just above the panel top edge. It used to render
+    // inside the panel (panelY + 50) where the big score glyphs (up to 260px,
+    // baseline panelY + 200, tops ≈ y 510) swallowed it; above the border
+    // nothing can collide at any score width.
     ctx.textAlign = 'center';
     ctx.fillStyle = PAL.magenta;
-    ctx.font = '900 22px ' + MONO;
-    ctx.fillText((opts.bigLabel || 'SCORE').toUpperCase(), W / 2, panelY + 50);
+    ctx.font = '900 19px ' + MONO;
+    ctx.fillText((opts.bigLabel || 'SCORE').toUpperCase(), W / 2, panelY - 14);
 
     // Huge yellow score — fills most of the panel
     const scoreText = (opts.score != null)
       ? (opts.total != null ? String(opts.score) + '/' + String(opts.total) : String(opts.score))
       : '—';
     drawMarqueeScore(ctx, scoreText, W / 2, panelY + 200, panelW - 60);
+
+    /* ---------- 8b. PLAYER tag — gives the card an owner ------------------
+       Centred in the empty band between the panel bottom (y 770) and the
+       rank line (y 884). That band is clear at every score width: the score
+       lives inside the panel, the rank stamp bottom ends ≈ y 614, and the
+       rank/stat lines start at 884 — so nothing can collide. 34px bold cyan
+       mono stays readable in a ~300px chat thumbnail (≈ 9px). */
+    const player = playerInitials();
+    if (player) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = PAL.cyan;
+      ctx.font = '900 34px ' + MONO;
+      ctx.fillText('PLAYER: ' + player, W / 2, 822);
+    }
 
     /* ---------- 9. Rank badge — big stamped grade over the panel corner --
        The rank letter (especially an S) is the most memeable element for
@@ -283,8 +300,172 @@
   }
 
   /* ----------------------------------------------------------------------- *
+   * Story card renderer — 1080×1920 (9:16) for IG/Snap stories
+   * Same marquee aesthetic re-laid vertically; reuses every square-card
+   * helper (stars, frame, badge, marquee headline/score, rank stamp), only
+   * the composition coordinates differ. Same-origin only, like the square.
+   * ----------------------------------------------------------------------- */
+  const STORY_W = 1080, STORY_H = 1920;
+  async function drawStoryCard(opts) {
+    const c = document.createElement('canvas');
+    c.width = STORY_W;
+    c.height = STORY_H;
+    const ctx = c.getContext('2d');
+    const W = STORY_W, H = STORY_H;
+
+    // Background gradient + starfield filling the full 9:16 height
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0,    PAL.bgTop);
+    bg.addColorStop(0.55, PAL.bgMid);
+    bg.addColorStop(1,    PAL.bgBot);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    drawStars(ctx, 250, 7, W, H);
+
+    // Soft glow vignette behind the centre block
+    const vg = ctx.createRadialGradient(W / 2, 880, 80, W / 2, 880, 900);
+    vg.addColorStop(0, 'rgba(126,109,255,0.22)');
+    vg.addColorStop(1, 'rgba(126,109,255,0)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Outer frame + corner brackets
+    ctx.shadowColor = PAL.borderGlow;
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = PAL.border;
+    ctx.lineWidth = 2.5;
+    roundRect(ctx, 36, 36, W - 72, H - 72, 22);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = PAL.border;
+    ctx.lineWidth = 6;
+    drawCornerBrackets(ctx, 36, 36, W - 72, H - 72, 56);
+
+    // Header: V badge + wordmark (dropped a little for story safe areas)
+    const badgeY = 130;
+    const badgeSize = 88;
+    const headerGroupW = 600;
+    const headerStartX = (W - headerGroupW) / 2;
+    drawVelvetBadge(ctx, headerStartX, badgeY, badgeSize);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PAL.text;
+    ctx.font = '900 36px ' + ARCADE_HEAD;
+    ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
+    ctx.fillStyle = PAL.cyan;
+    ctx.font = '700 17px ' + MONO;
+    ctx.fillText('THE VELVET METHOD™', headerStartX + badgeSize + 18, badgeY + 54);
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = PAL.cyanDim;
+    ctx.font = '700 16px ' + MONO;
+    ctx.fillText('· · ·  SCORE TRANSMISSION  · · ·', W / 2, badgeY + badgeSize + 34);
+
+    // Game-name marquee — more headroom in 9:16, so it sits lower
+    const headlineText = (opts.gameName || 'Arcade Run').toUpperCase();
+    drawMarqueeHeadline(ctx, headlineText, W / 2, 500);
+
+    // Subject / topic strip
+    const subjectLine = [opts.level, opts.subject].filter(Boolean).join(' · ');
+    ctx.textAlign = 'center';
+    if (subjectLine) {
+      ctx.fillStyle = PAL.cyan;
+      ctx.font = '700 22px ' + MONO;
+      ctx.fillText(subjectLine.toUpperCase(), W / 2, 620);
+    }
+    if (opts.topic) {
+      ctx.fillStyle = PAL.text;
+      ctx.font = '900 30px ' + ARCADE_HEAD;
+      const topic = String(opts.topic);
+      const safeTopic = topic.length > 36 ? topic.slice(0, 35) + '…' : topic;
+      ctx.fillText(safeTopic, W / 2, 664);
+    }
+
+    // PLAYER tag — its own clear band between the topic strip and the panel
+    const player = playerInitials();
+    if (player) {
+      ctx.fillStyle = PAL.cyan;
+      ctx.font = '900 40px ' + MONO;
+      ctx.fillText('PLAYER: ' + player, W / 2, 760);
+    }
+
+    // Score panel — same treatment as the square card, roomier
+    const panelX = 110, panelY = 820, panelW = W - 220, panelH = 300;
+    const sg = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelH);
+    sg.addColorStop(0, 'rgba(126,109,255,0.22)');
+    sg.addColorStop(1, 'rgba(126,109,255,0.05)');
+    ctx.fillStyle = sg;
+    roundRect(ctx, panelX, panelY, panelW, panelH, 22);
+    ctx.fill();
+    ctx.strokeStyle = PAL.border;
+    ctx.lineWidth = 2.5;
+    roundRect(ctx, panelX, panelY, panelW, panelH, 22);
+    ctx.stroke();
+
+    // Label just above the panel edge — same bleed-proof spot as the square
+    ctx.textAlign = 'center';
+    ctx.fillStyle = PAL.magenta;
+    ctx.font = '900 19px ' + MONO;
+    ctx.fillText((opts.bigLabel || 'SCORE').toUpperCase(), W / 2, panelY - 14);
+
+    const scoreText = (opts.score != null)
+      ? (opts.total != null ? String(opts.score) + '/' + String(opts.total) : String(opts.score))
+      : '—';
+    drawMarqueeScore(ctx, scoreText, W / 2, panelY + 225, panelW - 60);
+
+    // Rank stamp over the panel's top-right corner, like the square card
+    if (opts.rank) {
+      drawRankStamp(ctx, String(opts.rank), panelX + panelW - 62, panelY + 6);
+      if (opts.rankLine) {
+        ctx.textAlign = 'center';
+        ctx.fillStyle = PAL.cyan;
+        ctx.font = '600 20px ' + MONO;
+        const line = String(opts.rankLine);
+        const safe = line.length > 64 ? line.slice(0, 63) + '…' : line;
+        ctx.fillText(safe, W / 2, panelY + panelH + 90);
+      }
+    }
+
+    // Stat ribbon
+    if (opts.statLine) {
+      ctx.fillStyle = PAL.magenta;
+      ctx.font = '700 20px ' + MONO;
+      const sl = String(opts.statLine);
+      const safe = sl.length > 60 ? sl.slice(0, 59) + '…' : sl;
+      ctx.textAlign = 'center';
+      ctx.fillText(safe, W / 2, panelY + panelH + 144);
+    }
+
+    // Challenge tagline + footer URL — kept above the story-UI bottom zone
+    ctx.fillStyle = PAL.magenta;
+    ctx.font = '900 26px ' + MONO;
+    ctx.fillText('▼  BEAT THIS SCORE  ▼', W / 2, 1570);
+    ctx.fillStyle = PAL.cyan;
+    ctx.font = '900 30px ' + MONO;
+    ctx.fillText('aistudymethod.co.uk', W / 2, 1626);
+    ctx.fillStyle = PAL.textDim;
+    ctx.font = '500 15px ' + MONO;
+    ctx.fillText('· The Velvet Method™ ·', W / 2, 1658);
+
+    const blob = await new Promise(resolve => c.toBlob(resolve, 'image/png', 0.95));
+    if (!blob) throw new Error('toBlob returned null');
+    return blob;
+  }
+
+  /* ----------------------------------------------------------------------- *
    * Helpers
    * ----------------------------------------------------------------------- */
+  // Player identity — the leaderboard initials saved under aism-initials.
+  // Sanitised to at most 3 chars A-Z0-9. The placeholder default AAA means
+  // "never chosen", so it is treated as absent and no PLAYER line renders.
+  function playerInitials() {
+    let raw = '';
+    try { raw = localStorage.getItem('aism-initials') || ''; } catch (err) { raw = ''; }
+    const clean = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+    if (!clean || clean === 'AAA') return '';
+    return clean;
+  }
+
   function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -321,11 +502,12 @@
     };
   }
 
-  function drawStars(ctx, count, seed) {
+  function drawStars(ctx, count, seed, w, h) {
     const rand = mulberry32(seed);
+    const fieldW = w || CARD_SIZE, fieldH = h || CARD_SIZE;
     for (let i = 0; i < count; i++) {
-      const x = rand() * CARD_SIZE;
-      const y = rand() * CARD_SIZE;
+      const x = rand() * fieldW;
+      const y = rand() * fieldH;
       const size = 0.5 + rand() * 2.2;
       const bright = rand();
       ctx.fillStyle = bright > 0.7 ? PAL.star : PAL.starDim;
@@ -443,9 +625,13 @@
     ctx.textAlign = 'center';
     lines.forEach(function (line, i) {
       const y = startY + i * lineH;
-      // Magenta drop shadow (chunky neon offset)
+      // Magenta drop shadow — 4px at slightly lowered alpha reads as a neon
+      // glow; the old 7px offset read as misregistered print.
+      ctx.save();
+      ctx.globalAlpha = 0.85;
       ctx.fillStyle = PAL.magenta;
-      ctx.fillText(line, cx + 7, y + 7);
+      ctx.fillText(line, cx + 4, y + 4);
+      ctx.restore();
       // Black outline (thick stroke)
       ctx.lineWidth = Math.max(8, size * 0.095);
       ctx.strokeStyle = '#1a0a00';
@@ -474,9 +660,12 @@
       ctx.font = '900 ' + size + 'px ' + ARCADE_HEAD;
     }
     ctx.textAlign = 'center';
-    // Drop shadow
+    // Drop shadow — 4px neon offset (8px read as a rendering glitch)
+    ctx.save();
+    ctx.globalAlpha = 0.85;
     ctx.fillStyle = PAL.magenta;
-    ctx.fillText(text, cx + 8, baseY + 8);
+    ctx.fillText(text, cx + 4, baseY + 4);
+    ctx.restore();
     // Outline
     ctx.lineWidth = Math.max(10, size * 0.08);
     ctx.strokeStyle = '#1a0a00';
@@ -589,13 +778,33 @@
       return fallbackDownloadAndCopy(null, challengeUrl);
     }
 
-    const file = new File([blob], 'aism-score.png', { type: 'image/png' });
+    // Story companion (9:16) — best-effort. The square card is the product;
+    // a story render failure must never block the share.
+    let storyBlob = null;
+    try {
+      storyBlob = await drawStoryCard(opts);
+    } catch (err) {
+      storyBlob = null;
+    }
 
-    // Mobile path: native share sheet with file.
-    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+    const file = new File([blob], 'aism-score.png', { type: 'image/png' });
+    // Offer square + story together only when the share target accepts both;
+    // otherwise fall back to the square alone (the proven path).
+    let files = [file];
+    if (storyBlob) {
       try {
-        await navigator.share({ files: [file], text, url: challengeUrl });
-        return { method: 'native-share', ok: true };
+        const storyFile = new File([storyBlob], 'aism-score-story.png', { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file, storyFile] })) {
+          files = [file, storyFile];
+        }
+      } catch (err) { files = [file]; }
+    }
+
+    // Mobile path: native share sheet with file(s).
+    if (navigator.canShare && navigator.canShare({ files: files }) && navigator.share) {
+      try {
+        await navigator.share({ files: files, text, url: challengeUrl });
+        return { method: 'native-share', ok: true, cards: files.length };
       } catch (err) {
         if (err && err.name === 'AbortError') {
           return { method: 'native-share', ok: false, cancelled: true };
@@ -603,6 +812,7 @@
         // fall through to fallback so the user still gets something usable
       }
     }
+    // Desktop / unsupported: download the square only + copy the URL.
     return fallbackDownloadAndCopy(blob, challengeUrl);
   };
 

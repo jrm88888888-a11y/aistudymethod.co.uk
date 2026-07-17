@@ -161,12 +161,21 @@
   function getHistory() {
     try {
       const h = JSON.parse(LS.get('aism-daily-history') || '{}');
-      return (h && typeof h === 'object' && !Array.isArray(h)) ? h : {};
+      if (!h || typeof h !== 'object' || Array.isArray(h)) return {};
+      // Validate: scores must be finite numbers. Anything else (strings,
+      // objects, NaN — including tampered/corrupt values) is dropped.
+      const clean = {};
+      Object.keys(h).forEach(k => {
+        const n = Number(h[k]);
+        if (Number.isFinite(n)) clean[k] = n;
+      });
+      return clean;
     } catch (e) { return {}; }
   }
   function saveHistory(h) {
-    // prune anything older than 30 days
-    const cutISO = utcISO(new Date(now.getTime() - 30 * DAY_MS));
+    // prune anything older than 30 days (measured from the write, not from
+    // page load — a long-lived tab must not skew the pruning window)
+    const cutISO = utcISO(new Date(Date.now() - 30 * DAY_MS));
     const pruned = {};
     Object.keys(h).forEach(k => { if (k >= cutISO) pruned[k] = h[k]; });
     LS.set('aism-daily-history', JSON.stringify(pruned));
@@ -250,6 +259,56 @@
     'pe-a-level-anatomy--physiology-adventure-1',
     'physics-a-level-aqa-electricity-adventure-1',
   ];
+  /* Built-in emergency questions — one per fallback stem, embedded so the
+     drill can ALWAYS field five questions even when every spec fetch fails.
+     Used only to top up a short assembly (see assembleQuestions). Honest
+     caveat: the top-up is deterministic per (date, filters), but users whose
+     fetches failed may see a different padded set from users whose fetches
+     succeeded — we trade perfect worldwide sameness for never showing an
+     error as the default face of the daily habit. */
+  const FALLBACK_QUESTIONS = [
+    { stem: 'biology-a-level-aqa-cells-adventure-1', subject: 'biology', level: 'a-level', topic: 'Cells',
+      q: 'Which organelle is the main site of aerobic respiration in a eukaryotic cell?',
+      options: [['Mitochondrion', true], ['Ribosome', false], ['Nucleus', false], ['Golgi apparatus', false]],
+      explain: 'Mitochondrion — the organelle where the later stages of aerobic respiration release ATP.' },
+    { stem: 'chemistry-a-level-acids-bases--buffers-adventure-1', subject: 'chemistry', level: 'a-level', topic: 'Acids, bases & buffers',
+      q: 'In the Brønsted–Lowry theory, an acid is defined as a species that does what?',
+      options: [['Donates a proton', true], ['Accepts a proton', false], ['Donates an electron pair', false], ['Accepts an electron pair', false]],
+      explain: 'Brønsted–Lowry acid — a proton (H⁺) donor; the base is the proton acceptor.' },
+    { stem: 'physics-a-level-aqa-electricity-adventure-1', subject: 'physics', level: 'a-level', topic: 'Electricity',
+      q: 'Which electrical quantity is measured in ohms (Ω)?',
+      options: [['Resistance', true], ['Current', false], ['Charge', false], ['Potential difference', false]],
+      explain: 'Resistance — the ratio of potential difference to current, R = V / I.' },
+    { stem: 'maths-a-level-aqa-algebra-functions-adventure-1', subject: 'maths', level: 'a-level', topic: 'Algebra & functions',
+      q: 'For the quadratic equation ax² + bx + c = 0, what is the discriminant?',
+      options: [['b² − 4ac', true], ['b² + 4ac', false], ['4ac − b²', false], ['2a − b', false]],
+      explain: 'Discriminant — b² − 4ac; its sign tells you how many real roots the quadratic has.' },
+    { stem: 'history-a-level-ancient--medieval-adventure-1', subject: 'history', level: 'a-level', topic: 'Ancient & medieval',
+      q: 'The Battle of Hastings, which brought Norman rule to England, was fought in which year?',
+      options: [['1066', true], ['1042', false], ['1087', false], ['1215', false]],
+      explain: '1066 — William of Normandy defeated Harold II, beginning the Norman conquest of England.' },
+    { stem: 'geography-a-level-aqa-ecosystems-under-stress-adventure-1', subject: 'geography', level: 'a-level', topic: 'Ecosystems under stress',
+      q: 'Which term describes the total mass of living organic matter in a given area?',
+      options: [['Biomass', true], ['Biodiversity', false], ['Biome', false], ['Biosphere', false]],
+      explain: 'Biomass — the total mass of living material, usually quoted per unit area.' },
+    { stem: 'computer-science-a-level-ai--machine-learning-adventure-1', subject: 'computer-science', level: 'a-level', topic: 'AI & machine learning',
+      q: 'A model trained on data that includes the correct output labels is an example of which approach?',
+      options: [['Supervised learning', true], ['Unsupervised learning', false], ['Reinforcement learning', false], ['Evolutionary computation', false]],
+      explain: 'Supervised learning — the training data carries labelled answers for the model to learn from.' },
+    { stem: 'economics-a-level-aqa-economic-principles-and-issues-adventure-1', subject: 'economics', level: 'a-level', topic: 'Economic principles',
+      q: 'Opportunity cost is best defined as which of the following?',
+      options: [['The value of the next best alternative forgone', true], ['The total money spent on a purchase', false], ['The cost of producing one extra unit', false], ['The difference between price and average cost', false]],
+      explain: 'Opportunity cost — what you give up by choosing one option over the next best alternative.' },
+    { stem: 'french-a-level-advanced-grammar-terms-adventure-1', subject: 'french', level: 'a-level', topic: 'Advanced grammar',
+      q: 'Which French tense is used for ongoing or habitual actions in the past?',
+      options: [['The imperfect (imparfait)', true], ['The passé composé', false], ['The futur simple', false], ['The conditionnel', false]],
+      explain: 'Imparfait — sets the scene for repeated or ongoing past actions; the passé composé handles completed events.' },
+    { stem: 'business-studies-a-level-ansoff--porter-adventure-1', subject: 'business-studies', level: 'a-level', topic: 'Ansoff & Porter',
+      q: 'In the Ansoff matrix, selling existing products into new markets is called what?',
+      options: [['Market development', true], ['Market penetration', false], ['Product development', false], ['Diversification', false]],
+      explain: 'Market development — existing product, new market; penetration keeps both the same.' },
+  ];
+
   let READY = window.REAL_CONTENT_READY;
   if (!READY || !(READY instanceof Set) || READY.size === 0) READY = new Set(FALLBACK_STEMS);
   const STEM_RE = /^(.*?)-(a-level|gcse|ks3|ibdp)-/;
@@ -281,10 +340,14 @@
     } catch (e) { return today; }
   }
   function headerHtml(metaExtra) {
+    // On filtered URLs the worldwide claim is untrue — scope it honestly.
+    const scopeLine = (subjectFilter || levelFilter)
+      ? `Same five for everyone doing ${esc(filterDesc())} today.`
+      : 'Same five for everyone on Earth today.';
     return `
       <div class="ar-badge">V · Verify · Daily Drill #${drillNo}</div>
       <h1 class="ar-title">Daily Drill</h1>
-      <p class="ar-sub">Five questions, 15 seconds each. Same five for everyone on Earth today. One shot — then it locks until tomorrow.</p>
+      <p class="ar-sub">Five questions, 15 seconds each. ${scopeLine} One shot — then it locks until tomorrow.</p>
       <div class="dd-date">${esc(prettyDate())}</div>
       <div class="ar-meta">${esc(filterDesc())}${metaExtra || ''}</div>
     `;
@@ -303,11 +366,27 @@
       } else if (iso === today && includeTodayPending) {
         cls = 'today-pending'; inner = '?'; title = 'Today — not played yet';
       }
-      cells.push(`<div class="dd-day"><div class="dd-day-sq ${cls}" title="${esc(title)}">${inner}</div><div class="dd-day-lbl">${dayLbl}</div></div>`);
+      // inner is escaped even though history values are validated numbers —
+      // this innerHTML sink must stay safe if the validation above ever drifts.
+      cells.push(`<div class="dd-day"><div class="dd-day-sq ${cls}" title="${esc(title)}">${esc(inner)}</div><div class="dd-day-lbl">${dayLbl}</div></div>`);
     }
     return `<div class="dd-week" role="img" aria-label="Last seven days of Daily Drill activity">${cells.join('')}</div>`;
   }
   function streakStripHtml(streakVal, includeTodayPending) {
+    // Zero-state is an invitation, never "0-day streak" over an empty week —
+    // the first thing a new player sees must pull them in, not read as failure.
+    if (streakVal === 0) {
+      const hasHistory = Object.keys(getHistory()).length > 0;
+      const bigLine = hasHistory
+        ? 'Play today to restart your streak 🔥'
+        : 'Play today to start your streak 🔥';
+      return `
+        <div class="dd-streak-strip">
+          <div class="dd-streak-big">${bigLine}<small>Five questions — that’s all it takes</small></div>
+          ${hasHistory ? weekGridHtml(includeTodayPending) : ''}
+        </div>
+      `;
+    }
     return `
       <div class="dd-streak-strip">
         <div class="dd-streak-big">🔥 ${streakVal}-day streak<small>Play daily to keep it</small></div>
@@ -408,6 +487,7 @@
     const rng = mulberry32(xmur3(seedStr)());
     const shuffled = seededShuffle(pool, rng);
     const qs = [];
+    const usedStems = new Set();
     const MAX_ATTEMPTS = 30;
     for (let i = 0; i < shuffled.length && i < MAX_ATTEMPTS && qs.length < 5; i++) {
       const stem = shuffled[i];
@@ -423,6 +503,7 @@
         ? { text: String(o[0]), correct: !!o[1] }
         : { text: String(o.text), correct: !!o.correct });
       const correctOpt = opts.find(o => o.correct);
+      usedStems.add(stem);
       qs.push({
         q: String(m.q),
         options: Arcade.shuffle(opts), // option order is per-session only
@@ -431,6 +512,32 @@
         topic: String(spec.topic_display || spec.title || ''),
         explain: explanationFor(spec, correctOpt ? correctOpt.text : '', String(m.q)),
       });
+    }
+    // NEVER-ERROR top-up: if the network (or the content pool) let us down and
+    // fewer than five questions assembled, pad deterministically from the
+    // built-in bank — filter-matching entries first, in seeded order, deduped
+    // against stems already used. Days padded this way may differ between a
+    // user whose fetches failed and one whose fetches succeeded; that is the
+    // deliberate trade — the daily habit must never open on an error box.
+    if (qs.length < 5) {
+      const fbRng = mulberry32(xmur3(seedStr + '|fallback')());
+      const ordered = seededShuffle(FALLBACK_QUESTIONS, fbRng);
+      const fits = f => (!subjectFilter || f.subject === subjectFilter) &&
+                        (!levelFilter || f.level === levelFilter);
+      const ranked = ordered.filter(fits).concat(ordered.filter(f => !fits(f)));
+      for (const f of ranked) {
+        if (qs.length >= 5) break;
+        if (usedStems.has(f.stem)) continue;
+        usedStems.add(f.stem);
+        qs.push({
+          q: f.q,
+          options: Arcade.shuffle(f.options.map(o => ({ text: o[0], correct: !!o[1] }))),
+          subject: subjectLabel(f.subject),
+          level: levelLabel(f.level),
+          topic: f.topic,
+          explain: f.explain || '',
+        });
+      }
     }
     return qs;
   }
@@ -625,19 +732,27 @@
       return;
     }
 
+    // Recompute the date NOW: a tab left open across midnight UTC must record
+    // the streak/history under the day the drill was actually submitted, not
+    // the day the page loaded. (The question set itself deliberately stays
+    // the load-time one — swapping questions mid-run would be worse.)
+    const subNow = new Date();
+    const subToday = utcISO(subNow);
+    const subYesterday = utcISO(new Date(subNow.getTime() - DAY_MS));
+
     const s = loadStreak();
     let newStreak;
-    if (s.lastResult && s.lastResult.date === today) {
+    if (s.lastResult && s.lastResult.date === subToday) {
       newStreak = s.streak; // already recorded (e.g. second tab) — don't double-count
     } else {
-      newStreak = (s.lastPlayedDate === yesterday) ? s.streak + 1 : 1;
+      newStreak = (s.lastPlayedDate === subYesterday) ? s.streak + 1 : 1;
       s.streak = newStreak;
-      s.lastPlayedDate = today;
+      s.lastPlayedDate = subToday;
       s.totalDays = (s.totalDays || 0) + 1;
-      s.lastResult = { date: today, correct: state.score, total: 5, grid: grid };
+      s.lastResult = { date: subToday, correct: state.score, total: 5, grid: grid };
       saveStreak(s);
       const h = getHistory();
-      h[today] = state.score;
+      h[subToday] = state.score;
       saveHistory(h);
     }
     const extended = newStreak > 1;

@@ -112,18 +112,16 @@
         <span class="logo-secondary">The Velvet Method™</span>
       </div>
     </a>
-    <ul class="nav-links">
-      <li><a href="../../subjects.html">Velvet Revision</a></li>
-      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
-      <li><a href="../../courses.html">Courses</a></li>
-      
-      <li><a href="../../parents.html">Parents</a></li>
-      <li><a href="../../about.html">About</a></li>
-    </ul>
     <div class="nav-right">
-      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+      <a href="../arcade.html" class="arcade-back">← Back to Arcade</a>
     </div>
   </div>
+  <style>
+    nav .arcade-back { text-decoration: none; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; padding: 6px 12px; border-radius: 6px; transition: all 0.2s ease; white-space: nowrap; }
+    nav .arcade-back:hover { color: var(--text-primary); background: var(--accent-soft); }
+    body.arcade nav .arcade-back { color: var(--ar-text2); }
+    body.arcade nav .arcade-back:hover { color: var(--ar-mint); }
+  </style>
 </nav>
 
 <div class="ar-wrap" id="root">
@@ -170,6 +168,19 @@
   if (cardCount % cols !== 0) cols = (cardCount % 4 === 0) ? 4 : 3;
   if (isMobile) cols = (cardCount % 3 === 0) ? 3 : Math.min(cols, 4);
   cols = Math.max(2, Math.min(cols, 6));
+  const baseCols = cols;
+
+  // Injected from JS (only this script block ships). Columns are driven by a
+  // custom property instead of an inline grid-template-columns, because the
+  // site-wide mobile patch in style.css force-collapses any element whose
+  // style attribute contains "grid-template-columns" + "1fr" to one column.
+  (function () {
+    const st = document.createElement('style');
+    st.textContent =
+      '.mm-grid { grid-template-columns: repeat(var(--mm-cols, 3), 1fr) !important; }\n' +
+      '@media (max-width: 480px) { body.arcade .ar-kbd-hint { display: none; } }';
+    document.head.appendChild(st);
+  })();
 
   // Timer: number wins; legacy data ships a {pairs: secs} map; else 15s/pair.
   let timerSecs = asNum(D.TIMER_SECS);
@@ -182,7 +193,7 @@
   document.getElementById('badge').textContent =
     MODE === 'verify' ? 'V · Verify · Memory Match' : 'M · Memory Match';
   document.getElementById('sub').textContent = MODE === 'verify'
-    ? 'Every term has its definition hiding on the board. Clear all ' + pairCount + ' pairs before the clock hits zero.'
+    ? 'Every term has its definition hiding on the board. Clear all ' + pairCount + ' pairs before the clock hits zero — it starts on your first flip.'
     : 'Flip cards to pair each term with its definition. First-try matches set your grade — read every definition.';
   document.getElementById('meta').textContent =
     pairCount + ' pairs · ' + cardCount + ' cards · ' +
@@ -217,6 +228,7 @@
 
     state = {
       cards, flipped: [], lock: false, over: false, pending: null,
+      started: false,            // clock waits for the first flip
       moves: 0, matched: 0, score: 0, combo: 0, bestCombo: 0,
       missed: new Set(),         // pairIds that were ever in a mismatch
       order: [],                 // matches in the order they landed
@@ -226,7 +238,29 @@
     renderStage();
     announce.textContent = 'New board dealt: ' + cardCount + ' face-down cards, ' +
       pairCount + ' pairs to find. ' +
-      (MODE === 'verify' ? fmt(timerSecs) + ' on the clock.' : 'Take your time — every definition counts.');
+      (MODE === 'verify' ? fmt(timerSecs) + ' on the clock — it starts on your first flip.' : 'Take your time — every definition counts.');
+  }
+
+  // The clock is fair: nothing ticks until the player flips a card.
+  function startClock() {
+    if (MODE === 'verify') {
+      timerCtl = Arcade.timer(document.getElementById('tfill'), timerSecs * 1000, {
+        onSecond: (s) => {
+          const t = document.getElementById('hudTime');
+          if (t) t.textContent = fmt(s);
+          if (s === 10 && !state.over) {
+            Arcade.flashMsg('10 SECONDS ⏱', '#ffd60a');
+            announce.textContent = 'Ten seconds left.';
+          }
+        },
+        onEnd: () => { if (!state.over) finish(false); },
+      });
+    } else {
+      elapsedInt = setInterval(() => {
+        const t = document.getElementById('hudTime');
+        if (t && !state.over) t.textContent = fmt((performance.now() - state.t0) / 1000);
+      }, 1000);
+    }
   }
 
   /* ---------- rendering --------------------------------------------------- */
@@ -240,7 +274,7 @@
       </div>
       <div class="ar-dots" aria-hidden="true">${state.cards.slice(0, pairCount).map(() => '<span></span>').join('')}</div>
       ${MODE === 'verify' ? '<div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>' : ''}
-      <div class="mm-strip" id="fb" role="status">🃏 Flip two cards. Match each <strong>term</strong> to its <strong>definition</strong> — every match shows the full meaning here.</div>
+      <div class="mm-strip" id="fb" role="status">🃏 <span>Flip two cards. Match each <strong>term</strong> to its <strong>definition</strong> — every match shows the full meaning here.</span></div>
       <div class="mm-grid" id="grid" role="group" aria-label="Memory cards: match each term with its definition"></div>
       <div class="ar-kbd-hint">Keyboard: Tab / arrow keys move · Enter or Space flips · a third tap skips the flip-back</div>
     `;
@@ -281,35 +315,33 @@
 
     layout();
     requestAnimationFrame(fitAll);
-
-    if (MODE === 'verify') {
-      timerCtl = Arcade.timer(document.getElementById('tfill'), timerSecs * 1000, {
-        onSecond: (s) => {
-          const t = document.getElementById('hudTime');
-          if (t) t.textContent = fmt(s);
-          if (s === 10 && !state.over) {
-            Arcade.flashMsg('10 SECONDS ⏱', '#ffd60a');
-            announce.textContent = 'Ten seconds left.';
-          }
-        },
-        onEnd: () => { if (!state.over) finish(false); },
-      });
-    } else {
-      elapsedInt = setInterval(() => {
-        const t = document.getElementById('hudTime');
-        if (t && !state.over) t.textContent = fmt((performance.now() - state.t0) / 1000);
-      }, 1000);
-    }
   }
 
   /* ---------- card sizing + text fitting ---------------------------------- */
   function layout() {
     const grid = document.getElementById('grid');
     if (!grid || !state) return;
-    const gap = (window.matchMedia && window.matchMedia('(max-width: 480px)').matches) ? 6 : 8;
+    const phone = window.matchMedia && window.matchMedia('(max-width: 480px)').matches;
+    // Phones: force 3 columns for boards up to 12 cards, 4 beyond, so the
+    // whole board fits one screen. Desktop keeps its original column count.
+    cols = phone ? (cardCount >= 16 ? 4 : 3) : baseCols;
+    const gap = phone ? 6 : 8;
     const cardW = (grid.clientWidth - gap * (cols - 1)) / cols;
-    const cardH = Math.max(86, Math.min(150, Math.round(cardW * 1.12)));
-    grid.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+    let cardH = Math.max(86, Math.min(150, Math.round(cardW * 1.12)));
+    if (phone) {
+      // Size rows from the height budget: everything from the HUD down to the
+      // last card row must fit inside one viewport (44px minimum tap target).
+      const rows = Math.ceil(cardCount / cols);
+      const hud = stage.querySelector('.ar-hud');
+      const gTop = grid.getBoundingClientRect().top;
+      const hTop = hud ? hud.getBoundingClientRect().top : gTop;
+      const navEl = document.querySelector('nav');
+      const navH = navEl ? navEl.offsetHeight : 0;
+      const avail = window.innerHeight - navH - (gTop - hTop) - 12;
+      const fitH = Math.floor((avail - gap * (rows - 1)) / rows);
+      cardH = Math.max(44, Math.min(cardH, fitH));
+    }
+    grid.style.setProperty('--mm-cols', cols);
     grid.style.gridAutoRows = cardH + 'px';
     state.fsTerm = cardH >= 128 ? 16 : cardH >= 104 ? 14.5 : 13;
     state.fsDef  = cardH >= 128 ? 12.5 : cardH >= 104 ? 11.5 : 10.5;
@@ -349,6 +381,13 @@
     }
     const c = state.cards[i];
     if (c.matchedFlag || c.flippedFlag) return;
+
+    if (!state.started) {
+      state.started = true;
+      state.t0 = performance.now();
+      state.lastMatchT = state.t0;
+      startClock();
+    }
 
     c.flippedFlag = true;
     c.el.classList.add('flipped');
