@@ -27,8 +27,14 @@
   if (!window.Arcade) window.Arcade = {};
 
   /* Parent share — bridge to the Velvet Method course via for-parents.html (the course pitch).
-     Native share sheet on mobile; clipboard copy / open on desktop. Mirrors arcade.js. */
-  Arcade.shareWithParents = async function (opts) {
+     Native share sheet on mobile; clipboard copy / open on desktop. Mirrors arcade.js.
+
+     CONTEXT-AWARE — do not clobber an existing definition. Arcade game pages load
+     quizzes/arcade.js first, which defines Arcade.shareWithParents tagged
+     utm_source=arcade. If this module overwrote it, every arcade parent-share would
+     be mis-attributed to `lesson` in analytics. Mini-lessons load this file alone,
+     so they get the lesson-tagged version below. */
+  if (!Arcade.shareWithParents) Arcade.shareWithParents = async function (opts) {
     opts = opts || {};
     var url;
     try { url = new URL('../../for-parents.html', location.href); }
@@ -229,21 +235,20 @@
       : '—';
     drawMarqueeScore(ctx, scoreText, W / 2, panelY + 200, panelW - 60);
 
-    /* ---------- 9. Rank letter (serif, white, yellow glow) --------------- */
+    /* ---------- 9. Rank badge — big stamped grade over the panel corner --
+       The rank letter (especially an S) is the most memeable element for
+       teens, so it gets a ~216px rotated stamp overlapping the top-right
+       corner of the score panel — big enough to survive a ~300px WhatsApp/
+       iMessage thumbnail, and it gives the card a "graded" feel. */
     if (opts.rank) {
-      ctx.shadowColor = PAL.yellow;
-      ctx.shadowBlur = 38;
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.font = '900 100px ' + SERIF;
-      ctx.fillText(String(opts.rank), W / 2, 866);
-      ctx.shadowBlur = 0;
+      drawRankStamp(ctx, String(opts.rank), panelX + panelW - 62, panelY + 6);
       if (opts.rankLine) {
+        ctx.textAlign = 'center';
         ctx.fillStyle = PAL.cyan;
-        ctx.font = '600 18px ' + MONO;
+        ctx.font = '600 20px ' + MONO;
         const line = String(opts.rankLine);
         const safe = line.length > 64 ? line.slice(0, 63) + '…' : line;
-        ctx.fillText(safe, W / 2, 898);
+        ctx.fillText(safe, W / 2, 884);
       }
     }
 
@@ -262,8 +267,11 @@
     ctx.font = '900 24px ' + MONO;
     ctx.fillText('▼  BEAT THIS SCORE  ▼', W / 2, 986);
 
+    // Footer URL — bold + bigger so it stays legible when the card is
+    // screenshotted and re-forwarded (the challenge URL in the share text
+    // doesn't survive that journey; this line is all that's left).
     ctx.fillStyle = PAL.cyan;
-    ctx.font = '700 18px ' + MONO;
+    ctx.font = '900 26px ' + MONO;
     ctx.fillText('aistudymethod.co.uk', W / 2, 1024);
     ctx.fillStyle = PAL.textDim;
     ctx.font = '500 15px ' + MONO;
@@ -359,6 +367,52 @@
     ctx.font = '900 ' + Math.round(size * 0.7) + 'px ' + SERIF;
     ctx.fillText('V', x + size / 2, y + size / 2 + size * 0.04);
     ctx.textBaseline = 'alphabetic';
+  }
+
+  // Rank stamp — a big rotated "graded" badge: dark disc, double yellow ring,
+  // huge white serif letter with a yellow glow. Drawn last over the score
+  // panel's top-right corner so it reads as stamped on top. Intentionally
+  // allowed to overlap the panel border (that's the stamp effect); typical
+  // scores are centred and never reach under it.
+  function drawRankStamp(ctx, letter, cx, cy) {
+    const R = 108;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-12 * Math.PI / 180);
+    // Disc with a soft yellow glow
+    ctx.shadowColor = 'rgba(255,210,77,0.55)';
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = 'rgba(13,10,48,0.94)';
+    ctx.beginPath();
+    ctx.arc(0, 0, R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Outer ring (chunky) + inner ring (thin) = rubber-stamp look
+    ctx.strokeStyle = PAL.yellow;
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(0, 0, R - 6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,210,77,0.55)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, R - 22, 0, Math.PI * 2);
+    ctx.stroke();
+    // "RANK" caption
+    ctx.textAlign = 'center';
+    ctx.fillStyle = PAL.yellow;
+    ctx.font = '900 17px ' + MONO;
+    ctx.fillText('R A N K', 0, -54);
+    // The letter itself — the hero of the stamp
+    ctx.shadowColor = PAL.yellow;
+    ctx.shadowBlur = 34;
+    ctx.fillStyle = '#ffffff';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 132px ' + SERIF;
+    ctx.fillText(letter, 0, 22);
+    ctx.textBaseline = 'alphabetic';
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 
   // Marquee headline: chunky yellow with thick black outline + magenta drop
@@ -598,5 +652,21 @@
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* ----------------------------------------------------------------------- *
+   * Auto-init — arcade game pages include this module via a plain script tag
+   * with no inline wiring, so show the challenge banner automatically.
+   * Safe everywhere: maybeShowChallenge no-ops unless the URL carries
+   * ?from=share, and it never mounts twice, so lesson pages that already
+   * call it explicitly are unaffected.
+   * ----------------------------------------------------------------------- */
+  function autoInit() {
+    try { Arcade.maybeShowChallenge(); } catch (err) { /* swallow */ }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autoInit);
+  } else {
+    autoInit();
   }
 })();
