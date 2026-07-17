@@ -135,11 +135,13 @@ const announce = document.getElementById('announce');
 Arcade.mountMuteButton();
 
 const MAX_WRONG = 7;
+const RUN_SIZE  = 10;   // words per run — the end card offers the next batch
 const KB_ROWS   = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
 const topicLine = [META.subject, META.board, META.topic].filter(Boolean).join(' · ');
 const BEST_KEY  = `aism-best:hangman:${META.subject || ''}:${META.topic || ''}`;
 
 // ── STATE ──
+let fullList = [], runOffset = 0;
 let wordList = [], wordIndex = 0;
 let currentWord = '', currentDef = '', currentItem = null;
 let guessed = new Set(), wrongCount = 0;
@@ -189,6 +191,7 @@ function renderIntro() {
         <div>🔥 Crack words back-to-back to build a <strong style="color:var(--ar-text)">streak</strong></div>
         <div>⌨️ Tap the on-screen keys or type on your keyboard</div>
         <div>🎯 More shield left when you solve = more points</div>
+        ${VOCAB_DATA.length > RUN_SIZE ? '<div>📦 Words come in runs of ' + RUN_SIZE + ' — carry on from the results card when more remain</div>' : ''}
       </div>
       <div style="margin-top:18px;"><button class="ar-btn big" id="btn-begin">▶ Start the breach</button></div>
     </div>
@@ -199,7 +202,14 @@ function renderIntro() {
 /* ── Game (global so the study-first overlay can wrap it) ── */
 function startGame() {
   Arcade.sfx.swoosh();
-  wordList = shuffle([...VOCAB_DATA]);
+  fullList = shuffle([...VOCAB_DATA]);
+  runOffset = 0;
+  beginRun();
+}
+
+// A run is capped at RUN_SIZE words; the end card offers the next batch.
+function beginRun() {
+  wordList = fullList.slice(runOffset, runOffset + RUN_SIZE);
   wordIndex = 0; score = 0; correct = 0; failed = 0; streak = 0; bestStreak = 0;
   resultGrid = [];
   loadWord(0);
@@ -228,7 +238,7 @@ function hudHtml() {
 
 function renderRound() {
   root.innerHTML = `
-    ${headerHtml('Word ' + (wordIndex + 1) + ' of ' + wordList.length)}
+    ${headerHtml('Word ' + (wordIndex + 1) + ' of ' + wordList.length + (currentItem._redemption ? ' · second chance' : ''))}
     ${hudHtml()}
     <div class="ar-card">
       <div class="hb-core" aria-hidden="true">
@@ -415,12 +425,17 @@ function settleWord(won) {
     correct++;
     streak++;
     bestStreak = Math.max(bestStreak, streak);
-    resultGrid.push('🟩');
+    // 🟨 marks a word redeemed on its second chance — the grid stays honest.
+    resultGrid.push(currentItem._redemption ? '🟨' : '🟩');
     Arcade.streakCall(streak);
   } else {
     failed++;
     streak = 0;
     resultGrid.push('🟥');
+    // Failed words return once at the end of the run — a second miss is final.
+    if (!currentItem._redemption) {
+      wordList.push(Object.assign({}, currentItem, { _redemption: true }));
+    }
   }
 
   const hudS = document.getElementById('hudScore');
@@ -496,6 +511,25 @@ function showFinal() {
     ],
     onAgain: startGame,
   });
+  // Continuation: when more of the bank remains, offer the next batch of 10.
+  // Least invasive path — renderEndCard owns its buttons, so we prepend one
+  // extra button to the .ar-ctas row rather than intercepting onAgain.
+  const remaining = fullList.length - (runOffset + RUN_SIZE);
+  if (remaining > 0) {
+    const ctas = document.querySelector('#end .ar-ctas');
+    if (ctas) {
+      const contBtn = document.createElement('button');
+      contBtn.className = 'ar-btn';
+      contBtn.type = 'button';
+      contBtn.textContent = 'Next ' + Math.min(RUN_SIZE, remaining) + ' ▶';
+      contBtn.addEventListener('click', () => {
+        Arcade.sfx.swoosh();
+        runOffset += RUN_SIZE;
+        beginRun();
+      });
+      ctas.insertBefore(contBtn, ctas.firstChild);
+    }
+  }
   announce.textContent = `Run over. Score ${score} points. ${correct} words cracked, ${failed} breached.`;
 }
 

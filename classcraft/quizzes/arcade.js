@@ -70,6 +70,13 @@
   };
   Arcade.dayNumber = function () { return Math.floor(Date.now() / 86400000); };
 
+  /* Last-mission breadcrumb — the arcade lobby records the launched game here
+     so it can offer a one-tap CONTINUE chip on the next visit. Best-effort:
+     storage failures are swallowed, a launch must never be blocked. */
+  Arcade.logMission = function (mission) {
+    try { localStorage.setItem('aism-last-mission', JSON.stringify(mission)); } catch (e) { /* no-op */ }
+  };
+
   // Some on-disk stems contain a colon the URL param drops. Try the plain
   // stem first, then every possible colon-insertion before a dash.
   Arcade.stemCandidates = function (stem) {
@@ -454,6 +461,43 @@
       if (newBest) { try { localStorage.setItem(opts.bestKey, String(opts.bestValue)); } catch (err) {} }
     }
 
+    /* Result log — a rolling history of runs (capped at 200, oldest dropped)
+       that powers the arcade lobby REVENGE rail. Best-effort only: any
+       storage or parse failure is swallowed, the end card must never break. */
+    try {
+      let hist = [];
+      try { hist = JSON.parse(localStorage.getItem('aism-results') || '[]'); } catch (err2) { hist = []; }
+      if (!Array.isArray(hist)) hist = [];
+      hist.push({
+        path: location.pathname,
+        href: location.pathname + (location.search || ''),
+        topic: opts.topic || null,
+        pct: opts.pct,
+        game: opts.gameName || null,
+        ts: Date.now(),
+      });
+      if (hist.length > 200) hist = hist.slice(hist.length - 200);
+      localStorage.setItem('aism-results', JSON.stringify(hist));
+    } catch (err) { /* result log is best-effort */ }
+
+    /* Near-miss line — when the run lands within 5 points below a grade
+       threshold (S 95 / A 80 / B 60), say exactly how close it was. */
+    let nearMiss = '';
+    try {
+      const pctNum = Number(opts.pct);
+      if (isFinite(pctNum)) {
+        const rungs = [[95, 'an S'], [80, 'an A'], [60, 'a B']];
+        for (let ri = 0; ri < rungs.length; ri++) {
+          const gap = Math.round((rungs[ri][0] - pctNum) * 10) / 10;
+          if (gap > 0 && gap <= 5) {
+            nearMiss = '<div class="ar-near-miss" style="font-size:12.5px;letter-spacing:.4px;color:var(--ar-gold,#ffd60a);margin:-8px 0 14px;">'
+              + e(gap + '% from ' + rungs[ri][1] + ' — one more run') + '</div>';
+            break;
+          }
+        }
+      }
+    } catch (err) { nearMiss = ''; }
+
     container.innerHTML = `
       <div class="ar-end ${hot ? 'hot' : ''}">
         <div class="ar-end-inner">
@@ -461,6 +505,7 @@
           <div class="ar-end-topic">${e(opts.topic)}${opts.meta ? ' · ' + e(opts.meta) : ''}</div>
           <div class="ar-grade ${g.cls}">${g.letter}</div>
           <div class="ar-grade-line">${e(g.line)}</div>
+          ${nearMiss}
           ${opts.big != null ? `<div class="ar-end-big" id="ar-big">0</div><div class="ar-end-lbl">${e(opts.bigLabel || '')}</div>` : ''}
           ${opts.rows && opts.rows.length ? `<div class="ar-end-rows">${opts.rows.map(r => `<div class="ar-end-row"><b>${e(r.v)}</b><span>${e(r.l)}</span></div>`).join('')}</div>` : ''}
           ${opts.emojiGrid ? `<div class="ar-emoji-grid">${e(opts.emojiGrid)}</div>` : ''}

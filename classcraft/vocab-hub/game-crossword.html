@@ -316,7 +316,8 @@
 <div class="grid-panel" id="grid-panel">
 <div id="grid-container"></div>
 <div class="grid-actions">
-<button class="btn-submit-cw" onclick="submitCrossword()">✓ Check Answers</button>
+<button class="btn-submit-cw" onclick="checkAnswers()">✓ Check Answers</button>
+<button class="btn-reveal" onclick="revealWord()">💡 Reveal Word</button>
 <button class="btn-reveal" onclick="revealAll()">Reveal All</button>
 <button class="btn-new" onclick="newPuzzle()">↺ New Puzzle</button>
 </div>
@@ -502,6 +503,29 @@ function generateAndRender() {
     puzzleStart = Date.now();
     hintsUsed = 0;
     completedWords.clear();
+    // Generation accepts ≥4 placed words — when the grid came out smaller than
+    // requested, say so and offer a re-roll instead of silently shipping it.
+    if (placedWords.length < selectedWords) {
+      const note = document.createElement('div');
+      note.id = 'underfill-note';
+      note.style.cssText = 'display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;justify-content:center;margin-top:0.6rem;padding:0.5rem 0.85rem;background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.35);border-radius:12px;font-size:0.78rem;color:var(--text-mid);';
+      note.innerHTML = '<span>Placed <strong style="color:var(--text)">' + placedWords.length +
+        ' of ' + selectedWords + '</strong> words</span>';
+      const regen = document.createElement('button');
+      regen.className = 'btn-new';
+      regen.type = 'button';
+      regen.textContent = '↻ Regenerate';
+      regen.addEventListener('click', () => generateAndRender());
+      const keep = document.createElement('button');
+      keep.className = 'btn-new';
+      keep.type = 'button';
+      keep.textContent = 'Keep this grid';
+      keep.addEventListener('click', () => note.remove());
+      note.appendChild(regen);
+      note.appendChild(keep);
+      container.appendChild(note);
+      announce('Only ' + placedWords.length + ' of ' + selectedWords + ' words fitted this grid. You can regenerate or keep it.');
+    }
   }, 50);
 }
 
@@ -904,6 +928,8 @@ document.addEventListener('keydown', e => {
 function updateCellDisplay(r, c) {
   const el = document.getElementById(`cell-${r}-${c}`);
   if (el) el.textContent = grid[r][c].inputLetter;
+  // Editing a cell clears any pink mark left by a previous Check Answers pass.
+  document.querySelector(`.cw-cell[data-r="${r}"][data-c="${c}"]`)?.classList.remove('wrong');
 }
 
 function moveCursor(delta) {
@@ -968,8 +994,8 @@ function syncWordState(r, c, silent) {
     }
   });
   document.getElementById('words-done').textContent = completedWords.size;
-  // Whole puzzle solved without hints → celebrate and show results
-  if (!submitted && hintsUsed === 0 && completedWords.size === placedWords.length) {
+  // Whole puzzle correctly filled → celebrate and show results
+  if (!submitted && completedWords.size === placedWords.length) {
     setTimeout(() => {
       if (!submitted) {
         confettiBurst();                 // confetti rain; the end card supplies the fanfare
@@ -1010,8 +1036,42 @@ function confettiBurst() {
   Arcade.confettiRain(2000);
 }
 
-// ── CHECK ANSWERS ──
+// ── CHECK ANSWERS — non-terminal: marks wrong cells and lets the player fix
+//    and re-check. The puzzle only ends on a full correct fill or Reveal All. ──
+function checkAnswers() {
+  if (submitted) return;
+  let wrong = 0, empty = 0;
+  grid.forEach((row, r) => row.forEach((cell, c) => {
+    if (cell.isBlack) return;
+    const el = document.querySelector(`.cw-cell[data-r="${r}"][data-c="${c}"]`);
+    el?.classList.remove('wrong');
+    if (!cell.inputLetter) { empty++; return; }
+    if (cell.inputLetter === cell.letter) return;
+    wrong++;
+    el?.classList.add('wrong');
+    if (el && !REDUCED_MOTION) {
+      el.classList.add('shake');
+      setTimeout(() => el.classList.remove('shake'), 450);
+    }
+  }));
+  if (wrong === 0 && empty === 0) {
+    // Everything filled and correct — finish for real.
+    submitCrossword(true);
+    return;
+  }
+  if (wrong > 0) {
+    AudioFX.buzz();
+    Arcade.shake();
+    Arcade.flashMsg(wrong + (wrong === 1 ? ' CELL TO FIX' : ' CELLS TO FIX'), '#ff2e88');
+  } else {
+    Arcade.flashMsg('SO FAR SO GOOD', '#00ffa3');
+  }
+  announce('Checked: ' + wrong + ' wrong ' + (wrong === 1 ? 'cell' : 'cells') + ' marked and ' + empty + ' still empty. Fix them and check again.');
+}
+
+// ── FINISH (terminal) — renders the end card ──
 function submitCrossword(fromAuto) {
+  if (submitted) return;
   submitted = true;
   let correct=0, wrong=0, empty=0, wordsCorrect=0;
 
@@ -1115,8 +1175,46 @@ function submitCrossword(fromAuto) {
   setTimeout(() => document.getElementById('overlay').classList.add('open'), delay);
 }
 
-// ── REVEAL ALL ──
+// ── REVEAL WORD — costs hints (one per revealed letter), stays non-terminal ──
+function revealWord() {
+  if (submitted) return;
+  if (!selectedCell) { announce('Select a word in the grid first, then reveal it.'); return; }
+  const { r, c } = selectedCell;
+  const w = getWordAt(r, c, selectedDir) ||
+            getWordAt(r, c, selectedDir === 'across' ? 'down' : 'across');
+  if (!w) return;
+  let revealed = 0;
+  for (let i = 0; i < w.word.length; i++) {
+    const wr = w.dir === 'down'   ? w.row + i : w.row;
+    const wc = w.dir === 'across' ? w.col + i : w.col;
+    if (grid[wr][wc].inputLetter !== grid[wr][wc].letter) {
+      grid[wr][wc].inputLetter = grid[wr][wc].letter;
+      updateCellDisplay(wr, wc);
+      revealed++;
+      const letEl = document.getElementById(`cell-${wr}-${wc}`);
+      if (letEl && !REDUCED_MOTION) {
+        letEl.classList.add('reveal');
+        setTimeout(() => letEl.classList.remove('reveal'), 600);
+      }
+    }
+  }
+  if (revealed > 0) {
+    hintsUsed += revealed;   // same accounting as Reveal All: one hint per letter
+    AudioFX.reveal();
+  }
+  updateProgress();
+  // Update word states quietly (this may auto-finish a now-complete grid).
+  for (let i = 0; i < w.word.length; i++) {
+    const wr = w.dir === 'down'   ? w.row + i : w.row;
+    const wc = w.dir === 'across' ? w.col + i : w.col;
+    syncWordState(wr, wc, true);
+  }
+  announce(w.display + ' revealed — ' + revealed + (revealed === 1 ? ' letter' : ' letters') + ' cost ' + revealed + (revealed === 1 ? ' hint.' : ' hints.'));
+}
+
+// ── REVEAL ALL — terminal, and disqualifies the best-score (as before) ──
 function revealAll() {
+  if (submitted) return;
   let revealed = 0;
   grid.forEach((row, r) => row.forEach((cell, c) => {
     if (!cell.isBlack) {
@@ -1142,6 +1240,8 @@ function revealAll() {
   selectedCell = null;
   document.querySelectorAll('.cw-cell:not(.black)').forEach(el => el.classList.remove('selected','in-word'));
   document.getElementById('words-done').textContent = placedWords.length;
+  // Reveal All ends the puzzle — give the letters a beat to land, then finish.
+  setTimeout(() => submitCrossword(true), REDUCED_MOTION ? 150 : 700);
 }
 
 // Tablet: handle input from hidden field

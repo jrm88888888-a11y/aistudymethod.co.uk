@@ -183,7 +183,7 @@
     MODE === 'verify' ? 'V · Verify · Memory Match' : 'M · Memory Match';
   document.getElementById('sub').textContent = MODE === 'verify'
     ? 'Every term has its definition hiding on the board. Clear all ' + pairCount + ' pairs before the clock hits zero.'
-    : 'Flip cards to pair each term with its definition. Fewer moves, hotter combos, better grade.';
+    : 'Flip cards to pair each term with its definition. First-try matches set your grade — read every definition.';
   document.getElementById('meta').textContent =
     pairCount + ' pairs · ' + cardCount + ' cards · ' +
     (MODE === 'verify' ? timerSecs + 's on the clock' : 'untimed · speed still scores');
@@ -216,7 +216,7 @@
     ])));
 
     state = {
-      cards, flipped: [], lock: false, over: false,
+      cards, flipped: [], lock: false, over: false, pending: null,
       moves: 0, matched: 0, score: 0, combo: 0, bestCombo: 0,
       missed: new Set(),         // pairIds that were ever in a mismatch
       order: [],                 // matches in the order they landed
@@ -242,7 +242,7 @@
       ${MODE === 'verify' ? '<div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>' : ''}
       <div class="mm-strip" id="fb" role="status">🃏 Flip two cards. Match each <strong>term</strong> to its <strong>definition</strong> — every match shows the full meaning here.</div>
       <div class="mm-grid" id="grid" role="group" aria-label="Memory cards: match each term with its definition"></div>
-      <div class="ar-kbd-hint">Keyboard: Tab / arrow keys move · Enter or Space flips</div>
+      <div class="ar-kbd-hint">Keyboard: Tab / arrow keys move · Enter or Space flips · a third tap skips the flip-back</div>
     `;
 
     const grid = document.getElementById('grid');
@@ -339,7 +339,14 @@
 
   /* ---------- play -------------------------------------------------------- */
   function onCard(i) {
-    if (!state || state.lock || state.over) return;
+    if (!state || state.over) return;
+    if (state.lock) {
+      // Skip the flip-back wait: a third tap during the mismatch lock
+      // resolves the flip-back instantly and plays straight on. Taps during
+      // the brief pair-resolve window (no pending flip-back) stay ignored.
+      if (!state.pending) return;
+      state.pending.resolve();
+    }
     const c = state.cards[i];
     if (c.matchedFlag || c.flippedFlag) return;
 
@@ -420,20 +427,31 @@
       Arcade.sfx.wrong();
       Arcade.vibrate([40, 30, 40]);
 
+      // Teaching beat: a miss still pays out information — the first card
+      // you flipped gets its true pairing spelled out in full.
       fb.className = 'mm-strip no';
-      fb.innerHTML = '✗ <span>Not a pair — <strong>' + esc(a.text) + '</strong> and <strong>' + esc(b.text) +
-        '</strong> don’t belong together. Remember where they sit.</span>';
-      announce.textContent = 'Not a match. Combo reset. The cards flip back.';
+      fb.innerHTML = '✗ <span>Not a pair. Bank the correction: <strong>' + esc(a.pair.term) +
+        '</strong> — ' + esc(a.pair.def) + '</span>';
+      announce.textContent = 'Not a match. Combo reset. Remember: ' + a.pair.term + ' — ' + a.pair.def +
+        '. The cards flip back, or tap any card to play straight on.';
 
-      setTimeout(() => {
-        [a, b].forEach(c => {
-          c.flippedFlag = false;
-          c.el.classList.remove('flipped', 'miss');
-          c.el.setAttribute('aria-label', 'Card ' + (parseInt(c.el.dataset.i, 10) + 1) + ' of ' + cardCount + ', face down');
-        });
-        state.flipped = [];
-        state.lock = false;
-      }, FLIPBACK_MS);
+      const pending = {
+        timer: 0,
+        resolve() {
+          if (!state || state.over || state.pending !== pending) return;
+          clearTimeout(pending.timer);
+          state.pending = null;
+          [a, b].forEach(c => {
+            c.flippedFlag = false;
+            c.el.classList.remove('flipped', 'miss');
+            c.el.setAttribute('aria-label', 'Card ' + (parseInt(c.el.dataset.i, 10) + 1) + ' of ' + cardCount + ', face down');
+          });
+          state.flipped = [];
+          state.lock = false;
+        },
+      };
+      pending.timer = setTimeout(pending.resolve, FLIPBACK_MS);
+      state.pending = pending;
     }
   }
 
@@ -468,7 +486,13 @@
 
     const comp = state.matched / pairCount;
     const accFrac = state.moves > 0 ? Math.min(1, state.matched / state.moves) : 0;
-    const pct = Math.round(comp * 60 + accFrac * 40);
+    const firstTries = state.order.filter(o => o.firstTry).length;
+    // Untimed boards always get completed, so a completion floor lets sloppy
+    // runs coast — grade them on first-try accuracy alone. Timed verify runs
+    // keep the blended formula: beating the clock is part of the challenge.
+    const pct = MODE === 'verify'
+      ? Math.round(comp * 60 + accFrac * 40)
+      : Math.round((firstTries / Math.max(1, pairCount)) * 100);
 
     const emojiGrid = state.order.map(o => o.firstTry ? '🟩' : '🟨').join('') +
       '⬛'.repeat(pairCount - state.matched);

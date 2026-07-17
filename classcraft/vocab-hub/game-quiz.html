@@ -185,16 +185,25 @@ function startGame() {
   if (!selectedCount) return;
   Arcade.sfx.swoosh();
   const pool = shuffle([...VOCAB_DATA]).slice(0, selectedCount);
-  activeQs = pool.map((item, idx) => {
-    const others = pool.filter((_, i) => i !== idx);
-    const wrongs = shuffle(others).slice(0, 3).map(o => selectedMode === 'def' ? o.term : o.definition);
-    const correct = selectedMode === 'def' ? item.term : item.definition;
-    const question = selectedMode === 'def' ? item.definition : item.term;
-    const options = shuffle([correct, ...wrongs]);
-    return { question, correct, options, item };
-  });
+  activeQs = pool.map(item => buildQuestion(item));
   state = { idx: 0, correct: 0, score: 0, streak: 0, bestStreak: 0, grid: [] };
   renderQuestion();
+}
+
+// Distractors are drawn from the FULL vocab bank, not just this run's slice.
+function buildQuestion(item, redemption) {
+  const correct = selectedMode === 'def' ? item.term : item.definition;
+  const question = selectedMode === 'def' ? item.definition : item.term;
+  const wrongs = [];
+  for (const o of shuffle(VOCAB_DATA)) {
+    if (o === item) continue;
+    const w = selectedMode === 'def' ? o.term : o.definition;
+    if (w === correct || wrongs.includes(w)) continue;
+    wrongs.push(w);
+    if (wrongs.length === 3) break;
+  }
+  const options = shuffle([correct, ...wrongs]);
+  return { question, correct, options, item, redemption: !!redemption };
 }
 
 function hudHtml() {
@@ -212,12 +221,12 @@ function renderQuestion() {
     ${headerHtml('Question ' + (state.idx + 1) + ' of ' + activeQs.length)}
     ${hudHtml()}
     <div class="ar-dots" aria-hidden="true">${activeQs.map((_, i) => {
-      if (i < state.idx) return `<span class="${state.grid[i] === '🟩' ? 'done' : 'fail'}"></span>`;
+      if (i < state.idx) return `<span class="${(state.grid[i] === '🟩' || state.grid[i] === '🟨') ? 'done' : 'fail'}"></span>`;
       return `<span class="${i === state.idx ? 'now' : ''}"></span>`;
     }).join('')}</div>
     <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
     <div class="ar-card">
-      <div class="ar-label">${selectedMode === 'def' ? 'Definition — pick the term' : 'Term — pick the definition'}</div>
+      <div class="ar-label">${q.redemption ? '🔁 Redemption (half points) · ' : ''}${selectedMode === 'def' ? 'Definition — pick the term' : 'Term — pick the definition'}</div>
       <div class="ar-prompt">${esc(q.question)}</div>
       <div class="vq-opt-row ar-stagger" role="group" aria-label="Answer options">
         ${q.options.map((opt, i) => `
@@ -264,8 +273,9 @@ function renderQuestion() {
       const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
       const speed = Math.round(50 * (remaining / ROUND_MS));
       pts = Math.round((100 + speed) * mult);
+      if (q.redemption) pts = Math.round(pts / 2);   // redemption pays half
       state.score += pts;
-      state.grid.push('🟩');
+      state.grid.push(q.redemption ? '🟨' : '🟩');
       Arcade.sfx.correct(state.streak);
       if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg('NAILED IT', '#00ffa3');
       Arcade.streakCall(state.streak);
@@ -275,6 +285,8 @@ function renderQuestion() {
     } else {
       state.streak = 0;
       state.grid.push(timedOut ? '⬛' : '🟥');
+      // Redemption: a missed question returns once at the end of the run.
+      if (!q.redemption) activeQs.push(buildQuestion(q.item, true));
       if (timedOut) { Arcade.sfx.timeup(); Arcade.flashMsg("TIME'S UP ⏱", '#ffd60a'); }
       else { Arcade.sfx.wrong(); Arcade.flashMsg('MISS', '#ff2e88'); }
       Arcade.shake();

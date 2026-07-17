@@ -1103,8 +1103,23 @@ function killEnemy(e, silentScore) {
 function launchDive() {
   const candidates = enemies.filter(e => e.alive && e.state === 'formation' && !e.isVocab);
   if (!candidates.length) return;
-  // prefer edge/bottom enemies — feels deliberate, reads clearly
-  const e = candidates[Math.floor(Math.random() * candidates.length)];
+  // prefer edge/bottom enemies — feels deliberate, reads clearly:
+  // bottom-most in its column and the formation edges carry extra weight
+  const bottomByCol = {};
+  let minSx = Infinity, maxSx = -Infinity;
+  candidates.forEach(c => {
+    if (!(c.col in bottomByCol) || c.sy > bottomByCol[c.col]) bottomByCol[c.col] = c.sy;
+    minSx = Math.min(minSx, c.sx);
+    maxSx = Math.max(maxSx, c.sx);
+  });
+  const weights = candidates.map(c =>
+    1 + (c.sy === bottomByCol[c.col] ? 2 : 0) + ((c.sx === minSx || c.sx === maxSx) ? 2 : 0));
+  let roll = Math.random() * weights.reduce((s, w) => s + w, 0);
+  let e = candidates[0];
+  for (let i = 0; i < candidates.length; i++) {
+    roll -= weights[i];
+    if (roll <= 0) { e = candidates[i]; break; }
+  }
   e.state = 'diving';
   e.diveT = 0;
   e.dive = {
@@ -1294,6 +1309,10 @@ function answerQuestion(chosen, item, btn, cont) {
     btn.classList.add('correct');
     score += 100;
     vocabCorrect++;
+    // Knowing your terms feeds the kill-chain: +2 combo steps per correct answer.
+    combo += 2;
+    comboTimer = COMBO_WINDOW;
+    multiplier = Math.min(5, 1 + Math.floor(combo / 3));
     AudioFX.correct();
     Arcade.vibrate([18]);
     // learning is the loop: right answers arm you for the fight
@@ -1308,12 +1327,19 @@ function answerQuestion(chosen, item, btn, cont) {
     announce('Correct! ' + item.term + ' means: ' + correct + '. Plus 100 points and ' + st.label + '.');
   } else {
     btn.classList.add('wrong');
+    // A wrong answer breaks the kill-chain combo.
+    combo = 0; multiplier = 1; comboTimer = 0;
     AudioFX.wrong();
     Arcade.shake();
     // the educational beat: lock the real definition in before play resumes
     pointsEl.textContent = 'Not quite — ' + item.term + ' means: ' + correct;
     pointsEl.className = 'q-points miss';
     announce('Not quite. ' + item.term + ' means: ' + correct + '.');
+    // Missed terms return as carriers later in the same run.
+    if (!item._requeued) {
+      const at = Math.min(vocabQueue.length, vocabShownCount + 2 + Math.floor(Math.random() * 2));
+      vocabQueue.splice(at, 0, Object.assign({}, item, { _requeued: true }));
+    }
   }
 
   updateHUD();
@@ -1324,7 +1350,7 @@ function closeQuestion() {
   document.getElementById('overlay-q').classList.remove('open');
   if (state === 'question') {
     state = 'playing';
-    player.invuln = Math.max(player.invuln, 0.8);   // grace period after the modal
+    player.invuln = Math.max(player.invuln, 2.0);   // grace period after the modal
   }
 }
 
@@ -1374,16 +1400,18 @@ function endGame(reason) {
 
   const topic = META.topic || 'Vocabulary';
   const outOfLives = reason === 'lives';
+  // Shooting alone cannot earn a top grade — with zero vocab answered the
+  // percentage is capped at 39 (a D) no matter how high the score climbed.
   const pct = vocabAnswered > 0
     ? Math.round(100 * vocabCorrect / vocabAnswered)
-    : Math.max(0, Math.min(100, Math.round(score / 12)));
+    : Math.max(0, Math.min(39, Math.round(score / 12)));
   const hearts = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, LIVES_MAX - Math.max(0, lives)));
   const emojiGrid = hearts + ' 📚' + vocabCorrect + ' 👾' + kills;
 
-  const insight = outOfLives
-    ? 'The invaders won this round, but every carrier you shot down was a definition tested mid-firefight. The ones you fluffed are flashing at you — those are tonight’s flashcards.'
-    : vocabAnswered === 0
-      ? 'Great flying — now hunt the glowing carriers. Each one tests a definition, and right answers arm your ship. Knowledge is firepower in here.'
+  const insight = vocabAnswered === 0
+    ? 'Great flying, but the grade stays capped until some vocab is answered — hunt the glowing carriers. Each one tests a definition, and right answers arm your ship.'
+    : outOfLives
+      ? 'The invaders won this round, but every carrier you shot down was a definition tested mid-firefight. The ones you fluffed are flashing at you — those are tonight’s flashcards.'
       : 'Answering under fire is active recall at its hardest — each correct definition literally armed your ship. Re-run the terms that cost you a power-up.';
 
   const endRoot = document.getElementById('end-root');

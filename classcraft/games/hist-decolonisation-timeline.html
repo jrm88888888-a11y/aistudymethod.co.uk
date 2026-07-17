@@ -92,9 +92,32 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
   const TOPIC = (document.getElementById('gameHeading').textContent || '').trim();
   const BEST_KEY = 'aism-best:' + location.pathname;
 
-  const EVENTS = (GAME_DATA && Array.isArray(GAME_DATA.ALL_EVENTS) ? GAME_DATA.ALL_EVENTS : [])
-    .filter(e => e && e.text != null)
-    .map((e, i) => ({ year: String(e.year != null ? e.year : '?'), text: String(e.text), rank: i }));
+  const RAW_EVENTS = (GAME_DATA && Array.isArray(GAME_DATA.ALL_EVENTS) ? GAME_DATA.ALL_EVENTS : [])
+    .filter(e => e && e.text != null);
+  // Load-time guard: correctness is defined by authored array order, so where
+  // years are numeric, verify the order is non-decreasing. If it is not, warn
+  // with the offenders and sort the numeric-year events by year (events with
+  // non-numeric years keep their authored positions).
+  (function validateOrder() {
+    const yearOf = e => {
+      if (typeof e.year === 'number' && isFinite(e.year)) return e.year;
+      const s = String(e.year != null ? e.year : '').trim();
+      return /^-?\d+(\.\d+)?$/.test(s) ? parseFloat(s) : null;
+    };
+    const numIdx = [];
+    RAW_EVENTS.forEach((e, i) => { if (yearOf(e) !== null) numIdx.push(i); });
+    const offenders = [];
+    for (let k = 1; k < numIdx.length; k++) {
+      const prev = RAW_EVENTS[numIdx[k - 1]], cur = RAW_EVENTS[numIdx[k]];
+      if (yearOf(cur) < yearOf(prev)) offenders.push('"' + cur.text + '" (' + cur.year + ') listed after "' + prev.text + '" (' + prev.year + ')');
+    }
+    if (offenders.length) {
+      console.warn('[timeline] ALL_EVENTS is not in chronological order — auto-sorting numeric-year events by year. Offenders: ' + offenders.join('; '));
+      const sorted = numIdx.map(i => RAW_EVENTS[i]).sort((a, b) => yearOf(a) - yearOf(b));
+      numIdx.forEach((pos, k) => { RAW_EVENTS[pos] = sorted[k]; });
+    }
+  })();
+  const EVENTS = RAW_EVENTS.map((e, i) => ({ year: String(e.year != null ? e.year : '?'), text: String(e.text), rank: i }));
   const PLACE_SECS = (GAME_DATA && typeof GAME_DATA.TIMER_SECS === 'number' && GAME_DATA.TIMER_SECS > 0)
     ? GAME_DATA.TIMER_SECS : 15;
   const ROUND = Math.min(8, EVENTS.length);
@@ -131,7 +154,7 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
       queue: drawn.slice(1),
       placed: [anchor],
       idx: 0, score: 0, streak: 0, bestStreak: 0,
-      results: [], resByRank: {},
+      results: [], resByRank: {}, eventOrder: [], fixed: 0,
       t0: Date.now(), timer: null, phase: 'placing', sel: 0, done: false,
     };
     st.resByRank[anchor.rank] = 'anchor';
@@ -177,8 +200,15 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
   function beginTurn() {
     if (st.timer) st.timer.stop();
     st.phase = 'placing';
-    st.sel = Math.min(st.placed.length, Math.ceil(st.placed.length / 2));
     const ev = st.queue[st.idx];
+    // A retry card re-tests an earlier miss: pull its amber copy back off the
+    // timeline first, so the player re-places it fresh with the year hidden.
+    if (ev.retry && ev.nodeRef) {
+      const j = st.placed.indexOf(ev.nodeRef);
+      if (j !== -1) st.placed.splice(j, 1);
+      ev.nodeRef = null;
+    }
+    st.sel = Math.min(st.placed.length, Math.ceil(st.placed.length / 2));
     const n = st.queue.length;
     game.innerHTML = ''
       + '<div class="ar-hud">'
@@ -188,7 +218,7 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
       + '</div>'
       + '<div class="ar-dots" aria-hidden="true">' + dotsHtml() + '</div>'
       + '<div class="ar-card">'
-      +   '<div class="ar-label">Drop it in the timeline — year hidden</div>'
+      +   '<div class="ar-label">' + (ev.retry ? 'Retry · half points — year hidden again' : 'Drop it in the timeline — year hidden') + '</div>'
       +   '<div class="tl-evtext">' + esc(ev.text) + '</div>'
       +   '<div class="ar-timer"><i id="tfill"></i></div>'
       +   '<div class="ar-kbd-hint">Keyboard: ↑ ↓ pick a gap · Enter drops it</div>'
@@ -232,6 +262,7 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
       st.streak++;
       st.bestStreak = Math.max(st.bestStreak, st.streak);
       pts = Math.round(100 * multFor(st.streak)) + Math.round(remaining / 1000) * 4;
+      if (ev.retry) pts = Math.round(pts / 2);
       st.score += pts;
       Arcade.sfx.correct(st.streak);
       Arcade.vibrate(20);
@@ -245,14 +276,28 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
       if (gapEl) Arcade.popTextOver(gapEl, '✗', '#ff2e88');
     }
     st.results.push(ok);
-    st.resByRank[ev.rank] = ok;
+    // Per-event outcome, counted once: a miss fixed on its retry becomes 'retry'.
+    if (ev.retry) {
+      if (ok) { st.resByRank[ev.rank] = 'retry'; st.fixed++; }
+    } else {
+      st.eventOrder.push(ev.rank);
+      st.resByRank[ev.rank] = ok;
+    }
 
     const node = {
       year: ev.year, text: ev.text, rank: ev.rank,
       cls: (ok ? 'ok' : 'amber') + ' new',
-      tag: ok ? '✓ +' + pts : '→ it actually goes here',
+      tag: ok ? (ev.retry ? '✓ fixed on retry +' + pts : '✓ +' + pts) : '→ it actually goes here',
     };
     st.placed.splice(correctGap, 0, node);
+
+    // A fresh miss earns one in-run retry, 2–3 cards later, year hidden again.
+    let retryQueued = false;
+    if (!ok && !ev.retry) {
+      st.queue.splice(Math.min(st.queue.length, st.idx + 3), 0,
+        { year: ev.year, text: ev.text, rank: ev.rank, retry: true, nodeRef: node });
+      retryQueued = true;
+    }
 
     const tl = document.getElementById('tl');
     tl.innerHTML = tlHtml(false);
@@ -277,22 +322,52 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
     const fb = document.getElementById('fb');
     if (ok) {
       fb.className = 'ar-feedback ok';
-      fb.innerHTML = '<strong>' + esc(ev.year) + ' — slotted.</strong> ' + esc(ctx);
+      fb.innerHTML = '<strong>' + esc(ev.year) + (ev.retry ? ' — fixed on the retry.' : ' — slotted.') + '</strong> ' + esc(ctx);
     } else {
       fb.className = 'ar-feedback mid';
-      fb.innerHTML = '<strong>Not there — it slid to the amber slot.</strong> ' + esc(ctx);
+      fb.innerHTML = '<strong>Not there — it slid to the amber slot.</strong> ' + esc(ctx)
+        + (retryQueued ? ' It comes back around shortly for another go at half points.' : '')
+        + '<div style="margin-top:12px;"><button type="button" class="ar-btn big" id="tlNext">Tap to continue →</button></div>';
     }
     announce.textContent = (ok ? 'Correct. ' : 'Wrong gap. ') + ctx
-      + (ok ? ' Plus ' + pts + ' points.' : ' Streak reset.');
+      + (ok ? ' Plus ' + pts + ' points.' : ' Streak reset. Tap continue when you are ready.');
 
+    // Correct placements auto-advance after a short beat; wrong ones wait for a
+    // tap or keypress so there is time to read the correction. advanceTurn is
+    // phase-guarded, so double-advance is impossible.
+    if (ok) {
+      setTimeout(advanceTurn, 900);
+    } else {
+      const nextBtn = document.getElementById('tlNext');
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => { Arcade.sfx.click(); advanceTurn(); });
+        nextBtn.focus({ preventScroll: true });
+      }
+    }
+  }
+
+  function advanceTurn() {
+    if (!st || st.phase !== 'reveal') return;
+    st.phase = 'between';
     st.idx++;
-    setTimeout(() => { if (st.idx >= st.queue.length) finish(); else beginTurn(); }, ok ? 1400 : 3000);
+    if (st.idx >= st.queue.length) finish(); else beginTurn();
   }
 
   document.addEventListener('keydown', e => {
-    if (!st || st.phase !== 'placing' || st.done) return;
+    if (!st || st.done) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (st.phase === 'reveal' && (e.key === 'Enter' || e.key === ' ')) {
+      if (e.target && e.target.tagName === 'BUTTON') return; // the button handles its own click
+      // Only wrong placements wait for the player; correct ones auto-advance.
+      if (document.getElementById('tlNext')) {
+        e.preventDefault();
+        Arcade.sfx.click();
+        advanceTurn();
+      }
+      return;
+    }
+    if (st.phase !== 'placing') return;
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();
       const max = st.placed.length;
@@ -312,8 +387,8 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
     let nodes = '';
     EVENTS.forEach(ev => {
       const r = st.resByRank[ev.rank];
-      const cls = r === true ? 'ok' : r === false ? 'amber' : r === 'anchor' ? 'anchor' : '';
-      const tag = r === true ? '✓ you placed this' : r === false ? '★ review this one' : r === 'anchor' ? 'anchor' : '';
+      const cls = r === true || r === 'retry' ? 'ok' : r === false ? 'amber' : r === 'anchor' ? 'anchor' : '';
+      const tag = r === true ? '✓ you placed this' : r === 'retry' ? '✓ fixed on retry' : r === false ? '★ review this one' : r === 'anchor' ? 'anchor' : '';
       nodes += '<div class="tl-node ' + cls + '">'
         + '<span class="tl-year">' + esc(ev.year) + '</span>'
         + '<span class="tl-text">' + esc(ev.text) + '</span>'
@@ -330,11 +405,14 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
     st.done = true;
     st.phase = 'done';
     if (st.timer) st.timer.stop();
-    const n = st.results.length;
-    const c = st.results.filter(Boolean).length;
+    // Each event counts once: placed right first time (🟩), fixed on the
+    // retry (🟨), or still to review (🟥).
+    const outcomes = st.eventOrder.map(rank => st.resByRank[rank]);
+    const n = outcomes.length;
+    const c = outcomes.filter(o => o === true || o === 'retry').length;
     const pct = Math.round((c / n) * 100);
     const secs = fmtSecs(Date.now() - st.t0);
-    const emoji = st.results.map(r => (r ? '🟩' : '🟥')).join('');
+    const emoji = outcomes.map(o => (o === true ? '🟩' : o === 'retry' ? '🟨' : '🟥')).join('');
 
     let insight;
     if (pct === 100) insight = 'Perfect chronology — every card straight into its slot. Ordering is the deepest test of cause and effect: now narrate out loud WHY each event leads to the next and you own this topic.';
@@ -353,6 +431,7 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1917","text":"Balfour Declaration — 
       bigLabel: 'points',
       rows: [
         { v: c + '/' + n, l: 'placed right' },
+        ...(st.fixed > 0 ? [{ v: '🟨 ' + st.fixed, l: 'fixed on retry' }] : []),
         { v: String(st.bestStreak), l: 'best streak' },
         { v: secs, l: 'time' },
       ],

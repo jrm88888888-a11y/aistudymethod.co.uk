@@ -478,6 +478,8 @@ let bestStreak  = 0;
 let wordResults = [];       // per-word emoji for the shareable grid: 🟩 clean · 🟨 hinted · 🟥 skipped
 let bonusElapsed = 0;       // seconds the current word has been on screen (frozen while tab hidden)
 let lastTickSecond = -1;
+let checksUsed   = 0;       // Check presses this word — the first is free
+let checkPenalty = 0;       // points lost to failed Checks after the free one (2 each)
 
 function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
@@ -516,6 +518,8 @@ function loadWord(idx) {
   hintsLeft   = MAX_HINTS;
   gameActive  = true;
   tileIdCounter = 0;
+  checksUsed  = 0;
+  checkPenalty = 0;
 
   // Build answer slots (null = empty), grouped by word
   answerSlots = termWords.map(w => w.map(() => null));
@@ -532,7 +536,8 @@ function loadWord(idx) {
   bankTiles = shuffle(bankTiles);
 
   document.getElementById('word-num').textContent    = idx + 1;
-  document.getElementById('round-badge').textContent = `Word ${idx + 1} of ${wordList.length}`;
+  document.getElementById('round-badge').textContent =
+    `Word ${idx + 1} of ${wordList.length}` + (item._redemption ? ' · second chance' : '');
   document.getElementById('progress-fill').style.width = (idx / wordList.length * 100) + '%';
   document.getElementById('clue-box').textContent    = currentDef;
   announce('Word ' + (idx + 1) + ' of ' + wordList.length + '. Definition: ' + currentDef);
@@ -658,10 +663,33 @@ function useHint() {
     for (let li = 0; li < termWords[wi].length; li++) {
       if (answerSlots[wi][li] === null) {
         const correctLetter = termWords[wi][li];
-        const tile = bankTiles.find(t => !t.used && t.letter === correctLetter);
-        if (tile) tile.used = true;
+        let tile = bankTiles.find(t => !t.used && t.letter === correctLetter);
+        if (!tile) {
+          // Every copy of the letter is already placed — reclaim one from its
+          // slot (a misplaced copy first) instead of fabricating a tile.
+          const findPlaced = misplacedOnly => {
+            for (let wj = 0; wj < answerSlots.length; wj++) {
+              for (let lj = 0; lj < answerSlots[wj].length; lj++) {
+                const s = answerSlots[wj][lj];
+                if (s && !s.isHint && s.letter === correctLetter &&
+                    (!misplacedOnly || termWords[wj][lj] !== correctLetter)) {
+                  return { wj, lj };
+                }
+              }
+            }
+            return null;
+          };
+          const reclaim = findPlaced(true) || findPlaced(false);
+          if (reclaim) {
+            const s = answerSlots[reclaim.wj][reclaim.lj];
+            answerSlots[reclaim.wj][reclaim.lj] = null;
+            tile = bankTiles.find(t => t.id === s.tileId);
+          }
+        }
+        if (!tile) return;   // letter genuinely unavailable — never conjure one
+        tile.used = true;
         // Store as hint object — locked, not clearable
-        answerSlots[wi][li] = { letter: correctLetter, tileId: tile ? tile.id : -1, isHint: true };
+        answerSlots[wi][li] = { letter: correctLetter, tileId: tile.id, isHint: true };
         hintsLeft--;
         document.getElementById('hint-count').textContent = `(${hintsLeft} left)`;
         if (hintsLeft <= 0) document.getElementById('btn-hint').disabled = true;
@@ -679,6 +707,7 @@ function useHint() {
 // ── CHECK ──
 function checkAnswer() {
   if (!gameActive) return;
+  checksUsed++;
   const attempt = answerSlots.map(w => w.map(s => s ? s.letter : '').join('')).join(' ');
   const isCorrect = attempt === currentTerm;
 
@@ -691,7 +720,8 @@ function checkAnswer() {
     streak++;
     bestStreak = Math.max(bestStreak, streak);
     const streakBonus = Math.min(10, (streak - 1) * 2);
-    const wordScore   = base + speedBonus + streakBonus;
+    // Failed Checks after the free one cost 2 points each — never below 0 for the word.
+    const wordScore   = Math.max(0, base + speedBonus + streakBonus - checkPenalty);
     score += wordScore;
     correct++;
     document.getElementById('score-display').textContent = score;
@@ -716,14 +746,21 @@ function checkAnswer() {
       }, REDUCED_MOTION ? 0 : i * 45);
     });
     spawnFloatPts('+' + wordScore);
-    setTimeout(() => showWordResult(true, wordScore, { base, speedBonus, streakBonus }),
+    setTimeout(() => showWordResult(true, wordScore, { base, speedBonus, streakBonus, penalty: checkPenalty }),
                REDUCED_MOTION ? 350 : Math.min(1500, tiles.length * 45 + 700));
   } else {
-    // Shake wrong + buzz
+    // Shake wrong + buzz. The first Check per word is free; each failed Check
+    // after that costs 2 points off this word (floored at 0 when it scores).
+    if (checksUsed > 1) {
+      checkPenalty += 2;
+      spawnFloatPts('-2');
+      announce('Not quite — try a different arrangement. Minus 2 points for the extra check.');
+    } else {
+      announce('Not quite — try a different arrangement.');
+    }
     AudioFX.wrong();
     Arcade.shake();
     Arcade.vibrate([60, 40, 60]);
-    announce('Not quite — try a different arrangement.');
     groups.classList.add('flash-wrong');
     document.querySelectorAll('#answer-groups .tile.placed').forEach(t => t.classList.add('wrong'));
     setTimeout(() => {
@@ -751,6 +788,7 @@ function showWordResult(won, wordScore, detail) {
       const bits = [];
       if (detail.speedBonus > 0)  bits.push(`⚡ speed +${detail.speedBonus}`);
       if (detail.streakBonus > 0) bits.push(`🔥 streak +${detail.streakBonus}`);
+      if (detail.penalty > 0)     bits.push(`✗ checks −${detail.penalty}`);
       if (bits.length) txt += ' · ' + bits.join(' · ');
     }
     deltaEl.textContent = txt;
@@ -909,6 +947,12 @@ function skipWord() {
   skipped++;
   streak = 0;
   wordResults.push('🟥');
+  // Skipped words return once at the end of the run for a second chance.
+  const item = wordList[wordIndex];
+  if (item && !item._redemption) {
+    wordList.push(Object.assign({}, item, { _redemption: true }));
+    document.getElementById('word-total').textContent = wordList.length;
+  }
   updateStreakPill();
   AudioFX.drop();
   announce('Skipped. The answer was ' + currentTerm + '.');

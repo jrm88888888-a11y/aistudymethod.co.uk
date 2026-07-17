@@ -206,17 +206,37 @@ const announce = document.getElementById('announce');
    BUILD QUESTION SET (unchanged engine logic)
    ============================================================ */
 function buildQuestions(pairs, n) {
-  // Convert term/def pairs into MCQs: question = "What does X mean?", correct = its def, distractors = 3 random other defs
+  // Convert term/def pairs into MCQs: question = the term, correct = its def.
+  // Distractor hygiene: never offer a def that exactly matches the correct
+  // answer or shares its first 40 characters (near-duplicates read as trick
+  // questions), and keep the distractors distinct from each other too. If the
+  // bank cannot supply 3 clean distractors, ship a narrower gate (2–3 doors)
+  // rather than padding with duplicates. The correct index is recorded
+  // positionally (not via indexOf), so identical strings elsewhere in the
+  // bank can never mis-score a door.
+  function tooClose(a, b) {
+    const x = String(a).trim(), y = String(b).trim();
+    return x === y || x.slice(0, 40) === y.slice(0, 40);
+  }
   const used = shuffle([...pairs]).slice(0, n);
-  return used.map((p, idx) => {
-    const distractors = shuffle(pairs.filter(x => x !== p)).slice(0, 3).map(x => x.def);
-    const options = shuffle([p.def, ...distractors]);
-    return {
+  const out = [];
+  used.forEach(p => {
+    const defs = [];
+    shuffle(pairs.filter(x => x !== p)).forEach(x => {
+      if (defs.length >= 3) return;
+      if (tooClose(x.def, p.def)) return;
+      if (defs.some(d => tooClose(d, x.def))) return;
+      defs.push(x.def);
+    });
+    if (!defs.length) return;   // a one-door gate answers itself — skip the item
+    const doors = shuffle([{ def: p.def, ok: true }].concat(defs.map(d => ({ def: d, ok: false }))));
+    out.push({
       q: p.term,
-      options: options,
-      correct: options.indexOf(p.def)
-    };
+      options: doors.map(d => d.def),
+      correct: doors.findIndex(d => d.ok)
+    });
   });
+  return out;
 }
 
 function shuffle(arr) {
@@ -260,6 +280,16 @@ let maxSpeed = 1.0;
 let correctCount = 0;
 let totalAnswered = 0;
 let gateGrid = [];       // per-gate emoji results for the end card
+let gatesResolved = 0;   // every gate that reached the player (incl. idle)
+let missedQ = [];        // question indexes the player got wrong or slept through
+let teachPauseT = 0;     // ms left of the wrong-answer teaching pause
+let graceT = 0;          // ms of spawn-safe grace after any pause
+let hadInputThisGate = false;
+let idleGates = 0;       // consecutive gates with zero player input
+let pendingAutoPause = false;
+let autoPaused = false;
+const TEACH_PAUSE_MS = 2000;
+const RESUME_GRACE_MS = 1000;
 let difficulty = 'medium';
 const DIFF_SETTINGS = {
   easy:   { startSpeed: 0.7, speedGain: 0.04, baseScrollPx: 1.4 },
@@ -337,6 +367,7 @@ function setupInput() {
     isDragging = true;
     dragStartX = clientX;
     dragStartPlayer = playerX;
+    hadInputThisGate = true;
     showHint(false);
   }
   function onMove(clientX) {
@@ -360,8 +391,8 @@ function setupInput() {
   document.addEventListener('keydown', e => {
     if (gameState !== 'running') return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === 'ArrowLeft')  { e.preventDefault(); playerTargetX = Math.max(0.05, playerTargetX - kbStep); showHint(false); }
-    if (e.key === 'ArrowRight') { e.preventDefault(); playerTargetX = Math.min(0.95, playerTargetX + kbStep); showHint(false); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); playerTargetX = Math.max(0.05, playerTargetX - kbStep); hadInputThisGate = true; showHint(false); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); playerTargetX = Math.min(0.95, playerTargetX + kbStep); hadInputThisGate = true; showHint(false); }
     const laneKey = { '1': 0, '2': 1, '3': 2, '4': 3 }[e.key];
     if (laneKey != null) {
       const g = gates.find(x => !x.settled);
@@ -369,10 +400,67 @@ function setupInput() {
       if (laneKey < n) {
         e.preventDefault();
         playerTargetX = Math.max(0.05, Math.min(0.95, (laneKey + 0.5) / n));
+        hadInputThisGate = true;
         showHint(false);
       }
     }
   });
+}
+
+/* ============================================================
+   TEACHING PAUSE + AFK PAUSE OVERLAYS (injected from JS)
+   ============================================================ */
+let teachEl = null;
+function showTeachOverlay(term, def, idle) {
+  if (!teachEl) {
+    teachEl = document.createElement('div');
+    teachEl.id = 'mq-teach';
+    teachEl.setAttribute('role', 'status');
+    teachEl.style.cssText = 'position:absolute;inset:0;z-index:20;display:none;align-items:center;'
+      + 'justify-content:center;padding:24px;background:rgba(6,6,15,0.9);text-align:center;pointer-events:none;';
+    document.getElementById('canvas-wrap').appendChild(teachEl);
+  }
+  teachEl.innerHTML = '<div style="max-width:540px;font-family:' + AR_FONT + ';">'
+    + '<div style="font-family:monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:' + AR.pink + ';margin-bottom:12px;">'
+    + (idle ? '💤 No input — gate missed' : '✗ Wrong gate — bank the correction') + '</div>'
+    + '<div style="font-size:24px;font-weight:700;color:' + AR.text + ';margin-bottom:12px;line-height:1.3;">' + Arcade.escapeHtml(term) + '</div>'
+    + '<div style="font-size:17px;font-weight:600;line-height:1.5;color:' + AR.mint + ';">' + Arcade.escapeHtml(def) + '</div>'
+    + '</div>';
+  teachEl.style.display = 'flex';
+}
+function hideTeachOverlay() { if (teachEl) teachEl.style.display = 'none'; }
+
+let pauseEl = null;
+function showPauseOverlay() {
+  autoPaused = true;
+  if (!pauseEl) {
+    pauseEl = document.createElement('div');
+    pauseEl.id = 'mq-pause';
+    pauseEl.setAttribute('role', 'button');
+    pauseEl.tabIndex = 0;
+    pauseEl.style.cssText = 'position:absolute;inset:0;z-index:21;display:flex;flex-direction:column;gap:10px;'
+      + 'align-items:center;justify-content:center;background:rgba(6,6,15,0.92);cursor:pointer;text-align:center;'
+      + 'padding:24px;font-family:' + AR_FONT + ';';
+    pauseEl.innerHTML = '<div style="font-size:24px;font-weight:700;color:' + AR.text + ';">⏸ Paused — tap to resume</div>'
+      + '<div style="font-size:13px;color:' + AR.muted + ';max-width:420px;">Two gates drifted past with no input, so the run took a breather. Tap anywhere to jump back in.</div>';
+    pauseEl.addEventListener('click', resumeFromPause);
+    pauseEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resumeFromPause(); }
+    });
+    document.getElementById('canvas-wrap').appendChild(pauseEl);
+  }
+  pauseEl.style.display = 'flex';
+  if (pauseEl.focus) pauseEl.focus();
+  announce.textContent = 'Game paused after two idle gates. Tap or press Enter to resume.';
+}
+function resumeFromPause() {
+  if (!autoPaused) return;
+  autoPaused = false;
+  if (pauseEl) pauseEl.style.display = 'none';
+  idleGates = 0;
+  graceT = RESUME_GRACE_MS;  // spawn-safe breather before the scroll resumes
+  Arcade.sfx.click();
+  announce.textContent = 'Resumed. Steer into the correct gate.';
 }
 
 let hintTimer = null;
@@ -414,6 +502,11 @@ function startGame() {
       '<div class="ar-error">No question data loaded for this topic yet.</div>');
     return;
   }
+  if (!questions.length) {
+    document.querySelector('.ar-wrap').insertAdjacentHTML('afterbegin',
+      '<div class="ar-error">This topic needs more distinct definitions for a fair run — check back soon.</div>');
+    return;
+  }
 
   // Reset state
   currentIdx = 0;
@@ -428,6 +521,16 @@ function startGame() {
   shakeT = 0;
   totalAnswered = 0;
   gateGrid = [];
+  gatesResolved = 0;
+  missedQ = [];
+  teachPauseT = 0;
+  graceT = 0;
+  hadInputThisGate = false;
+  idleGates = 0;
+  pendingAutoPause = false;
+  autoPaused = false;
+  hideTeachOverlay();
+  if (pauseEl) pauseEl.style.display = 'none';
   playerX = 0.5;
   playerTargetX = 0.5;
   prevPlayerX = 0.5;
@@ -507,6 +610,23 @@ function animate(now) {
 }
 
 function update(dt) {
+  // AFK auto-pause: world fully frozen until the player taps to resume.
+  if (autoPaused) return;
+
+  // Teaching pause: freeze the world for ~2s while the correction overlay is
+  // up, then resume with a spawn-safe grace second.
+  if (teachPauseT > 0) {
+    teachPauseT -= dt * 16.67;
+    if (teachPauseT <= 0) {
+      teachPauseT = 0;
+      hideTeachOverlay();
+      if (pendingAutoPause) { pendingAutoPause = false; showPauseOverlay(); }
+      else graceT = RESUME_GRACE_MS;
+    }
+    return;
+  }
+  if (graceT > 0) graceT = Math.max(0, graceT - dt * 16.67);
+
   // Smooth player movement + squash/stretch when accelerating sideways
   prevPlayerX = playerX;
   playerX += (playerTargetX - playerX) * 0.2 * dt;
@@ -524,8 +644,9 @@ function update(dt) {
   // Background pulse decay
   if (bgPulseT > 0) bgPulseT = Math.max(0, bgPulseT - dt * 0.04);
 
-  // Scroll: gates move down (toward player)
-  const scrollPx = DIFF_SETTINGS[difficulty].baseScrollPx * speed * dt;
+  // Scroll: gates move down (toward player). During the post-pause grace the
+  // scroll holds still so the player can re-position before play resumes.
+  const scrollPx = graceT > 0 ? 0 : DIFF_SETTINGS[difficulty].baseScrollPx * speed * dt;
   nextSpawnDist -= scrollPx;
 
   // Move particles
@@ -595,13 +716,44 @@ function settleGate(gate) {
   gate.settled = true;
   gate.dissolveT = 0;
   gate.settleX = playerX;
-  totalAnswered++;
+  gatesResolved++;
+
+  const idle = !hadInputThisGate;
+  hadInputThisGate = false;
 
   // Determine which door player is in
   const numOptions = gate.options.length;
   const laneWidth = 1.0 / numOptions;
   const playerLane = Math.min(numOptions - 1, Math.max(0, Math.floor(playerX / laneWidth)));
   gate.playerLane = playerLane;
+
+  if (idle) {
+    // AFK guard: zero input for the whole approach is a timeout-miss, not an
+    // attempted answer — it costs a life and shows the correction, but stays
+    // out of the accuracy stats. Two in a row and the run pauses itself.
+    idleGates++;
+    lives--;
+    speed = Math.max(0.6, speed - 0.15);
+    gate.result = 'wrong';
+    gate.playerLane = -1;        // no door was truly chosen
+    gateGrid.push('💤');
+    missedQ.push(gate.qIdx);
+    aismStreak = 0;
+    aismMultiplier = 1;
+    Arcade.sfx.wrong();
+    aismShake(7);
+    bgPulseT = 0.7;
+    bgPulseColor = AR.pink;
+    showTeachOverlay(gate.q, gate.options[gate.correct], true);
+    teachPauseT = TEACH_PAUSE_MS;
+    if (idleGates >= 2 && lives > 0) pendingAutoPause = true;
+    announce.textContent = 'No input — gate missed. ' + gate.q + ': ' + gate.options[gate.correct]
+      + '. Lives left: ' + Math.max(0, lives) + '.';
+    updateHUD();
+    return;
+  }
+  idleGates = 0;
+  totalAnswered++;
 
   if (playerLane === gate.correct) {
     // Correct → bump streak, apply multiplier, score
@@ -644,18 +796,21 @@ function settleGate(gate) {
       });
     }
   } else {
-    // Wrong → break streak + life loss
+    // Wrong → break streak + life loss + a 2s teaching pause with the
+    // correction in large type (replaces the old 900ms drive-by flash).
     lives--;
     speed = Math.max(0.6, speed - 0.15);
     gate.result = 'wrong';
     gateGrid.push('🟥');
+    missedQ.push(gate.qIdx);
     const wasOnStreak = aismStreak >= 3;
     aismStreak = 0;
     aismMultiplier = 1;
     Arcade.sfx.wrong();
     Arcade.vibrate([40, 30, 40]);
     aismShake(wasOnStreak ? 11 : 7);
-    flashMessage(wasOnStreak ? 'COMBO BROKEN · ' + gate.options[gate.correct] : '✗ ' + gate.options[gate.correct], true);
+    showTeachOverlay(gate.q, gate.options[gate.correct], false);
+    teachPauseT = TEACH_PAUSE_MS;
     announce.textContent = 'Wrong. The correct answer was: ' + gate.options[gate.correct] + '. Lives left: ' + Math.max(0, lives) + '.';
     // Pink shard burst at gate centre
     emitParticles(playerX, 0.85, AR.pink, 16, 'shard');
@@ -1068,7 +1223,7 @@ function emitParticles(nx, ny, color, n, shape) {
    ============================================================ */
 function updateHUD() {
   document.getElementById('hud-score').textContent = score;
-  document.getElementById('hud-progress').textContent = totalAnswered + '/' + (questions.length || TOTAL_QUESTIONS);
+  document.getElementById('hud-progress').textContent = gatesResolved + '/' + (questions.length || TOTAL_QUESTIONS);
   document.getElementById('hud-lives').textContent = '♥'.repeat(Math.max(0, lives));
   document.getElementById('hud-speed').textContent = '×' + speed.toFixed(1);
   document.getElementById('hud-combo').textContent = aismMultiplier === 1 ? '×1.0' : ('×' + aismMultiplier.toFixed(1));
@@ -1098,6 +1253,9 @@ function endGame() {
   if (gameState === 'over') return;
   gameState = 'over';
   if (animId) cancelAnimationFrame(animId);
+  hideTeachOverlay();
+  if (pauseEl) pauseEl.style.display = 'none';
+  autoPaused = false;
   const accuracy = totalAnswered > 0 ? Math.round(100 * correctCount / totalAnswered) : 0;
 
   // Rank: combines accuracy + max streak. S+ = perfect + ≥6 streak.
@@ -1113,7 +1271,7 @@ function endGame() {
 
   let insight;
   if (lives <= 0) {
-    insight = 'Rank ' + rank + ' — out of lives at gate ' + totalAnswered + ' of ' + questions.length + '. The answers that cost you a heart are exactly the ones to revise. Re-read them, then run it back.';
+    insight = 'Rank ' + rank + ' — out of lives at gate ' + gatesResolved + ' of ' + questions.length + '. The pairs that cost you a heart are listed below — read them properly, then run it back.';
   } else if (rank === 'S+' || rank === 'S') {
     insight = 'Rank ' + rank + ' — flawless run at ×' + maxSpeed.toFixed(1) + ' top speed. Final boss: switch to Hard and hold the combo the whole way.';
   } else if (rank === 'A+' || rank === 'A') {
@@ -1155,6 +1313,35 @@ function endGame() {
     onAgain: restartGame,
     hot: lives <= 0
   });
+
+  // Missed-pairs revision list — every term that cost a life (wrong gate or
+  // idle miss), with its correct definition, appended inside the end card.
+  if (missedQ.length) {
+    const seen = new Set();
+    const items = [];
+    missedQ.forEach(qi => {
+      if (seen.has(qi)) return;
+      seen.add(qi);
+      const q = questions[qi];
+      if (q) {
+        items.push('<div style="margin:7px 0;line-height:1.45;font-size:13px;">'
+          + '<strong style="color:' + AR.text + ';">' + Arcade.escapeHtml(q.q) + '</strong>'
+          + '<span style="color:' + AR.muted + ';"> — </span>'
+          + '<span style="color:' + AR.mint + ';">' + Arcade.escapeHtml(q.options[q.correct]) + '</span>'
+          + '</div>');
+      }
+    });
+    const inner = endRoot.querySelector('.ar-end-inner');
+    if (inner && items.length) {
+      const box = document.createElement('div');
+      box.className = 'ar-insight';
+      box.id = 'mq-revision';
+      box.style.textAlign = 'left';
+      box.innerHTML = '<div style="font-weight:700;margin-bottom:6px;">📖 Revision list — the gates that got you</div>'
+        + items.join('');
+      inner.insertBefore(box, inner.querySelector('.ar-ctas') || null);
+    }
+  }
 
   // Extra CTA: back to the difficulty picker
   const ctas = endRoot.querySelector('.ar-ctas');

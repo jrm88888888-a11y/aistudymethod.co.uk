@@ -126,6 +126,16 @@ Arcade.mountMuteButton();
 
 const MAX_GUESSES = 6;
 const KB_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+
+// Wordle format plays best with short single words. When the bank has enough
+// 4–9-letter single-word terms (≥5), play only those; otherwise keep everything.
+const WORDLE_FIT = VOCAB_DATA.filter(v => {
+  const t = String(v.term || '').trim();
+  const letters = t.replace(/[^A-Za-z]/g, '');
+  return !/\s/.test(t) && letters.length >= 4 && letters.length <= 9;
+});
+const PLAY_DATA = WORDLE_FIT.length >= 5 ? WORDLE_FIT : VOCAB_DATA;
+const BANK_FILTERED = WORDLE_FIT.length >= 5 && WORDLE_FIT.length < VOCAB_DATA.length;
 const topicLine = [META.subject, META.board, META.topic].filter(Boolean).join(' · ');
 const BEST_KEY = `aism-best:termguess:${META.subject || ''}:${META.topic || ''}`;
 
@@ -176,6 +186,7 @@ function renderIntro() {
       <div style="color:var(--ar-text2);font-size:13.5px;margin:14px 0 18px;line-height:1.55;">
         ⌨️ Type or tap the keys · ↩️ Enter submits · 🔡 Spaces and hyphens are filled in for free · 🔥 Streaks add bonus points
       </div>
+      ${BANK_FILTERED ? `<div style="color:var(--ar-muted);font-size:12.5px;margin:-6px 0 16px;">🔎 Playing ${PLAY_DATA.length} of ${VOCAB_DATA.length} terms. Longer terms live in Anagram and Hangman.</div>` : ''}
       <button class="ar-btn big" id="btn-begin">▶ Insert coin</button>
     </div>
   `;
@@ -185,7 +196,7 @@ function renderIntro() {
 /* ── Game ── */
 function startGame() {
   Arcade.sfx.swoosh();
-  wordList = shuffle([...VOCAB_DATA]);
+  wordList = shuffle([...PLAY_DATA]);
   wordIndex = 0; score = 0; solved = 0; failed = 0; streak = 0; bestStreak = 0;
   resultGrid = [];
   loadWord(0);
@@ -214,7 +225,7 @@ function loadWord(idx) {
   const size = Math.max(20, Math.min(42, Math.floor(avail / cells) - 4));
 
   root.innerHTML = `
-    ${headerHtml('Word ' + (idx + 1) + ' of ' + wordList.length)}
+    ${headerHtml('Word ' + (idx + 1) + ' of ' + wordList.length + (item._redemption ? ' · second chance' : ''))}
     <div class="ar-hud">
       <div class="ar-hud-stat">Score <b id="hudScore">${score}</b></div>
       <div class="ar-hud-stat${streak >= 2 ? ' hot' : ''}">Streak <b id="hudStreak">${streak}${streak >= 2 ? '🔥' : ''}</b></div>
@@ -495,8 +506,13 @@ function updateHud() {
 function settleWord(won, tries) {
   if (resultShown) return;
   resultShown = true;
-  resultGrid.push(won ? '🟩' : '🟥');
   const item = wordList[wordIndex];
+  // 🟨 marks a word redeemed on its second chance — the grid stays honest.
+  resultGrid.push(won ? (item._redemption ? '🟨' : '🟩') : '🟥');
+  // Failed words return once at the end of the run — a second miss is final.
+  if (!won && !item._redemption) {
+    wordList.push(Object.assign({}, item, { _redemption: true }));
+  }
 
   const fb = document.getElementById('fb');
   fb.className = 'ar-feedback ' + (won ? 'ok' : 'no');

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__TITLE__</title>
+<meta name="description" content="__META_DESC__">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="../quizzes/arcade.css">
+<style>
+  .qz-opts { display:flex; flex-direction:column; gap:10px; margin-bottom:4px; }
+  .qz-opts.tf { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .qz-tile { min-height:60px; display:flex; align-items:center; gap:12px; }
+  .qz-tile.tf { justify-content:center; text-align:center; min-height:96px; font-size:clamp(20px,7vw,30px); font-weight:700; letter-spacing:0.5px; }
+  .qz-key { font-family:var(--ar-mono); font-size:12px; font-weight:700; min-width:26px; height:26px; border-radius:50%; border:1.5px solid var(--ar-border-hi); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--ar-text2); }
+  .qz-otext { line-height:1.4; overflow-wrap:anywhere; word-break:break-word; font-size:clamp(14px,3.6vw,16px); }
+  .qz-tile.tf .qz-otext { overflow-wrap:normal; }
+  .qz-prompt { overflow-wrap:anywhere; }
+  @media (max-width:380px){ .qz-opts.tf { gap:8px; } .qz-tile.tf { min-height:84px; } }
+</style>
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Velvet Revision</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/share-score.js?v=20260717a"></script>
+<script>
+(function () {
+  'use strict';
+  const GAME_DATA = __GAME_DATA__;
+  const esc = Arcade.escapeHtml;
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  Arcade.mountMuteButton();
+
+  const HEADING = "__HEADING__";
+  const ALL_QUESTIONS = (GAME_DATA.ALL_QUESTIONS || []).filter(q => q && q.q && q.answer);
+  const ROUND_SECS = GAME_DATA.TIMER_SECS || 20;
+  const ROUND_MS = ROUND_SECS * 1000;
+  const ROUNDS = Math.min(10, ALL_QUESTIONS.length);
+  const BEST_KEY = 'aism-best:' + location.pathname;
+  const KEYS = ['A', 'B', 'C', 'D'];
+
+  if (ALL_QUESTIONS.length < 1) {
+    root.innerHTML = '<div class="ar-error">No questions available for this topic yet.</div>';
+    return;
+  }
+
+  // Build one run: 10 random questions, each with its options shuffled.
+  function buildRun() {
+    return Arcade.shuffle(ALL_QUESTIONS).slice(0, ROUNDS).map(q => {
+      const opts = q.type === 'tf'
+        ? ['True', 'False']
+        : Arcade.shuffle(q.options || []);
+      return { type: q.type, q: q.q, answer: q.answer, opts };
+    });
+  }
+
+  let run, state, timerCtl = null;
+
+  function startGame() {
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    run = buildRun();
+    state = { idx: 0, correct: 0, score: 0, streak: 0, bestStreak: 0, grid: [], times: [] };
+    renderRound();
+  }
+
+  function bump(el) {
+    if (!el) return;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 350);
+  }
+
+  function renderHeader() {
+    return `
+      <div class="ar-badge">⚡ Arcade · Quiz Gauntlet</div>
+      <h1 class="ar-title">${esc(HEADING)}</h1>
+      <p class="ar-sub">10 rounds. ${esc(ROUND_SECS)} seconds each. Tap fast, keep the streak alive, learn from every miss.</p>
+    `;
+  }
+
+  function hudHtml() {
+    return `
+      <div class="ar-hud">
+        <div class="ar-hud-stat">Score <b id="hudScore">${state.score}</b></div>
+        <div class="ar-hud-stat${state.streak >= 3 ? ' hot' : ''}">Streak <b id="hudStreak">${state.streak}${state.streak >= 3 ? '🔥' : ''}</b></div>
+        <div class="ar-hud-stat gold">Round <b>${state.idx + 1}/${run.length}</b></div>
+      </div>
+    `;
+  }
+
+  function renderRound() {
+    const r = run[state.idx];
+    const isTf = r.type === 'tf';
+
+    root.innerHTML = `
+      ${renderHeader()}
+      ${hudHtml()}
+      <div class="ar-dots" aria-hidden="true">${run.map((_, i) => {
+        if (i < state.idx) return `<span class="${state.grid[i] === '🟩' ? 'done' : 'fail'}"></span>`;
+        return `<span class="${i === state.idx ? 'now' : ''}"></span>`;
+      }).join('')}</div>
+      <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
+      <div class="ar-card">
+        <div class="ar-label">${isTf ? 'True or False' : 'Multiple choice'} · tap to answer</div>
+        <div class="ar-prompt qz-prompt">${esc(r.q)}</div>
+        <div class="qz-opts ar-stagger${isTf ? ' tf' : ''}" role="radiogroup" aria-label="Choose your answer">
+          ${r.opts.map((opt, i) => `
+            <button type="button" class="ar-tile qz-tile${isTf ? ' tf' : ''}" role="radio" aria-checked="false" data-val="${esc(opt)}">
+              ${isTf ? '' : `<span class="qz-key">${KEYS[i]}</span>`}
+              <span class="qz-otext">${esc(opt)}</span>
+            </button>
+          `).join('')}
+        </div>
+        <div class="ar-kbd-hint">${isTf ? 'Keyboard: T / F to answer' : 'Keyboard: 1–4 to answer'} · Enter for next</div>
+        <div id="fb"></div>
+        <div id="nextWrap" style="margin-top:14px;"></div>
+      </div>
+    `;
+
+    announce.textContent = `Round ${state.idx + 1} of ${run.length}. ${r.q}`;
+
+    const tiles = Array.from(root.querySelectorAll('.qz-tile'));
+    let phase = 'answer';
+
+    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+      onEnd: () => { if (phase === 'answer') settle(null, true); },
+    });
+
+    function settle(chosenVal, timedOut) {
+      if (phase !== 'answer') return;
+      phase = 'verdict';
+      const remaining = timedOut ? 0 : timerCtl.remaining;
+      timerCtl.stop();
+      state.times.push((ROUND_MS - remaining) / 1000);
+
+      const correct = !timedOut && chosenVal === r.answer;
+
+      tiles.forEach(b => {
+        b.disabled = true;
+        b.style.pointerEvents = 'none';
+        const val = b.dataset.val;
+        b.setAttribute('aria-checked', String(val === chosenVal));
+        if (val === r.answer) {
+          b.classList.add('correct');
+        } else if (val === chosenVal) {
+          b.classList.add('wrong');
+        } else {
+          b.classList.add('dim');
+        }
+      });
+
+      let pts = 0;
+      if (correct) {
+        state.correct++;
+        state.streak++;
+        state.bestStreak = Math.max(state.bestStreak, state.streak);
+        const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
+        const speed = Math.round(50 * (remaining / ROUND_MS));
+        pts = Math.round((100 + speed) * mult);
+        state.score += pts;
+        state.grid.push('🟩');
+        Arcade.sfx.correct(state.streak);
+        if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg('NICE!', '#00ffa3');
+        Arcade.streakCall(state.streak);
+        if (state.streak >= 5) Arcade.confettiBurst({ count: 50 });
+        else Arcade.confettiBurst({ count: 30 });
+        const winner = tiles.find(t => t.dataset.val === r.answer);
+        if (winner) Arcade.popTextOver(winner, '+' + pts, '#00ffa3');
+        Arcade.vibrate(20);
+      } else {
+        state.streak = 0;
+        state.grid.push(timedOut ? '⬛' : '🟥');
+        if (timedOut) { Arcade.sfx.timeup(); Arcade.flashMsg("TIME'S UP ⏱", '#ffd60a'); }
+        else { Arcade.sfx.wrong(); Arcade.flashMsg('MISS', '#ff2e88'); }
+        Arcade.shake();
+        Arcade.vibrate([40, 30, 40]);
+      }
+
+      const hudS = document.getElementById('hudScore');
+      hudS.textContent = state.score;
+      if (pts) bump(hudS);
+      const hudSt = document.getElementById('hudStreak');
+      hudSt.textContent = state.streak + (state.streak >= 3 ? '🔥' : '');
+      bump(hudSt);
+      hudSt.parentElement.classList.toggle('hot', state.streak >= 3);
+
+      const fb = document.getElementById('fb');
+      fb.className = 'ar-feedback ' + (correct ? 'ok' : (timedOut ? 'mid' : 'no'));
+      fb.innerHTML = correct
+        ? `<strong>Correct! +${pts} pts.</strong> The answer is <em>${esc(r.answer)}</em>.`
+        : timedOut
+          ? `<strong>Clock beat you.</strong> The correct answer was <em>${esc(r.answer)}</em>.`
+          : `<strong>Not quite.</strong> The correct answer was <em>${esc(r.answer)}</em>.`;
+      announce.textContent = (correct
+        ? `Correct. Plus ${pts} points. The answer is ${r.answer}.`
+        : timedOut
+          ? `Time up. The correct answer was ${r.answer}.`
+          : `Incorrect. The correct answer was ${r.answer}.`);
+
+      const last = state.idx + 1 >= run.length;
+      document.getElementById('nextWrap').innerHTML =
+        `<button class="ar-btn big" id="next">${last ? 'See your score →' : 'Next →'}</button>`;
+      const nextBtn = document.getElementById('next');
+      nextBtn.addEventListener('click', advance);
+      nextBtn.focus({ preventScroll: true });
+    }
+
+    function advance() {
+      Arcade.sfx.swoosh();
+      if (state.idx + 1 < run.length) { state.idx++; renderRound(); }
+      else renderEnd();
+    }
+
+    tiles.forEach(b => {
+      b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
+        Arcade.sfx.click();
+        settle(b.dataset.val, false);
+      });
+    });
+  }
+
+  function renderEnd() {
+    const total = run.length;
+    const pct = Math.round((state.correct / total) * 100);
+    const avg = state.times.length
+      ? (state.times.reduce((a, b) => a + b, 0) / state.times.length).toFixed(1)
+      : '0.0';
+
+    let insight;
+    if (pct === 100) insight = `Flawless gauntlet. You answered every round correctly under the clock — now try to teach ${HEADING} to someone else. If you can explain why each answer is right, you own it.`;
+    else if (pct >= 60) insight = `Strong run. The ones you missed are exactly the ideas to revisit — re-read each correct answer above, then run it back and aim for a clean sweep.`;
+    else insight = `Tough round, but every miss just mapped out which parts of ${HEADING} to study next. Review the correct answers, then come back and beat this score.`;
+
+    root.innerHTML = renderHeader() + '<div id="end"></div>';
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'Quiz Gauntlet',
+      gameEmoji: '⚡',
+      topic: HEADING,
+      pct: pct,
+      big: state.score,
+      bigLabel: 'points',
+      rows: [
+        { v: `${state.correct}/${total}`, l: 'correct' },
+        { v: '🔥 ' + state.bestStreak, l: 'best streak' },
+        { v: avg + 's', l: 'avg time' },
+      ],
+      emojiGrid: state.grid.join(''),
+      bestKey: BEST_KEY,
+      bestValue: state.score,
+      bestSuffix: ' pts',
+      insight: insight,
+      shareLines: [
+        '⚡ Quiz Gauntlet — ' + HEADING,
+        `Score ${state.score} pts · ${pct}% · 🔥 best streak ${state.bestStreak}`,
+        state.grid.join(''),
+      ],
+      onAgain: startGame,
+    });
+    announce.textContent = `Game over. Score ${state.score} points. ${state.correct} of ${total} correct — ${pct} percent.`;
+  }
+
+  // Keyboard: 1-4 / T / F answer, Enter advances.
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'Enter') {
+      if (e.target && e.target.tagName === 'BUTTON') return;
+      const next = document.getElementById('next');
+      if (next) { e.preventDefault(); next.click(); }
+      return;
+    }
+    const tiles = Array.from(root.querySelectorAll('.qz-tile'));
+    if (!tiles.length) return;
+    const k = e.key.toLowerCase();
+    let target = null;
+    if (k === 't') target = tiles.find(t => t.dataset.val === 'True');
+    else if (k === 'f') target = tiles.find(t => t.dataset.val === 'False');
+    else {
+      const map = { '1': 0, '2': 1, '3': 2, '4': 3 };
+      if (k in map) target = tiles[map[k]];
+    }
+    if (target && !target.disabled) { e.preventDefault(); target.click(); }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

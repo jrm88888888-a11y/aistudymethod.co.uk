@@ -188,6 +188,31 @@ body::after{
 .legacy-card .lc-kind{font-family:var(--px);font-size:7px;color:var(--orange);letter-spacing:1px;margin-bottom:4px}
 .legacy-card .lc-ttl{font-size:12.5px;font-weight:700;line-height:1.3}
 
+/* ---- continue / daily-mission chips + revenge rail ---- */
+.mission-chip-row{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 0}
+.mission-chip{
+  display:inline-flex;align-items:center;gap:8px;text-decoration:none;cursor:pointer;
+  font-family:var(--px);font-size:8px;letter-spacing:1px;line-height:1.7;color:var(--text);
+  background:linear-gradient(160deg,var(--panel),var(--bg2));border:2px solid #26266a;
+  border-radius:8px;padding:10px 13px;transition:transform .12s,border-color .12s,box-shadow .12s;
+}
+.mission-chip:hover{transform:translateY(-2px)}
+.mission-chip.resume{border-color:rgba(57,255,20,.45);color:var(--green);text-shadow:0 0 6px rgba(57,255,20,.5)}
+.mission-chip.resume:hover{border-color:var(--green);box-shadow:0 0 16px rgba(57,255,20,.25)}
+.mission-chip.daily{border-color:rgba(255,216,61,.45);color:var(--yellow);text-shadow:0 0 6px rgba(255,216,61,.5)}
+.mission-chip.daily:hover{border-color:var(--yellow);box-shadow:0 0 16px rgba(255,216,61,.25)}
+.revenge-inner{margin:14px 0 0}
+.revenge-head{font-family:var(--px);font-size:9px;color:var(--red);letter-spacing:2px;text-shadow:0 0 8px rgba(255,64,64,.6);margin-bottom:8px}
+.revenge-row{display:flex;flex-wrap:wrap;gap:8px}
+.revenge-card{
+  display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);
+  font-family:var(--vt);font-size:16px;letter-spacing:1px;
+  background:linear-gradient(160deg,var(--panel),var(--bg2));border:2px solid rgba(255,64,64,.35);
+  border-radius:8px;padding:7px 11px;transition:transform .12s,border-color .12s;
+}
+.revenge-card:hover{transform:translateY(-2px);border-color:var(--red)}
+.revenge-card .rg{font-family:var(--px);font-size:9px;color:var(--red)}
+
 /* footer + fx */
 .footer-note{text-align:center;font-family:var(--vt);font-size:18px;color:#55557f;margin-top:40px;letter-spacing:2px}
 .footer-note b{color:var(--vm1)}
@@ -261,6 +286,9 @@ body::after{
   </div>
   <div class="score-ticker" id="score-ticker" hidden><div class="score-ticker-inner" id="score-ticker-inner"></div></div>
 
+  <div id="mission-chips" hidden></div>
+  <div id="revenge-rail" hidden></div>
+
   <div class="step-label" id="lbl-subject">STEP 1 — SELECT SUBJECT</div>
   <div class="choice-grid" id="grid-subject" role="listbox" aria-label="Choose a subject"></div>
 
@@ -313,7 +341,6 @@ body::after{
 
 <script src="arcade/index.js"></script>
 <script src="quizzes/arcade.js"></script>
-<script src="quizzes/share-score.js?v=20260717a"></script>
 <script>
 (function () {
 'use strict';
@@ -637,17 +664,39 @@ function pickTopic(id) {
 }
 
 /* ───────────────────────── launch ───────────────────────── */
+function gameLabel(kind, id) {
+  const pool = kind === 'terms' ? TERMS_GAMES : QUIZ_GAMES;
+  const g = pool.find(x => x.id === id);
+  return g ? g.n.replace(/<br>/gi, ' ') : String(id || '').toUpperCase();
+}
+// Breadcrumb for the ▶ CONTINUE chip — best-effort, never blocks a launch.
+function logMission(game, href) {
+  try {
+    const t = nodeT();
+    if (Arcade.logMission) Arcade.logMission({
+      subject: state.subject, level: state.level, board: state.board,
+      topic: state.topic, topicLabel: t ? t.d : null,
+      game: game, href: href, ts: Date.now(),
+    });
+  } catch (e) { /* never block a launch */ }
+}
 function launch(kind, id) {
   Arcade.sfx.coin();
   // Snapshot the arcade's URL state so the game's end screen can offer a
   // "Back to arcade" link that restores the player's subject/level/board/topic.
   try { sessionStorage.setItem('aism-arcade-return', location.search || ''); } catch (e) {}
-  if (kind === 'daily') { location.href = 'quizzes/daily-drill.html'; return; }
+  if (kind === 'daily') {
+    logMission('DAILY DRILL', 'quizzes/daily-drill.html');
+    location.href = 'quizzes/daily-drill.html';
+    return;
+  }
   const t = nodeT();
   if (!t) return;
   if (kind === 'quiz') {
     coinFlash('GAME ON!');
-    setTimeout(() => { location.href = 'quizzes/' + id + '.html?spec=' + encodeURIComponent(t.s); }, 350);
+    const href = 'quizzes/' + id + '.html?spec=' + encodeURIComponent(t.s);
+    logMission(gameLabel(kind, id), href);
+    setTimeout(() => { location.href = href; }, 350);
     return;
   }
   // terms tester: seed sessionStorage exactly like vocab-hub does
@@ -669,6 +718,10 @@ function launch(kind, id) {
     }));
   } catch (e) {}
   coinFlash('GAME ON!');
+  // Terms cabinets need their vocab re-seeded into sessionStorage, so the
+  // CONTINUE breadcrumb points back at this wizard (pre-filled) rather than
+  // at a game page that would open with an empty word bank.
+  logMission(gameLabel(kind, id), 'arcade.html' + (location.search || ''));
   setTimeout(() => { location.href = 'vocab-hub/game-' + id + '.html'; }, 350);
 }
 
@@ -708,6 +761,87 @@ function syncUrl() {
       }
     }
   }
+})();
+
+/* ───────────────────────── mission chips: CONTINUE + TODAY ─────────────────
+   Rendered above STEP 1 from localStorage + the live index. Pure decoration —
+   any error means no chips, never a broken lobby. */
+(function missionChips() {
+  try {
+    const holder = $('mission-chips');
+    if (!holder) return;
+    const chips = [];
+
+    // ▶ CONTINUE — the last cabinet launched (breadcrumb written by launch()).
+    try {
+      const raw = localStorage.getItem('aism-last-mission');
+      if (raw) {
+        const m = JSON.parse(raw);
+        if (m && typeof m.href === 'string' && m.href) {
+          const label = [m.topicLabel, m.game].filter(Boolean).map(x => E(String(x))).join(' — ');
+          if (label) chips.push('<a class="mission-chip resume" href="' + E(m.href) + '">▶ CONTINUE: ' + label + '</a>');
+        }
+      }
+    } catch (e) { /* no breadcrumb, no chip */ }
+
+    // 🎯 TODAY — one deterministic topic per day, same for every player.
+    try {
+      const flat = [];
+      IDX.subjects.forEach(s => s.levels.forEach(l => l.boards.forEach(b =>
+        b.topics.forEach(t => flat.push({
+          subject: s.id, subjectLabel: s.d, level: l.id, board: b.id,
+          topic: t.slug, topicLabel: t.d,
+        })))));
+      if (flat.length && Arcade.seededShuffle && Arcade.dayNumber) {
+        const pick = Arcade.seededShuffle(flat, Arcade.dayNumber())[0];
+        const p = new URLSearchParams();
+        p.set('subject', pick.subject);
+        p.set('level', pick.level);
+        p.set('board', pick.board);
+        p.set('topic', pick.topic);
+        chips.push('<a class="mission-chip daily" href="' + E(location.pathname + '?' + p.toString()) + '">🎯 TODAY: '
+          + E(pick.subjectLabel) + ' — ' + E(pick.topicLabel) + '</a>');
+      }
+    } catch (e) { /* no index, no chip */ }
+
+    if (chips.length) {
+      holder.innerHTML = '<div class="mission-chip-row">' + chips.join('') + '</div>';
+      holder.hidden = false;
+    }
+  } catch (e) { /* chips are decoration — the lobby must never break */ }
+})();
+
+/* ───────────────────────── revenge rail: beat your shakiest runs ─────────
+   Reads the rolling result log written by Arcade.renderEndCard. Needs at
+   least 3 logged runs; shows the 3 lowest-scoring distinct games from the
+   most recent 50. Renders nothing on any error. */
+(function revengeRail() {
+  try {
+    const holder = $('revenge-rail');
+    if (!holder) return;
+    let hist = JSON.parse(localStorage.getItem('aism-results') || '[]');
+    if (!Array.isArray(hist) || hist.length < 3) return;
+    const recent = hist.slice(-50).filter(r =>
+      r && typeof r.path === 'string' && r.path && isFinite(Number(r.pct)));
+    // shakiest run per distinct path, then the 3 lowest overall
+    const byPath = {};
+    recent.forEach(r => {
+      const cur = byPath[r.path];
+      if (!cur || Number(r.pct) < Number(cur.pct)) byPath[r.path] = r;
+    });
+    const worst = Object.keys(byPath).map(k => byPath[k])
+      .sort((a, b) => Number(a.pct) - Number(b.pct)).slice(0, 3);
+    if (!worst.length) return;
+    const cards = worst.map(r => {
+      const grade = Arcade.grade(Number(r.pct));
+      const label = String(r.topic || r.game || r.path);
+      const href = (typeof r.href === 'string' && r.href) ? r.href : r.path;
+      return '<a class="revenge-card" href="' + E(href) + '"><span class="rg">' + E(grade.letter) + '</span>' + E(label) + '</a>';
+    }).join('');
+    holder.innerHTML = '<div class="revenge-inner"><div class="revenge-head">😤 REVENGE — BEAT YOUR SHAKIEST RUNS</div>'
+      + '<div class="revenge-row">' + cards + '</div></div>';
+    holder.hidden = false;
+  } catch (e) { /* no data, no rail */ }
 })();
 
 /* ───────────────────────── Attract mode: boards flanking the marquee ───── */

@@ -449,6 +449,7 @@ let player, ghosts;
 let score, lives, level;
 let frightT, ghostStreak;
 let vocabQueue, vocabShownCount, vocabCorrect, vocabAnswered;
+let questionSeq = 0;           // guards the auto-continue timer against stale fires
 let particles, floatingTexts, banner;
 let shake, hitstop;
 let readyT, deathT, deathBurstDone;
@@ -1022,6 +1023,7 @@ function updateTimerDisplay() {
    ============================================================ */
 function showQuestion(item) {
   state = 'question';
+  questionSeq++;
   vocabAnswered++;
 
   document.getElementById('q-term').textContent = item.term;
@@ -1070,6 +1072,9 @@ function answerQuestion(chosen, item, btn, cont) {
     pointsEl.textContent = '+100 points! Ghost Frenzy — go hunting!';
     pointsEl.className = 'q-points gain';
     announce('Correct! ' + item.term + ' means: ' + correct + '. Plus 100 points and Ghost Frenzy.');
+    // Correct answers keep the flow: auto-continue shortly after the verdict.
+    const seq = questionSeq;
+    setTimeout(() => { if (state === 'question' && seq === questionSeq) closeQuestion(); }, 800);
   } else {
     btn.classList.add('wrong');
     AudioFX.wrong();
@@ -1078,6 +1083,11 @@ function answerQuestion(chosen, item, btn, cont) {
     pointsEl.textContent = 'Not quite — ' + item.term + ' means: ' + correct;
     pointsEl.className = 'q-points miss';
     announce('Not quite. ' + item.term + ' means: ' + correct + '.');
+    // Missed terms respawn as red dots a little later in the run.
+    if (!item._requeued) {
+      const at = Math.min(vocabQueue.length, vocabShownCount + 2 + Math.floor(Math.random() * 2));
+      vocabQueue.splice(at, 0, Object.assign({}, item, { _requeued: true }));
+    }
   }
 
   updateHUD();
@@ -1142,16 +1152,18 @@ function endGame(reason) {
 
   const topic = META.topic || 'Vocabulary';
   const outOfLives = reason === 'lives';
+  // Maze play alone cannot earn a top grade — with zero vocab answered the
+  // percentage is capped at 39 (a D) no matter how many dots were eaten.
   const pct = vocabAnswered > 0
     ? Math.round(100 * vocabCorrect / vocabAnswered)
-    : Math.max(0, Math.min(100, Math.round(score / 15)));
+    : Math.max(0, Math.min(39, Math.round(score / 15)));
   const hearts = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, LIVES_MAX - Math.max(0, lives)));
   const emojiGrid = hearts + ' 📚' + vocabCorrect + ' ⚪' + dotsEaten;
 
-  const insight = outOfLives
-    ? 'The ghosts got you, but every red dot you ate was a definition tested under pressure. The terms you missed in the maze are the ones to write out before your next run.'
-    : vocabAnswered === 0
-      ? 'You survived the maze — now go hunting the red dots. Each one is a term checked at speed, and that is where the marks live.'
+  const insight = vocabAnswered === 0
+    ? 'You survived the maze, but the grade stays capped until some vocab is answered — go hunting the red dots. Each one is a term checked at speed, and that is where the marks live.'
+    : outOfLives
+      ? 'The ghosts got you, but every red dot you ate was a definition tested under pressure. The terms you missed in the maze are the ones to write out before your next run.'
       : 'Recall under chase pressure is the hardest kind — every right answer earned you a frenzy because knowing your terms is literally power in here. Re-run the ones that slipped.';
 
   const endRoot = document.getElementById('end-root');

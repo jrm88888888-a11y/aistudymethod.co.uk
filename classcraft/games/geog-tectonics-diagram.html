@@ -131,7 +131,12 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
   const announce = document.getElementById('announce');
   const TOPIC = (document.getElementById('gameHeading').textContent || '').trim();
   const BEST_KEY = 'aism-best:' + location.pathname;
-  const LABEL_SECS = 12;
+  // Per-topic timer tuning: honour GAME_DATA.TIMER_SECS when present.
+  const LABEL_SECS = (function () {
+    const t = GAME_DATA && GAME_DATA.TIMER_SECS;
+    return (typeof t === 'number' && isFinite(t) && t > 0) ? Math.round(t) : 12;
+  })();
+  const ACTIVE_CHIPS = 5;   // plausible options kept selectable every round
 
   function fallbackSlot(dot) {
     const x = dot[0] < 50 ? Math.max(8, dot[0] - 20) : Math.min(92, dot[0] + 20);
@@ -148,6 +153,16 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
       slot: (Array.isArray(o.slot) && o.slot.length === 2) ? [+o.slot[0], +o.slot[1]] : fallbackSlot([+o.dot[0], +o.dot[1]]),
       num: i + 1,
     }));
+
+  // Duplicate part ids would collide via getElementById('dot-' + id) and
+  // silently mis-draw the board — flag them loudly at load time.
+  (function () {
+    const seen = new Set();
+    PARTS.forEach(p => {
+      if (seen.has(p.id)) console.warn('[Label It] Duplicate part id "' + p.id + '" in GAME_DATA.ORGANS — dot elements will collide via getElementById. Give every part a unique id.');
+      seen.add(p.id);
+    });
+  })();
 
   const stageCard = document.getElementById('stageCard');
   const dotsC = document.getElementById('dgDots');
@@ -221,25 +236,48 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
     fb.innerHTML = '';
     st = {
       order: Arcade.shuffle(PARTS),
-      ti: 0, misses: 0,
+      ti: 0, misses: 0, pass: 1,
       score: 0, streak: 0, bestStreak: 0,
       res: {}, t0: Date.now(), timer: null, phase: 'play',
     };
+    st.queue = st.order.slice();
     buildBoard();
     syncHud();
     setTarget();
   }
 
-  function curPart() { return st.order[st.ti]; }
+  function curPart() { return st.queue[st.ti]; }
+
+  // Keep ~ACTIVE_CHIPS plausible options selectable every round: the correct
+  // chip plus random decoys (used or unused, visually re-enabled). This kills
+  // the end-of-run elimination giveaway — the last part is a real question.
+  function setActiveChips() {
+    const p = curPart();
+    const chips = Array.from(bank.querySelectorAll('.dg-chip'));
+    const correct = chips.find(c => c.dataset.id === p.id);
+    const decoys = Arcade.shuffle(chips.filter(c => c !== correct));
+    const active = new Set([correct].concat(decoys.slice(0, Math.min(chips.length, ACTIVE_CHIPS) - 1)));
+    chips.forEach(c => {
+      const on = active.has(c);
+      c.disabled = !on;
+      c.classList.toggle('used', !on);   // benched chips take the faded style
+      c.classList.remove('dim', 'flash');
+      c.setAttribute('aria-disabled', String(!on));
+    });
+  }
 
   function setTarget() {
     st.phase = 'play';
     st.misses = 0;
     const p = curPart();
+    const isR = st.pass === 2;
     dotsC.querySelectorAll('.dg-dot').forEach(d => d.classList.remove('target'));
     document.getElementById('dot-' + p.id).classList.add('target');
-    targetLabel.textContent = 'Target · dot ' + p.num + ' is glowing — tap its label';
-    document.getElementById('hudProg').textContent = (st.ti + 1) + '/' + PARTS.length;
+    targetLabel.textContent = isR
+      ? 'Redemption · dot ' + p.num + ' is back — name it for half points'
+      : 'Target · dot ' + p.num + ' is glowing — tap its label';
+    document.getElementById('hudProg').textContent = (isR ? 'R' : '') + (st.ti + 1) + '/' + st.queue.length;
+    setActiveChips();
     if (st.timer) st.timer.stop();
     st.timer = Arcade.timer(tfill, LABEL_SECS * 1000, {
       onEnd() {
@@ -249,8 +287,8 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
         fb.innerHTML = '<strong>Clock drained.</strong> No speed bonus now — but no penalty either. Take your time.';
       },
     });
-    announce.textContent = 'Part ' + (st.ti + 1) + ' of ' + PARTS.length + ': dot number ' + p.num
-      + ' is glowing on the diagram. Pick the matching label.';
+    announce.textContent = (isR ? 'Redemption ' : 'Part ') + (st.ti + 1) + ' of ' + st.queue.length
+      + ': dot number ' + p.num + ' is glowing on the diagram. Pick the matching label.';
   }
 
   function pick(chip) {
@@ -316,6 +354,7 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
     ln.setAttribute('stroke-width', '1.6');
     ln.setAttribute('vector-effect', 'non-scaling-stroke');
     ln.setAttribute('stroke-linecap', 'round');
+    ln.setAttribute('data-id', p.id);
     ln.setAttribute('pathLength', '1');
     ln.style.strokeDasharray = '1';
     ln.style.strokeDashoffset = '1';
@@ -327,6 +366,7 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
   function addTag(p, amber) {
     const t = document.createElement('div');
     t.className = 'dg-tag' + (amber ? ' revealed' : '');
+    t.dataset.id = p.id;
     t.style.left = p.slot[0] + '%';
     t.style.top = p.slot[1] + '%';
     t.textContent = p.name;
@@ -337,7 +377,7 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
     st.phase = 'lock';
     const remaining = st.timer ? st.timer.remaining : 0;
     if (st.timer) st.timer.stop();
-    st.res[p.id] = tier;
+    st.res[p.id] = (st.pass === 2 && tier !== 'revealed') ? 'redeemed' : tier;
     const dot = document.getElementById('dot-' + p.id);
 
     let pts = 0;
@@ -346,13 +386,16 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
       st.bestStreak = Math.max(st.bestStreak, st.streak);
       const mult = Math.min(3, 1 + Math.max(0, st.streak - 1) * 0.5);
       pts = Math.round(100 * mult) + Math.round(remaining / 1000) * 4;
+      if (st.pass === 2) pts = Math.round(pts / 2);   // redemption pays half
       st.score += pts;
       Arcade.sfx.correct(st.streak);
       Arcade.vibrate(20);
       Arcade.streakCall(st.streak);
       fb.className = 'ar-feedback ok';
-      fb.innerHTML = '<strong>' + esc(p.name) + ' locked.</strong> +' + pts + ' points'
-        + (tier === 'second' ? ' — second tap, so the streak rebuilds from 1.' : '.');
+      fb.innerHTML = st.pass === 2
+        ? '<strong>' + esc(p.name) + ' redeemed.</strong> +' + pts + ' points — half rate on the buy-back, full credit on the grid.'
+        : '<strong>' + esc(p.name) + ' locked.</strong> +' + pts + ' points'
+          + (tier === 'second' ? ' — second tap, so the streak rebuilds from 1.' : '.');
     }
 
     if (chip) {
@@ -383,22 +426,54 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
 
     setTimeout(() => {
       st.ti++;
-      if (st.ti >= st.order.length) { finish(); return; }
+      if (st.ti >= st.queue.length) {
+        if (st.pass === 1) {
+          const misses = st.order.filter(q => st.res[q.id] === 'revealed');
+          if (misses.length) { startRedemption(misses); return; }
+        }
+        finish();
+        return;
+      }
       fb.className = '';
       fb.innerHTML = '';
       setTarget();
     }, tier === 'revealed' ? 1700 : 1000);
   }
 
+  // Redemption pass: every part that got auto-revealed comes back around
+  // once, same mechanic, half points — the miss becomes the re-test.
+  function startRedemption(misses) {
+    st.pass = 2;
+    st.queue = Arcade.shuffle(misses);
+    st.ti = 0;
+    st.streak = 0;
+    syncHud();
+    // Strip the giveaway labels off the parts coming back around.
+    st.queue.forEach(p => {
+      const dot = document.getElementById('dot-' + p.id);
+      if (dot) dot.classList.remove('revealed', 'lock', 'target');
+      const tag = tagsC.querySelector('.dg-tag[data-id="' + p.id + '"]');
+      if (tag) tag.remove();
+      const ln = linesSvg.querySelector('[data-id="' + p.id + '"]');
+      if (ln) ln.remove();
+    });
+    Arcade.flashMsg('REDEMPTION ⚡', '#ffd60a');
+    fb.className = 'ar-feedback mid';
+    fb.innerHTML = '<strong>Redemption pass.</strong> The revealed parts come back around once — half points, full credit on the grid.';
+    announce.textContent = 'Redemption pass: ' + st.queue.length + ' revealed part'
+      + (st.queue.length > 1 ? 's come' : ' comes') + ' back around for half points.';
+    setTimeout(setTarget, 900);
+  }
+
   function finish() {
     st.phase = 'done';
     if (st.timer) st.timer.stop();
     const n = PARTS.length;
-    const tally = { first: 0, second: 0, revealed: 0 };
+    const tally = { first: 0, second: 0, revealed: 0, redeemed: 0 };
     st.order.forEach(p => { tally[st.res[p.id]]++; });
     const pct = Math.round((tally.first / n) * 100);
     const secs = fmtSecs(Date.now() - st.t0);
-    const EMO = { first: '🟢', second: '🟡', revealed: '🟠' };
+    const EMO = { first: '🟢', second: '🟡', revealed: '🟠', redeemed: '🟣' };
     const emoji = st.order.map(p => EMO[st.res[p.id]]).join('');
 
     bank.style.display = 'none';
@@ -415,6 +490,7 @@ const GAME_DATA = {"ORGANS":[{"id":"constructive","name":"Constructive margin","
     else if (pct >= 70) insight = 'Sharp eye. The amber and yellow labels below are your shortlist — link each one to its job in one sentence and they will stick for the exam.';
     else if (pct >= 40) insight = 'Good foundation, fuzzy edges. Study the labelled diagram below, trace it with your finger naming each part out loud — then run it back.';
     else insight = 'First contact with this diagram — exactly what the arcade is for. Read every label below, close your eyes and rebuild the picture, then take the revenge run.';
+    if (tally.redeemed) insight += ' The 🟣 purple dots were bought back on the redemption pass — proof the reveal actually taught you something.';
 
     Arcade.renderEndCard(endC, {
       gameName: 'Label It',
