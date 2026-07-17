@@ -131,6 +131,27 @@
   }
   .vh-coming { font-family: var(--ar-mono); font-size: 0.55rem; letter-spacing: 1px; text-transform: uppercase; color: var(--ar-muted); border: 1px solid var(--ar-border); padding: 2px 6px; border-radius: 4px; }
 
+  /* learning-ladder stage tags */
+  .vh-cab-stage {
+    font-family: var(--ar-mono); font-size: 0.55rem; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 20px;
+    border: 1px solid var(--ar-border-hi); color: var(--ar-text2);
+  }
+  .vh-cab-stage.warmup { color: var(--ar-mint);   border-color: rgba(0,255,163,0.4);   background: var(--ar-mint-dim); }
+  .vh-cab-stage.level1 { color: var(--ar-cyan);   border-color: rgba(0,229,255,0.4);   background: var(--ar-cyan-dim); }
+  .vh-cab-stage.level2 { color: var(--ar-violet); border-color: rgba(139,92,246,0.45); background: rgba(139,92,246,0.12); }
+  .vh-cab-stage.boss   { color: var(--ar-pink);   border-color: rgba(255,46,136,0.4);  background: var(--ar-pink-dim); }
+  .vh-ladder-hint { font-family: var(--ar-mono); font-size: 0.66rem; letter-spacing: 0.8px; color: var(--ar-text2); margin: 0 0 14px; }
+  .vh-ladder-hint b { color: var(--ar-mint); }
+
+  /* personal-best badge on a cabinet */
+  .vh-cab-best {
+    font-family: var(--ar-mono); font-size: 0.56rem; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 20px;
+    color: var(--ar-gold); border: 1px solid rgba(255,214,10,0.4); background: var(--ar-gold-dim);
+    text-shadow: 0 0 8px rgba(255,214,10,0.5);
+  }
+
   .vh-count { font-family: var(--ar-mono); font-size: 0.68rem; letter-spacing: 0.6px; color: var(--ar-text2); margin: 0 0 16px; }
   .vh-count b { color: var(--ar-gold); }
 
@@ -216,6 +237,7 @@
 <h2 class="vh-heading">Choose your machine</h2>
 <p class="vh-sub" id="game-sub">Pick how you want to practise.</p>
 <div class="vh-count" id="vocab-count"></div>
+<p class="vh-ladder-hint">New topic? Start at <b>WARM UP</b> and climb.</p>
 <div class="vh-games" id="game-grid"></div>
 </div>
 </main>
@@ -253,16 +275,49 @@ let pendingGame = (_dlParams.get('game') || '').toLowerCase() || null;
 const _dlSubject = (_dlParams.get('subject') || '').toLowerCase();
 
 // ── GAME TYPES ──
+// Learning ladder: recognition first (WARM UP / LEVEL 1), then recall and
+// spelling (LEVEL 2), then arcade recall under pressure (BOSS). Guidance
+// only — every cabinet stays playable.
+const STAGES = {
+  warmup: { label: 'WARM UP', cls: 'warmup' },
+  level1: { label: 'LEVEL 1', cls: 'level1' },
+  level2: { label: 'LEVEL 2', cls: 'level2' },
+  boss:   { label: 'BOSS',    cls: 'boss'   },
+};
 const GAMES = [
-  { id:'pairs',         icon:'🃏', name:'Memory Match',    desc:'Flip cards to match terms with definitions.',        file:'game-pairs.html',          ready:true  },
-  { id:'quiz',          icon:'❓', name:'Multiple Choice',  desc:'Answer questions about key terms.',                  file:'game-quiz.html',           ready:true  },
-  { id:'hangman',       icon:'🪢', name:'Hangman',          desc:'Guess the term letter by letter.',                   file:'game-hangman.html',        ready:true  },
-  { id:'termguess',     icon:'🟩', name:'TermGuess',        desc:'Guess the vocabulary word in 6 attempts.',           file:'game-termguess.html',      ready:true  },
-  { id:'anagram',       icon:'🔀', name:'Anagram',          desc:'Unscramble the letters to reveal the term.',         file:'game-anagram.html',        ready:true  },
-  { id:'crossword',     icon:'✏️', name:'Crossword',        desc:'Fill in the crossword using definitions as clues.',  file:'game-crossword.html',      ready:true  },
-  { id:'spaceinvaders', icon:'👾', name:'Space Invaders',   desc:'Shoot vocab enemies for bonus points and questions.',file:'game-spaceinvaders.html',  ready:true  },
-  { id:'pacman',        icon:'🟡', name:'Pac-Man',           desc:'Eat red dots to trigger vocabulary questions.',      file:'game-pacman.html',         ready:true  },
+  { id:'pairs',         icon:'🃏', name:'Memory Match',    desc:'Flip cards to match terms with definitions.',        file:'game-pairs.html',          ready:true, stage:'warmup' },
+  { id:'quiz',          icon:'❓', name:'Multiple Choice',  desc:'Answer questions about key terms.',                  file:'game-quiz.html',           ready:true, stage:'level1' },
+  { id:'hangman',       icon:'🪢', name:'Hangman',          desc:'Guess the term letter by letter.',                   file:'game-hangman.html',        ready:true, stage:'level2' },
+  { id:'termguess',     icon:'🟩', name:'TermGuess',        desc:'Guess the vocabulary word in 6 attempts.',           file:'game-termguess.html',      ready:true, stage:'level2' },
+  { id:'anagram',       icon:'🔀', name:'Anagram',          desc:'Unscramble the letters to reveal the term.',         file:'game-anagram.html',        ready:true, stage:'level2' },
+  { id:'crossword',     icon:'✏️', name:'Crossword',        desc:'Fill in the crossword using definitions as clues.',  file:'game-crossword.html',      ready:true, stage:'level2' },
+  { id:'pacman',        icon:'🟡', name:'Pac-Man',           desc:'Eat red dots to trigger vocabulary questions.',      file:'game-pacman.html',         ready:true, stage:'boss'   },
+  { id:'spaceinvaders', icon:'👾', name:'Space Invaders',   desc:'Shoot vocab enemies for bonus points and questions.',file:'game-spaceinvaders.html',  ready:true, stage:'boss'   },
 ];
+
+// How each game reports its personal best (must match the bestSuffix each
+// game passes to Arcade.renderEndCard — pairs/quiz/crossword store accuracy
+// percentages, the rest store points).
+const BEST_SUFFIX = {
+  pairs: '%', quiz: '%', crossword: '%',
+  hangman: ' pts', termguess: ' pts', anagram: ' pts',
+  pacman: ' pts', spaceinvaders: ' pts',
+};
+
+// Saved personal best for a game under the current subject/topic selection,
+// or null when there is none. Keys match what the games themselves write via
+// Arcade.renderEndCard: aism-best:{game}:{Subject}:{Topic} (integer value).
+// Malformed storage must never break the wizard, hence the try/catch.
+function bestFor(gameId) {
+  try {
+    if (!sel.subject || !sel.topic) return null;
+    const raw = localStorage.getItem('aism-best:' + gameId + ':' + cap(sel.subject) + ':' + sel.topic);
+    if (raw == null) return null;
+    const val = parseInt(raw, 10);
+    if (isNaN(val)) return null;
+    return val + (BEST_SUFFIX[gameId] || '');
+  } catch (e) { return null; }
+}
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded', () => {
@@ -413,10 +468,14 @@ function buildGameGrid() {
     card.type = 'button';
     card.className = 'vh-cab';
     card.disabled = !game.ready;
+    const stage = STAGES[game.stage] || STAGES.warmup;
+    const best = game.ready ? bestFor(game.id) : null;
     card.innerHTML = `
+      <span class="vh-cab-stage ${esc(stage.cls)}">${esc(stage.label)}</span>
       <span class="vh-cab-icon" aria-hidden="true">${game.icon}</span>
       <span class="vh-cab-name">${esc(game.name)}</span>
       <span class="vh-cab-desc">${esc(game.desc)}</span>
+      ${best !== null ? `<span class="vh-cab-best">★ Best: ${esc(best)}</span>` : ''}
       ${game.ready ? '<span class="vh-cab-play">▶ Press start</span>' : '<span class="vh-coming">Coming soon</span>'}`;
     if (game.ready) {
       card.addEventListener('click', () => { Arcade.sfx.coin(); launchGame(game.file, vocab); });

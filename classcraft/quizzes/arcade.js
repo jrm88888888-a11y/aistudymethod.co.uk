@@ -753,9 +753,35 @@
       try { s = localStorage.getItem('aism-initials') || 'AAA'; } catch (e) {}
       return s;
     },
+    /* Crew code (class competition, v3 worker) — exactly 4 chars A-Z0-9 or
+       empty. The server treats anything invalid as absent, so these are
+       cosmetic guards, not security. */
+    crewClean(v) {
+      const s = String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+      return s.length === 4 ? s : '';
+    },
+    crew(v) {
+      if (v !== undefined) {
+        try {
+          if (v) localStorage.setItem('aism-crew', v);
+          else localStorage.removeItem('aism-crew');
+        } catch (e) {}
+      }
+      let s = '';
+      try { s = this.crewClean(localStorage.getItem('aism-crew') || ''); } catch (e) {}
+      return s;
+    },
+    /* Which board the player last looked at: 'crew' (MY CLASS) or 'all'. */
+    crewView(v) {
+      if (v !== undefined) { try { localStorage.setItem('aism-crew-view', v); } catch (e) {} }
+      let s = 'crew';
+      try { s = localStorage.getItem('aism-crew-view') || 'crew'; } catch (e) {}
+      return s === 'all' ? 'all' : 'crew';
+    },
     async top(game, opts) {
       const o = opts || {};
       const p = new URLSearchParams({ game, week: o.week || 'current', n: String(o.n || 10), device: this.device() });
+      if (o.crew) p.set('crew', o.crew);
       const r = await fetch(Arcade.LB_URL + '/top?' + p);
       if (!r.ok) throw new Error('leaderboard unavailable');
       return r.json();
@@ -791,10 +817,44 @@
           <span class="ar-lb-score">${e(String(kind === 'champion' ? r.points + ' pts' : r.score))}</span>
         </li>`).join('') + '</ol>';
     },
+    /* [MY CLASS] / [EVERYONE] toggle shown above the board when a crew is
+       set. Reuses .ar-btn with small inline overrides for the retro look. */
+    toggleHtml(active) {
+      const on = 'font-size:10px;padding:6px 12px;letter-spacing:1.5px;';
+      const off = on + 'opacity:0.5;background:transparent;border:2px solid var(--ar-border-hi);color:var(--ar-text);box-shadow:none;';
+      return '<div class="ar-lb-toggle" style="display:flex;gap:6px;justify-content:center;margin:2px 0 10px;">' +
+        '<button type="button" class="ar-btn ar-lb-view" data-view="crew" style="' + (active === 'crew' ? on : off) + '">MY CLASS</button>' +
+        '<button type="button" class="ar-btn ar-lb-view" data-view="all" style="' + (active === 'all' ? on : off) + '">EVERYONE</button></div>';
+    },
+    /* Chase line under the board, from a v3 response with `around` (entries
+       around the player, each {rank, initials, score, you}). A v2 response
+       has no `around`, so this degrades to nothing. Only rendered after the
+       player has submitted. */
+    chaseHtml(res) {
+      try {
+        if (!res || !Array.isArray(res.around)) return '';
+        const e = Arcade.escapeHtml;
+        const meIdx = res.around.findIndex(r => r && r.you);
+        if (meIdx < 0) return '';
+        const me = res.around[meIdx];
+        const rank = Number(me.rank);
+        const line = (txt) =>
+          '<div class="ar-lb-chase" style="font-family:var(--ar-mono);font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--ar-cyan);margin-top:10px;">' + txt + '</div>';
+        if (rank === 1) return line('YOU ARE #1 — DEFEND IT');
+        if (!isFinite(rank) || rank <= 3) return '';   // already shining on the board
+        const above = res.around[meIdx - 1];           // entry directly above
+        if (!above) return '';
+        const gap = Number(above.score) - Number(me.score);
+        if (!isFinite(gap)) return '';
+        if (gap <= 0) return line('YOU #' + e(String(rank)) + ' — LEVEL WITH ' + e(String(above.initials || '')) + ', ONE POINT TAKES IT');
+        return line('YOU #' + e(String(rank)) + ' — ' + e(String(gap)) + ' PTS BEHIND ' + e(String(above.initials || '')));
+      } catch (err) { return ''; }
+    },
     /* Initials picker + submit + board, mounted under the end card. */
     mount(container, run) {
       const e = Arcade.escapeHtml;
       const saved = this.initials();
+      const savedCrew = this.crew();
       container.innerHTML = `
         <div class="ar-lb">
           <div class="ar-lb-title">🏆 WEEKLY LEADERBOARD</div>
@@ -807,6 +867,12 @@
                 <button type="button" class="ar-lb-arrow" data-i="${i}" data-d="-1" aria-label="Letter ${i + 1} down">▼</button>
               </div>`).join('')}
             <button type="button" class="ar-btn ar-lb-go" id="ar-lb-go">SUBMIT</button>
+          </div>
+          <div class="ar-lb-crew" id="ar-lb-crew-row" style="margin-top:10px;">
+            <label for="ar-lb-crew" style="display:block;font-family:var(--ar-mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ar-muted);margin-bottom:4px;">Crew code (optional) — your class</label>
+            <input type="text" id="ar-lb-crew" maxlength="4" value="${e(savedCrew)}" placeholder="e.g. 9BIO"
+              autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Crew code, four letters or numbers"
+              style="width:96px;text-align:center;font-family:var(--ar-mono);font-size:16px;font-weight:700;letter-spacing:3px;color:var(--ar-cyan);background:var(--ar-card);border:2px solid rgba(0,229,255,0.45);border-radius:10px;padding:8px 6px;text-transform:uppercase;">
           </div>
           <div class="ar-lb-board" id="ar-lb-board"></div>
         </div>`;
@@ -823,18 +889,84 @@
 
       const go = container.querySelector('#ar-lb-go');
       const board = container.querySelector('#ar-lb-board');
+      const crewInput = container.querySelector('#ar-lb-crew');
+      // Auto-uppercase and strip anything that is not A-Z0-9 as they type.
+      try {
+        crewInput.addEventListener('input', () => {
+          const v = String(crewInput.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+          if (crewInput.value !== v) crewInput.value = v;
+        });
+      } catch (err) { /* cosmetic only */ }
+
+      /* Board rendering — crew-aware (v3 worker) but degrades silently
+         against the v2 worker: the crew param is ignored there (global board
+         comes back) and there is no `around`, so no chase line renders. */
+      const lb = this;
+      let submitted = false;   // chase line only appears once the player is on the board
+      let lastRes = null;      // last /submit response, fallback if a refetch fails
+      let fetchSeq = 0;        // ignore stale in-flight fetches
+
+      function renderBoard(res, view) {
+        try {
+          let html = '';
+          if (lb.crew()) html += lb.toggleHtml(view);
+          html += lb.boardHtml(res && res.board);
+          if (submitted) html += lb.chaseHtml(res);
+          board.innerHTML = html;
+          board.querySelectorAll('.ar-lb-view').forEach(b =>
+            b.addEventListener('click', () => {
+              try { Arcade.sfx.click(); } catch (err) {}
+              lb.crewView(b.dataset.view === 'crew' ? 'crew' : 'all');
+              refreshBoard();
+            }));
+        } catch (err) { /* the end card must never break */ }
+      }
+
+      function refreshBoard() {
+        try {
+          const crew = lb.crew();
+          const useCrew = !!crew && lb.crewView() === 'crew';
+          const id = ++fetchSeq;
+          lb.top(run.game, useCrew ? { crew } : {}).then(res => {
+            if (id === fetchSeq) renderBoard(res, useCrew ? 'crew' : 'all');
+          }).catch(() => {
+            if (id === fetchSeq && lastRes) renderBoard(lastRes, 'all');
+          });
+        } catch (err) { /* silent */ }
+      }
+
       go.addEventListener('click', async () => {
         const initials = letters.map(l => l.textContent).join('');
         go.disabled = true;
         go.textContent = '…';
+        // Read + persist the optional crew code (empty clears it; anything
+        // not exactly 4 chars A-Z0-9 is treated as absent).
+        let crew = '';
         try {
-          const res = await this.submit({ game: run.game, score: run.score, initials, topic: run.topic || '', stem: run.stem || '' });
+          crew = this.crewClean(crewInput ? crewInput.value : '');
+          this.crew(crew);
+        } catch (err) { crew = ''; }
+        try {
+          const payload = { game: run.game, score: run.score, initials, topic: run.topic || '', stem: run.stem || '' };
+          if (crew) payload.crew = crew;
+          const res = await this.submit(payload);
           this.initials(initials);
+          submitted = true;
+          lastRes = res;
+          fetchSeq++;          // invalidate any in-flight initial board fetch
           Arcade.sfx.fanfare();
           if (res.rank && res.rank <= 3) Arcade.confettiBurst({ count: 70 });
           container.querySelector('.ar-lb-picker').innerHTML =
             `<div class="ar-lb-result">${res.rank === 1 ? '👑 #1 THIS WEEK!' : 'RANK #' + e(String(res.rank)) + ' THIS WEEK'}</div>`;
-          board.innerHTML = this.boardHtml(res.board);
+          try {
+            const row = container.querySelector('#ar-lb-crew-row');
+            if (row) row.style.display = 'none';
+          } catch (err) { /* cosmetic only */ }
+          if (crew && this.crewView() === 'crew') {
+            refreshBoard();    // class view: refetch /top?crew=… (falls back to res)
+          } else {
+            renderBoard(res, 'all');
+          }
         } catch (err) {
           go.disabled = false;
           go.textContent = 'SUBMIT';
@@ -842,10 +974,9 @@
         }
       });
 
-      // show the current board straight away
-      this.top(run.game).then(res => {
-        if (!board.querySelector('.ar-lb-list')) board.innerHTML = this.boardHtml(res.board);
-      }).catch(() => {});
+      // show the current board straight away (class view by default when a
+      // crew is remembered, with a MY CLASS / EVERYONE toggle)
+      refreshBoard();
     },
   };
 

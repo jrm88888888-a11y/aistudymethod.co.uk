@@ -133,3 +133,78 @@ now needs 3+ stems × several games per fake device, which is real effort);
 replaying one valid token for multiple ever-better submissions within its 2h
 window (bounded by the daily cap and rate caps). Fixing those would need
 server-issued device identity or signed gameplay traces — out of scope here.
+
+---
+
+## v3 — crew codes (class competition + rank-around)
+
+Files: `classcraft/arcade/leaderboard-edge-script-v3.js` (new worker; v2
+stays on disk as the rollback) and the updated
+`classcraft/quizzes/arcade.js` (crew input under the initials picker, MY
+CLASS / EVERYONE toggle, post-submit chase line).
+
+What v3 adds: `/submit` takes an optional `crew` (4 chars A-Z0-9 after
+uppercasing, profanity-screened with the initials list; anything invalid is
+silently treated as absent), stored in a new `crew TEXT` column on `scores`.
+`/top` and `/champion` take an optional `crew=XXXX` that filters the board
+AND the requester's rank to that crew. `/top` and `/submit` responses gain
+an `around` array — up to 2 entries directly above the requesting device, the
+device itself, and 1 below (`{rank, initials, score, you}`), crew-aware on
+`/top`. All response changes are additive; no field is renamed or removed.
+
+### Deploy order — site first again (verified against the implementation)
+
+| Combination | Behaviour |
+|---|---|
+| new client + v2 worker | `/top?crew=…` — v2 ignores unknown query params → global board, no `around` → toggle shows the global board under both labels and no chase line renders (tested in `test/t-leaderboard-v3-client.cjs`, scenario B). `/submit` with a `crew` body field — v2 never reads it → ignored. **Nothing breaks, no scores lost.** |
+| old client + v3 worker | No `crew` sent → stored as NULL; extra `around`/`crew` response fields are simply never read. **Nothing breaks.** |
+
+Unlike the v2 rollout there is no score-loss failure mode in either order, but
+push the **site first** anyway (then purge `classcraft/quizzes/arcade.js`
+from the Bunny CDN cache): that way the moment the worker flips, the freshest
+clients light up crew boards immediately instead of showing a toggle that
+does nothing.
+
+### ALTER TABLE note
+
+SQLite/libSQL has no `ADD COLUMN IF NOT EXISTS`, so the worker adds the
+column lazily, exactly like the `submits_log` bootstrap: `ensureSchema()`
+runs `ALTER TABLE scores ADD COLUMN crew` once per isolate inside a
+try/catch that tolerates the expected "duplicate column" error (any other
+error is rethrown; crew-filtered *reads* then fall back to the global board
+rather than 500ing). It runs on the first accepted `/submit` and on the
+first crew-filtered `/top`/`/champion`, so no manual migration is needed —
+but you can run the ALTER once in the Bunny Database dashboard beforehand if
+you prefer the first request not to pay for it. Idempotence is covered by
+`test/t-leaderboard-v3-sql.mjs` (bootstrap run twice against real SQLite).
+
+### Smoke tests (curl)
+
+```sh
+LB=https://aism-leaderboard-2dc3b.bunny.run
+DEV=123e4567-e89b-42d3-a456-426614174000
+
+# 1. submit WITH a crew: take tok+ts from /token?game=wager&device=$DEV,
+#    wait >=20s, then — expect ok:true, and the row to carry the crew
+curl -s -X POST "$LB/submit" -H 'content-type: application/json' \
+  -d '{"game":"wager","score":500,"initials":"JRM","device":"'$DEV'","crew":"9bio","tok":"<tok>","ts":<ts>}'
+# (lowercase "9bio" on purpose — the server uppercases it)
+
+# 2. crew-filtered board: expect the JRM row, and rows from other crews absent
+curl -s "$LB/top?game=wager&week=current&device=$DEV&crew=9BIO"
+# expect: "crew":"9BIO" echoed, board only 9BIO devices, you.rank within crew
+
+# 3. around present: same call as 2 (or without crew) — expect an "around"
+#    array containing an entry with "you":true
+curl -s "$LB/top?game=wager&week=current&device=$DEV" | grep -o '"around":\[[^]]*\]'
+```
+
+Clean up the test row afterwards as in the v2 section.
+
+### Rollback
+
+Paste `classcraft/arcade/leaderboard-edge-script-v2.js` back into the Edge
+Script. The new client degrades silently against v2 (that combination is the
+tested deploy-order case above), so the site does not need rolling back. The
+`crew` column can stay — v2's SQL never references it, and its INSERT lists
+its columns explicitly, so an extra nullable column is harmless.
