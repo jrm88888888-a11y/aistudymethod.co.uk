@@ -715,6 +715,22 @@
     'spaceinvaders': 'Space Invaders',
   };
 
+  /* Play token — fetched once at page load (= start of play) so the server
+     can verify elapsed play time when the score is submitted. Best-effort:
+     if the fetch fails (offline, old v1 worker without /token) we simply
+     submit without it, exactly as before. */
+  let lbToken = null;
+  function lbFetchToken() {
+    try {
+      if (!Arcade.LB_URL || !LB_LABELS[lbGameId()]) return;
+      const p = new URLSearchParams({ game: lbGameId(), device: Arcade.lb.device() });
+      fetch(Arcade.LB_URL + '/token?' + p)
+        .then(r => (r.ok ? r.json() : null))
+        .then(t => { if (t && t.tok && t.ts) lbToken = t; })
+        .catch(() => {});
+    } catch (e) { /* tokens are best-effort; never block the game */ }
+  }
+
   Arcade.lb = {
     labels: LB_LABELS,
     enabled() { return !!Arcade.LB_URL && !!LB_LABELS[lbGameId()]; },
@@ -751,10 +767,12 @@
       return r.json();
     },
     async submit(data) {
+      const body = { ...data, device: this.device() };
+      if (lbToken) { body.tok = lbToken.tok; body.ts = lbToken.ts; }
       const r = await fetch(Arcade.LB_URL + '/submit', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...data, device: this.device() }),
+        body: JSON.stringify(body),
       });
       const out = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(out.error || 'submit failed');
@@ -830,6 +848,11 @@
       }).catch(() => {});
     },
   };
+
+  // Grab a play token as soon as the library loads on a leaderboard game page,
+  // stamping the start of play (the submit-time server check needs a believable
+  // elapsed time between token issue and score submission).
+  lbFetchToken();
 
   // Hook: every end card with a numeric best value gets the leaderboard UI.
   const _renderEndCard = Arcade.renderEndCard;

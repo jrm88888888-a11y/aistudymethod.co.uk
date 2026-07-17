@@ -83,7 +83,7 @@
 <script>
 (function () {
   'use strict';
-  const GAME_DATA = {"CATEGORIES":["Glycolysis","Link reaction","Krebs cycle","Electron transport chain"],"ALL_ITEMS":[{"text":"Occurs in cytoplasm","cat":0},{"text":"Glucose split into two pyruvate","cat":0},{"text":"Net gain of 2 ATP","cat":0},{"text":"NAD reduced to NADH","cat":0},{"text":"Pyruvate converted to acetyl CoA","cat":1},{"text":"CO₂ released","cat":1},{"text":"Occurs in mitochondrial matrix","cat":1},{"text":"NAD reduced","cat":1},{"text":"Acetyl CoA combines with oxaloacetate","cat":2},{"text":"2 ATP produced per glucose","cat":2},{"text":"NADH and FADH₂ produced","cat":2},{"text":"CO₂ released","cat":2},{"text":"Occurs on inner mitochondrial membrane","cat":3},{"text":"Most ATP produced here","cat":3},{"text":"Oxygen is final electron acceptor","cat":3},{"text":"Chemiosmosis drives ATP synthase","cat":3}],"TIMER_SECS":{"6":60,"9":90,"12":120,"15":150,"18":180}};
+  const GAME_DATA = {"CATEGORIES":["Glycolysis","Link reaction","Krebs cycle","Electron transport chain"],"ALL_ITEMS":[{"text":"Occurs in cytoplasm","cat":0},{"text":"Glucose split into two pyruvate","cat":0},{"text":"Net gain of 2 ATP","cat":0},{"text":"NAD reduced to NADH","cat":0},{"text":"Pyruvate converted to acetyl CoA","cat":1},{"text":"CO₂ released","cat":1},{"text":"Occurs in mitochondrial matrix","cat":1},{"text":"NAD reduced","cat":1},{"text":"Acetyl CoA combines with oxaloacetate","cat":2},{"text":"2 ATP produced per glucose","cat":2},{"text":"NADH and FADH₂ produced","cat":2},{"text":"CO₂ released","cat":2},{"text":"Occurs on inner mitochondrial membrane","cat":3},{"text":"Most ATP produced here","cat":3},{"text":"Oxygen is final electron acceptor","cat":3},{"text":"Chemiosmosis drives ATP synthase","cat":3}]};
   const esc = Arcade.escapeHtml;
   const root = document.getElementById('root');
   const announce = document.getElementById('announce');
@@ -101,6 +101,14 @@
     root.innerHTML = '<div class="ar-error">No sorting set available for this topic yet.</div>';
     return;
   }
+
+  // JS-injected styles (markup/CSS sections must stay untouched): frozen bins
+  // during the read-the-correction pause, plus a prominent correction line.
+  const injected = document.createElement('style');
+  injected.textContent = '.so-bin:disabled { opacity:0.35; cursor:default; transform:none; }'
+    + ' .ar-feedback.no { font-size:15.5px; }'
+    + ' .so-freeze-note { font-family:var(--ar-mono); font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ar-muted); margin-top:8px; }';
+  document.head.appendChild(injected);
 
   let queue, state, timerCtl = null, heartTimer = null, locked = false;
 
@@ -210,13 +218,19 @@
       state.combo = 0;
       state.grid.push('🟥');
       state.lastMiss = item;
+      // Re-queue the miss 3–4 positions ahead so it re-tests within this run.
+      const at = state.pos % queue.length;
+      state.pos = at;
+      queue.splice(Math.min(queue.length, at + 3 + (Math.random() < 0.5 ? 0 : 1)), 0, item);
       Arcade.sfx.wrong();
       chosenBin.classList.add('wrongbin');
       Arcade.shake();
       Arcade.vibrate([40, 30, 40]);
+      // Freeze the bins while the correction shows — the penalty is the reading time.
+      bins.forEach(b => { b.disabled = true; });
       fb.className = 'ar-feedback no';
-      fb.innerHTML = `<strong>Nope.</strong> “${esc(item.text)}” actually belongs in <em>${esc(CATEGORIES[item.cat])}</em>, not ${esc(CATEGORIES[catIdx])}.`;
-      announce.textContent = `Incorrect. ${item.text} belongs in ${CATEGORIES[item.cat]}, not ${CATEGORIES[catIdx]}.`;
+      fb.innerHTML = `<strong>Nope.</strong> “${esc(item.text)}” actually belongs in <em>${esc(CATEGORIES[item.cat])}</em>, not ${esc(CATEGORIES[catIdx])}.<div class="so-freeze-note">Read it — this one comes back around</div>`;
+      announce.textContent = `Incorrect. ${item.text} belongs in ${CATEGORIES[item.cat]}, not ${CATEGORIES[catIdx]}. It will come back around shortly.`;
     }
 
     document.getElementById('hudSorted').textContent = state.sorted;
@@ -224,12 +238,15 @@
     comboEl.textContent = '×' + Math.max(1, state.combo);
     comboEl.parentElement.classList.toggle('hot', state.combo >= 3);
 
+    // Correct sorts speed up as the combo climbs; misses hold for reading time.
+    const delay = correct ? Math.max(200, 360 - 20 * (state.combo - 1)) : 1400;
     setTimeout(() => {
       chosenBin.classList.remove('right', 'wrongbin');
+      bins.forEach(b => { b.disabled = false; });
       state.pos++;
       locked = false;
       if (timerCtl) { showItem(); }
-    }, 360);
+    }, delay);
   }
 
   function endGame() {

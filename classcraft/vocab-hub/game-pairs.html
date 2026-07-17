@@ -77,6 +77,9 @@
   @keyframes pvPop { 0%{transform:rotateY(180deg) scale(1)} 50%{transform:rotateY(180deg) scale(1.07)} 100%{transform:rotateY(180deg) scale(1)} }
   .pv-card.deal { animation: pvDeal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
   @keyframes pvDeal { from { opacity: 0; transform: translateY(22px) scale(0.7); } to { opacity: 1; transform: none; } }
+
+  /* lightning recall round */
+  .zap-opts { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
 </style>
 <!-- aism-rebranded:v1 --><link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -149,11 +152,19 @@ const DIFF_OPTIONS = [
   { icon:'👾', label:'Legend',    pairs:VOCAB_DATA.length },
 ];
 
+// Boards are capped at 12 pairs; bigger runs (Legend) deal successive boards.
+const MAX_BOARD_PAIRS = 12;
+const LIGHTNING_MS  = 30000;
+const LIGHTNING_PTS = 50;
+
 let selectedPairs = 0;
-let flipped = [], matched = new Set(), moves = 0;
+let boards = [], boardIndex = 0, boardPairs = 0, runTotal = 0;
+let flipped = [], matched = new Set(), moves = 0, totalMatched = 0;
 let locked = false, gameOver = false;
 let combo = 0, bestCombo = 0;
 let startTime = 0, clockInterval = null, elapsed = 0;
+let missedTerms = new Set();
+let lightningScore = 0, lightningHits = 0, lightningTotal = 0, lightningCtl = null;
 
 function shuffle(arr) { return Arcade.shuffle(arr); }
 function fmtTime(secs) {
@@ -207,7 +218,8 @@ function renderSetup() {
     card.className = 'pv-diff';
     card.disabled = VOCAB_DATA.length < opt.pairs;
     card.dataset.pairs = n;
-    card.innerHTML = `<span class="pv-diff-icon" aria-hidden="true">${opt.icon}</span><div class="pv-diff-label">${esc(opt.label)}</div><div class="pv-diff-detail">${esc(n)} pairs</div>`;
+    const detail = n > MAX_BOARD_PAIRS ? `${n} pairs · ${Math.ceil(n / MAX_BOARD_PAIRS)} boards` : `${n} pairs`;
+    card.innerHTML = `<span class="pv-diff-icon" aria-hidden="true">${opt.icon}</span><div class="pv-diff-label">${esc(opt.label)}</div><div class="pv-diff-detail">${esc(detail)}</div>`;
     if (!card.disabled) card.addEventListener('click', () => {
       Arcade.sfx.click();
       document.querySelectorAll('.pv-diff').forEach(c => c.classList.remove('selected'));
@@ -226,31 +238,48 @@ function renderSetup() {
 function startGame() {
   if (!selectedPairs) return;
   Arcade.sfx.swoosh();
-  flipped = []; matched = new Set(); moves = 0;
-  locked = false; gameOver = false; combo = 0; bestCombo = 0; elapsed = 0;
+  const pool = shuffle([...VOCAB_DATA]).slice(0, selectedPairs);
+  boards = [];
+  for (let i = 0; i < pool.length; i += MAX_BOARD_PAIRS) boards.push(pool.slice(i, i + MAX_BOARD_PAIRS));
+  boardIndex = 0;
+  runTotal = pool.length;
+  moves = 0; totalMatched = 0;
+  gameOver = false; combo = 0; bestCombo = 0; elapsed = 0;
+  missedTerms = new Set();
+  lightningScore = 0; lightningHits = 0; lightningTotal = 0;
+  if (lightningCtl) { lightningCtl.stop(); lightningCtl = null; }
+  startClock();
+  startBoard();
+}
+
+function startBoard() {
+  const boardItems = boards[boardIndex];
+  boardPairs = boardItems.length;
+  flipped = []; matched = new Set(); locked = false;
 
   const vw = window.innerWidth || 360;
   let cols;
-  if (vw < 420) cols = selectedPairs <= 8 ? 2 : 3;
-  else if (vw < 640) cols = selectedPairs <= 10 ? 3 : 4;
-  else cols = selectedPairs <= 6 ? 4 : selectedPairs <= 8 ? 4 : selectedPairs <= 10 ? 5 : 6;
+  if (vw < 420) cols = boardPairs <= 8 ? 2 : 3;
+  else if (vw < 640) cols = boardPairs <= 10 ? 3 : 4;
+  else cols = boardPairs <= 6 ? 4 : boardPairs <= 8 ? 4 : boardPairs <= 10 ? 5 : 6;
   const fs = cols >= 6 ? '0.6rem' : cols >= 5 ? '0.66rem' : cols >= 4 ? '0.74rem' : cols >= 3 ? '0.82rem' : '0.92rem';
 
-  const pool = shuffle([...VOCAB_DATA]).slice(0, selectedPairs);
   let cards = [];
-  pool.forEach((item, i) => {
+  boardItems.forEach((item, i) => {
     cards.push({ pairId: i, type: 'term', text: item.term, item });
     cards.push({ pairId: i, type: 'def',  text: item.definition, item });
   });
   cards = shuffle(cards);
 
+  const multi = boards.length > 1;
   root.innerHTML = `
-    ${headerHtml('Find every pair')}
+    ${headerHtml(multi ? `Board ${boardIndex + 1} of ${boards.length}` : 'Find every pair')}
     <div class="ar-hud">
-      <div class="ar-hud-stat">Pairs <b id="hudPairs">0/${selectedPairs}</b></div>
-      <div class="ar-hud-stat">Moves <b id="hudMoves">0</b></div>
-      <div class="ar-hud-stat">Combo <b id="hudCombo">0</b></div>
-      <div class="ar-hud-stat gold">Time <b id="hudTime">0:00</b></div>
+      <div class="ar-hud-stat">Pairs <b id="hudPairs">${totalMatched}/${runTotal}</b></div>
+      <div class="ar-hud-stat">Moves <b id="hudMoves">${moves}</b></div>
+      <div class="ar-hud-stat${combo >= 3 ? ' hot' : ''}">Combo <b id="hudCombo">${combo}${combo >= 3 ? '🔥' : ''}</b></div>
+      ${multi ? `<div class="ar-hud-stat">Board <b>${boardIndex + 1}/${boards.length}</b></div>` : ''}
+      <div class="ar-hud-stat gold">Time <b id="hudTime">${fmtTime(elapsed)}</b></div>
     </div>
     <div class="pv-grid" id="board" style="grid-template-columns:repeat(${cols},1fr);--pv-fs:${fs};"></div>
     <div id="fb"></div>
@@ -281,8 +310,8 @@ function startGame() {
     board.appendChild(card);
   });
 
-  startClock();
-  announce.textContent = `Board dealt: ${selectedPairs} pairs. Flip two cards to find a term and its matching definition.`;
+  announce.textContent = (multi ? `Board ${boardIndex + 1} of ${boards.length} dealt: ` : 'Board dealt: ')
+    + `${boardPairs} pairs. Flip two cards to find a term and its matching definition.`;
 }
 
 function startClock() {
@@ -327,6 +356,7 @@ function checkMatch() {
       a.disabled = true; b.disabled = true;
       setTimeout(() => { a.classList.remove('just'); b.classList.remove('just'); }, 1200);
       matched.add(a.dataset.pairId);
+      totalMatched++;
       flipped = []; locked = false;
       Arcade.sfx.correct(combo);
       const r = a.getBoundingClientRect();
@@ -335,18 +365,20 @@ function checkMatch() {
       Arcade.streakCall(combo);
       Arcade.vibrate(20);
 
-      document.getElementById('hudPairs').textContent = matched.size + '/' + selectedPairs;
+      document.getElementById('hudPairs').textContent = totalMatched + '/' + runTotal;
       document.getElementById('hudCombo').textContent = combo + (combo >= 3 ? '🔥' : '');
       document.getElementById('hudCombo').parentElement.classList.toggle('hot', combo >= 3);
 
       fb.className = 'ar-feedback ok';
       fb.innerHTML = `<strong>Matched!</strong> <strong>${esc(a.dataset.term)}</strong> — ${esc(a.dataset.def)}`;
-      announce.textContent = `Match! ${a.dataset.term}: ${a.dataset.def}. ${matched.size} of ${selectedPairs} pairs found.`;
+      announce.textContent = `Match! ${a.dataset.term}: ${a.dataset.def}. ${totalMatched} of ${runTotal} pairs found.`;
 
-      if (matched.size === selectedPairs) setTimeout(endGame, 600);
+      if (matched.size === boardPairs) setTimeout(boardCleared, 600);
     }, 350);
   } else {
     combo = 0;
+    missedTerms.add(a.dataset.term);
+    missedTerms.add(b.dataset.term);
     setTimeout(() => {
       a.classList.add('wrong'); b.classList.add('wrong');
       Arcade.sfx.wrong();
@@ -369,17 +401,142 @@ function checkMatch() {
   }
 }
 
+/* ── Board finished: next board, or the lightning recall round ── */
+function boardCleared() {
+  if (boardIndex < boards.length - 1) {
+    const clearedNo = boardIndex + 1;
+    Arcade.sfx.coin();
+    root.innerHTML = `
+      ${headerHtml(`Board ${clearedNo} of ${boards.length} cleared`)}
+      <div class="ar-card" style="text-align:center;padding:40px 24px;">
+        <div style="font-size:46px;line-height:1;margin-bottom:12px">🃏</div>
+        <h2 style="font-family:var(--ar-font);color:var(--ar-mint);margin:0 0 8px;">Board ${clearedNo} cleared!</h2>
+        <p style="color:var(--ar-text2);margin:0;">${totalMatched}/${runTotal} pairs banked · dealing board ${clearedNo + 1} of ${boards.length}&hellip;</p>
+      </div>`;
+    announce.textContent = `Board ${clearedNo} cleared. ${totalMatched} of ${runTotal} pairs found. Board ${clearedNo + 1} of ${boards.length} starting.`;
+    setTimeout(() => { boardIndex++; startBoard(); }, 2000);
+  } else {
+    elapsed = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+    stopClock();
+    startLightning();
+  }
+}
+
+/* ── Lightning recall: 30s, definition shown, tap the term (+50 a hit) ── */
+function startLightning() {
+  const played = boards.flat();
+  if (VOCAB_DATA.length < 4 || !played.length) { endGame(); return; }
+
+  // Up to 10 questions, pairs the player mismatched first.
+  const missed = shuffle(played.filter(it => missedTerms.has(it.term)));
+  const clean  = shuffle(played.filter(it => !missedTerms.has(it.term)));
+  const queue  = missed.concat(clean).slice(0, 10);
+  lightningTotal = queue.length;
+  lightningScore = 0; lightningHits = 0;
+  let qIdx = 0, roundOver = false;
+
+  Arcade.sfx.swoosh();
+  Arcade.flashMsg('⚡ LIGHTNING RECALL', '#ffd60a');
+  root.innerHTML = `
+    ${headerHtml('Lightning recall')}
+    <div class="ar-hud">
+      <div class="ar-hud-stat gold">Lightning <b id="hudZap">+0</b></div>
+      <div class="ar-hud-stat">Hits <b id="hudHits">0/${lightningTotal}</b></div>
+    </div>
+    <div class="ar-timer" aria-hidden="true"><i id="zapfill"></i></div>
+    <div class="ar-card">
+      <div class="ar-label">⚡ Lightning recall · 30 seconds · read the definition, tap the term · +${LIGHTNING_PTS} a hit</div>
+      <div id="zap-q"></div>
+    </div>
+  `;
+  announce.textContent = `Lightning recall round: 30 seconds. Read the definition and tap the matching term. ${LIGHTNING_PTS} points per hit.`;
+
+  lightningCtl = Arcade.timer(document.getElementById('zapfill'), LIGHTNING_MS, {
+    onEnd: () => finishLightning(true),
+  });
+
+  function finishLightning(timedOut) {
+    if (roundOver) return;
+    roundOver = true;
+    if (lightningCtl) { lightningCtl.stop(); lightningCtl = null; }
+    if (timedOut) { Arcade.sfx.timeup(); Arcade.flashMsg("TIME'S UP ⏱", '#ffd60a'); }
+    setTimeout(endGame, timedOut ? 900 : 500);
+  }
+
+  function nextQuestion() {
+    if (roundOver) return;
+    if (qIdx >= queue.length) { finishLightning(false); return; }
+    const item = queue[qIdx++];
+    const wrongs = [];
+    for (const o of shuffle([...VOCAB_DATA])) {
+      if (o.term === item.term || wrongs.includes(o.term)) continue;
+      wrongs.push(o.term);
+      if (wrongs.length === 3) break;
+    }
+    const options = shuffle([item.term, ...wrongs]);
+    const wrap = document.getElementById('zap-q');
+    if (!wrap) return;
+    wrap.innerHTML = `
+      <div class="ar-prompt">${esc(item.definition)}</div>
+      <div class="zap-opts ar-stagger" role="group" aria-label="Term options">
+        ${options.map(t => `<button type="button" class="ar-tile" data-ok="${t === item.term ? 1 : 0}">${esc(t)}</button>`).join('')}
+      </div>`;
+    announce.textContent = `Definition: ${item.definition}. Options: ${options.join(', ')}.`;
+
+    const tiles = Array.from(wrap.querySelectorAll('.ar-tile'));
+    let done = false;
+    tiles.forEach(btn => btn.addEventListener('click', () => {
+      if (done || roundOver) return;
+      done = true;
+      const ok = btn.dataset.ok === '1';
+      tiles.forEach(b => {
+        b.disabled = true;
+        if (b.dataset.ok === '1') b.classList.add('correct');
+        else if (b === btn) b.classList.add('wrong');
+        else b.classList.add('dim');
+      });
+      if (ok) {
+        lightningHits++;
+        lightningScore += LIGHTNING_PTS;
+        Arcade.sfx.correct(lightningHits);
+        Arcade.popTextOver(btn, '+' + LIGHTNING_PTS, '#ffd60a');
+        Arcade.vibrate(20);
+        announce.textContent = `Correct: ${item.term}.`;
+      } else {
+        Arcade.sfx.wrong();
+        Arcade.vibrate([30, 20, 30]);
+        announce.textContent = `Not quite. The term was ${item.term}.`;
+      }
+      const zap = document.getElementById('hudZap');
+      if (zap) zap.textContent = '+' + lightningScore;
+      const hits = document.getElementById('hudHits');
+      if (hits) hits.textContent = lightningHits + '/' + lightningTotal;
+      setTimeout(nextQuestion, ok ? 450 : 900);
+    }));
+  }
+
+  nextQuestion();
+}
+
 function endGame() {
   if (gameOver) return;
   gameOver = true;
   stopClock();
+  if (lightningCtl) { lightningCtl.stop(); lightningCtl = null; }
   elapsed = Math.max(elapsed, 1);
-  const accuracy = moves > 0 ? Math.min(100, Math.round(selectedPairs / moves * 100)) : 100;
+  const accuracy = moves > 0 ? Math.min(100, Math.round(runTotal / moves * 100)) : 100;
 
   let insight;
   if (accuracy === 100) insight = 'Perfect recall — every flip was a first-try match. Next level up: bigger board, same accuracy.';
   else if (accuracy >= 70) insight = 'Sharp memory. The pairs that took extra flips are the definitions to re-read — they were spelled out under the board every time you missed.';
   else insight = 'Every mismatch printed both definitions in full — that was the revision happening live. Run it back and watch the move count drop.';
+
+  const rows = [
+    { v: fmtTime(elapsed), l: 'time' },
+    { v: String(moves), l: 'moves' },
+    { v: '🔥 ' + bestCombo, l: 'best combo' },
+  ];
+  if (lightningTotal) rows.push({ v: '⚡ +' + lightningScore, l: `lightning ${lightningHits}/${lightningTotal}` });
 
   root.innerHTML = headerHtml('Results') + '<div id="end"></div>';
   Arcade.renderEndCard(document.getElementById('end'), {
@@ -391,22 +548,20 @@ function endGame() {
     big: accuracy,
     bigSuffix: '%',
     bigLabel: 'match accuracy',
-    rows: [
-      { v: fmtTime(elapsed), l: 'time' },
-      { v: String(moves), l: 'moves' },
-      { v: '🔥 ' + bestCombo, l: 'best combo' },
-    ],
+    rows: rows,
     bestKey: BEST_KEY,
     bestValue: accuracy,
     bestSuffix: '%',
     insight: insight,
     shareLines: [
       '🃏 Memory Match — ' + (META.topic || 'Vocabulary'),
-      `${selectedPairs} pairs in ${fmtTime(elapsed)} · ${moves} moves · 🔥 combo ${bestCombo} · ${accuracy}% accuracy`,
+      `${runTotal} pairs in ${fmtTime(elapsed)} · ${moves} moves · 🔥 combo ${bestCombo} · ${accuracy}% accuracy`
+        + (lightningTotal ? ` · ⚡ lightning +${lightningScore}` : ''),
     ],
     onAgain: startGame,
   });
-  announce.textContent = `All pairs found! ${selectedPairs} pairs in ${fmtTime(elapsed)}, ${moves} moves, best combo ${bestCombo}.`;
+  announce.textContent = `All pairs found! ${runTotal} pairs in ${fmtTime(elapsed)}, ${moves} moves, best combo ${bestCombo}`
+    + (lightningTotal ? `, lightning bonus ${lightningScore} points.` : '.');
 }
 </script>
 <!-- aism-study-screen:v1 -->

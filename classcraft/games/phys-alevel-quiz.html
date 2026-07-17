@@ -55,7 +55,7 @@
 <script>
 (function () {
   'use strict';
-  const GAME_DATA = {"ALL_QUESTIONS":[{"type":"mc","q":"What is the relationship between electric field strength and potential gradient?","options":["E = V/d","E = −dV/dx","E = Vd","E = V × d"],"answer":"E = −dV/dx"},{"type":"mc","q":"In SHM, when is kinetic energy at maximum?","options":["At maximum displacement","At equilibrium position","Halfway through oscillation","At any point"],"answer":"At equilibrium position"},{"type":"mc","q":"What does Wien's displacement law relate?","options":["Luminosity and temperature","Peak wavelength and temperature","Radius and luminosity","Mass and luminosity"],"answer":"Peak wavelength and temperature"},{"type":"mc","q":"What is the de Broglie wavelength of a particle?","options":["λ = hf","λ = h/p","λ = h/E","λ = p/h"],"answer":"λ = h/p"},{"type":"mc","q":"What happens to the time constant RC when capacitance doubles?","options":["Halves","Stays the same","Doubles","Quadruples"],"answer":"Doubles"},{"type":"mc","q":"In circular motion, what provides the centripetal force for a satellite?","options":["Normal force","Friction","Gravity","Tension"],"answer":"Gravity"},{"type":"mc","q":"What is Hubble's law?","options":["v = H₀/d","v = H₀d","v = H₀d²","d = H₀v"],"answer":"v = H₀d"},{"type":"mc","q":"What does a Hertzsprung-Russell diagram plot?","options":["Mass vs radius","Luminosity vs temperature","Age vs luminosity","Temperature vs radius"],"answer":"Luminosity vs temperature"},{"type":"tf","q":"The escape velocity from Earth depends on the mass of the escaping object.","answer":"False"},{"type":"tf","q":"A capacitor fully charges instantaneously.","answer":"False"},{"type":"tf","q":"In the photoelectric effect, increasing light intensity increases the maximum kinetic energy of electrons.","answer":"False"},{"type":"tf","q":"Damping reduces the amplitude of oscillations.","answer":"True"},{"type":"tf","q":"The gravitational potential at infinity is zero.","answer":"True"},{"type":"tf","q":"Stars on the main sequence are fusing hydrogen.","answer":"True"},{"type":"tf","q":"The Chandrasekhar limit is approximately 1.4 solar masses.","answer":"True"},{"type":"tf","q":"Nuclear fusion releases more energy per nucleon than fission.","answer":"True"}],"TIMER_SECS":{"5":150,"10":300,"15":450,"20":600}};
+  const GAME_DATA = {"ALL_QUESTIONS":[{"type":"mc","q":"What is the relationship between electric field strength and potential gradient?","options":["E = V/d","E = −dV/dx","E = Vd","E = V × d"],"answer":"E = −dV/dx"},{"type":"mc","q":"In SHM, when is kinetic energy at maximum?","options":["At maximum displacement","At equilibrium position","Halfway through oscillation","At any point"],"answer":"At equilibrium position"},{"type":"mc","q":"What does Wien's displacement law relate?","options":["Luminosity and temperature","Peak wavelength and temperature","Radius and luminosity","Mass and luminosity"],"answer":"Peak wavelength and temperature"},{"type":"mc","q":"What is the de Broglie wavelength of a particle?","options":["λ = hf","λ = h/p","λ = h/E","λ = p/h"],"answer":"λ = h/p"},{"type":"mc","q":"What happens to the time constant RC when capacitance doubles?","options":["Halves","Stays the same","Doubles","Quadruples"],"answer":"Doubles"},{"type":"mc","q":"In circular motion, what provides the centripetal force for a satellite?","options":["Normal force","Friction","Gravity","Tension"],"answer":"Gravity"},{"type":"mc","q":"What is Hubble's law?","options":["v = H₀/d","v = H₀d","v = H₀d²","d = H₀v"],"answer":"v = H₀d"},{"type":"mc","q":"What does a Hertzsprung-Russell diagram plot?","options":["Mass vs radius","Luminosity vs temperature","Age vs luminosity","Temperature vs radius"],"answer":"Luminosity vs temperature"},{"type":"tf","q":"The escape velocity from Earth depends on the mass of the escaping object.","answer":"False"},{"type":"tf","q":"A capacitor fully charges instantaneously.","answer":"False"},{"type":"tf","q":"In the photoelectric effect, increasing light intensity increases the maximum kinetic energy of electrons.","answer":"False"},{"type":"tf","q":"Damping reduces the amplitude of oscillations.","answer":"True"},{"type":"tf","q":"The gravitational potential at infinity is zero.","answer":"True"},{"type":"tf","q":"Stars on the main sequence are fusing hydrogen.","answer":"True"},{"type":"tf","q":"The Chandrasekhar limit is approximately 1.4 solar masses.","answer":"True"},{"type":"tf","q":"Nuclear fusion releases more energy per nucleon than fission.","answer":"True"}],"TIMER_SECS":30};
   const esc = Arcade.escapeHtml;
   const root = document.getElementById('root');
   const announce = document.getElementById('announce');
@@ -63,26 +63,47 @@
   Arcade.mountMuteButton();
 
   const HEADING = "A-Level Physics — Quiz";
-  const ALL_QUESTIONS = (GAME_DATA.ALL_QUESTIONS || []).filter(q => q && q.q && q.answer);
+  // Load-time guard: a question whose authored answer does not exactly match one
+  // of its options can never be marked correct — warn and skip it.
+  const ALL_QUESTIONS = (GAME_DATA.ALL_QUESTIONS || []).filter(q => q && q.q && q.answer).filter(q => {
+    const opts = q.type === 'tf' ? ['True', 'False'] : (q.options || []);
+    if (opts.indexOf(q.answer) === -1) {
+      console.warn(`[quiz] Skipping question — its answer does not exactly match any option: ${q.q}`);
+      return false;
+    }
+    return true;
+  });
   const ROUND_SECS = GAME_DATA.TIMER_SECS || 20;
   const ROUND_MS = ROUND_SECS * 1000;
   const ROUNDS = Math.min(10, ALL_QUESTIONS.length);
   const BEST_KEY = 'aism-best:' + location.pathname;
   const KEYS = ['A', 'B', 'C', 'D'];
 
+  // JS-injected style (markup/CSS sections must stay untouched): amber dot for redeemed rounds.
+  const injected = document.createElement('style');
+  injected.textContent = '.ar-dots span.redeem { background: var(--ar-gold); box-shadow: 0 0 10px rgba(255,214,10,0.55); }';
+  document.head.appendChild(injected);
+
   if (ALL_QUESTIONS.length < 1) {
     root.innerHTML = '<div class="ar-error">No questions available for this topic yet.</div>';
     return;
   }
 
-  // Build one run: 10 random questions, each with its options shuffled.
+  // Build one run: random questions, each with its options shuffled.
+  // Answers are tracked by option INDEX so duplicate option text cannot collide.
+  function runEntry(q, redemption) {
+    const opts = q.type === 'tf'
+      ? ['True', 'False']
+      : Arcade.shuffle(q.options || []);
+    return {
+      type: q.type, q: q.q, answer: q.answer,
+      answerIdx: opts.indexOf(q.answer), opts,
+      why: typeof q.why === 'string' ? q.why : '',
+      options: q.options, redemption: !!redemption,
+    };
+  }
   function buildRun() {
-    return Arcade.shuffle(ALL_QUESTIONS).slice(0, ROUNDS).map(q => {
-      const opts = q.type === 'tf'
-        ? ['True', 'False']
-        : Arcade.shuffle(q.options || []);
-      return { type: q.type, q: q.q, answer: q.answer, opts };
-    });
+    return Arcade.shuffle(ALL_QUESTIONS).slice(0, ROUNDS).map(q => runEntry(q, false));
   }
 
   let run, state, timerCtl = null;
@@ -90,7 +111,10 @@
   function startGame() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     run = buildRun();
-    state = { idx: 0, correct: 0, score: 0, streak: 0, bestStreak: 0, grid: [], times: [] };
+    state = {
+      idx: 0, correct: 0, score: 0, streak: 0, bestStreak: 0, grid: [], times: [],
+      misses: [], redeemed: 0, redemptionStarted: false, totalPlanned: run.length,
+    };
     renderRound();
   }
 
@@ -106,7 +130,7 @@
     return `
       <div class="ar-badge">⚡ Arcade · Quiz Gauntlet</div>
       <h1 class="ar-title">${esc(HEADING)}</h1>
-      <p class="ar-sub">10 rounds. ${esc(ROUND_SECS)} seconds each. Tap fast, keep the streak alive, learn from every miss.</p>
+      <p class="ar-sub">${ROUNDS} round${ROUNDS === 1 ? '' : 's'}. ${esc(ROUND_SECS)} seconds each. Tap fast, keep the streak alive, learn from every miss.</p>
     `;
   }
 
@@ -115,7 +139,7 @@
       <div class="ar-hud">
         <div class="ar-hud-stat">Score <b id="hudScore">${state.score}</b></div>
         <div class="ar-hud-stat${state.streak >= 3 ? ' hot' : ''}">Streak <b id="hudStreak">${state.streak}${state.streak >= 3 ? '🔥' : ''}</b></div>
-        <div class="ar-hud-stat gold">Round <b>${state.idx + 1}/${run.length}</b></div>
+        <div class="ar-hud-stat gold">${run[state.idx] && run[state.idx].redemption ? 'Redemption' : 'Round'} <b>${state.idx + 1}/${run.length}</b></div>
       </div>
     `;
   }
@@ -128,16 +152,16 @@
       ${renderHeader()}
       ${hudHtml()}
       <div class="ar-dots" aria-hidden="true">${run.map((_, i) => {
-        if (i < state.idx) return `<span class="${state.grid[i] === '🟩' ? 'done' : 'fail'}"></span>`;
+        if (i < state.idx) return `<span class="${state.grid[i] === '🟩' ? 'done' : state.grid[i] === '🟨' ? 'redeem' : 'fail'}"></span>`;
         return `<span class="${i === state.idx ? 'now' : ''}"></span>`;
       }).join('')}</div>
       <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
       <div class="ar-card">
-        <div class="ar-label">${isTf ? 'True or False' : 'Multiple choice'} · tap to answer</div>
+        <div class="ar-label">${r.redemption ? 'Redemption · half points · ' : ''}${isTf ? 'True or False' : 'Multiple choice'} · tap to answer</div>
         <div class="ar-prompt qz-prompt">${esc(r.q)}</div>
         <div class="qz-opts ar-stagger${isTf ? ' tf' : ''}" role="radiogroup" aria-label="Choose your answer">
           ${r.opts.map((opt, i) => `
-            <button type="button" class="ar-tile qz-tile${isTf ? ' tf' : ''}" role="radio" aria-checked="false" data-val="${esc(opt)}">
+            <button type="button" class="ar-tile qz-tile${isTf ? ' tf' : ''}" role="radio" aria-checked="false" data-idx="${i}" data-val="${esc(opt)}">
               ${isTf ? '' : `<span class="qz-key">${KEYS[i]}</span>`}
               <span class="qz-otext">${esc(opt)}</span>
             </button>
@@ -153,28 +177,28 @@
 
     const tiles = Array.from(root.querySelectorAll('.qz-tile'));
     let phase = 'answer';
+    let autoNextT = null;
 
     timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
-      onEnd: () => { if (phase === 'answer') settle(null, true); },
+      onEnd: () => { if (phase === 'answer') settle(-1, true); },
     });
 
-    function settle(chosenVal, timedOut) {
+    function settle(chosenIdx, timedOut) {
       if (phase !== 'answer') return;
       phase = 'verdict';
       const remaining = timedOut ? 0 : timerCtl.remaining;
       timerCtl.stop();
       state.times.push((ROUND_MS - remaining) / 1000);
 
-      const correct = !timedOut && chosenVal === r.answer;
+      const correct = !timedOut && chosenIdx === r.answerIdx;
 
-      tiles.forEach(b => {
+      tiles.forEach((b, i) => {
         b.disabled = true;
         b.style.pointerEvents = 'none';
-        const val = b.dataset.val;
-        b.setAttribute('aria-checked', String(val === chosenVal));
-        if (val === r.answer) {
+        b.setAttribute('aria-checked', String(i === chosenIdx));
+        if (i === r.answerIdx) {
           b.classList.add('correct');
-        } else if (val === chosenVal) {
+        } else if (i === chosenIdx) {
           b.classList.add('wrong');
         } else {
           b.classList.add('dim');
@@ -184,24 +208,27 @@
       let pts = 0;
       if (correct) {
         state.correct++;
+        if (r.redemption) state.redeemed++;
         state.streak++;
         state.bestStreak = Math.max(state.bestStreak, state.streak);
         const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
         const speed = Math.round(50 * (remaining / ROUND_MS));
         pts = Math.round((100 + speed) * mult);
+        if (r.redemption) pts = Math.round(pts / 2);
         state.score += pts;
-        state.grid.push('🟩');
+        state.grid.push(r.redemption ? '🟨' : '🟩');
         Arcade.sfx.correct(state.streak);
-        if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg('NICE!', '#00ffa3');
+        if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg(r.redemption ? 'REDEEMED!' : 'NICE!', '#00ffa3');
         Arcade.streakCall(state.streak);
         if (state.streak >= 5) Arcade.confettiBurst({ count: 50 });
         else Arcade.confettiBurst({ count: 30 });
-        const winner = tiles.find(t => t.dataset.val === r.answer);
+        const winner = tiles[r.answerIdx];
         if (winner) Arcade.popTextOver(winner, '+' + pts, '#00ffa3');
         Arcade.vibrate(20);
       } else {
         state.streak = 0;
         state.grid.push(timedOut ? '⬛' : '🟥');
+        if (!r.redemption) state.misses.push(r);
         if (timedOut) { Arcade.sfx.timeup(); Arcade.flashMsg("TIME'S UP ⏱", '#ffd60a'); }
         else { Arcade.sfx.wrong(); Arcade.flashMsg('MISS', '#ff2e88'); }
         Arcade.shake();
@@ -218,42 +245,59 @@
 
       const fb = document.getElementById('fb');
       fb.className = 'ar-feedback ' + (correct ? 'ok' : (timedOut ? 'mid' : 'no'));
+      const whyHtml = !correct && r.why ? `<div style="margin-top:8px;">💡 ${esc(r.why)}</div>` : '';
       fb.innerHTML = correct
-        ? `<strong>Correct! +${pts} pts.</strong> The answer is <em>${esc(r.answer)}</em>.`
+        ? `<strong>${r.redemption ? 'Redeemed! ' : 'Correct! '}+${pts} pts.</strong> The answer is <em>${esc(r.answer)}</em>.`
         : timedOut
-          ? `<strong>Clock beat you.</strong> The correct answer was <em>${esc(r.answer)}</em>.`
-          : `<strong>Not quite.</strong> The correct answer was <em>${esc(r.answer)}</em>.`;
+          ? `<strong>Clock beat you.</strong> The correct answer was <em>${esc(r.answer)}</em>.${whyHtml}`
+          : `<strong>Not quite.</strong> The correct answer was <em>${esc(r.answer)}</em>.${whyHtml}`;
       announce.textContent = (correct
         ? `Correct. Plus ${pts} points. The answer is ${r.answer}.`
         : timedOut
-          ? `Time up. The correct answer was ${r.answer}.`
-          : `Incorrect. The correct answer was ${r.answer}.`);
+          ? `Time up. The correct answer was ${r.answer}.` + (r.why ? ' ' + r.why : '')
+          : `Incorrect. The correct answer was ${r.answer}.` + (r.why ? ' ' + r.why : ''));
 
-      const last = state.idx + 1 >= run.length;
+      const morePending = state.idx + 1 < run.length
+        || (!state.redemptionStarted && state.misses.length > 0);
       document.getElementById('nextWrap').innerHTML =
-        `<button class="ar-btn big" id="next">${last ? 'See your score →' : 'Next →'}</button>`;
+        `<button class="ar-btn big" id="next">${morePending ? 'Next →' : 'See your score →'}</button>`;
       const nextBtn = document.getElementById('next');
       nextBtn.addEventListener('click', advance);
       nextBtn.focus({ preventScroll: true });
+      // Correct answers auto-advance after a short beat; misses wait for the
+      // player, so there is time to read the correct answer (and any why).
+      if (correct) autoNextT = setTimeout(advance, 1200);
     }
 
     function advance() {
+      if (phase !== 'verdict') return; // guard: button click vs auto-advance timeout
+      phase = 'done';
+      if (autoNextT) { clearTimeout(autoNextT); autoNextT = null; }
       Arcade.sfx.swoosh();
+      if (state.idx + 1 >= run.length && !state.redemptionStarted && state.misses.length > 0) {
+        // Redemption round: every miss comes back once, at half points.
+        state.redemptionStarted = true;
+        run = run.concat(state.misses.map(m => runEntry(m, true)));
+        Arcade.flashMsg('REDEMPTION ROUND', '#ffd60a');
+        announce.textContent = 'Redemption round. Your missed questions come back around at half points.';
+      }
       if (state.idx + 1 < run.length) { state.idx++; renderRound(); }
       else renderEnd();
     }
 
-    tiles.forEach(b => {
+    tiles.forEach((b, i) => {
       b.addEventListener('click', () => {
         if (phase !== 'answer') return;
         Arcade.sfx.click();
-        settle(b.dataset.val, false);
+        settle(i, false);
       });
     });
   }
 
   function renderEnd() {
-    const total = run.length;
+    // A question counts as correct if answered right either first time or on
+    // redemption; % is out of the planned rounds, not the redemption re-asks.
+    const total = state.totalPlanned;
     const pct = Math.round((state.correct / total) * 100);
     const avg = state.times.length
       ? (state.times.reduce((a, b) => a + b, 0) / state.times.length).toFixed(1)
@@ -274,6 +318,7 @@
       bigLabel: 'points',
       rows: [
         { v: `${state.correct}/${total}`, l: 'correct' },
+        ...(state.redemptionStarted ? [{ v: `🟨 ${state.redeemed}`, l: 'redeemed' }] : []),
         { v: '🔥 ' + state.bestStreak, l: 'best streak' },
         { v: avg + 's', l: 'avg time' },
       ],
