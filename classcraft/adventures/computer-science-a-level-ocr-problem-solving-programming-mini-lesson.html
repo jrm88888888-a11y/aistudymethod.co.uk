@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="An interactive A-level Computer Science mini-lesson on OCR 2.2 Problem solving and programming: programming constructs, recursion, scope, modularity, parameter passing, IDEs, computational methods including backtracking, heuristics, data mining and pipelining, and the procedural, assembly (Little Man Computer) and object-oriented paradigms, built for the OCR (H446) specification.">
+<title>Problem solving & programming — Mini-Lesson · AI Study Method</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fff7ec;--bg2:#ffeedd;--ink:#2c2840;--soft:#6b6580;
+    --kinetic:#2e8bff;--gpe:#ff9f1c;--elastic:#9b5de5;--thermal:#ff5b6e;
+    --chem:#34c777;--sun:#ffc83d;--green:#34c777;--red:#ff5b6e;
+    --card:#ffffff;--line:#efe2d2;--shadow:0 10px 0 rgba(44,40,64,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Nunito',sans-serif;color:var(--ink);
+    background:radial-gradient(circle at 12% 10%,#fff 0,transparent 30%),radial-gradient(circle at 88% 0%,#ffe6cf 0,transparent 35%),linear-gradient(160deg,var(--bg),var(--bg2));
+    min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:18px 14px 70px}
+  .app{width:100%;max-width:700px}
+  .backstrip{margin-bottom:10px;font-family:'Fredoka';font-weight:500;font-size:.95rem}
+  .backstrip a{color:var(--soft);text-decoration:none;border:2px solid var(--ink);border-radius:14px;padding:6px 12px;background:#fff;box-shadow:0 3px 0 var(--ink);display:inline-block}
+  .topbar{display:flex;align-items:center;gap:12px;background:var(--card);border:3px solid var(--ink);border-radius:22px;padding:12px 16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .logo{font-family:'Fredoka';font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:8px;white-space:nowrap}
+  .logo .spark{font-size:1.3rem}
+  .bar{flex:1;height:16px;background:#f0e7da;border-radius:20px;overflow:hidden;border:2px solid var(--ink)}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sun),var(--gpe));border-radius:20px;transition:width .45s cubic-bezier(.5,1.6,.4,1)}
+  .score{font-family:'Fredoka';font-weight:600;font-size:1rem;display:flex;align-items:center;gap:5px;white-space:nowrap}
+  .spec{font-family:'Fredoka';font-weight:500;font-size:.8rem;color:var(--soft);text-align:center;margin-bottom:14px}
+  .screen{display:none;background:var(--card);border:3px solid var(--ink);border-radius:28px;padding:28px 24px 24px;box-shadow:var(--shadow);animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+  .screen.active{display:block}
+  @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  h1{font-family:'Fredoka';font-weight:700;font-size:2rem;line-height:1.1;margin-bottom:8px}
+  h2{font-family:'Fredoka';font-weight:600;font-size:1.42rem;line-height:1.15;margin-bottom:12px}
+  p{font-size:1.12rem;line-height:1.6;margin-bottom:12px}
+  .big{font-size:1.26rem}
+  ul{margin:0 0 14px 2px;padding-left:20px}
+  li{font-size:1.08rem;line-height:1.55;margin-bottom:6px}
+  .tag{display:inline-block;background:var(--sun);border:2.5px solid var(--ink);border-radius:14px;padding:3px 12px;font-family:'Fredoka';font-weight:600;font-size:.9rem;margin-bottom:12px}
+  .tag.lo{background:#eef6ff;color:#0b5bbf}
+  .tag.bio{background:#e7fbef;color:#137a45}
+  .tag.ht{background:#efe1ff;color:#6a30b8}
+  .hl{padding:1px 7px;border-radius:8px;font-weight:800}
+  .hl.k{background:#d9ebff;color:#0b5bbf}.hl.g{background:#ffe9c7;color:#9a5a00}
+  .hl.el{background:#efe1ff;color:#6a30b8}.hl.t{background:#ffdfe3;color:#c8203a}
+  .hl.y{background:#fff1c2;color:#8b6a00}.hl.c{background:#d6f6e4;color:#137a45}
+  .eqn{background:#1c1840;color:#fff;border:3px solid var(--ink);border-radius:18px;padding:16px 18px;text-align:center;font-family:'Fredoka';font-weight:600;font-size:1.5rem;margin:6px 0 14px;letter-spacing:.4px}
+  .eqn small{display:block;font-family:'Nunito';font-weight:600;font-size:.92rem;color:#c9c4ec;margin-top:8px;letter-spacing:0;line-height:1.5}
+  .code{background:#1c1840;color:#e9e6ff;border:3px solid var(--ink);border-radius:16px;padding:14px 16px;margin:6px 0 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.98rem;line-height:1.5;white-space:pre;overflow-x:auto}
+  .code b{color:#ffd166;font-weight:700}
+  .code i{color:#9be7b4;font-style:normal}
+  .note{background:#fff7ee;border:2.5px dashed var(--ink);border-radius:16px;padding:12px 14px;font-size:1.02rem;margin:0 0 14px}
+  .note b{font-family:'Fredoka'}
+  .work{background:#f4fbff;border:2.5px solid #bfe1ff;border-radius:16px;padding:14px 16px;margin:8px 0 14px}
+  .work .wt{font-family:'Fredoka';font-weight:600;color:#0b5bbf;margin-bottom:6px}
+  .work p{font-size:1.04rem;margin-bottom:4px}
+  table.tbl{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:1rem}
+  table.tbl th,table.tbl td{border:2.5px solid var(--ink);padding:8px 10px;text-align:left}
+  table.tbl th{background:#fff1c2;font-family:'Fredoka';font-weight:600}
+  table.tbl td.c,table.tbl th.c{text-align:center}
+  figure{margin:6px 0 14px;text-align:center}
+  figure svg{max-width:100%;height:auto;border:3px solid var(--ink);border-radius:20px;background:#fff;box-shadow:var(--shadow)}
+  figcaption{font-family:'Fredoka';font-weight:500;color:var(--soft);font-size:.92rem;margin-top:8px}
+  .activity{background:#fff7ee;border:3px dashed var(--ink);border-radius:22px;padding:20px;margin-top:6px}
+  .qline{font-family:'Fredoka';font-weight:600;font-size:1.18rem;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start}
+  .qnum{background:var(--ink);color:#fff;border-radius:50%;min-width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+  .opts{display:grid;gap:10px}
+  .opt{font-family:'Fredoka';font-weight:500;font-size:1.1rem;text-align:left;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:13px 16px;cursor:pointer;transition:transform .08s,background .15s;display:flex;align-items:center;gap:10px}
+  .opt:hover{transform:translateY(-2px)}.opt:active{transform:translateY(1px)}
+  .opt .mk{font-size:1.2rem;margin-left:auto;opacity:0}
+  .opt.correct{background:#dff7e9;border-color:var(--green)}.opt.correct .mk{opacity:1}
+  .opt.wrong{background:#ffe2e6;border-color:var(--red)}.opt.wrong .mk{opacity:1}
+  .opt.lock{pointer-events:none;opacity:.55}.opt.lock.correct,.opt.lock.wrong{opacity:1}
+  .feedback{margin-top:14px;font-family:'Fredoka';font-weight:600;font-size:1.05rem;min-height:1.3em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .feedback.good{color:var(--green)}.feedback.bad{color:var(--red)}
+  .feedback .why{display:block;width:100%;font-family:'Nunito';font-weight:600;font-size:.96rem;color:var(--soft);margin-top:4px}
+  .numwrap{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .numwrap input{font-family:'Fredoka';font-weight:700;font-size:1.3rem;color:var(--ink);width:190px;text-align:center;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:10px 8px;outline:none}
+  .numwrap input:focus{border-color:var(--sun);box-shadow:0 0 0 3px rgba(255,200,61,.35)}
+  .numwrap input.correct{background:#dff7e9;border-color:var(--green)}
+  .numwrap input.wrong{background:#ffe2e6;border-color:var(--red)}
+  .unit{font-family:'Fredoka';font-weight:600;font-size:1.15rem}
+  .checkbtn{font-family:'Fredoka';font-weight:600;font-size:1rem;background:var(--sun);border:3px solid var(--ink);border-radius:14px;padding:10px 18px;cursor:pointer;box-shadow:0 4px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+  .checkbtn:hover{transform:translateY(-1px)}.checkbtn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+  .checkbtn:disabled{opacity:.5;cursor:not-allowed}
+  .hint{color:var(--soft);font-size:.95rem;font-weight:600;margin-top:8px;font-family:'Nunito'}
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+  .chip{font-family:'Fredoka';font-weight:600;font-size:1.02rem;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:9px 13px;cursor:pointer;transition:transform .08s}
+  .chip:hover{transform:translateY(-2px)}
+  .chip.sel{background:var(--sun)}
+  .chip.miss{animation:shake .4s}
+  .bins{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .bin{border:3px solid var(--ink);border-radius:18px;padding:12px;min-height:90px;background:#fff}
+  .bin h3{font-family:'Fredoka';font-weight:600;font-size:.96rem;text-align:center;margin-bottom:8px}
+  .bin.a{background:#eafaf0}.bin.b{background:#fdeef0}.bin.c{background:#eef6ff}
+  .bin .drop{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+  .placed{font-family:'Fredoka';font-weight:600;font-size:.92rem;border:2.5px solid var(--ink);border-radius:10px;padding:5px 9px;background:#fff}
+  .placed.ok{background:#dff7e9;border-color:var(--green)}
+  .match{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mcol{display:flex;flex-direction:column;gap:10px}
+  .mhead{font-family:'Fredoka';font-weight:600;text-align:center;color:var(--soft);font-size:.92rem}
+  .mitem{font-family:'Fredoka';font-weight:500;font-size:.98rem;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:11px;cursor:pointer;text-align:center;transition:transform .08s;line-height:1.25}
+  .mitem:hover{transform:translateY(-2px)}.mitem.sel{background:var(--sun)}
+  .mitem.done{background:#dff7e9;border-color:var(--green);pointer-events:none}.mitem.done::after{content:" ✓"}
+  .mitem.miss{animation:shake .4s}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .nav{display:flex;justify-content:space-between;gap:12px;margin-top:20px;align-items:center}
+  .btn{font-family:'Fredoka';font-weight:600;font-size:1.15rem;border:3px solid var(--ink);border-radius:18px;padding:12px 24px;cursor:pointer;background:var(--sun);box-shadow:0 5px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+  .btn:hover{transform:translateY(-1px)}.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+  .btn.ghost{background:#fff}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.locked{opacity:.6;pointer-events:none}
+  .final{text-align:center}
+  .trophy{font-size:4.2rem;animation:float 2.2s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .stars3{font-size:2.5rem;letter-spacing:6px;margin:4px 0}
+  .scorebig{font-family:'Fredoka';font-weight:700;font-size:2.2rem;color:var(--gpe)}
+  .recap{text-align:left;background:#fbf6ff;border:2.5px solid #e6d5ff;border-radius:16px;padding:14px 16px;margin:14px 0}
+  .recap b{font-family:'Fredoka'}
+  .sharebox{background:#fff7ee;border:3px dashed var(--ink);border-radius:22px;padding:18px;margin:18px 0 4px;text-align:center}
+  .sharebox h2{font-size:1.2rem;margin-bottom:6px}
+  .sharerow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  .sharerow .btn{font-size:1.02rem;padding:11px 18px}
+  @media(max-width:520px){h1{font-size:1.7rem}h2{font-size:1.26rem}p{font-size:1.05rem}.eqn{font-size:1.25rem}.match{gap:8px}body{padding:12px 10px 70px}.topbar{gap:8px;padding:10px 12px;flex-wrap:wrap}.logo{font-size:.95rem;white-space:normal;line-height:1.05;min-width:0}.bar{min-width:80px}.screen{padding:22px 16px 18px}.btn{font-size:1.05rem;padding:11px 16px}.sharerow{flex-direction:column}.sharerow .btn{width:100%}.code{font-size:.86rem}}
+  @media(max-width:420px){.bins{grid-template-columns:1fr}.match{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="backstrip"><a href="../../subjects.html">← Back to subjects</a></div>
+  <div class="topbar">
+    <div class="logo"><span class="spark">⌨️</span> Problem solving & programming</div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="score">⭐ <span id="score">0</span></div>
+  </div>
+  <div class="spec">OCR A-level Computer Science (H446) · Problem solving & programming</div>
+  <div class="stage" id="stage">
+
+    <section class="screen active">
+      <span class="tag">Mini-Lesson</span>
+      <h1>Problem solving & programming</h1>
+      <p class="big">This mini-lesson covers <b>OCR 2.2 — Problem solving and programming</b>: the techniques you write code with, the computational methods that make hard problems solvable, and the three paradigms OCR examines.</p>
+      <ul>
+        <li><b>Constructs</b>, <b>recursion</b>, <b>scope</b> and <b>modularity</b></li>
+        <li><b>Parameter passing</b> — by value and by reference</li>
+        <li><b>Computational methods</b> — backtracking, heuristics, data mining, pipelining</li>
+        <li><b>Assembly language</b> — the Little Man Computer</li>
+        <li><b>Object-oriented</b> programming</li>
+      </ul>
+      <p>Work through each screen, answer the <b>questions</b> as you go (some are recall, some are calculations you must actually work out) and collect ⭐ stars. Press <b>Start</b> when you're ready.</p>
+    </section>
+
+    <section class="screen">
+      <span class="tag lo">2.2.1 · Techniques</span>
+      <h2>Constructs, modularity and scope</h2>
+
+      <p>Three constructs express any computable algorithm: <b>sequence</b>, <b>selection</b> (IF, CASE) and <b>iteration</b> — <b>definite</b> (FOR: a known number of repeats) or <b>indefinite</b> (WHILE, REPEAT).</p>
+      <p><b>Modularity</b> means building the program from subroutines:</p>
+      <ul>
+        <li>a <b>procedure</b> performs an action and returns <b>no</b> value;</li>
+        <li>a <b>function</b> returns <b>exactly one</b> value.</li>
+      </ul>
+      <p><b>Scope</b>: a <b>local</b> variable is created when its subroutine is called and <b>destroyed when it returns</b> — it cannot be seen outside. A <b>global</b> is visible everywhere for the whole run.</p>
+      <p><b>Prefer locals.</b> Any subroutine can silently modify a global, so a bug can originate anywhere in the program. Locals keep subroutines <b>self-contained</b>, which is what makes them independently testable and reusable.</p>
+      <p class="note"><b>An IDE earns its keep</b> through: syntax highlighting and auto-complete, <b>breakpoints</b> and single-stepping, a <b>watch window</b> showing variable values as the program runs, an integrated translator, and refactoring tools. Debugging by inserting print statements is what you do when you have not learned the debugger.</p>
+    </section>
+
+    <section class="screen">
+      <span class="tag lo">2.2.1 · Parameters</span>
+      <h2>Parameter passing and recursion</h2>
+
+      <table class="tbl">
+        <tr><th>By value</th><th>By reference</th></tr>
+        <tr><td>A <b>copy</b> of the value is passed</td><td>The <b>memory address</b> is passed</td></tr>
+        <tr><td>Changes inside the subroutine are <b>lost</b> on return</td><td>Changes <b>persist</b> in the caller</td></tr>
+        <tr><td>Safe; expensive for large data</td><td>Efficient for large arrays; risks unintended side effects</td></tr>
+      </table>
+      <p>A <span class="hl el">recursive</span> subroutine calls itself. It needs a <b>base case</b>, a <b>general case</b>, and arguments that move <b>towards</b> the base case — or you get infinite recursion and a <b>stack overflow</b>.</p>
+      <div class="code">FUNCTION factorial(n)
+   IF n = 0 THEN
+      RETURN 1                <i>// base case</i>
+   ELSE
+      RETURN n * factorial(n-1)  <i>// general case</i>
+   ENDIF
+ENDFUNCTION</div>
+      <p>Each call pushes a <b>stack frame</b> holding the return address, parameters and locals; the frames unwind in reverse as each call returns.</p>
+      <p class="note"><b>The trade-off:</b> recursion is elegant for naturally recursive problems (tree traversal, quicksort, Towers of Hanoi) but uses <b>more memory</b> and is <b>slower</b> than iteration. Any recursive routine can be rewritten iteratively, using an explicit stack if necessary.</p>
+    </section>
+
+    <section class="screen">
+      <span class="tag">Calculate</span>
+      <h2>Your turn — trace the recursion</h2>
+      <div class="activity">
+        <div class="qline"><span class="qnum">1</span><span>Using the factorial function above, what is the value of <b>factorial(5)</b>?</span></div>
+        <div class="numwrap" data-num="n1" data-answer="120" data-tol="0">
+          <input type="text" inputmode="text" aria-label="Your answer"><span class="unit"></span>
+          <button class="checkbtn">Check ✓</button>
+        </div>
+        <div class="hint">Hint: Unwind it: 5 × factorial(4), and so on down to factorial(0), which returns 1.</div>
+        <div class="feedback" id="fb-n1"></div>
+      </div>
+    </section>
+
+    <section class="screen">
+      <span class="tag lo">2.2.2 · Methods</span>
+      <h2>Computational methods</h2>
+
+      <p>OCR expects you to name and explain these:</p>
+      <ul>
+        <li><b>Problem recognition</b> — is this problem actually solvable by a computer at all, and in a usable time?</li>
+        <li><b>Divide and conquer</b> — split the problem in half, solve each half, combine. Binary search and merge sort both do this.</li>
+        <li><b>Backtracking</b> — explore a route; on hitting a dead end, <b>return to the last decision point</b> and try a different branch. This is how maze solvers, Sudoku solvers and the eight-queens problem work.</li>
+        <li><b>Heuristics</b> — a rule of thumb giving a <b>good enough</b> answer quickly where an exact one is impractical. The estimate inside <b>A*</b> is a heuristic; so is nearest-neighbour for the travelling salesman.</li>
+        <li><b>Data mining</b> — search very large data sets for patterns and correlations that were not anticipated.</li>
+        <li><b>Performance modelling</b> — simulate a system's behaviour under load rather than building and testing it for real.</li>
+        <li><b>Pipelining</b> — begin the next stage before the previous one has finished, so stages overlap and throughput rises.</li>
+        <li><b>Visualisation</b> — present the data so a human can see the pattern that no summary statistic reveals.</li>
+      </ul>
+      <p class="note"><b>Why heuristics are not cheating:</b> for an intractable problem the exact algorithm is worse than useless — it may run for longer than the age of the universe. A heuristic that gets within 5% of optimal in a second is not a compromise; it is the <b>only</b> answer that exists.</p>
+    </section>
+
+    <section class="screen">
+      <span class="tag">Quick check</span>
+      <h2>Computational methods</h2>
+      <div class="activity">
+        <div class="qline"><span class="qnum">?</span><span>A Sudoku solver places a digit, continues, finds a contradiction, and returns to the last cell where it had a choice to try a different digit. Which computational method is this?</span></div>
+        <div class="opts" data-q="q1" data-why="Backtracking explores a candidate solution and, upon hitting a dead end, retreats to the most recent decision point and tries an alternative. It is a systematic exhaustive search that prunes branches as soon as they are shown to fail — quite different from a heuristic, which does not guarantee correctness at all.">
+          <button class="opt" data-correct="0">Data mining <span class="mk">❌</span></button>
+          <button class="opt" data-correct="1">Backtracking <span class="mk">✅</span></button>
+          <button class="opt" data-correct="0">Pipelining <span class="mk">❌</span></button>
+          <button class="opt" data-correct="0">Performance modelling <span class="mk">❌</span></button>
+        </div>
+        <div class="feedback" id="fb-q1"></div>
+      </div>
+    </section>
+
+    <section class="screen">
+      <span class="tag lo">2.2.3 · Assembly</span>
+      <h2>The Little Man Computer</h2>
+
+      <p>LMC is a teaching model of a von Neumann machine: 100 mailboxes (memory), one accumulator, a program counter, and this instruction set:</p>
+      <table class="tbl">
+        <tr><th>Instruction</th><th>Effect</th></tr>
+        <tr><td><b>INP</b></td><td>Read a value into the accumulator</td></tr>
+        <tr><td><b>OUT</b></td><td>Output the accumulator</td></tr>
+        <tr><td><b>LDA x</b></td><td>Load the contents of mailbox x into the accumulator</td></tr>
+        <tr><td><b>STA x</b></td><td>Store the accumulator into mailbox x</td></tr>
+        <tr><td><b>ADD x</b> / <b>SUB x</b></td><td>Add / subtract the contents of mailbox x</td></tr>
+        <tr><td><b>BRA x</b></td><td>Branch always to x</td></tr>
+        <tr><td><b>BRZ x</b> / <b>BRP x</b></td><td>Branch if the accumulator is zero / is positive</td></tr>
+        <tr><td><b>HLT</b> / <b>DAT</b></td><td>Stop / declare a data location</td></tr>
+      </table>
+      <div class="code">        INP
+        STA FIRST
+        INP
+        ADD FIRST
+        SUB TEN
+        OUT
+        HLT
+FIRST   DAT
+TEN     DAT 10</div>
+      <p class="note"><b>Note LDA and STA carefully.</b> <b>LDA</b> copies memory <b>into</b> the accumulator; <b>STA</b> copies the accumulator <b>into</b> memory. Getting them the wrong way round is the single commonest LMC mistake, and it destroys the trace.</p>
+    </section>
+
+    <section class="screen">
+      <span class="tag">Calculate</span>
+      <h2>Your turn — trace the LMC program</h2>
+      <div class="activity">
+        <div class="qline"><span class="qnum">2</span><span>Trace the LMC program above with the inputs <b>7</b> and then <b>12</b>. What value does <b>OUT</b> print?</span></div>
+        <div class="numwrap" data-num="n2" data-answer="9" data-tol="0">
+          <input type="text" inputmode="text" aria-label="Your answer"><span class="unit"></span>
+          <button class="checkbtn">Check ✓</button>
+        </div>
+        <div class="hint">Hint: The first input is stored in FIRST. The second stays in the accumulator, then FIRST is added to it, then 10 is subtracted.</div>
+        <div class="feedback" id="fb-n2"></div>
+      </div>
+    </section>
+
+    <section class="screen">
+      <span class="tag lo">2.2.3 · OOP</span>
+      <h2>Object-oriented programming</h2>
+
+      <p>A <b>class</b> is a blueprint defining <b>attributes</b> (data) and <b>methods</b> (behaviour). An <b>object</b> is an <b>instance</b> of it, created by <b>instantiation</b> — the constructor runs and sets the initial state.</p>
+      <ul>
+        <li><span class="hl k">Encapsulation</span> — attributes are <b>private</b>; access is only through public <b>getters and setters</b>, so validation cannot be bypassed and the object can never enter an invalid state.</li>
+        <li><span class="hl c">Inheritance</span> — a subclass derives from a superclass, gaining its attributes and methods. It models an <b>is-a</b> relationship.</li>
+        <li><span class="hl el">Polymorphism</span> — the same call runs different code depending on the object's actual class, via method <b>overriding</b>.</li>
+      </ul>
+      <div class="code">CLASS Shape
+   PUBLIC FUNCTION Area()
+ENDCLASS
+
+CLASS Circle INHERITS Shape
+   PUBLIC FUNCTION Area()        <i>// overrides</i>
+      RETURN 3.14159 * r * r
+ENDCLASS
+
+FOR EACH s IN shapes
+   OUTPUT s.Area()   <i>// polymorphic: the right Area() runs</i>
+ENDFOR</div>
+      <p class="note"><b>Favour composition over inheritance.</b> A <b>Car</b> <b>has an</b> Engine (composition); a <b>Circle</b> <b>is a</b> Shape (inheritance). Deep inheritance hierarchies are brittle — a change near the top breaks everything below it. Ask "is-a or has-a?" before you inherit.</p>
+    </section>
+
+    <section class="screen">
+      <span class="tag">Quick check</span>
+      <h2>Encapsulation</h2>
+      <div class="activity">
+        <div class="qline"><span class="qnum">?</span><span>A <code>BankAccount</code> class holds <code>balance</code> as a <b>private</b> attribute, with a public <code>Deposit()</code> method that rejects negative amounts. What does making it private achieve?</span></div>
+        <div class="opts" data-q="q2" data-why="Encapsulation forces every change to go through the setter, so the validation cannot be bypassed and the object can never hold an invalid balance. It also allows the internal representation to change later without breaking any code that uses the class.">
+          <button class="opt" data-correct="0">It makes the program run faster <span class="mk">❌</span></button>
+          <button class="opt" data-correct="1">It stops external code writing to the attribute directly, so the validation in the method cannot be bypassed <span class="mk">✅</span></button>
+          <button class="opt" data-correct="0">It allows the class to be inherited from <span class="mk">❌</span></button>
+          <button class="opt" data-correct="0">It makes balance a global variable <span class="mk">❌</span></button>
+        </div>
+        <div class="feedback" id="fb-q2"></div>
+      </div>
+    </section>
+
+    <section class="screen">
+      <span class="tag">Quick check</span>
+      <h2>Parameter passing</h2>
+      <div class="activity">
+        <div class="qline"><span class="qnum">?</span><span>A subroutine is passed a large array and must sort it <b>in place</b>, with the caller seeing the sorted result. Which passing method is needed?</span></div>
+        <div class="opts" data-q="q3" data-why="By reference passes only the address, so the subroutine operates on the caller's actual array — the sort is visible after the call, and no copy of a large array is made. By value would copy the whole array, and the caller would still hold the unsorted original.">
+          <button class="opt" data-correct="0">By value — it protects the original data <span class="mk">❌</span></button>
+          <button class="opt" data-correct="1">By reference — the subroutine works on the caller's own array, and no copy is made <span class="mk">✅</span></button>
+          <button class="opt" data-correct="0">Either: arrays behave identically <span class="mk">❌</span></button>
+          <button class="opt" data-correct="0">Neither: arrays cannot be passed to subroutines <span class="mk">❌</span></button>
+        </div>
+        <div class="feedback" id="fb-q3"></div>
+      </div>
+    </section>
+
+    <section class="screen">
+      <span class="tag">Sort it</span>
+      <h2>Which method is it?</h2>
+      <p style="font-size:1.02rem;color:var(--soft)">Tap the description, then tap the computational method.</p>
+      <div class="activity">
+        <div class="chips" id="sortChips"></div>
+        <div class="bins">
+          <div class="bin a"><h3>↩️ Backtracking</h3><div class="drop" id="binA"></div></div>
+          <div class="bin b"><h3>💡 Heuristic</h3><div class="drop" id="binB"></div></div>
+          <div class="bin c"><h3>⛏️ Data mining</h3><div class="drop" id="binC"></div></div>
+        </div>
+        <div class="feedback" id="fb-sort"></div>
+      </div>
+    </section>
+
+    <section class="screen">
+      <span class="tag">Match it</span>
+      <h2>Match the OOP term</h2>
+      <p style="font-size:1.02rem;color:var(--soft)">Tap an item on the left, then its partner on the right.</p>
+      <div class="activity">
+        <div class="match">
+          <div class="mcol"><div class="mhead">Meaning</div><div id="mLeft"></div></div>
+          <div class="mcol"><div class="mhead">Term</div><div id="mRight"></div></div>
+        </div>
+        <div class="feedback" id="fb-match"></div>
+      </div>
+    </section>
+
+    <section class="screen">
+      <span class="tag">Recap</span>
+      <h2>The big ideas to know</h2>
+      <div class="recap">
+        <p><b>Techniques:</b> sequence, selection, iteration · procedure vs function · locals over globals · IDE breakpoints and watches</p>
+        <p><b>Parameters:</b> by value = copy, changes lost · by reference = address, changes persist</p>
+        <p><b>Recursion:</b> base case + general case + progress towards it · stack frames · slower and hungrier than iteration</p>
+        <p><b>Methods:</b> divide and conquer · backtracking · heuristics · data mining · performance modelling · pipelining · visualisation</p>
+        <p><b>LMC:</b> INP, OUT, LDA, STA, ADD, SUB, BRA, BRZ, BRP, HLT, DAT — LDA loads <b>from</b> memory, STA stores <b>to</b> it</p>
+        <p><b>OOP:</b> class, object, instantiation · encapsulation · inheritance (is-a) · polymorphism via overriding · favour composition</p>
+      </div>
+      <p>That is the whole of OCR 2.2. Press <b>Finish</b> to see your score.</p>
+    </section>
+
+    <section class="screen final">
+      <div class="trophy">🏆</div>
+      <h1>Mini-lesson complete!</h1>
+      <div class="stars3" id="finalStars">⭐⭐⭐</div>
+      <p class="big">You've worked through <b>Problem solving & programming</b> for OCR A-level Computer Science (H446). 🎉</p>
+      <p>Your stars: <span class="scorebig" id="finalScore">0</span> / <span id="finalMax">0</span></p>
+      <p style="font-size:1.02rem;color:var(--soft)">Next: test yourself in the <b>Evaluate</b> stage Confidence Quiz, then lock it in with <b>Verify</b>.</p>
+      <div class="sharebox">
+        <h2>📣 Smashed it? Share your score</h2>
+        <p style="font-size:1rem;color:var(--soft);margin-bottom:0">Challenge a mate to beat your stars, or show a parent how you got on.</p>
+        <div class="sharerow">
+          <button type="button" class="btn" data-share="mate">📲 Challenge a mate</button>
+          <button type="button" class="btn ghost" data-share="parent">👪 Show your parents</button>
+        </div>
+      </div>
+
+      <button class="btn restart" onclick="location.reload()" style="margin-top:14px">Restart 🔄</button>
+      <p style="margin-top:14px"><a href="../../subjects.html" style="color:var(--kinetic);font-weight:700;text-decoration:none">→ Back to all subjects</a></p>
+    </section>
+
+  </div>
+  <div class="nav">
+    <button class="btn ghost" id="back">⬅ Back</button>
+    <button class="btn" id="next">Start ➡</button>
+  </div>
+</div>
+<script>
+const screens=[...document.querySelectorAll('.screen')];
+let cur=0,score=0;
+const bar=document.getElementById('bar'),scoreEl=document.getElementById('score'),nextBtn=document.getElementById('next'),backBtn=document.getElementById('back');
+const done={};
+function addScore(n){score+=n;scoreEl.textContent=score;}
+function screenGated(scr){
+  var q=scr.querySelector('.opts[data-q]'); if(q && !done[q.dataset.q]) return true;
+  var n=scr.querySelector('.numwrap[data-num]'); if(n && !done[n.dataset.num]) return true;
+  if(scr.querySelector('#sortChips') && !done.sort) return true;
+  if(scr.querySelector('#mLeft') && !done.match) return true;
+  return false;
+}
+function refreshGate(){if(screenGated(screens[cur])){nextBtn.classList.add('locked');nextBtn.textContent='Answer to continue 🙂';}else if(cur!==0&&cur!==screens.length-1){nextBtn.classList.remove('locked');nextBtn.textContent='Next ➡';}}
+function show(i){screens[cur].classList.remove('active');cur=i;screens[cur].classList.add('active');bar.style.width=(cur/(screens.length-1)*100)+'%';backBtn.style.visibility=cur===0?'hidden':'visible';if(cur===0){nextBtn.style.visibility='visible';nextBtn.textContent='Start ➡';}else if(cur===screens.length-1){nextBtn.style.visibility='hidden';}else{nextBtn.style.visibility='visible';nextBtn.textContent='Next ➡';}refreshGate();window.scrollTo({top:0,behavior:'smooth'});}
+nextBtn.addEventListener('click',()=>{if(cur<screens.length-1&&!nextBtn.classList.contains('locked'))show(cur+1);});
+backBtn.addEventListener('click',()=>{if(cur>0)show(cur-1);});
+
+function setupMCQ(qkey){const box=document.querySelector('.opts[data-q="'+qkey+'"]');if(!box)return;const fb=document.getElementById('fb-'+qkey);const why=box.dataset.why||'';box.querySelectorAll('.opt').forEach(btn=>{btn.addEventListener('click',()=>{if(done[qkey])return;const ok=btn.dataset.correct==='1';if(ok){box.querySelectorAll('.opt').forEach(b=>b.classList.add('lock'));btn.classList.add('correct');fb.innerHTML='🎉 Correct! +1 star<span class="why">'+why+'</span>';fb.className='feedback good';addScore(1);done[qkey]=true;refreshGate();}else{btn.classList.add('wrong','lock');fb.textContent='Not quite — try another 💪';fb.className='feedback bad';}});});}
+["q1","q2","q3"].forEach(setupMCQ);
+
+function setupNum(nkey){const box=document.querySelector('.numwrap[data-num="'+nkey+'"]');if(!box)return;const ansRaw=String(box.dataset.answer);const numeric=/^-?\d+(\.\d+)?$/.test(ansRaw);const ansNum=parseFloat(ansRaw);const tol=parseFloat(box.dataset.tol||'0');const input=box.querySelector('input');const btn=box.querySelector('.checkbtn');const fb=document.getElementById('fb-'+nkey);let tries=0;
+function norm(s){return String(s).replace(/[\s,_]/g,'').toUpperCase();}
+function check(){if(done[nkey])return;const raw=(input.value||'').trim();if(raw===''){fb.textContent='Type your answer first ✍️';fb.className='feedback';return;}let ok=false;if(numeric){const v=parseFloat(raw.replace(/[\s,]/g,''));ok=!isNaN(v)&&Math.abs(v-ansNum)<=tol;}else{ok=norm(raw)===norm(ansRaw);}
+if(ok){input.classList.add('correct');input.disabled=true;btn.disabled=true;fb.textContent='🎉 Correct! +1 star';fb.className='feedback good';addScore(1);done[nkey]=true;refreshGate();}else{tries++;input.classList.add('wrong');fb.textContent=tries>=2?('Answer: '+ansRaw+'. Check your working and move on.'):'Not quite — recalculate and try again 💪';fb.className='feedback bad';if(tries>=2){done[nkey]=true;input.value=ansRaw;input.disabled=true;btn.disabled=true;refreshGate();}else{setTimeout(()=>{input.classList.remove('wrong');input.focus();input.select();},500);}}}
+btn.addEventListener('click',check);input.addEventListener('keydown',e=>{if(e.key==='Enter')check();});}
+["n1","n2"].forEach(setupNum);
+
+const sortData=[["Return to the last decision point on a dead end","a"],["Solving a maze by trying and retreating","a"],["The eight-queens problem","a"],["A rule of thumb that is good enough","b"],["The estimate function inside A star","b"],["Nearest neighbour for the travelling salesman","b"],["Finding unexpected patterns in huge data sets","c"],["Supermarkets discovering which products sell together","c"],["Spotting correlations nobody was looking for","c"]];
+(function(){const chips=document.getElementById('sortChips');if(!chips)return;const fb=document.getElementById('fb-sort');const binA=document.getElementById('binA'),binB=document.getElementById('binB'),binC=document.getElementById('binC');let sel=null,placed=0;
+const order=sortData.map((r,i)=>i).sort(()=>Math.random()-0.5);
+order.forEach(i=>{const r=sortData[i];const c=document.createElement('button');c.className='chip';c.textContent=r[0];c.dataset.k=r[1];c.addEventListener('click',()=>{chips.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');sel=c;});chips.appendChild(c);});
+function place(binKey,binEl){if(!sel){fb.textContent='Tap a card first ⬆';fb.className='feedback';return;}if(sel.dataset.k===binKey){const tag=document.createElement('span');tag.className='placed ok';tag.textContent=sel.textContent;binEl.appendChild(tag);sel.remove();sel=null;placed++;addScore(1);fb.textContent='✅ Correct!';fb.className='feedback good';if(placed===sortData.length){fb.textContent="🌟 All sorted! Backtracking retreats and retries; a heuristic sacrifices optimality for speed; data mining searches large data for unanticipated patterns.";done.sort=true;refreshGate();}}else{fb.textContent='Not that group — think again 🤔';fb.className='feedback bad';sel.classList.add('miss');setTimeout(()=>sel&&sel.classList.remove('miss'),400);}}
+document.querySelector('.bin.a').addEventListener('click',()=>place('a',binA));
+document.querySelector('.bin.b').addEventListener('click',()=>place('b',binB));
+document.querySelector('.bin.c').addEventListener('click',()=>place('c',binC));})();
+
+const matchPairs=[{"l":"Private attributes accessed only through public methods","r":"Encapsulation"},{"l":"A subclass gains the attributes and methods of a superclass","r":"Inheritance"},{"l":"The same call runs different code depending on the object","r":"Polymorphism"},{"l":"Creating an object from a class","r":"Instantiation"}];
+(function(){const L=document.getElementById('mLeft'),R=document.getElementById('mRight');if(!L)return;const fb=document.getElementById('fb-match');let selL=null,matched=0;
+const rOrder=matchPairs.map((_,i)=>i).sort(()=>Math.random()-0.5);
+matchPairs.forEach((p,i)=>{const a=document.createElement('div');a.className='mitem';a.textContent=p.l;a.dataset.i=i;a.addEventListener('click',()=>{if(a.classList.contains('done'))return;L.querySelectorAll('.mitem').forEach(x=>x.classList.remove('sel'));a.classList.add('sel');selL=a;});L.appendChild(a);});
+rOrder.forEach(i=>{const p=matchPairs[i];const b=document.createElement('div');b.className='mitem';b.textContent=p.r;b.dataset.i=i;b.addEventListener('click',()=>{if(b.classList.contains('done'))return;if(!selL){fb.textContent='Pick an item on the left first ⬅';fb.className='feedback';return;}const li=parseInt(selL.dataset.i,10);if(li===i){selL.classList.add('done');selL.classList.remove('sel');b.classList.add('done');addScore(1);matched++;selL=null;if(matched===matchPairs.length){fb.textContent="🌟 All matched! Encapsulation hides state; inheritance shares behaviour; polymorphism selects it at run time; instantiation creates the object.";fb.className='feedback good';done.match=true;refreshGate();}else{fb.textContent='✅ Matched!';fb.className='feedback good';}}else{b.classList.add('miss');setTimeout(()=>b.classList.remove('miss'),400);fb.textContent='Not that one — re-read it 🤔';fb.className='feedback bad';}});R.appendChild(b);});})();
+
+const totalPoints=document.querySelectorAll('.opts[data-q]').length
+  +document.querySelectorAll('.numwrap[data-num]').length
+  +sortData.length
+  +matchPairs.length;
+const origShow=show;show=function(i){origShow(i);if(i===screens.length-1){document.getElementById('finalScore').textContent=score;document.getElementById('finalMax').textContent=totalPoints;const pct=score/totalPoints;document.getElementById('finalStars').textContent=pct>=0.85?'⭐⭐⭐':pct>=0.55?'⭐⭐':'⭐';}};
+backBtn.style.visibility='hidden';bar.style.width='0%';
+</script>
+<script>
+/* ── AISM juice layer: audio + celebration (shared 'aism-muted' pref) ── */
+const AISM_REDUCED=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const AISM_SFX=(()=>{let actx=null,master=null,muted=false;try{muted=localStorage.getItem('aism-muted')==='1';}catch(e){}
+function ensure(){try{if(!actx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;actx=new AC();master=actx.createGain();master.gain.value=0.28;master.connect(actx.destination);}if(actx.state==='suspended')actx.resume();return true;}catch(e){return false;}}
+function tone(freq,dur,type,vol,endFreq){if(muted||!ensure())return;try{const t0=actx.currentTime;const o=actx.createOscillator(),g=actx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(freq,t0);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(30,endFreq),t0+dur);g.gain.setValueAtTime(vol||0.1,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+dur);o.connect(g);g.connect(master);o.start(t0);o.stop(t0+dur+0.02);}catch(e){}}
+return{unlock(){ensure();},isMuted(){return muted;},toggleMute(){muted=!muted;try{localStorage.setItem('aism-muted',muted?'1':'0');}catch(e){}return muted;},ok(){tone(587,0.08,'sine',0.11);setTimeout(()=>tone(740,0.1,'sine',0.1),70);},bad(){tone(220,0.15,'sawtooth',0.05,165);},fanfare(){tone(523,0.1,'triangle',0.13);setTimeout(()=>tone(659,0.1,'triangle',0.13),100);setTimeout(()=>tone(784,0.22,'triangle',0.13),200);}};})();
+function aismConfetti(){if(AISM_REDUCED)return;let st=document.getElementById('aism-confetti-style');if(!st){st=document.createElement('style');st.id='aism-confetti-style';st.textContent='@keyframes aismCfFall{from{transform:translateY(-10vh) rotate(0)}to{transform:translateY(110vh) rotate(720deg)}}.aism-cf{position:fixed;top:0;width:8px;height:12px;z-index:950;pointer-events:none;animation:aismCfFall linear both;}';document.head.appendChild(st);}const colours=['#4ade9a','#7b6fff','#ffd166','#ff6b6b','#5ac8ff'];for(let i=0;i<40;i++){const c=document.createElement('div');c.className='aism-cf';c.style.left=Math.random()*100+'vw';c.style.background=colours[i%colours.length];c.style.animationDuration=(1.6+Math.random()*1.4)+'s';c.style.animationDelay=(Math.random()*0.5)+'s';c.style.borderRadius=Math.random()<0.5?'50%':'2px';document.body.appendChild(c);setTimeout(()=>c.remove(),3600);}}
+try{const _add=addScore;addScore=function(n){_add(n);try{AISM_SFX.ok();if(!AISM_REDUCED&&scoreEl&&scoreEl.animate)scoreEl.animate([{transform:'scale(1)'},{transform:'scale(1.4)'},{transform:'scale(1)'}],{duration:250});}catch(e){}};}catch(e){}
+try{const _show=show;show=function(i){_show(i);try{if(i===screens.length-1&&!window._cheered){window._cheered=true;AISM_SFX.fanfare();aismConfetti();}}catch(e){}};}catch(e){}
+document.addEventListener('click',e=>{const el=e.target&&e.target.closest?e.target.closest('.opt,.checkbtn,.chip'):null;if(!el)return;setTimeout(()=>{try{if(el.classList.contains('wrong')){AISM_SFX.bad();return;}const nw=el.closest('.numwrap');if(nw&&nw.querySelector('input.wrong'))AISM_SFX.bad();}catch(e2){}},40);},true);
+(function(){function add(){if(document.getElementById('aism-mute'))return;const b=document.createElement('button');b.id='aism-mute';b.type='button';b.title='Toggle sound (M)';b.textContent=AISM_SFX.isMuted()?'🔇':'🔊';b.addEventListener('click',()=>{b.textContent=AISM_SFX.toggleMute()?'🔇':'🔊';});var _bar=document.querySelector('.topbar');if(_bar){b.style.cssText='background:none;border:none;font-size:18px;line-height:1;cursor:pointer;padding:0 2px;margin-left:2px;opacity:.6;align-self:center;';_bar.appendChild(b);}else{b.style.cssText='position:fixed;top:12px;right:12px;z-index:900;background:rgba(26,29,39,0.92);border:1px solid rgba(255,255,255,0.16);color:#fff;border-radius:10px;padding:8px 11px;font-size:15px;cursor:pointer;line-height:1;';document.body.appendChild(b);}}if(document.body)add();else window.addEventListener('DOMContentLoaded',add);document.addEventListener('keydown',e=>{if((e.key==='m'||e.key==='M')&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const t=e.target||{};if(t.tagName==='INPUT'||t.tagName==='TEXTAREA')return;const b=document.getElementById('aism-mute');if(b)b.click();}});['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>AISM_SFX.unlock(),{once:true,capture:true}));})();
+</script>
+<script src="../quizzes/share-score.js?v=20260626c"></script>
+<script src="../quizzes/lesson-nav.js?v=20260706"></script>
+<script>
+(function(){
+  function lessonMeta(){
+    var logo=document.querySelector(".logo");
+    var topic=logo?logo.textContent.replace(/[^\x00-\x7F]/g,"").replace(/\s+/g," ").trim():"this topic";
+    var spec=(document.querySelector(".spec")||{}).textContent||"";
+    var lm=spec.match(/\b(GCSE|A-?Level|IB[^·]*)\b/i); var level=lm?lm[1].trim():"";
+    var sm=spec.match(/\b(Computer Science|Physics|Biology|Chemistry|Maths|Mathematics)\b/i); var subject=sm?sm[1]:"";
+    return {topic:topic,level:level,subject:subject};
+  }
+  function share(kind){
+    var sc=parseInt((document.getElementById("finalScore")||{}).textContent,10)||0;
+    var mx=parseInt((document.getElementById("finalMax")||{}).textContent,10)||0;
+    var mm=lessonMeta();
+    if(kind==="parent"){
+      if(!(window.Arcade&&Arcade.shareWithParents)){alert("Sharing isn't available in this browser.");return;}
+      Arcade.shareWithParents({subject:mm.subject,level:mm.level,topic:mm.topic,score:sc,total:mx});
+      return;
+    }
+    if(!(window.Arcade&&Arcade.shareScore)){alert("Sharing isn't available in this browser.");return;}
+    var txt="I scored "+sc+"/"+mx+" ⭐ on the "+mm.topic+" mini-lesson — bet you can't beat me! Try it: https://aistudymethod.co.uk";
+    Arcade.shareScore({gameName:"Mini-Lesson",subject:mm.subject,level:mm.level,topic:mm.topic,score:sc,total:mx,bigLabel:"STARS",rankLine:"on "+mm.topic,statLine:"Beat my score!",shareText:txt});
+  }
+  document.addEventListener("click",function(e){var b=e.target&&e.target.closest?e.target.closest("[data-share]"):null;if(b){e.preventDefault();share(b.getAttribute("data-share"));}});
+  try{ if(window.Arcade&&Arcade.maybeShowChallenge) Arcade.maybeShowChallenge({mountBefore:document.querySelector(".topbar")}); }catch(e){}
+})();
+</script>
+</body>
+</html>
