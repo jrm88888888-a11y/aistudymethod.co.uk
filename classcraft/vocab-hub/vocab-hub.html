@@ -122,6 +122,7 @@
   .vh-cab:focus-visible { outline: 2px solid var(--ar-cyan); outline-offset: 2px; }
   .vh-cab:disabled { opacity: 0.3; cursor: default; }
   .vh-cab-icon { font-size: 2.2rem; line-height: 1; transition: transform 0.18s cubic-bezier(0.2, 1.6, 0.4, 1); filter: drop-shadow(0 0 12px rgba(0,229,255,0.35)); }
+  .vh-cab-icon svg { display: block; width: 44px; height: 44px; }
   .vh-cab-name { font-size: 0.88rem; font-weight: 700; letter-spacing: 0.2px; }
   .vh-cab-desc { font-size: 0.67rem; color: var(--ar-text2); line-height: 1.35; overflow-wrap: anywhere; }
   .vh-cab-play {
@@ -245,6 +246,7 @@
 
 <script src="../quizzes/arcade.js"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
+<script src="../quizzes/arcade-icons.js?v=20260718a"></script>
 <script>
 const esc = Arcade.escapeHtml;
 const announceEl = document.getElementById('announce');
@@ -284,15 +286,17 @@ const STAGES = {
   level2: { label: 'LEVEL 2', cls: 'level2' },
   boss:   { label: 'BOSS',    cls: 'boss'   },
 };
+// px = pixel-art icon name in ../quizzes/arcade-icons.js (emoji is the
+// guarded fallback if the icon library fails to load).
 const GAMES = [
-  { id:'pairs',         icon:'🃏', name:'Memory Match',    desc:'Flip cards to match terms with definitions.',        file:'game-pairs.html',          ready:true, stage:'warmup' },
-  { id:'quiz',          icon:'❓', name:'Multiple Choice',  desc:'Answer questions about key terms.',                  file:'game-quiz.html',           ready:true, stage:'level1' },
-  { id:'hangman',       icon:'🪢', name:'Hangman',          desc:'Guess the term letter by letter.',                   file:'game-hangman.html',        ready:true, stage:'level2' },
-  { id:'termguess',     icon:'🟩', name:'TermGuess',        desc:'Guess the vocabulary word in 6 attempts.',           file:'game-termguess.html',      ready:true, stage:'level2' },
-  { id:'anagram',       icon:'🔀', name:'Anagram',          desc:'Unscramble the letters to reveal the term.',         file:'game-anagram.html',        ready:true, stage:'level2' },
-  { id:'crossword',     icon:'✏️', name:'Crossword',        desc:'Fill in the crossword using definitions as clues.',  file:'game-crossword.html',      ready:true, stage:'level2' },
-  { id:'pacman',        icon:'🟡', name:'Pac-Man',           desc:'Eat red dots to trigger vocabulary questions.',      file:'game-pacman.html',         ready:true, stage:'boss'   },
-  { id:'spaceinvaders', icon:'👾', name:'Space Invaders',   desc:'Shoot vocab enemies for bonus points and questions.',file:'game-spaceinvaders.html',  ready:true, stage:'boss'   },
+  { id:'pairs',         icon:'🃏', px:'pairs',     name:'Memory Match',    desc:'Flip cards to match terms with definitions.',        file:'game-pairs.html',          ready:true, stage:'warmup' },
+  { id:'quiz',          icon:'❓', px:'quiz',      name:'Multiple Choice',  desc:'Answer questions about key terms.',                  file:'game-quiz.html',           ready:true, stage:'level1' },
+  { id:'hangman',       icon:'🪢', px:'hangman',   name:'Hangman',          desc:'Guess the term letter by letter.',                   file:'game-hangman.html',        ready:true, stage:'level2' },
+  { id:'termguess',     icon:'🟩', px:'termguess', name:'TermGuess',        desc:'Guess the vocabulary word in 6 attempts.',           file:'game-termguess.html',      ready:true, stage:'level2' },
+  { id:'anagram',       icon:'🔀', px:'anagram',   name:'Anagram',          desc:'Unscramble the letters to reveal the term.',         file:'game-anagram.html',        ready:true, stage:'level2' },
+  { id:'crossword',     icon:'✏️', px:'crossword', name:'Crossword',        desc:'Fill in the crossword using definitions as clues.',  file:'game-crossword.html',      ready:true, stage:'level2' },
+  { id:'pacman',        icon:'🟡', px:'pacman',    name:'Pac-Man',           desc:'Eat red dots to trigger vocabulary questions.',      file:'game-pacman.html',         ready:true, stage:'boss'   },
+  { id:'spaceinvaders', icon:'👾', px:'invaders',  name:'Space Invaders',   desc:'Shoot vocab enemies for bonus points and questions.',file:'game-spaceinvaders.html',  ready:true, stage:'boss'   },
 ];
 
 // How each game reports its personal best (must match the bestSuffix each
@@ -470,9 +474,13 @@ function buildGameGrid() {
     card.disabled = !game.ready;
     const stage = STAGES[game.stage] || STAGES.warmup;
     const best = game.ready ? bestFor(game.id) : null;
+    // Pixel-art cabinet icon, guarded — emoji fallback if the library is out.
+    const iconHtml = (window.ArcadeIcons && game.px && window.ArcadeIcons.has(game.px))
+      ? window.ArcadeIcons.svg(game.px, 44)
+      : game.icon;
     card.innerHTML = `
       <span class="vh-cab-stage ${esc(stage.cls)}">${esc(stage.label)}</span>
-      <span class="vh-cab-icon" aria-hidden="true">${game.icon}</span>
+      <span class="vh-cab-icon" aria-hidden="true">${iconHtml}</span>
       <span class="vh-cab-name">${esc(game.name)}</span>
       <span class="vh-cab-desc">${esc(game.desc)}</span>
       ${best !== null ? `<span class="vh-cab-best">★ Best: ${esc(best)}</span>` : ''}

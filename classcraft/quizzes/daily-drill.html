@@ -90,6 +90,7 @@
 
 <script src="../evaluate/real-content-ready.js"></script>
 <script src="arcade.js"></script>
+<script src="arcade-icons.js?v=20260718a"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -455,6 +456,324 @@
     ];
   }
 
+  /* ── Streak share card — 1080×1080 canvas in the share-score.js visual
+     language (same palette, marquee treatment, frame and footer). Fronted
+     by a "Share your streak" button on the finish screen and the
+     already-played state; hidden entirely when there is no live streak. ── */
+  const SPAL = {
+    bgTop: '#1a1340', bgMid: '#0d0a30', bgBot: '#060418',
+    star: 'rgba(255,255,255,0.85)', starDim: 'rgba(180,170,255,0.45)',
+    border: '#7e6dff', borderGlow: 'rgba(126,109,255,0.45)',
+    yellow: '#ffd24d', cyan: '#5cffe4', cyanDim: 'rgba(92,255,228,0.72)',
+    magenta: '#ff5fa2', text: '#ece8ff', textDim: 'rgba(236,232,255,0.62)',
+    mint: '#00ffa3', gold: '#ffd60a', dark: '#06121c',
+    vTeal: '#5dbef0', vMid: '#7a7adb', vPurple: '#9b6dff',
+  };
+  const S_MONO = '"SF Mono", Menlo, Consolas, "Liberation Mono", "Courier New", monospace';
+  const S_HEAD = '"Arial Black", "Helvetica Neue Black", Impact, "Franklin Gothic Heavy", sans-serif';
+
+  function sRoundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // Marquee type — yellow fill, black outline, magenta neon offset, highlight
+  // gradient. Mirrors share-score.js so the two cards read as one family.
+  function sMarquee(ctx, text, cx, baseY, maxW, startSize) {
+    let size = startSize;
+    ctx.font = '900 ' + size + 'px ' + S_HEAD;
+    while (size > 40 && ctx.measureText(text).width > maxW) {
+      size -= 6;
+      ctx.font = '900 ' + size + 'px ' + S_HEAD;
+    }
+    ctx.textAlign = 'center';
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = SPAL.magenta;
+    ctx.fillText(text, cx + 4, baseY + 4);
+    ctx.restore();
+    ctx.lineWidth = Math.max(8, size * 0.095);
+    ctx.strokeStyle = '#1a0a00';
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+    ctx.strokeText(text, cx, baseY);
+    ctx.fillStyle = SPAL.yellow;
+    ctx.fillText(text, cx, baseY);
+    const grad = ctx.createLinearGradient(0, baseY - size, 0, baseY + size * 0.3);
+    grad.addColorStop(0, '#fff5b2');
+    grad.addColorStop(1, 'rgba(255,210,77,0)');
+    ctx.fillStyle = grad;
+    ctx.fillText(text, cx, baseY);
+    return size;
+  }
+
+  function drawStreakCard(streakVal) {
+    const W = 1080, H = 1080;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+
+    // Background gradient + deterministic starfield (seed 7, like share-score)
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, SPAL.bgTop);
+    bg.addColorStop(0.55, SPAL.bgMid);
+    bg.addColorStop(1, SPAL.bgBot);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    const srand = mulberry32(7);
+    for (let i = 0; i < 140; i++) {
+      const x = srand() * W, y = srand() * H;
+      const size = 0.5 + srand() * 2.2, bright = srand();
+      ctx.fillStyle = bright > 0.7 ? SPAL.star : SPAL.starDim;
+      ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Warm glow vignette behind the marquee block
+    const vg = ctx.createRadialGradient(W / 2, 470, 60, W / 2, 470, 620);
+    vg.addColorStop(0, 'rgba(126,109,255,0.22)');
+    vg.addColorStop(1, 'rgba(126,109,255,0)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Frame + corner brackets
+    ctx.shadowColor = SPAL.borderGlow;
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = SPAL.border;
+    ctx.lineWidth = 2.5;
+    sRoundRect(ctx, 36, 36, W - 72, H - 72, 22);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 6;
+    [[36, 36, 1, 1], [W - 36, 36, -1, 1], [36, H - 36, 1, -1], [W - 36, H - 36, -1, -1]]
+      .forEach(([bx, by, dx, dy]) => {
+        ctx.beginPath();
+        ctx.moveTo(bx + dx * 56, by);
+        ctx.lineTo(bx, by);
+        ctx.lineTo(bx, by + dy * 56);
+        ctx.stroke();
+      });
+
+    // Header: V badge + wordmark (share-score layout)
+    const badgeY = 70, badgeSize = 88, headerStartX = (W - 600) / 2;
+    ctx.save();
+    ctx.shadowColor = SPAL.vPurple;
+    ctx.shadowBlur = 24;
+    const bgrad = ctx.createLinearGradient(headerStartX, badgeY, headerStartX + badgeSize, badgeY + badgeSize);
+    bgrad.addColorStop(0, SPAL.vTeal);
+    bgrad.addColorStop(0.55, SPAL.vMid);
+    bgrad.addColorStop(1, SPAL.vPurple);
+    ctx.fillStyle = bgrad;
+    sRoundRect(ctx, headerStartX, badgeY, badgeSize, badgeSize, badgeSize * 0.22);
+    ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 ' + Math.round(badgeSize * 0.7) + 'px "Times New Roman", Georgia, serif';
+    ctx.fillText('V', headerStartX + badgeSize / 2, badgeY + badgeSize / 2 + badgeSize * 0.04);
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = SPAL.text;
+    ctx.font = '900 36px ' + S_HEAD;
+    ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
+    ctx.fillStyle = SPAL.cyan;
+    ctx.font = '700 17px ' + S_MONO;
+    ctx.fillText('THE VELVET METHOD™', headerStartX + badgeSize + 18, badgeY + 54);
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = SPAL.cyanDim;
+    ctx.font = '700 16px ' + S_MONO;
+    ctx.fillText('· · ·  STREAK TRANSMISSION  · · ·', W / 2, badgeY + badgeSize + 30);
+
+    // Mascot flame — large, left-of-centre (only when the icon library is in)
+    const mascotX = 118, mascotY = 316, mascotScale = 11; // 24px grid → 264px
+    if (window.ArcadeIcons && ArcadeIcons.has && ArcadeIcons.has('mascot-flame')) {
+      ArcadeIcons.drawOnCanvas(ctx, 'mascot-flame', mascotX, mascotY, mascotScale);
+    }
+
+    // Marquee: "N-DAY" / "STREAK" to the right of the mascot
+    const marqueeCx = 712; // centre of the band right of the mascot
+    sMarquee(ctx, streakVal + '-DAY', marqueeCx, 448, 600, 150);
+    sMarquee(ctx, 'STREAK', marqueeCx, 574, 600, 118);
+
+    // Sub-line
+    ctx.textAlign = 'center';
+    ctx.fillStyle = SPAL.cyan;
+    ctx.font = '700 24px ' + S_MONO;
+    ctx.fillText('THE DAILY — five a day, same for everyone', W / 2, 664);
+
+    // Week result grid — last seven days as coloured pixel squares (canvas
+    // squares, not emoji glyphs, so the card is font-safe on every OS).
+    ctx.fillStyle = SPAL.magenta;
+    ctx.font = '900 19px ' + S_MONO;
+    ctx.fillText('THIS WEEK', W / 2, 712);
+    const history = getHistory();
+    const sq = 70, gap = 14, gridW = 7 * sq + 6 * gap;
+    let gx = (W - gridW) / 2;
+    const gy = 736;
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * DAY_MS);
+      const iso = utcISO(d);
+      const dayLbl = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][d.getUTCDay()];
+      const score = history[iso];
+      if (score != null) {
+        ctx.fillStyle = score >= 4 ? SPAL.mint : score >= 2 ? SPAL.gold : SPAL.magenta;
+        sRoundRect(ctx, gx, gy, sq, sq, 10);
+        ctx.fill();
+        ctx.fillStyle = SPAL.dark;
+        ctx.font = '900 32px ' + S_MONO;
+        ctx.fillText(String(score), gx + sq / 2, gy + sq / 2 + 11);
+      } else {
+        ctx.fillStyle = 'rgba(126,109,255,0.10)';
+        sRoundRect(ctx, gx, gy, sq, sq, 10);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(126,109,255,0.55)';
+        ctx.lineWidth = 2;
+        sRoundRect(ctx, gx, gy, sq, sq, 10);
+        ctx.stroke();
+        ctx.fillStyle = SPAL.textDim;
+        ctx.font = '700 26px ' + S_MONO;
+        ctx.fillText('·', gx + sq / 2, gy + sq / 2 + 9);
+      }
+      ctx.fillStyle = SPAL.textDim;
+      ctx.font = '700 16px ' + S_MONO;
+      ctx.fillText(dayLbl, gx + sq / 2, gy + sq + 26);
+      gx += sq + gap;
+    }
+
+    // PLAYER tag — only when initials were actually chosen
+    let initials = '';
+    try { initials = (LS.get('aism-initials') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3); } catch (e) {}
+    if (initials && initials !== 'AAA') {
+      ctx.fillStyle = SPAL.cyan;
+      ctx.font = '900 34px ' + S_MONO;
+      ctx.fillText('PLAYER: ' + initials, W / 2, 902);
+    }
+
+    // Challenge line + footer (share-score footer treatment)
+    ctx.fillStyle = SPAL.magenta;
+    ctx.font = '900 24px ' + S_MONO;
+    ctx.fillText('▼  START YOURS TODAY  ▼', W / 2, 960);
+    ctx.fillStyle = SPAL.cyan;
+    ctx.font = '900 26px ' + S_MONO;
+    ctx.fillText('aistudymethod.co.uk', W / 2, 1004);
+    ctx.fillStyle = SPAL.textDim;
+    ctx.font = '500 15px ' + S_MONO;
+    ctx.fillText('· The Velvet Method™ ·', W / 2, 1032);
+
+    return c;
+  }
+
+  function ddToast(msg) {
+    if (window.Arcade && Arcade.toast) { Arcade.toast(msg); return; }
+    // Local fallback matching the share-score.js toast styling
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.setAttribute('role', 'status');
+    t.style.cssText =
+      'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+      'background:linear-gradient(135deg,#1a1340 0%,#0d0a30 100%);' +
+      'color:#5cffe4;padding:14px 22px;border:2px solid #7e6dff;border-radius:10px;' +
+      'font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;' +
+      'letter-spacing:0.5px;z-index:99999;opacity:0;transition:opacity 0.2s ease;' +
+      'box-shadow:0 8px 36px rgba(126,109,255,0.45);max-width:90vw;text-align:center;';
+    document.body.appendChild(t);
+    requestAnimationFrame(() => { t.style.opacity = '1'; });
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 250); }, 3200);
+  }
+
+  async function shareStreak(btn) {
+    const streakVal = currentStreak();
+    if (streakVal <= 0) return;
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '… preparing';
+    const restore = label => {
+      btn.textContent = label;
+      setTimeout(() => { btn.disabled = false; btn.textContent = orig; }, 1800);
+    };
+    const shareUrl = 'https://aistudymethod.co.uk/classcraft/quizzes/daily-drill.html'
+      + '?utm_source=share&utm_medium=image&utm_campaign=daily-streak';
+    const shareText = '🔥 ' + streakVal + '-day Daily Drill streak on AI Study Method.'
+      + ' Five questions a day, same for everyone — can you keep up?';
+    let blob = null;
+    try {
+      const canvas = drawStreakCard(streakVal);
+      blob = await new Promise(res => canvas.toBlob(res, 'image/png', 0.95));
+    } catch (err) { blob = null; }
+    if (!blob) {
+      // Card failed — still hand over something usable (URL to clipboard).
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareText + '\n' + shareUrl);
+          ddToast('Link copied — paste it in any chat.');
+          restore('✅ Copied!');
+          return;
+        }
+      } catch (err) {}
+      ddToast('Share unavailable in this browser.');
+      restore(orig);
+      return;
+    }
+    const file = new File([blob], 'aism-streak.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      try {
+        await navigator.share({ files: [file], text: shareText, url: shareUrl });
+        Arcade.sfx.coin();
+        restore('✅ Sent!');
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') { restore(orig); return; }
+        // fall through to the desktop fallback
+      }
+    }
+    // Desktop / unsupported: download the PNG + copy the URL (share-score
+    // fallback pattern).
+    let downloaded = false, copied = false;
+    try {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'aism-streak.png';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+      downloaded = true;
+    } catch (err) {}
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        copied = true;
+      }
+    } catch (err) {}
+    ddToast(
+      downloaded && copied ? 'Streak card saved. Link copied — paste it in any chat.'
+      : downloaded ? 'Streak card saved. Drag it into a chat to share.'
+      : copied ? 'Link copied — paste it in any chat.'
+      : 'Share unavailable in this browser.'
+    );
+    restore(downloaded || copied ? '✅ Done!' : orig);
+  }
+
+  // Adds the button to a rendered screen's .ar-ctas row. Silently does
+  // nothing when there is no live streak — a card full of zeroes sells
+  // nothing, so the button simply stays hidden.
+  function appendStreakShareBtn(scope) {
+    if (currentStreak() <= 0) return;
+    const ctas = (scope || root).querySelector('.ar-ctas');
+    if (!ctas || ctas.querySelector('.dd-streak-share')) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ar-btn ghost dd-streak-share';
+    b.textContent = '🔥 Share your streak';
+    b.addEventListener('click', () => { Arcade.sfx.click(); shareStreak(b); });
+    ctas.appendChild(b);
+  }
+
   /* ── Daily question assembly (deterministic, identical to the original) ── */
   const seedStr = today + '|' + (subjectFilter || 'all') + '|' + (levelFilter || 'all');
   const META_Q_RE = /\b(this adventure|key terms? this|term chips?|adventure introduces?)\b/i;
@@ -728,6 +1047,7 @@
       const againBtn = document.querySelector('#ar-again');
       if (againBtn) againBtn.textContent = '🎯 Practice again';
       appendCountdown(document.getElementById('end-root'));
+      appendStreakShareBtn(document.getElementById('end-root'));
       announce(`Practice run complete. ${state.score} out of 5 — not recorded. Your official streak is ${s.streak} days.`);
       return;
     }
@@ -780,6 +1100,7 @@
     const againBtn = document.querySelector('#ar-again');
     if (againBtn) againBtn.textContent = '🎯 Practice replay';
     appendCountdown(document.getElementById('end-root'));
+    appendStreakShareBtn(document.getElementById('end-root'));
     if (extended) setTimeout(() => Arcade.flashMsg('🔥 ' + newStreak + '-DAY STREAK', '#ffd60a'), 700);
     announce(`Drill complete. You got ${state.score} out of 5. Your streak is now ${newStreak} days. ${insight} A fresh drill lands at midnight UTC.`);
   }
@@ -833,6 +1154,7 @@
       </div>
     `;
     mountCountdown(document.getElementById('dd-countdown'));
+    appendStreakShareBtn(root);
     announce(`You've already played today's Daily Drill. You scored ${lr.correct} out of ${lr.total || 5}. Your streak is ${streak} days. Come back tomorrow, or run a practice replay.`);
 
     document.getElementById('btn-practice').addEventListener('click', async () => {

@@ -26,6 +26,11 @@
 (function () {
   if (!window.Arcade) window.Arcade = {};
 
+  /* Captured at module init — document.currentScript is null inside async
+     callbacks, so the src must be grabbed now. Used to derive the
+     arcade-icons.js URL for the one-shot lazy load at share time. */
+  var SCRIPT_SRC = (document.currentScript && document.currentScript.src) || '';
+
   /* Parent share — bridge to the Velvet Method course via for-parents.html (the course pitch).
      Native share sheet on mobile; clipboard copy / open on desktop. Mirrors arcade.js.
 
@@ -252,6 +257,15 @@
       ctx.fillText('PLAYER: ' + player, W / 2, 822);
     }
 
+    /* ---------- 8c. Mascot cameo — lower-left corner (ArcadeIcons only) --
+       Cheer pose for rank S/A, idle otherwise. 24px grid × scale 6 = 144px,
+       parked at (60, 866): clear of the rank stamp (upper-right of the
+       panel), the centred rank/stat lines (their realistic widths never
+       reach x 204), and the footer block (which starts ≈ x 380). Drawn
+       before the text layers so type always wins if content ever grows.
+       No-op on the ~8k mini-lesson pages that never load arcade-icons.js. */
+    drawMascot(ctx, opts.rank, 60, 866, 150);
+
     /* ---------- 9. Rank badge — big stamped grade over the panel corner --
        The rank letter (especially an S) is the most memeable element for
        teens, so it gets a ~216px rotated stamp overlapping the top-right
@@ -389,6 +403,12 @@
       ctx.fillText('PLAYER: ' + player, W / 2, 760);
     }
 
+    /* Mascot cameo — lower-left, scaled up for the 9:16 canvas (24px grid ×
+       scale 10 = 240px). The band y 1580–1820 is empty at x < 320: the rank
+       and stat lines end by y ≈ 1264 and the centred footer block never
+       reaches left of x ≈ 360. Same ArcadeIcons-only degrade as the square. */
+    drawMascot(ctx, opts.rank, 64, 1580, 240);
+
     // Score panel — same treatment as the square card, roomier
     const panelX = 110, panelY = 820, panelW = W - 220, panelH = 300;
     const sg = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelH);
@@ -464,6 +484,64 @@
     const clean = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
     if (!clean || clean === 'AAA') return '';
     return clean;
+  }
+
+  /* ----------------------------------------------------------------------- *
+   * Mascot — pixel-art cameo via the ArcadeIcons library (arcade-icons.js).
+   *
+   * DEGRADE RULE: this module also ships on ~8,452 mini-lesson pages that
+   * never load arcade-icons.js. The mascot is therefore drawn ONLY when
+   * window.ArcadeIcons exists; when it does not, the card renders exactly
+   * as it always has. drawMascot is a pure no-op in that case.
+   * ----------------------------------------------------------------------- */
+  // Cheer pose for the top ranks, idle pose otherwise.
+  function mascotPoseFor(rank) {
+    return (rank === 'S' || rank === 'A') ? 'mascot-cheer' : 'mascot';
+  }
+
+  // Draw the mascot with its top-left corner at (x, y), `target` px tall.
+  // Silent no-op unless ArcadeIcons is present and knows the pose.
+  function drawMascot(ctx, rank, x, y, target) {
+    try {
+      var icons = window.ArcadeIcons;
+      if (!icons || typeof icons.drawOnCanvas !== 'function') return;
+      var pose = mascotPoseFor(rank);
+      if (!icons.has(pose)) pose = 'mascot';
+      if (!icons.has(pose)) return;
+      var grid = (typeof icons.size === 'function' && icons.size(pose)) || 24;
+      // Integer scale keeps the pixel art crisp (24×24 grid → scale 6 = 144px).
+      var scale = Math.max(1, Math.floor(target / grid));
+      icons.drawOnCanvas(ctx, pose, x, y, scale);
+    } catch (err) { /* cosmetic only — never let the mascot break a card */ }
+  }
+
+  /* One-shot lazy load of arcade-icons.js at share time. Derives the URL
+     from this module's own script src (same directory), injects a script
+     tag, and waits at most ~1.5s. Resolves either way; totally silent on
+     failure — lesson pages where the file 404s just get the classic card. */
+  var iconsLoadPromise = null;
+  function ensureArcadeIcons() {
+    if (window.ArcadeIcons) return Promise.resolve(true);
+    if (iconsLoadPromise) return iconsLoadPromise;
+    iconsLoadPromise = new Promise(function (resolve) {
+      try {
+        if (!SCRIPT_SRC || !/share-score\.js/.test(SCRIPT_SRC)) { resolve(false); return; }
+        var url = SCRIPT_SRC.replace(/share-score\.js[^\/]*$/, 'arcade-icons.js');
+        var s = document.createElement('script');
+        var done = false;
+        var finish = function () {
+          if (done) return;
+          done = true;
+          resolve(!!window.ArcadeIcons);
+        };
+        var t = setTimeout(finish, 1500);
+        s.onload = function () { clearTimeout(t); finish(); };
+        s.onerror = function () { clearTimeout(t); finish(); };
+        s.src = url;
+        (document.head || document.documentElement).appendChild(s);
+      } catch (err) { resolve(false); }
+    });
+    return iconsLoadPromise;
   }
 
   function roundRect(ctx, x, y, w, h, r) {
@@ -768,6 +846,10 @@
 
     const challengeUrl = buildChallengeUrl(opts);
     const text = buildShareText(opts);
+
+    // Mascot library — one lazy-load attempt at share time (never at page
+    // load). Cosmetic: proceed with or without it, in total silence.
+    try { await ensureArcadeIcons(); } catch (err) { /* swallow */ }
 
     let blob = null;
     try {
