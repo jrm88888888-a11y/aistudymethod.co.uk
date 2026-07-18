@@ -663,6 +663,27 @@
       '................'
     ],
 
+    /* The Claw — claw-machine grabber on its cable, lavender fingers
+       curling in around a magenta prize heart. */
+    'claw': [
+      '.......LL.......',
+      '.......LL.......',
+      '....KKKKKKKK....',
+      '...KWWLLLLLLK...',
+      '...KWLLLLLLLK...',
+      '...KKKKKKKKKK...',
+      '..KWLK....KLLK..',
+      '.KWLK.KK.KK.KLLK',
+      '.KWLKKMMKMMKKLLK',
+      '.KLLKKMMMMMKKLLK',
+      '..KLLKKMMMKKLLK.',
+      '...KLK.KMK.KLK..',
+      '........K.......',
+      '................',
+      '................',
+      '................'
+    ],
+
     'mob-quiz': [
       '................',
       '................',

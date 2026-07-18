@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Claw — Free Revision Game — AI Study Method</title>
+<meta name="description" content="Grab the plushie, name the term. A free GCSE, A-Level and IB claw-machine revision game across every subject. No login required.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* ---- The Claw: full-canvas cabinet + control deck ---- */
+  .claw-stage { max-width: 560px; margin: 0 auto; }
+  #cab-wrap {
+    position: relative; width: 100%;
+    height: min(64vh, 640px); min-height: 380px;
+    border-radius: 16px; overflow: hidden;
+    background: #05040f; border: 1px solid var(--ar-border-hi);
+    box-shadow: 0 22px 60px rgba(0,0,0,0.55);
+    touch-action: none; user-select: none;
+  }
+  #claw-canvas { display: block; width: 100%; height: 100%; }
+
+  /* hold-to-move zones (mobile / pointer) */
+  .claw-zone { position: absolute; top: 0; height: 100%; z-index: 3; -webkit-tap-highlight-color: transparent; }
+  .claw-zone.left  { left: 0;  width: 34%; }
+  .claw-zone.right { right: 0; width: 34%; }
+  .claw-zone.mid   { left: 34%; width: 32%; }
+  .claw-zone .hint {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    font-family: var(--ar-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(236,232,255,0.5); pointer-events: none; white-space: nowrap;
+  }
+  #cab-wrap.playing .claw-zone .hint { opacity: 1; }
+  #cab-wrap:not(.aim) .claw-zone { pointer-events: none; }
+
+  /* question overlay — slides up over the LOWER part only, toy stays visible up top */
+  #q-overlay {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+    max-height: 56%; overflow: auto;
+    background: linear-gradient(180deg, rgba(10,8,32,0.78) 0%, rgba(8,6,24,0.97) 30%);
+    backdrop-filter: blur(3px);
+    border-top: 2px solid rgba(126,109,255,0.55);
+    box-shadow: 0 -14px 40px rgba(0,0,0,0.5);
+    padding: 12px 14px 14px; transform: translateY(102%); transition: transform 0.32s cubic-bezier(0.2,1.1,0.3,1);
+  }
+  #q-overlay.up { transform: translateY(0); }
+  .q-term {
+    font-family: var(--ar-font); font-weight: 700; font-size: clamp(15px, 4.4vw, 20px);
+    color: var(--ar-text); line-height: 1.2; margin: 0 0 2px;
+  }
+  .q-term .gold { color: var(--ar-gold); text-shadow: 0 0 14px rgba(255,214,10,0.5); }
+  .q-ask { font-family: var(--ar-mono); font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ar-cyan); margin: 0 0 9px; }
+  #q-timer { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); overflow: hidden; margin-bottom: 10px; }
+  #q-timer i { display: block; height: 100%; width: 100%; transform-origin: left; background: var(--ar-mint); box-shadow: 0 0 10px rgba(0,255,163,0.6); }
+  #q-timer i.warn { background: var(--ar-gold); }
+  #q-timer i.danger { background: var(--ar-pink); }
+  .q-opts { display: grid; gap: 8px; }
+  .q-opt {
+    background: var(--ar-card); border: 2px solid var(--ar-border); border-radius: 12px;
+    padding: 11px 13px; text-align: left; color: var(--ar-text); font-family: var(--ar-font);
+    font-size: 14px; line-height: 1.4; cursor: pointer; width: 100%;
+    display: flex; gap: 10px; align-items: flex-start;
+    transition: transform 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+  }
+  .q-opt .k { font-family: var(--ar-mono); font-size: 11px; font-weight: 700; color: var(--ar-cyan); flex: 0 0 auto; margin-top: 1px; }
+  .q-opt:hover:not(:disabled) { border-color: var(--ar-cyan); transform: translateY(-1px); }
+  .q-opt:active:not(:disabled) { transform: scale(0.99); }
+  .q-opt.correct { border-color: var(--ar-mint); background: var(--ar-mint-dim); }
+  .q-opt.wrong   { border-color: var(--ar-pink); background: var(--ar-pink-dim); }
+  .q-opt.dim { opacity: 0.4; }
+  .q-opt:disabled { cursor: default; }
+
+  /* correction strip — appears while the toy tumbles back */
+  #corr {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 7;
+    background: #1b0a1f;                 /* solid backing so text never sits over toys/tags */
+    border-top: 2px solid rgba(255,46,136,0.75);
+    box-shadow: 0 -16px 34px rgba(0,0,0,0.6);
+    padding: 13px 16px 15px; transform: translateY(102%); transition: transform 0.3s ease;
+    cursor: pointer;
+  }
+  #corr.up { transform: translateY(0); }
+  #corr .lead { font-family: var(--ar-mono); font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ar-pink); margin-bottom: 5px; }
+  #corr .body { font-size: 14px; line-height: 1.5; color: #ffd7e6; }
+  #corr .body b { color: #fff; }
+  #corr .tap { margin-top: 9px; font-family: var(--ar-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ar-muted); }
+
+  /* toast — empty-grab quips */
+  #toast {
+    position: absolute; left: 50%; top: 30%; transform: translate(-50%,-50%) scale(0.8);
+    z-index: 8; pointer-events: none; opacity: 0;
+    background: rgba(12,10,34,0.92); border: 1px solid rgba(255,214,10,0.4); border-radius: 12px;
+    padding: 10px 16px; font-family: var(--ar-font); font-weight: 700; font-size: 15px; color: var(--ar-gold);
+    text-align: center; max-width: 78%; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+
+  /* control deck */
+  .claw-deck { display: flex; gap: 10px; align-items: stretch; margin: 14px 0 6px; }
+  .deck-move {
+    flex: 0 0 auto; width: 64px; min-height: 64px; border-radius: 14px;
+    background: var(--ar-card); border: 2px solid var(--ar-border-hi); color: var(--ar-text);
+    font-size: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent; touch-action: none;
+    transition: transform 0.08s ease, background 0.1s ease, border-color 0.1s ease;
+  }
+  .deck-move:active, .deck-move.on { transform: translateY(2px); background: var(--ar-cyan-dim); border-color: var(--ar-cyan); }
+  #btn-drop {
+    flex: 1 1 auto; min-height: 72px; border-radius: 16px; border: none; cursor: pointer;
+    font-family: var(--ar-font); font-weight: 800; font-size: 22px; letter-spacing: 2px;
+    color: #1a0d02; background: linear-gradient(180deg, #ffe27a 0%, #ffd24d 55%, #e8a51f 100%);
+    box-shadow: 0 7px 0 #a5720f, 0 12px 26px rgba(255,210,77,0.35);
+    -webkit-tap-highlight-color: transparent; touch-action: none;
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+  }
+  #btn-drop:active:not(:disabled), #btn-drop.press { transform: translateY(6px); box-shadow: 0 1px 0 #a5720f, 0 5px 14px rgba(255,210,77,0.3); }
+  #btn-drop:disabled { filter: grayscale(0.5) brightness(0.7); cursor: default; box-shadow: 0 3px 0 #6b4a0a; }
+
+  /* prize-bank strip */
+  #prizebank {
+    display: flex; gap: 7px; overflow-x: auto; padding: 4px 2px 8px; min-height: 58px;
+    scrollbar-width: thin;
+  }
+  #prizebank .pb-empty { font-family: var(--ar-mono); font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ar-muted); align-self: center; padding: 0 6px; }
+  .pb-chip {
+    flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: var(--ar-card); border: 1px solid var(--ar-border-hi); border-radius: 10px; padding: 5px 7px 4px;
+    animation: arPop 0.4s cubic-bezier(0.2,2,0.4,1);
+  }
+  .pb-chip.gold { border-color: rgba(255,214,10,0.55); background: var(--ar-gold-dim); }
+  .pb-chip canvas { image-rendering: pixelated; }
+  .pb-chip .lbl { max-width: 62px; font-family: var(--ar-mono); font-size: 9px; letter-spacing: 0.4px; color: var(--ar-text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .claw-hint-row { font-family: var(--ar-mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--ar-muted); text-align: center; margin: 4px 0 0; }
+  @media (hover: none) { .claw-kbd { display: none; } }
+  @media (max-width: 480px) { .deck-move { width: 56px; } #btn-drop { font-size: 19px; } }
+  /* During a question the mute FAB must never sit over an answer button — park it
+     top-right, clear of the option list. */
+  body.claw-q .ar-mute { bottom: auto; top: calc(var(--nav-h, 68px) + 10px); right: 12px; }
+</style>
+<link rel="canonical" href="https://aistudymethod.co.uk/classcraft/quizzes/claw.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AI Study Method">
+<meta property="og:title" content="The Claw — AI Study Method">
+<meta property="og:description" content="Play this revision game on the AI Study Method Subjects Arcade — retro games across every subject, level and exam board. Can you beat the score?">
+<meta property="og:url" content="https://aistudymethod.co.uk/classcraft/quizzes/claw.html">
+<meta property="og:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Claw — AI Study Method">
+<meta name="twitter:description" content="Grab the plushie, name the term. A free revision claw machine on the AI Study Method Subjects Arcade.">
+<meta name="twitter:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Velvet Revision</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script src="share-score.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const esc = Arcade.escapeHtml;
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const DEBUG = params.get('debug') === '1';
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  Arcade.mountMuteButton();
+  Arcade.maybeShowChallenge && Arcade.maybeShowChallenge();
+
+  if (!stem) {
+    root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  const [spec, bank] = await Promise.all([
+    Arcade.fetchSpecJson(stem, '../adventures/_specs'),
+    Arcade.fetchSpecJson(stem, '../evaluate/misconception-banks'),
+  ]);
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const concepts = ((spec && spec.concepts) || [])
+    .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  // Distractor pool from the misconception bank — but only DEFINITION-shaped
+  // strings. Banks contain junk like "22", "44", "Phenotype", "In the cell
+  // membrane"; a good distractor must read like a definition, so require a
+  // decent length, a space, and that it is not purely numeric.
+  const isDefShaped = s => typeof s === 'string' && s.trim().length >= 20 && /\s/.test(s) && !/^[\d\s.,%-]+$/.test(s);
+  const bankMisc = (((bank && bank.items) || [])
+    .flatMap(it => [it && it.misconception, it && it.random_wrong])
+    .filter(isDefShaped));
+
+  // Quality gate — need at least 4 authored definitions to build a 4-way question.
+  if (!spec || concepts.length < 4) {
+    root.innerHTML =
+      '<div class="ar-badge">V · Grab · The Claw</div>' +
+      '<h1 class="ar-title">' + esc(topic) + '</h1>' +
+      '<p class="ar-sub">The Claw fills the cabinet with plushie versions of this topic&rsquo;s key terms &mdash; it needs a full set of authored definitions before it can open for play.</p>' +
+      '<div class="ar-meta">' + esc([level, subj, 'In production'].filter(Boolean).join(' · ')) + '</div>' +
+      '<div class="ar-card" style="text-align:center;padding:40px 28px;">' +
+        '<div style="font-size:48px;line-height:1;margin-bottom:14px">🕹️</div>' +
+        '<h2 style="font-size:1.3rem;margin:0 0 8px">Cabinet being stocked</h2>' +
+        '<p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">The Claw needs at least four authored concept definitions for this exact topic. That set has not been written at the required depth yet.</p>' +
+        '<a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>' +
+      '</div>';
+    return;
+  }
+
+  const BEST_KEY = 'aism-claw-best:' + stem;
+
+  /* ======================================================================
+     PIXEL PLUSHIE SPRITES — 14x14 hand-drawn maps (own designs, arcade
+     palette, 1px dark outline). 6 distinct toys.
+     ====================================================================== */
+  const PAL = {
+    K: '#141235', E: '#141235',        // outline + eyes (deep navy)
+    W: '#f6f2ff', o: '#c67b3a',        // light / teddy brown
+    Y: '#ffd24d', R: '#ff5f8a',        // yellow / heart pink
+    L: '#8b7bff', C: '#5cffe4', G: '#5fe07a', // lavender / cyan / green
+  };
+  // Golden remap — hardest term reads unmistakably as the jackpot plushie.
+  const GOLD = {
+    K: '#3a2c04', E: '#241a02',
+    W: '#fff6cf', o: '#e0a021',
+    Y: '#ffe27a', R: '#ffcf4a',
+    L: '#ffcf4a', C: '#ffe089', G: '#ffcf4a',
+  };
+  // Dull remap — "stuffing" plushies that fill the machine but carry no term.
+  // Muted slate so they read as background filler, never competing with a real toy.
+  const DULL = {
+    K: '#211f3e', E: '#211f3e',
+    W: '#8b90b8', o: '#5b6088',
+    Y: '#7a7ea6', R: '#7d6f97',
+    L: '#6a6f9a', C: '#6f88a0', G: '#6b8a86',
+  };
+  const SPRITES = {
+    teddy: [
+      '...KK....KK...', '..KooK..KooK..', '..KooKKKKooK..', '.KKooooooooKK.',
+      '.KooooooooooK.', '.KoEooooooEoK.', '.KoooKWWKoooK.', '.KoooWWWWoooK.',
+      '..KooooooooK..', '..KWWWWWWWWK..', '.KoWWWWWWWWoK.', '.KooWWWWWWooK.',
+      '..KooK..KooK..', '..KKKK..KKKK..',
+    ],
+    star: [
+      '......KK......', '.....KYYK.....', '.....KYYK.....', '....KYYYYK....',
+      'KKKKYYYYYYKKKK', '.KYYYYYYYYYYK.', '..KYYEYYEYYK..', '..KYYYYYYYYK..',
+      '...KYYWWYYK...', '...KYYYYYYK...', '..KYYK..KYYK..', '.KYYK....KYYK.',
+      '.KYK......KYK.', '..K........K..',
+    ],
+    heart: [
+      '..KKK..KKK....', '.KRRRKKRRRK...', 'KRRRRRRRRRRK..', 'KRRWRRRRRRRK..',
+      'KRRWRRRRRRRRK.', 'KRRRRRRRRRRRK.', '.KRRRRRRRRRRK.', '..KRRRRRRRRK..',
+      '...KRRRRRRK...', '....KRRRRK....', '.....KRRK.....', '......KK......',
+      '..............', '..............',
+    ],
+    ghost: [
+      '....KKKKKK....', '..KKLLLLLLKK..', '.KLLLLLLLLLLK.', '.KLLLLLLLLLLK.',
+      'KLLWWLLLLWWLLK', 'KLWWWWLLWWWWLK', 'KLWWEWLLWWEWLK', 'KLLLLLLLLLLLLK',
+      'KLLLLLLLLLLLLK', 'KLLLLLLLLLLLLK', 'KLLLLLLLLLLLLK', 'KLKKLLKKLLKKLK',
+      '.K..KK..KK..K.', '..............',
+    ],
+    robot: [
+      '...K....K.....', '...K....K.....', '..KKKKKKKK....', '.KCCCCCCCCK...',
+      'KCCCCCCCCCCK..', 'KCKWWCCWWKCK..', 'KCKWECCEWKCK..', 'KCCCCCCCCCCK..',
+      'KCCCKKKKCCCK..', 'KCCCCCCCCCCK..', '.KKCCCCCCKK...', '..KCCCCCCK....',
+      '..KCK..KCK....', '..KKK..KKK....',
+    ],
+    dino: [
+      '.........KKK..', '........KGGGK.', '.KKK...KGGGGGK', 'KGGGK.KGGWEGGK',
+      'KGGGGKKGGGGGGK', 'KGGGGGGGGGGGGK', '.KGGGGGGGGGGGK', '..KGGGGGGGGGGK',
+      '..KGGGGGGGGKK.', '..KGGGGGGGGK..', '..KGGKKGGK....', '..KGK..KGK....',
+      '..KKK..KKK....', '..............',
+    ],
+  };
+  const SPRITE_KEYS = Object.keys(SPRITES);
+  const SPRITE_N = 14;
+
+  // Draw a sprite centred at (cx,cy). s = pixel size. gold + blink + dull options.
+  function drawSprite(ctx, key, cx, cy, s, gold, blink, dull) {
+    const map = SPRITES[key]; if (!map) return;
+    const pal = dull ? DULL : (gold ? GOLD : PAL);
+    const half = (SPRITE_N * s) / 2;
+    const ox = cx - half, oy = cy - half;
+    for (let r = 0; r < map.length; r++) {
+      const row = map[r];
+      for (let c = 0; c < row.length; c++) {
+        const ch = row[c];
+        if (ch === '.') continue;
+        if (ch === 'E' && blink) {
+          ctx.fillStyle = pal.K;
+          ctx.fillRect(ox + c * s, oy + (r + 0.42) * s, s, Math.max(1, s * 0.34));
+          continue;
+        }
+        ctx.fillStyle = pal[ch] || '#fff';
+        ctx.fillRect(ox + c * s, oy + r * s, s + 0.4, s + 0.4);
+      }
+    }
+  }
+
+  /* ======================================================================
+     WORLD GEOMETRY (fixed logical coordinate space, letterboxed to fit)
+     ====================================================================== */
+  const LW = 600, LH = 820;
+  const CAB = { x0: 34, y0: 42, x1: 566, y1: 782 };
+  const MARQ = { y0: 54, y1: 150 };
+  const GX0 = 70, GY0 = 182, GX1 = 466, GY1 = 662;   // glass interior (floor raised so the pile reads stocked)
+  const CH = { x0: 484, x1: 556, top: 182, bot: 662, cx: 520 }; // prize chute
+  const RAIL_Y = 166;
+  const GANTRY_MIN = GX0 + 26, GANTRY_MAX = CH.cx;
+  const IDLE_L = 108, GRAB_Y = GY1 - 42;
+
+  /* ======================================================================
+     STATE
+     ====================================================================== */
+  let toys = [];
+  let total = 0, goldenTerm = null;
+  let credits = 10, score = 0, streak = 0, bestStreak = 0;
+  let bankedCount = 0, emptyGrabs = 0;
+  let banked = [];                 // banked term strings (for hook/tests)
+  let state = 'boot';
+  let stateT = 0;
+
+  const gantry = { x: (GANTRY_MIN + GANTRY_MAX) / 2, vx: 0 };
+  let moveDir = 0;                 // -1 / 0 / +1 from held controls
+
+  // rope (verlet chain) hanging from the gantry carriage
+  const ROPE_N = 5;
+  let rope = [];
+  let winchL = IDLE_L, winchTarget = IDLE_L;
+  let clawOpen = 1;                // 1 = wide open, 0 = shut
+  let clawTarget = 1;
+  const HOLD_DIST = 30;
+
+  let held = null;                 // toy currently gripped
+  let currentToy = null;          // toy in the active question
+  let bankFall = null;            // toy animating down the chute
+  let corrText = '';
+  let shakeMag = 0, shakeX = 0, shakeY = 0;
+  let qCorrectIdx = 0, qOpts = [];
+  let timerCtl = null;
+  let qStartMs = 0;
+  const Q_MS = 12000;
+  let answerCorrect = false;   // outcome of the reveal, consumed by the 'reveal' state
+
+  const EMPTY_LINES = [
+    'The claw came back empty. Aim matters.',
+    'So close — a fistful of nothing.',
+    'Whiff! Line it up and try again.',
+    'Empty grip. The pile is laughing.',
+  ];
+
+  /* ---- physics tunables ---- */
+  const H = 1 / 120;               // fixed timestep
+  const GRAV = 2100;               // logical u/s^2
+  const AIR = 0.992;
+  const REST = 0.35;               // wall/floor restitution
+  const FRICT = 0.84;
+  const CLAW_R = 20;               // claw head disturbance radius
+  const SLEEP_SPEED = 3.2;         // u/s below which a toy may sleep
+  const swayScale = reduced ? 0.35 : 1;
+
+  /* ======================================================================
+     BUILD THE TOY PILE
+     ====================================================================== */
+  function pickTerms() {
+    const chosen = Arcade.shuffle(concepts).slice(0, Math.min(10, concepts.length));
+    // Golden = hardest term = longest definition.
+    let gi = 0;
+    for (let i = 1; i < chosen.length; i++) {
+      if (String(chosen[i].def).length > String(chosen[gi].def).length) gi = i;
+    }
+    goldenTerm = chosen[gi].term;
+    return chosen.map((c, i) => ({ concept: c, golden: i === gi }));
+  }
+
+  function makeToys() {
+    const picked = pickTerms();
+    total = picked.length;
+    // Fill the cabinet so it looks STOCKED: with only 5-6 real terms we add
+    // non-term "stuffing" plushies (duller, no tag, not worth points). Target
+    // a full-looking heap of ~10 plushies across two rows.
+    const STOCK = 10;
+    const stuffN = Math.max(0, Math.min(6, STOCK - picked.length));
+    const specs = picked.map(p => ({ term: p.concept.term, def: p.concept.def, golden: p.golden, stuffing: false }));
+    for (let s = 0; s < stuffN; s++) specs.push({ term: '', def: '', golden: false, stuffing: true });
+    const specsShuf = Arcade.shuffle(specs);
+    const n = specsShuf.length;
+
+    // Lay out across the full floor width in stacked rows so they heap 2-3 high.
+    const perRow = Math.min(5, Math.max(3, Math.ceil(n / 2)));
+    const usable = (GX1 - GX0) - 76;
+    toys = specsShuf.map((p, i) => {
+      const r = 31 + Math.random() * 6;
+      const col = i % perRow, rowN = Math.floor(i / perRow);
+      const x = GX0 + 38 + (usable * (col + 0.5)) / perRow + (Math.random() - 0.5) * 20;
+      const y = GY0 + r + 20 + rowN * (r * 1.35) + Math.random() * 8;
+      return {
+        i, x, y, px: x + (Math.random() - 0.5) * 2, py: y,
+        r,
+        term: p.term, def: p.def, golden: p.golden, stuffing: p.stuffing,
+        sprite: SPRITE_KEYS[(i + (p.stuffing ? 3 : 0)) % SPRITE_KEYS.length],
+        state: 'pile',            // pile | held | banking
+        status: 'fresh',          // fresh | wrong | banked-clean | banked-redeemed
+        sleep: false, slow: 0,
+        blink: 0, blinkNext: 1 + Math.random() * 5,
+        vlast2: 0,
+      };
+    });
+  }
+
+  function makeRope() {
+    rope = [];
+    for (let i = 0; i < ROPE_N; i++) {
+      const y = RAIL_Y + (winchL / (ROPE_N - 1)) * i;
+      rope.push({ x: gantry.x, y, px: gantry.x, py: y });
+    }
+  }
+
+  function clawHead() { return rope[ROPE_N - 1]; }
+
+  // Run the sim forward ~2s with no rendering so the pile is pre-settled on the
+  // first painted frame (no visible drop-in chaos on load or replay).
+  function warmUp() {
+    for (let i = 0; i < 240; i++) physicsStep();
+  }
+
+  /* ======================================================================
+     PHYSICS
+     ====================================================================== */
+  function integrateToy(t) {
+    if (t.state !== 'pile') return;
+    if (t.sleep) return;
+    const vx = (t.x - t.px) * AIR, vy = (t.y - t.py) * AIR;
+    t.px = t.x; t.py = t.y;
+    t.x += vx; t.y += vy + GRAV * H * H;
+  }
+
+  function toyBounds(t) {
+    let vx = t.x - t.px, vy = t.y - t.py;
+    if (t.x < GX0 + t.r) { t.x = GX0 + t.r; t.px = t.x + vx * REST; t.py = t.y - vy * FRICT; }
+    else if (t.x > GX1 - t.r) { t.x = GX1 - t.r; t.px = t.x + vx * REST; t.py = t.y - vy * FRICT; }
+    vx = t.x - t.px; vy = t.y - t.py;
+    if (t.y > GY1 - t.r) { t.y = GY1 - t.r; t.py = t.y + vy * REST; t.px = t.x - vx * FRICT; }
+    else if (t.y < GY0 + t.r) { t.y = GY0 + t.r; t.py = t.y + vy * REST; }
+  }
+
+  function collidePair(a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    let d2 = dx * dx + dy * dy;
+    const rr = a.r + b.r;
+    if (d2 >= rr * rr) return;
+    let d = Math.sqrt(d2);
+    let nx, ny;
+    if (d < 0.0001) { nx = 1; ny = 0; d = 0.0001; } else { nx = dx / d; ny = dy / d; }
+    const overlap = (rr - d) * 0.5 * 0.8;
+    a.x -= nx * overlap; a.y -= ny * overlap;
+    b.x += nx * overlap; b.y += ny * overlap;
+    a.sleep = false; b.sleep = false;
+  }
+
+  function clawDisturb() {
+    // The plunging claw shoves toys aside.
+    if (state !== 'dropping' && state !== 'anticip' && state !== 'closing') return;
+    const hd = clawHead();
+    for (const t of toys) {
+      if (t.state !== 'pile') continue;
+      const dx = t.x - hd.x, dy = t.y - hd.y;
+      let d2 = dx * dx + dy * dy;
+      const rr = t.r + CLAW_R;
+      if (d2 >= rr * rr) continue;
+      let d = Math.sqrt(d2) || 0.001;
+      const nx = dx / d, ny = dy / d, ov = rr - d;
+      t.x += nx * ov * 0.6; t.y += ny * ov * 0.5;
+      t.sleep = false;
+    }
+  }
+
+  function integrateRope() {
+    for (let i = 1; i < ROPE_N; i++) {
+      const n = rope[i];
+      const vx = (n.x - n.px) * 0.98, vy = (n.y - n.py) * 0.98;
+      n.px = n.x; n.py = n.y;
+      n.x += vx; n.y += vy + GRAV * 0.55 * H * H;
+    }
+    const seg = winchL / (ROPE_N - 1);
+    for (let it = 0; it < 10; it++) {
+      rope[0].x = gantry.x; rope[0].y = RAIL_Y;
+      for (let i = 0; i < ROPE_N - 1; i++) {
+        const a = rope[i], b = rope[i + 1];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.hypot(dx, dy) || 0.001;
+        const diff = (d - seg) / d;
+        if (i === 0) { b.x -= dx * diff; b.y -= dy * diff; }
+        else { const hx = dx * diff * 0.5, hy = dy * diff * 0.5; a.x += hx; a.y += hy; b.x -= hx; b.y -= hy; }
+      }
+      // keep the claw hanging mostly below the gantry (limit sideways drift)
+      const hd = rope[ROPE_N - 1];
+      const maxDrift = 40 * swayScale;
+      if (hd.x - gantry.x > maxDrift) hd.x = gantry.x + maxDrift;
+      if (hd.x - gantry.x < -maxDrift) hd.x = gantry.x - maxDrift;
+    }
+  }
+
+  function integrateHeld() {
+    if (!held) return;
+    const t = held;
+    const vx = (t.x - t.px) * 0.985, vy = (t.y - t.py) * 0.985;
+    t.px = t.x; t.py = t.y;
+    t.x += vx; t.y += vy + GRAV * H * H;
+    // pendulum constraint to the claw mouth
+    const hd = clawHead();
+    for (let it = 0; it < 6; it++) {
+      const dx = t.x - hd.x, dy = t.y - (hd.y + 6);
+      const d = Math.hypot(dx, dy) || 0.001;
+      const diff = (d - HOLD_DIST) / d;
+      t.x -= dx * diff; t.y -= dy * diff;
+    }
+  }
+
+  function integrateBankFall() {
+    if (!bankFall) return;
+    const t = bankFall;
+    const vx = (t.x - t.px) * 0.99, vy = (t.y - t.py) * 0.99;
+    t.px = t.x; t.py = t.y;
+    t.x += vx; t.y += vy + GRAV * H * H;
+    // stay inside the chute walls
+    if (t.x < CH.x0 + t.r) { t.x = CH.x0 + t.r; t.px = t.x + (t.x - t.px) * 0.4; }
+    if (t.x > CH.x1 - t.r) { t.x = CH.x1 - t.r; t.px = t.x + (t.x - t.px) * 0.4; }
+    if (t.y > CH.bot - t.r) {
+      t.y = CH.bot - t.r; const v = t.y - t.py; t.py = t.y + v * 0.42;
+      if (!t.bounced) {
+        t.bounced = true;
+        shakeMag = reduced ? 3 : 9;             // screen-shake ONLY on the chute drop-in
+        Arcade.sfx.coin();
+        Arcade.vibrate(20);
+      } else if (Math.abs(v) < 3) {
+        t.settle = (t.settle || 0) + 1;
+      }
+    }
+  }
+
+  function physicsStep() {
+    for (const t of toys) integrateToy(t);
+    clawDisturb();
+    for (let it = 0; it < 6; it++) {
+      for (let i = 0; i < toys.length; i++) {
+        const t = toys[i];
+        if (t.state !== 'pile') continue;
+        toyBounds(t);
+        for (let j = i + 1; j < toys.length; j++) {
+          if (toys[j].state !== 'pile') continue;
+          collidePair(t, toys[j]);
+        }
+      }
+    }
+    // sleep bookkeeping
+    for (const t of toys) {
+      if (t.state !== 'pile') continue;
+      const sp = Math.hypot(t.x - t.px, t.y - t.py) / H;
+      t.vlast2 = sp * sp;
+      // resting damping — bleed residual jitter so the pile settles quietly
+      if (sp < 26) { const k = 0.28; t.px += (t.x - t.px) * k; t.py += (t.y - t.py) * k; }
+      if (sp < SLEEP_SPEED) { t.slow += H; if (t.slow > 0.3) { t.sleep = true; t.px = t.x; t.py = t.y; } }
+      else t.slow = 0;
+    }
+    integrateRope();
+    integrateHeld();
+    integrateBankFall();
+  }
+
+  /* ======================================================================
+     STATE MACHINE / ANIMATION (per-frame, dt seconds)
+     ====================================================================== */
+  function setState(s) { state = s; stateT = 0; }
+
+  function stateStep(dt) {
+    stateT += dt;
+
+    // winch + claw easing
+    winchL += (winchTarget - winchL) * Math.min(1, dt * 7.5);
+    clawOpen += (clawTarget - clawOpen) * Math.min(1, dt * 12);
+
+    // gantry momentum
+    if (state === 'idle') {
+      const acc = 1500;
+      gantry.vx += moveDir * acc * dt;
+      gantry.vx *= Math.pow(0.0025, dt);   // strong damping when key released
+    }
+
+    // shake decay
+    if (shakeMag > 0.1) {
+      shakeX = (Math.random() * 2 - 1) * shakeMag;
+      shakeY = (Math.random() * 2 - 1) * shakeMag;
+      shakeMag *= Math.pow(0.02, dt);
+    } else { shakeMag = 0; shakeX = 0; shakeY = 0; }
+
+    // blink timers
+    for (const t of toys) {
+      t.blinkNext -= dt;
+      if (t.blink > 0) { t.blink -= dt; }
+      else if (t.blinkNext <= 0) { t.blink = 0.12; t.blinkNext = 2.5 + Math.random() * 5; }
+    }
+
+    switch (state) {
+      case 'idle':
+        winchTarget = IDLE_L; clawTarget = 1;
+        gantry.x = Math.max(GANTRY_MIN, Math.min(GANTRY_MAX, gantry.x + gantry.vx * dt));
+        if (gantry.x <= GANTRY_MIN || gantry.x >= GANTRY_MAX) gantry.vx *= -0.3;
+        break;
+
+      case 'dropping':
+        winchTarget = GRAB_Y - RAIL_Y; clawTarget = 1;
+        if (clawHead().y >= GRAB_Y - 6 || winchL >= (GRAB_Y - RAIL_Y) - 3) setState('anticip');
+        break;
+
+      case 'anticip':
+        winchTarget = GRAB_Y - RAIL_Y; clawTarget = 1;
+        // little bob
+        winchTarget += Math.sin(stateT * 22) * 4 * swayScale;
+        if (stateT > 0.34) { Arcade.sfx.tick(); setState('closing'); }
+        break;
+
+      case 'closing':
+        clawTarget = 0;
+        if (stateT > 0.24) resolveCatch();
+        break;
+
+      case 'lifting':
+        winchTarget = IDLE_L; clawTarget = 0;
+        if (winchL <= IDLE_L + 8) { if (held) startQuestion(); }
+        break;
+
+      case 'question':
+        winchTarget = IDLE_L; clawTarget = 0;
+        break;
+
+      case 'reveal':
+        // brief verdict beat, then route to chute (correct) or slacken (wrong)
+        winchTarget = IDLE_L; clawTarget = 0;
+        if (stateT > 0.6) {
+          const ov = document.getElementById('q-overlay');
+          if (ov) ov.classList.remove('up');
+          document.body.classList.remove('claw-q');
+          if (answerCorrect) setState('toChute');
+          else { setState('wrongRelease'); showCorrection(); }
+        }
+        break;
+
+      case 'toChute': {
+        winchTarget = IDLE_L; clawTarget = 0;
+        const d = CH.cx - gantry.x;
+        gantry.x += d * Math.min(1, dt * 3.2);
+        if (Math.abs(d) < 4) { gantry.x = CH.cx; releaseIntoChute(); }
+        break;
+      }
+
+      case 'chuteFall':
+        winchTarget = IDLE_L; clawTarget = 1;
+        if (bankFall && (bankFall.settle > 6 || stateT > 2.4)) { bankFall = null; afterResolve(); }
+        break;
+
+      case 'wrongRelease':
+        winchTarget = IDLE_L; clawTarget = 1;   // fingers slacken open
+        if (held && stateT > 0.32) dropHeldToPile();
+        if (!held && stateT > 0.5) { /* wait for tap */ }
+        break;
+
+      case 'empty':
+        winchTarget = IDLE_L; clawTarget = 1;
+        if (stateT > 1.15) { hideToast(); afterResolve(); }
+        break;
+    }
+  }
+
+  /* ======================================================================
+     ACTIONS
+     ====================================================================== */
+  function dropClaw() {
+    if (state !== 'idle') return;
+    Arcade.sfx.click();
+    document.getElementById('btn-drop').classList.add('press');
+    setTimeout(() => document.getElementById('btn-drop').classList.remove('press'), 130);
+    gantry.vx = 0;
+    setState('dropping');
+    Arcade.sfx.swoosh();
+  }
+
+  function resolveCatch() {
+    const hd = clawHead();
+    let best = null, bestD = Infinity;
+    for (const t of toys) {
+      if (t.state !== 'pile') continue;
+      const dx = t.x - hd.x, dy = t.y - hd.y;
+      const under = dy > -t.r * 0.6;
+      const reach = t.r + 20;
+      if (Math.abs(dx) <= reach && under && dy < t.r + 46) {
+        const d = Math.hypot(dx, dy);
+        if (d < bestD) { bestD = d; best = t; }
+      }
+    }
+    if (best && best.stuffing) {
+      // grabbed a filler plushie — it slips straight out, no question, no penalty
+      best.sleep = false;
+      best.px = best.x + (Math.random() - 0.5) * 3; best.py = best.y - 5;
+      Arcade.sfx.wrong();
+      Arcade.vibrate(20);
+      showToast('That one is just stuffing — no credit lost.');
+      announce.textContent = 'That plushie was just stuffing. No penalty. Aim for a labelled toy.';
+      setState('empty');
+    } else if (best) {
+      held = best; best.state = 'held'; best.sleep = false;
+      best.x = hd.x; best.y = hd.y + HOLD_DIST; best.px = best.x; best.py = best.y;
+      Arcade.sfx.click();
+      setState('lifting');
+    } else {
+      // empty grab
+      emptyGrabs++;
+      credits = Math.max(0, credits - 1);
+      Arcade.sfx.timeup();
+      Arcade.vibrate([30, 30, 30]);
+      showToast(EMPTY_LINES[Math.floor(Math.random() * EMPTY_LINES.length)]);
+      announce.textContent = 'Empty grab. Credit lost. ' + credits + ' left.';
+      setState('empty');
+    }
+  }
+
+  function buildOptions(toy) {
+    const correct = toy.def;
+    const pool = [];
+    const seen = new Set([correct]);
+    // golden toy pulls distractors from the misconception bank first
+    if (toy.golden) {
+      for (const m of Arcade.shuffle(bankMisc)) {
+        if (!seen.has(m)) { seen.add(m); pool.push(m); }
+        if (pool.length >= 3) break;
+      }
+    }
+    for (const c of Arcade.shuffle(concepts)) {
+      if (pool.length >= 3) break;
+      if (c.def !== correct && !seen.has(c.def)) { seen.add(c.def); pool.push(c.def); }
+    }
+    for (const m of Arcade.shuffle(bankMisc)) {
+      if (pool.length >= 3) break;
+      if (!seen.has(m)) { seen.add(m); pool.push(m); }
+    }
+    const opts = Arcade.shuffle(pool.slice(0, 3).concat([correct]));
+    qCorrectIdx = opts.indexOf(correct);
+    qOpts = opts;
+    return opts;
+  }
+
+  function startQuestion() {
+    currentToy = held;
+    const toy = held;
+    const opts = buildOptions(toy);
+    setState('question');
+    document.getElementById('cab-wrap').classList.remove('aim');
+    const ov = document.getElementById('q-overlay');
+    const goldTag = toy.golden ? ' <span class="gold">★ GOLDEN</span>' : '';
+    ov.innerHTML =
+      '<div class="q-ask">Which is the definition?</div>' +
+      '<h3 class="q-term">' + esc(toy.term) + goldTag + '</h3>' +
+      '<div id="q-timer"><i></i></div>' +
+      '<div class="q-opts">' +
+        opts.map((o, i) =>
+          '<button type="button" class="q-opt" data-idx="' + i + '">' +
+          '<span class="k">' + (i + 1) + '</span><span>' + esc(o) + '</span></button>'
+        ).join('') +
+      '</div>';
+    ov.classList.add('up');
+    document.body.classList.add('claw-q');   // park the mute FAB clear of the answers
+    ov.querySelectorAll('.q-opt').forEach(b =>
+      b.addEventListener('click', () => answerQuestion(parseInt(b.dataset.idx, 10))));
+    announce.textContent = 'Question: which is the definition of ' + toy.term + '?';
+
+    qStartMs = performance.now();
+    const fill = ov.querySelector('#q-timer i');
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    timerCtl = Arcade.timer(fill, Q_MS, { onEnd: () => answerQuestion(-1, true) });
+  }
+
+  function answerQuestion(idx, timedOut) {
+    if (state !== 'question') return;
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    const toy = currentToy;
+    const correct = !timedOut && idx === qCorrectIdx;
+    const remain = Math.max(0, Q_MS - (performance.now() - qStartMs));
+
+    const ov = document.getElementById('q-overlay');
+    ov.querySelectorAll('.q-opt').forEach((b, i) => {
+      b.disabled = true;
+      if (i === qCorrectIdx) b.classList.add('correct');
+      else if (i === idx) b.classList.add('wrong');
+      else b.classList.add('dim');
+    });
+
+    if (correct) {
+      const wasRedeem = toy.status === 'wrong';
+      streak++;
+      bestStreak = Math.max(bestStreak, streak);
+      const speedBonus = Math.max(0, Math.min(100, Math.round(100 * remain / Q_MS)));
+      const streakMult = streak >= 3 ? Math.min(2, 1.5 + 0.25 * (streak - 3)) : 1;
+      const goldF = toy.golden ? 2 : 1;
+      const redeemF = wasRedeem ? 0.5 : 1;
+      const pts = Math.round((200 + speedBonus) * streakMult * goldF * redeemF);
+      score += pts;
+      toy.status = wasRedeem ? 'banked-redeemed' : 'banked-clean';
+      bankedCount++;
+      banked.push(toy.term);
+      addPrizeChip(toy);
+      Arcade.sfx.correct(streak);
+      Arcade.streakCall(streak);
+      Arcade.confettiBurst({ count: 36 });
+      Arcade.vibrate(20);
+      announce.textContent = 'Correct. Plus ' + pts + ' points.';
+      answerCorrect = true;
+      setState('reveal');
+    } else {
+      streak = 0;
+      toy.status = 'wrong';           // now redeemable at half points
+      credits = Math.max(0, credits - 1);   // a wrong call wastes the trip — costs a credit
+      Arcade.sfx.wrong();
+      Arcade.vibrate([40, 30, 40]);
+      corrText = '<b>' + esc(toy.term) + '</b>: ' + esc(toy.def);
+      announce.textContent = (timedOut ? 'Time up. ' : 'Wrong. ') + toy.term + ' means ' + toy.def
+        + ' Minus one credit — ' + credits + ' left.';
+      answerCorrect = false;
+      setState('reveal');
+    }
+  }
+
+  function releaseIntoChute() {
+    // detach the held toy into the chute for the bounce-in
+    const t = held;
+    held = null;
+    if (!t) { afterResolve(); return; }
+    t.state = 'banking';
+    bankFall = t;
+    const hd = clawHead();
+    t.x = CH.cx; t.y = Math.max(CH.top + t.r, hd.y);
+    t.px = t.x - 1; t.py = t.y - 2; t.bounced = false; t.settle = 0;
+    clawTarget = 1;   // release: fingers open
+    currentToy = null;
+    // remove from toys list once it starts banking (already counted)
+    toys = toys.filter(x => x !== t);
+    setState('chuteFall');
+  }
+
+  function dropHeldToPile() {
+    const t = held; held = null;
+    if (!t) return;
+    const hd = clawHead();
+    t.state = 'pile'; t.sleep = false; t.slow = 0;
+    t.x = hd.x; t.y = hd.y + HOLD_DIST;
+    t.px = t.x - (Math.random() - 0.5) * 3; t.py = t.y - 6;  // small tumble velocity
+    Arcade.sfx.swoosh();
+    currentToy = null;
+  }
+
+  function showCorrection() {
+    const el = document.getElementById('corr');
+    el.innerHTML =
+      '<div class="lead">✗ Not quite — into the pile it goes</div>' +
+      '<div class="body">' + corrText + '</div>' +
+      '<div class="tap">Tap to continue &middot; it stays grabbable (half points)</div>';
+    el.classList.add('up');
+  }
+  function dismissCorrection() {
+    const el = document.getElementById('corr');
+    if (!el.classList.contains('up')) return;
+    el.classList.remove('up');
+    if (held) dropHeldToPile();   // if tapped before the tumble finished, release now
+    afterResolve();
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+  }
+  function hideToast() { document.getElementById('toast').classList.remove('show'); }
+
+  function afterResolve() {
+    document.body.classList.remove('claw-q');
+    if (state === 'ended') return;
+    if (credits <= 0 || bankedCount >= total) { endGame(); return; }
+    document.getElementById('cab-wrap').classList.add('aim');
+    setState('idle');
+    updateDropBtn();
+  }
+
+  function updateDropBtn() {
+    const b = document.getElementById('btn-drop');
+    if (b) b.disabled = (state !== 'idle');
+  }
+
+  /* ======================================================================
+     PRIZE BANK STRIP
+     ====================================================================== */
+  function addPrizeChip(toy) {
+    const bankEl = document.getElementById('prizebank');
+    const empty = bankEl.querySelector('.pb-empty');
+    if (empty) empty.remove();
+    const chip = document.createElement('div');
+    chip.className = 'pb-chip' + (toy.golden ? ' gold' : '');
+    const cv = document.createElement('canvas');
+    const px = 3, size = SPRITE_N * px;
+    cv.width = size; cv.height = size; cv.style.width = size + 'px'; cv.style.height = size + 'px';
+    drawSprite(cv.getContext('2d'), toy.sprite, size / 2, size / 2, px, toy.golden, false);
+    const lbl = document.createElement('div');
+    lbl.className = 'lbl'; lbl.textContent = toy.term; lbl.title = toy.term;
+    chip.appendChild(cv); chip.appendChild(lbl);
+    bankEl.appendChild(chip);
+    bankEl.scrollLeft = bankEl.scrollWidth;
+  }
+
+  /* ======================================================================
+     END CARD
+     ====================================================================== */
+  function endGame() {
+    setState('ended');
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    stopLoop();
+    const pct = total ? Math.round((bankedCount / total) * 100) : 0;
+    const grid = toys.length || bankedCount || emptyGrabs ? buildGrid() : '';
+    const goldenBanked = banked.some(t => t === goldenTerm);
+
+    let insight;
+    if (pct >= 95) insight = 'Cleared the cabinet. Every plushie in the machine was a term you can now define on demand — that is exactly what the exam rewards. Final boss: say each definition out loud without looking.';
+    else if (pct >= 60) insight = 'Strong haul. The plushies still in the pile are the terms worth a second run — grab them, name them, and clear the glass.';
+    else insight = 'The claw is unforgiving and so is recall. The terms you left behind are the ones to drill next — read their definitions, then come back and empty the machine.';
+
+    root.innerHTML =
+      '<div class="ar-badge">V · Grab · The Claw</div>' +
+      '<h1 class="ar-title">' + esc(topic) + '</h1>' +
+      '<div class="ar-meta">' + esc([level, subj, 'Results'].filter(Boolean).join(' · ')) + '</div>' +
+      '<div id="end"></div>';
+
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'The Claw',
+      gameEmoji: '🕹️',
+      topic: topic,
+      meta: [level, subj].filter(Boolean).join(' · '),
+      pct: pct,
+      big: score,
+      bigLabel: 'points',
+      rows: [
+        { v: bankedCount + '/' + total, l: 'plushies banked' },
+        { v: goldenBanked ? '★ yes' : '— no', l: 'golden toy' },
+        { v: '🔥 ' + bestStreak, l: 'best streak' },
+      ],
+      emojiGrid: grid,
+      bestKey: BEST_KEY,
+      bestValue: score,
+      bestSuffix: ' pts',
+      insight: insight,
+      shareLines: [
+        '🕹️ The Claw — ' + topic,
+        'Score ' + score + ' pts · ' + bankedCount + '/' + total + ' banked',
+        grid,
+      ],
+      share: {
+        subject: subj, level: level, bigLabel: 'POINTS',
+        statLine: '🧸 ' + bankedCount + '/' + total + ' banked  ·  🔥 best streak ' + bestStreak,
+      },
+      onAgain: restart,
+    });
+    announce.textContent = 'Game over. Score ' + score + ' points. You banked ' + bankedCount + ' of ' + total + ' — ' + pct + ' percent.';
+  }
+
+  function buildGrid() {
+    // per-toy final outcome, then empty-grab markers
+    const marks = [];
+    // banked toys already left the array with a status; reconstruct from all terms
+    // Track outcomes on every toy we ever created via a persistent registry.
+    for (const rec of REGISTRY) {
+      if (rec.stuffing) continue;   // stuffing plushies are not scored terms
+      if (rec.status === 'banked-clean') marks.push('🧸');
+      else if (rec.status === 'banked-redeemed') marks.push('🟨');
+      else marks.push('🟥');
+    }
+    for (let i = 0; i < emptyGrabs; i++) marks.push('⬛');
+    return marks.join('');
+  }
+
+  let REGISTRY = [];   // stable list of every toy (for the end grid)
+
+  function restart() {
+    // rebuild everything
+    credits = 10; score = 0; streak = 0; bestStreak = 0;
+    bankedCount = 0; emptyGrabs = 0; banked = [];
+    held = null; currentToy = null; bankFall = null;
+    makeToys();
+    REGISTRY = toys;         // registry shares references; statuses update in place
+    gantry.x = (GANTRY_MIN + GANTRY_MAX) / 2; gantry.vx = 0;
+    winchL = IDLE_L; winchTarget = IDLE_L; clawOpen = 1; clawTarget = 1;
+    makeRope();
+    warmUp();               // pre-settle so replay opens calm, not mid-drop
+    mountGame();
+    setState('idle');
+    updateDropBtn();        // mountGame ran while state was still 'ended' — re-enable now
+    startLoop();
+  }
+
+  /* ======================================================================
+     RENDER
+     ====================================================================== */
+  let canvas, ctx, S = 1, offX = 0, offY = 0;
+
+  function fit() {
+    const wrap = document.getElementById('cab-wrap');
+    const rect = wrap.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    const cw = rect.width, ch = rect.height;
+    S = Math.min(cw / LW, ch / LH);
+    offX = (cw - LW * S) / 2;
+    offY = (ch - LH * S) / 2;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    const cw = canvas.width / dpr, chh = canvas.height / dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#05040f';
+    ctx.fillRect(0, 0, cw, chh);
+
+    ctx.save();
+    ctx.translate(offX + shakeX, offY + shakeY);
+    ctx.scale(S, S);
+
+    // ---- cabinet body ----
+    let g = ctx.createLinearGradient(0, CAB.y0, 0, CAB.y1);
+    g.addColorStop(0, '#1a1340'); g.addColorStop(1, '#0d0a30');
+    ctx.fillStyle = g; rr(CAB.x0, CAB.y0, CAB.x1 - CAB.x0, CAB.y1 - CAB.y0, 26); ctx.fill();
+    // frame
+    ctx.lineWidth = 10; ctx.strokeStyle = '#7e6dff';
+    rr(CAB.x0 + 5, CAB.y0 + 5, CAB.x1 - CAB.x0 - 10, CAB.y1 - CAB.y0 - 10, 22); ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(180,160,255,0.5)';
+    rr(CAB.x0 + 11, CAB.y0 + 11, CAB.x1 - CAB.x0 - 22, CAB.y1 - CAB.y0 - 22, 18); ctx.stroke();
+
+    // ---- marquee ----
+    let mg = ctx.createLinearGradient(0, MARQ.y0, 0, MARQ.y1);
+    mg.addColorStop(0, '#241a5e'); mg.addColorStop(1, '#160f3d');
+    ctx.fillStyle = mg; rr(CAB.x0 + 22, MARQ.y0, CAB.x1 - CAB.x0 - 44, MARQ.y1 - MARQ.y0, 14); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,210,77,0.5)'; ctx.lineWidth = 2;
+    rr(CAB.x0 + 22, MARQ.y0, CAB.x1 - CAB.x0 - 44, MARQ.y1 - MARQ.y0, 14); ctx.stroke();
+    // marquee bulbs
+    for (let i = 0; i < 12; i++) {
+      const bx = CAB.x0 + 40 + i * ((CAB.x1 - CAB.x0 - 80) / 11);
+      ctx.fillStyle = (Math.floor(Date.now() / 220) + i) % 3 === 0 ? '#ffd24d' : 'rgba(255,210,77,0.35)';
+      ctx.beginPath(); ctx.arc(bx, MARQ.y0 + 8, 3.2, 0, 7); ctx.fill();
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '800 40px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#ffd24d';
+    ctx.shadowColor = 'rgba(255,210,77,0.65)'; ctx.shadowBlur = 18;
+    ctx.fillText('THE CLAW', LW / 2, MARQ.y0 + 52);
+    ctx.shadowBlur = 0;
+    // credits + score readouts
+    ctx.font = '700 15px "DM Mono", monospace';
+    ctx.textAlign = 'left'; ctx.fillStyle = '#5cffe4';
+    ctx.fillText('CREDITS ' + credits, CAB.x0 + 40, MARQ.y1 - 12);
+    ctx.textAlign = 'right'; ctx.fillStyle = '#ece8ff';
+    ctx.fillText('SCORE ' + score, CAB.x1 - 40, MARQ.y1 - 12);
+    ctx.textAlign = 'center';
+
+    // ---- glass box interior ----
+    let bg = ctx.createLinearGradient(0, GY0, 0, GY1);
+    bg.addColorStop(0, '#120e38'); bg.addColorStop(1, '#0a0826');
+    ctx.fillStyle = bg; ctx.fillRect(GX0, GY0, GX1 - GX0, GY1 - GY0);
+    // faint back-wall grid
+    ctx.strokeStyle = 'rgba(126,109,255,0.09)'; ctx.lineWidth = 1;
+    for (let x = GX0 + 30; x < GX1; x += 40) { ctx.beginPath(); ctx.moveTo(x, GY0); ctx.lineTo(x, GY1); ctx.stroke(); }
+    for (let y = GY0 + 30; y < GY1; y += 40) { ctx.beginPath(); ctx.moveTo(GX0, y); ctx.lineTo(GX1, y); ctx.stroke(); }
+    // floor lip
+    ctx.fillStyle = 'rgba(126,109,255,0.16)'; ctx.fillRect(GX0, GY1 - 8, GX1 - GX0, 8);
+
+    // ---- prize chute ----
+    let cg = ctx.createLinearGradient(CH.x0, 0, CH.x1, 0);
+    cg.addColorStop(0, '#07061a'); cg.addColorStop(0.5, '#0f0b33'); cg.addColorStop(1, '#07061a');
+    ctx.fillStyle = cg; ctx.fillRect(CH.x0, CH.top, CH.x1 - CH.x0, CH.bot - CH.top);
+    ctx.strokeStyle = 'rgba(126,109,255,0.4)'; ctx.lineWidth = 3;
+    ctx.strokeRect(CH.x0, CH.top, CH.x1 - CH.x0, CH.bot - CH.top);
+    // chute mouth glow at top
+    ctx.fillStyle = 'rgba(92,255,228,0.14)'; ctx.fillRect(CH.x0, CH.top, CH.x1 - CH.x0, 16);
+    ctx.save();
+    ctx.translate((CH.x0 + CH.x1) / 2, (CH.top + CH.bot) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.font = '700 13px "DM Mono", monospace'; ctx.fillStyle = 'rgba(255,210,77,0.6)';
+    ctx.fillText('PRIZES', 0, 0);
+    ctx.restore();
+
+    // ---- toys in the pile ----
+    for (const t of toys) {
+      if (t.state !== 'pile') continue;
+      drawToy(t, false);
+    }
+
+    // ---- rail + gantry + rope + claw ----
+    // rail beam
+    ctx.fillStyle = '#2a2160'; ctx.fillRect(GX0 - 6, RAIL_Y - 6, (CH.cx + 24) - (GX0 - 6), 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(GX0 - 6, RAIL_Y - 6, (CH.cx + 24) - (GX0 - 6), 2);
+    // rope
+    ctx.strokeStyle = '#b9b0e6'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(rope[0].x, rope[0].y);
+    for (let i = 1; i < ROPE_N; i++) ctx.lineTo(rope[i].x, rope[i].y);
+    ctx.stroke();
+    // gantry carriage
+    ctx.fillStyle = '#ffd24d';
+    rr(gantry.x - 22, RAIL_Y - 14, 44, 20, 5); ctx.fill();
+    ctx.fillStyle = '#a5720f'; ctx.fillRect(gantry.x - 16, RAIL_Y - 2, 32, 4);
+    // held toy dangles from claw (behind fingers)
+    if (held) drawToy(held, true);
+    // claw fingers
+    drawClaw();
+
+    // ---- banking toy in the chute ----
+    if (bankFall) drawToy(bankFall, false);
+
+    // ---- glass reflection streaks (front pane) ----
+    ctx.save();
+    ctx.globalAlpha = 0.06; ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.moveTo(GX0 + 40, GY0); ctx.lineTo(GX0 + 120, GY0); ctx.lineTo(GX0 + 40, GY1); ctx.lineTo(GX0 - 24, GY1); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(GX0 + 150, GY0); ctx.lineTo(GX0 + 185, GY0); ctx.lineTo(GX0 + 120, GY1); ctx.lineTo(GX0 + 90, GY1); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    // cyan corner glints
+    ctx.fillStyle = 'rgba(92,255,228,0.5)';
+    ctx.fillRect(GX0 + 4, GY0 + 4, 18, 3); ctx.fillRect(GX0 + 4, GY0 + 4, 3, 18);
+    // vignette
+    let vg = ctx.createRadialGradient(LW / 2, LH / 2, LH * 0.25, LW / 2, LH / 2, LH * 0.72);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.4)');
+    ctx.fillStyle = vg; ctx.fillRect(CAB.x0, CAB.y0, CAB.x1 - CAB.x0, CAB.y1 - CAB.y0);
+
+    ctx.restore();
+
+    // ---- screen-space toy tags (crisp, >=12px) ----
+    drawTags();
+  }
+
+  function drawToy(t, dangling) {
+    const px = (t.r * 2) / SPRITE_N;
+    // soft shadow
+    if (!dangling && t.state === 'pile') {
+      ctx.save(); ctx.globalAlpha = 0.28; ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.ellipse(t.x, Math.min(GY1 - 4, t.y + t.r * 0.9), t.r * 0.9, t.r * 0.3, 0, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+    drawSprite(ctx, t.sprite, t.x, t.y, px, t.golden, t.blink > 0, t.stuffing);
+    if (t.golden) {
+      // sparkle
+      ctx.fillStyle = 'rgba(255,240,180,0.9)';
+      const a = Date.now() / 300;
+      const sx = t.x + Math.cos(a) * t.r * 0.7, sy = t.y - t.r * 0.6 + Math.sin(a) * 4;
+      ctx.fillRect(sx - 1, sy - 4, 2, 8); ctx.fillRect(sx - 4, sy - 1, 8, 2);
+    }
+  }
+
+  function drawClaw() {
+    const hd = clawHead();
+    const spread = 16 + clawOpen * 18;    // fingers open wider when clawOpen high
+    ctx.strokeStyle = '#c9c0f0'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    // wrist knuckle
+    ctx.fillStyle = '#8b7bff';
+    ctx.beginPath(); ctx.arc(hd.x, hd.y, 9, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.beginPath(); ctx.arc(hd.x - 2, hd.y - 3, 3, 0, 7); ctx.fill();
+    // three fingers
+    for (let f = -1; f <= 1; f++) {
+      const openAmt = Math.max(0, Math.min(1, clawOpen));
+      const tipX = hd.x + f * spread;
+      const midX = hd.x + f * (spread * 0.55);
+      ctx.strokeStyle = '#c9c0f0';
+      ctx.beginPath();
+      ctx.moveTo(hd.x, hd.y + 4);
+      ctx.lineTo(midX, hd.y + 16);
+      ctx.lineTo(tipX, hd.y + 30 - openAmt * 4);
+      ctx.stroke();
+      // claw tip
+      ctx.fillStyle = '#ffd24d';
+      ctx.beginPath(); ctx.arc(tipX, hd.y + 30 - openAmt * 4, 3.4, 0, 7); ctx.fill();
+    }
+  }
+
+  // Which real (non-stuffing) pile toy the claw is poised over — the tag we show.
+  function aimTarget() {
+    const hd = clawHead();
+    let best = null, bestD = Infinity;
+    for (const t of toys) {
+      if (t.state !== 'pile' || t.stuffing) continue;
+      const dx = Math.abs(t.x - hd.x);
+      if (dx <= t.r + 26 && dx < bestD) { bestD = dx; best = t; }
+    }
+    return best;
+  }
+
+  // Tags declutter to stay readable: label the aim target (bright), the golden
+  // toy (always, so you can hunt it), and the toy being held/questioned.
+  function drawTags() {
+    // While the correction panel is up, draw NO tags — the term is named in the
+    // panel text, and a floating tag would collide with the solid panel.
+    const corrEl = document.getElementById('corr');
+    if (corrEl && corrEl.classList.contains('up')) return;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const fs = 12;
+    ctx.font = '700 ' + fs + 'px "DM Mono", monospace';
+    const target = (state === 'idle') ? aimTarget() : null;
+    const set = new Set();
+    const list = [];
+    const add = (t, kind) => { if (t && !t.stuffing && t.state !== 'banking' && !set.has(t)) { set.add(t); list.push([t, kind]); } };
+    add(held || currentToy, 'held');
+    add(target, 'target');
+    for (const t of toys) if (t.golden && t.state === 'pile') add(t, 'gold');
+
+    for (const [t, kind] of list) {
+      const sx = offX + t.x * S;
+      const sy = offY + (t.y + t.r + 4) * S;
+      let label = t.term;
+      let w = ctx.measureText(label).width;
+      const maxW = 108;
+      if (w > maxW) {
+        while (label.length > 3 && ctx.measureText(label + '…').width > maxW) label = label.slice(0, -1);
+        label += '…'; w = ctx.measureText(label).width;
+      }
+      const bright = (kind === 'target' || kind === 'held');
+      ctx.fillStyle = bright ? 'rgba(255,210,77,0.96)' : (t.golden ? 'rgba(60,44,4,0.9)' : 'rgba(12,10,34,0.85)');
+      rr(sx - w / 2 - 6, sy, w + 12, fs + 8, 6); ctx.fill();
+      if (t.golden || kind === 'target') { ctx.strokeStyle = 'rgba(255,210,77,0.85)'; ctx.lineWidth = 1.4; ctx.stroke(); }
+      ctx.fillStyle = bright ? '#231a04' : (t.golden ? '#ffe27a' : '#ece8ff');
+      ctx.fillText(label, sx, sy + 4);
+    }
+  }
+
+  /* ======================================================================
+     MAIN LOOP
+     ====================================================================== */
+  let rafId = null, lastT = 0, acc = 0;
+  function frame(now) {
+    if (!lastT) lastT = now;
+    let dt = (now - lastT) / 1000; lastT = now;
+    if (dt > 0.05) dt = 0.05;
+    advance(dt);
+    draw();
+    rafId = requestAnimationFrame(frame);
+  }
+  function advance(dt) {
+    acc += dt;
+    let guard = 0;
+    while (acc >= H && guard < 600) { physicsStep(); acc -= H; guard++; }
+    stateStep(dt);
+  }
+  function startLoop() { if (!rafId) { lastT = 0; rafId = requestAnimationFrame(frame); } }
+  function stopLoop() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+
+  /* ======================================================================
+     INPUT
+     ====================================================================== */
+  function bindControls() {
+    const left = document.getElementById('btn-left');
+    const right = document.getElementById('btn-right');
+    const drop = document.getElementById('btn-drop');
+    const zoneL = document.querySelector('.claw-zone.left');
+    const zoneR = document.querySelector('.claw-zone.right');
+    const zoneM = document.querySelector('.claw-zone.mid');
+
+    function hold(el, dir) {
+      const on = e => { e.preventDefault(); moveDir = dir; el.classList.add('on'); };
+      const off = () => { if (moveDir === dir) moveDir = 0; el.classList.remove('on'); };
+      el.addEventListener('pointerdown', on);
+      el.addEventListener('pointerup', off);
+      el.addEventListener('pointerleave', off);
+      el.addEventListener('pointercancel', off);
+    }
+    hold(left, -1); hold(right, 1);
+    hold(zoneL, -1); hold(zoneR, 1);
+    drop.addEventListener('click', dropClaw);
+    zoneM.addEventListener('pointerdown', e => { e.preventDefault(); dropClaw(); });
+
+    document.addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if (state === 'question') {
+        const n = { '1': 0, '2': 1, '3': 2, '4': 3 }[e.key];
+        if (n !== undefined) {
+          const b = document.querySelectorAll('#q-overlay .q-opt')[n];
+          if (b && !b.disabled) { e.preventDefault(); b.click(); }
+        }
+        return;
+      }
+      if (e.key === 'ArrowLeft') { moveDir = -1; e.preventDefault(); }
+      else if (e.key === 'ArrowRight') { moveDir = 1; e.preventDefault(); }
+      else if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        if (state === 'idle') dropClaw();
+        else if (document.getElementById('corr').classList.contains('up')) dismissCorrection();
+      }
+    });
+    document.addEventListener('keyup', e => {
+      if (e.key === 'ArrowLeft' && moveDir === -1) moveDir = 0;
+      if (e.key === 'ArrowRight' && moveDir === 1) moveDir = 0;
+    });
+
+    document.getElementById('corr').addEventListener('click', dismissCorrection);
+  }
+
+  /* ======================================================================
+     MOUNT
+     ====================================================================== */
+  function mountGame() {
+    root.innerHTML =
+      '<div class="ar-badge">V · Grab · The Claw</div>' +
+      '<h1 class="ar-title">' + esc(topic) + '</h1>' +
+      '<p class="ar-sub">Move the claw, drop it, grab a plushie — then prove you know the term to bank it. ' + esc(topic) + ', ' + total + ' toys, 10 credits.</p>' +
+      '<div class="ar-meta">' + esc([level, subj].filter(Boolean).join(' · ')) + '</div>' +
+      '<div class="claw-stage">' +
+        '<div id="cab-wrap" class="aim playing">' +
+          '<canvas id="claw-canvas"></canvas>' +
+          '<div class="claw-zone left"><span class="hint">◀ hold</span></div>' +
+          '<div class="claw-zone mid"><span class="hint">tap = drop</span></div>' +
+          '<div class="claw-zone right"><span class="hint">hold ▶</span></div>' +
+          '<div id="q-overlay"></div>' +
+          '<div id="corr"></div>' +
+          '<div id="toast"></div>' +
+        '</div>' +
+        '<div class="claw-deck">' +
+          '<button id="btn-left" class="deck-move" aria-label="Move claw left">◀</button>' +
+          '<button id="btn-drop" aria-label="Drop the claw">DROP</button>' +
+          '<button id="btn-right" class="deck-move" aria-label="Move claw right">▶</button>' +
+        '</div>' +
+        '<div id="prizebank"><span class="pb-empty">Prize bank — banked plushies land here</span></div>' +
+        '<div class="claw-hint-row claw-kbd">◀ ▶ or hold the edges to aim · Space / tap centre to drop · 1–4 to answer</div>' +
+      '</div>';
+
+    canvas = document.getElementById('claw-canvas');
+    ctx = canvas.getContext('2d');
+    fit();
+    window.addEventListener('resize', fit);
+    bindControls();
+    updateDropBtn();
+  }
+
+  /* ======================================================================
+     BOOT
+     ====================================================================== */
+  makeToys();
+  REGISTRY = toys;
+  makeRope();
+  warmUp();                // pre-settle ~2s so the machine opens calm, not mid-drop
+  mountGame();
+  setState('idle');
+  updateDropBtn();         // ensure DROP is live from the very first frame
+  startLoop();
+  Arcade.logMission && Arcade.logMission({ game: 'claw', stem: stem, topic: topic });
+
+  /* ---- debug hook for the test harness ---- */
+  if (DEBUG) {
+    window.__claw = {
+      get state() { return state; },
+      get toys() { return toys; },
+      get credits() { return credits; },
+      get score() { return score; },
+      get bankedCount() { return bankedCount; },
+      get emptyGrabs() { return emptyGrabs; },
+      get total() { return total; },
+      get currentToy() { return currentToy; },
+      get banked() { return banked.slice(); },
+      glass: { x0: GX0, y0: GY0, x1: GX1, y1: GY1 },
+      sleepThreshold: SLEEP_SPEED,
+      maxToySpeed() {
+        let m = 0;
+        for (const t of toys) if (t.state === 'pile') m = Math.max(m, Math.hypot(t.x - t.px, t.y - t.py) / H);
+        return m;
+      },
+      pileKE() {
+        let e = 0;
+        for (const t of toys) if (t.state === 'pile') { const v2 = (Math.pow(t.x - t.px, 2) + Math.pow(t.y - t.py, 2)) / (H * H); e += v2; }
+        return e;
+      },
+      // fast-forward the simulation deterministically
+      step(seconds) {
+        const n = Math.max(0, Math.round(seconds / H));
+        for (let i = 0; i < n; i++) { physicsStep(); stateStep(H); }
+      },
+      // force a successful grab of a REAL pile toy (default: highest / most exposed)
+      grab(idx) {
+        if (state !== 'idle') return false;
+        const pile = toys.filter(t => t.state === 'pile' && !t.stuffing);
+        if (!pile.length) return false;
+        let toy;
+        if (typeof idx === 'number') toy = toys[idx];
+        else { toy = pile[0]; for (const t of pile) if (t.y < toy.y) toy = t; }
+        if (!toy || toy.state !== 'pile' || toy.stuffing) return false;
+        gantry.x = Math.max(GANTRY_MIN, Math.min(GANTRY_MAX, toy.x));
+        gantry.vx = 0;
+        held = toy; toy.state = 'held'; toy.sleep = false;
+        const hd = clawHead();
+        toy.x = hd.x; toy.y = hd.y + HOLD_DIST; toy.px = toy.x; toy.py = toy.y;
+        startQuestion();
+        return true;
+      },
+      forceAnswer(right) {
+        if (state !== 'question') return false;
+        answerQuestion(right ? qCorrectIdx : (qCorrectIdx === 0 ? 1 : 0), false);
+        return true;
+      },
+      // simulate an empty grab (bad aim)
+      emptyGrab() {
+        if (state !== 'idle') return false;
+        emptyGrabs++;
+        credits = Math.max(0, credits - 1);
+        Arcade.sfx.timeup();
+        showToast(EMPTY_LINES[0]);
+        setState('empty');
+        return true;
+      },
+      get options() { return qOpts.slice(); },
+      get correctIdx() { return qCorrectIdx; },
+      get goldenTerm() { return goldenTerm; },
+      get realCount() { return toys.filter(t => !t.stuffing).length + banked.length; },
+      get stuffingCount() { return toys.filter(t => t.stuffing).length; },
+      // grab a specific real toy by term (for targeted tests, e.g. the golden one)
+      grabTerm(term) {
+        if (state !== 'idle') return false;
+        const idx = toys.findIndex(t => t.state === 'pile' && !t.stuffing && t.term === term);
+        if (idx < 0) return false;
+        return this.grab(idx);
+      },
+      // force-grab a stuffing plushie to exercise the slip path
+      grabStuffing() {
+        if (state !== 'idle') return false;
+        const t = toys.find(x => x.state === 'pile' && x.stuffing);
+        if (!t) return false;
+        const hd = clawHead();
+        gantry.x = Math.max(GANTRY_MIN, Math.min(GANTRY_MAX, t.x));
+        t.x = hd.x; t.y = hd.y; t.px = t.x; t.py = t.y;
+        setState('closing'); stateT = 0.3;   // land straight into the catch resolution
+        return true;
+      },
+      dismissCorrection: dismissCorrection,
+      _endGame: endGame,
+    };
+  }
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

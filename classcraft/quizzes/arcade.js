@@ -721,7 +721,7 @@
     'sequence': 'Sort the Sequence', 'wager': 'Wager', 'higher-lower': 'Higher or Lower',
     'falling-words': 'Falling Words', 'conveyor': 'Conveyor Belt', 'word-web': 'Word Web',
     'reveal-race': 'Reveal Race', 'daily-drill': 'Daily Drill', 'quiz': 'Vocab Quiz',
-    'ghost-race': 'Ghost Race',
+    'ghost-race': 'Ghost Race', 'claw': 'The Claw',
     'pairs': 'Matching Pairs', 'hangman': 'System Breach', 'termguess': 'Term Guess',
     'anagram': 'Anagram', 'crossword': 'Crossword', 'pacman': 'Pac-Man Vocab',
     'spaceinvaders': 'Space Invaders', 'boss-rush': 'Boss Rush',

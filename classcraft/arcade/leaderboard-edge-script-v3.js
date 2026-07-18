@@ -100,6 +100,10 @@ const GAME_CAPS = {
   "boss-rush": 4000,
   // ghost-race: 10 rounds x (100 + 50 speed) = 1500 max. 2000 headroom.
   "ghost-race": 2000,
+  // claw: 10 term toys x (200 + 100 speed) x streak mult (ramps 1 -> 2 by
+  // streak 5), one golden toy x2 => flawless run 300+300+450+525+6x600
+  // = 5175, +600 for the golden banked at full multiplier = 5775 hard max.
+  "claw": 6500,
 };
 
 /* Score plausibility: max points per SECOND of play, per game.
@@ -133,6 +137,7 @@ const RATE_CAPS = {
   "odd-one": 50,         // 3000/60
   "boss-rush": 67,       // 4000/60
   "ghost-race": 34,      // 2000/60
+  "claw": 109,           // 6500/60
 };
 
 /* Minimum believable play time per game, ms. The token is issued when the game
