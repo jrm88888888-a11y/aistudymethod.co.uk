@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odd One Out — Free Revision Game — AI Study Method</title>
+<meta name="description" content="Three statements are true, one is the odd one out. A free GCSE, A-Level and IB revision game that trains you to tell close concepts apart. No login required.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  .oo-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .oo-card { display:flex; flex-direction:column; gap:6px; min-height:44px; }
+  .oo-term { font-family:var(--ar-mono); font-size:11px; letter-spacing:0.8px; text-transform:uppercase; color:var(--ar-cyan); font-weight:700; line-height:1.4; }
+  .oo-def  { font-size:14.5px; line-height:1.5; color:var(--ar-text); }
+  .oo-pill-slot { display:block; }
+  .oo-why {
+    margin-top:14px; padding:12px 14px; border-radius:var(--ar-r);
+    font-size:14px; line-height:1.55; animation:arSlideUp 0.3s ease;
+  }
+  .oo-why.ok  { background:var(--ar-mint-dim); color:#b8ffe3; border:1px solid rgba(0,255,163,0.35); }
+  .oo-why.no  { background:var(--ar-pink-dim); color:#ffc4dd; border:1px solid rgba(255,46,136,0.35); }
+  .oo-why strong { color:var(--ar-text); }
+  .oo-redeem-tag {
+    display:inline-block; font-family:var(--ar-mono); font-size:10px; font-weight:700;
+    letter-spacing:1.4px; text-transform:uppercase; color:var(--ar-gold);
+    background:var(--ar-gold-dim); border:1px solid rgba(255,214,10,0.4);
+    padding:3px 9px; border-radius:20px; margin-left:8px;
+  }
+  @media (max-width:480px) {
+    .oo-grid { grid-template-columns:1fr; }
+    .oo-def { font-size:14px; }
+  }
+</style>
+<link rel="canonical" href="https://aistudymethod.co.uk/classcraft/quizzes/odd-one.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AI Study Method">
+<meta property="og:title" content="Odd One Out — AI Study Method">
+<meta property="og:description" content="Play this revision game on the AI Study Method Subjects Arcade — retro games across every subject, level and exam board. Three are true, one is the odd one out.">
+<meta property="og:url" content="https://aistudymethod.co.uk/classcraft/quizzes/odd-one.html">
+<meta property="og:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Odd One Out — AI Study Method">
+<meta name="twitter:description" content="Play this revision game on the AI Study Method Subjects Arcade — retro games across every subject, level and exam board. Can you beat the score?">
+<meta name="twitter:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Velvet Revision</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script src="share-score.js"></script>
+<script>
+(async function() {
+  const esc = Arcade.escapeHtml;
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  Arcade.mountMuteButton();
+  Arcade.maybeShowChallenge && Arcade.maybeShowChallenge();
+
+  if (!stem) {
+    root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  const [spec, bank] = await Promise.all([
+    Arcade.fetchSpecJson(stem, '../adventures/_specs'),
+    Arcade.fetchSpecJson(stem, '../evaluate/misconception-banks'),
+  ]);
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  /* ---- text helpers ---------------------------------------------------- */
+  const lc = s => String(s == null ? '' : s).toLowerCase().trim();
+  const WORD_RE = /[a-z0-9]+/g;
+  function wordSet(s) {
+    const set = new Set();
+    (lc(s).match(WORD_RE) || []).forEach(w => { if (w.length > 2) set.add(w); });
+    return set;
+  }
+  // Fraction of the shorter statement's content words that also appear in the
+  // other. Used as the "these two definitions are too alike to safely pair"
+  // guard so a mismatched card can never be accidentally true.
+  function overlapRatio(a, b) {
+    const wa = wordSet(a), wb = wordSet(b);
+    if (!wa.size || !wb.size) return 0;
+    let shared = 0;
+    wa.forEach(w => { if (wb.has(w)) shared++; });
+    return shared / Math.min(wa.size, wb.size);
+  }
+  function escapeReg(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  /* ---- concept pool ----------------------------------------------------- */
+  // Placeholder defs make hollow "truths" — treat as unauthored, same as the
+  // other Verify games.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const rawConcepts = []
+    .concat((spec && spec.concepts) || [])
+    .concat((spec && spec.sequence) || []);        // sequence steps are extra term/def discrimination fodder
+  const seenTerm = new Set(), seenDef = new Set();
+  const concepts = [];
+  for (const c of rawConcepts) {
+    if (!c || !c.term || !c.def) continue;
+    if (PLACEHOLDER_DEF_RE.test(c.def)) continue;
+    if (lc(c.term) === lc(c.def)) continue;
+    const kt = lc(c.term), kd = lc(c.def);
+    if (seenTerm.has(kt) || seenDef.has(kd)) continue;   // no duplicate terms OR defs
+    seenTerm.add(kt); seenDef.add(kd);
+    concepts.push({ term: String(c.term), def: String(c.def) });
+  }
+
+  const bankItems = ((bank && bank.items) || []).filter(it => it && it.q && it.misconception);
+  const bankIsLowQuality = bank && bank.quality === 'low';
+
+  const MIN_ROUNDS = 6;
+  const TARGET_ROUNDS = 10;
+
+  /* ---- odd-one card builders ------------------------------------------- */
+  // A misconception card: a real concept term paired with a genuinely-false
+  // claim drawn from the misconception bank. Only built when the misconception
+  // maps confidently to a concept AND is provably not a valid definition of it.
+  function matchConcept(item) {
+    const q = lc(item.q);
+    let best = null, bestScore = 0;
+    for (const c of concepts) {
+      const inQ = new RegExp('\\b' + escapeReg(lc(c.term)) + '\\b').test(q) ? 1 : 0;
+      const inCorrect = (lc(c.term) === lc(item.correct)) ? 1 : 0;
+      const ov = overlapRatio(c.def, item.correct);
+      const score = inQ + inCorrect + ov;
+      if (score > bestScore) { bestScore = score; best = c; }
+    }
+    return bestScore >= 0.5 ? best : null;
+  }
+
+  function buildMisconceptionCards() {
+    const cards = [];
+    const usedTerms = new Set();
+    // Hand-authored items (no src marker) lead; MCQ/numerical-derived backfill.
+    const ordered = bankItems.filter(it => !it.src).concat(bankItems.filter(it => it.src));
+    for (const item of ordered) {
+      const claim = String(item.misconception);
+      // Must read like a full claim, not a bare one-word distractor.
+      if (claim.length < 15 || !/\s/.test(claim)) continue;
+      const c = matchConcept(item);
+      if (!c) continue;
+      if (usedTerms.has(lc(c.term))) continue;
+      // Never use a misconception that equals a true def, or is too close to
+      // this concept's real def (could be accidentally true).
+      if (concepts.some(x => lc(x.def) === lc(claim))) continue;
+      if (overlapRatio(claim, c.def) > 0.5) continue;
+      usedTerms.add(lc(c.term));
+      const why = 'In truth, <strong>' + esc(c.term) + '</strong> means: ' + esc(c.def) + '.'
+        + (item.why ? ' ' + esc(String(item.why)) : '');
+      cards.push({
+        kind: 'misconception',
+        term: c.term,
+        def: claim,
+        why: why,
+        exclude: [lc(c.term)],   // the concept whose meaning is being distorted must not appear as a true card
+      });
+    }
+    return cards;
+  }
+
+  // A mismatched card: a real term wearing another concept's definition.
+  // Guarded so the borrowed def is never a near-synonym of the term's own def.
+  function randomMismatchCard(usedKeys) {
+    if (concepts.length < 5) return null;   // need 3 true cards after excluding 2 concepts
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const a = concepts[Math.floor(Math.random() * concepts.length)];
+      const b = concepts[Math.floor(Math.random() * concepts.length)];
+      if (lc(a.term) === lc(b.term)) continue;
+      if (overlapRatio(a.def, b.def) > 0.5) continue;       // too alike — could be accidentally true
+      if (lc(a.def) === lc(b.def)) continue;
+      const key = lc(a.term) + '|' + lc(b.def);
+      if (usedKeys.has(key)) continue;
+      const why = '<strong>' + esc(a.term) + '</strong> actually means: ' + esc(a.def)
+        + '. That definition belongs to <strong>' + esc(b.term) + '</strong>.';
+      return {
+        kind: 'mismatch',
+        term: a.term,
+        def: b.def,
+        why: why,
+        exclude: [lc(a.term), lc(b.term)],   // neither the borrowing term nor the source of the borrowed def
+      };
+    }
+    return null;
+  }
+
+  // Assemble a full round from an odd-one card: three distinct true term/def
+  // cards (none excluded, none sharing the odd card's def) plus the odd card.
+  function makeRound(odd, redemption) {
+    const excl = new Set(odd.exclude);
+    const pool = concepts.filter(c => !excl.has(lc(c.term)) && lc(c.def) !== lc(odd.def));
+    if (pool.length < 3) return null;
+    const trues = Arcade.shuffle(pool).slice(0, 3).map(c => ({ term: c.term, def: c.def, odd: false }));
+    const cards = Arcade.shuffle(trues.concat([{ term: odd.term, def: odd.def, odd: true }]));
+    return {
+      redemption: !!redemption,
+      why: odd.why,
+      cards: cards,
+      oddIdx: cards.findIndex(c => c.odd),
+    };
+  }
+
+  function buildRounds() {
+    const misc = Arcade.shuffle(buildMisconceptionCards());
+    const usedKeys = new Set();
+    const rounds = [];
+    let mi = 0, guard = 0;
+    while (rounds.length < TARGET_ROUNDS && guard < 400) {
+      guard++;
+      let odd = null;
+      if (mi < misc.length) odd = misc[mi++];
+      else odd = randomMismatchCard(usedKeys);
+      if (!odd) break;
+      const key = lc(odd.term) + '|' + lc(odd.def);
+      if (usedKeys.has(key)) continue;
+      const round = makeRound(odd, false);
+      if (!round) continue;
+      usedKeys.add(key);
+      rounds.push(round);
+    }
+    return rounds;
+  }
+
+  const baseRounds = (concepts.length >= 4 && spec && bank && !bankIsLowQuality) ? buildRounds() : [];
+
+  /* ---- graceful "not enough content" screen ---------------------------- */
+  if (!spec || !bank || bankIsLowQuality || baseRounds.length < MIN_ROUNDS) {
+    root.innerHTML =
+      '<div class="ar-badge">V · Verify · Odd One Out</div>'
+      + '<h1 class="ar-title">' + esc(topic) + '</h1>'
+      + '<p class="ar-sub">This game needs a full set of authored concept definitions plus a bank of researched misconceptions — generic filler would not earn its place on the site. Come back soon.</p>'
+      + '<div class="ar-meta">' + esc([level, subj, 'In production'].filter(Boolean).join(' · ')) + '</div>'
+      + '<div class="ar-card" style="text-align:center;padding:40px 28px;">'
+      + '<div style="font-size:48px;line-height:1;margin-bottom:14px">🎯</div>'
+      + '<h2 style="font-size:1.3rem;margin:0 0 8px">Statements in production</h2>'
+      + '<p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Odd One Out needs enough authored concept definitions to build at least six rounds of four distinct statements for this exact topic. That set has not been written at the required depth yet.</p>'
+      + '<a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>'
+      + '</div>';
+    return;
+  }
+
+  const BEST_KEY = 'aism-oo-best:' + stem;
+  const ROUND_MS = 10000;
+
+  let queue, state, timerCtl = null;
+
+  function startGame() {
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    queue = buildRounds();
+    state = { idx: 0, correct: 0, played: 0, score: 0, streak: 0, bestStreak: 0, fastestMs: null, grid: [] };
+    renderRound();
+  }
+
+  function bump(el) {
+    if (!el) return;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 350);
+  }
+
+  function renderHeader(metaTail) {
+    return '<div class="ar-badge">V · Verify · Odd One Out</div>'
+      + '<h1 class="ar-title">' + esc(topic) + '</h1>'
+      + '<p class="ar-sub">Four statements about ' + esc(topic) + '. Three are true — one is the odd one out. Spot the false pairing before the bar runs down.</p>'
+      + '<div class="ar-meta">' + esc([level, subj].filter(Boolean).join(' · ')) + (metaTail ? ' · ' + esc(metaTail) : '') + '</div>';
+  }
+
+  function hudHtml() {
+    return '<div class="ar-hud">'
+      + '<div class="ar-hud-stat">Score <b id="hudScore">' + state.score + '</b></div>'
+      + '<div class="ar-hud-stat' + (state.streak >= 3 ? ' hot' : '') + '">Streak <b id="hudStreak">' + state.streak + (state.streak >= 3 ? '🔥' : '') + '</b></div>'
+      + '<div class="ar-hud-stat gold">Round <b>' + (state.idx + 1) + '/' + queue.length + '</b></div>'
+      + '</div>';
+  }
+
+  function renderRound() {
+    const round = queue[state.idx];
+    const redeem = round.redemption;
+
+    root.innerHTML =
+      renderHeader(redeem ? 'Redemption' : ('Round ' + (state.idx + 1)))
+      + hudHtml()
+      + '<div class="ar-dots" aria-hidden="true">' + queue.map((_, i) => {
+          if (i < state.idx) {
+            const g = state.grid[i];
+            const cls = (g === '🟩' || g === '🟦') ? 'done' : 'fail';
+            return '<span class="' + cls + '"></span>';
+          }
+          return '<span class="' + (i === state.idx ? 'now' : '') + '"></span>';
+        }).join('') + '</div>'
+      + '<div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>'
+      + '<div class="ar-card">'
+      + '<div class="ar-label">' + (redeem ? 'Redemption · half points' : ('Round ' + (state.idx + 1) + ' · tap the odd one')) + '</div>'
+      + '<div class="ar-prompt">Which statement is the odd one out?' + (redeem ? '<span class="oo-redeem-tag">2nd chance</span>' : '') + '</div>'
+      + '<div class="oo-grid ar-stagger" role="radiogroup" aria-label="Four statements — pick the odd one out">'
+      + round.cards.map((c, i) =>
+          '<button type="button" class="ar-tile oo-card" role="radio" aria-checked="false" data-idx="' + i + '">'
+          + '<span class="oo-term">' + esc(c.term) + '</span>'
+          + '<span class="oo-def">' + esc(c.def) + '</span>'
+          + '<span class="oo-pill-slot"></span>'
+          + '</button>').join('')
+      + '</div>'
+      + '<div class="ar-kbd-hint">Keyboard: 1–4 picks a card · Enter for next round</div>'
+      + '<div id="fb"></div>'
+      + '<div id="nextWrap" style="margin-top:14px;"></div>'
+      + '</div>';
+
+    const tiles = Array.from(root.querySelectorAll('.oo-grid .ar-tile'));
+    let phase = 'answer';
+    let autoTimer = null;
+
+    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+      onEnd: () => { if (phase === 'answer') settle(null, true); },
+    });
+
+    function settle(chosen, timedOut) {
+      if (phase !== 'answer') return;
+      phase = 'verdict';
+      const remaining = timedOut ? 0 : timerCtl.remaining;
+      timerCtl.stop();
+
+      const correct = !timedOut && chosen === round.oddIdx;
+      state.played++;
+
+      tiles.forEach((b, i) => {
+        b.disabled = true;
+        b.style.pointerEvents = 'none';
+        b.setAttribute('aria-checked', String(i === chosen));
+        const slot = b.querySelector('.oo-pill-slot');
+        if (i === round.oddIdx) {
+          b.classList.add('correct');
+          slot.outerHTML = '<span class="ar-pill bad" style="margin-top:6px;">✗ odd one out</span>';
+        } else {
+          if (i === chosen) b.classList.add('wrong');
+          else b.classList.add('dim');
+          slot.outerHTML = '<span class="ar-pill good" style="margin-top:6px;">✓ true</span>';
+        }
+      });
+
+      let pts = 0;
+      if (correct) {
+        const usedMs = ROUND_MS - remaining;
+        if (state.fastestMs === null || usedMs < state.fastestMs) state.fastestMs = usedMs;
+        state.correct++;
+        state.streak++;
+        state.bestStreak = Math.max(state.bestStreak, state.streak);
+        const mult = state.streak >= 3 ? Math.min(2, 1.5 + 0.1 * (state.streak - 3)) : 1;
+        const speed = Math.round(50 * (remaining / ROUND_MS));
+        pts = Math.round((100 + speed) * mult * (round.redemption ? 0.5 : 1));
+        state.score += pts;
+        state.grid.push(round.redemption ? '🟦' : '🟩');
+        Arcade.sfx.correct(state.streak);
+        if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg(round.redemption ? 'REDEEMED' : 'SPOT ON', '#00ffa3');
+        Arcade.streakCall(state.streak);
+        Arcade.confettiBurst({ count: 40 });
+        Arcade.popTextOver(tiles[round.oddIdx], '+' + pts, '#00ffa3');
+        Arcade.vibrate(20);
+      } else {
+        state.streak = 0;
+        state.grid.push(round.redemption ? '🟪' : (timedOut ? '⬛' : '🟥'));
+        if (timedOut) { Arcade.sfx.timeup(); Arcade.flashMsg("TIME'S UP ⏱", '#ffd60a'); }
+        else { Arcade.sfx.wrong(); Arcade.flashMsg('THAT ONE WAS TRUE', '#ff2e88'); }
+        Arcade.shake();
+        Arcade.vibrate([40, 30, 40]);
+        // Re-queue the missed odd-one once, near the end, for a half-point redemption.
+        if (!round.redemption) {
+          const clone = makeRound(
+            { term: round.cards[round.oddIdx].term, def: round.cards[round.oddIdx].def, why: round.why,
+              exclude: computeExclude(round) },
+            true
+          );
+          if (clone) queue.push(clone);
+        }
+      }
+
+      const hudS = document.getElementById('hudScore');
+      hudS.textContent = state.score;
+      if (pts) bump(hudS);
+      const hudSt = document.getElementById('hudStreak');
+      hudSt.textContent = state.streak + (state.streak >= 3 ? '🔥' : '');
+      bump(hudSt);
+      hudSt.parentElement.classList.toggle('hot', state.streak >= 3);
+
+      const fb = document.getElementById('fb');
+      fb.className = 'oo-why ' + (correct ? 'ok' : 'no');
+      const lead = correct
+        ? '<strong>Spotted it. +' + pts + ' pts.</strong> '
+        : timedOut
+          ? '<strong>The clock beat you.</strong> '
+          : '<strong>That statement was true.</strong> ';
+      fb.innerHTML = lead + round.why;
+
+      announce.textContent = (correct
+        ? 'Correct — you found the odd one out. Plus ' + pts + ' points. '
+        : timedOut ? 'Time up — round lost. ' : 'Incorrect — that statement was true. ')
+        + (round.cards[round.oddIdx].term + ': ' + round.cards[round.oddIdx].def);
+
+      const last = state.idx + 1 >= queue.length;
+      if (correct) {
+        // Auto-advance on a correct call; a tap still jumps ahead early.
+        document.getElementById('nextWrap').innerHTML =
+          '<button class="ar-btn big" id="next">' + (last ? 'See your score →' : 'Next →') + '</button>'
+          + '<div class="ar-kbd-hint" style="margin-top:8px;">Auto-advancing…</div>';
+        autoTimer = setTimeout(advance, 1600);
+      } else {
+        // Wrong or timed out — let them read the correction, advance on tap.
+        document.getElementById('nextWrap').innerHTML =
+          '<button class="ar-btn big" id="next">' + (last ? 'See your score →' : 'Continue →') + '</button>';
+      }
+      const nextBtn = document.getElementById('next');
+      nextBtn.addEventListener('click', () => { if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; } advance(); });
+      nextBtn.focus({ preventScroll: true });
+    }
+
+    function advance() {
+      Arcade.sfx.swoosh();
+      if (state.idx + 1 < queue.length) { state.idx++; renderRound(); }
+      else renderEnd();
+    }
+
+    tiles.forEach(b => {
+      b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
+        Arcade.sfx.click();
+        settle(parseInt(b.dataset.idx, 10), false);
+      });
+    });
+  }
+
+  // Rebuild the exclude list for a round's odd-one so a redemption clone keeps
+  // the same "true cards must not collide with the odd card" guarantees.
+  function computeExclude(round) {
+    const odd = round.cards[round.oddIdx];
+    // A mismatch card borrowed its def from another concept; keep that concept
+    // out too so the borrowed def never doubles up as a true card.
+    const source = concepts.find(c => lc(c.def) === lc(odd.def) && lc(c.term) !== lc(odd.term));
+    const excl = [lc(odd.term)];
+    if (source) excl.push(lc(source.term));
+    return excl;
+  }
+
+  function renderEnd() {
+    const total = state.played;
+    const pct = total ? Math.round((state.correct / total) * 100) : 0;
+    const fastest = state.fastestMs === null ? null : (state.fastestMs / 1000);
+
+    let insight;
+    if (pct === 100) insight = 'Flawless discrimination. Every round hid one statement engineered to look at home beside the true ones — and none fooled you. Final boss: say out loud WHY each odd one was false. If you can, you own ' + topic + '.';
+    else if (pct >= 60) insight = 'Sharp eye. The odd ones that slipped past were built from the exact confusions examiners exploit — re-read the corrections on your misses, then run it back and sweep the board.';
+    else insight = 'The odd statements are engineered to sound right — falling for them just mapped exactly which ideas in ' + topic + ' blur together for you. Re-read each correction, then come back and pick every odd one out.';
+
+    root.innerHTML = renderHeader('Results') + '<div id="end"></div>';
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'Odd One Out',
+      gameEmoji: '🎯',
+      topic: topic,
+      meta: [level, subj].filter(Boolean).join(' · '),
+      pct: pct,
+      big: state.score,
+      bigLabel: 'points',
+      rows: [
+        { v: state.correct + '/' + total, l: 'spot-ons' },
+        { v: '🔥 ' + state.bestStreak, l: 'best streak' },
+        { v: fastest === null ? '—' : (fastest.toFixed(1) + 's'), l: 'fastest spot' },
+      ],
+      emojiGrid: state.grid.join(''),
+      bestKey: BEST_KEY,
+      bestValue: state.score,
+      bestSuffix: ' pts',
+      insight: insight,
+      shareLines: [
+        '🎯 Odd One Out — ' + topic,
+        'Score ' + state.score + ' pts · 🔥 best streak ' + state.bestStreak,
+        state.grid.join(''),
+      ],
+      share: {
+        subject: subj,
+        level: level,
+        bigLabel: 'POINTS',
+        statLine: '🔥 best streak ' + state.bestStreak + '  ·  ' + pct + '% accuracy',
+      },
+      onAgain: startGame,
+    });
+
+    announce.textContent = 'Game over. Score ' + state.score + ' points. You spotted ' + state.correct + ' of ' + total + ' odd ones — ' + pct + ' percent.';
+  }
+
+  // Keyboard shortcuts: 1–4 pick a card, Enter advances.
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'Enter') {
+      if (e.target && e.target.tagName === 'BUTTON') return;
+      const next = document.getElementById('next');
+      if (next) { e.preventDefault(); next.click(); }
+      return;
+    }
+    const map = { '1': 0, '2': 1, '3': 2, '4': 3 };
+    if (e.key in map) {
+      const b = root.querySelectorAll('.oo-grid .ar-tile')[map[e.key]];
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

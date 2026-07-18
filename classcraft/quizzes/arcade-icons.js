@@ -600,6 +600,69 @@
       '...........KK...'
     ],
 
+    /* Odd One Out — four tiles in a 2x2; three cool-toned (cyan/lavender),
+       one magenta with a glint: the odd one, standing out of the grid. */
+    'odd-one': [
+      '.KKKKK...KKKKK..',
+      'KWCCCCK.KWLLLLK.',
+      'KCCCCCK.KLLLLLK.',
+      'KCCCCCK.KLLLLLK.',
+      'KCCCCCK.KLLLLLK.',
+      'KCCCCCK.KLLLLLK.',
+      '.KKKKK...KKKKK..',
+      '................',
+      '.KKKKK...KKKKK..',
+      'KWLLLLK.KWMMMMK.',
+      'KLLLLLK.KMMMMMK.',
+      'KLLLLLK.KMMWMMK.',
+      'KLLLLLK.KMMMMMK.',
+      'KLLLLLK.KMMMMMK.',
+      '.KKKKK...KKKKK..',
+      '................'
+    ],
+
+    /* Boss Rush — horned boss face: lavender skull, magenta eyes, jagged
+       white teeth in a dark mouth. Horns catch the top-left light. */
+    'boss-rush': [
+      '.KK..........KK.',
+      'KWLK........KLLK',
+      '.KWLK......KLLK.',
+      '..KLLKKKKKKLLK..',
+      '..KWLLLLLLLLLK..',
+      '.KWLLLLLLLLLLLK.',
+      '.KLLMMLLLLMMLLK.',
+      '.KLLMMLLLLMMLLK.',
+      '.KLLLLLLLLLLLLK.',
+      '.KLLKKKKKKKKLLK.',
+      '.KLKDWDWDWDWKLK.',
+      '.KLLKKKKKKKKLLK.',
+      '..KLLLLLLLLLLK..',
+      '...KKKKKKKKKK...',
+      '................',
+      '................'
+    ],
+
+    /* Ghost Race — arcade ghost sprinting right: cyan body, white eyes with
+       pupils looking ahead, scalloped skirt, motion dashes trailing behind. */
+    'ghost-race': [
+      '................',
+      '................',
+      '.......KKKKKK...',
+      '......KWWCCCCK..',
+      '.....KWCCCCCCCK.',
+      '.CC..KCWWCCWWCK.',
+      '.....KCWKCCWKCK.',
+      'CCC..KCCCCCCCCK.',
+      '.....KCCCCCCCCK.',
+      '.CC..KCCCCCCCCK.',
+      '.....KCCKCCKCCK.',
+      '.....KKK.KK.KKK.',
+      '................',
+      '................',
+      '................',
+      '................'
+    ],
+
     'mob-quiz': [
       '................',
       '................',

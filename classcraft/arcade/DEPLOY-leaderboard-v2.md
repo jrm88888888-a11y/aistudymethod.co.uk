@@ -152,6 +152,11 @@ an `around` array — up to 2 entries directly above the requesting device, the
 device itself, and 1 below (`{rank, initials, score, you}`), crew-aware on
 `/top`. All response changes are additive; no field is renamed or removed.
 
+This same deploy also ships three new game ids in `GAME_CAPS`/`RATE_CAPS`:
+`odd-one` (cap 3000), `boss-rush` (cap 4000) and `ghost-race` (cap 2000) —
+the July 2026 cabinets. Until the worker flips, submissions for those ids get
+"unknown game" and the client degrades silently, same as any capless game.
+
 ### Deploy order — site first again (verified against the implementation)
 
 | Combination | Behaviour |

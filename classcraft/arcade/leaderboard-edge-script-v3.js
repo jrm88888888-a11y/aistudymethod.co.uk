@@ -92,6 +92,14 @@ const GAME_CAPS = {
   "word-web": 5000, "reveal-race": 5000, "daily-drill": 1000,
   "quiz": 50000, "pairs": 50000, "hangman": 50000, "termguess": 50000,
   "anagram": 50000, "crossword": 50000, "pacman": 200000, "spaceinvaders": 200000,
+  // odd-one: 10 rounds x (100 + 50 speed) x 2 streak multiplier = 3000 ceiling
+  // (true max ~2475 — the multiplier only ramps to 2x from round 8).
+  "odd-one": 3000,
+  // boss-rush: stage1 5x100 + stage2 4x200 + boss (3 + misses<=2) hits x
+  // (300 + 200 speed bonus) + 500 flawless bonus => hard max 3600. 4000 headroom.
+  "boss-rush": 4000,
+  // ghost-race: 10 rounds x (100 + 50 speed) = 1500 max. 2000 headroom.
+  "ghost-race": 2000,
 };
 
 /* Score plausibility: max points per SECOND of play, per game.
@@ -122,6 +130,9 @@ const RATE_CAPS = {
   "crossword": 834,      // 50000/60
   "pacman": 3334,        // 200000/60
   "spaceinvaders": 3334, // 200000/60
+  "odd-one": 50,         // 3000/60
+  "boss-rush": 67,       // 4000/60
+  "ghost-race": 34,      // 2000/60
 };
 
 /* Minimum believable play time per game, ms. The token is issued when the game

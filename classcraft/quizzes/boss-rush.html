@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boss Rush — Free Revision Game — AI Study Method</title>
+<meta name="description" content="Survive a three-stage gauntlet where every term you miss comes back as the boss's attack. A free GCSE, A-Level and IB revision game across every subject. No login required.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* ---- Boss Rush specifics ---- */
+  .br-hearts { display:inline-flex; gap:3px; align-items:center; }
+  .br-heart { font-size:15px; line-height:1; filter:drop-shadow(0 0 4px rgba(255,46,136,0.5)); transition:transform .2s, opacity .2s; }
+  .br-heart.gone { opacity:0.22; filter:grayscale(1); transform:scale(0.82); }
+
+  /* Type-the-term input — kept ABOVE the on-screen keyboard: the prompt/def
+     sits above, the input stays in view at 390px. */
+  .br-typewrap { margin-top:6px; }
+  .br-input {
+    width:100%; box-sizing:border-box; text-align:center;
+    font-family:var(--ar-mono); font-size:20px; font-weight:700; letter-spacing:2px;
+    color:var(--ar-cyan); background:var(--ar-card); text-transform:none;
+    border:2px solid rgba(0,229,255,0.45); border-radius:12px; padding:14px 12px;
+  }
+  .br-input:focus { outline:none; border-color:var(--ar-cyan); box-shadow:0 0 0 3px rgba(0,229,255,0.18); }
+  .br-input.ok { border-color:var(--ar-mint); color:var(--ar-mint); box-shadow:0 0 0 3px rgba(0,255,163,0.18); }
+  .br-input.no { border-color:var(--ar-pink); color:var(--ar-pink); box-shadow:0 0 0 3px rgba(255,46,136,0.18); }
+  .br-hint { min-height:20px; margin-top:10px; font-family:var(--ar-mono); font-size:12px; letter-spacing:2px; color:var(--ar-gold); text-align:center; }
+  .br-hint .slot { display:inline-block; min-width:10px; }
+  .br-def { line-height:1.55; font-size:1.05rem; }
+
+  /* ---- Splash screens ---- */
+  .br-splash { text-align:center; padding:38px 22px; }
+  .br-splash .st { font-family:var(--ar-mono); font-size:12px; letter-spacing:4px; color:var(--ar-muted); text-transform:uppercase; }
+  .br-splash h2 { font-size:2rem; margin:8px 0 6px; letter-spacing:1px; }
+  .br-splash p { color:var(--ar-text2); margin:0 auto 20px; max-width:30ch; line-height:1.5; }
+
+  /* ---- Boss frame ---- */
+  .br-boss-stage { position:relative; }
+  .br-bosshp { margin:2px 0 12px; }
+  .br-bosshp-top { display:flex; justify-content:space-between; align-items:baseline; font-family:var(--ar-mono); font-size:10.5px; letter-spacing:2px; text-transform:uppercase; color:var(--ar-muted); margin-bottom:5px; }
+  .br-bosshp-bar { height:18px; border:2px solid var(--ar-border-hi); border-radius:6px; background:repeating-linear-gradient(45deg,#1a0a12,#1a0a12 6px,#220a14 6px,#220a14 12px); overflow:hidden; }
+  .br-bosshp-fill { height:100%; width:100%; background:linear-gradient(90deg,#ff2e88,#ff6a3d); transition:width .45s cubic-bezier(.2,.8,.2,1); box-shadow:0 0 12px rgba(255,46,136,0.6) inset; }
+
+  .br-boss { display:flex; justify-content:center; margin:2px 0 14px; }
+  .br-pixboss { position:relative; transition:transform .12s; }
+  .br-pixboss.hit { animation:br-hit .32s; }
+  @keyframes br-hit { 0%{filter:brightness(3) hue-rotate(-40deg);transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 100%{filter:none;transform:translateX(0)} }
+  .br-pixboss.attack { animation:br-attack .4s; }
+  @keyframes br-attack { 0%{transform:translateY(0)} 30%{transform:translateY(10px) scale(1.05)} 100%{transform:translateY(0)} }
+  .br-body {
+    width:118px; height:96px; border-radius:14px 14px 20px 20px;
+    background:linear-gradient(160deg,#7b2ff7,#3a1a6e);
+    border:4px solid #12061f; position:relative;
+    box-shadow:0 0 26px rgba(123,47,247,0.5), 0 8px 0 rgba(0,0,0,0.35);
+  }
+  .br-horn { position:absolute; top:-14px; width:0; height:0; border-left:11px solid transparent; border-right:11px solid transparent; border-bottom:20px solid #7b2ff7; filter:drop-shadow(0 -2px 0 #12061f); }
+  .br-horn.l { left:12px; transform:rotate(-12deg); }
+  .br-horn.r { right:12px; transform:rotate(12deg); }
+  .br-eye { position:absolute; top:30px; width:26px; height:26px; background:#ffd60a; border:3px solid #12061f; border-radius:50%; box-shadow:0 0 10px rgba(255,214,10,0.7); }
+  .br-eye.l { left:16px; } .br-eye.r { right:16px; }
+  .br-eye::after { content:""; position:absolute; top:8px; left:7px; width:9px; height:9px; background:#12061f; border-radius:50%; }
+  .br-mouth { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); width:56px; height:18px; background:#12061f; border-radius:0 0 12px 12px; box-shadow:inset 0 4px 0 #ff2e88; }
+  .br-fang { position:absolute; top:0; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:11px solid #fff; }
+  .br-fang.l { left:10px; } .br-fang.r { right:10px; }
+  .br-boss-dead .br-pixboss { animation:br-die 1s forwards; }
+  @keyframes br-die { 0%{opacity:1;transform:rotate(0) scale(1)} 100%{opacity:0;transform:rotate(18deg) scale(0.6) translateY(30px)} }
+
+  .br-missed-list { list-style:none; margin:14px 0 0; padding:0; text-align:left; }
+  .br-missed-list li { padding:9px 12px; margin-bottom:7px; border-radius:10px; background:var(--ar-card); border:1px solid var(--ar-border); }
+  .br-missed-list b { color:var(--ar-cyan); }
+  .br-missed-list span { display:block; color:var(--ar-text2); font-size:13px; margin-top:2px; line-height:1.4; }
+</style>
+<link rel="canonical" href="https://aistudymethod.co.uk/classcraft/quizzes/boss-rush.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AI Study Method">
+<meta property="og:title" content="Boss Rush — AI Study Method">
+<meta property="og:description" content="Play this revision game on the AI Study Method Subjects Arcade — retro games across every subject, level and exam board. Can you beat the boss?">
+<meta property="og:url" content="https://aistudymethod.co.uk/classcraft/quizzes/boss-rush.html">
+<meta property="og:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Boss Rush — AI Study Method">
+<meta name="twitter:description" content="Play this revision game on the AI Study Method Subjects Arcade — retro games across every subject, level and exam board. Can you beat the boss?">
+<meta name="twitter:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Velvet Revision</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script src="share-score.js"></script>
+<script>
+(async function() {
+  const esc = Arcade.escapeHtml;
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  Arcade.mountMuteButton();
+  Arcade.maybeShowChallenge && Arcade.maybeShowChallenge();
+
+  if (!stem) {
+    root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  const [spec, bank] = await Promise.all([
+    Arcade.fetchSpecJson(stem, '../adventures/_specs'),
+    Arcade.fetchSpecJson(stem, '../evaluate/misconception-banks'),
+  ]);
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Placeholder concept defs make hollow questions — treat as unauthored.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  const bankItems = ((bank && bank.items) || []).filter(it => it && it.misconception);
+
+  // A four-option MCQ needs four distinct concepts; the gauntlet wants more to
+  // feel varied. Degrade gracefully like two-truths when content is thin.
+  if (!spec || concepts.length < 4) {
+    root.innerHTML = `
+      <div class="ar-badge">V · Verify · Boss Rush</div>
+      <h1 class="ar-title">${esc(topic)}</h1>
+      <p class="ar-sub">This gauntlet needs a full set of authored concept definitions before a boss can be built from them — generic filler would not earn its place. Come back soon.</p>
+      <div class="ar-meta">${esc([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="ar-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">👾</div>
+        <h2 style="font-size:1.3rem;margin:0 0 8px">Boss in production</h2>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Boss Rush needs at least four authored concept definitions for this exact topic. That set has not been written at the required depth yet.</p>
+        <a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
+  /* ------------------------------------------------------------------ config */
+  const BEST_KEY   = 'aism-boss-best:' + stem;
+  const BADGE_KEY  = 'aism-boss:' + stem;
+  const S1_ROUNDS  = Math.min(5, concepts.length);
+  const S2_ROUNDS  = Math.min(4, concepts.length);
+  const BOSS_MS    = 20000;
+  const HINT_MS    = 8000;
+
+  /* ------------------------------------------------------------- text matcher
+     Forgiving type-the-term matcher: lower-case, strip accents, collapse
+     spaces and hyphens, drop punctuation, then accept an exact hit or a
+     Levenshtein distance of 1 for terms of six characters or more. */
+  function normalise(s) {
+    return String(s == null ? '' : s)
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[-‐-―]/g, ' ')
+      .replace(/[^a-z0-9 ]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    const m = a.length, n = b.length;
+    if (!m) return n;
+    if (!n) return m;
+    let prev = new Array(n + 1);
+    for (let j = 0; j <= n; j++) prev[j] = j;
+    for (let i = 1; i <= m; i++) {
+      let cur = [i];
+      for (let j = 1; j <= n; j++) {
+        const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      }
+      prev = cur;
+    }
+    return prev[n];
+  }
+  function matchesTerm(input, term) {
+    const a = normalise(input), b = normalise(term);
+    if (!a) return false;
+    if (a === b) return true;
+    if (b.length >= 6 && levenshtein(a, b) <= 1) return true;
+    return false;
+  }
+  // Debug hook for automated testing only (does not affect play).
+  try { window.__brMatch = matchesTerm; } catch (e) {}
+
+  /* ---------------------------------------------------------- round building */
+  function pick(arr, n) { return Arcade.shuffle(arr).slice(0, n); }
+
+  // Stage 1: MCQ "what is TERM?" — correct def plus three distractors drawn
+  // from other concept definitions, topped up with bank misconceptions.
+  function buildStage1() {
+    const targets = pick(concepts, S1_ROUNDS);
+    // Only researched misconceptions that read as full, plausible definitions
+    // earn a spot as a distractor. Some derived bank items are bare fragments
+    // ("Heterozygous", "44") — those would give the term away or read as noise.
+    const termsLC = concepts.map(c => c.term.toLowerCase());
+    const miscTexts = bankItems.map(it => it.misconception)
+      .filter(m => m && m.length >= 25 && !termsLC.includes(m.toLowerCase()));
+    return targets.map(t => {
+      const others = concepts.filter(c => c.term !== t.term).map(c => c.def);
+      let distractPool = Arcade.shuffle(others.slice());
+      let distractors = distractPool.slice(0, 3);
+      // Occasionally swap one plausible-but-wrong distractor for a researched
+      // misconception when the bank offers one.
+      if (miscTexts.length && distractors.length === 3 && Math.random() < 0.6) {
+        const m = miscTexts[Math.floor(Math.random() * miscTexts.length)];
+        if (!distractors.includes(m) && m !== t.def) distractors[Math.floor(Math.random() * 3)] = m;
+      }
+      const options = Arcade.shuffle(
+        [{ text: t.def, correct: true }].concat(distractors.map(d => ({ text: d, correct: false })))
+      );
+      return { term: t.term, def: t.def, options, answerIdx: options.findIndex(o => o.correct) };
+    });
+  }
+
+  // Stage 2: definition shown, type the term.
+  function buildStage2(used) {
+    // Prefer concepts not already drilled in stage 1, then backfill.
+    const fresh = concepts.filter(c => !used.has(c.term));
+    const pool = fresh.length >= S2_ROUNDS ? fresh : fresh.concat(concepts.filter(c => used.has(c.term)));
+    return pick(pool, S2_ROUNDS).map(c => ({ term: c.term, def: c.def }));
+  }
+
+  // Stage 3 deck: missed items FIRST (the whole point — your misses become the
+  // boss's attacks), then the hardest unseen concepts (longest definitions),
+  // then any remaining concept. Cycled if a long fight outlasts the deck.
+  function buildBossDeck(missed, tested) {
+    const seen = new Set();
+    const deck = [];
+    const add = (item) => {
+      const k = item.term.toLowerCase();
+      if (seen.has(k)) return;
+      seen.add(k); deck.push({ term: item.term, def: item.def });
+    };
+    missed.forEach(add);
+    const unseen = concepts.filter(c => !tested.has(c.term)).sort((a, b) => b.def.length - a.def.length);
+    unseen.forEach(add);
+    concepts.slice().sort((a, b) => b.def.length - a.def.length).forEach(add);
+    return deck;
+  }
+
+  /* --------------------------------------------------------------- game state */
+  let S = null, timerCtl = null, hintTimer = null;
+
+  function clearTimers() {
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+  }
+
+  function startGame() {
+    clearTimers();
+    const s1 = buildStage1();
+    const used = new Set(s1.map(r => r.term));
+    const s2 = buildStage2(used);
+    S = {
+      stage: 1, idx: 0,
+      s1, s2, boss: null,
+      lives: 3,
+      score: 0,
+      s1correct: 0, s2correct: 0, bossHits: 0,
+      missed: [],           // [{term, def}] unique, in the order they were missed
+      tested: new Set(),
+      grid: [],
+      bossHP: 0, bossMax: 0, damage: 0,
+      livesLostTotal: 0,
+    };
+    renderSplash1();
+  }
+
+  function addMiss(item) {
+    if (!S.missed.some(m => m.term.toLowerCase() === item.term.toLowerCase())) {
+      S.missed.push({ term: item.term, def: item.def });
+    }
+  }
+  function loseLife() {
+    S.lives = Math.max(0, S.lives - 1);
+    S.livesLostTotal++;
+    Arcade.shake();
+    Arcade.vibrate([40, 30, 40]);
+  }
+
+  function heartsHtml() {
+    let h = '';
+    for (let i = 0; i < 3; i++) h += `<span class="br-heart${i >= S.lives ? ' gone' : ''}">❤️</span>`;
+    return `<span class="br-hearts" id="hearts" aria-label="${S.lives} lives left">${h}</span>`;
+  }
+
+  function header(sub) {
+    return `
+      <div class="ar-badge">V · Verify · Boss Rush</div>
+      <h1 class="ar-title">${esc(topic)}</h1>
+      <p class="ar-sub">${esc(sub)}</p>
+      <div class="ar-meta">${esc([level, subj].filter(Boolean).join(' · '))}</div>
+    `;
+  }
+
+  function hud(stageLabel) {
+    return `
+      <div class="ar-hud">
+        <div class="ar-hud-stat">Score <b id="hudScore">${S.score}</b></div>
+        <div class="ar-hud-stat">Lives <b>${heartsHtml()}</b></div>
+        <div class="ar-hud-stat gold">${esc(stageLabel)}</div>
+      </div>
+    `;
+  }
+
+  /* ------------------------------------------------------------ splash screens */
+  function renderSplash1() {
+    clearTimers();
+    root.innerHTML = header('A three-stage gauntlet. Every term you miss comes back as the boss attack. Three lives. No respawns.') + `
+      <div class="ar-card br-splash">
+        <div class="st">Stage 1 of 3</div>
+        <h2>RECOGNITION</h2>
+        <p>Pick the definition that matches the term. Read carefully — the wrong answers are built to look right.</p>
+        <button class="ar-btn big" id="go">Enter the arena →</button>
+      </div>`;
+    const go = document.getElementById('go');
+    go.addEventListener('click', () => { Arcade.sfx.riser(); S.stage = 1; S.idx = 0; renderStage1(); });
+    go.focus({ preventScroll: true });
+  }
+
+  function renderSplash2() {
+    clearTimers();
+    root.innerHTML = header('Recognition cleared. Now the safety wheels come off.') + `
+      <div class="ar-card br-splash">
+        <div class="st">Stage 2 of 3</div>
+        <h2>RECALL</h2>
+        <p>No options now. You are shown the definition — type the term. The boss is watching.</p>
+        <button class="ar-btn big" id="go">Bring it on →</button>
+      </div>`;
+    const go = document.getElementById('go');
+    go.addEventListener('click', () => { Arcade.sfx.riser(); S.stage = 2; S.idx = 0; renderStage2(); });
+    go.focus({ preventScroll: true });
+  }
+
+  function renderSplashBoss() {
+    clearTimers();
+    S.boss = buildBossDeck(S.missed, S.tested);
+    S.bossHP = 3 + S.missed.length;
+    S.bossMax = S.bossHP;
+    S.damage = 0;
+    S.idx = 0;
+    // Debug hook for automated testing (does not affect play).
+    try { window.__bossDebug = { hp: S.bossHP, deck: S.boss.map(d => d.term), missed: S.missed.map(m => m.term) }; } catch (e) {}
+
+    const missNote = S.missed.length
+      ? `It has taken ${S.missed.length} of your slips and turned them into weapons. Beat them again, in order, or it will not fall.`
+      : 'Flawless so far — the boss had nothing of yours to steal. It will fight with the hardest ideas on the syllabus instead.';
+    root.innerHTML = header('Two stages down. One monster to go.') + `
+      <div class="ar-card br-splash">
+        <div class="st">Stage 3 of 3 · Final</div>
+        <h2>THE BOSS</h2>
+        <p>${esc(missNote)} ${S.bossHP} hits to kill · 20 seconds each · ${S.lives} lives left.</p>
+        <button class="ar-btn big" id="go">Face the boss →</button>
+      </div>`;
+    const go = document.getElementById('go');
+    go.addEventListener('click', () => { Arcade.sfx.riser(); S.stage = 3; S.idx = 0; renderBoss(); });
+    go.focus({ preventScroll: true });
+  }
+
+  /* --------------------------------------------------------------- stage one */
+  function renderStage1() {
+    clearTimers();
+    const round = S.s1[S.idx];
+    root.innerHTML = header('Match the term to its definition. One life lost per wrong call.') + hud('Stage 1 · ' + (S.idx + 1) + '/' + S.s1.length) + `
+      <div class="ar-card">
+        <div class="ar-label">Recognition · round ${S.idx + 1} of ${S.s1.length}</div>
+        <div class="ar-prompt">What is “${esc(round.term)}”?</div>
+        <div class="tt-stmts ar-stagger" id="opts" role="radiogroup" aria-label="Pick the correct definition">
+          ${round.options.map((o, i) => `
+            <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">
+              <div class="tt-a">${esc(o.text)}</div>
+            </button>`).join('')}
+        </div>
+        <div class="ar-kbd-hint">Keyboard: 1–4 locks your call · Enter for next</div>
+        <div id="fb"></div>
+        <div id="nextWrap" style="margin-top:14px;"></div>
+      </div>`;
+
+    const tiles = Array.from(root.querySelectorAll('#opts .ar-tile'));
+    let phase = 'answer';
+
+    function settle(chosen) {
+      if (phase !== 'answer') return;
+      phase = 'verdict';
+      const correct = chosen === round.answerIdx;
+      tiles.forEach((b, i) => {
+        b.disabled = true; b.style.pointerEvents = 'none';
+        b.setAttribute('aria-checked', String(i === chosen));
+        if (i === round.answerIdx) b.classList.add('correct');
+        else if (i === chosen) b.classList.add('wrong');
+        else b.classList.add('dim');
+      });
+      S.tested.add(round.term);
+      const fb = document.getElementById('fb');
+      if (correct) {
+        S.s1correct++; S.score += 100; S.grid.push('🟩');
+        Arcade.sfx.correct(S.s1correct);
+        Arcade.confettiBurst({ count: 34 });
+        Arcade.popTextOver(tiles[round.answerIdx], '+100', '#00ffa3');
+        Arcade.vibrate(18);
+        fb.className = 'ar-feedback ok';
+        fb.innerHTML = '<strong>Correct. +100.</strong>';
+        announce.textContent = 'Correct. Plus 100 points.';
+      } else {
+        addMiss({ term: round.term, def: round.def });
+        loseLife(); S.grid.push('🟥');
+        Arcade.sfx.wrong();
+        Arcade.flashMsg('MISS · –1 LIFE', '#ff2e88');
+        fb.className = 'ar-feedback no';
+        fb.innerHTML = `<strong>Wrong — that costs a life.</strong> “${esc(round.term)}” means: <em>${esc(round.def)}</em>. It joins the boss attack deck.`;
+        announce.textContent = 'Wrong. Life lost. ' + round.term + ' means ' + round.def;
+      }
+      document.getElementById('hudScore').textContent = S.score;
+      const heartsEl = document.getElementById('hearts');
+      if (heartsEl) heartsEl.outerHTML = heartsHtml();
+
+      if (S.lives <= 0) { finishNext('defeat'); return; }
+      finishNext(S.idx + 1 >= S.s1.length ? 'stage2' : 'next');
+    }
+
+    function finishNext(where) {
+      const label = where === 'defeat' ? 'See the damage →' : (where === 'stage2' ? 'To Stage 2 →' : 'Next →');
+      document.getElementById('nextWrap').innerHTML = `<button class="ar-btn big" id="next">${label}</button>`;
+      const nb = document.getElementById('next');
+      nb.addEventListener('click', () => {
+        Arcade.sfx.swoosh();
+        if (where === 'defeat') return renderEnd(false);
+        if (where === 'stage2') return renderSplash2();
+        S.idx++; renderStage1();
+      });
+      nb.focus({ preventScroll: true });
+    }
+
+    tiles.forEach(b => b.addEventListener('click', () => {
+      if (phase !== 'answer') return;
+      Arcade.sfx.click();
+      settle(parseInt(b.dataset.idx, 10));
+    }));
+  }
+
+  /* --------------------------------------------------------------- stage two */
+  function renderStage2() {
+    typeRound({
+      item: S.s2[S.idx],
+      stageLabel: 'Stage 2 · ' + (S.idx + 1) + '/' + S.s2.length,
+      roundLabel: 'Recall · round ' + (S.idx + 1) + ' of ' + S.s2.length,
+      sub: 'Read the definition. Type the term it defines.',
+      timed: false,
+      onDone: (correct) => {
+        S.tested.add(S.s2[S.idx].term);
+        if (correct) { S.s2correct++; S.score += 200; S.grid.push('🟩'); }
+        else { addMiss(S.s2[S.idx]); loseLife(); S.grid.push('🟥'); }
+        document.getElementById('hudScore').textContent = S.score;
+        const heartsEl = document.getElementById('hearts');
+        if (heartsEl) heartsEl.outerHTML = heartsHtml();
+        if (S.lives <= 0) return { label: 'See the damage →', go: () => renderEnd(false) };
+        if (S.idx + 1 >= S.s2.length) return { label: 'To the boss →', go: renderSplashBoss };
+        return { label: 'Next →', go: () => { S.idx++; renderStage2(); } };
+      },
+    });
+  }
+
+  /* --------------------------------------------------------------- boss stage */
+  function bossFrameHtml() {
+    const pct = Math.max(0, (S.bossHP - S.damage) / S.bossMax * 100);
+    return `
+      <div class="br-bosshp">
+        <div class="br-bosshp-top"><span>BOSS HP</span><span id="bosshpNum">${S.bossHP - S.damage} / ${S.bossHP}</span></div>
+        <div class="br-bosshp-bar"><div class="br-bosshp-fill" id="bosshpFill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="br-boss" id="bossWrap">
+        <div class="br-pixboss" id="pixboss" aria-hidden="true">
+          <div class="br-horn l"></div><div class="br-horn r"></div>
+          <div class="br-body">
+            <div class="br-eye l"></div><div class="br-eye r"></div>
+            <div class="br-mouth"><span class="br-fang l"></span><span class="br-fang r"></span></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderBoss() {
+    typeRound({
+      item: S.boss[S.idx % S.boss.length],
+      stageLabel: 'BOSS · HP ' + (S.bossHP - S.damage),
+      roundLabel: 'Boss attack · type the term',
+      sub: 'The boss strikes with the ideas you missed. Name each one to land a hit.',
+      timed: true,
+      bossFrame: true,
+      onDone: (correct, timedOut, remaining) => {
+        if (correct) {
+          S.bossHits++;
+          S.damage++;
+          const bonus = Math.round((remaining / BOSS_MS) * 200);
+          S.score += 300 + bonus; S.grid.push('🟩');
+          const pix = document.getElementById('pixboss');
+          if (pix) { pix.classList.remove('hit'); void pix.offsetWidth; pix.classList.add('hit'); }
+          const fill = document.getElementById('bosshpFill');
+          const num = document.getElementById('bosshpNum');
+          if (fill) fill.style.width = Math.max(0, (S.bossHP - S.damage) / S.bossMax * 100) + '%';
+          if (num) num.textContent = (S.bossHP - S.damage) + ' / ' + S.bossHP;
+          Arcade.flashMsg('HIT! +' + (300 + bonus), '#00ffa3');
+        } else {
+          loseLife(); S.grid.push('🟥');
+          const pix = document.getElementById('pixboss');
+          if (pix) { pix.classList.remove('attack'); void pix.offsetWidth; pix.classList.add('attack'); }
+          Arcade.flashMsg(timedOut ? 'TOO SLOW · –1 LIFE' : 'MISS · –1 LIFE', '#ff2e88');
+        }
+        document.getElementById('hudScore').textContent = S.score;
+        const heartsEl = document.getElementById('hearts');
+        if (heartsEl) heartsEl.outerHTML = heartsHtml();
+
+        if (S.damage >= S.bossHP) {
+          const wrap = document.querySelector('.br-boss-stage');
+          if (wrap) wrap.classList.add('br-boss-dead');
+          return { label: 'VICTORY →', go: () => renderEnd(true), delay: 700 };
+        }
+        if (S.lives <= 0) return { label: 'See the damage →', go: () => renderEnd(false) };
+        return { label: 'Next attack →', go: () => { S.idx++; renderBoss(); } };
+      },
+    });
+  }
+
+  /* ------------------------------------- shared type-the-term round renderer */
+  function typeRound(cfg) {
+    clearTimers();
+    const item = cfg.item;
+    const bossFrame = cfg.bossFrame ? bossFrameHtml() : '';
+    root.innerHTML = header(cfg.sub) + hud(cfg.stageLabel) + `
+      <div class="ar-card ${cfg.bossFrame ? 'br-boss-stage' : ''}">
+        ${bossFrame}
+        <div class="ar-label">${esc(cfg.roundLabel)}</div>
+        ${cfg.timed ? '<div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>' : ''}
+        <div class="ar-prompt">Which term is this?</div>
+        <div class="br-def">${esc(item.def)}</div>
+        <div class="br-typewrap">
+          <input class="br-input" id="ans" type="text" autocomplete="off" autocorrect="off"
+                 autocapitalize="none" spellcheck="false" enterkeyhint="done"
+                 aria-label="Type the term" placeholder="type the term…">
+        </div>
+        <div class="br-hint" id="hint"></div>
+        <div id="fb"></div>
+        <div id="nextWrap" style="margin-top:14px;"></div>
+      </div>`;
+
+    const input = document.getElementById('ans');
+    const hint = document.getElementById('hint');
+    let phase = 'answer';
+    input.focus({ preventScroll: true });
+
+    // First-letter + length hint after 8s of hesitation.
+    hintTimer = setTimeout(() => {
+      if (phase !== 'answer') return;
+      const clean = normalise(item.term);
+      const first = (item.term.trim()[0] || '').toUpperCase();
+      hint.textContent = 'Hint: ' + first + ' · ' + clean.replace(/ /g, '').length + ' letters';
+    }, HINT_MS);
+
+    if (cfg.timed) {
+      timerCtl = Arcade.timer(document.getElementById('tfill'), BOSS_MS, {
+        onEnd: () => { if (phase === 'answer') submit(true); },
+      });
+    }
+
+    function submit(timedOut) {
+      if (phase !== 'answer') return;
+      phase = 'verdict';
+      const remaining = (cfg.timed && timerCtl) ? (timedOut ? 0 : timerCtl.remaining) : 0;
+      clearTimers();
+      const correct = !timedOut && matchesTerm(input.value, item.term);
+      input.disabled = true;
+      input.classList.add(correct ? 'ok' : 'no');
+
+      const fb = document.getElementById('fb');
+      if (correct) {
+        Arcade.sfx.correct(3);
+        Arcade.confettiBurst({ count: 40 });
+        Arcade.vibrate(20);
+        fb.className = 'ar-feedback ok';
+        fb.innerHTML = `<strong>“${esc(item.term)}” — spot on.</strong>`;
+        announce.textContent = 'Correct. The term was ' + item.term;
+      } else {
+        Arcade.sfx.wrong();
+        fb.className = 'ar-feedback no';
+        fb.innerHTML = timedOut
+          ? `<strong>Out of time.</strong> The term was <em>${esc(item.term)}</em>.`
+          : `<strong>Not quite.</strong> The term was <em>${esc(item.term)}</em>.`;
+        announce.textContent = (timedOut ? 'Time up. ' : 'Wrong. ') + 'The term was ' + item.term;
+      }
+
+      const res = cfg.onDone(correct, timedOut, remaining) || {};
+      document.getElementById('nextWrap').innerHTML = `<button class="ar-btn big" id="next">${esc(res.label || 'Next →')}</button>`;
+      const nb = document.getElementById('next');
+      const fire = () => { Arcade.sfx.swoosh(); res.go && res.go(); };
+      nb.addEventListener('click', fire);
+      if (res.delay) setTimeout(() => nb.focus({ preventScroll: true }), res.delay);
+      else nb.focus({ preventScroll: true });
+    }
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); if (phase === 'answer') submit(false); }
+    });
+  }
+
+  /* --------------------------------------------------------------- end card */
+  function renderEnd(won) {
+    clearTimers();
+    const bossMax = S.bossMax || (3 + S.missed.length);
+    const pct = Math.min(100, Math.round((S.damage / bossMax) * 100));
+
+    // Victory extras.
+    if (won) {
+      if (S.livesLostTotal === 0) S.score += 500;
+      try {
+        localStorage.setItem(BADGE_KEY, JSON.stringify({ won: true, ts: Date.now(), livesLeft: S.lives }));
+      } catch (e) { /* badge is best-effort */ }
+    }
+
+    const statLine = won
+      ? 'BOSS DOWN · ' + S.lives + ' ' + (S.lives === 1 ? 'life' : 'lives') + ' left'
+      : 'BOSS SURVIVED · ' + (bossMax - S.damage) + ' more ' + ((bossMax - S.damage) === 1 ? 'hit' : 'hits') + ' needed';
+
+    let insight;
+    if (won && S.livesLostTotal === 0) insight = `Flawless run — you cleared all three stages without dropping a single life, so the boss went down with nothing of yours to fight back with. Now teach ${topic} to someone else; if you can explain every term, you own it.`;
+    else if (won) insight = `Boss down. It hit hard with the terms you slipped on earlier — and you answered every one when it counted. Re-read the definitions you first missed so the win sticks past exam day.`;
+    else insight = `The boss got you — ${bossMax - S.damage} more ${(bossMax - S.damage) === 1 ? 'hit was' : 'hits were'} needed. Those attacks were built from your own misses, so you already know exactly what to revise. The list is below — run it back.`;
+
+    root.innerHTML = header(won ? 'Boss defeated.' : 'The boss stands.') + '<div id="end"></div>';
+
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'Boss Rush',
+      gameEmoji: won ? '🏆' : '👾',
+      topic: topic,
+      meta: [level, subj].filter(Boolean).join(' · '),
+      pct: pct,
+      big: S.score,
+      bigLabel: 'points',
+      rows: [
+        { v: won ? 'DEFEATED' : 'SURVIVED', l: 'the boss' },
+        { v: heartsPlain(), l: 'lives left' },
+        { v: S.damage + '/' + bossMax, l: 'boss damage' },
+      ],
+      emojiGrid: S.grid.join(''),
+      bestKey: BEST_KEY,
+      bestValue: S.score,
+      bestSuffix: ' pts',
+      insight: insight,
+      shareLines: [
+        (won ? '🏆' : '👾') + ' Boss Rush — ' + topic,
+        statLine + ' · ' + S.score + ' pts',
+        S.grid.join(''),
+      ],
+      share: {
+        subject: subj,
+        level: level,
+        bigLabel: 'POINTS',
+        statLine: statLine,
+      },
+      onAgain: startGame,
+    });
+
+    // Honest defeat card: list the missed pairs for revision.
+    if (!won && S.missed.length) {
+      const end = document.getElementById('end');
+      const box = document.createElement('div');
+      box.className = 'ar-card';
+      box.style.marginTop = '16px';
+      box.innerHTML = `<div class="ar-label">Revise these — the boss built its attacks from them</div>
+        <ul class="br-missed-list">${S.missed.map(m => `<li><b>${esc(m.term)}</b><span>${esc(m.def)}</span></li>`).join('')}</ul>`;
+      end.appendChild(box);
+    }
+
+    announce.textContent = won
+      ? `Victory. The boss is defeated. Score ${S.score} points, ${S.lives} lives left.`
+      : `Defeat. ${bossMax - S.damage} more hits were needed. Score ${S.score} points.`;
+  }
+
+  function heartsPlain() {
+    let s = '';
+    for (let i = 0; i < 3; i++) s += i < S.lives ? '❤️' : '🖤';
+    return s;
+  }
+
+  /* ------------------------------------------------------ keyboard shortcuts */
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'Enter') {
+      if (e.target && e.target.tagName === 'BUTTON') return;
+      const next = document.getElementById('next') || document.getElementById('go');
+      if (next) { e.preventDefault(); next.click(); }
+      return;
+    }
+    // Stage 1 only: number keys pick an option.
+    if (S && S.stage === 1) {
+      const map = { '1': 0, '2': 1, '3': 2, '4': 3 };
+      if (e.key in map) {
+        const b = root.querySelectorAll('#opts .ar-tile')[map[e.key]];
+        if (b && !b.disabled) { e.preventDefault(); b.click(); }
+      }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

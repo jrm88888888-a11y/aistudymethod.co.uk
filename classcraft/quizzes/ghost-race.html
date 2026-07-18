@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghost Race — Free Revision Game — AI Study Method</title>
+<meta name="description" content="Race the ghost of the friend who challenged you. A free GCSE, A-Level and IB speed-quiz across every subject. No login required.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* --- Ghost Race: the head-to-head race strip ------------------------- */
+  .gr-banner {
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(0,229,255,0.10) 100%);
+    border:1px solid var(--ar-border-hi); border-radius:12px;
+    padding:11px 15px; margin:0 0 14px;
+    font-family:var(--ar-mono); font-size:12px; letter-spacing:0.4px; color:var(--ar-text);
+  }
+  .gr-banner b { color:var(--ar-pink); }
+  .gr-banner .gr-vs { color:var(--ar-cyan); font-weight:700; }
+
+  .gr-track {
+    position:sticky; top:calc(var(--nav-h, 68px) + 6px); z-index:20;
+    background:linear-gradient(180deg, rgba(12,12,29,0.96) 0%, rgba(12,12,29,0.90) 100%);
+    backdrop-filter:blur(8px);
+    border:1px solid var(--ar-border-hi); border-radius:14px;
+    padding:12px 14px 10px; margin:0 0 16px;
+    box-shadow:0 8px 26px rgba(0,0,0,0.4);
+  }
+  .gr-lane { display:grid; grid-template-columns:52px 1fr 34px; align-items:center; gap:9px; margin:5px 0; }
+  .gr-tag  { font-family:var(--ar-mono); font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; text-align:right; }
+  .gr-lane-you   .gr-tag { color:var(--ar-cyan); }
+  .gr-lane-ghost .gr-tag { color:var(--ar-pink); }
+  .gr-score { font-family:var(--ar-mono); font-size:15px; font-weight:700; text-align:center; }
+  .gr-lane-you   .gr-score { color:var(--ar-cyan); }
+  .gr-lane-ghost .gr-score { color:var(--ar-pink); }
+
+  .gr-rail {
+    position:relative; height:20px; border-radius:10px;
+    background:var(--ar-card2);
+    background-image:repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 2px), rgba(255,255,255,0.07) calc(10% - 2px), rgba(255,255,255,0.07) 10%);
+    overflow:hidden; border:1px solid rgba(255,255,255,0.06);
+  }
+  .gr-flag {
+    position:absolute; right:3px; top:50%; transform:translateY(-50%);
+    font-size:13px; line-height:1; opacity:0.85; filter:grayscale(0.2);
+  }
+  .gr-runner {
+    position:absolute; top:50%; left:0;
+    width:12px; height:12px; border-radius:3px;
+    transform:translate(0,-50%);
+    transition:left 0.45s cubic-bezier(0.3,1.4,0.5,1);
+    will-change:left;
+  }
+  .gr-runner-you {
+    background:var(--ar-cyan);
+    box-shadow:0 0 10px rgba(0,229,255,0.85), -9px 0 8px -4px rgba(0,229,255,0.5), -16px 0 8px -6px rgba(0,229,255,0.28);
+  }
+  .gr-runner-ghost {
+    background:var(--ar-pink); opacity:0.72;
+    box-shadow:0 0 10px rgba(255,46,136,0.7), -9px 0 8px -4px rgba(255,46,136,0.4);
+  }
+  .gr-runner.bump { animation:grPop 0.4s cubic-bezier(0.2,2.2,0.4,1); }
+  @keyframes grPop { 0%{transform:translate(0,-50%) scale(1);} 45%{transform:translate(0,-50%) scale(1.7);} 100%{transform:translate(0,-50%) scale(1);} }
+
+  .gr-callout {
+    text-align:center; margin-top:8px;
+    font-family:var(--ar-mono); font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+    color:var(--ar-text2); min-height:15px;
+  }
+  .gr-callout.lead { color:var(--ar-mint); }
+  .gr-callout.trail { color:var(--ar-pink); }
+  .gr-callout.level { color:var(--ar-gold); }
+
+  .gr-result {
+    text-align:center; margin:2px 0 18px;
+  }
+  .gr-result-head {
+    font-family:var(--ar-font); font-weight:700; font-size:clamp(22px, 6vw, 32px);
+    line-height:1.1; letter-spacing:-0.5px; margin-bottom:6px;
+  }
+  .gr-result-head.win  { color:var(--ar-mint); text-shadow:0 0 22px rgba(0,255,163,0.4); }
+  .gr-result-head.lose { color:var(--ar-pink); }
+  .gr-result-head.draw { color:var(--ar-gold); }
+  .gr-result-sub {
+    font-family:var(--ar-mono); font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--ar-muted);
+  }
+
+  .gr-q  { font-family:var(--ar-mono); font-size:10.5px; letter-spacing:0.8px; text-transform:uppercase; color:var(--ar-muted); margin-bottom:6px; line-height:1.5; }
+  .gr-opts { display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
+  .gr-opts .ar-tile { line-height:1.4; }
+
+  @media (max-width:420px) {
+    .gr-lane { grid-template-columns:44px 1fr 28px; gap:6px; }
+    .gr-track { padding:10px 11px 8px; }
+    .gr-tag { font-size:9px; }
+  }
+</style>
+<link rel="canonical" href="https://aistudymethod.co.uk/classcraft/quizzes/ghost-race.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AI Study Method">
+<meta property="og:title" content="Ghost Race — AI Study Method">
+<meta property="og:description" content="Race the ghost of the friend who challenged you on the AI Study Method Subjects Arcade — 18 retro games across every subject, level and exam board.">
+<meta property="og:url" content="https://aistudymethod.co.uk/classcraft/quizzes/ghost-race.html">
+<meta property="og:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ghost Race — AI Study Method">
+<meta name="twitter:description" content="Race the ghost of the friend who challenged you on the AI Study Method Subjects Arcade.">
+<meta name="twitter:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Velvet Revision</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script src="share-score.js"></script>
+<script>
+(async function() {
+  const esc = Arcade.escapeHtml;
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+
+  Arcade.mountMuteButton();
+  // Generic "your mate scored X — beat them" banner (mirrors two-truths). The
+  // ghost race adds its own "you are racing X" banner below.
+  Arcade.maybeShowChallenge && Arcade.maybeShowChallenge();
+
+  if (!stem) {
+    root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  const [spec, bank] = await Promise.all([
+    Arcade.fetchSpecJson(stem, '../adventures/_specs'),
+    Arcade.fetchSpecJson(stem, '../evaluate/misconception-banks'),
+  ]);
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Placeholder concept defs make hollow questions — treat as unauthored.
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  // Low-quality banks are suppressed (see two-truths for the rationale). When
+  // absent or low, the game runs on concept questions alone.
+  const bankUsable = bank && bank.quality !== 'low';
+  const bankItems = bankUsable ? ((bank.items || []).filter(it => it && it.q && it.correct)) : [];
+
+  // Need at least four concepts (for concept-question distractors) and a pool
+  // of six-plus questions for the run to be worth racing.
+  const poolSize = concepts.length + bankItems.length;
+  if (!spec || concepts.length < 4 || poolSize < 6) {
+    root.innerHTML = `
+      <div class="ar-badge">V · Race · Ghost Race</div>
+      <h1 class="ar-title">${esc(topic)}</h1>
+      <p class="ar-sub">Ghost Race needs a full set of authored concept definitions before it can build a fair, seeded run for both racers. That set is not ready for this exact topic yet.</p>
+      <div class="ar-meta">${esc([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <div class="ar-card" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:48px;line-height:1;margin-bottom:14px">👻</div>
+        <h2 style="font-size:1.3rem;margin:0 0 8px">Race track in production</h2>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">This topic needs at least four authored concept definitions. Come back soon.</p>
+        <a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>
+      </div>
+    `;
+    return;
+  }
+
+  const ROUNDS_TARGET = 10;
+  const ROUNDS = Math.min(ROUNDS_TARGET, poolSize);
+  const ROUND_MS = 15000;
+  const TIME_UNIT_MS = 100;    // recording resolution
+  const TIME_CAP_UNITS = 255;  // 25.5s cap per question
+  const BEST_KEY = 'aism-gr-best:' + stem;
+
+  /* ---------------- seeded PRNG (mulberry32, matches share-score.js) ------
+     A single rng stream seeded by `seed` drives EVERYTHING deterministic:
+     question order, which concepts/items are picked, and option order. Both
+     the challenger and the challenged pass the same seed, so they build
+     byte-identical runs. No Math.random touches question construction. */
+  function mulberry32(seed) {
+    let t = seed >>> 0;
+    return function () {
+      t += 0x6D2B79F5;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function seededShuffle(arr, rng) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* ---------------- deterministic question construction -------------------
+     Each question is "what is TERM?" (concept) or a ready-made misconception
+     item, both rendered as a stem + four options. Every draw consumes the rng
+     in a fixed order, so the same seed always yields the same 10 questions in
+     the same order with the same option layout. */
+  function buildQuestions(seed) {
+    const rng = mulberry32(seed);
+    const conceptQ = concepts.map(c => ({ kind: 'concept', term: c.term, correct: c.def }));
+    const bankQ = bankItems.map(it => ({
+      kind: 'bank',
+      stemText: it.q,
+      correct: it.correct,
+      distract: [it.misconception, it.random_wrong].filter(Boolean),
+    }));
+    const chosen = seededShuffle(conceptQ.concat(bankQ), rng).slice(0, ROUNDS);
+    return chosen.map(item => {
+      let distractors;
+      if (item.kind === 'concept') {
+        distractors = seededShuffle(concepts.filter(c => c.term !== item.term).map(c => c.def), rng).slice(0, 3);
+        item.stemText = 'What does “' + item.term + '” mean?';
+      } else {
+        distractors = item.distract.slice(0, 3);
+        if (distractors.length < 3) {
+          const extra = seededShuffle(concepts.map(c => c.def), rng)
+            .filter(d => d !== item.correct && distractors.indexOf(d) < 0);
+          while (distractors.length < 3 && extra.length) distractors.push(extra.shift());
+        }
+      }
+      const options = seededShuffle([item.correct].concat(distractors), rng);
+      return { stemText: item.stemText, options, correctIdx: options.indexOf(item.correct) };
+    });
+  }
+
+  /* ---------------- ghost blob encode / decode ----------------------------
+     ENCODING SPEC (per run):
+       seed  — travels as its own `seed` URL param, base36.
+       ghost — travels as `ghost` URL param: ROUNDS tokens joined, each token
+               is a 2-char zero-padded base36 number encoding one question:
+                 units = clamp(round(ms / 100), 0, 255)     // 25.5s cap
+                 code  = (units << 1) | (correct ? 1 : 0)   // range 0..511
+                 token = code.toString(36).padStart(2, '0')
+       So a 10-question ghost is exactly 20 chars — well under 200. Decode
+       validates the length is 2*ROUNDS and every char is base36, otherwise it
+       returns null and the page silently falls back to a solo time-trial. */
+  function encodeGhost(records) {
+    return records.map(r => {
+      const units = Math.max(0, Math.min(TIME_CAP_UNITS, Math.round(r.ms / TIME_UNIT_MS)));
+      const code = (units << 1) | (r.correct ? 1 : 0);
+      return code.toString(36).padStart(2, '0');
+    }).join('');
+  }
+  function decodeGhost(blob, rounds) {
+    if (typeof blob !== 'string') return null;
+    if (blob.length !== rounds * 2) return null;
+    if (!/^[0-9a-z]+$/.test(blob)) return null;
+    const out = [];
+    for (let i = 0; i < rounds; i++) {
+      const code = parseInt(blob.substr(i * 2, 2), 36);
+      if (!isFinite(code)) return null;
+      out.push({ correct: !!(code & 1), ms: (code >> 1) * TIME_UNIT_MS });
+    }
+    return out;
+  }
+
+  // Leaderboard / share initials — validated to exactly three A-Z, and the
+  // "never chosen" placeholder AAA is treated as absent.
+  function readInitials() {
+    try {
+      const s = String(localStorage.getItem('aism-initials') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+      return (/^[A-Z]{3}$/.test(s) && s !== 'AAA') ? s : '';
+    } catch (e) { return ''; }
+  }
+
+  /* ---------------- seed + ghost resolution ------------------------------- */
+  let seed;
+  const seedParam = params.get('seed');
+  const parsedSeed = seedParam != null ? parseInt(seedParam, 36) : NaN;
+  if (isFinite(parsedSeed) && parsedSeed >= 0) {
+    seed = parsedSeed >>> 0;
+  } else {
+    seed = (Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
+  }
+
+  const questions = buildQuestions(seed);
+
+  const ghostBlobIn = params.get('ghost');
+  const ghost = ghostBlobIn ? decodeGhost(ghostBlobIn, ROUNDS) : null;  // null => garbage or absent
+  const racing = !!ghost;
+
+  const giParam = String(params.get('gi') || '').toUpperCase();
+  const ghostInitials = /^[A-Z]{3}$/.test(giParam) ? giParam : '';
+  const ghostName = ghostInitials || 'YOUR MATE';
+
+  // Ghost true score (what the friend actually achieved) — used for the final
+  // result headline. The live strip may differ (see the racing model note).
+  const ghostTrueCorrect = racing ? ghost.filter(g => g.correct).length : 0;
+  const ghostTrueTime = racing ? ghost.reduce((s, g) => s + g.ms, 0) : 0;
+
+  /* ---------------- racing model (documented choice) ----------------------
+     Per-question HEAD-TO-HEAD, NOT wall-clock. When you START question i, the
+     ghost begins racing that same question using ITS recorded time for i. The
+     ghost "crosses" question i (its runner advances one slot) if and only if
+     it answered i correctly AND its recorded time <= the time you took on i.
+     Timing uses performance.now() deltas from the moment the question renders,
+     so a hidden/background tab is robust: no rAF-tick counting, and the ghost
+     is only ever live during an active question. Between questions nothing
+     moves. If you consistently out-run the ghost, its live position can trail
+     its TRUE score; at the finish we animate it up to its true score so the
+     result headline (which always uses true scores) matches the strip. */
+
+  let state, timerCtl = null, ghostRAF = null;
+
+  function bump(el) {
+    if (!el) return;
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 420);
+  }
+
+  function startGame() {
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    if (ghostRAF) { cancelAnimationFrame(ghostRAF); ghostRAF = null; }
+    state = {
+      idx: 0, score: 0, youCorrect: 0, grid: [],
+      records: [],           // { ms, correct } per question, for encoding
+      youProgress: 0,        // your correct-count so far (runner position)
+      ghostProgress: 0,      // ghost head-to-head crossings so far
+      qStart: 0,
+      ghostCrossed: false,   // ghost already crossed the current question?
+    };
+    renderQuestion();
+  }
+
+  function renderHeader(metaTail) {
+    const lead = racing
+      ? 'Race the ghost of the mate who challenged you. Same 10 questions, same order. Answer fast and clean — beat their score, then their time.'
+      : 'Set a time on these 10 questions, then send your ghost to a mate and make them chase it. 15 seconds a question.';
+    return `
+      <div class="ar-badge">V · Race · Ghost Race</div>
+      <h1 class="ar-title">${esc(topic)}</h1>
+      <p class="ar-sub">${esc(lead)}</p>
+      <div class="ar-meta">${esc([level, subj].filter(Boolean).join(' · '))} · ${esc(metaTail)}</div>
+    `;
+  }
+
+  function bannerHtml() {
+    if (racing) {
+      return `<div class="gr-banner">👻 <span>You are racing <b>${esc(ghostName)}</b></span>
+        <span class="gr-vs">· their score to beat: ${ghostTrueCorrect}/${ROUNDS} ·</span></div>`;
+    }
+    return `<div class="gr-banner">⏱ <span>Time trial — <b>set a time</b>, then send your ghost</span></div>`;
+  }
+
+  function trackHtml() {
+    const youPct = 0, ghostPct = 0;
+    const ghostLane = racing ? `
+      <div class="gr-lane gr-lane-ghost">
+        <span class="gr-tag">${esc(ghostName.slice(0, 6))}</span>
+        <div class="gr-rail"><i class="gr-runner gr-runner-ghost" id="grGhost" style="left:${ghostPct}%"></i><span class="gr-flag">🏁</span></div>
+        <span class="gr-score" id="grGhostScore">0</span>
+      </div>` : '';
+    return `
+      <div class="gr-track" id="grTrack">
+        <div class="gr-lane gr-lane-you">
+          <span class="gr-tag">You</span>
+          <div class="gr-rail"><i class="gr-runner gr-runner-you" id="grYou" style="left:${youPct}%"></i><span class="gr-flag">🏁</span></div>
+          <span class="gr-score" id="grYouScore">0</span>
+        </div>
+        ${ghostLane}
+        <div class="gr-callout" id="grCallout">${racing ? 'AND THEY ARE OFF' : 'RACE THE CLOCK'}</div>
+      </div>`;
+  }
+
+  // Position a runner. Slot progress maps 0..ROUNDS across the rail, leaving
+  // room at the right edge for the finish flag.
+  function runnerLeft(progress) {
+    const frac = Math.max(0, Math.min(1, progress / ROUNDS));
+    return 'calc(' + (frac * 100) + '% - ' + (frac * 18) + 'px)';
+  }
+
+  function updateStrip(opts) {
+    opts = opts || {};
+    const youEl = document.getElementById('grYou');
+    const youScoreEl = document.getElementById('grYouScore');
+    if (youEl) youEl.style.left = runnerLeft(state.youProgress);
+    if (youScoreEl) youScoreEl.textContent = state.youProgress;
+    if (racing) {
+      const ghostEl = document.getElementById('grGhost');
+      const ghostScoreEl = document.getElementById('grGhostScore');
+      const gp = opts.ghostFinal != null ? opts.ghostFinal : state.ghostProgress;
+      if (ghostEl) ghostEl.style.left = runnerLeft(gp);
+      if (ghostScoreEl) ghostScoreEl.textContent = gp;
+    }
+  }
+
+  function setCallout() {
+    const el = document.getElementById('grCallout');
+    if (!el) return;
+    if (!racing) {
+      const secs = (state.records.reduce((s, r) => s + r.ms, 0) / 1000).toFixed(1);
+      el.className = 'gr-callout';
+      el.textContent = secs + 'S ON THE CLOCK';
+      return;
+    }
+    const diff = state.youProgress - state.ghostProgress;
+    if (diff > 0) { el.className = 'gr-callout lead'; el.textContent = 'YOU LEAD BY ' + diff; }
+    else if (diff < 0) { el.className = 'gr-callout trail'; el.textContent = 'DOWN BY ' + (-diff); }
+    else { el.className = 'gr-callout level'; el.textContent = 'NECK AND NECK'; }
+  }
+
+  function ghostAdvance() {
+    state.ghostProgress++;
+    state.ghostCrossed = true;
+    updateStrip();
+    const g = document.getElementById('grGhost');
+    bump(g);
+    setCallout();
+    if (state.ghostProgress > state.youProgress) {
+      Arcade.sfx.swoosh();
+      Arcade.flashMsg('GHOST PULLS AHEAD', '#ff2e88');
+    }
+  }
+
+  function renderQuestion() {
+    const q = questions[state.idx];
+
+    root.innerHTML = `
+      ${renderHeader('Question ' + (state.idx + 1) + ' of ' + ROUNDS)}
+      ${bannerHtml()}
+      ${trackHtml()}
+      <div class="ar-hud">
+        <div class="ar-hud-stat">Score <b id="hudScore">${state.score}</b></div>
+        <div class="ar-hud-stat gold">Q <b>${state.idx + 1}/${ROUNDS}</b></div>
+        <div class="ar-hud-stat${racing ? '' : ' hot'}">${racing ? 'Ghost <b id="hudGhost">' + ghostTrueCorrect + '</b>' : 'Solo <b>run</b>'}</div>
+      </div>
+      <div class="ar-dots" aria-hidden="true">${questions.map((_, i) => {
+        if (i < state.idx) return `<span class="${state.grid[i] === '🟩' ? 'done' : 'fail'}"></span>`;
+        return `<span class="${i === state.idx ? 'now' : ''}"></span>`;
+      }).join('')}</div>
+      <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
+      <div class="ar-card">
+        <div class="ar-label">Question ${state.idx + 1} · tap the definition</div>
+        <div class="gr-q">${esc(q.stemText)}</div>
+        <div class="ar-prompt">Which one is right?</div>
+        <div class="gr-opts ar-stagger" role="radiogroup" aria-label="Four options — pick the correct one">
+          ${q.options.map((opt, i) => `
+            <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">${esc(opt)}</button>
+          `).join('')}
+        </div>
+        <div class="ar-kbd-hint">Keyboard: 1–4 locks your answer · Enter for next</div>
+        <div id="fb"></div>
+        <div id="nextWrap" style="margin-top:14px;"></div>
+      </div>
+    `;
+
+    updateStrip();
+    setCallout();
+
+    const tiles = Array.from(root.querySelectorAll('.gr-opts .ar-tile'));
+    let phase = 'answer';
+
+    // Question clock starts NOW. performance.now() deltas from here drive both
+    // the recording and the ghost head-to-head.
+    state.qStart = performance.now();
+    state.ghostCrossed = false;
+    const gRec = racing ? ghost[state.idx] : null;
+
+    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+      onEnd: () => { if (phase === 'answer') settle(null, true); },
+    });
+
+    // Ghost ticker — advances the ghost mid-window the instant its recorded
+    // time elapses (only while this question is active).
+    if (ghostRAF) { cancelAnimationFrame(ghostRAF); ghostRAF = null; }
+    function ghostTick() {
+      if (phase !== 'answer') return;
+      const elapsed = performance.now() - state.qStart;
+      if (racing && gRec && gRec.correct && !state.ghostCrossed && elapsed >= gRec.ms) {
+        ghostAdvance();
+      }
+      if (!racing) setCallout();
+      ghostRAF = requestAnimationFrame(ghostTick);
+    }
+    ghostRAF = requestAnimationFrame(ghostTick);
+
+    function settle(chosen, timedOut) {
+      if (phase !== 'answer') return;
+      phase = 'verdict';
+      if (ghostRAF) { cancelAnimationFrame(ghostRAF); ghostRAF = null; }
+      timerCtl.stop();
+
+      let elapsed = timedOut ? ROUND_MS : (performance.now() - state.qStart);
+      elapsed = Math.max(0, Math.min(elapsed, TIME_CAP_UNITS * TIME_UNIT_MS));
+      const correct = !timedOut && chosen === q.correctIdx;
+      state.records.push({ ms: elapsed, correct: correct });
+
+      // Final head-to-head check: the ghost crosses this question if it was
+      // correct AND its time was no slower than yours (tie goes to the ghost).
+      if (racing && gRec && gRec.correct && !state.ghostCrossed && gRec.ms <= elapsed) {
+        ghostAdvance();
+      }
+
+      tiles.forEach((b, i) => {
+        b.disabled = true;
+        b.style.pointerEvents = 'none';
+        b.setAttribute('aria-checked', String(i === chosen));
+        if (i === q.correctIdx) b.classList.add('correct');
+        else if (i === chosen) b.classList.add('wrong');
+        else b.classList.add('dim');
+      });
+
+      let pts = 0;
+      if (correct) {
+        state.youCorrect++;
+        state.youProgress++;
+        const remaining = Math.max(0, ROUND_MS - elapsed);
+        const speed = Math.round(50 * (remaining / ROUND_MS));
+        pts = 100 + speed;
+        state.score += pts;
+        state.grid.push('🟩');
+        Arcade.sfx.correct(state.youCorrect);
+        Arcade.confettiBurst({ count: 26 });
+        Arcade.popTextOver(tiles[q.correctIdx], '+' + pts, '#00e5ff');
+        Arcade.vibrate(20);
+      } else {
+        state.grid.push(timedOut ? '⬛' : '🟥');
+        if (timedOut) { Arcade.sfx.timeup(); Arcade.flashMsg("TIME UP", '#ffd60a'); }
+        else { Arcade.sfx.wrong(); Arcade.flashMsg('WRONG', '#ff2e88'); }
+        Arcade.shake();
+        Arcade.vibrate([40, 30, 40]);
+      }
+
+      const youEl = document.getElementById('grYou');
+      bump(youEl);
+      updateStrip();
+      setCallout();
+
+      const hudS = document.getElementById('hudScore');
+      if (hudS) { hudS.textContent = state.score; if (pts) bump(hudS); }
+
+      const fb = document.getElementById('fb');
+      fb.className = 'ar-feedback ' + (correct ? 'ok' : 'no');
+      const rightAnswer = q.options[q.correctIdx];
+      fb.innerHTML = correct
+        ? `<strong>Correct. +${pts} pts.</strong>`
+        : timedOut
+          ? `<strong>The clock beat you.</strong> The answer: <em>${esc(rightAnswer)}</em>.`
+          : `<strong>Not quite.</strong> The answer: <em>${esc(rightAnswer)}</em>.`;
+      announce.textContent = (correct ? 'Correct. Plus ' + pts + ' points. ' : (timedOut ? 'Time up. ' : 'Incorrect. '))
+        + (racing ? ('You ' + state.youProgress + ', ghost ' + state.ghostProgress + '.') : '');
+
+      const last = state.idx + 1 >= ROUNDS;
+      document.getElementById('nextWrap').innerHTML =
+        `<button class="ar-btn big" id="next">${last ? 'See the finish →' : 'Next →'}</button>`;
+      const nextBtn = document.getElementById('next');
+      nextBtn.addEventListener('click', advance);
+      nextBtn.focus({ preventScroll: true });
+    }
+
+    function advance() {
+      Arcade.sfx.swoosh();
+      if (state.idx + 1 < ROUNDS) { state.idx++; renderQuestion(); }
+      else renderEnd();
+    }
+
+    tiles.forEach(b => {
+      b.addEventListener('click', () => {
+        if (phase !== 'answer') return;
+        Arcade.sfx.click();
+        settle(parseInt(b.dataset.idx), false);
+      });
+    });
+
+    // expose settle for keyboard handler
+    renderQuestion._settle = settle;
+  }
+
+  function renderEnd() {
+    if (ghostRAF) { cancelAnimationFrame(ghostRAF); ghostRAF = null; }
+
+    const yourTime = state.records.reduce((s, r) => s + r.ms, 0);
+    const yourCorrect = state.youCorrect;
+    const pct = Math.round((yourCorrect / ROUNDS) * 100);
+    const timeStr = (yourTime / 1000).toFixed(1) + 's';
+
+    // Encode this run and stamp it into the CURRENT url BEFORE any share, so
+    // Arcade.shareScore -> buildChallengeUrl carries it automatically. The
+    // seed rides along too (same track for the rematch); initials become gi.
+    const ghostBlobOut = encodeGhost(state.records);
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set('ghost', ghostBlobOut);
+      u.searchParams.set('seed', seed.toString(36));
+      const myInitials = readInitials();
+      if (myInitials) u.searchParams.set('gi', myInitials);
+      history.replaceState(null, '', u.toString());
+    } catch (e) { /* replaceState is best-effort; share still works from opts */ }
+
+    // Result headline. Score first (correct count), total time as tiebreak.
+    let cls, head, sub;
+    if (racing) {
+      const gc = ghostTrueCorrect, gt = ghostTrueTime;
+      if (yourCorrect > gc) {
+        cls = 'win'; head = 'YOU BEAT ' + ghostName + ' ' + yourCorrect + '–' + gc + '!';
+        sub = 'Your ' + timeStr + ' vs their ' + (gt / 1000).toFixed(1) + 's';
+      } else if (yourCorrect < gc) {
+        cls = 'lose'; head = ghostName + ' BEAT YOU ' + gc + '–' + yourCorrect;
+        sub = 'Run it back — same track, same questions';
+      } else if (yourTime < gt) {
+        cls = 'win'; head = 'PHOTO FINISH — YOU WIN ON TIME ' + yourCorrect + '–' + gc;
+        sub = 'Level on score · your ' + timeStr + ' beat their ' + (gt / 1000).toFixed(1) + 's';
+      } else if (yourTime > gt) {
+        cls = 'lose'; head = 'PIPPED ON TIME ' + gc + '–' + yourCorrect;
+        sub = 'Level on score · they were ' + ((yourTime - gt) / 1000).toFixed(1) + 's faster';
+      } else {
+        cls = 'draw'; head = 'DEAD HEAT ' + yourCorrect + '–' + gc;
+        sub = 'Same score, same time — spooky';
+      }
+    } else {
+      cls = 'draw'; head = 'TIME SET — ' + yourCorrect + '/' + ROUNDS + ' in ' + timeStr;
+      sub = 'Now send your ghost and make a mate chase it';
+    }
+
+    root.innerHTML = renderHeader('Finish') + bannerHtml() + trackHtml()
+      + `<div class="gr-result"><div class="gr-result-head ${cls}">${esc(head)}</div><div class="gr-result-sub">${esc(sub)}</div></div>`
+      + '<div id="end"></div>';
+
+    // Snap the strip to final standings. Winner uses true ghost score so the
+    // strip agrees with the headline even if you out-ran the live ghost.
+    state.youProgress = yourCorrect;
+    updateStrip({ ghostFinal: racing ? ghostTrueCorrect : undefined });
+    const cEl = document.getElementById('grCallout');
+    if (cEl) {
+      cEl.className = 'gr-callout ' + (cls === 'win' ? 'lead' : cls === 'lose' ? 'trail' : 'level');
+      cEl.textContent = racing ? (cls === 'win' ? 'WINNER' : cls === 'lose' ? 'BEATEN' : 'DEAD HEAT') : 'TIME LOGGED';
+    }
+
+    let insight;
+    if (racing) {
+      insight = (cls === 'win')
+        ? `You out-raced ${ghostName}. Send your ghost straight back and see if they can take it — same 10 questions, your time to beat now.`
+        : (cls === 'draw')
+          ? `Impossibly close against ${ghostName}. One faster tap decides the rematch — send your ghost back.`
+          : `${ghostName} edged it. The questions do not change — learn the misses, send your ghost, and take the rematch.`;
+    } else {
+      insight = `You have set a time on ${topic}. Send your ghost to a mate: they race the exact same 10 questions against your run. Fastest clean sheet wins.`;
+    }
+
+    const shareStat = racing
+      ? (yourCorrect + '/' + ROUNDS + '  ·  ' + timeStr + ' vs ' + ghostName)
+      : (yourCorrect + '/' + ROUNDS + '  ·  ' + timeStr);
+
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'Ghost Race',
+      gameEmoji: '👻',
+      topic: topic,
+      meta: [level, subj].filter(Boolean).join(' · '),
+      pct: pct,
+      big: state.score,
+      bigLabel: 'points',
+      rows: [
+        { v: yourCorrect + '/' + ROUNDS, l: 'correct' },
+        { v: timeStr, l: 'your time' },
+        { v: racing ? (cls === 'win' || (cls === 'draw' && false) ? 'WON' : cls === 'lose' ? 'LOST' : 'TIED') : pct + '%', l: racing ? 'vs ghost' : 'accuracy' },
+      ],
+      emojiGrid: state.grid.join(''),
+      bestKey: BEST_KEY,
+      bestValue: state.score,
+      bestSuffix: ' pts',
+      insight: insight,
+      shareLines: [
+        '👻 Ghost Race — ' + topic,
+        'Scored ' + yourCorrect + '/' + ROUNDS + ' in ' + timeStr,
+        state.grid.join(''),
+      ],
+      share: {
+        subject: subj,
+        level: level,
+        bigLabel: 'POINTS',
+        statLine: shareStat,
+      },
+      onAgain: startGame,
+    });
+
+    // Re-label the share button so it reads as "send your ghost".
+    try {
+      const sb = document.getElementById('ar-share');
+      if (sb) sb.textContent = racing ? '👻 Send your ghost back' : '👻 Send your ghost';
+    } catch (e) { /* cosmetic */ }
+
+    if (racing && (cls === 'win')) { Arcade.confettiRain(1600); }
+
+    announce.textContent = head + '. ' + sub + '.';
+  }
+
+  // Keyboard: 1–4 lock an option, Enter advances.
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'Enter') {
+      if (e.target && e.target.tagName === 'BUTTON') return;
+      const next = document.getElementById('next');
+      if (next) { e.preventDefault(); next.click(); }
+      return;
+    }
+    const map = { '1': 0, '2': 1, '3': 2, '4': 3 };
+    if (e.key in map) {
+      const b = root.querySelectorAll('.gr-opts .ar-tile')[map[e.key]];
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+    }
+  });
+
+  startGame();
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

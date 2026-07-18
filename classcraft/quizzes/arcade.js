@@ -717,13 +717,14 @@
     return base.replace(/^game-/, '');
   }
   const LB_LABELS = {
-    'two-truths': 'Two Truths One Lie', 'connections': 'Connections Grid',
+    'two-truths': 'Two Truths One Lie', 'odd-one': 'Odd One Out', 'connections': 'Connections Grid',
     'sequence': 'Sort the Sequence', 'wager': 'Wager', 'higher-lower': 'Higher or Lower',
     'falling-words': 'Falling Words', 'conveyor': 'Conveyor Belt', 'word-web': 'Word Web',
     'reveal-race': 'Reveal Race', 'daily-drill': 'Daily Drill', 'quiz': 'Vocab Quiz',
+    'ghost-race': 'Ghost Race',
     'pairs': 'Matching Pairs', 'hangman': 'System Breach', 'termguess': 'Term Guess',
     'anagram': 'Anagram', 'crossword': 'Crossword', 'pacman': 'Pac-Man Vocab',
-    'spaceinvaders': 'Space Invaders',
+    'spaceinvaders': 'Space Invaders', 'boss-rush': 'Boss Rush',
   };
 
   /* Play token — fetched once at page load (= start of play) so the server
