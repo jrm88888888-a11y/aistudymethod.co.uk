@@ -325,6 +325,14 @@
   const PUSH_BACK = 118, PUSH_FRONT = 168, PUSH_W = 26, PUSH_H = 46, PUSH_HZ = reduced ? 0.12 : 0.16;
   let pusherX = PUSH_BACK, pusherXprev = PUSH_BACK;      // pusher front (right) face
   const TROUGH_Y = 728, TROUGH_TOP = PLAT_TOP + 10;
+  // Left DEFLECTOR LEDGE (~28.5°): coins spilling off the tray's LEFT edge
+  // (x 108-168 at y 452) land on this angled shelf and roll RIGHT, discharging
+  // at x=206 — clearly in front of the pusher's forward-most face (168) — so
+  // nothing can ever pool behind or on top of the bar.
+  const DEFL = { x0: WX0, y0: 496, x1: 206, y1: 572 };
+  // Housing block SEALS the dead zone behind the bar (wall → bar's rearmost
+  // back face, up to just under the deflector). The bar slides out of it.
+  const SEAL = { x1: PUSH_BACK - PUSH_W, top: 540 };
 
   /* ======================================================================
      PHYSICS TUNABLES
@@ -471,6 +479,47 @@
     }
   }
 
+  // Line-segment collider for the deflector ledge: closest-point projection,
+  // push-out along the contact normal, small restitution normally, tangential
+  // friction tuned so coins ROLL down the slope rather than bounce or stall.
+  function deflectorCollide(b) {
+    const dx = DEFL.x1 - DEFL.x0, dy = DEFL.y1 - DEFL.y0;
+    const len2 = dx * dx + dy * dy;
+    let t = ((b.x - DEFL.x0) * dx + (b.y - DEFL.y0) * dy) / len2;
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    const cx = DEFL.x0 + dx * t, cy = DEFL.y0 + dy * t;
+    let nx = b.x - cx, ny = b.y - cy;
+    const d2 = nx * nx + ny * ny;
+    if (d2 >= b.r * b.r) return;
+    let d = Math.sqrt(d2);
+    if (d < 0.0001) {
+      // degenerate: centre exactly on the line — use the upper-side normal
+      const L0 = Math.hypot(dy, dx); nx = dy / L0; ny = -dx / L0; d = 0.0001;
+    } else { nx /= d; ny /= d; }
+    const vx = b.x - b.px, vy = b.y - b.py;
+    b.x = cx + nx * b.r; b.y = cy + ny * b.r;
+    const L = Math.sqrt(len2), tx = dx / L, ty = dy / L;
+    const vn = vx * nx + vy * ny;
+    const vt = vx * tx + vy * ty;
+    const nvn = vn < 0 ? -vn * 0.15 : vn;      // damped normal bounce
+    const nvt = vt * 0.97;                     // mild rolling friction
+    const nvx = tx * nvt + nx * nvn, nvy = ty * nvt + ny * nvn;
+    b.px = b.x - nvx; b.py = b.y - nvy;
+    b.sleep = false; b.slow = 0;               // gravity keeps it rolling — never wedges
+  }
+
+  // Housing collider: the region behind the bar is solid. Push-out favours the
+  // right face; the (unreachable-by-design) top face sheds coins rightward.
+  function sealCollide(b) {
+    if (b.x - b.r >= SEAL.x1 || b.y + b.r <= SEAL.top || b.y - b.r > PLAT_TOP) return;
+    const penX = SEAL.x1 - (b.x - b.r);
+    const penY = (b.y + b.r) - SEAL.top;
+    const vx = b.x - b.px, vy = b.y - b.py;
+    if (penX <= penY) { b.x = SEAL.x1 + b.r; b.px = b.x + vx * 0.3; }
+    else { b.y = SEAL.top - b.r; b.py = b.y + vy * 0.2; b.px = b.x - Math.max(vx, 0.5); b.slow = 0; }
+    b.sleep = false;
+  }
+
   // Land / rest a body on a horizontal shelf segment [x0,x1] at surface `top`.
   // Returns true if the body is supported by this shelf this step.
   function shelfSupport(b, top, x0, x1) {
@@ -530,6 +579,16 @@
     for (const b of bodies) {
       if (!b.live) continue;
       if (b.y + b.r < yTop || b.y - b.r > PLAT_TOP) continue;   // not at platform height
+      // Bar-top chamfer: anything landing ON the bar slides off to the RIGHT
+      // (low-friction top + enforced rightward creep) — nothing rests there.
+      if (b.y < yTop && b.y + b.r > yTop && b.x + b.r > backFace && b.x - b.r < frontFace) {
+        const vy2 = b.y - b.py;
+        b.y = yTop - b.r;
+        b.py = b.y + vy2 * 0.15;
+        b.px = b.x - Math.max(b.x - b.px, 0.5);
+        b.sleep = false; b.slow = 0;
+        continue;
+      }
       if (b.x - b.r < frontFace && b.x + b.r > backFace) {
         // body overlaps the bar. On the forward stroke shove it ahead of the
         // face, imparting ONLY the bar speed (never the coin prior velocity, so
@@ -577,6 +636,8 @@
         if (!b.live) continue;
         wallBounds(b);
         pegCollide(b);
+        deflectorCollide(b);
+        sealCollide(b);
         // shelves: tray (only over its live span) then platform (up to the lip)
         shelfSupport(b, TRAY_TOP, trayCX - TRAY_HW, trayCX + TRAY_HW);
         shelfSupport(b, PLAT_TOP, WX0, FLIP);
@@ -1083,6 +1144,19 @@
     ctx.fillStyle = 'rgba(255,255,255,0.14)'; ctx.fillRect(trL + 4, TRAY_TOP + 2, trR - trL - 8, 2);
     ctx.fillStyle = 'rgba(255,210,77,0.5)'; ctx.fillRect(trL, TRAY_TOP, 4, 14); ctx.fillRect(trR - 4, TRAY_TOP, 4, 14);
 
+    // left deflector ledge — same shelf material as the trays, angled to feed
+    // tray spill back in front of the pusher
+    ctx.beginPath();
+    ctx.moveTo(DEFL.x0, DEFL.y0); ctx.lineTo(DEFL.x1, DEFL.y1);
+    ctx.lineTo(DEFL.x1, DEFL.y1 + 13); ctx.lineTo(DEFL.x0, DEFL.y0 + 13);
+    ctx.closePath();
+    ctx.fillStyle = '#3a2f74'; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(DEFL.x0 + 2, DEFL.y0 + 2.5); ctx.lineTo(DEFL.x1 - 2, DEFL.y1 + 2.5); ctx.stroke();
+    // wear highlight at the discharge tip + wall mount plate
+    ctx.fillStyle = 'rgba(255,210,77,0.5)'; ctx.fillRect(DEFL.x1 - 4, DEFL.y1, 4, 13);
+    ctx.fillStyle = 'rgba(126,109,255,0.55)'; ctx.fillRect(DEFL.x0, DEFL.y0 - 3, 5, 19);
+
     // lower platform + front lip + trough
     ctx.fillStyle = '#2c2566'; rr(WX0, PLAT_TOP, FLIP - WX0, 16, 3); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(WX0 + 4, PLAT_TOP + 2, FLIP - WX0 - 8, 2);
@@ -1096,6 +1170,11 @@
     ctx.save(); ctx.translate((FLIP + WX1) / 2, (PLAT_TOP + CAB.y1 - 22) / 2); ctx.rotate(-Math.PI / 2);
     ctx.font = '700 12px "DM Mono", monospace'; ctx.fillStyle = 'rgba(255,210,77,0.55)';
     ctx.fillText('TROUGH', 0, 0); ctx.restore();
+
+    // pusher housing — seals the zone behind the bar; the bar slides out of it
+    ctx.fillStyle = '#241d52'; rr(WX0, SEAL.top, SEAL.x1 - WX0 + 2, PLAT_TOP - SEAL.top + 6, 3); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(WX0 + 2, SEAL.top + 2, SEAL.x1 - WX0 - 2, 2);
+    ctx.fillStyle = 'rgba(126,109,255,0.4)'; ctx.fillRect(SEAL.x1 - 1, SEAL.top, 3, PLAT_TOP - SEAL.top);
 
     // pusher bar
     const pbBack = pusherX - PUSH_W;
@@ -1283,7 +1362,7 @@
       get correctIdx() { return qCorrectIdx; },
       get liveCount() { return bodies.filter(b => b.live).length; },
       get restingCount() { return bodies.filter(b => b.live && b.sleep).length; },
-      geometry: { WX0, WX1, TRAY_TOP, PLAT_TOP, FLIP, TROUGH_Y, LAUNCH_MIN, LAUNCH_MAX },
+      geometry: { WX0, WX1, TRAY_TOP, PLAT_TOP, FLIP, TROUGH_Y, LAUNCH_MIN, LAUNCH_MAX, PUSH_FRONT, PUSH_BACK, PUSH_H, DEFL, SEAL },
       answer(right) {
         if (!currentConcept || qLocked) return false;
         answerQuestion(right ? qCorrectIdx : (qCorrectIdx === 0 ? 1 : 0), false);
@@ -1295,6 +1374,15 @@
       },
       setAim(x) { launcherX = Math.max(LAUNCH_MIN, Math.min(LAUNCH_MAX, x)); },
       drop() { const before = magazine; dropCoin(); return magazine < before; },
+      // test-only: inject a coin at the rail without touching the magazine
+      // (physics regression aid — currency rules untouched in real play)
+      injectDrop(x) {
+        const b = makeBody(Math.max(LAUNCH_MIN, Math.min(LAUNCH_MAX, x)), RAIL_Y + 20, 'coin');
+        b.py = b.y - 3;
+        bodies.push(b);
+        lastDropTime = simTime;
+        return b.id;
+      },
       // deterministic fast-forward of the physics + sim clock
       stepSeconds(sec) {
         const n = Math.max(0, Math.round(sec / H));
