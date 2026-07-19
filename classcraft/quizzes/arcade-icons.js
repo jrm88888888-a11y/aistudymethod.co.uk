@@ -684,6 +684,27 @@
       '................'
     ],
 
+    /* Coin Pusher — a falling coin (motion dash above) dropping onto a
+       stack of pound coins seen side-on, gold with shaded undersides. */
+    'coin-pusher': [
+      '.......WW.......',
+      '................',
+      '......KKKK......',
+      '.....KYWWYK.....',
+      '.....KYYYyK.....',
+      '......KKKK......',
+      '................',
+      '....KKKKKKKK....',
+      '...KWWYYYYYYK...',
+      '...KyyyyyyyyK...',
+      '..KKKKKKKKKKKK..',
+      '..KYYYYYYYYYYK..',
+      '..KyyyyyyyyyyK..',
+      '..KKKKKKKKKKKK..',
+      '..KYYYYYYYYYYK..',
+      '..KKKKKKKKKKKK..'
+    ],
+
     'mob-quiz': [
       '................',
       '................',

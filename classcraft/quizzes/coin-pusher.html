@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Pusher — Free Revision Coin-Pusher Game — AI Study Method</title>
+<meta name="description" content="Answer to mint coins, drop them through the pins, shove the pile off the ledge. A free GCSE, A-Level and IB coin-pusher revision game across every subject. No login required.">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="arcade.css">
+<style>
+  /* ---- The Pusher: machine canvas + live question panel ---- */
+  #root { max-width: 760px; }
+  .pu-stage { margin: 0 auto; }
+  .pu-layout { display: flex; gap: 16px; align-items: stretch; }
+  .pu-machine { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .pu-quiz { flex: 0 0 336px; max-width: 336px; display: flex; flex-direction: column; }
+
+  #cab-wrap {
+    position: relative; width: 100%;
+    height: min(62vh, 600px); min-height: 380px;
+    border-radius: 16px; overflow: hidden;
+    background: #05040f; border: 1px solid var(--ar-border-hi);
+    box-shadow: 0 22px 60px rgba(0,0,0,0.55);
+    touch-action: none; user-select: none;
+  }
+  #pu-canvas { display: block; width: 100%; height: 100%; }
+  #cab-wrap.fever { box-shadow: 0 0 0 3px rgba(255,214,10,0.5), 0 0 46px rgba(255,210,77,0.5), 0 22px 60px rgba(0,0,0,0.55); }
+
+  /* hold-to-aim zones (mobile / pointer) */
+  .pu-zone { position: absolute; top: 0; height: 100%; z-index: 3; -webkit-tap-highlight-color: transparent; }
+  .pu-zone.left  { left: 0;  width: 30%; }
+  .pu-zone.right { right: 0; width: 30%; }
+  .pu-zone.mid   { left: 30%; width: 40%; }
+  .pu-zone .hint {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    font-family: var(--ar-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(236,232,255,0.5); pointer-events: none; white-space: nowrap;
+  }
+
+  /* fever banner */
+  #pu-fever {
+    position: absolute; left: 50%; top: 14px; transform: translateX(-50%) scale(0.8);
+    z-index: 6; pointer-events: none; opacity: 0;
+    font-family: var(--ar-font); font-weight: 800; font-size: 20px; letter-spacing: 2px;
+    color: #1a0d02; background: linear-gradient(180deg,#ffe27a,#ffb020);
+    border-radius: 12px; padding: 8px 18px; box-shadow: 0 6px 26px rgba(255,180,32,0.55);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  #pu-fever.show { opacity: 1; transform: translateX(-50%) scale(1); }
+
+  /* control deck */
+  .pu-deck { display: flex; gap: 10px; align-items: stretch; margin: 14px 0 4px; }
+  .deck-move {
+    flex: 0 0 auto; width: 66px; min-height: 66px; border-radius: 14px;
+    background: var(--ar-card); border: 2px solid var(--ar-border-hi); color: var(--ar-text);
+    font-size: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent; touch-action: none;
+    transition: transform 0.08s ease, background 0.1s ease, border-color 0.1s ease;
+  }
+  .deck-move:active, .deck-move.on { transform: translateY(2px); background: var(--ar-cyan-dim); border-color: var(--ar-cyan); }
+  #btn-drop {
+    flex: 1 1 auto; min-height: 74px; border-radius: 16px; border: none; cursor: pointer;
+    font-family: var(--ar-font); font-weight: 800; font-size: 22px; letter-spacing: 2px;
+    color: #1a0d02; background: linear-gradient(180deg, #ffe27a 0%, #ffd24d 55%, #e8a51f 100%);
+    box-shadow: 0 7px 0 #a5720f, 0 12px 26px rgba(255,210,77,0.35);
+    -webkit-tap-highlight-color: transparent; touch-action: none;
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+  }
+  #btn-drop:active:not(:disabled), #btn-drop.press { transform: translateY(6px); box-shadow: 0 1px 0 #a5720f, 0 5px 14px rgba(255,210,77,0.3); }
+  #btn-drop:disabled { filter: grayscale(0.55) brightness(0.62); cursor: default; box-shadow: 0 3px 0 #6b4a0a; }
+  #btn-drop .mag { font-family: var(--ar-mono); font-size: 13px; letter-spacing: 1px; opacity: 0.85; }
+  .pu-hint-row { font-family: var(--ar-mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--ar-muted); text-align: center; margin: 4px 0 0; }
+  @media (hover: none) { .pu-kbd { display: none; } }
+
+  /* ---- question panel ---- */
+  .qp {
+    flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px;
+    background: var(--ar-card); border: 1px solid var(--ar-border-hi); border-radius: 16px;
+    padding: 14px 14px 16px; min-height: 0; position: relative; overflow: hidden;
+  }
+  .qp.gold-flash { animation: qpGold 0.7s ease; }
+  @keyframes qpGold {
+    0% { box-shadow: 0 0 0 0 rgba(255,214,10,0); }
+    30% { box-shadow: inset 0 0 0 3px rgba(255,214,10,0.9), 0 0 34px rgba(255,210,77,0.6); background: var(--ar-gold-dim); }
+    100% { box-shadow: 0 0 0 0 rgba(255,214,10,0); }
+  }
+  .qp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .qp-count { font-family: var(--ar-mono); font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ar-cyan); }
+  .qp-streak { font-family: var(--ar-mono); font-size: 11px; letter-spacing: 1px; color: var(--ar-gold); }
+  .qp-streak.hot { color: var(--ar-gold); text-shadow: 0 0 12px rgba(255,214,10,0.6); }
+  .qp-ask { font-family: var(--ar-mono); font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ar-text2); margin: 2px 0 0; }
+  .qp-term { font-family: var(--ar-font); font-weight: 700; font-size: clamp(16px, 2.4vw, 21px); color: var(--ar-text); line-height: 1.2; margin: 0; }
+  .qp-term .gold { color: var(--ar-gold); text-shadow: 0 0 14px rgba(255,214,10,0.5); }
+  #qp-timer { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); overflow: hidden; }
+  #qp-timer i { display: block; height: 100%; width: 100%; transform-origin: left; background: var(--ar-mint); box-shadow: 0 0 10px rgba(0,255,163,0.6); }
+  #qp-timer i.warn { background: var(--ar-gold); }
+  #qp-timer i.danger { background: var(--ar-pink); }
+  .qp-opts { display: grid; gap: 8px; }
+  .qp-opt {
+    background: var(--ar-card2, #171233); border: 2px solid var(--ar-border); border-radius: 12px;
+    padding: 10px 12px; text-align: left; color: var(--ar-text); font-family: var(--ar-font);
+    font-size: 14px; line-height: 1.38; cursor: pointer; width: 100%;
+    display: flex; gap: 9px; align-items: flex-start;
+    transition: transform 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+  }
+  .qp-opt .k { font-family: var(--ar-mono); font-size: 11px; font-weight: 700; color: var(--ar-cyan); flex: 0 0 auto; margin-top: 1px; }
+  .qp-opt:hover:not(:disabled) { border-color: var(--ar-cyan); transform: translateY(-1px); }
+  .qp-opt:active:not(:disabled) { transform: scale(0.99); }
+  .qp-opt.correct { border-color: var(--ar-mint); background: var(--ar-mint-dim); }
+  .qp-opt.wrong   { border-color: var(--ar-pink); background: var(--ar-pink-dim); }
+  .qp-opt.dim { opacity: 0.42; }
+  .qp-opt:disabled { cursor: default; }
+  #qp-corr {
+    border-radius: 12px; border: 1px solid rgba(255,46,136,0.6); background: #1b0a1f;
+    padding: 11px 13px; display: none;
+  }
+  #qp-corr.show { display: block; animation: arPop 0.32s ease; }
+  #qp-corr .lead { font-family: var(--ar-mono); font-size: 10px; letter-spacing: 1.3px; text-transform: uppercase; color: var(--ar-pink); margin-bottom: 5px; }
+  #qp-corr .body { font-size: 13.5px; line-height: 1.5; color: #ffd7e6; }
+  #qp-corr .body b { color: #fff; }
+  .qp-spend {
+    text-align: center; padding: 18px 12px; display: none;
+  }
+  .qp-spend.show { display: block; }
+  .qp-spend h3 { font-family: var(--ar-font); font-weight: 800; font-size: 19px; margin: 0 0 6px; color: var(--ar-gold); }
+  .qp-spend p { font-size: 13.5px; color: var(--ar-text2); margin: 0; line-height: 1.5; }
+
+  @media (max-width: 860px) {
+    .pu-layout { flex-direction: column; }
+    .pu-quiz { flex: 1 1 auto; max-width: none; }
+    #cab-wrap { height: min(52vh, 460px); }
+  }
+  @media (max-width: 480px) { .deck-move { width: 58px; } #btn-drop { font-size: 19px; } }
+</style>
+<link rel="canonical" href="https://aistudymethod.co.uk/classcraft/quizzes/coin-pusher.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AI Study Method">
+<meta property="og:title" content="The Pusher — AI Study Method">
+<meta property="og:description" content="Play this revision coin-pusher on the AI Study Method Subjects Arcade — retro games across every subject, level and exam board. Can you beat the score?">
+<meta property="og:url" content="https://aistudymethod.co.uk/classcraft/quizzes/coin-pusher.html">
+<meta property="og:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Pusher — AI Study Method">
+<meta name="twitter:description" content="Answer to mint coins, drop them through the pins, shove the pile off the ledge. A free revision coin-pusher on the AI Study Method Subjects Arcade.">
+<meta name="twitter:image" content="https://aistudymethod.co.uk/og-arcade.png">
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../../subjects.html">Velvet Revision</a></li>
+      <li><a href="../../velvet-method.html">The Velvet Method</a></li>
+      <li><a href="../../courses.html">Courses</a></li>
+      <li><a href="../../parents.html">Parents</a></li>
+      <li><a href="../../about.html">About</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="../../courses.html" class="btn-primary">View the Course →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ar-wrap" id="root">
+  <div class="ar-error">Loading…</div>
+</div>
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="arcade.js"></script>
+<script src="share-score.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const esc = Arcade.escapeHtml;
+  const params = new URLSearchParams(location.search);
+  const stem = params.get('spec');
+  const DEBUG = params.get('debug') === '1';
+  const root = document.getElementById('root');
+  const announce = document.getElementById('announce');
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  Arcade.mountMuteButton();
+  Arcade.maybeShowChallenge && Arcade.maybeShowChallenge();
+
+  if (!stem) {
+    root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
+    return;
+  }
+
+  const [spec, bank] = await Promise.all([
+    Arcade.fetchSpecJson(stem, '../adventures/_specs'),
+    Arcade.fetchSpecJson(stem, '../evaluate/misconception-banks'),
+  ]);
+
+  const topic = (spec && (spec.topic_display || spec.title)) || stem;
+  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
+  const concepts = ((spec && spec.concepts) || [])
+    .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  // Distractor pool from the misconception bank — DEFINITION-shaped strings only.
+  const isDefShaped = s => typeof s === 'string' && s.trim().length >= 20 && /\s/.test(s) && !/^[\d\s.,%-]+$/.test(s);
+  const bankMisc = (((bank && bank.items) || [])
+    .flatMap(it => [it && it.misconception, it && it.random_wrong])
+    .filter(isDefShaped));
+
+  // Quality gate — need at least 4 authored definitions to build a 4-way question.
+  if (!spec || concepts.length < 4) {
+    root.innerHTML =
+      '<div class="ar-badge">V · Push · The Pusher</div>' +
+      '<h1 class="ar-title">' + esc(topic) + '</h1>' +
+      '<p class="ar-sub">The Pusher stocks its cabinet with a coin for every key term in this topic &mdash; it needs a full set of authored definitions before it can open for play.</p>' +
+      '<div class="ar-meta">' + esc([level, subj, 'In production'].filter(Boolean).join(' · ')) + '</div>' +
+      '<div class="ar-card" style="text-align:center;padding:40px 28px;">' +
+        '<div style="font-size:48px;line-height:1;margin-bottom:14px">🪙</div>' +
+        '<h2 style="font-size:1.3rem;margin:0 0 8px">Cabinet being stocked</h2>' +
+        '<p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">The Pusher needs at least four authored concept definitions for this exact topic. That set has not been written at the required depth yet.</p>' +
+        '<a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>' +
+      '</div>';
+    return;
+  }
+
+  const BEST_KEY = 'aism-pusher-best:' + stem;
+
+  /* ======================================================================
+     PIXEL PLUSHIE SPRITES (14x14) — reused for the three lower-deck prizes.
+     ====================================================================== */
+  const PAL = {
+    K: '#141235', E: '#141235', W: '#f6f2ff', o: '#c67b3a',
+    Y: '#ffd24d', R: '#ff5f8a', L: '#8b7bff', C: '#5cffe4', G: '#5fe07a',
+  };
+  const SPRITES = {
+    teddy: [
+      '...KK....KK...', '..KooK..KooK..', '..KooKKKKooK..', '.KKooooooooKK.',
+      '.KooooooooooK.', '.KoEooooooEoK.', '.KoooKWWKoooK.', '.KoooWWWWoooK.',
+      '..KooooooooK..', '..KWWWWWWWWK..', '.KoWWWWWWWWoK.', '.KooWWWWWWooK.',
+      '..KooK..KooK..', '..KKKK..KKKK..',
+    ],
+    robot: [
+      '...K....K.....', '...K....K.....', '..KKKKKKKK....', '.KCCCCCCCCK...',
+      'KCCCCCCCCCCK..', 'KCKWWCCWWKCK..', 'KCKWECCEWKCK..', 'KCCCCCCCCCCK..',
+      'KCCCKKKKCCCK..', 'KCCCCCCCCCCK..', '.KKCCCCCCKK...', '..KCCCCCCK....',
+      '..KCK..KCK....', '..KKK..KKK....',
+    ],
+    dino: [
+      '.........KKK..', '........KGGGK.', '.KKK...KGGGGGK', 'KGGGK.KGGWEGGK',
+      'KGGGGKKGGGGGGK', 'KGGGGGGGGGGGGK', '.KGGGGGGGGGGGK', '..KGGGGGGGGGGK',
+      '..KGGGGGGGGKK.', '..KGGGGGGGGK..', '..KGGKKGGK....', '..KGK..KGK....',
+      '..KKK..KKK....', '..............',
+    ],
+  };
+  const PRIZE_KEYS = ['teddy', 'robot', 'dino'];
+  const SPRITE_N = 14;
+
+  function drawSprite(ctx, key, cx, cy, s, blink) {
+    const map = SPRITES[key]; if (!map) return;
+    const half = (SPRITE_N * s) / 2;
+    const ox = cx - half, oy = cy - half;
+    for (let r = 0; r < map.length; r++) {
+      const row = map[r];
+      for (let c = 0; c < row.length; c++) {
+        const ch = row[c];
+        if (ch === '.') continue;
+        if (ch === 'E' && blink) {
+          ctx.fillStyle = PAL.K;
+          ctx.fillRect(ox + c * s, oy + (r + 0.42) * s, s, Math.max(1, s * 0.34));
+          continue;
+        }
+        ctx.fillStyle = PAL[ch] || '#fff';
+        ctx.fillRect(ox + c * s, oy + r * s, s + 0.4, s + 0.4);
+      }
+    }
+  }
+
+  /* ======================================================================
+     WORLD GEOMETRY (fixed logical space, letterboxed to fit)
+     ====================================================================== */
+  const LW = 540, LH = 820;
+  const CAB = { x0: 18, y0: 22, x1: 522, y1: 802 };
+  const MARQ = { y0: 34, y1: 116 };
+  const WX0 = 66, WX1 = 474;                 // interior play walls
+  const RAIL_Y = 150;                        // launcher rail
+  const LAUNCH_MIN = WX0 + 34, LAUNCH_MAX = WX1 - 34;
+
+  // Pin field
+  const PEG_R = 7;
+  const PIN_Y0 = 214, PIN_DY = 50, PIN_ROWS = 4;
+  const pegs = [];
+  (function buildPegs() {
+    for (let r = 0; r < PIN_ROWS; r++) {
+      const y = PIN_Y0 + r * PIN_DY;
+      const off = (r % 2) * 27;
+      for (let x = WX0 + 34 + off; x < WX1 - 20; x += 54) {
+        pegs.push({ x: x, y: y });
+      }
+    }
+  })();
+
+  // Upper oscillating tray
+  const TRAY_TOP = 452, TRAY_HW = 132, TRAY_CX0 = (WX0 + WX1) / 2;
+  const TRAY_AMP = reduced ? 12 : 30, TRAY_HZ = 0.4;
+  let trayCX = TRAY_CX0, trayCXprev = TRAY_CX0;
+  let mechActive = false;                     // tray + pusher frozen during warm-up settle
+
+  // Lower platform + pusher + front lip / trough
+  const PLAT_TOP = 612, FLIP = 434;          // platform surface + front-lip x
+  // The pusher reciprocates in the BACK half of the platform. The resting
+  // starter pile sits AHEAD of its forward reach, so at idle the bar swings in
+  // empty space and never touches the pile — nothing ratchets off on its own.
+  // A dropped coin lands in the back zone, the bar bulldozes it into the pile,
+  // and the pile advances a coin-width toward the lip. That is the mechanism.
+  const PUSH_BACK = 118, PUSH_FRONT = 168, PUSH_W = 26, PUSH_H = 46, PUSH_HZ = reduced ? 0.12 : 0.16;
+  let pusherX = PUSH_BACK, pusherXprev = PUSH_BACK;      // pusher front (right) face
+  const TROUGH_Y = 728, TROUGH_TOP = PLAT_TOP + 10;
+
+  /* ======================================================================
+     PHYSICS TUNABLES
+     ====================================================================== */
+  const H = 1 / 120;
+  const GRAV = 2000;
+  const AIR = 0.994;
+  const WALL_REST = 0.34;
+  const PEG_REST = 0.55;
+  const SHELF_REST = 0.16;
+  const SLEEP_SPEED = 4.0;
+  const R_COIN = 11, R_GOLD = 18, R_PRIZE = 20;
+
+  /* ======================================================================
+     STATE
+     ====================================================================== */
+  let bodies = [];
+  let magazine = 0, score = 0, streak = 0, bestStreak = 0;
+  let coinsCollected = 0, goldCollected = 0, prizesCollected = 0;
+  let state = 'boot';                     // boot | playing | ended
+  let simTime = 0, lastDropTime = -999, hardCapAt = 180;
+  let launcherX = TRAY_CX0, moveDir = 0;
+  let shakeMag = 0, shakeX = 0, shakeY = 0;
+
+  // Fever / coin-shower
+  const collectTimes = [];
+  let feverUntil = -1;
+  let sparks = [];                        // in-canvas collection sparkles (never over the quiz panel)
+
+  // Quiz
+  const QUESTION_TARGET = 12, Q_MS = 15000;
+  let qQueue = [], asked = 0, correctCount = 0, quizExhausted = false;
+  let currentConcept = null, qOpts = [], qCorrectIdx = 0, qLocked = false;
+  let timerCtl = null, qStartMs = 0;
+  const askRecords = [];                  // {term, outcome} for the emoji grid
+
+  // sfx throttle
+  let lastPinSfx = 0;
+
+  /* ======================================================================
+     BODY FACTORY
+     ====================================================================== */
+  let bodyId = 0;
+  function makeBody(x, y, kind, sprite) {
+    const r = kind === 'gold' ? R_GOLD : (kind === 'prize' ? R_PRIZE : R_COIN);
+    return {
+      id: bodyId++, x, y, px: x, py: y, r,
+      m: r * r, kind, sprite: sprite || null,
+      resting: false, sleep: false, slow: 0, spin: Math.random() * 6.28,
+      blink: 0, blinkNext: 1 + Math.random() * 5, live: true,
+    };
+  }
+  function invM(b) { return b.sleep ? 0 : 1 / b.m; }
+
+  /* ======================================================================
+     BUILD THE STARTER PILE
+     ====================================================================== */
+  const STARTER_UPPER = 16, STARTER_LOWER = 9, PRIZE_N = 3;
+  // The tray oscillates by TRAY_AMP, so only [CX0-HW+AMP, CX0+HW-AMP] is
+  // covered on EVERY frame. Starter coins live inside that always-supported
+  // band so idle oscillation alone never dumps them — only coins arriving
+  // later widen the pile past the band and spill. Likewise the pusher front
+  // only reaches PUSH_FRONT, so lower starters + prizes sit ahead of it and
+  // stay put at rest; a growing pile is what eventually shoves them over.
+  function stockMachine() {
+    bodies = [];
+    const bandL = TRAY_CX0 - TRAY_HW + TRAY_AMP + 8;   // safe tray band
+    for (let i = 0; i < STARTER_UPPER; i++) {
+      const col = i % 7, row = Math.floor(i / 7);
+      const x = bandL + col * 27 + (Math.random() - 0.5) * 4;
+      const y = TRAY_TOP - R_COIN - 2 - row * (R_COIN * 1.9);
+      bodies.push(makeBody(x, y, 'coin'));
+    }
+    // Lower platform starter coins — parked AHEAD of the pusher reach so the
+    // idle bar never touches them. Flat rows so they do not topple forward into
+    // the prizes.
+    for (let i = 0; i < STARTER_LOWER; i++) {
+      const col = i % 3, row = Math.floor(i / 3);
+      const x = 206 + col * 24 + (Math.random() - 0.5) * 2;
+      const y = PLAT_TOP - R_COIN - 2 - row * (R_COIN * 2.15);
+      bodies.push(makeBody(x, y, 'coin'));
+    }
+    // Three prizes in an exactly-touching pyramid (no overlap → the solver
+    // never flings them), parked ahead of the pusher with a clear gap from the
+    // coin pile and a margin from the lip. A player has to build the pile up to
+    // shove the cluster over. At rest nothing touches them, so they hold.
+    bodies.push(makeBody(350, PLAT_TOP - R_PRIZE - 2, 'prize', PRIZE_KEYS[0]));
+    bodies.push(makeBody(390, PLAT_TOP - R_PRIZE - 2, 'prize', PRIZE_KEYS[1]));
+    bodies.push(makeBody(370, PLAT_TOP - R_PRIZE - 2 - 35, 'prize', PRIZE_KEYS[2]));
+  }
+
+  // Pre-settle under gravity only (mechanism frozen) so the machine opens calm
+  // and fully stable — no coin ejected before the player has done anything.
+  function warmUp() {
+    mechActive = false;
+    trayCX = trayCXprev = TRAY_CX0;
+    pusherX = pusherXprev = PUSH_BACK;
+    for (let i = 0; i < 420; i++) physicsStep();
+    simTime = 0;                              // start the play clock fresh
+    mechActive = true;
+  }
+
+  /* ======================================================================
+     PHYSICS
+     ====================================================================== */
+  function integrate(b) {
+    if (b.sleep) return;
+    const vx = (b.x - b.px) * AIR, vy = (b.y - b.py) * AIR;
+    b.px = b.x; b.py = b.y;
+    b.x += vx; b.y += vy + GRAV * H * H;
+  }
+
+  function wallBounds(b) {
+    let vx = b.x - b.px, vy = b.y - b.py;
+    if (b.x < WX0 + b.r) { b.x = WX0 + b.r; b.px = b.x + vx * WALL_REST; }
+    else if (b.x > WX1 - b.r) { b.x = WX1 - b.r; b.px = b.x + vx * WALL_REST; }
+    // machine floor (trough bottom) so collected bodies do not escape before removal
+    if (b.y > TROUGH_Y + b.r) { b.y = TROUGH_Y + b.r; b.py = b.y + vy * 0.2; }
+  }
+
+  function pegCollide(b) {
+    for (let p = 0; p < pegs.length; p++) {
+      const pg = pegs[p];
+      const dx = b.x - pg.x, dy = b.y - pg.y;
+      const rr = b.r + PEG_R;
+      let d2 = dx * dx + dy * dy;
+      if (d2 >= rr * rr) continue;
+      let d = Math.sqrt(d2) || 0.001;
+      const nx = dx / d, ny = dy / d;
+      b.x = pg.x + nx * rr; b.y = pg.y + ny * rr;
+      let vx = b.x - b.px, vy = b.y - b.py;
+      const vn = vx * nx + vy * ny;
+      if (vn < 0) {
+        // reflect normal component, keep tangential, add slight tangential jitter
+        const jx = -ny, jy = nx;
+        const jit = (Math.random() - 0.5) * (reduced ? 0.6 : 1.6);
+        vx = vx - (1 + PEG_REST) * vn * nx + jx * jit;
+        vy = vy - (1 + PEG_REST) * vn * ny + jy * jit;
+        b.px = b.x - vx; b.py = b.y - vy;
+      }
+      b.sleep = false;
+      const now = simTime;
+      if (now - lastPinSfx > 0.045) { lastPinSfx = now; Arcade.sfx.tick(); }
+    }
+  }
+
+  // Land / rest a body on a horizontal shelf segment [x0,x1] at surface `top`.
+  // Returns true if the body is supported by this shelf this step.
+  function shelfSupport(b, top, x0, x1) {
+    // Centre-based span: a body is held only while its CENTRE is over the shelf.
+    // Once the centre passes the lip it loses support and tips into the trough.
+    if (b.x < x0 || b.x > x1) return false;
+    const bottom = b.y + b.r;
+    const prevBottom = b.py + b.r;
+    // swept check prevents tunnelling through the thin shelf in one step
+    if (b.y < top && bottom > top && prevBottom <= top + 3) {
+      const vy = b.y - b.py, vx = b.x - b.px;
+      b.y = top - b.r;
+      b.py = b.y + vy * SHELF_REST;
+      b.px = b.x - vx * 0.38;            // strong shelf friction → coins grip, piles stay compact
+      return true;
+    }
+    return false;
+  }
+
+  function collidePair(a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const rr = a.r + b.r;
+    let d2 = dx * dx + dy * dy;
+    if (d2 >= rr * rr) return;
+    let d = Math.sqrt(d2);
+    let nx, ny;
+    if (d < 0.0001) { nx = 0; ny = -1; d = 0.0001; } else { nx = dx / d; ny = dy / d; }
+    const ia = invM(a), ib = invM(b), it = ia + ib;
+    if (it <= 0) return;
+    const overlap = (rr - d) * 0.72;
+    a.x -= nx * overlap * (ia / it); a.y -= ny * overlap * (ia / it);
+    b.x += nx * overlap * (ib / it); b.y += ny * overlap * (ib / it);
+    a.sleep = false; b.sleep = false;
+  }
+
+  function trayCarry() {
+    // Coins resting on the oscillating tray get carried by it (friction).
+    const dx = trayCX - trayCXprev;
+    if (dx === 0) return;
+    const left = trayCX - TRAY_HW, right = trayCX + TRAY_HW;
+    for (const b of bodies) {
+      if (!b.live) continue;
+      if (b.x < left - b.r || b.x > right + b.r) continue;
+      if (Math.abs((b.y + b.r) - TRAY_TOP) > 6) continue;   // must be sat on the surface
+      // ride the tray exactly (px follows too → matched velocity, no injected
+      // drift). A coin only leaves when the pile presses it out of the band,
+      // at which point it keeps the tray velocity and is flung off the edge.
+      b.x += dx; b.px += dx;
+      b.sleep = false;
+    }
+  }
+
+  function pusherPush() {
+    // The reciprocating bar shoves platform coins toward the front lip.
+    const dx = pusherX - pusherXprev;
+    const yTop = PLAT_TOP - PUSH_H, backFace = pusherX - PUSH_W, frontFace = pusherX;
+    for (const b of bodies) {
+      if (!b.live) continue;
+      if (b.y + b.r < yTop || b.y - b.r > PLAT_TOP) continue;   // not at platform height
+      if (b.x - b.r < frontFace && b.x + b.r > backFace) {
+        // body overlaps the bar. On the forward stroke shove it ahead of the
+        // face, imparting ONLY the bar speed (never the coin prior velocity, so
+        // the heap creeps rather than squirts).
+        if (dx > 0 || b.x >= frontFace - b.r) {
+          b.x = frontFace + b.r;
+          b.px = b.x;                 // placed against the bar, no coasting → no net creep at rest
+          b.sleep = false;
+        }
+      }
+    }
+    pusherXprev = pusherX;
+  }
+
+  function collectSweep() {
+    if (!mechActive) return;             // no collection during the warm-up settle
+    // Bodies past the front lip fall; once below the platform on the right they
+    // are in the trough → collect.
+    for (const b of bodies) {
+      if (!b.live || b.collected) continue;
+      if (b.x > FLIP + 2 && b.y > TROUGH_TOP + b.r) {
+        collect(b);
+      }
+    }
+  }
+
+  function physicsStep() {
+    simTime += H;
+    // kinematics of tray + pusher (frozen at rest during the warm-up settle)
+    trayCXprev = trayCX;
+    pusherXprev = pusherX;
+    if (mechActive) {
+      trayCX = TRAY_CX0 + TRAY_AMP * Math.sin(2 * Math.PI * TRAY_HZ * simTime);
+      pusherX = PUSH_BACK + (PUSH_FRONT - PUSH_BACK) * (0.5 - 0.5 * Math.cos(2 * Math.PI * PUSH_HZ * simTime));
+    }
+
+    for (const b of bodies) integrate(b);
+    trayCarry();
+    pusherPush();
+
+    let maxFall = 0;
+    for (let it = 0; it < 5; it++) {
+      for (let i = 0; i < bodies.length; i++) {
+        const b = bodies[i];
+        if (!b.live) continue;
+        wallBounds(b);
+        pegCollide(b);
+        // shelves: tray (only over its live span) then platform (up to the lip)
+        shelfSupport(b, TRAY_TOP, trayCX - TRAY_HW, trayCX + TRAY_HW);
+        shelfSupport(b, PLAT_TOP, WX0, FLIP);
+        for (let j = i + 1; j < bodies.length; j++) {
+          if (!bodies[j].live) continue;
+          collidePair(b, bodies[j]);
+        }
+      }
+    }
+
+    // sleep + rest bookkeeping
+    for (const b of bodies) {
+      if (!b.live) continue;
+      const sp = Math.hypot(b.x - b.px, b.y - b.py) / H;
+      // Activity = coins actually cascading (high VERTICAL speed). The tray
+      // carries its coins horizontally at ~75 u/s forever, so a total-speed
+      // metric would never go quiet; vertical speed ignores that carry.
+      const vy = Math.abs(b.y - b.py) / H;
+      if (vy > maxFall) maxFall = vy;
+      const onTray = Math.abs((b.y + b.r) - TRAY_TOP) < 6 && b.x > trayCX - TRAY_HW && b.x < trayCX + TRAY_HW;
+      if (sp < 22) { const k = 0.3; b.px += (b.x - b.px) * k; b.py += (b.y - b.py) * k; }
+      // tray coins never truly sleep (they are always being carried)
+      if (!onTray && sp < SLEEP_SPEED) { b.slow += H; if (b.slow > 0.35) { b.sleep = true; b.px = b.x; b.py = b.y; } }
+      else b.slow = 0;
+    }
+    collectSweep();
+
+    // run-end evaluation (kept inside the sim so debug stepSeconds triggers it).
+    // Gate on time-since-last-drop with an empty magazine, NOT on total board
+    // quiet: a coin pusher never truly goes still (the bar ratchets the pile
+    // forever), so a quiet-based gate could hang. Five seconds after the final
+    // drop is ample for the last coins to cascade and collect.
+    if (state === 'playing') {
+      const settled = (simTime - lastDropTime) > 5;
+      const nothingLeft = quizExhausted && magazine === 0;
+      if ((nothingLeft && settled) || simTime > hardCapAt) endGame();
+    }
+  }
+
+  /* ======================================================================
+     COLLECTION
+     ====================================================================== */
+  function collect(b) {
+    b.collected = true; b.live = false;
+    const fever = simTime < feverUntil;
+    const mult = fever ? 2 : 1;
+    let base;
+    if (b.kind === 'prize') { base = 500; prizesCollected++; }
+    else if (b.kind === 'gold') { base = 250; goldCollected++; coinsCollected++; }
+    else { base = 50; coinsCollected++; }
+    const pts = base * mult;
+    score += pts;
+
+    // coin-shower / fever bookkeeping
+    collectTimes.push(simTime);
+    while (collectTimes.length && simTime - collectTimes[0] > 2) collectTimes.shift();
+    if (!fever && collectTimes.length >= 6) triggerFever();
+
+    Arcade.sfx.coin();
+    if (b.kind === 'prize') Arcade.sfx.correct(3);
+    // fly the points up toward the score readout
+    popCollect(b, '+' + pts, b.kind === 'coin' ? '#ffd24d' : (b.kind === 'gold' ? '#ffe27a' : '#5cffe4'));
+    if (!reduced) shakeMag = Math.min(8, shakeMag + (b.kind === 'prize' ? 7 : 2));
+    updateMarquee();
+  }
+
+  function popCollect(b, text, color) {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const sx = rect.left + (offX + b.x * S);
+    const sy = rect.top + (offY + b.y * S);
+    Arcade.popText(text, sx, sy, color);
+    // In-canvas sparkles only — the shared confetti layer is full-screen and
+    // would fall across the question panel, which must stay legible.
+    spawnSparks(b.x, b.y, b.kind === 'prize' ? 20 : 9, b.kind !== 'coin');
+  }
+  function spawnSparks(x, y, n, gold) {
+    if (reduced) n = Math.min(n, 4);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * 6.283, sp = 50 + Math.random() * 190;
+      sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 80, life: 0, max: 0.45 + Math.random() * 0.45,
+        c: gold ? '#ffe27a' : (Math.random() < 0.5 ? '#ffd24d' : '#5cffe4') });
+    }
+    if (sparks.length > 240) sparks.splice(0, sparks.length - 240);
+  }
+
+  function triggerFever() {
+    feverUntil = simTime + 10;
+    const el = document.getElementById('cab-wrap');
+    if (el) el.classList.add('fever');
+    const fb = document.getElementById('pu-fever');
+    if (fb) { fb.textContent = '★ COIN SHOWER — ×2 ★'; fb.classList.add('show'); }
+    Arcade.sfx.fanfare();
+    announce.textContent = 'Coin shower. Double points for ten seconds.';
+  }
+  function feverTick() {
+    if (feverUntil > 0 && simTime >= feverUntil) {
+      feverUntil = -1;
+      const el = document.getElementById('cab-wrap'); if (el) el.classList.remove('fever');
+      const fb = document.getElementById('pu-fever'); if (fb) fb.classList.remove('show');
+    }
+  }
+
+  /* ======================================================================
+     MINT + DROP  (currency ONLY minted by correct answers)
+     ====================================================================== */
+  function mintCoin(golden) {
+    magazine++;
+    if (magazine > 20) magazine = 20;      // sane cap
+    updateDropBtn();
+    if (golden) {
+      Arcade.sfx.fanfare();
+      const qp = document.getElementById('qp'); if (qp) { qp.classList.remove('gold-flash'); void qp.offsetWidth; qp.classList.add('gold-flash'); }
+    } else {
+      Arcade.sfx.click();
+    }
+  }
+  // A minted golden is remembered so the NEXT drop launches a golden coin.
+  let goldenPending = 0;
+
+  function dropCoin() {
+    if (state !== 'playing' || magazine <= 0) return;
+    magazine--;
+    const golden = goldenPending > 0;
+    if (golden) goldenPending--;
+    const b = makeBody(launcherX, RAIL_Y + 20, golden ? 'gold' : 'coin');
+    b.px = b.x - moveDir * 1.4; b.py = b.y - 3.2;   // slight launch velocity
+    bodies.push(b);
+    lastDropTime = simTime;
+    Arcade.sfx.swoosh();
+    const btn = document.getElementById('btn-drop');
+    if (btn) { btn.classList.add('press'); setTimeout(() => btn.classList.remove('press'), 120); }
+    updateDropBtn();
+    cullBodies();
+  }
+
+  function cullBodies() {
+    // recycle dead bodies + hard population cap for performance
+    bodies = bodies.filter(b => b.live);
+    if (bodies.length > 68) {
+      // drop the oldest sleeping platform coin that is safely away from the lip
+      for (let i = 0; i < bodies.length; i++) {
+        const b = bodies[i];
+        if (b.kind === 'coin' && b.sleep && b.x < FLIP - 30 && b.y < PLAT_TOP) { bodies.splice(i, 1); break; }
+      }
+    }
+  }
+
+  /* ======================================================================
+     QUIZ
+     ====================================================================== */
+  function buildQueue() {
+    const base = [];
+    while (base.length < QUESTION_TARGET) base.push.apply(base, Arcade.shuffle(concepts));
+    qQueue = base.slice(0, QUESTION_TARGET);
+  }
+
+  function buildOptions(concept) {
+    const correct = concept.def;
+    const pool = [];
+    const seen = new Set([correct]);
+    for (const c of Arcade.shuffle(concepts)) {
+      if (pool.length >= 2) break;
+      if (c.def !== correct && !seen.has(c.def)) { seen.add(c.def); pool.push(c.def); }
+    }
+    for (const m of Arcade.shuffle(bankMisc)) {
+      if (pool.length >= 3) break;
+      if (!seen.has(m)) { seen.add(m); pool.push(m); }
+    }
+    for (const c of Arcade.shuffle(concepts)) {
+      if (pool.length >= 3) break;
+      if (c.def !== correct && !seen.has(c.def)) { seen.add(c.def); pool.push(c.def); }
+    }
+    const opts = Arcade.shuffle(pool.slice(0, 3).concat([correct]));
+    qCorrectIdx = opts.indexOf(correct);
+    qOpts = opts;
+    return opts;
+  }
+
+  function nextQuestion() {
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    if (!qQueue.length) { onQuizExhausted(); return; }
+    currentConcept = qQueue.shift();
+    qLocked = false;
+    const opts = buildOptions(currentConcept);
+    const golden = streak >= 2;   // answering this correctly makes 3-in-a-row
+    const qp = document.getElementById('qp');
+    qp.innerHTML =
+      '<div class="qp-head">' +
+        '<span class="qp-count">Question ' + (asked + 1) + ' of ' + QUESTION_TARGET + '</span>' +
+        '<span class="qp-streak' + (streak >= 2 ? ' hot' : '') + '">' + (streak > 0 ? '🔥 ' + streak + ' streak' : 'Build a streak') + '</span>' +
+      '</div>' +
+      '<div class="qp-ask">Which is the definition?' + (golden ? ' · next correct mints GOLD' : '') + '</div>' +
+      '<h3 class="qp-term">' + esc(currentConcept.term) + '</h3>' +
+      '<div id="qp-timer"><i></i></div>' +
+      '<div class="qp-opts">' +
+        opts.map((o, i) =>
+          '<button type="button" class="qp-opt" data-idx="' + i + '">' +
+          '<span class="k">' + (i + 1) + '</span><span>' + esc(o) + '</span></button>'
+        ).join('') +
+      '</div>' +
+      '<div id="qp-corr"></div>';
+    qp.querySelectorAll('.qp-opt').forEach(b =>
+      b.addEventListener('click', () => answerQuestion(parseInt(b.dataset.idx, 10), false)));
+    announce.textContent = 'Question ' + (asked + 1) + '. Which is the definition of ' + currentConcept.term + '?';
+    qStartMs = performance.now();
+    const fill = qp.querySelector('#qp-timer i');
+    timerCtl = Arcade.timer(fill, Q_MS, { onEnd: () => answerQuestion(-1, true) });
+  }
+
+  function answerQuestion(idx, timedOut) {
+    if (qLocked || !currentConcept) return;
+    qLocked = true;
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    const concept = currentConcept;
+    const correct = !timedOut && idx === qCorrectIdx;
+    const qp = document.getElementById('qp');
+    qp.querySelectorAll('.qp-opt').forEach((b, i) => {
+      b.disabled = true;
+      if (i === qCorrectIdx) b.classList.add('correct');
+      else if (i === idx) b.classList.add('wrong');
+      else b.classList.add('dim');
+    });
+    asked++;
+
+    if (correct) {
+      correctCount++;
+      streak++;
+      bestStreak = Math.max(bestStreak, streak);
+      const golden = streak > 0 && streak % 3 === 0;
+      if (golden) goldenPending++;
+      mintCoin(golden);
+      askRecords.push({ term: concept.term, outcome: concept._wrongOnce ? 'redeemed' : 'correct' });
+      Arcade.sfx.correct(streak);
+      Arcade.streakCall && Arcade.streakCall(streak);
+      announce.textContent = 'Correct. ' + (golden ? 'Golden coin minted. ' : 'Coin minted. ') + 'Magazine ' + magazine + '.';
+      setTimeout(nextQuestion, reduced ? 260 : 520);
+    } else {
+      streak = 0;
+      Arcade.sfx.wrong();
+      Arcade.vibrate([30, 30, 30]);
+      // re-queue this term once, near the end of the run
+      if (!concept._wrongOnce) {
+        concept._wrongOnce = true;
+        qQueue.splice(Math.max(qQueue.length - 1, 0), 0, concept);
+      }
+      askRecords.push({ term: concept.term, outcome: 'wrong' });
+      const corr = qp.querySelector('#qp-corr');
+      corr.innerHTML =
+        '<div class="lead">✗ ' + (timedOut ? 'Time up' : 'Not quite') + ' — no coin this time</div>' +
+        '<div class="body"><b>' + esc(concept.term) + '</b>: ' + esc(concept.def) + '</div>';
+      corr.classList.add('show');
+      announce.textContent = (timedOut ? 'Time up. ' : 'Wrong. ') + concept.term + ' means ' + concept.def;
+      setTimeout(nextQuestion, reduced ? 900 : 1700);
+    }
+  }
+
+  function onQuizExhausted() {
+    quizExhausted = true;
+    currentConcept = null;
+    const qp = document.getElementById('qp');
+    qp.innerHTML =
+      '<div class="qp-head"><span class="qp-count">Questions complete</span>' +
+      '<span class="qp-streak">🔥 best ' + bestStreak + '</span></div>' +
+      '<div class="qp-spend show">' +
+        '<h3>Spend your coins!</h3>' +
+        '<p>You answered ' + correctCount + ' of ' + asked + ' correctly and minted your coins. ' +
+        'Drop what is left in the magazine and shove the pile over the ledge before the machine settles.</p>' +
+      '</div>';
+    announce.textContent = 'All questions answered. Spend your remaining coins.';
+    lastDropTime = simTime;                   // grace window before the run can settle out
+  }
+
+  /* ======================================================================
+     END CARD
+     ====================================================================== */
+  function endGame() {
+    if (state === 'ended') return;
+    state = 'ended';
+    if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    stopLoop();
+    const pct = asked ? Math.round((correctCount / asked) * 100) : 0;
+
+    // emoji grid over questions: 🟩 correct, 🟥 wrong, 🟨 redeemed
+    const grid = askRecords.map(r =>
+      r.outcome === 'correct' ? '🟩' : (r.outcome === 'redeemed' ? '🟨' : '🟥')).join('');
+
+    let insight;
+    if (pct >= 95) insight = 'Near-perfect recall — every coin you dropped was earned by a term you could define on the spot. That is exactly the knowledge the exam pays out on.';
+    else if (pct >= 60) insight = 'Strong run. The terms you missed are the ones worth a second lap — redeem them, mint the coins, and push a bigger jackpot.';
+    else insight = 'The pile only moves when the knowledge does. Re-read the terms you missed, then come back and flood the trough.';
+
+    root.innerHTML =
+      '<div class="ar-badge">V · Push · The Pusher</div>' +
+      '<h1 class="ar-title">' + esc(topic) + '</h1>' +
+      '<div class="ar-meta">' + esc([level, subj, 'Results'].filter(Boolean).join(' · ')) + '</div>' +
+      '<div id="end"></div>';
+
+    Arcade.renderEndCard(document.getElementById('end'), {
+      gameName: 'The Pusher',
+      gameEmoji: '🪙',
+      topic: topic,
+      meta: [level, subj].filter(Boolean).join(' · '),
+      pct: pct,
+      big: score,
+      bigLabel: 'points',
+      rows: [
+        { v: coinsCollected + '', l: 'coins collected' },
+        { v: prizesCollected + '/' + PRIZE_N, l: 'prizes won' },
+        { v: '🔥 ' + bestStreak, l: 'best streak' },
+      ],
+      emojiGrid: grid,
+      bestKey: BEST_KEY,
+      bestValue: score,
+      bestSuffix: ' pts',
+      insight: insight,
+      shareLines: [
+        '🪙 The Pusher — ' + topic,
+        'Score ' + score + ' pts · ' + correctCount + '/' + asked + ' correct',
+        grid,
+      ],
+      share: {
+        subject: subj, level: level, bigLabel: 'POINTS',
+        statLine: '🪙 ' + coinsCollected + ' coins  ·  🧸 ' + prizesCollected + '/' + PRIZE_N + ' prizes  ·  🔥 ' + bestStreak,
+      },
+      onAgain: restart,
+    });
+    announce.textContent = 'Game over. Score ' + score + ' points. ' + correctCount + ' of ' + asked + ' correct, ' + pct + ' percent.';
+  }
+
+  function restart() {
+    magazine = 0; score = 0; streak = 0; bestStreak = 0;
+    coinsCollected = 0; goldCollected = 0; prizesCollected = 0;
+    simTime = 0; lastDropTime = -999; feverUntil = -1; collectTimes.length = 0; sparks = [];
+    asked = 0; correctCount = 0; quizExhausted = false; goldenPending = 0;
+    askRecords.length = 0; currentConcept = null;
+    for (const c of concepts) delete c._wrongOnce;
+    launcherX = TRAY_CX0; moveDir = 0;
+    stockMachine();
+    warmUp();
+    mountGame();
+    state = 'playing';
+    buildQueue();
+    nextQuestion();
+    updateDropBtn();
+    startLoop();
+  }
+
+  /* ======================================================================
+     RENDER
+     ====================================================================== */
+  let canvas, ctx, S = 1, offX = 0, offY = 0;
+
+  function fit() {
+    const wrap = document.getElementById('cab-wrap');
+    const rect = wrap.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    const cw = rect.width, ch = rect.height;
+    S = Math.min(cw / LW, ch / LH);
+    offX = (cw - LW * S) / 2;
+    offY = (ch - LH * S) / 2;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function rr(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  function updateMarquee() { /* readouts painted each frame */ }
+
+  function drawCoin(b) {
+    const gold = b.kind === 'gold';
+    ctx.save();
+    // shadow
+    if (!reduced) { ctx.globalAlpha = 0.26; ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.ellipse(b.x, b.y + b.r * 0.82, b.r * 0.9, b.r * 0.32, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+    // disc
+    const g = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.4, b.r * 0.2, b.x, b.y, b.r);
+    if (gold) { g.addColorStop(0, '#fff2b0'); g.addColorStop(0.5, '#ffd24d'); g.addColorStop(1, '#c8871a'); }
+    else { g.addColorStop(0, '#ffe89a'); g.addColorStop(0.55, '#f2b93a'); g.addColorStop(1, '#b9791a'); }
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill();
+    // rim
+    ctx.lineWidth = gold ? 2.4 : 1.8; ctx.strokeStyle = gold ? '#8a5a10' : '#9a6a16';
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 0.9, 0, 7); ctx.stroke();
+    // inner ring + face mark
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.62, 0, 7); ctx.stroke();
+    ctx.fillStyle = gold ? '#7a4f0e' : '#8a5c12';
+    ctx.font = '700 ' + (b.r * 1.05).toFixed(0) + 'px "DM Mono", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(gold ? '★' : '£', b.x, b.y + 0.5);
+    // glint
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.beginPath(); ctx.ellipse(b.x - b.r * 0.34, b.y - b.r * 0.42, b.r * 0.22, b.r * 0.12, -0.6, 0, 7); ctx.fill();
+    if (gold) {
+      ctx.fillStyle = 'rgba(255,245,190,0.9)';
+      const a = Date.now() / 320; const sx = b.x + Math.cos(a) * b.r * 0.8, sy = b.y - b.r * 0.7;
+      ctx.fillRect(sx - 1, sy - 4, 2, 8); ctx.fillRect(sx - 4, sy - 1, 8, 2);
+    }
+    ctx.restore();
+  }
+
+  function drawPrize(b) {
+    ctx.save();
+    if (!reduced) { ctx.globalAlpha = 0.3; ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.ellipse(b.x, b.y + b.r * 0.85, b.r * 0.95, b.r * 0.3, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+    const px = (b.r * 2) / SPRITE_N;
+    drawSprite(ctx, b.sprite, b.x, b.y, px, b.blink > 0);
+    ctx.restore();
+  }
+
+  function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    const cw = canvas.width / dpr, chh = canvas.height / dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#05040f'; ctx.fillRect(0, 0, cw, chh);
+
+    ctx.save();
+    ctx.translate(offX + shakeX, offY + shakeY);
+    ctx.scale(S, S);
+
+    // cabinet body
+    let g = ctx.createLinearGradient(0, CAB.y0, 0, CAB.y1);
+    g.addColorStop(0, '#1a1340'); g.addColorStop(1, '#0d0a30');
+    ctx.fillStyle = g; rr(CAB.x0, CAB.y0, CAB.x1 - CAB.x0, CAB.y1 - CAB.y0, 26); ctx.fill();
+    ctx.lineWidth = 10; ctx.strokeStyle = '#7e6dff';
+    rr(CAB.x0 + 5, CAB.y0 + 5, CAB.x1 - CAB.x0 - 10, CAB.y1 - CAB.y0 - 10, 22); ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(180,160,255,0.5)';
+    rr(CAB.x0 + 11, CAB.y0 + 11, CAB.x1 - CAB.x0 - 22, CAB.y1 - CAB.y0 - 22, 18); ctx.stroke();
+
+    // marquee
+    let mg = ctx.createLinearGradient(0, MARQ.y0, 0, MARQ.y1);
+    mg.addColorStop(0, '#241a5e'); mg.addColorStop(1, '#160f3d');
+    ctx.fillStyle = mg; rr(CAB.x0 + 20, MARQ.y0, CAB.x1 - CAB.x0 - 40, MARQ.y1 - MARQ.y0, 14); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,210,77,0.5)'; ctx.lineWidth = 2;
+    rr(CAB.x0 + 20, MARQ.y0, CAB.x1 - CAB.x0 - 40, MARQ.y1 - MARQ.y0, 14); ctx.stroke();
+    const sway = reduced ? 0 : Math.sin(Date.now() / 700) * 0.6;
+    for (let i = 0; i < 12; i++) {
+      const bx = CAB.x0 + 40 + i * ((CAB.x1 - CAB.x0 - 80) / 11);
+      ctx.fillStyle = (Math.floor(Date.now() / 220) + i) % 3 === 0 ? '#ffd24d' : 'rgba(255,210,77,0.35)';
+      ctx.beginPath(); ctx.arc(bx, MARQ.y0 + 8 + sway, 3.2, 0, 7); ctx.fill();
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '800 38px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#ffd24d'; ctx.shadowColor = 'rgba(255,210,77,0.65)'; ctx.shadowBlur = 18;
+    ctx.fillText('THE PUSHER', LW / 2, MARQ.y0 + 40 + sway); ctx.shadowBlur = 0;
+    ctx.font = '700 15px "DM Mono", monospace';
+    ctx.textAlign = 'left'; ctx.fillStyle = '#5cffe4';
+    ctx.fillText('COINS ' + magazine, CAB.x0 + 38, MARQ.y1 - 12);
+    ctx.textAlign = 'right'; ctx.fillStyle = simTime < feverUntil ? '#ffd24d' : '#ece8ff';
+    ctx.fillText((simTime < feverUntil ? '×2  ' : '') + 'SCORE ' + score, CAB.x1 - 38, MARQ.y1 - 12);
+    ctx.textAlign = 'center';
+
+    // interior back panel
+    let bg = ctx.createLinearGradient(0, MARQ.y1, 0, CAB.y1);
+    bg.addColorStop(0, '#120e38'); bg.addColorStop(1, '#0a0826');
+    ctx.fillStyle = bg; ctx.fillRect(WX0, MARQ.y1 + 6, WX1 - WX0, CAB.y1 - 22 - (MARQ.y1 + 6));
+    ctx.strokeStyle = 'rgba(126,109,255,0.09)'; ctx.lineWidth = 1;
+    for (let x = WX0 + 30; x < WX1; x += 40) { ctx.beginPath(); ctx.moveTo(x, MARQ.y1 + 6); ctx.lineTo(x, CAB.y1 - 22); ctx.stroke(); }
+
+    // launcher rail
+    ctx.fillStyle = '#2a2160'; ctx.fillRect(WX0, RAIL_Y - 5, WX1 - WX0, 7);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(WX0, RAIL_Y - 5, WX1 - WX0, 2);
+    // launcher carriage + magazine stack + queued coin
+    ctx.fillStyle = '#ffd24d'; rr(launcherX - 20, RAIL_Y - 20, 40, 16, 5); ctx.fill();
+    ctx.fillStyle = '#a5720f'; ctx.fillRect(launcherX - 14, RAIL_Y - 6, 28, 3);
+    // magazine pixel-coin stack above the carriage
+    const magShow = Math.min(magazine, 6);
+    for (let i = 0; i < magShow; i++) {
+      const cy = RAIL_Y - 30 - i * 7;
+      const gc = ctx.createLinearGradient(0, cy - 5, 0, cy + 5);
+      gc.addColorStop(0, '#ffe89a'); gc.addColorStop(1, '#c8871a');
+      ctx.fillStyle = gc; rr(launcherX - 11, cy - 4, 22, 7, 3); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,80,20,0.7)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+    if (magazine > 6) {
+      ctx.fillStyle = '#ffe27a'; ctx.font = '700 11px "DM Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('+' + (magazine - 6), launcherX, RAIL_Y - 30 - 6 * 7 - 6);
+    }
+    // a chambered coin about to drop
+    if (magazine > 0) {
+      ctx.fillStyle = goldenPending > 0 ? '#ffe27a' : '#f2b93a';
+      ctx.beginPath(); ctx.arc(launcherX, RAIL_Y + 14, 8, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,80,20,0.8)'; ctx.lineWidth = 1.4; ctx.stroke();
+    }
+
+    // pins
+    for (const p of pegs) {
+      const pg = ctx.createRadialGradient(p.x - 2, p.y - 2, 1, p.x, p.y, PEG_R);
+      pg.addColorStop(0, '#c8bcff'); pg.addColorStop(1, '#6a5bc4');
+      ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(p.x, p.y, PEG_R, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(92,255,228,0.7)'; ctx.beginPath(); ctx.arc(p.x - 2, p.y - 2, 1.6, 0, 7); ctx.fill();
+    }
+
+    // upper tray (oscillating shelf) with wear highlights
+    const trL = trayCX - TRAY_HW, trR = trayCX + TRAY_HW;
+    ctx.fillStyle = '#3a2f74'; rr(trL, TRAY_TOP, trR - trL, 14, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.14)'; ctx.fillRect(trL + 4, TRAY_TOP + 2, trR - trL - 8, 2);
+    ctx.fillStyle = 'rgba(255,210,77,0.5)'; ctx.fillRect(trL, TRAY_TOP, 4, 14); ctx.fillRect(trR - 4, TRAY_TOP, 4, 14);
+
+    // lower platform + front lip + trough
+    ctx.fillStyle = '#2c2566'; rr(WX0, PLAT_TOP, FLIP - WX0, 16, 3); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(WX0 + 4, PLAT_TOP + 2, FLIP - WX0 - 8, 2);
+    // front lip wear highlight
+    ctx.fillStyle = 'rgba(255,210,77,0.6)'; ctx.fillRect(FLIP - 5, PLAT_TOP, 5, 16);
+    // trough
+    ctx.fillStyle = '#07061a'; ctx.fillRect(FLIP, PLAT_TOP + 6, WX1 - FLIP, CAB.y1 - 22 - (PLAT_TOP + 6));
+    ctx.strokeStyle = 'rgba(126,109,255,0.4)'; ctx.lineWidth = 2;
+    ctx.strokeRect(FLIP, PLAT_TOP + 6, WX1 - FLIP, CAB.y1 - 22 - (PLAT_TOP + 6));
+    ctx.fillStyle = 'rgba(92,255,228,0.14)'; ctx.fillRect(FLIP, TROUGH_Y, WX1 - FLIP, 6);
+    ctx.save(); ctx.translate((FLIP + WX1) / 2, (PLAT_TOP + CAB.y1 - 22) / 2); ctx.rotate(-Math.PI / 2);
+    ctx.font = '700 12px "DM Mono", monospace'; ctx.fillStyle = 'rgba(255,210,77,0.55)';
+    ctx.fillText('TROUGH', 0, 0); ctx.restore();
+
+    // pusher bar
+    const pbBack = pusherX - PUSH_W;
+    let pg2 = ctx.createLinearGradient(pbBack, 0, pusherX, 0);
+    pg2.addColorStop(0, '#6a5bc4'); pg2.addColorStop(1, '#9b8bff');
+    ctx.fillStyle = pg2; rr(pbBack, PLAT_TOP - PUSH_H, PUSH_W, PUSH_H, 3); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(pbBack + 2, PLAT_TOP - PUSH_H + 2, PUSH_W - 4, 2);
+    ctx.fillStyle = 'rgba(92,255,228,0.5)'; ctx.fillRect(pusherX - 3, PLAT_TOP - PUSH_H, 3, PUSH_H);
+
+    // bodies: prizes behind coins for depth, then coins
+    for (const b of bodies) if (b.live && b.kind === 'prize') drawPrize(b);
+    for (const b of bodies) if (b.live && b.kind !== 'prize') drawCoin(b);
+
+    // collection sparkles (drawn in-world so they never spill over the panel)
+    for (const s of sparks) {
+      ctx.globalAlpha = Math.max(0, 1 - s.life / s.max);
+      ctx.fillStyle = s.c;
+      const sz = 3.4 * (1 - s.life / s.max) + 1.2;
+      ctx.fillRect(s.x - sz / 2, s.y - sz / 2, sz, sz);
+    }
+    ctx.globalAlpha = 1;
+
+    // glass reflection streaks
+    ctx.save(); ctx.globalAlpha = 0.05; ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.moveTo(WX0 + 30, MARQ.y1); ctx.lineTo(WX0 + 96, MARQ.y1); ctx.lineTo(WX0 + 24, CAB.y1 - 30); ctx.lineTo(WX0 - 20, CAB.y1 - 30); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    // vignette
+    let vg = ctx.createRadialGradient(LW / 2, LH / 2, LH * 0.26, LW / 2, LH / 2, LH * 0.72);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.4)');
+    ctx.fillStyle = vg; ctx.fillRect(CAB.x0, CAB.y0, CAB.x1 - CAB.x0, CAB.y1 - CAB.y0);
+
+    ctx.restore();
+  }
+
+  /* ======================================================================
+     MAIN LOOP
+     ====================================================================== */
+  let rafId = null, lastT = 0, acc = 0;
+  function frame(now) {
+    if (!lastT) lastT = now;
+    let dt = (now - lastT) / 1000; lastT = now;
+    if (dt > 0.05) dt = 0.05;
+    advance(dt);
+    draw();
+    rafId = requestAnimationFrame(frame);
+  }
+  function advance(dt) {
+    acc += dt; let guard = 0;
+    while (acc >= H && guard < 600) { physicsStep(); acc -= H; guard++; }
+    // per-frame cosmetic updates
+    if (shakeMag > 0.1) { shakeX = (Math.random() * 2 - 1) * shakeMag; shakeY = (Math.random() * 2 - 1) * shakeMag; shakeMag *= Math.pow(0.02, dt); }
+    else { shakeMag = 0; shakeX = 0; shakeY = 0; }
+    if (moveDir !== 0) launcherX = Math.max(LAUNCH_MIN, Math.min(LAUNCH_MAX, launcherX + moveDir * 260 * dt));
+    for (const b of bodies) { if (!b.live) continue; b.blinkNext -= dt; if (b.blink > 0) b.blink -= dt; else if (b.blinkNext <= 0) { b.blink = 0.12; b.blinkNext = 2.5 + Math.random() * 5; } }
+    for (let i = sparks.length - 1; i >= 0; i--) {
+      const s = sparks[i]; s.life += dt;
+      if (s.life >= s.max) { sparks.splice(i, 1); continue; }
+      s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 900 * dt;
+    }
+    feverTick();
+  }
+  function startLoop() { if (!rafId) { lastT = 0; rafId = requestAnimationFrame(frame); } }
+  function stopLoop() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+
+  /* ======================================================================
+     INPUT
+     ====================================================================== */
+  function updateDropBtn() {
+    const b = document.getElementById('btn-drop');
+    if (!b) return;
+    b.disabled = state !== 'playing' || magazine <= 0;
+    const m = b.querySelector('.mag');
+    if (m) m.textContent = magazine > 0 ? '× ' + magazine : (quizExhausted ? 'empty' : 'answer to mint');
+  }
+
+  function bindControls() {
+    const left = document.getElementById('btn-left');
+    const right = document.getElementById('btn-right');
+    const drop = document.getElementById('btn-drop');
+    const zoneL = document.querySelector('.pu-zone.left');
+    const zoneR = document.querySelector('.pu-zone.right');
+    const zoneM = document.querySelector('.pu-zone.mid');
+
+    function hold(el, dir) {
+      const on = e => { e.preventDefault(); moveDir = dir; el.classList.add('on'); };
+      const off = () => { if (moveDir === dir) moveDir = 0; el.classList.remove('on'); };
+      el.addEventListener('pointerdown', on);
+      el.addEventListener('pointerup', off);
+      el.addEventListener('pointerleave', off);
+      el.addEventListener('pointercancel', off);
+    }
+    hold(left, -1); hold(right, 1);
+    hold(zoneL, -1); hold(zoneR, 1);
+    drop.addEventListener('click', dropCoin);
+    zoneM.addEventListener('pointerdown', e => { e.preventDefault(); dropCoin(); });
+
+    document.addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      const n = { '1': 0, '2': 1, '3': 2, '4': 3 }[e.key];
+      if (n !== undefined && currentConcept && !qLocked) {
+        const b = document.querySelectorAll('#qp .qp-opt')[n];
+        if (b && !b.disabled) { e.preventDefault(); b.click(); return; }
+      }
+      if (e.key === 'ArrowLeft') { moveDir = -1; e.preventDefault(); }
+      else if (e.key === 'ArrowRight') { moveDir = 1; e.preventDefault(); }
+      else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); dropCoin(); }
+    });
+    document.addEventListener('keyup', e => {
+      if (e.key === 'ArrowLeft' && moveDir === -1) moveDir = 0;
+      if (e.key === 'ArrowRight' && moveDir === 1) moveDir = 0;
+    });
+  }
+
+  /* ======================================================================
+     MOUNT
+     ====================================================================== */
+  function mountGame() {
+    root.innerHTML =
+      '<div class="ar-badge">V · Push · The Pusher</div>' +
+      '<h1 class="ar-title">' + esc(topic) + '</h1>' +
+      '<p class="ar-sub">Answer a term to mint a coin, drop it through the pins, and shove the pile over the ledge into the trough. ' + esc(topic) + ' &mdash; coins are earned by knowledge, never given.</p>' +
+      '<div class="ar-meta">' + esc([level, subj].filter(Boolean).join(' · ')) + '</div>' +
+      '<div class="pu-stage">' +
+        '<div class="pu-layout">' +
+          '<div class="pu-machine">' +
+            '<div id="cab-wrap">' +
+              '<canvas id="pu-canvas"></canvas>' +
+              '<div class="pu-zone left"><span class="hint">◀ aim</span></div>' +
+              '<div class="pu-zone mid"><span class="hint">tap = drop</span></div>' +
+              '<div class="pu-zone right"><span class="hint">aim ▶</span></div>' +
+              '<div id="pu-fever"></div>' +
+            '</div>' +
+            '<div class="pu-deck">' +
+              '<button id="btn-left" class="deck-move" aria-label="Aim launcher left">◀</button>' +
+              '<button id="btn-drop" aria-label="Drop a coin">DROP <span class="mag"></span></button>' +
+              '<button id="btn-right" class="deck-move" aria-label="Aim launcher right">▶</button>' +
+            '</div>' +
+            '<div class="pu-hint-row pu-kbd">◀ ▶ or hold the edges to aim · Space / tap centre to drop · 1–4 to answer</div>' +
+          '</div>' +
+          '<div class="pu-quiz"><div class="qp" id="qp"></div></div>' +
+        '</div>' +
+      '</div>';
+
+    canvas = document.getElementById('pu-canvas');
+    ctx = canvas.getContext('2d');
+    fit();
+    window.addEventListener('resize', fit);
+    bindControls();
+    updateDropBtn();
+  }
+
+  /* ======================================================================
+     BOOT
+     ====================================================================== */
+  stockMachine();
+  warmUp();
+  mountGame();
+  state = 'playing';
+  buildQueue();
+  nextQuestion();
+  updateDropBtn();
+  startLoop();
+  Arcade.logMission && Arcade.logMission({ game: 'coin-pusher', stem: stem, topic: topic });
+
+  /* ---- debug hook for the test harness ---- */
+  if (DEBUG) {
+    window.__pusher = {
+      get state() { return state; },
+      get coins() { return bodies; },
+      get magazine() { return magazine; },
+      get score() { return score; },
+      get questionsAsked() { return asked; },
+      get questionsCorrect() { return correctCount; },
+      get quizExhausted() { return quizExhausted; },
+      get streak() { return streak; },
+      get goldenPending() { return goldenPending; },
+      get coinsCollected() { return coinsCollected; },
+      get prizesCollected() { return prizesCollected; },
+      get feverActive() { return simTime < feverUntil; },
+      get simTime() { return simTime; },
+      get currentTerm() { return currentConcept ? currentConcept.term : null; },
+      get canAnswer() { return !!currentConcept && !qLocked; },
+      get options() { return qOpts.slice(); },
+      get correctIdx() { return qCorrectIdx; },
+      get liveCount() { return bodies.filter(b => b.live).length; },
+      get restingCount() { return bodies.filter(b => b.live && b.sleep).length; },
+      geometry: { WX0, WX1, TRAY_TOP, PLAT_TOP, FLIP, TROUGH_Y, LAUNCH_MIN, LAUNCH_MAX },
+      answer(right) {
+        if (!currentConcept || qLocked) return false;
+        answerQuestion(right ? qCorrectIdx : (qCorrectIdx === 0 ? 1 : 0), false);
+        return true;
+      },
+      timeout() {
+        if (!currentConcept || qLocked) return false;
+        answerQuestion(-1, true); return true;
+      },
+      setAim(x) { launcherX = Math.max(LAUNCH_MIN, Math.min(LAUNCH_MAX, x)); },
+      drop() { const before = magazine; dropCoin(); return magazine < before; },
+      // deterministic fast-forward of the physics + sim clock
+      stepSeconds(sec) {
+        const n = Math.max(0, Math.round(sec / H));
+        for (let i = 0; i < n; i++) physicsStep();
+        // apply cosmetic per-frame bits that gate nothing in tests
+        feverTick();
+      },
+      maxBodySpeed() {
+        let m = 0; for (const b of bodies) if (b.live) m = Math.max(m, Math.hypot(b.x - b.px, b.y - b.py) / H); return m;
+      },
+      // spray coins directly into the trough mouth (fever engineering aid)
+      spray(count) {
+        for (let i = 0; i < (count || 8); i++) {
+          const b = makeBody(FLIP + 12 + Math.random() * (WX1 - FLIP - 24), PLAT_TOP + 20 + i * 4, 'coin');
+          b.py = b.y - 8; bodies.push(b);
+        }
+      },
+      _endGame: endGame,
+    };
+  }
+})();
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

@@ -157,9 +157,10 @@ This same deploy also ships three new game ids in `GAME_CAPS`/`RATE_CAPS`:
 the July 2026 cabinets. Until the worker flips, submissions for those ids get
 "unknown game" and the client degrades silently, same as any capless game.
 
-`claw` (cap 6500) was added to `GAME_CAPS`/`RATE_CAPS` AFTER v3 was first
-deployed — the live worker does not know it yet, so this addition needs one
-more paste of the updated `leaderboard-edge-script-v3.js` into the Edge Script.
+`claw` (cap 6500) and `coin-pusher` (cap 10000) were added to
+`GAME_CAPS`/`RATE_CAPS` AFTER v3 was first deployed — the live worker does not
+know them yet, so both ids need one more paste of the updated
+`leaderboard-edge-script-v3.js` into the Edge Script.
 
 ### Deploy order — site first again (verified against the implementation)
 

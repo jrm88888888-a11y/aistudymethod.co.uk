@@ -104,6 +104,10 @@ const GAME_CAPS = {
   // streak 5), one golden toy x2 => flawless run 300+300+450+525+6x600
   // = 5175, +600 for the golden banked at full multiplier = 5775 hard max.
   "claw": 6500,
+  // coin-pusher: board holds 25 starter coins + 12 minted (4 golden on
+  // streaks 3/6/9/12) + 3 prizes = 33x50 + 4x250 + 3x500 = 4150 base;
+  // everything collected under fever x2 = 8300 hard max. 10000 headroom.
+  "coin-pusher": 10000,
 };
 
 /* Score plausibility: max points per SECOND of play, per game.
@@ -138,6 +142,7 @@ const RATE_CAPS = {
   "boss-rush": 67,       // 4000/60
   "ghost-race": 34,      // 2000/60
   "claw": 109,           // 6500/60
+  "coin-pusher": 167,    // 10000/60
 };
 
 /* Minimum believable play time per game, ms. The token is issued when the game
