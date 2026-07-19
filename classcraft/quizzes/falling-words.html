@@ -143,6 +143,7 @@
 
         <div class="how-it-works">
           <b>How it works:</b> A definition appears in the banner at the top. Several terms fall down the screen — only one matches. Tap it to score (combo multiplies your points: ×1.5 at 3, ×2 at 5, ×3 at 8). Tap a wrong term or let the right one fall off the bottom and you lose a life. 12 definitions per round, 3 lives.
+          <br><b>☄ Golden meteor:</b> every 5 correct snipes, the next answer falls as a golden meteor — trailing sparks, ~1.3× faster, worth ×3 points. If it streaks past unsniped, no lives lost — it was a bonus, not a trap.
         </div>
       </div>
     </div>
@@ -289,6 +290,21 @@ const DIFF_NEON = {
   hard:   { hex: '#ff2e88', icon: '🔥', label: 'Hard' }
 };
 
+/* ============================================================
+   GOLDEN METEOR — earned by every 5 correct snipes. The NEXT wave
+   spawns its answer as a golden meteor: gold pill, trailing sparks,
+   ~1.3× fall speed. Sniping it (the correct match for the banner
+   definition — always a real vocab item, never a decoy) pays ×3
+   points on top of the combo multiplier. If it lands unsniped,
+   nothing bad happens: no life lost, no combo break — it simply
+   streaks past and the round moves on. Wrong taps during a meteor
+   wave keep their normal cost.
+   ============================================================ */
+const METEOR_EVERY = 5, METEOR_MULT = 3, METEOR_FALL = 1.3;
+const METEOR_GOLD = '#ffd60a';
+let meteorPending = false;   // next spawnWave carries the meteor
+let meteorsSpawned = 0, meteorsSniped = 0;
+
 // Combo / score multiplier
 let aismMaxStreak = 0;
 let aismMultiplier = 1;   // 1, 1.5, 2, 3
@@ -397,22 +413,35 @@ function tapFaller(f) {
     aismStreak++;
     if (aismStreak > aismMaxStreak) aismMaxStreak = aismStreak;
     aismMultiplier = getMultTier().mult;
-    const earned = Math.round(100 * aismMultiplier);
+    const golden = !!f.golden;
+    const earned = Math.round(100 * aismMultiplier * (golden ? METEOR_MULT : 1));
     score += earned;
     correctCount++;
+    if (golden) meteorsSniped++;
+    // Every 5th correct snipe EARNS a meteor on the next wave — telegraphed
+    // now, paid only when the next answer is sniped.
+    const meteorEarned = correctCount % METEOR_EVERY === 0 && qIdx + 1 < questions.length;
+    if (meteorEarned) { meteorPending = true; Arcade.sfx.riser(); }
     const cap = DIFF_SETTINGS[difficulty].startSpeed * 2.0;
     speed = Math.min(cap, speed + DIFF_SETTINGS[difficulty].speedGain);
     if (speed > maxSpeed) maxSpeed = speed;
 
     Arcade.sfx.correct(aismStreak);
+    if (golden) { Arcade.sfx.fanfare(); Arcade.confettiBurst({ count: 60 }); }
     Arcade.streakCall(aismStreak);
-    Arcade.vibrate([18]);
+    Arcade.vibrate(golden ? [18, 30, 40] : [18]);
     const tier = getMultTier();
-    flashMessage(aismStreak >= 3 ? '+' + earned + ' · ' + tier.label + ' ×' + aismMultiplier : '+' + earned, false);
-    emitParticles(f.x / cssW(), f.y / cssH(), neon, aismStreak >= 5 ? 40 : aismStreak >= 3 ? 30 : 20, 'star');
-    bgPulseT = aismStreak >= 5 ? 1.0 : 0.6;
-    bgPulseColor = aismStreak >= 8 ? '#ff2e88' : aismStreak >= 5 ? '#ffd60a' : neon;
-    announce('Correct — ' + f.term + '. Combo ' + aismStreak + '.');
+    let msg = aismStreak >= 3 ? '+' + earned + ' · ' + tier.label + ' ×' + aismMultiplier : '+' + earned;
+    if (golden) msg = '☄ GOLDEN METEOR ×3 · +' + earned;
+    if (meteorEarned) msg += ' · ☄ METEOR INCOMING';
+    flashMessage(msg, false);
+    // Starburst for the meteor snipe; normal burst otherwise.
+    emitParticles(f.x / cssW(), f.y / cssH(), golden ? METEOR_GOLD : neon,
+      golden ? 60 : aismStreak >= 5 ? 40 : aismStreak >= 3 ? 30 : 20, 'star');
+    bgPulseT = golden ? 1.0 : aismStreak >= 5 ? 1.0 : 0.6;
+    bgPulseColor = golden ? METEOR_GOLD : aismStreak >= 8 ? '#ff2e88' : aismStreak >= 5 ? '#ffd60a' : neon;
+    announce((golden ? 'Golden meteor sniped — triple points! ' : 'Correct — ') + f.term + '. Combo ' + aismStreak + '.'
+      + (meteorEarned ? ' Golden meteor incoming on the next wave.' : ''));
 
     // Remove the tapped word instantly (it "explodes" into the particles)
     fallers = fallers.filter(x => x !== f);
@@ -469,6 +498,9 @@ function startGame() {
   aismStreak = 0;
   aismMaxStreak = 0;
   aismMultiplier = 1;
+  meteorPending = false;
+  meteorsSpawned = 0;
+  meteorsSniped = 0;
   shakeT = 0;
   fallers = [];
   particles = [];
@@ -546,29 +578,43 @@ function spawnWave() {
   const slotW = W / n;
   const slots = shuffle(Array.from({ length: n }, (_, i) => i));
 
+  // Consume a pending meteor: THIS wave carries it (checked before the loop
+  // so the flag applies to every faller decision below).
+  const meteorWave = meteorPending;
+  meteorPending = false;
+
   terms.forEach((t, i) => {
     const m = measureTerm(t.term);
     const slot = slots[i];
     const minX = slot * slotW + m.w / 2 + 6;
     const maxX = (slot + 1) * slotW - m.w / 2 - 6;
     const x = minX >= maxX ? slot * slotW + slotW / 2 : minX + Math.random() * (maxX - minX);
+    // The meteor IS the correct match for the banner definition — a real
+    // vocab item, never a decoy. Gold, sparks, fixed ~1.3× fall speed.
+    const golden = meteorWave && t.isCorrect;
     fallers.push({
       term: t.term,
       displayTerm: m.displayTerm,
       fontSize: m.fontSize,
       isCorrect: t.isCorrect,
+      golden: golden,
       qIdx: qIdx,
       x: Math.max(m.w / 2 + 4, Math.min(W - m.w / 2 - 4, x)),
       y: -40 - i * 95 - Math.random() * 60,   // staggered above the screen
       w: m.w,
       h: m.h,
-      speedFactor: 1 + (Math.random() * 2 - 1) * cfg.speedVar,
+      speedFactor: golden ? METEOR_FALL : 1 + (Math.random() * 2 - 1) * cfg.speedVar,
       phase: Math.random() * Math.PI * 2,
       state: 'live',
       dieT: 0,
       staleFade: 1
     });
   });
+
+  if (meteorWave) {
+    meteorsSpawned++;
+    announce('Golden meteor wave — the matching term falls in gold, faster, worth triple points.');
+  }
 
   waveActive = true;
   nextSpawnDist = WAVE_SPACING;
@@ -640,19 +686,46 @@ function update(dt) {
   }
 
   if (missedCorrect) {
-    lives--;
-    const wasOnStreak = aismStreak >= 3;
-    aismStreak = 0;
-    aismMultiplier = 1;
-    Arcade.sfx.wrong();
-    Arcade.shake();
-    Arcade.vibrate([60, 40, 60]);
-    aismShake(wasOnStreak ? 11 : 7);
-    flashMessage('MISSED · it was “' + missedCorrect.term + '”', true);
-    bgPulseT = 0.7;
-    bgPulseColor = '#ff2e88';
-    announce('Missed — the answer was ' + missedCorrect.term + '. ' + Math.max(0, lives) + ' lives left.');
-    resolveQuestion(false, missedCorrect.term);
+    if (missedCorrect.golden) {
+      // A meteor that lands unsniped just streaks past — no life lost, no
+      // combo break, no shake. It was a bonus, never a trap.
+      Arcade.sfx.swoosh();
+      flashMessage('☄ the meteor got away — it was “' + missedCorrect.term + '”', false);
+      announce('The golden meteor streaked past — it was ' + missedCorrect.term + '. No lives lost.');
+      resolveQuestion(false, missedCorrect.term);
+    } else {
+      lives--;
+      const wasOnStreak = aismStreak >= 3;
+      aismStreak = 0;
+      aismMultiplier = 1;
+      Arcade.sfx.wrong();
+      Arcade.shake();
+      Arcade.vibrate([60, 40, 60]);
+      aismShake(wasOnStreak ? 11 : 7);
+      flashMessage('MISSED · it was “' + missedCorrect.term + '”', true);
+      bgPulseT = 0.7;
+      bgPulseColor = '#ff2e88';
+      announce('Missed — the answer was ' + missedCorrect.term + '. ' + Math.max(0, lives) + ' lives left.');
+      resolveQuestion(false, missedCorrect.term);
+    }
+  }
+
+  // Golden meteor spark trail — a few gold motes shed behind it each frame.
+  if (!AISM_REDUCED) {
+    for (const f of fallers) {
+      if (f.golden && f.state === 'live' && f.y > -60 && !f.offscreen && Math.random() < 0.4) {
+        particles.push({
+          x: (f.x + (Math.random() - 0.5) * f.w * 0.6) / cssW(),
+          y: (f.y - f.h / 2) / cssH(),
+          vx: (Math.random() - 0.5) * 0.003,
+          vy: -0.003 - Math.random() * 0.004,
+          life: 14 + Math.random() * 10,
+          size: 1.6 + Math.random() * 2,
+          color: METEOR_GOLD,
+          shape: null, angle: 0, spin: 0
+        });
+      }
+    }
   }
 
   // Cull finished fallers
@@ -844,12 +917,13 @@ function drawBanner(W, H, neon) {
   ctx.globalAlpha = 1;
   ctx.restore();
 
-  // Tiny label
-  ctx.fillStyle = bannerIsDef ? neon : '#767ca8';
+  // Tiny label — gold call-out while a meteor wave is live
+  const meteorLive = fallers.some(f => f.golden && f.state === 'live');
+  ctx.fillStyle = bannerIsDef ? (meteorLive ? METEOR_GOLD : neon) : '#767ca8';
   ctx.font = '700 8.5px "Space Grotesk", sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText(bannerIsDef ? 'FIND THE TERM FOR' : 'GET READY', bX + 14, bY + 15);
+  ctx.fillText(bannerIsDef ? (meteorLive ? '☄ GOLDEN METEOR — TRIPLE POINTS' : 'FIND THE TERM FOR') : 'GET READY', bX + 14, bY + 15);
 
   // Definition text (max 2 lines, ellipsised)
   ctx.fillStyle = '#f2f3ff';
@@ -902,6 +976,14 @@ function drawFaller(f, W, H) {
   let glow = neon;
   let glowBlur = 18;
 
+  if (f.golden && f.state === 'live') {
+    fill = '#241a05';
+    edge = METEOR_GOLD;
+    textCol = '#fff3c4';
+    glow = METEOR_GOLD;
+    glowBlur = 26;
+  }
+
   if (f.state === 'dying') {
     // Redden + shake + fade, then removed in update()
     const d = Math.min(1, f.dieT);
@@ -930,11 +1012,13 @@ function drawFaller(f, W, H) {
   ctx.translate(x, y);
 
   // Neon trail — a fading streak above the word while it's live
+  // (gold for the meteor).
   if (f.state === 'live' && !AISM_REDUCED) {
-    const trailH = 64;
+    const trailCol = f.golden ? METEOR_GOLD : neon;
+    const trailH = f.golden ? 92 : 64;
     const tg = ctx.createLinearGradient(0, -f.h / 2 - trailH, 0, -f.h / 2);
-    tg.addColorStop(0, neon + '00');
-    tg.addColorStop(1, neon + '2e');
+    tg.addColorStop(0, trailCol + '00');
+    tg.addColorStop(1, trailCol + (f.golden ? '4a' : '2e'));
     ctx.fillStyle = tg;
     roundRect(ctx, -f.w / 2 + 10, -f.h / 2 - trailH, f.w - 20, trailH + 6, 10);
     ctx.fill();
@@ -1068,7 +1152,7 @@ function endGame() {
 
   const misses = Math.max(0, resolvedCount - correctCount);
   const hearts = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - Math.max(0, lives)));
-  const emojiGrid = diff.icon + ' ' + hearts + ' ⚡×' + aismMaxStreak;
+  const emojiGrid = diff.icon + ' ' + hearts + ' ⚡×' + aismMaxStreak + (meteorsSniped ? ' ☄×' + meteorsSniped : '');
 
   const insight = outOfLives
     ? 'Out of lives, but every wrong tap just showed you exactly which definitions are blurry. ' + misses + ' term' + (misses === 1 ? '' : 's') + ' got past you — write those down while they sting. That is the fastest flashcard deck you will ever make.'
@@ -1120,6 +1204,48 @@ function endGame() {
   announce('Round over. Score ' + score + ', accuracy ' + accuracy + ' percent, max combo ' + aismMaxStreak + ', rank ' + rank + '.');
   document.getElementById('screen-game').classList.remove('active');
   document.getElementById('screen-end').classList.add('active');
+}
+
+/* ---- debug hook for the test harness (sibling pattern: coin-pusher) ---- */
+if (new URLSearchParams(location.search).get('debug') === '1') {
+  window.__fw = {
+    get gameState() { return gameState; },
+    get score() { return score; },
+    get streak() { return aismStreak; },
+    get multiplier() { return aismMultiplier; },
+    get correctCount() { return correctCount; },
+    get resolvedCount() { return resolvedCount; },
+    get lives() { return lives; },
+    get qIdx() { return qIdx; },
+    get questionCount() { return questions.length; },
+    get waveActive() { return waveActive; },
+    get meteorPending() { return meteorPending; },
+    get meteorsSpawned() { return meteorsSpawned; },
+    get meteorsSniped() { return meteorsSniped; },
+    get fallers() {
+      return fallers.map(f => ({ term: f.term, correct: f.isCorrect, golden: !!f.golden, state: f.state, y: f.y, speedFactor: f.speedFactor }));
+    },
+    start(diff) { if (diff) selectDifficulty(diff); startGame(); return gameState === 'running'; },
+    // spawn the next wave immediately (skips the belt-travel wait)
+    forceWave() {
+      if (waveActive || gameState !== 'running' || qIdx >= questions.length || lives <= 0) return false;
+      spawnWave();
+      return true;
+    },
+    snipe(right) {
+      const f = fallers.find(x => x.state === 'live' && x.qIdx === qIdx && (right ? x.isCorrect : !x.isCorrect));
+      if (!f || !waveActive) return false;
+      tapFaller(f);
+      return true;
+    },
+    // shove the current correct faller past the bottom edge (miss test)
+    dropCorrect() {
+      const f = fallers.find(x => x.state === 'live' && x.isCorrect && x.qIdx === qIdx);
+      if (!f) return false;
+      f.y = cssH() + f.h;
+      return true;
+    },
+  };
 }
 
 /* Keyboard: M toggles the arcade mute button (kept from the original). */

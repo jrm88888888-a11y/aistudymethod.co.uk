@@ -53,6 +53,14 @@
   #cv-why { min-height: 0; }
   #cv-why .ar-feedback { margin-top: 0; }
 
+  /* ---- BELT SURGE (earned by a 4-combo: ~12s, belt ×1.6, points ×2) ---- */
+  .cv-surge .cv-stage { border-radius: var(--ar-r-lg); box-shadow: 0 0 0 2px rgba(255,176,32,0.6), 0 0 34px rgba(255,176,32,0.28); animation: cvSurgePulse 0.9s ease infinite; }
+  .cv-surge .cv-statement { border-color: rgba(255,176,32,0.85); box-shadow: 0 18px 50px rgba(0,0,0,0.5), 0 0 26px rgba(255,176,32,0.3); }
+  .cv-surge .ar-hud { border-radius: 14px; box-shadow: 0 0 0 2px rgba(255,176,32,0.5), 0 0 22px rgba(255,176,32,0.22); }
+  .cv-surge #timer-fill { background: #ffb020 !important; box-shadow: 0 0 10px rgba(255,176,32,0.7) !important; }
+  @keyframes cvSurgePulse { 50% { box-shadow: 0 0 0 2px rgba(255,176,32,1), 0 0 48px rgba(255,176,32,0.5); } }
+  @media (prefers-reduced-motion: reduce) { .cv-surge .cv-stage { animation: none; } }
+
   @media (max-width: 480px) {
     .cv-card-slot { padding: 12px 72px; }
     .cv-zone { width: 62px; }
@@ -115,7 +123,7 @@
       <div class="ar-card" style="text-align:center;">
         <div class="ar-label">60-second shift</div>
         <p class="ar-prompt" style="margin-bottom:10px;">Sort as many as you can before the clock dies.</p>
-        <p class="ar-sub" style="margin:0 auto 18px;">Tap a zone or swipe the card. Real facts go to <strong style="color:var(--ar-mint)">TRUTH ✅</strong>, fakes go to <strong style="color:var(--ar-pink)">CAP 🧢</strong>. Consecutive correct sorts stack a combo multiplier — a wrong sort breaks it and flashes the why, so even an L teaches you something.</p>
+        <p class="ar-sub" style="margin:0 auto 18px;">Tap a zone or swipe the card. Real facts go to <strong style="color:var(--ar-mint)">TRUTH ✅</strong>, fakes go to <strong style="color:var(--ar-pink)">CAP 🧢</strong>. Consecutive correct sorts stack a combo multiplier — a wrong sort breaks it and flashes the why, so even an L teaches you something. String four correct sorts together and the klaxon sounds: <strong style="color:#ffb020">BELT SURGE ⏩</strong> — twelve seconds of double points at ×1.6 belt speed. One wrong sort kills the surge.</p>
         <button id="btn-start" class="ar-btn big" type="button">▶ Start the belt</button>
         <div class="ar-kbd-hint">Keyboard: ← truth · → cap · M mute</div>
       </div>
@@ -294,6 +302,47 @@ let cycleT = [], cycleM = [];
 
 function multiplier() { return combo >= 8 ? 3 : combo >= 5 ? 2 : combo >= 3 ? 1.5 : 1; }
 
+/* ============================================================
+   BELT SURGE — earned by a 4-combo. For ~12 seconds the belt runs at
+   ×1.6 (cards arrive faster, the inter-card gap shrinks) and every
+   correct sort pays ×2 on top of the combo multiplier. More sorting
+   decisions per minute — density UP, never down. A wrong sort ends the
+   surge instantly and keeps its full 1.6s teaching dwell. Cards still
+   wait to be sorted (the belt never yanks them away), so surge speed
+   costs zero readability, even at 390px.
+   ============================================================ */
+const SURGE_MS = 12000, SURGE_SPEED = 1.6, SURGE_TRIGGER = 4, SURGE_MULT = 2;
+let surgeUntil = 0, surgeTimeout = null, surgeSorts = 0, surgeCount = 0;
+function surgeActive() { return performance.now() < surgeUntil; }
+
+function startSurge() {
+  surgeUntil = performance.now() + SURGE_MS;
+  surgeCount++;
+  document.getElementById('game-shell').classList.add('cv-surge');
+  Arcade.flashMsg('⚠ BELT SURGE — ×2 ⏩', '#ffb020');
+  // warning klaxon: double heartbeat + riser
+  Arcade.sfx.heartbeat();
+  setTimeout(() => Arcade.sfx.heartbeat(), 180);
+  Arcade.sfx.riser();
+  Arcade.vibrate([30, 40, 30]);
+  announce('Belt surge! Twelve seconds of double points — the belt runs faster. A wrong sort ends it.');
+  clearTimeout(surgeTimeout);
+  surgeTimeout = setTimeout(() => endSurge(false), SURGE_MS);
+}
+
+function endSurge(byWrong) {
+  const wasOn = document.getElementById('game-shell').classList.contains('cv-surge');
+  surgeUntil = 0;
+  clearTimeout(surgeTimeout);
+  surgeTimeout = null;
+  document.getElementById('game-shell').classList.remove('cv-surge');
+  if (wasOn && !byWrong && gameState === 'running') {
+    Arcade.flashMsg('SURGE OVER', '#ffb020');
+    Arcade.sfx.swoosh();
+    announce('Belt surge over — back to normal speed.');
+  }
+}
+
 function drawItem() {
   // Roughly 50/50 truth vs cap, cycling shuffled per-kind pools.
   let kind = Math.random() < 0.5 ? 'truth' : 'misc';
@@ -322,6 +371,7 @@ function startGame() {
   combo = 0; bestCombo = 0; level = 0;
   results = []; lastFoolerMisc = null; lastMissAny = null;
   locked = false; timeUp = false; lastText = '';
+  endSurge(true); surgeSorts = 0; surgeCount = 0;
   cycleT = Arcade.shuffle(TRUTHS);
   cycleM = Arcade.shuffle(MISCS);
   clearTimeout(whyTimeout);
@@ -361,8 +411,9 @@ function nextCard() {
   card.style.transform = '';
   card.classList.remove('out-truth', 'out-cap', 'snap', 'enter');
   void card.offsetWidth;
-  // Belt speeds up every 5 sorts — cards slide in faster.
-  const dur = Math.max(0.18, 0.5 - level * 0.05);
+  // Belt speeds up every 5 sorts — cards slide in faster. During a surge the
+  // whole belt runs at ×1.6.
+  const dur = Math.max(0.18, 0.5 - level * 0.05) / (surgeActive() ? SURGE_SPEED : 1);
   card.style.setProperty('--cv-enter', dur + 's');
   card.innerHTML = (current.ctx
     ? '<div class="cv-ctx">' + esc(current.ctx) + '</div>'
@@ -386,22 +437,31 @@ function verdict(guessKind, zoneEl) {
   if (ok) {
     combo++;
     if (combo > bestCombo) bestCombo = combo;
-    const earned = Math.round(100 * multiplier());
+    // ×2 only INSIDE an already-running surge — the trigger sort itself
+    // scores normally (the klaxon telegraphs before the bonus pays).
+    const inSurge = surgeActive();
+    const earned = Math.round(100 * multiplier() * (inSurge ? SURGE_MULT : 1));
     score += earned;
     correctCount++;
+    if (inSurge) surgeSorts++;
     Arcade.sfx.correct(combo);
-    Arcade.popTextOver(card, '+' + earned, combo >= 3 ? '#ffd60a' : '#00ffa3');
+    Arcade.popTextOver(card, '+' + earned, inSurge ? '#ffb020' : (combo >= 3 ? '#ffd60a' : '#00ffa3'));
     Arcade.streakCall(combo);
     if (combo === 5 || combo === 10) Arcade.confettiBurst({ count: combo === 10 ? 80 : 40 });
     Arcade.vibrate(20);
     card.classList.add(guessKind === 'truth' ? 'out-truth' : 'out-cap');
     announce('Correct — that was a ' + (item.kind === 'truth' ? 'truth' : 'misconception') + '. Plus ' + earned + ' points. Combo ' + combo + '.');
+    // A 4-combo EARNS the surge — announced before it pays.
+    if (!inSurge && combo === SURGE_TRIGGER) startSurge();
     updateHUD();
     maybeSpeedUp();
-    setTimeout(nextCard, 300);
+    setTimeout(nextCard, surgeActive() ? 190 : 300);
   } else {
     const hadCombo = combo >= 3;
     combo = 0;
+    // A wrong sort ends the surge on the spot; the teaching dwell below
+    // keeps its full length.
+    if (surgeActive()) endSurge(true);
     if (item.kind === 'misc') lastFoolerMisc = item;
     lastMissAny = item;
     Arcade.sfx.wrong();
@@ -461,6 +521,7 @@ function updateHUD() {
 function endGame() {
   if (gameState === 'over') return;
   gameState = 'over';
+  endSurge(true);
   if (timerCtl) timerCtl.stop();
   clearTimeout(whyTimeout);
   document.getElementById('cv-why').innerHTML = '';
@@ -494,7 +555,7 @@ function endGame() {
       { v: sorted, l: 'sorted' },
       { v: accuracy + '%', l: 'accuracy' },
       { v: '×' + bestCombo, l: 'best combo' },
-    ],
+    ].concat(surgeCount ? [{ v: '⏩ ' + surgeSorts, l: 'surge sorts' }] : []),
     emojiGrid: grid,
     bestKey: 'aism-best:' + location.pathname,
     bestValue: score,
@@ -565,6 +626,33 @@ document.addEventListener('keydown', e => {
   card.addEventListener('pointerup', release);
   card.addEventListener('pointercancel', release);
 })();
+
+/* ---- debug hook for the test harness (sibling pattern: coin-pusher) ---- */
+if (new URLSearchParams(location.search).get('debug') === '1') {
+  window.__cv = {
+    get gameState() { return gameState; },
+    get score() { return score; },
+    get combo() { return combo; },
+    get sorted() { return sorted; },
+    get correctCount() { return correctCount; },
+    get locked() { return locked; },
+    get currentKind() { return current ? current.kind : null; },
+    get surgeActive() { return surgeActive(); },
+    get surgeMsLeft() { return Math.max(0, surgeUntil - performance.now()); },
+    get surgeSorts() { return surgeSorts; },
+    get surgeCount() { return surgeCount; },
+    get multiplier() { return multiplier(); },
+    start() { const b = document.getElementById('btn-start'); if (!b) return false; b.click(); return true; },
+    sort(right) {
+      if (gameState !== 'running' || locked || !current) return false;
+      const guess = right ? current.kind : (current.kind === 'truth' ? 'misc' : 'truth');
+      verdict(guess, null);
+      return true;
+    },
+    expireSurge() { surgeUntil = performance.now() - 1; endSurge(false); },
+    endGame: endGame,
+  };
+}
 </script>
 
 <script src="../../script.js" defer></script>

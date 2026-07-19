@@ -36,6 +36,31 @@
   .hl-cashout { display:block; margin-top:16px; text-align:center; font-family:var(--ar-mono); font-size:10.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ar-muted); background:none; border:none; cursor:pointer; text-decoration:underline; text-underline-offset:3px; width:100%; }
   .hl-cashout:hover { color:var(--ar-cyan); }
   .hl-cashout:focus-visible { outline:2px solid var(--ar-cyan); outline-offset:2px; }
+  /* ---- JACKPOT VAULT (signature event) ---- */
+  .hl-vault { display:flex; align-items:center; gap:10px; background:var(--ar-card); border:1px solid var(--ar-border-hi); border-radius:14px; padding:9px 14px; margin:2px 0 12px; }
+  .hl-vault-label { font-family:var(--ar-mono); font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--ar-gold); white-space:nowrap; }
+  .hl-vault-segs { flex:1 1 auto; display:flex; align-items:center; gap:5px; min-width:0; }
+  .hl-vault-seg { flex:1 1 auto; height:12px; border-radius:4px; background:rgba(255,214,10,0.1); border:1px solid rgba(255,214,10,0.28); transition:background 0.25s ease, box-shadow 0.25s ease; }
+  .hl-vault-seg.on { background:var(--ar-gold); box-shadow:0 0 10px rgba(255,214,10,0.55); }
+  .hl-vault-over { font-family:var(--ar-mono); font-size:11px; font-weight:700; color:var(--ar-gold); flex:0 0 auto; }
+  .hl-vault-note { font-family:var(--ar-mono); font-size:9.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ar-muted); white-space:nowrap; }
+  .hl-vault-val { font-family:var(--ar-font); font-size:17px; font-weight:800; color:var(--ar-gold); min-width:44px; text-align:right; }
+  .hl-vault.arming { border-color:var(--ar-gold); animation:hlVaultArm 1s ease infinite; }
+  .hl-vault.arming .hl-vault-note { color:var(--ar-gold); }
+  @keyframes hlVaultArm { 50% { box-shadow:0 0 18px rgba(255,214,10,0.35); } }
+  .hl-vault.jackpot { border-color:var(--ar-gold); animation:hlVaultJackpot 0.9s ease infinite; }
+  .hl-vault.jackpot .hl-vault-note { color:var(--ar-gold); text-shadow:0 0 10px rgba(255,214,10,0.7); }
+  @keyframes hlVaultJackpot { 50% { box-shadow:0 0 30px rgba(255,214,10,0.6), inset 0 0 12px rgba(255,214,10,0.25); } }
+  .hl-vault.collapse { border-color:var(--ar-pink); animation:hlVaultCollapse 0.5s ease; }
+  @keyframes hlVaultCollapse {
+    0% { transform:translateX(0); box-shadow:0 0 26px rgba(255,46,136,0.55); }
+    25% { transform:translateX(-6px); } 50% { transform:translateX(5px); }
+    75% { transform:translateX(-3px); } 100% { transform:translateX(0); }
+  }
+  .hl-jackpot { flex:1 1 100%; background:linear-gradient(180deg, rgba(255,214,10,0.16), rgba(255,214,10,0.05)); border:1px solid var(--ar-gold); border-radius:14px; padding:13px 15px; animation:arPop 0.32s ease; }
+  .hl-jackpot-head { font-family:var(--ar-font); font-weight:800; font-size:17px; letter-spacing:0.5px; color:var(--ar-gold); text-shadow:0 0 14px rgba(255,214,10,0.5); margin-bottom:5px; }
+  .hl-jackpot-sub { font-size:13px; line-height:1.5; color:var(--ar-text2); margin-bottom:11px; }
+  .hl-crack { background:linear-gradient(180deg, #ffe27a 0%, #ffd24d 55%, #e8a51f 100%); color:#1a0d02; box-shadow:0 6px 22px rgba(255,210,77,0.4); width:100%; }
   @media (max-width:560px) {
     .hl-stage { flex-direction:column; }
     .hl-vs { padding:2px 0; }
@@ -97,6 +122,7 @@
   const E = Arcade.escapeHtml;
   const params = new URLSearchParams(location.search);
   const stem = params.get('spec');
+  const DEBUG = params.get('debug') === '1';
   const root = document.getElementById('root');
   const announce = document.getElementById('announce');
 
@@ -249,6 +275,21 @@
   const BEST_KEY = 'aism-hl-best:' + stem;
   const MAX_Q = 12;          // cap the run so videos stay tight
   const HOT_POT = 500;       // heartbeat territory
+  // ── JACKPOT VAULT (signature event) ────────────────────────────────────
+  // A visible vault fills alongside the streak: each consecutive correct
+  // call drops in a growing token — 1x, 2x, 3x, 4x, 5x the base call value
+  // (100), capped at 5x per correct from there on. At a 5-chain the vault
+  // arms and the player faces a choice: CRACK IT (one genuinely extra,
+  // harder call — the unseen card whose value sits closest to the one just
+  // revealed; a correct pays the whole vault straight into the bank) or
+  // KEEP CLIMBING (+500 a call, but any wrong call collapses the vault to
+  // nothing on top of the normal pot burn). CHARTER: the vault only ever
+  // pays out through a correct answer to a real extra question — it never
+  // skips, shortens or softens the normal loop, and banking the pot leaves
+  // the vault chain untouched. Wrong calls behave exactly as before, plus
+  // the vault consequence.
+  const VAULT_BASE = 100;    // token 1 value; tokens grow to 5x this
+  const VAULT_ARM = 5;       // consecutive correct calls to arm the jackpot
   const sameVal = (a, b) => Math.abs(a - b) < 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
 
   let queue = [];
@@ -274,14 +315,15 @@
     return Math.round(v).toLocaleString('en-GB');
   }
 
-  let state, stats;
+  let state, stats, seenRun;
 
   function startGame() {
     refill(null);
     const left = queue.shift();
     const right = drawNext(left);
-    state = { left, right, banked: 0, pot: 0, streak: 0, qNum: 0, correctCount: 0, busy: false };
-    stats = { overshoot: 0, undershoot: 0, yearRounds: 0, yearRight: 0, lastWrongGuess: null, longestStreak: 0, biggestBurn: 0, marks: [] };
+    state = { left, right, banked: 0, pot: 0, streak: 0, qNum: 0, correctCount: 0, busy: false, vault: 0, vaultStreak: 0, crack: null };
+    stats = { overshoot: 0, undershoot: 0, yearRounds: 0, yearRight: 0, lastWrongGuess: null, longestStreak: 0, biggestBurn: 0, marks: [], vaultBuilt: 0, vaultLost: 0, jackpotPaid: 0, biggestJackpot: 0, crackAsked: 0, crackRight: 0 };
+    seenRun = new Set([left, right]);
     renderGame(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -295,6 +337,38 @@
     `;
   }
 
+  function vaultNote() {
+    const vs = state.vaultStreak;
+    if (vs >= VAULT_ARM) return 'JACKPOT READY';
+    if (vs === VAULT_ARM - 1) return 'one call from jackpot';
+    return 'streak to fill';
+  }
+
+  function vaultHtml() {
+    const vs = state.vaultStreak;
+    const segs = Array.from({ length: VAULT_ARM }, (_, i) => `<span class="hl-vault-seg ${vs > i ? 'on' : ''}"></span>`).join('');
+    const over = vs > VAULT_ARM ? `<span class="hl-vault-over">+${vs - VAULT_ARM}</span>` : '';
+    const cls = vs >= VAULT_ARM ? 'jackpot' : (vs === VAULT_ARM - 1 ? 'arming' : '');
+    return `
+      <div class="hl-vault ${cls}" id="vault">
+        <span class="hl-vault-label">💎 Vault</span>
+        <div class="hl-vault-segs">${segs}${over}</div>
+        <span class="hl-vault-note">${vaultNote()}</span>
+        <b class="hl-vault-val" id="vault-val">${state.vault}</b>
+      </div>`;
+  }
+
+  // In-place swap of the vault bar (renderGame rebuilds it from state anyway).
+  function refreshVault(popText, popColour, collapsed) {
+    const el = document.getElementById('vault');
+    if (!el) return;
+    el.outerHTML = vaultHtml();
+    const fresh = document.getElementById('vault');
+    if (collapsed && fresh) fresh.classList.add('collapse');
+    const val = document.getElementById('vault-val');
+    if (popText && val) Arcade.popTextOver(val, popText, popColour);
+  }
+
   function hudHtml() {
     return `
       <div class="ar-hud">
@@ -302,8 +376,9 @@
         <div class="ar-hud-stat ${state.pot > HOT_POT ? 'hot' : ''}">🔥 Pot <b id="pot-val">${state.pot}</b></div>
         <div class="ar-hud-stat">⚡ Streak <b id="streak-val">${state.streak}</b></div>
       </div>
+      ${vaultHtml()}
       <div class="ar-dots" aria-hidden="true">${Array.from({ length: MAX_Q }, (_, i) => {
-        const m = stats.marks.filter(x => x !== '🏦')[i];
+        const m = stats.marks.filter(x => x === '🟩' || x === '🟥')[i];
         let cls = '';
         if (m === '🟩') cls = 'done';
         else if (m === '🟥') cls = 'fail';
@@ -344,7 +419,7 @@
       <div id="fb"></div>
       <div class="hl-decision" id="decision"></div>
       <button type="button" class="hl-cashout" id="btnCashout">Cash out &amp; finish — bank everything and see your results</button>
-      <div class="ar-kbd-hint">Keyboard: ↑ higher · ↓ lower · B bank · Enter keep going</div>
+      <div class="ar-kbd-hint">Keyboard: ↑ higher · ↓ lower · B bank · C crack the vault · Enter keep going</div>
     `;
     document.getElementById('btnHigher').addEventListener('click', () => guess('higher'));
     document.getElementById('btnLower').addEventListener('click', () => guess('lower'));
@@ -427,6 +502,14 @@
         state.pot += gain;
         stats.marks.push('🟩');
 
+        // Vault: consecutive-correct chain drops in a growing token (1x-5x
+        // the base call value, held at 5x beyond the fifth). Banking the pot
+        // never touches this chain — only a wrong call does.
+        state.vaultStreak++;
+        const vgain = VAULT_BASE * Math.min(state.vaultStreak, 5);
+        state.vault += vgain;
+        stats.vaultBuilt += vgain;
+
         Arcade.sfx.correct(state.streak);
         Arcade.streakCall(state.streak);
         Arcade.vibrate([20]);
@@ -442,28 +525,51 @@
         }
         const streakEl = document.getElementById('streak-val');
         if (streakEl) streakEl.textContent = state.streak;
+        refreshVault('+' + vgain, '#ffd60a');
+        if (state.vaultStreak === VAULT_ARM) {
+          Arcade.flashMsg('VAULT ARMED 💎', '#ffd60a');
+          Arcade.sfx.riser();
+        }
+
+        const offerCrack = state.vaultStreak >= VAULT_ARM && state.vault > 0 && !!pickCrackCard(right);
+        const bannerHtml = offerCrack ? `
+          <div class="hl-jackpot" id="jackpotBanner" role="status">
+            <div class="hl-jackpot-head">💎 JACKPOT — the vault holds ${state.vault}</div>
+            <div class="hl-jackpot-sub">Crack it with <strong>one extra call</strong> — the trickiest unseen number in the deck. Right, and the whole vault drops straight into your bank. Wrong, and the vault <em>and</em> your unbanked pot go up in smoke. Or keep climbing at +500 a call — but one wrong call empties the vault.</div>
+            <button type="button" class="hl-pill hl-crack" id="btnCrack">💎 CRACK THE VAULT — one harder call for ${state.vault}</button>
+          </div>` : '';
+        if (offerCrack) Arcade.sfx.heartbeat();
 
         fb.className = 'ar-feedback ok';
         fb.innerHTML = `<strong>Called it.</strong> ${E(take)} Pot: <strong>${state.pot}</strong> unbanked.`;
-        announce.textContent = 'Correct — the answer was ' + revealed + ', which is ' + (isHigher ? 'higher' : 'lower') + '. Streak ' + state.streak + '. Pot ' + state.pot + ' unbanked. Bank it, or keep going?';
+        announce.textContent = 'Correct — the answer was ' + revealed + ', which is ' + (isHigher ? 'higher' : 'lower') + '. Streak ' + state.streak + '. Pot ' + state.pot + ' unbanked. Vault ' + state.vault + '.'
+          + (offerCrack ? ' Jackpot ready — crack the vault with one extra harder call, or keep climbing.' : ' Bank it, or keep going?');
 
         if (endedByCap()) {
-          decision.innerHTML = '<button type="button" class="ar-btn big" id="btnCollect">🏦 Collect ' + state.pot + ' &amp; finish →</button>';
+          decision.innerHTML = bannerHtml + '<button type="button" class="ar-btn big" id="btnCollect">🏦 Collect ' + state.pot + ' &amp; finish →</button>';
           document.getElementById('btnCollect').addEventListener('click', () => { bankPot(false); finish(false); });
         } else {
-          decision.innerHTML = `
+          decision.innerHTML = bannerHtml + `
             <button type="button" class="ar-btn" id="btnBank">🏦 BANK IT — keep ${state.pot}</button>
-            <button type="button" class="ar-btn hot" id="btnKeep">😈 KEEP GOING — next is +${100 * (state.streak + 1)}</button>
+            <button type="button" class="ar-btn hot" id="btnKeep">😈 ${offerCrack ? 'KEEP CLIMBING' : 'KEEP GOING'} — next is +${100 * (state.streak + 1)}${offerCrack ? ' &amp; vault +500' : ''}</button>
           `;
           document.getElementById('btnBank').addEventListener('click', () => { bankPot(true); advance(); });
           document.getElementById('btnKeep').addEventListener('click', () => { Arcade.sfx.click(); advance(); });
         }
+        const crackBtn = document.getElementById('btnCrack');
+        if (crackBtn) crackBtn.addEventListener('click', startCrack);
       } else {
         const burned = state.pot;
         if (burned > stats.biggestBurn) stats.biggestBurn = burned;
         state.pot = 0;
         state.streak = 0;
         stats.marks.push('🟥');
+
+        // Vault consequence: a wrong call collapses the whole vault chain.
+        const vaultGone = state.vault;
+        if (vaultGone > 0) stats.vaultLost += vaultGone;
+        state.vault = 0;
+        state.vaultStreak = 0;
 
         Arcade.sfx.wrong();
         Arcade.shake();
@@ -477,10 +583,11 @@
         }
         const streakEl = document.getElementById('streak-val');
         if (streakEl) streakEl.textContent = '0';
+        refreshVault(vaultGone > 0 ? '−' + vaultGone : '', '#ff2e88', vaultGone > 0);
 
         fb.className = 'ar-feedback no';
-        fb.innerHTML = `<strong>Wrong way.</strong> ${E(take)}` + (burned > 0 ? ` Your unbanked pot of <strong>${burned}</strong> just went up in smoke.` : ' Nothing in the pot — nothing lost.');
-        announce.textContent = 'Wrong — the answer was ' + revealed + ', which is ' + (isHigher ? 'higher' : 'lower') + '.' + (burned > 0 ? ' You burned an unbanked pot of ' + burned + '.' : '') + ' Banked total still ' + state.banked + '.';
+        fb.innerHTML = `<strong>Wrong way.</strong> ${E(take)}` + (burned > 0 ? ` Your unbanked pot of <strong>${burned}</strong> just went up in smoke.` : ' Nothing in the pot — nothing lost.') + (vaultGone > 0 ? ` The vault collapsed — <strong>${vaultGone}</strong> gone with it.` : '');
+        announce.textContent = 'Wrong — the answer was ' + revealed + ', which is ' + (isHigher ? 'higher' : 'lower') + '.' + (burned > 0 ? ' You burned an unbanked pot of ' + burned + '.' : '') + (vaultGone > 0 ? ' The vault collapsed, losing ' + vaultGone + '.' : '') + ' Banked total still ' + state.banked + '.';
 
         if (endedByCap()) {
           decision.innerHTML = '<button type="button" class="ar-btn big" id="btnFinish">See your results →</button>';
@@ -488,6 +595,160 @@
         } else {
           decision.innerHTML = '<button type="button" class="ar-btn big ghost" id="btnNext">Shake it off — next number →</button>';
           document.getElementById('btnNext').addEventListener('click', () => { Arcade.sfx.click(); advance(); });
+        }
+      }
+    });
+  }
+
+  // ── JACKPOT VAULT: crack question ──────────────────────────────────────
+  // The crack is a REAL extra higher-or-lower call, deliberately the hardest
+  // one available: from cards not yet seen this run (falling back to seen),
+  // same category as the base where possible, pick the value closest to the
+  // just-revealed card — a near coin-flip that only genuine number sense
+  // wins. The vault pays out on a correct answer and only then.
+  function pickCrackCard(base) {
+    const cands = pool.filter(c => c !== base && c !== state.left && !sameVal(c.value, base.value));
+    if (!cands.length) return null;
+    const unseen = cands.filter(c => !seenRun.has(c));
+    let pickFrom = unseen.length ? unseen : cands;
+    const sameCat = pickFrom.filter(c => c.year === base.year);
+    if (sameCat.length) pickFrom = sameCat;
+    let best = null, bestGap = Infinity;
+    for (const c of pickFrom) {
+      const gap = Math.abs(c.value - base.value) / Math.max(1, Math.abs(base.value), Math.abs(c.value));
+      if (gap < bestGap) { bestGap = gap; best = c; }
+    }
+    return best;
+  }
+
+  function startCrack() {
+    if (state.crack || state.vault <= 0) return;
+    const base = state.right; // already revealed on screen
+    const card = pickCrackCard(base);
+    if (!card) return;
+    queue = queue.filter(c => c !== card);
+    seenRun.add(card);
+    state.crack = { base, card, answered: false };
+    stats.crackAsked++;
+    Arcade.sfx.heartbeat();
+    root.innerHTML = `
+      ${headerHtml('Jackpot — one extra call')}
+      ${hudHtml()}
+      <div class="hl-jackpot" style="margin-bottom:12px" role="status">
+        <div class="hl-jackpot-head">💎 CRACK THE VAULT</div>
+        <div class="hl-jackpot-sub">One extra call, the trickiest number left. Call it right and <strong>${state.vault}</strong> drops straight into your bank. Call it wrong and the vault and your unbanked pot are gone.</div>
+      </div>
+      <div class="hl-stage" id="stage">
+        <div class="hl-col" id="colL">${cardHtml(base, false)}</div>
+        <div class="hl-vs" aria-hidden="true">vs</div>
+        <div class="hl-col" id="colR">
+          ${cardHtml(card, true, 'enter')}
+          <div class="hl-controls">
+            <button type="button" class="hl-pill hl-crack" id="btnHigher" aria-label="Guess the hidden answer is higher">↑ HIGHER</button>
+            <button type="button" class="hl-pill hl-crack" id="btnLower" aria-label="Guess the hidden answer is lower">↓ LOWER</button>
+          </div>
+        </div>
+      </div>
+      <div id="fb"></div>
+      <div class="hl-decision" id="decision"></div>
+      <div class="ar-kbd-hint">Keyboard: ↑ higher · ↓ lower</div>
+    `;
+    document.getElementById('btnHigher').addEventListener('click', () => crackGuess('higher'));
+    document.getElementById('btnLower').addEventListener('click', () => crackGuess('lower'));
+    announce.textContent = 'Jackpot question. One extra call for the vault of ' + state.vault + '. Is the hidden answer higher or lower than ' + fmt(base.value, base) + (base.unit ? ' ' + base.unit : '') + '?';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function crackGuess(dir) {
+    const crack = state.crack;
+    if (!crack || crack.answered) return;
+    crack.answered = true;
+    Arcade.sfx.click();
+    const { base, card } = crack;
+    const isHigher = card.value > base.value;
+    const correct = (dir === 'higher') === isHigher;
+
+    ['btnHigher', 'btnLower'].forEach(id => { document.getElementById(id).disabled = true; });
+    const cardR = root.querySelector('#colR .hl-card');
+    cardR.classList.add('revealed');
+    if (!correct) cardR.classList.add('busted');
+    const numEl = cardR.querySelector('.hl-num');
+    if (card.unit) numEl.insertAdjacentHTML('afterend', `<span class="hl-unit">${E(card.unit)}</span>`);
+
+    countUp(numEl, card, base.value, () => {
+      const take = takeaway(base, card, isHigher);
+      const fb = document.getElementById('fb');
+      const decision = document.getElementById('decision');
+
+      if (correct) {
+        const payout = state.vault;
+        state.banked += payout;
+        stats.jackpotPaid += payout;
+        if (payout > stats.biggestJackpot) stats.biggestJackpot = payout;
+        stats.crackRight++;
+        stats.marks.push('💎');
+        state.vault = 0;
+        state.vaultStreak = 0;
+
+        Arcade.sfx.fanfare();
+        Arcade.confettiBurst({ count: 140 });
+        Arcade.flashMsg('JACKPOT 💎', '#ffd60a');
+        Arcade.vibrate([30, 40, 80]);
+        const bankedEl = document.getElementById('banked-val');
+        if (bankedEl) {
+          Arcade.countUp(bankedEl, state.banked, 900);
+          Arcade.popTextOver(bankedEl, '+' + payout, '#ffd60a');
+        }
+        refreshVault('', '');
+
+        fb.className = 'ar-feedback ok';
+        fb.innerHTML = `<strong>VAULT CRACKED.</strong> ${E(take)} The jackpot of <strong>${payout}</strong> is paid straight into your bank — no wrong call can touch it now.`;
+        announce.textContent = 'Vault cracked. The answer was ' + fmt(card.value, card) + (card.unit ? ' ' + card.unit : '') + ', which is ' + (isHigher ? 'higher' : 'lower') + '. Jackpot of ' + payout + ' banked. Safe total ' + state.banked + '.';
+
+        if (endedByCap()) {
+          decision.innerHTML = '<button type="button" class="ar-btn big" id="btnCollect">🏦 Collect ' + state.pot + ' &amp; finish →</button>';
+          document.getElementById('btnCollect').addEventListener('click', () => { bankPot(false); finish(false); });
+        } else {
+          decision.innerHTML = '<button type="button" class="ar-btn big" id="btnNext">Back to the run — next number →</button>';
+          document.getElementById('btnNext').addEventListener('click', () => { Arcade.sfx.click(); state.crack = null; advance(); });
+        }
+      } else {
+        // Wrong answers behave exactly as elsewhere — pot torched, streak
+        // reset — plus the vault consequence: it collapses to nothing.
+        const burned = state.pot;
+        if (burned > stats.biggestBurn) stats.biggestBurn = burned;
+        const vaultGone = state.vault;
+        stats.vaultLost += vaultGone;
+        state.pot = 0;
+        state.streak = 0;
+        state.vault = 0;
+        state.vaultStreak = 0;
+        stats.marks.push('💥');
+
+        Arcade.sfx.wrong();
+        Arcade.shake();
+        Arcade.vibrate([60, 40, 60]);
+        Arcade.flashMsg('VAULT LOST 💥', '#ff2e88');
+        const potEl = document.getElementById('pot-val');
+        if (potEl) {
+          potEl.textContent = '0';
+          potEl.closest('.ar-hud-stat').classList.remove('hot');
+          if (burned > 0) Arcade.popTextOver(potEl, '−' + burned, '#ff2e88');
+        }
+        const streakEl = document.getElementById('streak-val');
+        if (streakEl) streakEl.textContent = '0';
+        refreshVault('−' + vaultGone, '#ff2e88', true);
+
+        fb.className = 'ar-feedback no';
+        fb.innerHTML = `<strong>The vault holds.</strong> ${E(take)} The jackpot of <strong>${vaultGone}</strong> collapsed` + (burned > 0 ? ` and your unbanked pot of <strong>${burned}</strong> went with it.` : ' — but your pot was empty, so nothing else was lost.');
+        announce.textContent = 'Wrong — the answer was ' + fmt(card.value, card) + (card.unit ? ' ' + card.unit : '') + ', which is ' + (isHigher ? 'higher' : 'lower') + '. The vault collapsed, losing ' + vaultGone + '.' + (burned > 0 ? ' You also burned an unbanked pot of ' + burned + '.' : '') + ' Banked total still ' + state.banked + '.';
+
+        if (endedByCap()) {
+          decision.innerHTML = '<button type="button" class="ar-btn big" id="btnFinish">See your results →</button>';
+          document.getElementById('btnFinish').addEventListener('click', () => finish(false));
+        } else {
+          decision.innerHTML = '<button type="button" class="ar-btn big ghost" id="btnNext">Shake it off — next number →</button>';
+          document.getElementById('btnNext').addEventListener('click', () => { Arcade.sfx.click(); state.crack = null; advance(); });
         }
       }
     });
@@ -520,6 +781,7 @@
     }
     state.left = state.right;
     state.right = next;
+    seenRun.add(next);
     state.busy = false;
     renderGame(true);
   }
@@ -549,6 +811,11 @@
     if (stats.biggestBurn > 0 && stats.biggestBurn > state.banked) {
       core = `You torched more than you banked (a ${stats.biggestBurn}-point pot went up in flames). Knowing when to lock in what you've got is calibration too. ` + core;
     }
+    if (stats.jackpotPaid > 0) {
+      core = `You cracked the vault for ${stats.jackpotPaid} — the hardest call in the deck, answered under pressure. That is what a streak is for. ` + core;
+    } else if (stats.vaultLost > 0) {
+      core = `A vault of ${stats.vaultLost} collapsed on a wrong call. The jackpot only pays the player who can land one more hard answer — worth knowing which number caught you out. ` + core;
+    }
     return core;
   }
 
@@ -575,6 +842,7 @@
         { v: stats.longestStreak, l: 'longest streak' },
         { v: stats.biggestBurn ? '−' + stats.biggestBurn : '—', l: 'biggest burn' },
         { v: state.correctCount + '/' + answered, l: 'calls right' },
+        { v: stats.jackpotPaid ? '💎 ' + stats.jackpotPaid : (stats.vaultLost ? '💥 −' + stats.vaultLost : '—'), l: stats.jackpotPaid ? 'vault cracked' : (stats.vaultLost ? 'vault lost' : 'vault untouched') },
       ],
       emojiGrid: grid,
       bestKey: BEST_KEY,
@@ -584,13 +852,14 @@
       share: { subject: subj, level: level, bigLabel: 'POINTS BANKED', statLine: 'longest streak ⚡' + stats.longestStreak + '  ·  ' + state.correctCount + '/' + answered + ' calls right' },
       shareLines: [
         '⚖️ Higher or Lower — ' + topic,
-        '🏦 ' + state.banked + ' banked · ⚡ streak ' + stats.longestStreak + (stats.biggestBurn ? ' · 🔥 burned ' + stats.biggestBurn : ''),
+        '🏦 ' + state.banked + ' banked · ⚡ streak ' + stats.longestStreak + (stats.jackpotPaid ? ' · 💎 jackpot ' + stats.jackpotPaid : '') + (stats.biggestBurn ? ' · 🔥 burned ' + stats.biggestBurn : ''),
         grid,
       ],
       onAgain: startGame,
     });
 
     announce.textContent = 'Run over. ' + state.banked + ' points banked, longest streak ' + stats.longestStreak
+      + (stats.jackpotPaid ? ', jackpot cracked for ' + stats.jackpotPaid : '')
       + (stats.biggestBurn ? ', biggest pot burned ' + stats.biggestBurn : '') + '. '
       + state.correctCount + ' of ' + answered + ' calls right.';
   }
@@ -609,6 +878,11 @@
       if (btn) { e.preventDefault(); btn.click(); }
       return;
     }
+    if (e.key === 'c' || e.key === 'C') {
+      const btn = document.getElementById('btnCrack');
+      if (btn) { e.preventDefault(); btn.click(); }
+      return;
+    }
     if (e.key === 'Enter') {
       const t = e.target;
       if (t && t.classList && (t.classList.contains('ar-btn') || t.classList.contains('hl-pill') || t.classList.contains('hl-cashout'))) return; // native activation
@@ -619,6 +893,27 @@
   });
 
   startGame();
+
+  /* ---- debug hook for the test harness (follows the __pusher pattern) ---- */
+  if (DEBUG) {
+    window.__hl = {
+      get state() { return state; },
+      get stats() { return stats; },
+      get poolSize() { return pool.length; },
+      get left() { return state.left; },
+      get right() { return state.right; },
+      get vault() { return state.vault; },
+      get vaultStreak() { return state.vaultStreak; },
+      get crack() { return state.crack; },
+      get offerUp() { return !!document.getElementById('btnCrack'); },
+      get inCrack() { return !!state.crack && !state.crack.answered; },
+      correctDir() { return state.right.value > state.left.value ? 'higher' : 'lower'; },
+      crackCorrectDir() { return state.crack ? (state.crack.card.value > state.crack.base.value ? 'higher' : 'lower') : null; },
+      pickCrackCard: pickCrackCard,
+      _startCrack: startCrack,
+      _finish: finish,
+    };
+  }
 })();
 </script>
 

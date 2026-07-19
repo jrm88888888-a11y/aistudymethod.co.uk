@@ -11,6 +11,14 @@
   .tt-stmts { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
   .tt-q { font-family:var(--ar-mono); font-size:10.5px; letter-spacing:0.8px; text-transform:uppercase; color:var(--ar-muted); margin-bottom:6px; line-height:1.5; }
   .tt-a { line-height:1.5; }
+  /* ---- Lightning Round (earned by a 3-streak: 20s of ×2, no dwell padding) ---- */
+  .tt-bolt-badge { background:linear-gradient(180deg,#ffe27a,#ffb020) !important; color:#1a0d02 !important; box-shadow:0 0 18px rgba(255,214,10,0.55); }
+  .tt-bolt-badge b { color:#1a0d02 !important; }
+  body.tt-lightning .ar-hud { border-radius:14px; box-shadow:0 0 0 2px rgba(255,214,10,0.55), 0 0 28px rgba(255,214,10,0.3); animation:ttCrackle 1.1s ease infinite; }
+  body.tt-lightning .ar-card { border-color:rgba(255,214,10,0.6); box-shadow:0 0 34px rgba(255,214,10,0.22); }
+  @keyframes ttCrackle { 50% { box-shadow:0 0 0 2px rgba(255,214,10,0.95), 0 0 44px rgba(255,214,10,0.55); } }
+  .tt-zap { font-family:var(--ar-mono); font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ar-gold); text-shadow:0 0 12px rgba(255,214,10,0.6); }
+  @media (prefers-reduced-motion: reduce) { body.tt-lightning .ar-hud { animation:none; } }
 </style>
 <link rel="canonical" href="https://aistudymethod.co.uk/classcraft/quizzes/two-truths.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -66,6 +74,7 @@
   const esc = Arcade.escapeHtml;
   const params = new URLSearchParams(location.search);
   const stem = params.get('spec');
+  const DEBUG = params.get('debug') === '1';
   const root = document.getElementById('root');
   const announce = document.getElementById('announce');
 
@@ -117,6 +126,70 @@
   const ROUND_MS = 20000;
   const ROUNDS = 5;
 
+  /* ---- LIGHTNING ROUND ----------------------------------------------------
+     Earned by a 3-streak. For 20 seconds the rounds keep coming with no
+     inter-round padding: a correct verdict dwells ~0.7s then auto-advances,
+     and extra rounds are appended so the supply never runs dry — more
+     retrieval per minute, never less. Everything answered inside the window
+     scores ×2. A wrong keeps its full teaching dwell and ends the storm
+     early. The trigger round itself scores normally — the ×2 starts after
+     the banner, so the reward is always telegraphed before it applies.   */
+  const LIGHTNING_MS = 20000;
+  const LIGHTNING_MULT = 2;
+  const MAX_ROUNDS = 40;               // hard bound on lightning extensions
+  const lightning = { until: 0, tickId: null };
+  function lightningActive() { return performance.now() < lightning.until; }
+
+  function crackleSfx() {
+    Arcade.sfx.tick();
+    setTimeout(() => Arcade.sfx.tick(), 60);
+    setTimeout(() => Arcade.sfx.tick(), 130);
+    setTimeout(() => Arcade.sfx.coin(), 200);
+  }
+
+  function startLightning() {
+    lightning.until = performance.now() + LIGHTNING_MS;
+    document.body.classList.add('tt-lightning');
+    Arcade.flashMsg('⚡ LIGHTNING ROUND — ×2 ⚡', '#ffd60a');
+    crackleSfx();
+    Arcade.sfx.riser();
+    announce.textContent = 'Lightning round! Twenty seconds of double points — rounds come fast, a wrong answer ends it.';
+    clearInterval(lightning.tickId);
+    lightning.tickId = setInterval(() => {
+      const left = lightning.until - performance.now();
+      const el = document.getElementById('lightSecs');
+      if (el) el.textContent = Math.max(0, Math.ceil(left / 1000));
+      if (left <= 0) endLightning(false);
+    }, 200);
+  }
+
+  function endLightning(byWrong) {
+    const wasOn = document.body.classList.contains('tt-lightning');
+    lightning.until = 0;
+    clearInterval(lightning.tickId);
+    lightning.tickId = null;
+    document.body.classList.remove('tt-lightning');
+    const badge = document.getElementById('boltBadge');
+    if (badge) badge.remove();
+    if (wasOn && !byWrong) {
+      Arcade.flashMsg('LIGHTNING OVER', '#ffd60a');
+      Arcade.sfx.swoosh();
+    }
+  }
+
+  // One extra round, same construction as buildRounds — a real misconception
+  // versus two authored truths. Lightning never recycles thin filler.
+  function buildExtraRound() {
+    const item = Arcade.shuffle(bankItems)[0];
+    const [c1, c2] = Arcade.shuffle(concepts);
+    const statements = Arcade.shuffle([
+      { lie: true,  prompt: item.q, claim: item.misconception, why: item.why || '' },
+      { lie: false, prompt: `What does “${c1.term}” mean?`, claim: c1.def },
+      { lie: false, prompt: `What does “${c2.term}” mean?`, claim: c2.def },
+    ]);
+    return { statements, lieIdx: statements.findIndex(s => s.lie) };
+  }
+
   // Build rounds: each pairs one misconception (the lie) with two
   // randomly-drawn concept definitions (the truths). Every statement is
   // shown as a prompt + claim so the lie isn't given away by format.
@@ -140,8 +213,9 @@
 
   function startGame() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
+    endLightning(true);
     rounds = buildRounds();
-    state = { idx: 0, caught: 0, score: 0, streak: 0, bestStreak: 0, grid: [] };
+    state = { idx: 0, caught: 0, score: 0, streak: 0, bestStreak: 0, grid: [], lightningRounds: 0, lightningPts: 0, lastCalc: null };
     renderRound();
   }
 
@@ -157,16 +231,20 @@
     return `
       <div class="ar-badge">V · Verify · Two Truths One Lie</div>
       <h1 class="ar-title">${esc(topic)}</h1>
-      <p class="ar-sub">Three claims about ${esc(topic)}. Two are true — one is a misconception built to fool you. 20 seconds. Call the lie.</p>
+      <p class="ar-sub">Three claims about ${esc(topic)}. Two are true — one is a misconception built to fool you. 20 seconds. Call the lie. Catch three in a row to spark a ⚡ Lightning Round: twenty seconds of double points with no waiting between rounds.</p>
       <div class="ar-meta">${esc([level, subj].filter(Boolean).join(' · '))} · ${esc(metaTail)}</div>
     `;
   }
 
   function hudHtml() {
+    const bolt = lightningActive()
+      ? `<div class="ar-hud-stat tt-bolt-badge" id="boltBadge">⚡ ×2 <b><span id="lightSecs">${Math.max(0, Math.ceil((lightning.until - performance.now()) / 1000))}</span>s</b></div>`
+      : '';
     return `
       <div class="ar-hud">
         <div class="ar-hud-stat">Score <b id="hudScore">${state.score}</b></div>
         <div class="ar-hud-stat${state.streak >= 3 ? ' hot' : ''}">Streak <b id="hudStreak">${state.streak}${state.streak >= 3 ? '🔥' : ''}</b></div>
+        ${bolt}
         <div class="ar-hud-stat gold">Round <b>${state.idx + 1}/${rounds.length}</b></div>
       </div>
     `;
@@ -232,6 +310,9 @@
         }
       });
 
+      // ×2 only for rounds answered INSIDE an already-running lightning
+      // window — the trigger round itself scores normally (telegraph first).
+      const inLightning = lightningActive();
       let pts = 0;
       if (correct) {
         state.caught++;
@@ -239,18 +320,27 @@
         state.bestStreak = Math.max(state.bestStreak, state.streak);
         const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
         const speed = Math.round(50 * (remaining / ROUND_MS));
-        pts = Math.round((100 + speed) * mult);
+        pts = Math.round((100 + speed) * mult) * (inLightning ? LIGHTNING_MULT : 1);
         state.score += pts;
         state.grid.push('🟩');
+        state.lastCalc = { speed, mult, doubled: inLightning };
+        if (inLightning) { state.lightningRounds++; state.lightningPts += pts; }
         Arcade.sfx.correct(state.streak);
-        if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg('CAUGHT IT', '#00ffa3');
+        if (inLightning) crackleSfx();
+        if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg(inLightning ? '⚡ CAUGHT IT ×2' : 'CAUGHT IT', inLightning ? '#ffd60a' : '#00ffa3');
         Arcade.streakCall(state.streak);
         Arcade.confettiBurst({ count: 40 });
-        Arcade.popTextOver(tiles[round.lieIdx], '+' + pts, '#00ffa3');
+        Arcade.popTextOver(tiles[round.lieIdx], '+' + pts, inLightning ? '#ffd60a' : '#00ffa3');
         Arcade.vibrate(20);
+        // A 3-streak EARNS the lightning round — announced before it pays.
+        if (!inLightning && state.streak === 3) startLightning();
       } else {
         state.streak = 0;
         state.grid.push(timedOut ? '⬛' : '🟥');
+        state.lastCalc = null;
+        // A wrong ends the lightning round early — the full teaching dwell
+        // below is untouched.
+        if (inLightning) endLightning(true);
         if (timedOut) {
           Arcade.sfx.timeup();
           Arcade.flashMsg("TIME'S UP ⏱", '#ffd60a');
@@ -283,16 +373,28 @@
         : timedOut ? 'Time up — round lost. ' : 'Incorrect — that statement was true. ')
         + (lie.why || '');
 
-      const last = state.idx + 1 >= rounds.length;
-      document.getElementById('nextWrap').innerHTML =
-        `<button class="ar-btn big" id="next">${last ? 'See your score →' : 'Next →'}</button>`;
-      const nextBtn = document.getElementById('next');
-      nextBtn.addEventListener('click', advance);
-      nextBtn.focus({ preventScroll: true });
+      if (correct && lightningActive()) {
+        // No inter-round padding during lightning: ~0.7s verdict beat, then
+        // the next round arrives on its own.
+        document.getElementById('nextWrap').innerHTML = '<div class="tt-zap">⚡ next round incoming…</div>';
+        setTimeout(advance, 700);
+      } else {
+        const last = state.idx + 1 >= rounds.length;
+        document.getElementById('nextWrap').innerHTML =
+          `<button class="ar-btn big" id="next">${last ? 'See your score →' : 'Next →'}</button>`;
+        const nextBtn = document.getElementById('next');
+        nextBtn.addEventListener('click', advance);
+        nextBtn.focus({ preventScroll: true });
+      }
     }
 
     function advance() {
       Arcade.sfx.swoosh();
+      // Lightning keeps the supply topped up: while the window is live,
+      // append a fresh round so play never stalls — MORE retrieval, not less.
+      if (lightningActive() && state.idx + 1 >= rounds.length && rounds.length < MAX_ROUNDS) {
+        rounds.push(buildExtraRound());
+      }
       if (state.idx + 1 < rounds.length) {
         state.idx++;
         renderRound();
@@ -311,6 +413,7 @@
   }
 
   function renderEnd() {
+    endLightning(true);
     const total = rounds.length;
     const pct = Math.round((state.caught / total) * 100);
 
@@ -332,7 +435,7 @@
         { v: `${state.caught}/${total}`, l: 'lies caught' },
         { v: '🔥 ' + state.bestStreak, l: 'best streak' },
         { v: pct + '%', l: 'accuracy' },
-      ],
+      ].concat(state.lightningRounds ? [{ v: '⚡ ' + state.lightningRounds, l: 'lightning rounds' }] : []),
       emojiGrid: state.grid.join(''),
       bestKey: BEST_KEY,
       bestValue: state.score,
@@ -340,7 +443,7 @@
       insight: insight,
       shareLines: [
         '🕵️ Two Truths One Lie — ' + topic,
-        `Score ${state.score} pts · 🔥 best streak ${state.bestStreak}`,
+        `Score ${state.score} pts · 🔥 best streak ${state.bestStreak}` + (state.lightningRounds ? ` · ⚡ ${state.lightningRounds} lightning rounds` : ''),
         state.grid.join(''),
       ],
       // Share-card extras (consumed by Arcade.shareScore inside renderEndCard).
@@ -375,6 +478,39 @@
       if (b && !b.disabled) { e.preventDefault(); b.click(); }
     }
   });
+
+  /* ---- debug hook for the test harness (sibling pattern: coin-pusher) ---- */
+  if (DEBUG) {
+    window.__tt = {
+      get score() { return state.score; },
+      get streak() { return state.streak; },
+      get idx() { return state.idx; },
+      get caught() { return state.caught; },
+      get roundCount() { return rounds.length; },
+      get lightningActive() { return lightningActive(); },
+      get lightningMsLeft() { return Math.max(0, lightning.until - performance.now()); },
+      get lightningRounds() { return state.lightningRounds; },
+      get lightningPts() { return state.lightningPts; },
+      get lastCalc() { return state.lastCalc; },
+      get lieIdx() { return rounds[state.idx] ? rounds[state.idx].lieIdx : -1; },
+      answer(right) {
+        const tiles = root.querySelectorAll('.tt-stmts .ar-tile');
+        if (!tiles.length) return false;
+        const li = rounds[state.idx].lieIdx;
+        const b = tiles[right ? li : (li === 0 ? 1 : 0)];
+        if (!b || b.disabled) return false;
+        b.click();
+        return true;
+      },
+      next() {
+        const n = document.getElementById('next');
+        if (!n) return false;
+        n.click();
+        return true;
+      },
+      expireLightning() { lightning.until = performance.now() - 1; endLightning(false); },
+    };
+  }
 
   startGame();
 })();

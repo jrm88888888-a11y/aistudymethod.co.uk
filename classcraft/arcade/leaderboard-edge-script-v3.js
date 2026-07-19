@@ -87,8 +87,8 @@ const tokenRate = new Map();
 
 // game id → maximum believable score (anything above is rejected). Same as v1.
 const GAME_CAPS = {
-  "two-truths": 2000, "connections": 3000, "sequence": 1000, "wager": 200000,
-  "higher-lower": 50000, "falling-words": 50000, "conveyor": 20000,
+  "two-truths": 25000, "connections": 3000, "sequence": 1000, "wager": 200000,
+  "higher-lower": 50000, "falling-words": 50000, "conveyor": 40000,
   "word-web": 5000, "reveal-race": 5000, "daily-drill": 1000,
   "quiz": 50000, "pairs": 50000, "hangman": 50000, "termguess": 50000,
   "anagram": 50000, "crossword": 50000, "pacman": 200000, "spaceinvaders": 200000,
@@ -99,7 +99,7 @@ const GAME_CAPS = {
   // (300 + 200 speed bonus) + 500 flawless bonus => hard max 3600. 4000 headroom.
   "boss-rush": 4000,
   // ghost-race: 10 rounds x (100 + 50 speed) = 1500 max. 2000 headroom.
-  "ghost-race": 2000,
+  "ghost-race": 2500,
   // claw: 10 term toys x (200 + 100 speed) x streak mult (ramps 1 -> 2 by
   // streak 5), one golden toy x2 => flawless run 300+300+450+525+6x600
   // = 5175, +600 for the golden banked at full multiplier = 5775 hard max.
@@ -120,13 +120,13 @@ const GAME_CAPS = {
    freshly-minted token can post is GAME_CAPS/3. Tune per game if a legit
    pattern ever trips it. */
 const RATE_CAPS = {
-  "two-truths": 34,      // 2000/60
+  "two-truths": 417,     // 25000/60 — lightning-round event ceiling
   "connections": 50,     // 3000/60
   "sequence": 17,        // 1000/60
   "wager": 3334,         // 200000/60
   "higher-lower": 834,   // 50000/60
   "falling-words": 834,  // 50000/60
-  "conveyor": 334,       // 20000/60
+  "conveyor": 667,       // 40000/60 — belt-surge event ceiling
   "word-web": 84,        // 5000/60
   "reveal-race": 84,     // 5000/60
   "daily-drill": 17,     // 1000/60
@@ -140,7 +140,7 @@ const RATE_CAPS = {
   "spaceinvaders": 3334, // 200000/60
   "odd-one": 50,         // 3000/60
   "boss-rush": 67,       // 4000/60
-  "ghost-race": 34,      // 2000/60
+  "ghost-race": 42,     // 2500/60 — nitro event ceiling
   "claw": 109,           // 6500/60
   "coin-pusher": 417,    // 25000/60
 };

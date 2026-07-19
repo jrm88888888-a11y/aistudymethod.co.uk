@@ -66,6 +66,32 @@
   .br-boss-dead .br-pixboss { animation:br-die 1s forwards; }
   @keyframes br-die { 0%{opacity:1;transform:rotate(0) scale(1)} 100%{opacity:0;transform:rotate(18deg) scale(0.6) translateY(30px)} }
 
+  /* ---- CRITICAL HIT — the 4-second crit window (boss stage only) ---- */
+  .br-critrow { display:flex; align-items:center; justify-content:center; gap:9px; margin:2px 0 12px; transition:opacity .3s; }
+  .br-critring {
+    --crit:1turn; position:relative; width:30px; height:30px; border-radius:50%;
+    background:conic-gradient(#ffd60a var(--crit), rgba(255,214,10,0.14) 0);
+    box-shadow:0 0 12px rgba(255,214,10,0.35);
+  }
+  .br-critring::after {
+    content:"⚡"; position:absolute; inset:5px; border-radius:50%;
+    background:var(--ar-card, #141233); display:flex; align-items:center; justify-content:center;
+    font-size:12px; line-height:1;
+  }
+  .br-critlabel { font-family:var(--ar-mono); font-size:10px; letter-spacing:2px; color:var(--ar-gold); text-transform:uppercase; }
+  .br-critrow.closed { opacity:0.35; filter:grayscale(0.7); }
+  .br-splash .br-critnote { color:var(--ar-gold); font-family:var(--ar-mono); font-size:11.5px; letter-spacing:0.6px; max-width:34ch; }
+  .br-pixboss.crit { animation:br-crit .5s; }
+  @keyframes br-crit {
+    0%{filter:brightness(3.2) hue-rotate(20deg);transform:translateX(0) scale(1.07)}
+    15%{transform:translateX(-11px) scale(1.07)} 30%{transform:translateX(11px) scale(1.05)}
+    45%{transform:translateX(-8px)} 60%{transform:translateX(8px)} 100%{filter:none;transform:none}
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .br-pixboss.crit { animation:br-critsoft .5s; }
+    @keyframes br-critsoft { 0%{filter:brightness(2.4)} 100%{filter:none} }
+  }
+
   .br-missed-list { list-style:none; margin:14px 0 0; padding:0; text-align:left; }
   .br-missed-list li { padding:9px 12px; margin-bottom:7px; border-radius:10px; background:var(--ar-card); border:1px solid var(--ar-border); }
   .br-missed-list b { color:var(--ar-cyan); }
@@ -175,6 +201,7 @@
   const S2_ROUNDS  = Math.min(4, concepts.length);
   const BOSS_MS    = 20000;
   const HINT_MS    = 8000;
+  const CRIT_MS    = 4000;   // boss stage only: correct inside this window = CRITICAL HIT
 
   /* ------------------------------------------------------------- text matcher
      Forgiving type-the-term matcher: lower-case, strip accents, collapse
@@ -213,8 +240,9 @@
     if (b.length >= 6 && levenshtein(a, b) <= 1) return true;
     return false;
   }
-  // Debug hook for automated testing only (does not affect play).
+  // Debug hooks for automated testing only (do not affect play).
   try { window.__brMatch = matchesTerm; } catch (e) {}
+  try { window.__brState = function () { return S; }; } catch (e) {}
 
   /* ---------------------------------------------------------- round building */
   function pick(arr, n) { return Arcade.shuffle(arr).slice(0, n); }
@@ -273,11 +301,12 @@
   }
 
   /* --------------------------------------------------------------- game state */
-  let S = null, timerCtl = null, hintTimer = null;
+  let S = null, timerCtl = null, hintTimer = null, critRAF = null;
 
   function clearTimers() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+    if (critRAF) { cancelAnimationFrame(critRAF); critRAF = null; }
   }
 
   function startGame() {
@@ -290,7 +319,7 @@
       s1, s2, boss: null,
       lives: 3,
       score: 0,
-      s1correct: 0, s2correct: 0, bossHits: 0,
+      s1correct: 0, s2correct: 0, bossHits: 0, crits: 0,
       missed: [],           // [{term, def}] unique, in the order they were missed
       tested: new Set(),
       grid: [],
@@ -374,7 +403,7 @@
     S.damage = 0;
     S.idx = 0;
     // Debug hook for automated testing (does not affect play).
-    try { window.__bossDebug = { hp: S.bossHP, deck: S.boss.map(d => d.term), missed: S.missed.map(m => m.term) }; } catch (e) {}
+    try { window.__bossDebug = { hp: S.bossHP, deck: S.boss.map(d => d.term), missed: S.missed.map(m => m.term), critMs: CRIT_MS }; } catch (e) {}
 
     const missNote = S.missed.length
       ? `It has taken ${S.missed.length} of your slips and turned them into weapons. Beat them again, in order, or it will not fall.`
@@ -384,6 +413,7 @@
         <div class="st">Stage 3 of 3 · Final</div>
         <h2>THE BOSS</h2>
         <p>${esc(missNote)} ${S.bossHP} hits to kill · 20 seconds each · ${S.lives} lives left.</p>
+        <p class="br-critnote">⚡ Answer within 4 seconds of the question appearing to land a CRITICAL HIT — ×2 damage and +150 points.</p>
         <button class="ar-btn big" id="go">Face the boss →</button>
       </div>`;
     const go = document.getElementById('go');
@@ -521,19 +551,34 @@
       sub: 'The boss strikes with the ideas you missed. Name each one to land a hit.',
       timed: true,
       bossFrame: true,
-      onDone: (correct, timedOut, remaining) => {
+      onDone: (correct, timedOut, remaining, elapsedMs) => {
         if (correct) {
+          // CRITICAL HIT: correct inside the 4s window = double damage + bonus.
+          // Boss stage only — fluency pays exactly where the stakes are highest.
+          const crit = elapsedMs <= CRIT_MS;
           S.bossHits++;
-          S.damage++;
+          S.damage += crit ? 2 : 1;
+          if (S.damage > S.bossHP) S.damage = S.bossHP;   // no overkill display
+          if (crit) S.crits++;
           const bonus = Math.round((remaining / BOSS_MS) * 200);
-          S.score += 300 + bonus; S.grid.push('🟩');
+          const gain = 300 + bonus + (crit ? 150 : 0);
+          S.score += gain; S.grid.push(crit ? '⚡' : '🟩');
           const pix = document.getElementById('pixboss');
-          if (pix) { pix.classList.remove('hit'); void pix.offsetWidth; pix.classList.add('hit'); }
+          if (pix) { pix.classList.remove('hit', 'crit'); void pix.offsetWidth; pix.classList.add(crit ? 'crit' : 'hit'); }
           const fill = document.getElementById('bosshpFill');
           const num = document.getElementById('bosshpNum');
           if (fill) fill.style.width = Math.max(0, (S.bossHP - S.damage) / S.bossMax * 100) + '%';
           if (num) num.textContent = (S.bossHP - S.damage) + ' / ' + S.bossHP;
-          Arcade.flashMsg('HIT! +' + (300 + bonus), '#00ffa3');
+          if (crit) {
+            Arcade.sfx.fanfare();
+            Arcade.sfx.coin();
+            Arcade.shake();                       // no-op under reduced motion
+            Arcade.vibrate([20, 20, 50]);
+            Arcade.flashMsg('CRIT! ×2 DMG +' + gain, '#ffd60a');
+            announce.textContent = 'Critical hit! Double damage. Plus ' + gain + ' points.';
+          } else {
+            Arcade.flashMsg('HIT! +' + gain, '#00ffa3');
+          }
         } else {
           loseLife(); S.grid.push('🟥');
           const pix = document.getElementById('pixboss');
@@ -560,11 +605,15 @@
     clearTimers();
     const item = cfg.item;
     const bossFrame = cfg.bossFrame ? bossFrameHtml() : '';
+    const critRow = cfg.bossFrame
+      ? '<div class="br-critrow" id="critrow" aria-hidden="true"><span class="br-critring" id="critring"></span><span class="br-critlabel" id="critlbl">Crit window · ×2 dmg</span></div>'
+      : '';
     root.innerHTML = header(cfg.sub) + hud(cfg.stageLabel) + `
       <div class="ar-card ${cfg.bossFrame ? 'br-boss-stage' : ''}">
         ${bossFrame}
         <div class="ar-label">${esc(cfg.roundLabel)}</div>
         ${cfg.timed ? '<div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>' : ''}
+        ${critRow}
         <div class="ar-prompt">Which term is this?</div>
         <div class="br-def">${esc(item.def)}</div>
         <div class="br-typewrap">
@@ -580,7 +629,30 @@
     const input = document.getElementById('ans');
     const hint = document.getElementById('hint');
     let phase = 'answer';
+    const roundStart = performance.now();
     input.focus({ preventScroll: true });
+
+    // Crit-window ring: a small gold dial that visibly drains over the 4s
+    // window, then dims to "closed". Purely informative — answers are never
+    // blocked by it, and it exists only in the boss stage.
+    if (cfg.bossFrame) {
+      const rowEl = document.getElementById('critrow');
+      const ringEl = document.getElementById('critring');
+      const lblEl = document.getElementById('critlbl');
+      const drain = () => {
+        if (phase !== 'answer') return;
+        const left = 1 - (performance.now() - roundStart) / CRIT_MS;
+        if (left <= 0) {
+          if (ringEl) ringEl.style.setProperty('--crit', '0turn');
+          if (rowEl) rowEl.classList.add('closed');
+          if (lblEl) lblEl.textContent = 'Crit window closed';
+          return;
+        }
+        if (ringEl) ringEl.style.setProperty('--crit', left.toFixed(3) + 'turn');
+        critRAF = requestAnimationFrame(drain);
+      };
+      critRAF = requestAnimationFrame(drain);
+    }
 
     // First-letter + length hint after 8s of hesitation.
     hintTimer = setTimeout(() => {
@@ -600,6 +672,7 @@
       if (phase !== 'answer') return;
       phase = 'verdict';
       const remaining = (cfg.timed && timerCtl) ? (timedOut ? 0 : timerCtl.remaining) : 0;
+      const elapsedMs = performance.now() - roundStart;
       clearTimers();
       const correct = !timedOut && matchesTerm(input.value, item.term);
       input.disabled = true;
@@ -622,7 +695,7 @@
         announce.textContent = (timedOut ? 'Time up. ' : 'Wrong. ') + 'The term was ' + item.term;
       }
 
-      const res = cfg.onDone(correct, timedOut, remaining) || {};
+      const res = cfg.onDone(correct, timedOut, remaining, elapsedMs) || {};
       document.getElementById('nextWrap').innerHTML = `<button class="ar-btn big" id="next">${esc(res.label || 'Next →')}</button>`;
       const nb = document.getElementById('next');
       const fire = () => { Arcade.sfx.swoosh(); res.go && res.go(); };
@@ -650,9 +723,10 @@
       } catch (e) { /* badge is best-effort */ }
     }
 
-    const statLine = won
+    const critBit = S.crits ? ' · ⚡ ' + S.crits + ' crit' + (S.crits === 1 ? '' : 's') : '';
+    const statLine = (won
       ? 'BOSS DOWN · ' + S.lives + ' ' + (S.lives === 1 ? 'life' : 'lives') + ' left'
-      : 'BOSS SURVIVED · ' + (bossMax - S.damage) + ' more ' + ((bossMax - S.damage) === 1 ? 'hit' : 'hits') + ' needed';
+      : 'BOSS SURVIVED · ' + (bossMax - S.damage) + ' more ' + ((bossMax - S.damage) === 1 ? 'hit' : 'hits') + ' needed') + critBit;
 
     let insight;
     if (won && S.livesLostTotal === 0) insight = `Flawless run — you cleared all three stages without dropping a single life, so the boss went down with nothing of yours to fight back with. Now teach ${topic} to someone else; if you can explain every term, you own it.`;

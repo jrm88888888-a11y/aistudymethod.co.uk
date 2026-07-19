@@ -96,6 +96,18 @@
   }
   #toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
 
+  /* DOUBLE GRAB — charged-claw banner + cabinet glow (earned by a 3-streak) */
+  #dg-banner {
+    position: absolute; left: 50%; top: 12px; transform: translateX(-50%) scale(0.8);
+    z-index: 8; pointer-events: none; opacity: 0;
+    font-family: var(--ar-font); font-weight: 800; font-size: 15px; letter-spacing: 2px;
+    color: #1a0d02; background: linear-gradient(180deg, #ffe27a, #ffb020);
+    border-radius: 12px; padding: 7px 16px; box-shadow: 0 6px 26px rgba(255,180,32,0.55);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  #dg-banner.show { opacity: 1; transform: translateX(-50%) scale(1); }
+  #cab-wrap.dg-charged { box-shadow: 0 0 0 3px rgba(255,214,10,0.45), 0 0 44px rgba(255,210,77,0.45), 0 22px 60px rgba(0,0,0,0.55); }
+
   /* control deck */
   .claw-deck { display: flex; gap: 10px; align-items: stretch; margin: 14px 0 6px; }
   .deck-move {
@@ -378,6 +390,16 @@
   const Q_MS = 12000;
   let answerCorrect = false;   // outcome of the reveal, consumed by the 'reveal' state
 
+  // DOUBLE GRAB — armed by every 3-streak of correct answers. The charged claw
+  // swells and can seize TWO toys in one drop; each toy must then be EARNED
+  // with its own full question. The event only ever ADDS retrieval — it never
+  // skips a question, and every reward still flows from a correct answer.
+  let dgCharged = false;       // next drop may grab two toys
+  let dgPending = null;        // second toy of an active double grab (question queued)
+  let dgStage = 0;             // 0 none · 1 first of the pair · 2 second of the pair
+  let bankQueue = [];          // toys queued for the chute (double grabs bank one after another)
+  let bankFallT = 0;           // per-toy chute-fall timer
+
   const EMPTY_LINES = [
     'The claw came back empty. Aim matters.',
     'So close — a fistful of nothing.',
@@ -495,8 +517,11 @@
   }
 
   function clawDisturb() {
-    // The plunging claw shoves toys aside.
+    // The plunging claw shoves toys aside. A CHARGED claw (double grab) has a
+    // swollen plush mouth that envelops rather than deflects — much softer
+    // push, so a pair of toys stays put long enough to be seized together.
     if (state !== 'dropping' && state !== 'anticip' && state !== 'closing') return;
+    const soft = dgCharged ? 0.16 : 1;
     const hd = clawHead();
     for (const t of toys) {
       if (t.state !== 'pile') continue;
@@ -506,7 +531,7 @@
       if (d2 >= rr * rr) continue;
       let d = Math.sqrt(d2) || 0.001;
       const nx = dx / d, ny = dy / d, ov = rr - d;
-      t.x += nx * ov * 0.6; t.y += ny * ov * 0.5;
+      t.x += nx * ov * 0.6 * soft; t.y += ny * ov * 0.5 * soft;
       t.sleep = false;
     }
   }
@@ -537,19 +562,36 @@
     }
   }
 
-  function integrateHeld() {
-    if (!held) return;
-    const t = held;
+  function integrateHeldOne(t, ax) {
     const vx = (t.x - t.px) * 0.985, vy = (t.y - t.py) * 0.985;
     t.px = t.x; t.py = t.y;
     t.x += vx; t.y += vy + GRAV * H * H;
-    // pendulum constraint to the claw mouth
+    // pendulum constraint to the claw mouth (ax offsets a double-grab pair)
     const hd = clawHead();
     for (let it = 0; it < 6; it++) {
-      const dx = t.x - hd.x, dy = t.y - (hd.y + 6);
+      const dx = t.x - (hd.x + ax), dy = t.y - (hd.y + 6);
       const d = Math.hypot(dx, dy) || 0.001;
       const diff = (d - HOLD_DIST) / d;
       t.x -= dx * diff; t.y -= dy * diff;
+    }
+  }
+
+  function integrateHeld() {
+    if (held && dgPending) {
+      // double grab: each toy hangs from its own side of the mouth, and a
+      // soft separation keeps the pair nestled rather than z-fighting
+      integrateHeldOne(held, -16);
+      integrateHeldOne(dgPending, 16);
+      const dx = dgPending.x - held.x, dy = dgPending.y - held.y;
+      const d = Math.hypot(dx, dy) || 0.001;
+      const min = (held.r + dgPending.r) * 0.72;
+      if (d < min) {
+        const push = (min - d) / 2, nx = dx / d, ny = dy / d;
+        held.x -= nx * push; held.y -= ny * push;
+        dgPending.x += nx * push; dgPending.y += ny * push;
+      }
+    } else if (held) {
+      integrateHeldOne(held, 0);
     }
   }
 
@@ -630,6 +672,21 @@
       shakeMag *= Math.pow(0.02, dt);
     } else { shakeMag = 0; shakeX = 0; shakeY = 0; }
 
+    // chute queue — the next banking toy starts its drop as soon as the chute
+    // is clear. Runs in EVERY state so a double grab can bank toy one while
+    // toy two is still being questioned.
+    if (!bankFall && bankQueue.length) {
+      const nb = bankQueue.shift();
+      bankFall = nb; bankFallT = 0;
+      nb.x = CH.cx;
+      nb.y = Math.max(CH.top + nb.r + 2, Math.min(clawHead().y, CH.bot - nb.r - 60));
+      nb.px = nb.x - 1; nb.py = nb.y - 2; nb.bounced = false; nb.settle = 0;
+    }
+    if (bankFall) {
+      bankFallT += dt;
+      if (bankFall.settle > 6 || bankFallT > 2.4) bankFall = null;
+    }
+
     // blink timers
     for (const t of toys) {
       t.blinkNext -= dt;
@@ -677,7 +734,12 @@
           const ov = document.getElementById('q-overlay');
           if (ov) ov.classList.remove('up');
           document.body.classList.remove('claw-q');
-          if (answerCorrect) setState('toChute');
+          if (answerCorrect) {
+            // double grab: bank this toy straight into the chute queue and go
+            // directly to the second question — back-to-back retrieval
+            if (dgPending) { bankHeldNow(); promoteDgPending(); }
+            else setState('toChute');
+          }
           else { setState('wrongRelease'); showCorrection(); }
         }
         break;
@@ -692,7 +754,9 @@
 
       case 'chuteFall':
         winchTarget = IDLE_L; clawTarget = 1;
-        if (bankFall && (bankFall.settle > 6 || stateT > 2.4)) { bankFall = null; afterResolve(); }
+        // the shared queue logic above clears bankFall as each toy settles;
+        // resolve once the whole queue has drained
+        if (!bankFall && !bankQueue.length && stateT > 0.4) afterResolve();
         break;
 
       case 'wrongRelease':
@@ -723,6 +787,37 @@
 
   function resolveCatch() {
     const hd = clawHead();
+    // DOUBLE GRAB: a charged claw seizes the TWO nearest real toys inside its
+    // mouth radius. The swollen claw is drawn ~1.3x wider, so its pair-catch
+    // window is 1.3x the normal reach (the plunge also shoves toys outward, so
+    // the wider mouth is what makes a genuine two-toy catch land in play).
+    // Fewer than two real toys in reach → it behaves as a normal grab and the
+    // charge is KEPT for the next drop.
+    if (dgCharged) {
+      const inReach = [];
+      for (const t of toys) {
+        if (t.state !== 'pile' || t.stuffing) continue;
+        const dx = t.x - hd.x, dy = t.y - hd.y;
+        if (Math.abs(dx) <= (t.r + 20) * 1.3 && dy > -t.r * 0.6 && dy < t.r + 60) {
+          inReach.push({ t: t, d: Math.hypot(dx, dy) });
+        }
+      }
+      if (inReach.length >= 2) {
+        inReach.sort((a, b) => a.d - b.d);
+        dgCharged = false; setDgBanner(false);
+        held = inReach[0].t; dgPending = inReach[1].t; dgStage = 1;
+        held.state = 'held'; held.sleep = false;
+        dgPending.state = 'held'; dgPending.sleep = false;
+        held.x = hd.x - 14; held.y = hd.y + HOLD_DIST; held.px = held.x; held.py = held.y;
+        dgPending.x = hd.x + 14; dgPending.y = hd.y + HOLD_DIST; dgPending.px = dgPending.x; dgPending.py = dgPending.y;
+        shakeMag = reduced ? 2 : 6;
+        Arcade.sfx.fanfare();
+        Arcade.flashMsg('DOUBLE GRAB!', '#ffd60a');
+        announce.textContent = 'Double grab! Two toys in the claw. Two questions, back to back.';
+        setState('lifting');
+        return;
+      }
+    }
     let best = null, bestD = Infinity;
     for (const t of toys) {
       if (t.state !== 'pile') continue;
@@ -793,8 +888,9 @@
     document.getElementById('cab-wrap').classList.remove('aim');
     const ov = document.getElementById('q-overlay');
     const goldTag = toy.golden ? ' <span class="gold">★ GOLDEN</span>' : '';
+    const dgTag = dgStage ? '<span class="gold">DOUBLE GRAB · toy ' + dgStage + ' of 2</span> · ' : '';
     ov.innerHTML =
-      '<div class="q-ask">Which is the definition?</div>' +
+      '<div class="q-ask">' + dgTag + 'Which is the definition?</div>' +
       '<h3 class="q-term">' + esc(toy.term) + goldTag + '</h3>' +
       '<div id="q-timer"><i></i></div>' +
       '<div class="q-opts">' +
@@ -834,6 +930,7 @@
       const wasRedeem = toy.status === 'wrong';
       streak++;
       bestStreak = Math.max(bestStreak, streak);
+      if (streak % 3 === 0 && !dgCharged) armDoubleGrab();
       const speedBonus = Math.max(0, Math.min(100, Math.round(100 * remain / Q_MS)));
       const streakMult = streak >= 3 ? Math.min(2, 1.5 + 0.25 * (streak - 3)) : 1;
       const goldF = toy.golden ? 2 : 1;
@@ -866,20 +963,49 @@
   }
 
   function releaseIntoChute() {
-    // detach the held toy into the chute for the bounce-in
+    // detach the held toy into the chute queue for the bounce-in
     const t = held;
     held = null;
     if (!t) { afterResolve(); return; }
-    t.state = 'banking';
-    bankFall = t;
-    const hd = clawHead();
-    t.x = CH.cx; t.y = Math.max(CH.top + t.r, hd.y);
-    t.px = t.x - 1; t.py = t.y - 2; t.bounced = false; t.settle = 0;
+    enqueueBank(t);
     clawTarget = 1;   // release: fingers open
     currentToy = null;
-    // remove from toys list once it starts banking (already counted)
-    toys = toys.filter(x => x !== t);
     setState('chuteFall');
+  }
+
+  // Remove a toy from the pile bookkeeping and queue it for the chute drop.
+  function enqueueBank(t) {
+    t.state = 'banking';
+    toys = toys.filter(x => x !== t);
+    bankQueue.push(t);
+  }
+
+  // Double grab: bank the answered toy while the claw keeps its partner for
+  // the second question — the chute animations play one after another.
+  function bankHeldNow() {
+    const t = held;
+    held = null; currentToy = null;
+    if (t) { enqueueBank(t); Arcade.sfx.swoosh(); }
+  }
+
+  function promoteDgPending() {
+    held = dgPending; dgPending = null; dgStage = 2;
+    startQuestion();
+  }
+
+  function setDgBanner(on) {
+    const b = document.getElementById('dg-banner');
+    if (b) b.classList.toggle('show', on);
+    const wrap = document.getElementById('cab-wrap');
+    if (wrap) wrap.classList.toggle('dg-charged', on);
+  }
+
+  function armDoubleGrab() {
+    dgCharged = true;
+    setDgBanner(true);
+    Arcade.sfx.fanfare();
+    Arcade.flashMsg('DOUBLE GRAB READY', '#ffd60a');
+    announce.textContent = 'Double grab ready. The claw is charged. The next drop can seize two toys, each with its own question.';
   }
 
   function dropHeldToPile() {
@@ -906,6 +1032,14 @@
     if (!el.classList.contains('up')) return;
     el.classList.remove('up');
     if (held) dropHeldToPile();   // if tapped before the tumble finished, release now
+    if (dgPending) {
+      if (credits > 0) { promoteDgPending(); return; }
+      // out of credits mid-pair — the second toy slips back to the pile
+      const t = dgPending; dgPending = null;
+      const hd = clawHead();
+      t.state = 'pile'; t.sleep = false; t.slow = 0;
+      t.x = hd.x; t.y = hd.y + HOLD_DIST; t.px = t.x; t.py = t.y - 4;
+    }
     afterResolve();
   }
 
@@ -917,6 +1051,7 @@
 
   function afterResolve() {
     document.body.classList.remove('claw-q');
+    dgStage = 0;
     if (state === 'ended') return;
     if (credits <= 0 || bankedCount >= total) { endGame(); return; }
     document.getElementById('cab-wrap').classList.add('aim');
@@ -1025,6 +1160,8 @@
     credits = 10; score = 0; streak = 0; bestStreak = 0;
     bankedCount = 0; emptyGrabs = 0; banked = [];
     held = null; currentToy = null; bankFall = null;
+    dgCharged = false; dgPending = null; dgStage = 0;
+    bankQueue = []; bankFallT = 0;
     makeToys();
     REGISTRY = toys;         // registry shares references; statuses update in place
     gantry.x = (GANTRY_MIN + GANTRY_MAX) / 2; gantry.vx = 0;
@@ -1159,8 +1296,9 @@
     ctx.fillStyle = '#ffd24d';
     rr(gantry.x - 22, RAIL_Y - 14, 44, 20, 5); ctx.fill();
     ctx.fillStyle = '#a5720f'; ctx.fillRect(gantry.x - 16, RAIL_Y - 2, 32, 4);
-    // held toy dangles from claw (behind fingers)
+    // held toys dangle from claw (behind fingers) — a double grab shows two
     if (held) drawToy(held, true);
+    if (dgPending) drawToy(dgPending, true);
     // claw fingers
     drawClaw();
 
@@ -1207,27 +1345,39 @@
 
   function drawClaw() {
     const hd = clawHead();
-    const spread = 16 + clawOpen * 18;    // fingers open wider when clawOpen high
-    ctx.strokeStyle = '#c9c0f0'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    // DOUBLE GRAB: while charged (telegraph) or carrying a pair, the claw
+    // swells ~1.3x and glows gold so the event is unmistakable
+    const boosted = dgCharged || !!dgPending;
+    const k = boosted ? 1.3 : 1;
+    if (boosted) {
+      const pulse = reduced ? 0.5 : (0.5 + 0.5 * Math.sin(Date.now() / 180));
+      const glow = ctx.createRadialGradient(hd.x, hd.y + 10, 2, hd.x, hd.y + 10, 54);
+      glow.addColorStop(0, 'rgba(255,214,10,' + (0.28 + pulse * 0.2) + ')');
+      glow.addColorStop(1, 'rgba(255,214,10,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(hd.x, hd.y + 10, 54, 0, 7); ctx.fill();
+    }
+    const spread = (16 + clawOpen * 18) * k;    // fingers open wider when clawOpen high
+    ctx.lineWidth = 4 * k; ctx.lineCap = 'round';
     // wrist knuckle
-    ctx.fillStyle = '#8b7bff';
-    ctx.beginPath(); ctx.arc(hd.x, hd.y, 9, 0, 7); ctx.fill();
+    ctx.fillStyle = boosted ? '#ffd24d' : '#8b7bff';
+    ctx.beginPath(); ctx.arc(hd.x, hd.y, 9 * k, 0, 7); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.beginPath(); ctx.arc(hd.x - 2, hd.y - 3, 3, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(hd.x - 2, hd.y - 3, 3 * k, 0, 7); ctx.fill();
     // three fingers
     for (let f = -1; f <= 1; f++) {
       const openAmt = Math.max(0, Math.min(1, clawOpen));
       const tipX = hd.x + f * spread;
       const midX = hd.x + f * (spread * 0.55);
-      ctx.strokeStyle = '#c9c0f0';
+      ctx.strokeStyle = boosted ? '#ffe27a' : '#c9c0f0';
       ctx.beginPath();
-      ctx.moveTo(hd.x, hd.y + 4);
-      ctx.lineTo(midX, hd.y + 16);
-      ctx.lineTo(tipX, hd.y + 30 - openAmt * 4);
+      ctx.moveTo(hd.x, hd.y + 4 * k);
+      ctx.lineTo(midX, hd.y + 16 * k);
+      ctx.lineTo(tipX, hd.y + (30 - openAmt * 4) * k);
       ctx.stroke();
       // claw tip
       ctx.fillStyle = '#ffd24d';
-      ctx.beginPath(); ctx.arc(tipX, hd.y + 30 - openAmt * 4, 3.4, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(tipX, hd.y + (30 - openAmt * 4) * k, 3.4 * k, 0, 7); ctx.fill();
     }
   }
 
@@ -1258,6 +1408,7 @@
     const list = [];
     const add = (t, kind) => { if (t && !t.stuffing && t.state !== 'banking' && !set.has(t)) { set.add(t); list.push([t, kind]); } };
     add(held || currentToy, 'held');
+    add(dgPending, 'held');
     add(target, 'target');
     for (const t of toys) if (t.golden && t.state === 'pile') add(t, 'gold');
 
@@ -1370,6 +1521,7 @@
           '<div id="q-overlay"></div>' +
           '<div id="corr"></div>' +
           '<div id="toast"></div>' +
+          '<div id="dg-banner">DOUBLE GRAB READY</div>' +
         '</div>' +
         '<div class="claw-deck">' +
           '<button id="btn-left" class="deck-move" aria-label="Move claw left">◀</button>' +
@@ -1486,6 +1638,38 @@
         return true;
       },
       dismissCorrection: dismissCorrection,
+      // ---- DOUBLE GRAB event hooks ----
+      get dgCharged() { return dgCharged; },
+      get dgStage() { return dgStage; },
+      get dgPendingTerm() { return dgPending ? dgPending.term : null; },
+      get bankQueueLength() { return bankQueue.length; },
+      get streak() { return streak; },
+      armDouble() { if (!dgCharged) armDoubleGrab(); return dgCharged; },
+      setGantry(x) {
+        if (state !== 'idle') return false;
+        gantry.x = Math.max(GANTRY_MIN, Math.min(GANTRY_MAX, x));
+        gantry.vx = 0;
+        return true;
+      },
+      // force a charged drop onto two specific (or the two most exposed) real toys
+      grabDouble(i1, i2) {
+        if (state !== 'idle' || !dgCharged) return false;
+        const pile = toys.filter(t => t.state === 'pile' && !t.stuffing);
+        if (pile.length < 2) return false;
+        const a = (typeof i1 === 'number') ? toys[i1] : pile[0];
+        const b = (typeof i2 === 'number') ? toys[i2] : pile.find(t => t !== a);
+        if (!a || !b || a === b) return false;
+        if (a.state !== 'pile' || b.state !== 'pile' || a.stuffing || b.stuffing) return false;
+        // park the pair under the claw where it already hangs — moving the
+        // gantry instead would drag the rope head away from the parked toys
+        const hd = clawHead();
+        gantry.x = Math.max(GANTRY_MIN, Math.min(GANTRY_MAX, hd.x));
+        gantry.vx = 0;
+        a.x = hd.x - 6; a.y = hd.y + 10; a.px = a.x; a.py = a.y;
+        b.x = hd.x + 6; b.y = hd.y + 10; b.px = b.x; b.py = b.y;
+        setState('closing'); stateT = 0.3;   // land straight into the catch resolution
+        return true;
+      },
       _endGame: endGame,
     };
   }

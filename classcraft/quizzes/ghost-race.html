@@ -90,6 +90,23 @@
   .gr-opts { display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
   .gr-opts .ar-tile { line-height:1.4; }
 
+  /* --- NITRO: earned by three sub-5s corrects; glows the track for one question --- */
+  .gr-track.nitro {
+    border-color:rgba(255,214,10,0.7);
+    box-shadow:0 0 0 2px rgba(255,214,10,0.30), 0 0 36px rgba(255,178,10,0.40), 0 8px 26px rgba(0,0,0,0.4);
+    animation:grNitroGlow 1s ease infinite;
+  }
+  @keyframes grNitroGlow {
+    50% { box-shadow:0 0 0 2px rgba(255,214,10,0.55), 0 0 54px rgba(255,178,10,0.65), 0 8px 26px rgba(0,0,0,0.4); }
+  }
+  .gr-nitro-banner {
+    margin-top:7px; text-align:center;
+    font-family:var(--ar-mono); font-size:10.5px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+    color:#1a0d02; background:linear-gradient(180deg,#ffe27a,#ffb020);
+    border-radius:8px; padding:4px 8px;
+  }
+  @media (prefers-reduced-motion: reduce) { .gr-track.nitro { animation:none; } }
+
   @media (max-width:420px) {
     .gr-lane { grid-template-columns:44px 1fr 28px; gap:6px; }
     .gr-track { padding:10px 11px 8px; }
@@ -150,6 +167,7 @@
   const esc = Arcade.escapeHtml;
   const params = new URLSearchParams(location.search);
   const stem = params.get('spec');
+  const DEBUG = params.get('debug') === '1';
   const root = document.getElementById('root');
   const announce = document.getElementById('announce');
 
@@ -202,6 +220,12 @@
   const ROUNDS_TARGET = 10;
   const ROUNDS = Math.min(ROUNDS_TARGET, poolSize);
   const ROUND_MS = 15000;
+  // NITRO: three consecutive corrects, each answered inside 5 seconds, charge
+  // nitro for the NEXT question — a correct answer during nitro scores ×2.
+  // Nitro touches the SCORE only; the recorded ghost stays a pure timing record.
+  const NITRO_NEED = 3;
+  const NITRO_MS = 5000;
+  let nitroDisabled = false;   // test hook (debug builds only) — never set in play
   const TIME_UNIT_MS = 100;    // recording resolution
   const TIME_CAP_UNITS = 255;  // 25.5s cap per question
   const BEST_KEY = 'aism-gr-best:' + stem;
@@ -359,6 +383,10 @@
       ghostProgress: 0,      // ghost head-to-head crossings so far
       qStart: 0,
       ghostCrossed: false,   // ghost already crossed the current question?
+      nitroChain: 0,         // consecutive sub-5s corrects toward the next nitro
+      nitroArmed: false,     // charged — engages when the next question starts
+      nitroActive: false,    // this question scores ×2 (score only, never the ghost)
+      nitroCount: 0,         // nitro questions converted (for the end card line)
     };
     renderQuestion();
   }
@@ -392,7 +420,7 @@
         <span class="gr-score" id="grGhostScore">0</span>
       </div>` : '';
     return `
-      <div class="gr-track" id="grTrack">
+      <div class="gr-track${state.nitroActive ? ' nitro' : ''}" id="grTrack">
         <div class="gr-lane gr-lane-you">
           <span class="gr-tag">You</span>
           <div class="gr-rail"><i class="gr-runner gr-runner-you" id="grYou" style="left:${youPct}%"></i><span class="gr-flag">🏁</span></div>
@@ -400,6 +428,7 @@
         </div>
         ${ghostLane}
         <div class="gr-callout" id="grCallout">${racing ? 'AND THEY ARE OFF' : 'RACE THE CLOCK'}</div>
+        ${state.nitroActive ? '<div class="gr-nitro-banner">🔥 Nitro engaged — this question scores ×2</div>' : ''}
       </div>`;
   }
 
@@ -487,6 +516,11 @@
 
     updateStrip();
     setCallout();
+    if (state.nitroActive) {
+      Arcade.flashMsg('NITRO ENGAGED — ×2', '#ffd60a');
+      Arcade.sfx.riser();
+      announce.textContent = 'Nitro engaged. A correct answer on this question scores double.';
+    }
 
     const tiles = Array.from(root.querySelectorAll('.gr-opts .ar-tile'));
     let phase = 'answer';
@@ -541,20 +575,44 @@
         else b.classList.add('dim');
       });
 
+      // NITRO bookkeeping — score only. state.records above is already sealed
+      // for this question before any nitro maths runs, so the encoded ghost is
+      // identical whether or not nitro ever triggers.
+      const wasNitro = state.nitroActive;
+      state.nitroActive = false;             // nitro lasts exactly one question
       let pts = 0;
       if (correct) {
         state.youCorrect++;
         state.youProgress++;
         const remaining = Math.max(0, ROUND_MS - elapsed);
         const speed = Math.round(50 * (remaining / ROUND_MS));
-        pts = 100 + speed;
+        pts = (100 + speed) * (wasNitro ? 2 : 1);
         state.score += pts;
         state.grid.push('🟩');
+        if (wasNitro) state.nitroCount++;
         Arcade.sfx.correct(state.youCorrect);
-        Arcade.confettiBurst({ count: 26 });
-        Arcade.popTextOver(tiles[q.correctIdx], '+' + pts, '#00e5ff');
+        Arcade.confettiBurst({ count: wasNitro ? 46 : 26 });
+        Arcade.popTextOver(tiles[q.correctIdx], '+' + pts + (wasNitro ? ' NITRO' : ''), wasNitro ? '#ffd60a' : '#00e5ff');
         Arcade.vibrate(20);
+        // chain toward the next nitro: three consecutive corrects, each sub-5s
+        if (!nitroDisabled && elapsed < NITRO_MS) {
+          state.nitroChain++;
+          if (state.nitroChain >= NITRO_NEED) {
+            state.nitroChain = 0;
+            state.nitroArmed = true;
+            Arcade.flashMsg('NITRO CHARGED — NEXT QUESTION ×2', '#ffd60a');
+            Arcade.sfx.riser();
+          }
+        } else {
+          state.nitroChain = 0;
+        }
       } else {
+        state.nitroChain = 0;
+        if (wasNitro) {
+          // the engine splutters out — nitro is lost, nothing else changes
+          Arcade.flashMsg('NITRO SPLUTTERS OUT', '#ffd60a');
+          Arcade.sfx.timeup();
+        }
         state.grid.push(timedOut ? '⬛' : '🟥');
         if (timedOut) { Arcade.sfx.timeup(); Arcade.flashMsg("TIME UP", '#ffd60a'); }
         else { Arcade.sfx.wrong(); Arcade.flashMsg('WRONG', '#ff2e88'); }
@@ -574,11 +632,12 @@
       fb.className = 'ar-feedback ' + (correct ? 'ok' : 'no');
       const rightAnswer = q.options[q.correctIdx];
       fb.innerHTML = correct
-        ? `<strong>Correct. +${pts} pts.</strong>`
+        ? `<strong>Correct. +${pts} pts${wasNitro ? ' — NITRO ×2' : ''}.</strong>`
         : timedOut
           ? `<strong>The clock beat you.</strong> The answer: <em>${esc(rightAnswer)}</em>.`
           : `<strong>Not quite.</strong> The answer: <em>${esc(rightAnswer)}</em>.`;
       announce.textContent = (correct ? 'Correct. Plus ' + pts + ' points. ' : (timedOut ? 'Time up. ' : 'Incorrect. '))
+        + (state.nitroArmed ? 'Nitro charged for the next question. ' : '')
         + (racing ? ('You ' + state.youProgress + ', ghost ' + state.ghostProgress + '.') : '');
 
       const last = state.idx + 1 >= ROUNDS;
@@ -591,7 +650,11 @@
 
     function advance() {
       Arcade.sfx.swoosh();
-      if (state.idx + 1 < ROUNDS) { state.idx++; renderQuestion(); }
+      if (state.idx + 1 < ROUNDS) {
+        state.nitroActive = state.nitroArmed;   // a charged nitro engages now
+        state.nitroArmed = false;
+        state.idx++; renderQuestion();
+      }
       else renderEnd();
     }
 
@@ -609,6 +672,7 @@
 
   function renderEnd() {
     if (ghostRAF) { cancelAnimationFrame(ghostRAF); ghostRAF = null; }
+    state.nitroActive = false; state.nitroArmed = false;   // strip renders clean
 
     const yourTime = state.records.reduce((s, r) => s + r.ms, 0);
     const yourCorrect = state.youCorrect;
@@ -678,9 +742,10 @@
       insight = `You have set a time on ${topic}. Send your ghost to a mate: they race the exact same 10 questions against your run. Fastest clean sheet wins.`;
     }
 
-    const shareStat = racing
+    const nitroBit = state.nitroCount ? '  ·  🔥 ' + state.nitroCount + ' nitro' : '';
+    const shareStat = (racing
       ? (yourCorrect + '/' + ROUNDS + '  ·  ' + timeStr + ' vs ' + ghostName)
-      : (yourCorrect + '/' + ROUNDS + '  ·  ' + timeStr);
+      : (yourCorrect + '/' + ROUNDS + '  ·  ' + timeStr)) + nitroBit;
 
     Arcade.renderEndCard(document.getElementById('end'), {
       gameName: 'Ghost Race',
@@ -741,6 +806,23 @@
       if (b && !b.disabled) { e.preventDefault(); b.click(); }
     }
   });
+
+  /* ---- debug hooks for the test harness (debug=1 only) ---- */
+  if (DEBUG) {
+    try {
+      window.__gr = {
+        get state() { return state; },
+        get questions() { return questions; },
+        get seed() { return seed; },
+        get racing() { return racing; },
+        get rounds() { return ROUNDS; },
+        get nitroDisabled() { return nitroDisabled; },
+        encodeGhost: encodeGhost,
+        decodeGhost: decodeGhost,
+        disableNitro() { nitroDisabled = true; return true; },
+      };
+    } catch (e) { /* debug only */ }
+  }
 
   startGame();
 })();

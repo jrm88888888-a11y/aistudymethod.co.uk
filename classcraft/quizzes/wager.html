@@ -29,6 +29,13 @@
   .wg-chip.allin:hover:not(:disabled) { border-color:var(--ar-pink); box-shadow:0 6px 22px rgba(255,46,136,0.25); }
   .wg-chip.allin.selected { border-color:var(--ar-pink); background:var(--ar-pink-dim); box-shadow:0 0 0 3px rgba(255,46,136,0.2), 0 0 26px rgba(255,46,136,0.35); }
   .wg-suspense { text-align:center; font-size:38px; font-weight:700; letter-spacing:10px; color:var(--ar-gold); text-shadow:0 0 24px rgba(255,214,10,0.6); margin:18px 0 6px; animation:arBreathe 0.55s ease-in-out infinite; }
+  /* ---- Mystery Pot (hidden ×1.5/×2/×3 multiplier, announced before staking) ---- */
+  .wg-mystery { display:flex; align-items:center; gap:12px; margin:0 0 14px; padding:12px 14px; border-radius:14px; border:2px solid rgba(255,214,10,0.55); background:linear-gradient(135deg, rgba(255,214,10,0.12), rgba(139,92,246,0.16)); box-shadow:0 0 26px rgba(255,214,10,0.22); animation:wgMystPulse 1.3s ease infinite; }
+  .wg-mystery .m-ico { font-size:26px; line-height:1; }
+  .wg-mystery .m-txt { font-size:13.5px; line-height:1.5; color:var(--ar-text); }
+  .wg-mystery .m-txt b { color:var(--ar-gold); }
+  @keyframes wgMystPulse { 50% { box-shadow:0 0 42px rgba(255,214,10,0.42); } }
+  @media (prefers-reduced-motion: reduce) { .wg-mystery { animation:none; } }
   .wg-stmts { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
   .wg-finale-btns { display:flex; flex-direction:column; gap:12px; margin-top:18px; }
   @media (max-width:480px) { .wg-chip { min-height:64px; } .wg-chip-face { font-size:18px; } }
@@ -88,6 +95,7 @@
   const E = Arcade.escapeHtml;
   const params = new URLSearchParams(location.search);
   const stem = params.get('spec');
+  const DEBUG = params.get('debug') === '1';
   const root = document.getElementById('root');
   const announce = document.getElementById('announce');
 
@@ -141,6 +149,16 @@
     { key: 'allin', face: null, allin: true  },
   ];
 
+  /* ---- MYSTERY POT --------------------------------------------------------
+     Round 3 of every game (a deterministic beat in the 5-round structure:
+     two normal stakes, the mystery pot, one normal stake, then the finale).
+     Announced BEFORE staking; the pot multiplier — ×1.5, ×2 or ×3 — stays
+     hidden until the verdict lands. A correct answer pays the stake at the
+     revealed multiplier; a wrong answer loses only the normal stake. Pure
+     risk-spice on the same learning action — question count unchanged.   */
+  const MYSTERY_IDX = 2;
+  const MYSTERY_MULTS = [1.5, 2, 3];
+
   // Build a 5-round question queue. With a small bank the questions recycle,
   // but never the same question twice in a row, and every appearance gets a
   // fresh option shuffle so repeats aren't exact.
@@ -169,6 +187,7 @@
 
   function startGame() {
     rounds = buildRounds();
+    rounds[MYSTERY_IDX].mystery = MYSTERY_MULTS[Math.floor(Math.random() * MYSTERY_MULTS.length)];
     state = {
       idx: 0,
       bank: START_BANK,
@@ -230,6 +249,7 @@
   function renderRound() {
     if (state.idx === ROUNDS - 1) { renderFinale(); return; }
     const round = rounds[state.idx];
+    const mystery = round.mystery || 0;
     const chips = CHIPS.map(c => ({
       ...c,
       amount: c.allin ? state.bank : c.face,
@@ -243,6 +263,11 @@
       <div class="ar-card">
         <div id="stake-phase">
           <div class="ar-label">Place your stake — before you see the choices</div>
+          ${mystery ? `
+          <div class="wg-mystery" id="mystery-banner" role="status">
+            <span class="m-ico">🎁</span>
+            <span class="m-txt"><b>MYSTERY POT.</b> This round pays a hidden multiplier — <b>×1.5, ×2 or ×3</b> — revealed only once your answer is locked in. A wrong answer loses just the normal stake. Stake first, find out after.</span>
+          </div>` : ''}
           <div class="wg-chips ar-stagger" role="radiogroup" aria-label="Choose your stake">
             ${chips.map((c, i) => `
               <button type="button" class="wg-chip${c.allin ? ' allin' : ''}" role="radio" aria-checked="false"
@@ -276,6 +301,13 @@
       </div>
     `;
 
+    if (mystery) {
+      // Telegraph the pot before any chip is touched — earned suspense.
+      Arcade.flashMsg('🎁 MYSTERY POT', '#ffd60a');
+      Arcade.sfx.heartbeat();
+      announce.textContent = 'Mystery pot round. The payout multiplier is hidden — one and a half, two, or three times your stake — revealed after you answer. Place your stake.';
+    }
+
     // ---------- Stake phase ----------
     const chipBtns = Array.from(root.querySelectorAll('.wg-chip'));
     const confirmStake = document.getElementById('confirm-stake');
@@ -301,9 +333,9 @@
       const ap = document.getElementById('answer-phase');
       ap.hidden = false;
       const tag = document.getElementById('stake-tag');
-      tag.textContent = chosenChip.allin
+      tag.textContent = (chosenChip.allin
         ? '🔥 ALL IN — ' + round.stake + ' on the table'
-        : '🪙 Stake: ' + round.stake;
+        : '🪙 Stake: ' + round.stake) + (mystery ? ' · 🎁 pot ×?' : '');
       if (chosenChip.allin) { tag.className = 'ar-pill bad'; }
       announce.textContent = 'Stake confirmed: ' + round.stake + '. Question: ' + round.q;
       const first = ap.querySelector('.ar-tile');
@@ -337,17 +369,20 @@
       let delta, busted = false;
 
       if (correct) {
-        delta = stake;
+        // Mystery pot pays the stake at the revealed multiplier — the reward
+        // still flows from the correct answer, just spicier.
+        delta = mystery ? Math.round(stake * mystery) : stake;
         state.bank += delta;
         state.correct++;
         state.streak++;
       } else {
+        // Mystery or not, a wrong answer loses only the normal stake.
         delta = -stake;
         state.bank = Math.max(0, state.bank - stake);
         state.streak = 0;
         if (state.bank === 0) busted = true;
       }
-      state.history.push({ stakeKey: chip.key, stake, delta, correct, busted, bankBefore: prevBank });
+      state.history.push({ stakeKey: chip.key, stake, delta, correct, busted, bankBefore: prevBank, potMult: mystery || 0 });
 
       stmts.forEach((b, i) => {
         b.style.pointerEvents = 'none';
@@ -376,7 +411,11 @@
         // Confetti sized by how bold the stake was relative to the bank.
         const boldness = prevBank > 0 ? stake / prevBank : 1;
         Arcade.confettiBurst({ count: Math.round(30 + 90 * Math.min(1, boldness)) });
-        if (chip.allin) {
+        if (mystery) {
+          Arcade.flashMsg('🎁 POT ×' + mystery + ' — +' + delta, '#ffd60a');
+          Arcade.sfx.fanfare();
+          if (mystery === 3 || chip.allin) Arcade.confettiRain(1600);
+        } else if (chip.allin) {
           Arcade.flashMsg('JACKPOT 💰', '#ffd60a');
           Arcade.confettiRain(1600);
           Arcade.sfx.fanfare();
@@ -394,16 +433,18 @@
       const fb = document.getElementById('fb');
       fb.className = 'ar-feedback ' + (correct ? 'ok' : 'no');
       fb.innerHTML = correct
-        ? `<strong>Right.</strong> Your ${stake}-chip stake pays out <strong>+${delta}</strong>. Bank: ${state.bank}.`
+        ? (mystery
+          ? `<strong>Right — the pot reveals ×${mystery}.</strong> Your ${stake}-chip stake pays out <strong>+${delta}</strong>. Bank: ${state.bank}.`
+          : `<strong>Right.</strong> Your ${stake}-chip stake pays out <strong>+${delta}</strong>. Bank: ${state.bank}.`)
         : busted
           ? `<strong>Busted.</strong> You staked everything and lost the lot. The correct answer was “${E(round.options[round.correctIdx].text)}”.`
-          : `<strong>Wrong.</strong> You lose your stake of ${stake}. The correct answer was “${E(round.options[round.correctIdx].text)}”. Bank: ${state.bank}.`;
+          : `<strong>Wrong.</strong> You lose your stake of ${stake}.${mystery ? ` The hidden pot was ×${mystery} — it only pays on a correct answer.` : ''} The correct answer was “${E(round.options[round.correctIdx].text)}”. Bank: ${state.bank}.`;
 
       announce.textContent = (correct
-        ? 'Correct. You win ' + delta + '. '
+        ? (mystery ? 'Correct. The mystery pot reveals times ' + mystery + ' — you win ' + delta + '. ' : 'Correct. You win ' + delta + '. ')
         : busted
           ? 'Wrong, and you went bust. '
-          : 'Wrong. You lose ' + stake + '. ')
+          : 'Wrong. You lose ' + stake + '. ' + (mystery ? 'The hidden pot was times ' + mystery + '. ' : ''))
         + 'Bank is now ' + state.bank + '.';
 
       lockIn.textContent = busted ? 'See the damage →' : 'Next round →';
@@ -722,6 +763,52 @@
       if (b && !b.disabled) { e.preventDefault(); b.click(); }
     }
   });
+
+  /* ---- debug hook for the test harness (sibling pattern: coin-pusher) ---- */
+  if (DEBUG) {
+    window.__wg = {
+      get bank() { return state.bank; },
+      get idx() { return state.idx; },
+      get streak() { return state.streak; },
+      get correct() { return state.correct; },
+      get history() { return state.history.map(h => ({ ...h })); },
+      get mysteryIdx() { return MYSTERY_IDX; },
+      get mysteryMult() { return rounds[MYSTERY_IDX].mystery; },
+      get isMysteryRound() { return state.idx === MYSTERY_IDX; },
+      get correctIdx() { const r = rounds[Math.min(state.idx, ROUNDS - 1)]; return r ? r.correctIdx : -1; },
+      get hasMysteryBanner() { return !!document.getElementById('mystery-banner'); },
+      stake(i) {
+        const chips = root.querySelectorAll('.wg-chip');
+        const c = chips[i];
+        if (!c || c.disabled) return false;
+        c.click();
+        const cf = document.getElementById('confirm-stake');
+        if (!cf || cf.disabled) return false;
+        cf.click();
+        return true;
+      },
+      pick(right) {
+        const r = rounds[Math.min(state.idx, ROUNDS - 1)];
+        const tiles = root.querySelectorAll('.ar-tile');
+        if (!tiles.length) return false;
+        const b = tiles[right ? r.correctIdx : (r.correctIdx === 0 ? 1 : 0)];
+        if (!b || b.disabled) return false;
+        b.click();
+        const l = document.getElementById('lock-in');
+        if (!l || l.disabled) return false;
+        l.click();
+        return true;
+      },
+      next() {
+        const l = document.getElementById('lock-in');
+        if (!l || l.disabled) return false;
+        l.click();
+        return true;
+      },
+      bankIt() { const b = document.getElementById('btn-bank'); if (!b) return false; b.click(); return true; },
+      goDouble() { const b = document.getElementById('btn-double'); if (!b) return false; b.click(); return true; },
+    };
+  }
 
   startGame();
 })();
