@@ -122,6 +122,22 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
 
   Arcade.mountMuteButton();
 
+  // GOLDEN ERA event — JS-injected skin (markup/CSS sections must stay
+  // untouched): gold card + sparkles for the golden turn.
+  const injectedTl = document.createElement('style');
+  injectedTl.textContent = ''
+    + '.ar-card.tl-gold { position:relative; border-color:rgba(255,214,10,0.75) !important; box-shadow:0 0 0 2px rgba(255,214,10,0.3), 0 0 30px rgba(255,214,10,0.28); }'
+    + ' .tl-gold .ar-label { color:var(--ar-gold); }'
+    + ' .tl-gold .tl-evtext { color:var(--ar-gold); text-shadow:0 0 14px rgba(255,214,10,0.4); }'
+    + ' .tl-spark { position:absolute; font-size:13px; pointer-events:none; animation:tlTwinkle 1.2s ease-in-out infinite; }'
+    + ' @keyframes tlTwinkle { 0%,100% { opacity:0.25; transform:scale(0.8); } 50% { opacity:1; transform:scale(1.15); } }'
+    + ' @media (prefers-reduced-motion: reduce) { .tl-spark { animation:none; opacity:0.8; } }';
+  document.head.appendChild(injectedTl);
+  // Three perfect placements in a row turn the NEXT due card golden: ×3 points
+  // if it lands right, plain correction if not. The queue is never reordered —
+  // gold is a skin and multiplier on whatever card was already due.
+  const GOLD_STREAK = 3;
+
   if (EVENTS.length < 3) {
     game.innerHTML = '<div class="ar-error">This timeline needs at least three events — check back soon.</div>';
     return;
@@ -154,6 +170,7 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
       idx: 0, score: 0, streak: 0, bestStreak: 0,
       results: [], resByRank: {}, eventOrder: [], fixed: 0,
       t0: Date.now(), timer: null, phase: 'placing', sel: 0, done: false,
+      goldenNext: false, goldenTurn: false, goldCount: 0,
     };
     st.resByRank[anchor.rank] = 'anchor';
     beginTurn();
@@ -207,6 +224,10 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
       ev.nodeRef = null;
     }
     st.sel = Math.min(st.placed.length, Math.ceil(st.placed.length / 2));
+    // EVENT — GOLDEN ERA: consume a pending golden turn. The card itself is
+    // whatever was already next in the queue — only the skin and stakes change.
+    st.goldenTurn = st.goldenNext;
+    st.goldenNext = false;
     const n = st.queue.length;
     game.innerHTML = ''
       + '<div class="ar-hud">'
@@ -215,8 +236,8 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
       +   '<div class="ar-hud-stat gold">Card <b>' + (st.idx + 1) + '/' + n + '</b></div>'
       + '</div>'
       + '<div class="ar-dots" aria-hidden="true">' + dotsHtml() + '</div>'
-      + '<div class="ar-card">'
-      +   '<div class="ar-label">' + (ev.retry ? 'Retry · half points — year hidden again' : 'Drop it in the timeline — year hidden') + '</div>'
+      + '<div class="ar-card' + (st.goldenTurn ? ' tl-gold' : '') + '">'
+      +   '<div class="ar-label">' + (st.goldenTurn ? '✨ Golden card — ×3 points · ' : '') + (ev.retry ? 'Retry · half points — year hidden again' : 'Drop it in the timeline — year hidden') + '</div>'
       +   '<div class="tl-evtext">' + esc(ev.text) + '</div>'
       +   '<div class="ar-timer"><i id="tfill"></i></div>'
       +   '<div class="ar-kbd-hint">Keyboard: ↑ ↓ pick a gap · Enter drops it</div>'
@@ -224,6 +245,20 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
       + '<div class="tl" id="tl" role="group" aria-label="The timeline so far — choose the gap where the event belongs">' + tlHtml(true) + '</div>'
       + '<div id="fb" role="status"></div>'
       + '<div id="end"></div>';
+
+    if (st.goldenTurn) {
+      const card = game.querySelector('.ar-card');
+      [['8%', '10px'], ['88%', '14px'], ['55%', '4px']].forEach((pos, i) => {
+        const s = document.createElement('span');
+        s.className = 'tl-spark';
+        s.textContent = '✨';
+        s.style.left = pos[0];
+        s.style.top = pos[1];
+        s.style.animationDelay = (i * 0.35) + 's';
+        s.setAttribute('aria-hidden', 'true');
+        card.appendChild(s);
+      });
+    }
 
     game.querySelectorAll('.tl-gap').forEach(b =>
       b.addEventListener('click', () => { Arcade.sfx.click(); choose(+b.dataset.gap); }));
@@ -240,7 +275,8 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
       },
     });
 
-    announce.textContent = 'Card ' + (st.idx + 1) + ' of ' + n + ': ' + ev.text
+    announce.textContent = (st.goldenTurn ? 'Golden card — triple points if you place it right. ' : '')
+      + 'Card ' + (st.idx + 1) + ' of ' + n + ': ' + ev.text
       + '. Choose a gap on the timeline. Arrow keys move the selection, Enter drops the card.';
   }
 
@@ -256,16 +292,30 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
     const gapEl = game.querySelector('.tl-gap[data-gap="' + gap + '"]');
 
     let pts = 0;
+    const golden = st.goldenTurn;
     if (ok) {
       st.streak++;
       st.bestStreak = Math.max(st.bestStreak, st.streak);
       pts = Math.round(100 * multFor(st.streak)) + Math.round(remaining / 1000) * 4;
       if (ev.retry) pts = Math.round(pts / 2);
+      if (golden) { pts = pts * 3; st.goldCount++; }   // GOLDEN ERA pays triple
       st.score += pts;
       Arcade.sfx.correct(st.streak);
       Arcade.vibrate(20);
-      if (gapEl) Arcade.popTextOver(gapEl, '+' + pts, '#00ffa3');
+      if (gapEl) Arcade.popTextOver(gapEl, '+' + pts, golden ? '#ffd60a' : '#00ffa3');
       Arcade.streakCall(st.streak);
+      if (golden && gapEl) {
+        // Starburst on the landed gap.
+        const gr = gapEl.getBoundingClientRect();
+        Arcade.confettiBurst({ x: gr.left + gr.width / 2, y: gr.top + gr.height / 2, count: 70, colors: ['#ffd60a', '#fff2b8', '#ffb347'] });
+        Arcade.sfx.coin();
+      }
+      // EVENT — GOLDEN ERA: three perfect placements in a row gild the next
+      // due card. Telegraphed after the streak call; re-earnable every 3.
+      if (st.streak % GOLD_STREAK === 0 && st.idx + 1 < st.queue.length) {
+        st.goldenNext = true;
+        setTimeout(() => { Arcade.flashMsg('✨ GOLDEN ERA — NEXT CARD ×3', '#ffd60a'); Arcade.sfx.riser(); }, 750);
+      }
     } else {
       st.streak = 0;
       Arcade.sfx.wrong();
@@ -285,7 +335,9 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
     const node = {
       year: ev.year, text: ev.text, rank: ev.rank,
       cls: (ok ? 'ok' : 'amber') + ' new',
-      tag: ok ? (ev.retry ? '✓ fixed on retry +' + pts : '✓ +' + pts) : '→ it actually goes here',
+      tag: ok
+        ? (golden ? '✨ golden ×3 +' + pts : ev.retry ? '✓ fixed on retry +' + pts : '✓ +' + pts)
+        : '→ it actually goes here',
     };
     st.placed.splice(correctGap, 0, node);
 
@@ -320,15 +372,16 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
     const fb = document.getElementById('fb');
     if (ok) {
       fb.className = 'ar-feedback ok';
-      fb.innerHTML = '<strong>' + esc(ev.year) + (ev.retry ? ' — fixed on the retry.' : ' — slotted.') + '</strong> ' + esc(ctx);
+      fb.innerHTML = '<strong>' + (golden ? '✨ Golden card — triple points! ' : '') + esc(ev.year) + (ev.retry ? ' — fixed on the retry.' : ' — slotted.') + '</strong> ' + esc(ctx);
     } else {
       fb.className = 'ar-feedback mid';
       fb.innerHTML = '<strong>Not there — it slid to the amber slot.</strong> ' + esc(ctx)
         + (retryQueued ? ' It comes back around shortly for another go at half points.' : '')
         + '<div style="margin-top:12px;"><button type="button" class="ar-btn big" id="tlNext">Tap to continue →</button></div>';
     }
-    announce.textContent = (ok ? 'Correct. ' : 'Wrong gap. ') + ctx
-      + (ok ? ' Plus ' + pts + ' points.' : ' Streak reset. Tap continue when you are ready.');
+    announce.textContent = (ok ? (golden ? 'Correct — golden card, triple points. ' : 'Correct. ') : 'Wrong gap. ') + ctx
+      + (ok ? ' Plus ' + pts + ' points.' : ' Streak reset. Tap continue when you are ready.')
+      + (st.goldenNext ? ' Golden era: the next card pays triple.' : '');
 
     // Correct placements auto-advance after a short beat; wrong ones wait for a
     // tap or keypress so there is time to read the correction. advanceTurn is
@@ -430,6 +483,7 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1865","text":"13th Amendment abolishes
       rows: [
         { v: c + '/' + n, l: 'placed right' },
         ...(st.fixed > 0 ? [{ v: '🟨 ' + st.fixed, l: 'fixed on retry' }] : []),
+        ...(st.goldCount > 0 ? [{ v: '✨ ' + st.goldCount, l: 'golden cards' }] : []),
         { v: String(st.bestStreak), l: 'best streak' },
         { v: secs, l: 'time' },
       ],

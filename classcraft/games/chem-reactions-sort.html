@@ -105,10 +105,54 @@
   const injected = document.createElement('style');
   injected.textContent = '.so-bin:disabled { opacity:0.35; cursor:default; transform:none; }'
     + ' .ar-feedback.no { font-size:15.5px; }'
-    + ' .so-freeze-note { font-family:var(--ar-mono); font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ar-muted); margin-top:8px; }';
+    + ' .so-freeze-note { font-family:var(--ar-mono); font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ar-muted); margin-top:8px; }'
+    // FRENZY event skin: gold pulsing card while the ×2 window runs, plus a
+    // countdown pill under the HUD. All JS-injected — the markup never changes.
+    + ' body.so-frenzy .so-card { border-color:var(--ar-gold); box-shadow:0 0 0 2px rgba(255,214,10,0.35), 0 0 30px rgba(255,214,10,0.3); }'
+    + ' body.so-frenzy .so-card-hint { color:var(--ar-gold); }'
+    + ' .so-frenzy-pill { display:none; align-items:center; justify-content:center; gap:6px; margin:0 0 10px; font-family:var(--ar-mono); font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--ar-gold); animation:soFrenzyPulse 0.8s ease-in-out infinite; }'
+    + ' body.so-frenzy .so-frenzy-pill { display:flex; }'
+    + ' @keyframes soFrenzyPulse { 50% { opacity:0.55; } }'
+    + ' @media (prefers-reduced-motion: reduce) { .so-frenzy-pill { animation:none; } body.so-frenzy .so-card { box-shadow:0 0 0 2px rgba(255,214,10,0.35); } }';
   document.head.appendChild(injected);
 
+  // FRENZY: every 5th consecutive correct sort opens a 10-second ×2 window —
+  // double sort points and a moderately faster item cadence (more retrieval
+  // per second). A wrong sort keeps its full input-freeze correction and ends
+  // the frenzy on the spot. Re-earnable at every 5-combo milestone.
+  const FRENZY_COMBO = 5;
+  const FRENZY_MS = 10000;
+
   let queue, state, timerCtl = null, heartTimer = null, locked = false;
+  let frenzyEndT = null, frenzyTick = null;
+
+  function frenzyPill() { return root.querySelector('.so-frenzy-pill'); }
+
+  function startFrenzy() {
+    state.frenzy = true;
+    state.frenzyUntil = Date.now() + FRENZY_MS;
+    document.body.classList.add('so-frenzy');
+    clearTimeout(frenzyEndT);
+    clearInterval(frenzyTick);
+    frenzyEndT = setTimeout(() => endFrenzy(true), FRENZY_MS);
+    frenzyTick = setInterval(() => {
+      const p = frenzyPill();
+      if (p && state.frenzy) p.textContent = '⚡ FRENZY ×2 · ' + Math.max(0, Math.ceil((state.frenzyUntil - Date.now()) / 1000)) + 's';
+    }, 250);
+    const p = frenzyPill();
+    if (p) p.textContent = '⚡ FRENZY ×2 · 10s';
+    // Sequenced after the existing 5-combo streak call so the banners read in order.
+    setTimeout(() => { if (state && state.frenzy) { Arcade.flashMsg('⚡ FRENZY — ×2 FOR 10s', '#ffd60a'); Arcade.sfx.riser(); } }, 700);
+  }
+
+  function endFrenzy(timedOut) {
+    if (!state || !state.frenzy) { document.body.classList.remove('so-frenzy'); return; }
+    state.frenzy = false;
+    clearTimeout(frenzyEndT); frenzyEndT = null;
+    clearInterval(frenzyTick); frenzyTick = null;
+    document.body.classList.remove('so-frenzy');
+    if (timedOut && timerCtl) announce.textContent = 'Frenzy over. Back to normal points.';
+  }
 
   function startGame() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
@@ -117,7 +161,9 @@
     state = {
       pos: 0, sorted: 0, correct: 0, combo: 0, bestCombo: 0,
       grid: [], lastMiss: null,
+      pts: 0, frenzyExtra: 0, frenzy: false, frenzyUntil: 0,
     };
+    endFrenzy(false);
     locked = false;
     renderGame();
   }
@@ -127,12 +173,13 @@
     root.innerHTML = `
       <div class="ar-badge">📦 Arcade · Sorting Rush</div>
       <h1 class="ar-title">${esc(HEADING)}</h1>
-      <p class="ar-sub">${esc(RUN_SECS)} seconds. Drop each item into the right bin. Chain correct sorts to grow your combo.</p>
+      <p class="ar-sub">${esc(RUN_SECS)} seconds. Drop each item into the right bin. Chain correct sorts to grow your combo — five in a row sparks a ×2 frenzy.</p>
       <div class="ar-hud">
-        <div class="ar-hud-stat">Sorted <b id="hudSorted">0</b></div>
+        <div class="ar-hud-stat">Score <b id="hudScore">0</b></div>
         <div class="ar-hud-stat${state.combo >= 3 ? ' hot' : ''}">Combo <b id="hudCombo">×1</b></div>
         <div class="ar-hud-stat gold">Time <b id="hudTime">${RUN_SECS}</b></div>
       </div>
+      <div class="so-frenzy-pill" aria-hidden="true">⚡ FRENZY ×2</div>
       <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
       <div class="so-stage">
         <div class="so-card in" id="card">
@@ -202,18 +249,29 @@
       state.correct++;
       state.combo++;
       state.bestCombo = Math.max(state.bestCombo, state.combo);
+      // FRENZY payout: a correct sort inside the window banks 2 points, not 1.
+      // Accuracy stats (sorted / correct) stay untouched — score only.
+      const inFrenzy = state.frenzy;
+      const gained = inFrenzy ? 2 : 1;
+      state.pts += gained;
+      if (inFrenzy) state.frenzyExtra++;
       state.grid.push('🟩');
       Arcade.sfx.correct(state.combo);
       chosenBin.classList.add('right');
       card.classList.add('fly');
-      Arcade.popTextOver(chosenBin, '×' + state.combo, '#00ffa3');
+      Arcade.popTextOver(chosenBin, inFrenzy ? '+2 ⚡' : '×' + state.combo, inFrenzy ? '#ffd60a' : '#00ffa3');
       Arcade.vibrate(15);
       if (state.combo === 5 || state.combo === 10) { Arcade.streakCall(state.combo); Arcade.confettiBurst({ count: 45 }); }
+      // EVENT — FRENZY: earned at every 5-combo milestone while no frenzy runs.
+      if (!state.frenzy && state.combo % FRENZY_COMBO === 0) startFrenzy();
       fb.className = 'ar-feedback ok';
-      fb.innerHTML = `<strong>Correct!</strong> “${esc(item.text)}” belongs in <em>${esc(CATEGORIES[item.cat])}</em>.`;
-      announce.textContent = `Correct. ${item.text} is ${CATEGORIES[item.cat]}. Combo ${state.combo}.`;
+      fb.innerHTML = `<strong>Correct!${inFrenzy ? ' ⚡ +2' : ''}</strong> “${esc(item.text)}” belongs in <em>${esc(CATEGORIES[item.cat])}</em>.`;
+      announce.textContent = `Correct. ${item.text} is ${CATEGORIES[item.cat]}. Combo ${state.combo}.`
+        + (inFrenzy ? ' Frenzy: two points banked.' : '')
+        + (state.frenzy && !inFrenzy ? ' Frenzy! Double points for ten seconds.' : '');
     } else {
       state.combo = 0;
+      endFrenzy(false);   // a miss snuffs the frenzy; the full correction pause below is unchanged
       state.grid.push('🟥');
       state.lastMiss = item;
       // Re-queue the miss 3–4 positions ahead so it re-tests within this run.
@@ -231,13 +289,18 @@
       announce.textContent = `Incorrect. ${item.text} belongs in ${CATEGORIES[item.cat]}, not ${CATEGORIES[catIdx]}. It will come back around shortly.`;
     }
 
-    document.getElementById('hudSorted').textContent = state.sorted;
+    const scoreEl = document.getElementById('hudScore');
+    scoreEl.textContent = state.pts;
+    if (correct) { scoreEl.classList.remove('bump'); void scoreEl.offsetWidth; scoreEl.classList.add('bump'); }
     const comboEl = document.getElementById('hudCombo');
     comboEl.textContent = '×' + Math.max(1, state.combo);
     comboEl.parentElement.classList.toggle('hot', state.combo >= 3);
 
     // Correct sorts speed up as the combo climbs; misses hold for reading time.
-    const delay = correct ? Math.max(200, 360 - 20 * (state.combo - 1)) : 1400;
+    // During FRENZY the cadence tightens moderately (density up) — the card
+    // itself stays full size and the player still paces their own answer.
+    let delay = correct ? Math.max(200, 360 - 20 * (state.combo - 1)) : 1400;
+    if (correct && state.frenzy) delay = Math.max(150, Math.round(delay * 0.65));
     setTimeout(() => {
       chosenBin.classList.remove('right', 'wrongbin');
       bins.forEach(b => { b.disabled = false; });
@@ -250,6 +313,7 @@
   function endGame() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     if (heartTimer) { clearInterval(heartTimer); heartTimer = null; }
+    endFrenzy(false);
     locked = true;
 
     const pct = state.sorted ? Math.round((state.correct / state.sorted) * 100) : 0;
@@ -274,26 +338,27 @@
       gameEmoji: '📦',
       topic: HEADING,
       pct: pct,
-      big: state.correct,
-      bigLabel: 'sorted right',
+      big: state.pts,
+      bigLabel: 'sort points',
       rows: [
-        { v: state.sorted, l: 'sorted' },
+        { v: `${state.correct}/${state.sorted}`, l: 'sorted right' },
         { v: pct + '%', l: 'accuracy' },
         { v: '🔥 ×' + state.bestCombo, l: 'best combo' },
+        ...(state.frenzyExtra > 0 ? [{ v: '⚡ +' + state.frenzyExtra, l: 'frenzy bonus' }] : []),
       ],
       emojiGrid: gridStr,
       bestKey: BEST_KEY,
-      bestValue: state.correct,
-      bestSuffix: '',
+      bestValue: state.pts,
+      bestSuffix: ' pts',
       insight: insight,
       shareLines: [
         '📦 Sorting Rush — ' + HEADING,
-        `${state.correct} sorted right · ${pct}% · 🔥 best combo ×${state.bestCombo}`,
+        `${state.pts} pts · ${state.correct} sorted right · ${pct}%` + (state.frenzyExtra > 0 ? ` · ⚡ frenzy +${state.frenzyExtra}` : '') + ` · 🔥 best combo ×${state.bestCombo}`,
         gridStr,
       ],
       onAgain: startGame,
     });
-    announce.textContent = `Time up. You sorted ${state.correct} correctly out of ${state.sorted} — ${pct} percent. Best combo ${state.bestCombo}.`;
+    announce.textContent = `Time up. ${state.pts} sort points. You sorted ${state.correct} correctly out of ${state.sorted} — ${pct} percent. Best combo ${state.bestCombo}.`;
   }
 
   // Keyboard: number keys 1-4 sort into the matching bin.

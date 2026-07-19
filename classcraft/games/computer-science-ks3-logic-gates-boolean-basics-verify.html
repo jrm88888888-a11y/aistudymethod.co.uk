@@ -178,7 +178,16 @@
     const st = document.createElement('style');
     st.textContent =
       '.mm-grid { grid-template-columns: repeat(var(--mm-cols, 3), 1fr) !important; }\n' +
-      '@media (max-width: 480px) { body.arcade .ar-kbd-hint { display: none; } }';
+      '@media (max-width: 480px) { body.arcade .ar-kbd-hint { display: none; } }\n' +
+      // PEEK CHARGE event: charge button + gold rim on peeked cards (JS-injected).
+      '.mm-peek-row { display: flex; justify-content: center; margin: -2px 0 10px; }\n' +
+      '.mm-peek { min-height: 40px; padding: 7px 18px; border-radius: 999px; border: 2px solid var(--ar-border); background: var(--ar-card); color: var(--ar-muted); font-family: var(--ar-mono); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; cursor: default; transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }\n' +
+      '.mm-peek.ready { border-color: var(--ar-gold); color: var(--ar-gold); background: var(--ar-gold-dim); cursor: pointer; box-shadow: 0 0 18px rgba(255,214,10,0.35); animation: mmPeekPulse 1s ease-in-out infinite; }\n' +
+      '.mm-peek.ready:hover { transform: translateY(-1px); }\n' +
+      '.mm-peek:focus-visible { outline: 2px solid var(--ar-gold); outline-offset: 2px; }\n' +
+      '@keyframes mmPeekPulse { 50% { box-shadow: 0 0 30px rgba(255,214,10,0.55); } }\n' +
+      '.mm-card.peek .mm-face.mm-front { border-color: var(--ar-gold); box-shadow: 0 0 14px rgba(255,214,10,0.4); }\n' +
+      '@media (prefers-reduced-motion: reduce) { .mm-peek.ready { animation: none; } }';
     document.head.appendChild(st);
   })();
 
@@ -207,6 +216,11 @@
   const BEST_KEY = 'aism-best:' + location.pathname;
   const FLIPBACK_MS = MODE === 'verify' ? 750 : 1150; // learn pacing breathes
   const MATCH_BASE = 100;
+  // PEEK CHARGE: three matches with no mismatch in between light the Peek
+  // button. Firing it flips every remaining face-down card face-up for 1.2s,
+  // then back — a strategic scan, never an answer: matching is still on you.
+  const PEEK_NEED = 3;
+  const PEEK_MS = 1200;
 
   function fmt(secs) {
     const s = Math.max(0, Math.round(secs));
@@ -233,6 +247,7 @@
       missed: new Set(),         // pairIds that were ever in a mismatch
       order: [],                 // matches in the order they landed
       t0: performance.now(), lastMatchT: performance.now(),
+      peekCharge: false, peekProgress: 0, peeking: false, peeksUsed: 0,
     };
 
     renderStage();
@@ -275,9 +290,12 @@
       <div class="ar-dots" aria-hidden="true">${state.cards.slice(0, pairCount).map(() => '<span></span>').join('')}</div>
       ${MODE === 'verify' ? '<div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>' : ''}
       <div class="mm-strip" id="fb" role="status">🃏 <span>Flip two cards. Match each <strong>term</strong> to its <strong>definition</strong> — every match shows the full meaning here.</span></div>
+      <div class="mm-peek-row"><button type="button" class="mm-peek" id="peekBtn" disabled aria-label="Peek — three clean matches in a row charge it; firing flips every hidden card face up for a moment">👁 PEEK · 0/${PEEK_NEED}</button></div>
       <div class="mm-grid" id="grid" role="group" aria-label="Memory cards: match each term with its definition"></div>
       <div class="ar-kbd-hint">Keyboard: Tab / arrow keys move · Enter or Space flips · a third tap skips the flip-back</div>
     `;
+
+    document.getElementById('peekBtn').addEventListener('click', firePeek);
 
     const grid = document.getElementById('grid');
     state.cards.forEach((c, i) => {
@@ -370,8 +388,42 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitAll());
 
   /* ---------- play -------------------------------------------------------- */
+  /* ---------- PEEK CHARGE event ------------------------------------------ */
+  function updatePeekBtn() {
+    const b = document.getElementById('peekBtn');
+    if (!b) return;
+    b.textContent = state.peekCharge ? '👁 PEEK READY' : '👁 PEEK · ' + state.peekProgress + '/' + PEEK_NEED;
+    b.classList.toggle('ready', state.peekCharge);
+    b.disabled = !state.peekCharge;
+  }
+
+  // Earned by learning performance only: a first-look scan of the board, paid
+  // for with three clean matches. It reveals positions for 1.2s — the player
+  // still has to know (and pick) the right pairings, and any running clock
+  // keeps ticking while they look.
+  function firePeek() {
+    if (!state || state.over || !state.peekCharge || state.peeking) return;
+    if (state.pending) state.pending.resolve();   // settle a pending mismatch flip-back first
+    state.peekCharge = false;
+    state.peeking = true;
+    state.peeksUsed++;
+    updatePeekBtn();
+    const hidden = state.cards.filter(c => !c.matchedFlag && !c.flippedFlag);
+    hidden.forEach(c => c.el.classList.add('flipped', 'peek'));
+    Arcade.sfx.coin();
+    Arcade.vibrate(15);
+    Arcade.flashMsg('👁 PEEK!', '#ffd60a');
+    announce.textContent = 'Peek! Every hidden card flashes face up for a moment. Memorise what you can.';
+    setTimeout(() => {
+      hidden.forEach(c => { if (!c.matchedFlag) c.el.classList.remove('flipped', 'peek'); });
+      if (state) state.peeking = false;
+      announce.textContent = 'Cards are face down again. Back to matching.';
+    }, PEEK_MS);
+  }
+
   function onCard(i) {
     if (!state || state.over) return;
+    if (state.peeking) return;   // input rests while the peek is showing
     if (state.lock) {
       // Skip the flip-back wait: a third tap during the mismatch lock
       // resolves the flip-back instantly and plays straight on. Taps during
@@ -451,6 +503,21 @@
       announce.textContent = 'Match! ' + a.pair.term + ': ' + a.pair.def + '. Plus ' + pts + ' points. ' +
         (pairCount - state.matched) + ' pairs left.';
 
+      // EVENT — PEEK CHARGE: three matches with no mismatch in between charge
+      // the Peek button. One charge held at a time; re-earnable after firing.
+      if (!state.peekCharge) {
+        state.peekProgress++;
+        if (state.peekProgress >= PEEK_NEED && state.matched < pairCount) {
+          state.peekCharge = true;
+          state.peekProgress = 0;
+          setTimeout(() => {
+            if (state && state.peekCharge && !state.over) { Arcade.flashMsg('👁 PEEK CHARGED', '#ffd60a'); Arcade.sfx.riser(); }
+          }, 700);
+          announce.textContent += ' Peek charged — fire it to flash every hidden card face up.';
+        }
+        updatePeekBtn();
+      }
+
       state.flipped = [];
       state.lock = false;
       if (state.matched === pairCount) setTimeout(() => finish(true), 750);
@@ -458,6 +525,8 @@
       state.missed.add(a.pairId);
       state.missed.add(b.pairId);
       state.combo = 0;
+      state.peekProgress = 0;   // a mismatch resets progress towards the next Peek charge
+      updatePeekBtn();
       setHud('hudCombo', '×1');
       const comboStat = document.getElementById('comboStat');
       if (comboStat) comboStat.classList.remove('hot');

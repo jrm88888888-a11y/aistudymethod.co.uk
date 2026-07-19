@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__TITLE__</title>
+<meta name="description" content="__META_DESC__">
+<link rel="stylesheet" href="../../style.css">
+<link rel="stylesheet" href="../quizzes/arcade.css">
+<style>
+  /* Mob Quiz — page-specific styles on top of the arcade design system */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .mq-diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+  .mq-diff {
+    background: var(--ar-card); border: 2px solid var(--ar-border);
+    border-radius: var(--ar-r); padding: 13px 6px; cursor: pointer;
+    color: var(--ar-text); font-family: var(--ar-font); text-align: center;
+    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  }
+  .mq-diff:hover { border-color: var(--ar-cyan); transform: translateY(-2px); }
+  .mq-diff:focus-visible { outline: 2px solid var(--ar-cyan); outline-offset: 2px; }
+  .mq-diff.selected {
+    border-color: var(--ar-mint); background: var(--ar-mint-dim);
+    box-shadow: 0 0 0 3px rgba(0,255,163,0.15), 0 0 20px rgba(0,255,163,0.2);
+  }
+  .mq-diff .ico  { font-size: 20px; line-height: 1; }
+  .mq-diff .lbl  { font-size: 12px; font-weight: 700; margin-top: 5px; letter-spacing: 0.5px; }
+  .mq-diff .sub  { font-family: var(--ar-mono); font-size: 9.5px; color: var(--ar-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .mq-how {
+    margin-top: 18px; font-size: 12.5px; color: var(--ar-text2); line-height: 1.6;
+    text-align: left; padding: 13px 15px; background: var(--ar-card);
+    border-radius: var(--ar-r); border-left: 3px solid var(--ar-cyan);
+  }
+  .mq-how b { color: var(--ar-text); }
+
+  /* HUD flair on top of .ar-hud-stat */
+  #hud-lives-item b { color: var(--ar-pink); letter-spacing: 1px; }
+  #hud-lives-item.critical b { animation: mqLifeBlip 0.6s ease infinite; }
+  #hud-speed-item b { color: var(--ar-cyan); }
+  #hud-combo-item b { transition: color 0.2s; }
+  #hud-combo-item.mult-hot b     { color: var(--ar-mint); text-shadow: 0 0 10px rgba(0,255,163,0.5); }
+  #hud-combo-item.mult-blazing b { color: var(--ar-gold); text-shadow: 0 0 10px rgba(255,214,10,0.6); }
+  #hud-combo-item.mult-inferno b { color: var(--ar-pink); text-shadow: 0 0 12px rgba(255,46,136,0.7); animation: mqComboPulse 0.3s ease infinite; display: inline-block; }
+  @keyframes mqComboPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  @keyframes mqLifeBlip   { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* Canvas arena */
+  #canvas-wrap {
+    position: relative; height: clamp(420px, 62vh, 620px);
+    border-radius: var(--ar-r-lg); overflow: hidden;
+    background: linear-gradient(180deg, var(--ar-card) 0%, var(--ar-bg2) 100%);
+    border: 1px solid var(--ar-border);
+    box-shadow: 0 18px 50px rgba(0,0,0,0.45);
+  }
+  #game-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  #game-canvas:active { cursor: grabbing; }
+
+  .mq-msg {
+    position: absolute; top: 46%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.7);
+    padding: 12px 22px; background: var(--ar-mint); color: #051418;
+    border-radius: 14px; font-size: 20px; font-weight: 700;
+    font-family: var(--ar-font); letter-spacing: 0.3px;
+    opacity: 0; pointer-events: none; z-index: 10;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 30px rgba(0,255,163,0.45);
+    max-width: 92%; text-align: center;
+  }
+  .mq-msg.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .mq-msg.wrong { background: var(--ar-pink); color: #fff; box-shadow: 0 0 30px rgba(255,46,136,0.45); }
+
+  .mq-hint {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    background: rgba(6,6,15,0.75); color: var(--ar-text2);
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--ar-border);
+    font-family: var(--ar-mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 5; white-space: nowrap;
+  }
+  .mq-hint.visible { opacity: 1; }
+</style>
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="arcade">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">V</div>
+      <div class="logo-text">
+        <span class="logo-primary">AI Study Method</span>
+        <span class="logo-secondary">The Velvet Method™</span>
+      </div>
+    </a>
+    <div class="nav-right">
+      <a href="../arcade.html" class="arcade-back">← Back to Arcade</a>
+    </div>
+  </div>
+  <style>
+    nav .arcade-back { text-decoration: none; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; padding: 6px 12px; border-radius: 6px; transition: all 0.2s ease; white-space: nowrap; }
+    nav .arcade-back:hover { color: var(--text-primary); background: var(--accent-soft); }
+    body.arcade nav .arcade-back { color: var(--ar-text2); }
+    body.arcade nav .arcade-back:hover { color: var(--ar-mint); }
+  </style>
+</nav>
+
+<div class="ar-wrap">
+
+  <!-- START SCREEN -->
+  <div id="screen-start" class="screen active">
+    <div class="ar-badge">V · Verify · Mob Quiz</div>
+    <h1 class="ar-title" id="game-heading">__HEADING__</h1>
+    <p class="ar-sub">Steer your runner into the gate matching the correct answer. Right answers speed you up and stack a combo multiplier — wrong answers cost a life.</p>
+    <div class="ar-meta">12 gates · 3 lives · combo multipliers · star bonuses</div>
+
+    <div class="ar-card">
+      <div class="ar-label">Pick your pace</div>
+      <div class="mq-diff-grid" role="radiogroup" aria-label="Difficulty">
+        <button class="mq-diff" data-diff="easy" type="button" role="radio" aria-checked="false">
+          <div class="ico">🐢</div>
+          <div class="lbl">Easy</div>
+          <div class="sub">slow start</div>
+        </button>
+        <button class="mq-diff selected" data-diff="medium" type="button" role="radio" aria-checked="true">
+          <div class="ico">⚡</div>
+          <div class="lbl">Medium</div>
+          <div class="sub">balanced</div>
+        </button>
+        <button class="mq-diff" data-diff="hard" type="button" role="radio" aria-checked="false">
+          <div class="ico">🔥</div>
+          <div class="lbl">Hard</div>
+          <div class="sub">fast &amp; furious</div>
+        </button>
+      </div>
+
+      <button id="btn-start" class="ar-btn big" type="button">▶ Start run</button>
+
+      <div class="mq-how">
+        <b>How it works:</b> a question appears above each gate as it approaches. Drag (or use ← →, or keys 1–4) to steer into the door labelled with your answer. Correct = score + speed + combo. Wrong = lose a life. Streaks spawn ★ bonus stars — grab them for +75.
+      </div>
+      <div class="ar-kbd-hint">Keyboard: ← → steer · 1–4 jump to a lane · M mute</div>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <div class="ar-hud">
+      <div class="ar-hud-stat">Score <b id="hud-score">0</b></div>
+      <div class="ar-hud-stat gold">Gate <b id="hud-progress">0/12</b></div>
+      <div class="ar-hud-stat" id="hud-lives-item">Lives <b id="hud-lives">♥♥♥</b></div>
+      <div class="ar-hud-stat" id="hud-speed-item">Speed <b id="hud-speed">×1.0</b></div>
+      <div class="ar-hud-stat" id="hud-combo-item">Combo <b id="hud-combo">×1.0</b></div>
+    </div>
+    <div id="canvas-wrap">
+      <canvas id="game-canvas" aria-label="Mob Quiz arena — steer your runner into the gate with the correct answer"></canvas>
+      <div id="floating-msg" class="mq-msg"></div>
+      <div id="controls-hint" class="mq-hint">Drag to steer · ← → and 1–4 keys work too</div>
+    </div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div id="screen-end" class="screen">
+    <div id="end-root"></div>
+  </div>
+
+</div>
+
+<div id="announce" aria-live="polite" class="sr-only"></div>
+
+<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/share-score.js?v=20260717a"></script>
+<script>
+/* ============================================================
+   MOB QUIZ — arcade port
+   Mechanics (gates, combo multipliers, star power-ups, squash/
+   trail effects, ranks) transplanted intact from the engine.
+   ============================================================ */
+
+const GAME_DATA = __GAME_DATA__;
+const ALL_PAIRS = (GAME_DATA && GAME_DATA.ALL_PAIRS) || [];
+const QUESTIONS_FALLBACK = (GAME_DATA && GAME_DATA.QUESTIONS_FALLBACK) || null;
+
+/* ---------------- arcade palette for canvas drawing ---------------- */
+const AR = {
+  mint:   '#00ffa3',
+  pink:   '#ff2e88',
+  gold:   '#ffd60a',
+  cyan:   '#00e5ff',
+  violet: '#8b5cf6',
+  bg:     '#06060f',
+  bg2:    '#0c0c1d',
+  bgHot:  '#141432',
+  text:   '#f2f3ff',
+  muted:  '#767ca8',
+  ink:    '#051418'
+};
+const AR_FONT = "'Space Grotesk', 'DM Sans', sans-serif";
+
+const announce = document.getElementById('announce');
+
+/* ============================================================
+   BUILD QUESTION SET (unchanged engine logic)
+   ============================================================ */
+function buildQuestions(pairs, n) {
+  // Convert term/def pairs into MCQs: question = the term, correct = its def.
+  // Distractor hygiene: never offer a def that exactly matches the correct
+  // answer or shares its first 40 characters (near-duplicates read as trick
+  // questions), and keep the distractors distinct from each other too. If the
+  // bank cannot supply 3 clean distractors, ship a narrower gate (2–3 doors)
+  // rather than padding with duplicates. The correct index is recorded
+  // positionally (not via indexOf), so identical strings elsewhere in the
+  // bank can never mis-score a door.
+  function tooClose(a, b) {
+    const x = String(a).trim(), y = String(b).trim();
+    return x === y || x.slice(0, 40) === y.slice(0, 40);
+  }
+  const used = shuffle([...pairs]).slice(0, n);
+  const out = [];
+  used.forEach(p => {
+    const defs = [];
+    shuffle(pairs.filter(x => x !== p)).forEach(x => {
+      if (defs.length >= 3) return;
+      if (tooClose(x.def, p.def)) return;
+      if (defs.some(d => tooClose(d, x.def))) return;
+      defs.push(x.def);
+    });
+    if (!defs.length) return;   // a one-door gate answers itself — skip the item
+    const doors = shuffle([{ def: p.def, ok: true }].concat(defs.map(d => ({ def: d, ok: false }))));
+    out.push({
+      q: p.term,
+      options: doors.map(d => d.def),
+      correct: doors.findIndex(d => d.ok)
+    });
+  });
+  return out;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ============================================================
+   JUICE LAYER — screen shake + streaks (sfx now via Arcade)
+   ============================================================ */
+const AISM_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let aismStreak = 0;
+let shakeT = 0, shakeMag = 0;
+function aismShake(m) { if (AISM_REDUCED) return; shakeMag = m; shakeT = 0.3; }
+
+Arcade.mountMuteButton();
+// M toggles mute via the shared arcade button (keeps icon in sync).
+document.addEventListener('keydown', e => {
+  if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    const b = document.querySelector('.ar-mute');
+    if (b) b.click();
+  }
+});
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let canvas, ctx;
+let gameState = 'idle';  // idle | running | over
+let questions = [];
+let currentIdx = 0;
+let score = 0;
+let lives = 3;
+let speed = 1.0;        // multiplier
+let maxSpeed = 1.0;
+let correctCount = 0;
+let totalAnswered = 0;
+let gateGrid = [];       // per-gate emoji results for the end card
+let gatesResolved = 0;   // every gate that reached the player (incl. idle)
+let missedQ = [];        // question indexes the player got wrong or slept through
+let teachPauseT = 0;     // ms left of the wrong-answer teaching pause
+let graceT = 0;          // ms of spawn-safe grace after any pause
+let hadInputThisGate = false;
+let idleGates = 0;       // consecutive gates with zero player input
+let pendingAutoPause = false;
+let autoPaused = false;
+const TEACH_PAUSE_MS = 2000;
+const RESUME_GRACE_MS = 1000;
+let difficulty = 'medium';
+const DIFF_SETTINGS = {
+  easy:   { startSpeed: 0.7, speedGain: 0.04, baseScrollPx: 1.4 },
+  medium: { startSpeed: 1.0, speedGain: 0.07, baseScrollPx: 1.8 },
+  hard:   { startSpeed: 1.4, speedGain: 0.10, baseScrollPx: 2.4 }
+};
+const TOTAL_QUESTIONS = 12;
+
+// Player
+let playerX = 0.5;       // normalised 0..1 across track
+let playerTargetX = 0.5; // smoothed
+let isDragging = false;
+let prevPlayerX = 0.5;        // for velocity-based squash + eye direction
+let playerSquash = 0;         // 0 = relaxed, 1 = max stretch
+let playerTrail = [];         // {x, life}
+
+// Gates (questions approaching)
+let gates = [];          // { qIdx, y, options[], correct, settled, result, dissolveT, settleX }
+let nextSpawnDist = 0;   // distance until next gate spawns
+
+// Power-ups
+let powerUps = [];       // {x, y, type, collected, life}
+
+// Background reaction pulse (radial flash at player on answer)
+let bgPulseT = 0;        // 0..1 seconds remaining
+let bgPulseColor = AR.mint;
+
+// Combo / score multiplier
+let aismMaxStreak = 0;
+let aismMultiplier = 1;  // 1, 1.5, 2, 3
+const MULT_TIERS = [
+  { streak: 8, mult: 3.0, label: 'INFERNO', color: AR.pink },
+  { streak: 5, mult: 2.0, label: 'BLAZING', color: AR.gold },
+  { streak: 3, mult: 1.5, label: 'HOT',     color: AR.mint },
+  { streak: 0, mult: 1.0, label: '',        color: AR.muted }
+];
+function getMultTier() { return MULT_TIERS.find(t => aismStreak >= t.streak); }
+
+// Animation
+let lastFrame = 0;
+let animId = null;
+let particles = [];      // {x, y, vx, vy, life, size, color, shape?}
+
+/* ============================================================
+   CANVAS SETUP (DPR-aware)
+   ============================================================ */
+function setupCanvas() {
+  canvas = document.getElementById('game-canvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+}
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  const rect = wrap.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+/* ============================================================
+   INPUT
+   ============================================================ */
+function setupInput() {
+  // Mouse / touch drag
+  let dragStartX = 0;
+  let dragStartPlayer = 0;
+
+  function onDown(clientX) {
+    if (gameState !== 'running') return;
+    isDragging = true;
+    dragStartX = clientX;
+    dragStartPlayer = playerX;
+    hadInputThisGate = true;
+    showHint(false);
+  }
+  function onMove(clientX) {
+    if (!isDragging || gameState !== 'running') return;
+    const rect = canvas.getBoundingClientRect();
+    const dx = (clientX - dragStartX) / rect.width;
+    playerTargetX = Math.max(0.05, Math.min(0.95, dragStartPlayer + dx));
+  }
+  function onUp() { isDragging = false; }
+
+  canvas.addEventListener('mousedown', e => onDown(e.clientX));
+  canvas.addEventListener('mousemove', e => onMove(e.clientX));
+  canvas.addEventListener('mouseup', onUp);
+  canvas.addEventListener('mouseleave', onUp);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown(e.touches[0].clientX); }, { passive: false });
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); onMove(e.touches[0].clientX); }, { passive: false });
+  canvas.addEventListener('touchend',   e => { e.preventDefault(); onUp(); }, { passive: false });
+
+  // Keyboard: arrows nudge, 1–4 snap to a lane centre
+  const kbStep = 0.05;
+  document.addEventListener('keydown', e => {
+    if (gameState !== 'running') return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); playerTargetX = Math.max(0.05, playerTargetX - kbStep); hadInputThisGate = true; showHint(false); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); playerTargetX = Math.min(0.95, playerTargetX + kbStep); hadInputThisGate = true; showHint(false); }
+    const laneKey = { '1': 0, '2': 1, '3': 2, '4': 3 }[e.key];
+    if (laneKey != null) {
+      const g = gates.find(x => !x.settled);
+      const n = g ? g.options.length : 4;
+      if (laneKey < n) {
+        e.preventDefault();
+        playerTargetX = Math.max(0.05, Math.min(0.95, (laneKey + 0.5) / n));
+        hadInputThisGate = true;
+        showHint(false);
+      }
+    }
+  });
+}
+
+/* ============================================================
+   TEACHING PAUSE + AFK PAUSE OVERLAYS (injected from JS)
+   ============================================================ */
+let teachEl = null;
+function showTeachOverlay(term, def, idle) {
+  if (!teachEl) {
+    teachEl = document.createElement('div');
+    teachEl.id = 'mq-teach';
+    teachEl.setAttribute('role', 'status');
+    teachEl.style.cssText = 'position:absolute;inset:0;z-index:20;display:none;align-items:center;'
+      + 'justify-content:center;padding:24px;background:rgba(6,6,15,0.9);text-align:center;pointer-events:none;';
+    document.getElementById('canvas-wrap').appendChild(teachEl);
+  }
+  teachEl.innerHTML = '<div style="max-width:540px;font-family:' + AR_FONT + ';">'
+    + '<div style="font-family:monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:' + AR.pink + ';margin-bottom:12px;">'
+    + (idle ? '💤 No input — gate missed' : '✗ Wrong gate — bank the correction') + '</div>'
+    + '<div style="font-size:24px;font-weight:700;color:' + AR.text + ';margin-bottom:12px;line-height:1.3;">' + Arcade.escapeHtml(term) + '</div>'
+    + '<div style="font-size:17px;font-weight:600;line-height:1.5;color:' + AR.mint + ';">' + Arcade.escapeHtml(def) + '</div>'
+    + '</div>';
+  teachEl.style.display = 'flex';
+}
+function hideTeachOverlay() { if (teachEl) teachEl.style.display = 'none'; }
+
+let pauseEl = null;
+function showPauseOverlay() {
+  autoPaused = true;
+  if (!pauseEl) {
+    pauseEl = document.createElement('div');
+    pauseEl.id = 'mq-pause';
+    pauseEl.setAttribute('role', 'button');
+    pauseEl.tabIndex = 0;
+    pauseEl.style.cssText = 'position:absolute;inset:0;z-index:21;display:flex;flex-direction:column;gap:10px;'
+      + 'align-items:center;justify-content:center;background:rgba(6,6,15,0.92);cursor:pointer;text-align:center;'
+      + 'padding:24px;font-family:' + AR_FONT + ';';
+    pauseEl.innerHTML = '<div style="font-size:24px;font-weight:700;color:' + AR.text + ';">⏸ Paused — tap to resume</div>'
+      + '<div style="font-size:13px;color:' + AR.muted + ';max-width:420px;">Two gates drifted past with no input, so the run took a breather. Tap anywhere to jump back in.</div>';
+    pauseEl.addEventListener('click', resumeFromPause);
+    pauseEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resumeFromPause(); }
+    });
+    document.getElementById('canvas-wrap').appendChild(pauseEl);
+  }
+  pauseEl.style.display = 'flex';
+  if (pauseEl.focus) pauseEl.focus();
+  announce.textContent = 'Game paused after two idle gates. Tap or press Enter to resume.';
+}
+function resumeFromPause() {
+  if (!autoPaused) return;
+  autoPaused = false;
+  if (pauseEl) pauseEl.style.display = 'none';
+  idleGates = 0;
+  graceT = RESUME_GRACE_MS;  // spawn-safe breather before the scroll resumes
+  Arcade.sfx.click();
+  announce.textContent = 'Resumed. Steer into the correct gate.';
+}
+
+let hintTimer = null;
+function showHint(visible) {
+  const h = document.getElementById('controls-hint');
+  if (visible) {
+    h.classList.add('visible');
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => h.classList.remove('visible'), 2500);
+  } else {
+    h.classList.remove('visible');
+  }
+}
+
+/* ============================================================
+   GAME START
+   ============================================================ */
+function selectDifficulty(d) {
+  difficulty = d;
+  document.querySelectorAll('.mq-diff').forEach(b => {
+    const sel = b.dataset.diff === d;
+    b.classList.toggle('selected', sel);
+    b.setAttribute('aria-checked', String(sel));
+  });
+}
+
+document.querySelectorAll('.mq-diff').forEach(b => {
+  b.addEventListener('click', () => { Arcade.sfx.click(); selectDifficulty(b.dataset.diff); });
+});
+
+function startGame() {
+  // Build question set
+  if (Array.isArray(QUESTIONS_FALLBACK) && QUESTIONS_FALLBACK.length) {
+    questions = shuffle([...QUESTIONS_FALLBACK]).slice(0, TOTAL_QUESTIONS);
+  } else if (Array.isArray(ALL_PAIRS) && ALL_PAIRS.length >= 4) {
+    questions = buildQuestions(ALL_PAIRS, Math.min(TOTAL_QUESTIONS, ALL_PAIRS.length));
+  } else {
+    document.querySelector('.ar-wrap').insertAdjacentHTML('afterbegin',
+      '<div class="ar-error">No question data loaded for this topic yet.</div>');
+    return;
+  }
+  if (!questions.length) {
+    document.querySelector('.ar-wrap').insertAdjacentHTML('afterbegin',
+      '<div class="ar-error">This topic needs more distinct definitions for a fair run — check back soon.</div>');
+    return;
+  }
+
+  // Reset state
+  currentIdx = 0;
+  score = 0;
+  lives = 3;
+  speed = DIFF_SETTINGS[difficulty].startSpeed;
+  maxSpeed = speed;
+  correctCount = 0;
+  aismStreak = 0;
+  aismMaxStreak = 0;
+  aismMultiplier = 1;
+  shakeT = 0;
+  totalAnswered = 0;
+  gateGrid = [];
+  gatesResolved = 0;
+  missedQ = [];
+  teachPauseT = 0;
+  graceT = 0;
+  hadInputThisGate = false;
+  idleGates = 0;
+  pendingAutoPause = false;
+  autoPaused = false;
+  hideTeachOverlay();
+  if (pauseEl) pauseEl.style.display = 'none';
+  playerX = 0.5;
+  playerTargetX = 0.5;
+  prevPlayerX = 0.5;
+  playerSquash = 0;
+  playerTrail = [];
+  gates = [];
+  particles = [];
+  powerUps = [];
+  bgPulseT = 0;
+  nextSpawnDist = 0;
+
+  // Show game screen
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-end').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+  resizeCanvas();
+  updateHUD();
+  showHint(true);
+  Arcade.sfx.riser();
+  announce.textContent = 'Run started. Steer into the gate with the correct answer.';
+
+  // Spawn first gate immediately
+  spawnGate();
+
+  gameState = 'running';
+  lastFrame = performance.now();
+  if (animId) cancelAnimationFrame(animId);
+  animate();
+}
+
+function restartGame() { startGame(); }
+
+function resetGame() {
+  gameState = 'idle';
+  if (animId) cancelAnimationFrame(animId);
+  document.getElementById('screen-end').classList.remove('active');
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-start').classList.add('active');
+}
+
+document.getElementById('btn-start').addEventListener('click', startGame);
+
+/* ============================================================
+   GATE SPAWNING
+   ============================================================ */
+function spawnGate() {
+  if (currentIdx >= questions.length) return;
+  const q = questions[currentIdx];
+  gates.push({
+    qIdx: currentIdx,
+    q: q.q,
+    options: q.options,
+    correct: q.correct,
+    y: -120,            // start above screen
+    settled: false,
+    result: null
+  });
+  currentIdx++;
+  announce.textContent = 'Gate ' + currentIdx + ': ' + q.q + '. Options left to right: ' + q.options.join('; ') + '.';
+  // Distance until next gate (in pixels of player travel)
+  nextSpawnDist = 460;
+}
+
+/* ============================================================
+   ANIMATION LOOP
+   ============================================================ */
+function animate(now) {
+  if (!now) now = performance.now();
+  const dt = Math.min((now - lastFrame) / 16.67, 3);  // ~60fps clamp
+  lastFrame = now;
+
+  if (gameState === 'running') {
+    update(dt);
+  }
+  draw();
+  if (gameState === 'running') animId = requestAnimationFrame(animate);
+}
+
+function update(dt) {
+  // AFK auto-pause: world fully frozen until the player taps to resume.
+  if (autoPaused) return;
+
+  // Teaching pause: freeze the world for ~2s while the correction overlay is
+  // up, then resume with a spawn-safe grace second.
+  if (teachPauseT > 0) {
+    teachPauseT -= dt * 16.67;
+    if (teachPauseT <= 0) {
+      teachPauseT = 0;
+      hideTeachOverlay();
+      if (pendingAutoPause) { pendingAutoPause = false; showPauseOverlay(); }
+      else graceT = RESUME_GRACE_MS;
+    }
+    return;
+  }
+  if (graceT > 0) graceT = Math.max(0, graceT - dt * 16.67);
+
+  // Smooth player movement + squash/stretch when accelerating sideways
+  prevPlayerX = playerX;
+  playerX += (playerTargetX - playerX) * 0.2 * dt;
+  const lateralV = Math.abs(playerX - prevPlayerX);
+  playerSquash = Math.max(playerSquash * Math.pow(0.85, dt), Math.min(1, lateralV * 60));
+
+  // Player trail — push current position, decay older entries
+  if (Math.floor(performance.now() / 16) % 2 === 0) {
+    playerTrail.push({ x: playerX, life: 14 });
+  }
+  playerTrail.forEach(t => { t.life -= dt; });
+  playerTrail = playerTrail.filter(t => t.life > 0);
+  if (playerTrail.length > 18) playerTrail.shift();
+
+  // Background pulse decay
+  if (bgPulseT > 0) bgPulseT = Math.max(0, bgPulseT - dt * 0.04);
+
+  // Scroll: gates move down (toward player). During the post-pause grace the
+  // scroll holds still so the player can re-position before play resumes.
+  const scrollPx = graceT > 0 ? 0 : DIFF_SETTINGS[difficulty].baseScrollPx * speed * dt;
+  nextSpawnDist -= scrollPx;
+
+  // Move particles
+  particles.forEach(p => {
+    p.y += p.vy * dt;
+    p.x += p.vx * dt;
+    p.life -= dt;
+    p.vy += 0.05 * dt;
+    if (p.spin != null) p.angle = (p.angle || 0) + p.spin * dt;
+  });
+  particles = particles.filter(p => p.life > 0);
+
+  // Move power-ups & detect collection
+  const screenH = canvas.height / (window.devicePixelRatio || 1);
+  const playerY = screenH - 80;
+  powerUps.forEach(pu => {
+    if (pu.collected) return;
+    pu.y += scrollPx * 0.85;     // slightly slower than gates so they're catchable
+    pu.x += Math.sin(pu.y * 0.012 + pu.phase) * 0.0015 * dt;  // wobble
+    pu.x = Math.max(0.08, Math.min(0.92, pu.x));
+    // Collection: when in player vertical band AND within horizontal tolerance
+    if (pu.y >= playerY - 30 && pu.y <= playerY + 30) {
+      if (Math.abs(pu.x - playerX) < 0.07) {
+        pu.collected = true;
+        score += 75;
+        Arcade.sfx.coin();
+        emitParticles(pu.x, 0.85, AR.gold, 18, 'star');
+        flashMessage('★ +75 BONUS', false);
+        updateHUD();
+      }
+    }
+  });
+  // Remove off-screen or collected power-ups after a short delay
+  powerUps = powerUps.filter(pu => !(pu.collected && pu.collectedFade > 0.5) && pu.y < screenH + 60);
+  powerUps.forEach(pu => { if (pu.collected) pu.collectedFade = (pu.collectedFade || 0) + dt * 0.05; });
+
+  // Move gates — only un-settled gates scroll; settled gates dissolve in place
+  gates.forEach(g => {
+    if (g.settled) {
+      g.dissolveT += dt * 0.07;   // ~0.45s total dissolve at 60fps
+      return;
+    }
+    g.y += scrollPx;
+    if (g.y >= playerY) {
+      settleGate(g);
+    }
+  });
+
+  // Remove dissolved gates immediately (fixes pile-up at the bottom)
+  gates = gates.filter(g => !g.settled || g.dissolveT < 1);
+
+  // Spawn next gate
+  if (nextSpawnDist <= 0 && currentIdx < questions.length) {
+    spawnGate();
+  }
+
+  // Check end
+  if (currentIdx >= questions.length && gates.length === 0) {
+    endGame();
+  }
+  if (lives <= 0) {
+    endGame();
+  }
+}
+
+function settleGate(gate) {
+  gate.settled = true;
+  gate.dissolveT = 0;
+  gate.settleX = playerX;
+  gatesResolved++;
+
+  const idle = !hadInputThisGate;
+  hadInputThisGate = false;
+
+  // Determine which door player is in
+  const numOptions = gate.options.length;
+  const laneWidth = 1.0 / numOptions;
+  const playerLane = Math.min(numOptions - 1, Math.max(0, Math.floor(playerX / laneWidth)));
+  gate.playerLane = playerLane;
+
+  if (idle) {
+    // AFK guard: zero input for the whole approach is a timeout-miss, not an
+    // attempted answer — it costs a life and shows the correction, but stays
+    // out of the accuracy stats. Two in a row and the run pauses itself.
+    idleGates++;
+    lives--;
+    speed = Math.max(0.6, speed - 0.15);
+    gate.result = 'wrong';
+    gate.playerLane = -1;        // no door was truly chosen
+    gateGrid.push('💤');
+    missedQ.push(gate.qIdx);
+    aismStreak = 0;
+    aismMultiplier = 1;
+    Arcade.sfx.wrong();
+    aismShake(7);
+    bgPulseT = 0.7;
+    bgPulseColor = AR.pink;
+    showTeachOverlay(gate.q, gate.options[gate.correct], true);
+    teachPauseT = TEACH_PAUSE_MS;
+    if (idleGates >= 2 && lives > 0) pendingAutoPause = true;
+    announce.textContent = 'No input — gate missed. ' + gate.q + ': ' + gate.options[gate.correct]
+      + '. Lives left: ' + Math.max(0, lives) + '.';
+    updateHUD();
+    return;
+  }
+  idleGates = 0;
+  totalAnswered++;
+
+  if (playerLane === gate.correct) {
+    // Correct → bump streak, apply multiplier, score
+    aismStreak++;
+    if (aismStreak > aismMaxStreak) aismMaxStreak = aismStreak;
+    aismMultiplier = getMultTier().mult;
+    const earned = Math.round(100 * aismMultiplier);
+    score += earned;
+    correctCount++;
+    gateGrid.push('🟩');
+    // Cap speed at 2× the starting speed so consecutive correct answers don't
+    // shrink the reading window beyond the point the question is legible.
+    const cap = DIFF_SETTINGS[difficulty].startSpeed * 2.0;
+    speed = Math.min(cap, speed + DIFF_SETTINGS[difficulty].speedGain);
+    if (speed > maxSpeed) maxSpeed = speed;
+    gate.result = 'correct';
+    Arcade.sfx.correct(aismStreak);
+    if (aismStreak === 3 || aismStreak === 5 || aismStreak === 8) Arcade.sfx.riser();
+    Arcade.vibrate(20);
+    const tier = getMultTier();
+    const msg = aismStreak >= 3
+      ? '+' + earned + ' · ' + tier.label + ' ×' + aismMultiplier
+      : '+' + earned;
+    flashMessage(msg, false);
+    announce.textContent = 'Correct! Plus ' + earned + ' points.' + (aismStreak >= 3 ? ' Combo ×' + aismMultiplier + '.' : '');
+    // Burst mint sparkles from gate centre — more particles at higher streaks
+    emitParticles(playerX, 0.85, AR.mint, aismStreak >= 5 ? 36 : aismStreak >= 3 ? 28 : 18);
+    // Background reaction pulse — mint, scaled by streak
+    bgPulseT = aismStreak >= 5 ? 1.0 : 0.6;
+    bgPulseColor = aismStreak >= 8 ? AR.pink : aismStreak >= 5 ? AR.gold : AR.mint;
+    // Star power-up — chance to spawn after a streak of 3+
+    if (aismStreak >= 3 && Math.random() < 0.35) {
+      powerUps.push({
+        x: 0.15 + Math.random() * 0.7,
+        y: -40,
+        type: 'star',
+        phase: Math.random() * Math.PI * 2,
+        collected: false,
+        collectedFade: 0
+      });
+    }
+  } else {
+    // Wrong → break streak + life loss + a 2s teaching pause with the
+    // correction in large type (replaces the old 900ms drive-by flash).
+    lives--;
+    speed = Math.max(0.6, speed - 0.15);
+    gate.result = 'wrong';
+    gateGrid.push('🟥');
+    missedQ.push(gate.qIdx);
+    const wasOnStreak = aismStreak >= 3;
+    aismStreak = 0;
+    aismMultiplier = 1;
+    Arcade.sfx.wrong();
+    Arcade.vibrate([40, 30, 40]);
+    aismShake(wasOnStreak ? 11 : 7);
+    showTeachOverlay(gate.q, gate.options[gate.correct], false);
+    teachPauseT = TEACH_PAUSE_MS;
+    announce.textContent = 'Wrong. The correct answer was: ' + gate.options[gate.correct] + '. Lives left: ' + Math.max(0, lives) + '.';
+    // Pink shard burst at gate centre
+    emitParticles(playerX, 0.85, AR.pink, 16, 'shard');
+    bgPulseT = 0.7;
+    bgPulseColor = AR.pink;
+  }
+  updateHUD();
+}
+
+/* ============================================================
+   DRAWING
+   ============================================================ */
+function draw() {
+  const W = canvas.width  / (window.devicePixelRatio || 1);
+  const H = canvas.height / (window.devicePixelRatio || 1);
+
+  /* screen shake — absolute transform each frame, no restore needed */
+  const dprS = window.devicePixelRatio || 1;
+  ctx.setTransform(dprS, 0, 0, dprS, 0, 0);
+  if (shakeT > 0) {
+    ctx.fillStyle = AR.bg;
+    ctx.fillRect(0, 0, W, H);
+    shakeT = Math.max(0, shakeT - 0.016);
+    const mS = shakeMag * (shakeT / 0.3);
+    ctx.transform(1, 0, 0, 1, (Math.random() - 0.5) * mS, (Math.random() - 0.5) * mS);
+  }
+
+  // Background gradient — when player is on a streak, tinted with multiplier colour.
+  const tier = getMultTier();
+  const baseTop = tier.streak >= 5 ? AR.bgHot : AR.bg2;
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, baseTop);
+  grad.addColorStop(1, AR.bg);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Background reaction pulse — radial flash at player position on answer
+  if (bgPulseT > 0) {
+    const pulseX = 20 + playerX * (W - 40);
+    const pulseY = H - 80;
+    const r = Math.max(W, H) * (1 - bgPulseT) * 1.2;
+    const opacity = Math.min(0.32, bgPulseT * 0.5);
+    const pg = ctx.createRadialGradient(pulseX, pulseY, 0, pulseX, pulseY, r);
+    pg.addColorStop(0, bgPulseColor + Math.round(opacity * 255).toString(16).padStart(2,'0'));
+    pg.addColorStop(0.6, bgPulseColor + '00');
+    ctx.fillStyle = pg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Track edges — pulse with streak colour
+  ctx.strokeStyle = tier.streak >= 5 ? tier.color + '40' : 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = tier.streak >= 5 ? 3 : 2;
+  ctx.beginPath();
+  ctx.moveTo(20, 0); ctx.lineTo(20, H);
+  ctx.moveTo(W - 20, 0); ctx.lineTo(W - 20, H);
+  ctx.stroke();
+
+  // Lane dashes (animated, scrolling)
+  const dashOffset = (performance.now() * 0.05 * (gameState === 'running' ? speed : 1)) % 40;
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.setLineDash([15, 10]);
+  ctx.lineDashOffset = -dashOffset;
+  ctx.beginPath();
+  ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Power-ups (stars)
+  powerUps.forEach(pu => drawPowerUp(pu, W, H));
+
+  // Gates
+  gates.forEach(g => drawGate(g, W, H));
+
+  // Player trail (oldest to newest, faint to bright)
+  const playerY = H - 80;
+  const pxScreen = 20 + playerX * (W - 40);
+  playerTrail.forEach((t, i) => {
+    const tx = 20 + t.x * (W - 40);
+    const alpha = (t.life / 14) * 0.18;
+    const trailCol = tier.streak >= 3 ? tier.color : AR.mint;
+    ctx.fillStyle = trailCol + Math.round(alpha * 255).toString(16).padStart(2,'0');
+    ctx.beginPath();
+    ctx.arc(tx, playerY + 4, 14 - i * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Player
+  drawPlayer(pxScreen, playerY);
+
+  // Particles
+  particles.forEach(p => {
+    const alpha = Math.round(Math.min(255, Math.max(0, p.life * 25))).toString(16).padStart(2,'0');
+    ctx.fillStyle = p.color + alpha;
+    if (p.shape === 'shard') {
+      // Triangular shards for wrong-answer shatter
+      ctx.save();
+      ctx.translate(p.x * W, p.y * H);
+      ctx.rotate(p.angle || 0);
+      ctx.beginPath();
+      ctx.moveTo(-p.size, p.size);
+      ctx.lineTo(p.size, 0);
+      ctx.lineTo(-p.size, -p.size);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    } else if (p.shape === 'star') {
+      // 4-pt star sparkle for correct + power-ups
+      ctx.save();
+      ctx.translate(p.x * W, p.y * H);
+      ctx.rotate(p.angle || 0);
+      ctx.beginPath();
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2;
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(a) * p.size * 1.5, Math.sin(a) * p.size * 1.5);
+      }
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+/* ---- text fitting (overflow-bug fix) --------------------------------
+   Wraps on spaces, hard-breaks words wider than the box, shrinks the
+   font until every line fits the door, and ellipsizes as a last resort.
+   Combined with a clip region this guarantees text stays inside cards
+   even at 380px wide with four long answers. ------------------------- */
+function wrapLines(ctx, text, maxW) {
+  const words = String(text).split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    if (ctx.measureText(word).width > maxW) {
+      // hard-break a word that can never fit on one line
+      if (line) { lines.push(line); line = ''; }
+      let chunk = '';
+      for (const ch of word) {
+        if (chunk && ctx.measureText(chunk + ch).width > maxW) { lines.push(chunk); chunk = ch; }
+        else chunk += ch;
+      }
+      line = chunk;
+      continue;
+    }
+    const test = line ? line + ' ' + word : word;
+    if (line && ctx.measureText(test).width > maxW) { lines.push(line); line = word; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function fitTextLayout(ctx, text, maxW, maxH, weight) {
+  const sizes = [13, 12, 11, 10, 9, 8];
+  for (const fs of sizes) {
+    ctx.font = (weight || '700') + ' ' + fs + 'px ' + AR_FONT;
+    const lineH = fs + 3;
+    const lines = wrapLines(ctx, text, maxW);
+    if (lines.length * lineH <= maxH) return { fs: fs, lineH: lineH, lines: lines };
+  }
+  // Minimum size still too tall → truncate with ellipsis
+  const fs = 8, lineH = 11;
+  ctx.font = (weight || '700') + ' ' + fs + 'px ' + AR_FONT;
+  let lines = wrapLines(ctx, text, maxW);
+  const maxLines = Math.max(1, Math.floor(maxH / lineH));
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    let last = lines[maxLines - 1];
+    while (last.length && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+    lines[maxLines - 1] = last + '…';
+  }
+  return { fs: fs, lineH: lineH, lines: lines };
+}
+
+function drawGate(g, W, H) {
+  const top = g.y - 110;  // top of gate
+  const gateH = 110;
+  const trackLeft = 20, trackRight = W - 20, trackW = trackRight - trackLeft;
+  const numOptions = g.options.length;
+  const laneW = trackW / numOptions;
+
+  // Settled gates dissolve: shrink + fade + emit residual sparkles. Once
+  // dissolveT >= 1 the gate is removed in update(), preventing pile-up.
+  const dissolving = g.settled;
+  const dt = dissolving ? Math.min(1, g.dissolveT || 0) : 0;
+  const scale = dissolving ? 1 - dt * 0.35 : 1;            // shrinks to 65%
+  const alpha = dissolving ? Math.max(0, 1 - dt * 1.15) : 1;
+  // Emit a couple of residual particles each frame while dissolving
+  if (dissolving && dt < 0.6 && Math.random() < 0.4) {
+    const colour = g.result === 'correct' ? AR.mint : AR.pink;
+    const py = (g.y - gateH / 2) / H;
+    const px = (trackLeft + laneW * (g.correct + 0.5)) / W;
+    particles.push({
+      x: px + (Math.random() - 0.5) * 0.05,
+      y: py + (Math.random() - 0.5) * 0.05,
+      vx: (Math.random() - 0.5) * 0.01,
+      vy: -Math.random() * 0.01,
+      life: 14 + Math.random() * 10,
+      size: 2 + Math.random() * 2,
+      color: colour,
+      shape: g.result === 'correct' ? 'star' : 'shard',
+      angle: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 0.2
+    });
+  }
+
+  // Apply global alpha for dissolve fade
+  const prevAlpha = ctx.globalAlpha;
+  ctx.globalAlpha = alpha * prevAlpha;
+
+  // Question banner (above gate) — measured wrap, max 2 lines, ellipsized.
+  if (g.y > 50 && !dissolving) {
+    const qW = Math.min(W - 24, 480);
+    const qX = (W - qW) / 2;
+    let layout = fitTextLayout(ctx, g.q, qW - 28, 2 * 19, '700');
+    // fitTextLayout starts at 13px; banner wants up to 14px when it fits on one line
+    ctx.font = '700 14px ' + AR_FONT;
+    if (ctx.measureText(g.q).width <= qW - 28) layout = { fs: 14, lineH: 19, lines: [g.q] };
+    const bh = layout.lines.length * layout.lineH + 18;
+    const qY = Math.max(8, top - bh - 10);
+
+    ctx.fillStyle = 'rgba(6,6,15,0.88)';
+    roundRect(ctx, qX, qY, qW, bh, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,229,255,0.25)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, qX, qY, qW, bh, 10);
+    ctx.stroke();
+
+    ctx.fillStyle = AR.text;
+    ctx.font = '700 ' + layout.fs + 'px ' + AR_FONT;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const startY = qY + bh / 2 - ((layout.lines.length - 1) / 2) * layout.lineH;
+    layout.lines.forEach((l, i) => ctx.fillText(l, W / 2, startY + i * layout.lineH));
+  }
+
+  // Doors — when dissolving, draw centred & scaled
+  const cy = top + gateH / 2;
+  for (let i = 0; i < numOptions; i++) {
+    const xCentre = trackLeft + (i + 0.5) * laneW;
+    const w = (laneW - 6) * scale;
+    const h = gateH * scale;
+    const x = xCentre - w / 2;
+    const y = cy - h / 2;
+
+    let fill, edge;
+    if (g.settled) {
+      if (i === g.correct) {
+        fill = 'rgba(0,255,163,0.3)';
+        edge = AR.mint;
+      } else if (i === g.playerLane && g.result === 'wrong') {
+        fill = 'rgba(255,46,136,0.28)';
+        edge = AR.pink;
+      } else {
+        fill = 'rgba(255,255,255,0.04)';
+        edge = 'rgba(255,255,255,0.1)';
+      }
+    } else {
+      fill = 'rgba(139,92,246,0.18)';
+      edge = 'rgba(139,92,246,0.55)';
+    }
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = edge;
+    ctx.lineWidth = 2;
+    roundRect(ctx, x, y, w, h, 8 * scale);
+    ctx.fill();
+    ctx.stroke();
+
+    // Option text — fitted to the door and clipped so it can never spill
+    // outside the card (the old fixed-size wrap overflowed on narrow screens).
+    if (!dissolving || dt < 0.5) {
+      ctx.save();
+      roundRect(ctx, x, y, w, h, 8 * scale);
+      ctx.clip();
+      ctx.fillStyle = g.settled && i === g.correct ? AR.mint
+                    : g.settled && i === g.playerLane && g.result === 'wrong' ? AR.pink
+                    : AR.text;
+      const layout = fitTextLayout(ctx, g.options[i], w - 12, h - 10, '700');
+      ctx.font = '700 ' + layout.fs + 'px ' + AR_FONT;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const startY = cy - ((layout.lines.length - 1) / 2) * layout.lineH;
+      layout.lines.forEach((l, li) => ctx.fillText(l, xCentre, startY + li * layout.lineH));
+      ctx.restore();
+    }
+  }
+
+  ctx.globalAlpha = prevAlpha;
+}
+
+function drawPowerUp(pu, W, H) {
+  const x = 20 + pu.x * (W - 40);
+  const y = pu.y;
+  const t = performance.now() / 200;
+  const pulse = 1 + Math.sin(t + pu.phase) * 0.08;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.sin(t * 0.6 + pu.phase) * 0.2);
+  // Glow
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 24);
+  g.addColorStop(0, 'rgba(255,214,10,0.6)');
+  g.addColorStop(1, 'rgba(255,214,10,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, 0, 24, 0, Math.PI * 2);
+  ctx.fill();
+  // Star
+  ctx.fillStyle = AR.gold;
+  ctx.strokeStyle = '#a8870a';
+  ctx.lineWidth = 1.5;
+  const sp = 12 * pulse;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a1 = (i / 5) * Math.PI * 2 - Math.PI / 2;
+    const a2 = ((i + 0.5) / 5) * Math.PI * 2 - Math.PI / 2;
+    ctx.lineTo(Math.cos(a1) * sp, Math.sin(a1) * sp);
+    ctx.lineTo(Math.cos(a2) * sp * 0.45, Math.sin(a2) * sp * 0.45);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawPlayer(x, y) {
+  // Squash/stretch: when moving fast laterally, stretch horizontally.
+  const sx = 1 + playerSquash * 0.3;
+  const sy = 1 - playerSquash * 0.15;
+  const moveDir = (playerX - prevPlayerX);  // negative = moving left
+  const eyeNudge = Math.max(-3, Math.min(3, moveDir * 200));
+  const tier = getMultTier();
+
+  // Glow — colour grows hotter with streak tier
+  const glowCol = tier.streak >= 8 ? 'rgba(255,46,136,0.6)'
+                : tier.streak >= 5 ? 'rgba(255,214,10,0.55)'
+                : 'rgba(0,255,163,0.5)';
+  const glowR = 35 + tier.streak * 0.7;
+  const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, glowR);
+  glowGrad.addColorStop(0, glowCol);
+  glowGrad.addColorStop(1, 'rgba(0,255,163,0)');
+  ctx.fillStyle = glowGrad;
+  ctx.beginPath();
+  ctx.arc(x, y, glowR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Body (pill) — colour shifts on streak
+  const bodyCol = tier.streak >= 8 ? AR.pink
+                : tier.streak >= 5 ? AR.gold
+                : AR.mint;
+  ctx.fillStyle = bodyCol;
+  ctx.strokeStyle = 'rgba(6,6,15,0.55)';
+  ctx.lineWidth = 2;
+  const w = 36 * sx, h = 44 * sy;
+  roundRect(ctx, x - w / 2, y - h / 2, w, h, 18);
+  ctx.fill();
+  ctx.stroke();
+
+  // Eyes — look in the direction of movement
+  ctx.fillStyle = AR.bg;
+  ctx.beginPath();
+  ctx.arc(x - 6 + eyeNudge, y - 6, 3, 0, Math.PI * 2);
+  ctx.arc(x + 6 + eyeNudge, y - 6, 3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+}
+
+function emitParticles(nx, ny, color, n, shape) {
+  for (let i = 0; i < n; i++) {
+    // Star + shard shapes get wider velocity spread + spin for visual variety.
+    const angle = Math.random() * Math.PI * 2;
+    const speed = shape === 'shard' ? 0.022 + Math.random() * 0.018
+                : shape === 'star'  ? 0.012 + Math.random() * 0.014
+                : 0.012 + Math.random() * 0.012;
+    particles.push({
+      x: nx, y: ny,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (shape === 'star' ? 0.005 : 0.008),
+      life: 28 + Math.random() * 22,
+      size: shape === 'shard' ? 4 + Math.random() * 3
+          : shape === 'star'  ? 3 + Math.random() * 3
+          : 3 + Math.random() * 3,
+      color: color,
+      shape: shape || null,
+      angle: shape ? Math.random() * Math.PI * 2 : 0,
+      spin: shape ? (Math.random() - 0.5) * 0.4 : 0
+    });
+  }
+}
+
+/* ============================================================
+   HUD
+   ============================================================ */
+function updateHUD() {
+  document.getElementById('hud-score').textContent = score;
+  document.getElementById('hud-progress').textContent = gatesResolved + '/' + (questions.length || TOTAL_QUESTIONS);
+  document.getElementById('hud-lives').textContent = '♥'.repeat(Math.max(0, lives));
+  document.getElementById('hud-speed').textContent = '×' + speed.toFixed(1);
+  document.getElementById('hud-combo').textContent = aismMultiplier === 1 ? '×1.0' : ('×' + aismMultiplier.toFixed(1));
+
+  const comboItem = document.getElementById('hud-combo-item');
+  comboItem.classList.remove('mult-hot', 'mult-blazing', 'mult-inferno');
+  if (aismStreak >= 8) comboItem.classList.add('mult-inferno');
+  else if (aismStreak >= 5) comboItem.classList.add('mult-blazing');
+  else if (aismStreak >= 3) comboItem.classList.add('mult-hot');
+
+  // Critical life: pulse hearts when on last life
+  document.getElementById('hud-lives-item').classList.toggle('critical', lives === 1);
+}
+
+function flashMessage(text, isWrong) {
+  const m = document.getElementById('floating-msg');
+  m.textContent = text;
+  m.classList.toggle('wrong', isWrong);
+  m.classList.add('show');
+  setTimeout(() => m.classList.remove('show'), 900);
+}
+
+/* ============================================================
+   END GAME — shared arcade end card (rank concept preserved)
+   ============================================================ */
+function endGame() {
+  if (gameState === 'over') return;
+  gameState = 'over';
+  if (animId) cancelAnimationFrame(animId);
+  hideTeachOverlay();
+  if (pauseEl) pauseEl.style.display = 'none';
+  autoPaused = false;
+  const accuracy = totalAnswered > 0 ? Math.round(100 * correctCount / totalAnswered) : 0;
+
+  // Rank: combines accuracy + max streak. S+ = perfect + ≥6 streak.
+  let rank = 'C';
+  if (accuracy >= 100 && aismMaxStreak >= 6) rank = 'S+';
+  else if (accuracy === 100) rank = 'S';
+  else if (accuracy >= 90 && aismMaxStreak >= 5) rank = 'A+';
+  else if (accuracy >= 85) rank = 'A';
+  else if (accuracy >= 70) rank = 'B';
+
+  const topic = document.getElementById('game-heading').textContent.trim();
+  const diffLabel = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+
+  let insight;
+  if (lives <= 0) {
+    insight = 'Rank ' + rank + ' — out of lives at gate ' + gatesResolved + ' of ' + questions.length + '. The pairs that cost you a heart are listed below — read them properly, then run it back.';
+  } else if (rank === 'S+' || rank === 'S') {
+    insight = 'Rank ' + rank + ' — flawless run at ×' + maxSpeed.toFixed(1) + ' top speed. Final boss: switch to Hard and hold the combo the whole way.';
+  } else if (rank === 'A+' || rank === 'A') {
+    insight = 'Rank ' + rank + ' — one or two gates from a perfect run. Check the answers you missed, then chase the S rank.';
+  } else if (rank === 'B') {
+    insight = 'Rank B — solid steering, but the broken combos show where recall is slow. Another run will lock those terms in.';
+  } else {
+    insight = 'Rank ' + rank + ' — this topic fought back. Each wrong gate flashed the right answer: re-read those, slow it down on Easy, and build the streak.';
+  }
+
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-end').classList.add('active');
+
+  const endRoot = document.getElementById('end-root');
+  Arcade.renderEndCard(endRoot, {
+    gameName: 'Mob Quiz',
+    gameEmoji: '🏃',
+    topic: topic,
+    meta: diffLabel + ' run',
+    pct: accuracy,
+    big: score,
+    bigLabel: 'points',
+    rows: [
+      { v: correctCount + '/' + totalAnswered, l: 'gates' },
+      { v: '🔥 ' + aismMaxStreak, l: 'best streak' },
+      { v: '×' + maxSpeed.toFixed(1), l: 'top speed' },
+      { v: rank, l: 'rank' }
+    ],
+    emojiGrid: gateGrid.join(''),
+    bestKey: 'aism-best:' + location.pathname,
+    bestValue: score,
+    bestSuffix: ' pts',
+    insight: insight,
+    shareLines: [
+      '🏃 Mob Quiz — ' + topic,
+      'Rank ' + rank + ' · ' + score + ' pts · 🔥 ' + aismMaxStreak + ' streak · ×' + maxSpeed.toFixed(1) + ' speed',
+      gateGrid.join('')
+    ],
+    onAgain: restartGame,
+    hot: lives <= 0
+  });
+
+  // Missed-pairs revision list — every term that cost a life (wrong gate or
+  // idle miss), with its correct definition, appended inside the end card.
+  if (missedQ.length) {
+    const seen = new Set();
+    const items = [];
+    missedQ.forEach(qi => {
+      if (seen.has(qi)) return;
+      seen.add(qi);
+      const q = questions[qi];
+      if (q) {
+        items.push('<div style="margin:7px 0;line-height:1.45;font-size:13px;">'
+          + '<strong style="color:' + AR.text + ';">' + Arcade.escapeHtml(q.q) + '</strong>'
+          + '<span style="color:' + AR.muted + ';"> — </span>'
+          + '<span style="color:' + AR.mint + ';">' + Arcade.escapeHtml(q.options[q.correct]) + '</span>'
+          + '</div>');
+      }
+    });
+    const inner = endRoot.querySelector('.ar-end-inner');
+    if (inner && items.length) {
+      const box = document.createElement('div');
+      box.className = 'ar-insight';
+      box.id = 'mq-revision';
+      box.style.textAlign = 'left';
+      box.innerHTML = '<div style="font-weight:700;margin-bottom:6px;">📖 Revision list — the gates that got you</div>'
+        + items.join('');
+      inner.insertBefore(box, inner.querySelector('.ar-ctas') || null);
+    }
+  }
+
+  // Extra CTA: back to the difficulty picker
+  const ctas = endRoot.querySelector('.ar-ctas');
+  if (ctas) {
+    const diffBtn = document.createElement('button');
+    diffBtn.type = 'button';
+    diffBtn.className = 'ar-btn ghost';
+    diffBtn.textContent = '⚙ Change difficulty';
+    diffBtn.addEventListener('click', () => { Arcade.sfx.click(); resetGame(); });
+    ctas.insertBefore(diffBtn, ctas.lastElementChild);
+  }
+
+  announce.textContent = 'Run over. Rank ' + rank + '. Score ' + score + ' points. ' +
+    correctCount + ' of ' + totalAnswered + ' gates correct — ' + accuracy + ' percent. Max streak ' + aismMaxStreak + '.';
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.addEventListener('load', () => {
+  setupCanvas();
+  setupInput();
+});
+</script>
+
+<script src="../../script.js" defer></script>
+</body>
+</html>

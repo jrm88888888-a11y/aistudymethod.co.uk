@@ -288,6 +288,13 @@ let pendingAutoPause = false;
 let autoPaused = false;
 const TEACH_PAUSE_MS = 2000;
 const RESUME_GRACE_MS = 1000;
+// SHIELD event: a 4-gate correct streak forges one shield (icon by the lives).
+// The next WRONG gate spends it instead of a life — the full teaching pause
+// and correction still run; only the heart is spared. Idle (no-input) misses
+// are not answers, so they never spend the shield. One held max; re-earnable.
+let shield = false;
+let shieldsForged = 0;
+const SHIELD_NEED = 4;
 let difficulty = 'medium';
 const DIFF_SETTINGS = {
   easy:   { startSpeed: 0.7, speedGain: 0.04, baseScrollPx: 1.4 },
@@ -409,7 +416,7 @@ function setupInput() {
    TEACHING PAUSE + AFK PAUSE OVERLAYS (injected from JS)
    ============================================================ */
 let teachEl = null;
-function showTeachOverlay(term, def, idle) {
+function showTeachOverlay(term, def, idle, shielded) {
   if (!teachEl) {
     teachEl = document.createElement('div');
     teachEl.id = 'mq-teach';
@@ -423,6 +430,7 @@ function showTeachOverlay(term, def, idle) {
     + (idle ? '💤 No input — gate missed' : '✗ Wrong gate — bank the correction') + '</div>'
     + '<div style="font-size:24px;font-weight:700;color:' + AR.text + ';margin-bottom:12px;line-height:1.3;">' + Arcade.escapeHtml(term) + '</div>'
     + '<div style="font-size:17px;font-weight:600;line-height:1.5;color:' + AR.mint + ';">' + Arcade.escapeHtml(def) + '</div>'
+    + (shielded ? '<div style="margin-top:14px;font-size:14px;font-weight:700;color:' + AR.cyan + ';">🛡 Shield spent — life saved</div>' : '')
     + '</div>';
   teachEl.style.display = 'flex';
 }
@@ -527,6 +535,8 @@ function startGame() {
   idleGates = 0;
   pendingAutoPause = false;
   autoPaused = false;
+  shield = false;
+  shieldsForged = 0;
   hideTeachOverlay();
   if (pauseEl) pauseEl.style.display = 'none';
   playerX = 0.5;
@@ -777,6 +787,16 @@ function settleGate(gate) {
       : '+' + earned;
     flashMessage(msg, false);
     announce.textContent = 'Correct! Plus ' + earned + ' points.' + (aismStreak >= 3 ? ' Combo ×' + aismMultiplier + '.' : '');
+    // EVENT — SHIELD: every 4th consecutive correct gate forges a shield if
+    // none is held. Telegraphed after the score flash; consumed by the next
+    // wrong gate in place of a life.
+    if (!shield && aismStreak % SHIELD_NEED === 0) {
+      shield = true;
+      shieldsForged++;
+      Arcade.sfx.coin();
+      setTimeout(() => { if (gameState === 'running' && shield) flashMessage('🛡 SHIELD FORGED', false); }, 950);
+      announce.textContent += ' Shield forged — your next wrong gate will not cost a life.';
+    }
     // Burst mint sparkles from gate centre — more particles at higher streaks
     emitParticles(playerX, 0.85, AR.mint, aismStreak >= 5 ? 36 : aismStreak >= 3 ? 28 : 18);
     // Background reaction pulse — mint, scaled by streak
@@ -794,9 +814,12 @@ function settleGate(gate) {
       });
     }
   } else {
-    // Wrong → break streak + life loss + a 2s teaching pause with the
-    // correction in large type (replaces the old 900ms drive-by flash).
-    lives--;
+    // Wrong → break streak + a 2s teaching pause with the correction in large
+    // type. A held SHIELD is spent in place of the life — everything else
+    // (correction, streak reset, stats, speed penalty) runs in full.
+    const shielded = shield;
+    if (shielded) shield = false;
+    else lives--;
     speed = Math.max(0.6, speed - 0.15);
     gate.result = 'wrong';
     gateGrid.push('🟥');
@@ -807,9 +830,10 @@ function settleGate(gate) {
     Arcade.sfx.wrong();
     Arcade.vibrate([40, 30, 40]);
     aismShake(wasOnStreak ? 11 : 7);
-    showTeachOverlay(gate.q, gate.options[gate.correct], false);
+    showTeachOverlay(gate.q, gate.options[gate.correct], false, shielded);
     teachPauseT = TEACH_PAUSE_MS;
-    announce.textContent = 'Wrong. The correct answer was: ' + gate.options[gate.correct] + '. Lives left: ' + Math.max(0, lives) + '.';
+    announce.textContent = 'Wrong. ' + (shielded ? 'Your shield absorbed the hit — no life lost. ' : '')
+      + 'The correct answer was: ' + gate.options[gate.correct] + '. Lives left: ' + Math.max(0, lives) + '.';
     // Pink shard burst at gate centre
     emitParticles(playerX, 0.85, AR.pink, 16, 'shard');
     bgPulseT = 0.7;
@@ -1178,6 +1202,21 @@ function drawPlayer(x, y) {
   ctx.arc(x - 6 + eyeNudge, y - 6, 3, 0, Math.PI * 2);
   ctx.arc(x + 6 + eyeNudge, y - 6, 3, 0, Math.PI * 2);
   ctx.fill();
+
+  // SHIELD ring — a steady cyan halo while a shield is held (static, so it
+  // stays reduced-motion friendly).
+  if (shield) {
+    ctx.strokeStyle = 'rgba(0,229,255,0.85)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(x, y, 30, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,229,255,0.25)';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(x, y, 33, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -1222,7 +1261,7 @@ function emitParticles(nx, ny, color, n, shape) {
 function updateHUD() {
   document.getElementById('hud-score').textContent = score;
   document.getElementById('hud-progress').textContent = gatesResolved + '/' + (questions.length || TOTAL_QUESTIONS);
-  document.getElementById('hud-lives').textContent = '♥'.repeat(Math.max(0, lives));
+  document.getElementById('hud-lives').textContent = '♥'.repeat(Math.max(0, lives)) + (shield ? '🛡' : '');
   document.getElementById('hud-speed').textContent = '×' + speed.toFixed(1);
   document.getElementById('hud-combo').textContent = aismMultiplier === 1 ? '×1.0' : ('×' + aismMultiplier.toFixed(1));
 
@@ -1297,7 +1336,7 @@ function endGame() {
       { v: '🔥 ' + aismMaxStreak, l: 'best streak' },
       { v: '×' + maxSpeed.toFixed(1), l: 'top speed' },
       { v: rank, l: 'rank' }
-    ],
+    ].concat(shieldsForged > 0 ? [{ v: '🛡 ' + shieldsForged, l: 'shields forged' }] : []),
     emojiGrid: gateGrid.join(''),
     bestKey: 'aism-best:' + location.pathname,
     bestValue: score,

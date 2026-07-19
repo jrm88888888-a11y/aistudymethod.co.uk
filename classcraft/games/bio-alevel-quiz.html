@@ -77,10 +77,25 @@
   const BEST_KEY = 'aism-best:' + location.pathname;
   const KEYS = ['A', 'B', 'C', 'D'];
 
-  // JS-injected style (markup/CSS sections must stay untouched): amber dot for redeemed rounds.
+  // JS-injected style (markup/CSS sections must stay untouched): amber dot for
+  // redeemed rounds, plus the ON FIRE event skin (flame card border, flaming
+  // HUD streak, cheap DOM ember particles).
   const injected = document.createElement('style');
-  injected.textContent = '.ar-dots span.redeem { background: var(--ar-gold); box-shadow: 0 0 10px rgba(255,214,10,0.55); }';
+  injected.textContent = '.ar-dots span.redeem { background: var(--ar-gold); box-shadow: 0 0 10px rgba(255,214,10,0.55); }'
+    + ' .ar-card.qz-fire { position:relative; overflow:hidden; border-color:#ff7a18 !important; box-shadow:0 0 0 2px rgba(255,122,24,0.35), 0 0 34px rgba(255,90,0,0.38), inset 0 0 26px rgba(255,122,24,0.10); }'
+    + ' .qz-fire .ar-label { color:#ffb347; }'
+    + ' .ar-hud-stat.qz-fire-hud { border-color:rgba(255,122,24,0.6); }'
+    + ' .ar-hud-stat.qz-fire-hud b { color:#ff7a18; text-shadow:0 0 10px rgba(255,122,24,0.7); }'
+    + ' .qz-embers { position:absolute; inset:0; pointer-events:none; overflow:hidden; border-radius:inherit; }'
+    + ' .qz-ember { position:absolute; bottom:-8px; width:5px; height:5px; border-radius:50%; background:#ffb347; opacity:0; box-shadow:0 0 8px rgba(255,122,24,0.9); animation:qzEmberUp linear infinite; }'
+    + ' @keyframes qzEmberUp { 0% { transform:translateY(0) scale(1); opacity:0; } 12% { opacity:0.9; } 100% { transform:translateY(-360px) scale(0.35); opacity:0; } }'
+    + ' @media (prefers-reduced-motion: reduce) { .qz-ember { display:none; } .ar-card.qz-fire { box-shadow:0 0 0 2px rgba(255,122,24,0.35); } }';
   document.head.appendChild(injected);
+  const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // ON FIRE: every 5th consecutive correct answer ignites the next 3 questions
+  // at triple points. Earned by streak only; a wrong answer puts the fire out.
+  const FIRE_STREAK = 5;
+  const FIRE_ROUNDS = 3;
 
   if (ALL_QUESTIONS.length < 1) {
     root.innerHTML = '<div class="ar-error">No questions available for this topic yet.</div>';
@@ -112,6 +127,7 @@
     state = {
       idx: 0, correct: 0, score: 0, streak: 0, bestStreak: 0, grid: [], times: [],
       misses: [], redeemed: 0, redemptionStarted: false, totalPlanned: run.length,
+      fire: 0,   // ON FIRE rounds remaining (0 = not burning)
     };
     renderRound();
   }
@@ -136,15 +152,34 @@
     return `
       <div class="ar-hud">
         <div class="ar-hud-stat">Score <b id="hudScore">${state.score}</b></div>
-        <div class="ar-hud-stat${state.streak >= 3 ? ' hot' : ''}">Streak <b id="hudStreak">${state.streak}${state.streak >= 3 ? '🔥' : ''}</b></div>
+        <div class="ar-hud-stat${state.streak >= 3 ? ' hot' : ''}${state.fire > 0 ? ' qz-fire-hud' : ''}">Streak <b id="hudStreak">${state.streak}${state.streak >= 3 ? '🔥' : ''}</b></div>
         <div class="ar-hud-stat gold">${run[state.idx] && run[state.idx].redemption ? 'Redemption' : 'Round'} <b>${state.idx + 1}/${run.length}</b></div>
       </div>
     `;
   }
 
+  // Cheap DOM embers layered inside the card while ON FIRE (skipped for
+  // reduced motion via both the JS guard and the injected media query).
+  function mountEmbers(card) {
+    if (REDUCED || !card) return;
+    const layer = document.createElement('div');
+    layer.className = 'qz-embers';
+    layer.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 9; i++) {
+      const e = document.createElement('span');
+      e.className = 'qz-ember';
+      e.style.left = (4 + Math.random() * 92) + '%';
+      e.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+      e.style.animationDelay = (Math.random() * 2) + 's';
+      layer.appendChild(e);
+    }
+    card.appendChild(layer);
+  }
+
   function renderRound() {
     const r = run[state.idx];
     const isTf = r.type === 'tf';
+    const fireRound = state.fire > 0;   // this round burns: ×3 points on a correct
 
     root.innerHTML = `
       ${renderHeader()}
@@ -154,8 +189,8 @@
         return `<span class="${i === state.idx ? 'now' : ''}"></span>`;
       }).join('')}</div>
       <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
-      <div class="ar-card">
-        <div class="ar-label">${r.redemption ? 'Redemption · half points · ' : ''}${isTf ? 'True or False' : 'Multiple choice'} · tap to answer</div>
+      <div class="ar-card${fireRound ? ' qz-fire' : ''}">
+        <div class="ar-label">${fireRound ? `🔥 ON FIRE · ×3 points · ${state.fire} burning ` + (state.fire === 1 ? 'round' : 'rounds') + ' left · ' : ''}${r.redemption ? 'Redemption · half points · ' : ''}${isTf ? 'True or False' : 'Multiple choice'} · tap to answer</div>
         <div class="ar-prompt qz-prompt">${esc(r.q)}</div>
         <div class="qz-opts ar-stagger${isTf ? ' tf' : ''}" role="radiogroup" aria-label="Choose your answer">
           ${r.opts.map((opt, i) => `
@@ -171,7 +206,10 @@
       </div>
     `;
 
-    announce.textContent = `Round ${state.idx + 1} of ${run.length}. ${r.q}`;
+    if (fireRound) mountEmbers(root.querySelector('.ar-card'));
+
+    announce.textContent = (fireRound ? 'On fire — triple points this round. ' : '')
+      + `Round ${state.idx + 1} of ${run.length}. ${r.q}`;
 
     const tiles = Array.from(root.querySelectorAll('.qz-tile'));
     let phase = 'answer';
@@ -213,6 +251,7 @@
         const speed = Math.round(50 * (remaining / ROUND_MS));
         pts = Math.round((100 + speed) * mult);
         if (r.redemption) pts = Math.round(pts / 2);
+        if (fireRound) { pts = pts * 3; state.fire--; }   // burn a fire round: ×3
         state.score += pts;
         state.grid.push(r.redemption ? '🟨' : '🟩');
         Arcade.sfx.correct(state.streak);
@@ -221,9 +260,21 @@
         if (state.streak >= 5) Arcade.confettiBurst({ count: 50 });
         else Arcade.confettiBurst({ count: 30 });
         const winner = tiles[r.answerIdx];
-        if (winner) Arcade.popTextOver(winner, '+' + pts, '#00ffa3');
+        if (winner) Arcade.popTextOver(winner, '+' + pts, fireRound ? '#ff7a18' : '#00ffa3');
         Arcade.vibrate(20);
+        // EVENT — ON FIRE: every 5th consecutive correct (while not already
+        // burning) ignites the next 3 rounds at triple points. Telegraphed
+        // with a banner sequenced after the streak call. Re-earnable.
+        if (state.fire === 0 && state.streak > 0 && state.streak % FIRE_STREAK === 0) {
+          state.fire = FIRE_ROUNDS;
+          setTimeout(() => {
+            Arcade.flashMsg('🔥 ON FIRE — NEXT 3 ×3', '#ff7a18');
+            Arcade.sfx.riser();
+            Arcade.vibrate([30, 40, 60]);
+          }, 750);
+        }
       } else {
+        if (fireRound) state.fire = 0;   // a wrong answer puts the fire out instantly
         state.streak = 0;
         state.grid.push(timedOut ? '⬛' : '🟥');
         if (!r.redemption) state.misses.push(r);
@@ -244,13 +295,17 @@
       const fb = document.getElementById('fb');
       fb.className = 'ar-feedback ' + (correct ? 'ok' : (timedOut ? 'mid' : 'no'));
       const whyHtml = !correct && r.why ? `<div style="margin-top:8px;">💡 ${esc(r.why)}</div>` : '';
+      const ignited = correct && state.fire === FIRE_ROUNDS && !fireRound;
+      const fireOutHtml = !correct && fireRound
+        ? '<div style="margin-top:6px;color:#ffb347;">🔥 The flames go out — build another streak to reignite.</div>' : '';
       fb.innerHTML = correct
-        ? `<strong>${r.redemption ? 'Redeemed! ' : 'Correct! '}+${pts} pts.</strong> The answer is <em>${esc(r.answer)}</em>.`
+        ? `<strong>${fireRound ? '🔥 ' : ''}${r.redemption ? 'Redeemed! ' : 'Correct! '}+${pts} pts${fireRound ? ' (×3 on fire)' : ''}.</strong> The answer is <em>${esc(r.answer)}</em>.${ignited ? '<div style="margin-top:6px;color:#ffb347;">🔥 Five in a row — the next three questions are ON FIRE at triple points.</div>' : ''}`
         : timedOut
-          ? `<strong>Clock beat you.</strong> The correct answer was <em>${esc(r.answer)}</em>.${whyHtml}`
-          : `<strong>Not quite.</strong> The correct answer was <em>${esc(r.answer)}</em>.${whyHtml}`;
+          ? `<strong>Clock beat you.</strong> The correct answer was <em>${esc(r.answer)}</em>.${whyHtml}${fireOutHtml}`
+          : `<strong>Not quite.</strong> The correct answer was <em>${esc(r.answer)}</em>.${whyHtml}${fireOutHtml}`;
       announce.textContent = (correct
-        ? `Correct. Plus ${pts} points. The answer is ${r.answer}.`
+        ? `Correct. Plus ${pts} points${fireRound ? ', tripled by the fire' : ''}. The answer is ${r.answer}.`
+          + (ignited ? ' Five in a row — the next three questions score triple points.' : '')
         : timedOut
           ? `Time up. The correct answer was ${r.answer}.` + (r.why ? ' ' + r.why : '')
           : `Incorrect. The correct answer was ${r.answer}.` + (r.why ? ' ' + r.why : ''));
