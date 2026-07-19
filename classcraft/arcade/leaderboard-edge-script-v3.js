@@ -107,7 +107,7 @@ const GAME_CAPS = {
   // coin-pusher: board holds 25 starter coins + 12 minted (4 golden on
   // streaks 3/6/9/12) + 3 prizes = 33x50 + 4x250 + 3x500 = 4150 base;
   // everything collected under fever x2 = 8300 hard max. 10000 headroom.
-  "coin-pusher": 10000,
+  "coin-pusher": 25000,  // v2 excitement pack: pin bursts + sacks raised the fever ceiling to 22,200
 };
 
 /* Score plausibility: max points per SECOND of play, per game.
@@ -142,7 +142,7 @@ const RATE_CAPS = {
   "boss-rush": 67,       // 4000/60
   "ghost-race": 34,      // 2000/60
   "claw": 109,           // 6500/60
-  "coin-pusher": 167,    // 10000/60
+  "coin-pusher": 417,    // 25000/60
 };
 
 /* Minimum believable play time per game, ms. The token is issued when the game

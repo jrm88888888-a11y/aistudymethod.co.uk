@@ -74,7 +74,7 @@
 
   /* ---- question panel ---- */
   .qp {
-    flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px;
+    flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px;
     background: var(--ar-card); border: 1px solid var(--ar-border-hi); border-radius: 16px;
     padding: 14px 14px 16px; min-height: 0; position: relative; overflow: hidden;
   }
@@ -124,6 +124,32 @@
   .qp-spend.show { display: block; }
   .qp-spend h3 { font-family: var(--ar-font); font-weight: 800; font-size: 19px; margin: 0 0 6px; color: var(--ar-gold); }
   .qp-spend p { font-size: 13.5px; color: var(--ar-text2); margin: 0; line-height: 1.5; }
+
+  /* ---- MEGA PUSH meter (charged by correct answers only) ---- */
+  #mega-row {
+    display: flex; align-items: center; gap: 10px; margin-top: 10px;
+    background: var(--ar-card); border: 1px solid var(--ar-border-hi); border-radius: 14px;
+    padding: 10px 12px;
+  }
+  #mega-row .mp-label { font-family: var(--ar-mono); font-size: 10px; letter-spacing: 1.4px; color: var(--ar-cyan); line-height: 1.35; }
+  #mega-row .mp-segs { flex: 1 1 auto; display: flex; gap: 5px; }
+  #mega-row .mp-seg {
+    flex: 1 1 auto; height: 12px; border-radius: 4px;
+    background: rgba(92,255,228,0.12); border: 1px solid rgba(92,255,228,0.25);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+  #mega-row .mp-seg.on { background: var(--ar-cyan); box-shadow: 0 0 10px rgba(92,255,228,0.55); }
+  #mega-row.full { border-color: var(--ar-cyan); box-shadow: 0 0 22px rgba(92,255,228,0.35); animation: mpPulse 1.1s ease infinite; }
+  @keyframes mpPulse { 50% { box-shadow: 0 0 34px rgba(92,255,228,0.6); } }
+  #btn-mega {
+    flex: 0 0 auto; min-width: 74px; min-height: 44px; border-radius: 12px; border: none; cursor: pointer;
+    font-family: var(--ar-font); font-weight: 800; font-size: 15px; letter-spacing: 1.5px;
+    color: #04241e; background: linear-gradient(180deg, #8effec 0%, #5cffe4 55%, #1fbfa4 100%);
+    box-shadow: 0 5px 0 #0e7d6b, 0 8px 20px rgba(92,255,228,0.3);
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+  }
+  #btn-mega:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #0e7d6b; }
+  #btn-mega:disabled { filter: grayscale(0.75) brightness(0.55); cursor: default; box-shadow: 0 3px 0 #0a4d43; }
 
   @media (max-width: 860px) {
     .pu-layout { flex-direction: column; }
@@ -327,12 +353,55 @@
   const TROUGH_Y = 728, TROUGH_TOP = PLAT_TOP + 10;
   // Left DEFLECTOR LEDGE (~28.5°): coins spilling off the tray's LEFT edge
   // (x 108-168 at y 452) land on this angled shelf and roll RIGHT, discharging
-  // at x=206 — clearly in front of the pusher's forward-most face (168) — so
-  // nothing can ever pool behind or on top of the bar.
-  const DEFL = { x0: WX0, y0: 496, x1: 206, y1: 572 };
+  // at x=160 INTO THE PUSHER SWEEP ZONE, where the bar bulldozes them forward
+  // every stroke (and its chamfered top sheds anything that lands on it). The
+  // sweep zone is cleared each cycle, so the ledge can never back up and stall
+  // — and nothing can pool behind or on top of the bar.
+  const DEFL = { x0: WX0, y0: 496, x1: 160, y1: 547 };
   // Housing block SEALS the dead zone behind the bar (wall → bar's rearmost
   // back face, up to just under the deflector). The bar slides out of it.
   const SEAL = { x1: PUSH_BACK - PUSH_W, top: 540 };
+
+  // MEGA PUSH: one scripted slow extra-long stroke, reach 1.5x the base stroke
+  // length (front face to 193 — still short of the deflector discharge at 206).
+  // The BASE stroke is untouched; the bar runs on an accumulated phase so the
+  // mega script can splice in and the cosine resumes with no positional jump.
+  const MEGA_FRONT = PUSH_BACK + (PUSH_FRONT - PUSH_BACK) * 1.5;
+  let pushPhase = 0;
+  let mega = null;                 // {t, from} while a mega stroke runs
+  let megaCharge = 0;              // 0..MEGA_NEED, +1 per correct answer
+  const MEGA_NEED = 4;
+
+  // BONUS PINS: exactly two pins lit at any moment (relocated every ~10s,
+  // never adjacent). A dropped coin striking a lit pin opens a hopper flap in
+  // the canopy above the tray and rains 3-5 BOARD coins onto the tray pile.
+  // ETHICS: bonus coins are board coins only — the magazine is never touched.
+  let litPins = [];                // peg indices
+  let flashPins = [];              // {i, until} — post-hit flash
+  let nextRelocateAt = 0, relightAt = -1;
+  let hopperOpenUntil = -1;
+  const HOPPER = { x: TRAY_CX0, y: 388, w: 64 };
+  let pendingSpawns = [];          // [{at}] staggered board-coin spawn times
+  const BODY_CAP = 70;             // live-body cap: skip spawns, never degrade fps
+
+  function pegDist2(a, b) { const dx = pegs[a].x - pegs[b].x, dy = pegs[a].y - pegs[b].y; return dx * dx + dy * dy; }
+  function pickLitPins() {
+    // two non-adjacent pins (adjacent spacing is 54/50 — require > 70 apart)
+    for (let tries = 0; tries < 60; tries++) {
+      const a = Math.floor(Math.random() * pegs.length);
+      const b = Math.floor(Math.random() * pegs.length);
+      if (a !== b && pegDist2(a, b) > 70 * 70) { litPins = [a, b]; return; }
+    }
+    litPins = [0, pegs.length - 1];
+  }
+  function relightOnePin() {
+    const other = litPins[0];
+    for (let tries = 0; tries < 60; tries++) {
+      const c = Math.floor(Math.random() * pegs.length);
+      if (c !== other && (other === undefined || pegDist2(c, other) > 70 * 70)) { litPins.push(c); return; }
+    }
+    litPins.push(pegs.length > 5 ? 5 : 0);
+  }
 
   /* ======================================================================
      PHYSICS TUNABLES
@@ -344,14 +413,14 @@
   const PEG_REST = 0.55;
   const SHELF_REST = 0.16;
   const SLEEP_SPEED = 4.0;
-  const R_COIN = 11, R_GOLD = 18, R_PRIZE = 20;
+  const R_COIN = 11, R_GOLD = 18, R_PRIZE = 20, R_SACK = 20;
 
   /* ======================================================================
      STATE
      ====================================================================== */
   let bodies = [];
   let magazine = 0, score = 0, streak = 0, bestStreak = 0;
-  let coinsCollected = 0, goldCollected = 0, prizesCollected = 0;
+  let coinsCollected = 0, goldCollected = 0, prizesCollected = 0, sacksCollected = 0;
   let state = 'boot';                     // boot | playing | ended
   let simTime = 0, lastDropTime = -999, hardCapAt = 180;
   let launcherX = TRAY_CX0, moveDir = 0;
@@ -377,10 +446,11 @@
      ====================================================================== */
   let bodyId = 0;
   function makeBody(x, y, kind, sprite) {
-    const r = kind === 'gold' ? R_GOLD : (kind === 'prize' ? R_PRIZE : R_COIN);
+    const r = kind === 'gold' ? R_GOLD : (kind === 'prize' ? R_PRIZE : (kind === 'sack' ? R_SACK : R_COIN));
     return {
       id: bodyId++, x, y, px: x, py: y, r,
-      m: r * r, kind, sprite: sprite || null,
+      m: r * r * (kind === 'sack' ? 1.7 : 1),   // sacks are heavier than plushies
+      kind, sprite: sprite || null, value: 0,
       resting: false, sleep: false, slow: 0, spin: Math.random() * 6.28,
       blink: 0, blinkNext: 1 + Math.random() * 5, live: true,
     };
@@ -390,7 +460,9 @@
   /* ======================================================================
      BUILD THE STARTER PILE
      ====================================================================== */
-  const STARTER_UPPER = 16, STARTER_LOWER = 9, PRIZE_N = 3;
+  // 14 upper = exactly 7 columns x 2 stacked rows: full columns are creep-free;
+  // any odd coin on a third row wanders with tray slip until it escapes the band.
+  const STARTER_UPPER = 14, STARTER_LOWER = 6, PRIZE_N = 4;
   // The tray oscillates by TRAY_AMP, so only [CX0-HW+AMP, CX0+HW-AMP] is
   // covered on EVERY frame. Starter coins live inside that always-supported
   // band so idle oscillation alone never dumps them — only coins arriving
@@ -399,29 +471,36 @@
   // stay put at rest; a growing pile is what eventually shoves them over.
   function stockMachine() {
     bodies = [];
-    const bandL = TRAY_CX0 - TRAY_HW + TRAY_AMP + 8;   // safe tray band
+    const bandL = TRAY_CX0 - TRAY_HW + TRAY_AMP + 20;  // safe tray band (20u margin)
     for (let i = 0; i < STARTER_UPPER; i++) {
       const col = i % 7, row = Math.floor(i / 7);
-      const x = bandL + col * 27 + (Math.random() - 0.5) * 4;
+      const x = bandL + col * 25 + (Math.random() - 0.5) * 4;
       const y = TRAY_TOP - R_COIN - 2 - row * (R_COIN * 1.9);
       bodies.push(makeBody(x, y, 'coin'));
     }
     // Lower platform starter coins — parked AHEAD of the pusher reach so the
     // idle bar never touches them. Flat rows so they do not topple forward into
     // the prizes.
+    // Two flat vertical stacks per column (same pattern as the tray rows,
+    // which is creep-free): a 3-high narrow heap topples during warm-up and
+    // the rolling coins walk the prize row toward the lip.
     for (let i = 0; i < STARTER_LOWER; i++) {
       const col = i % 3, row = Math.floor(i / 3);
-      const x = 206 + col * 24 + (Math.random() - 0.5) * 2;
+      const x = 202 + col * 24 + (Math.random() - 0.5) * 2;
       const y = PLAT_TOP - R_COIN - 2 - row * (R_COIN * 2.15);
       bodies.push(makeBody(x, y, 'coin'));
     }
-    // Three prizes in an exactly-touching pyramid (no overlap → the solver
-    // never flings them), parked ahead of the pusher with a clear gap from the
-    // coin pile and a margin from the lip. A player has to build the pile up to
-    // shove the cluster over. At rest nothing touches them, so they hold.
-    bodies.push(makeBody(350, PLAT_TOP - R_PRIZE - 2, 'prize', PRIZE_KEYS[0]));
-    bodies.push(makeBody(390, PLAT_TOP - R_PRIZE - 2, 'prize', PRIZE_KEYS[1]));
-    bodies.push(makeBody(370, PLAT_TOP - R_PRIZE - 2 - 35, 'prize', PRIZE_KEYS[2]));
+    // Four prizes: 2 plushies (500) + 2 coin sacks (£10/£20 board-coin bursts)
+    // in ONE exactly-touching row — no stacking, because a top-loaded body
+    // presses its supports outward every step (no static friction in the
+    // solver) and that creep can walk the front prize over the lip at idle.
+    // A flat row carries no lateral force, so it holds indefinitely. Front
+    // sack sits 28u off the lip — one good shove drops it early in a run.
+    const py = PLAT_TOP - R_PRIZE - 2;
+    const s10 = makeBody(406, py, 'sack'); s10.value = 10; bodies.push(s10);
+    bodies.push(makeBody(366, py, 'prize', PRIZE_KEYS[0]));
+    const s20 = makeBody(326, py, 'sack'); s20.value = 20; bodies.push(s20);
+    bodies.push(makeBody(286, py, 'prize', PRIZE_KEYS[1]));
   }
 
   // Pre-settle under gravity only (mechanism frozen) so the machine opens calm
@@ -476,7 +555,44 @@
       b.sleep = false;
       const now = simTime;
       if (now - lastPinSfx > 0.045) { lastPinSfx = now; Arcade.sfx.tick(); }
+      if (litPins.indexOf(p) !== -1) pinBonusHit(p);
     }
+  }
+
+  /* ======================================================================
+     BONUS PINS + HOPPER (board coins only — never the magazine)
+     ====================================================================== */
+  function pinBonusHit(p) {
+    litPins = litPins.filter(i => i !== p);
+    flashPins.push({ i: p, until: simTime + 0.45 });
+    relightAt = simTime + 0.8;                 // restore the pair shortly after
+    Arcade.sfx.coin(); Arcade.sfx.tick();      // layered chime
+    spawnBurst(3 + Math.floor(Math.random() * 3), 0.5);
+    announce.textContent = 'Bonus pin! Coins rain into the machine.';
+  }
+
+  // Queue n staggered board-coin spawns from the hopper over `dur` seconds.
+  function spawnBurst(n, dur) {
+    hopperOpenUntil = Math.max(hopperOpenUntil, simTime + dur + 0.35);
+    for (let i = 0; i < n; i++) pendingSpawns.push({ at: simTime + (dur * i) / Math.max(1, n - 1 || 1) });
+  }
+  function liveCountNow() { let c = 0; for (const b of bodies) if (b.live) c++; return c; }
+  function processSpawns() {
+    while (pendingSpawns.length && pendingSpawns[0].at <= simTime) {
+      pendingSpawns.shift();
+      if (liveCountNow() >= BODY_CAP) continue;       // cap: skip, never degrade
+      const b = makeBody(HOPPER.x + (Math.random() - 0.5) * (HOPPER.w - 18), HOPPER.y - 6, 'coin');
+      b.px = b.x - (Math.random() - 0.5) * 1.6; b.py = b.y - 1.5;
+      bodies.push(b);
+      lastDropTime = simTime;                          // bursts extend the settle window
+    }
+    pendingSpawns.sort((a, c) => a.at - c.at);
+  }
+  function bonusPinTick() {
+    if (!mechActive) return;
+    if (simTime >= nextRelocateAt) { pickLitPins(); nextRelocateAt = simTime + 9 + Math.random() * 2; }
+    if (litPins.length < 2 && relightAt >= 0 && simTime >= relightAt) { relightOnePin(); relightAt = -1; }
+    flashPins = flashPins.filter(f => f.until > simTime);
   }
 
   // Line-segment collider for the deflector ledge: closest-point projection,
@@ -622,8 +738,26 @@
     pusherXprev = pusherX;
     if (mechActive) {
       trayCX = TRAY_CX0 + TRAY_AMP * Math.sin(2 * Math.PI * TRAY_HZ * simTime);
-      pusherX = PUSH_BACK + (PUSH_FRONT - PUSH_BACK) * (0.5 - 0.5 * Math.cos(2 * Math.PI * PUSH_HZ * simTime));
+      if (mega) {
+        // Scripted mega stroke: ease back to base, wind-up pause, slow drive
+        // to 1.5x reach, hold, return. BASE cosine untouched; phase resumes
+        // at zero (= PUSH_BACK) so there is no positional jump afterwards.
+        mega.t += H;
+        const t = mega.t;
+        const ease = u => u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+        if (t < 0.6) pusherX = mega.from + (PUSH_BACK - mega.from) * ease(Math.min(1, t / 0.6));
+        else if (t < 0.85) { pusherX = PUSH_BACK; if (!reduced) shakeMag = Math.max(shakeMag, 2.2); }
+        else if (t < 2.05) { pusherX = PUSH_BACK + (MEGA_FRONT - PUSH_BACK) * ease((t - 0.85) / 1.2); if (!reduced) shakeMag = Math.max(shakeMag, 3); }
+        else if (t < 2.25) pusherX = MEGA_FRONT;
+        else if (t < 3.15) pusherX = MEGA_FRONT + (PUSH_BACK - MEGA_FRONT) * ease((t - 2.25) / 0.9);
+        else { pusherX = PUSH_BACK; mega = null; pushPhase = 0; updateMegaUI(); }
+      } else {
+        pushPhase += 2 * Math.PI * PUSH_HZ * H;
+        pusherX = PUSH_BACK + (PUSH_FRONT - PUSH_BACK) * (0.5 - 0.5 * Math.cos(pushPhase));
+      }
     }
+    bonusPinTick();
+    processSpawns();
 
     for (const b of bodies) integrate(b);
     trayCarry();
@@ -686,6 +820,7 @@
     const mult = fever ? 2 : 1;
     let base;
     if (b.kind === 'prize') { base = 500; prizesCollected++; }
+    else if (b.kind === 'sack') { base = 100; prizesCollected++; sacksCollected++; }
     else if (b.kind === 'gold') { base = 250; goldCollected++; coinsCollected++; }
     else { base = 50; coinsCollected++; }
     const pts = base * mult;
@@ -698,9 +833,18 @@
 
     Arcade.sfx.coin();
     if (b.kind === 'prize') Arcade.sfx.correct(3);
+    if (b.kind === 'sack') {
+      // SACK BURST: the sack tears open — its coins cascade from the hopper as
+      // BOARD coins (they still have to be pushed off; magazine untouched).
+      Arcade.sfx.fanfare();
+      spawnBurst(b.value, 1.2);
+      spawnSparks(b.x, b.y, 26, true);
+      announce.textContent = 'Coin sack! ' + b.value + ' coins pour into the machine.';
+    }
     // fly the points up toward the score readout
-    popCollect(b, '+' + pts, b.kind === 'coin' ? '#ffd24d' : (b.kind === 'gold' ? '#ffe27a' : '#5cffe4'));
-    if (!reduced) shakeMag = Math.min(8, shakeMag + (b.kind === 'prize' ? 7 : 2));
+    popCollect(b, b.kind === 'sack' ? '+' + pts + ' · £' + b.value + ' BURST' : '+' + pts,
+      b.kind === 'coin' ? '#ffd24d' : (b.kind === 'gold' || b.kind === 'sack' ? '#ffe27a' : '#5cffe4'));
+    if (!reduced) shakeMag = Math.min(8, shakeMag + (b.kind === 'prize' || b.kind === 'sack' ? 7 : 2));
     updateMarquee();
   }
 
@@ -777,7 +921,7 @@
   function cullBodies() {
     // recycle dead bodies + hard population cap for performance
     bodies = bodies.filter(b => b.live);
-    if (bodies.length > 68) {
+    if (bodies.length > BODY_CAP) {
       // drop the oldest sleeping platform coin that is safely away from the lip
       for (let i = 0; i < bodies.length; i++) {
         const b = bodies[i];
@@ -870,6 +1014,7 @@
       const golden = streak > 0 && streak % 3 === 0;
       if (golden) goldenPending++;
       mintCoin(golden);
+      if (megaCharge < MEGA_NEED) { megaCharge++; updateMegaUI(); }
       askRecords.push({ term: concept.term, outcome: concept._wrongOnce ? 'redeemed' : 'correct' });
       Arcade.sfx.correct(streak);
       Arcade.streakCall && Arcade.streakCall(streak);
@@ -961,7 +1106,7 @@
       ],
       share: {
         subject: subj, level: level, bigLabel: 'POINTS',
-        statLine: '🪙 ' + coinsCollected + ' coins  ·  🧸 ' + prizesCollected + '/' + PRIZE_N + ' prizes  ·  🔥 ' + bestStreak,
+        statLine: '🪙 ' + coinsCollected + ' coins  ·  🧸 ' + prizesCollected + '/' + PRIZE_N + ' prizes (' + sacksCollected + ' sacks)  ·  🔥 ' + bestStreak,
       },
       onAgain: restart,
     });
@@ -970,10 +1115,13 @@
 
   function restart() {
     magazine = 0; score = 0; streak = 0; bestStreak = 0;
-    coinsCollected = 0; goldCollected = 0; prizesCollected = 0;
+    coinsCollected = 0; goldCollected = 0; prizesCollected = 0; sacksCollected = 0;
     simTime = 0; lastDropTime = -999; feverUntil = -1; collectTimes.length = 0; sparks = [];
     asked = 0; correctCount = 0; quizExhausted = false; goldenPending = 0;
     askRecords.length = 0; currentConcept = null;
+    megaCharge = 0; mega = null; pushPhase = 0;
+    litPins = []; flashPins = []; pendingSpawns = []; hopperOpenUntil = -1;
+    nextRelocateAt = 0; relightAt = -1;
     for (const c of concepts) delete c._wrongOnce;
     launcherX = TRAY_CX0; moveDir = 0;
     stockMachine();
@@ -983,6 +1131,7 @@
     buildQueue();
     nextQuestion();
     updateDropBtn();
+    updateMegaUI();
     startLoop();
   }
 
@@ -1052,6 +1201,38 @@
       ctx.beginPath(); ctx.ellipse(b.x, b.y + b.r * 0.85, b.r * 0.95, b.r * 0.3, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
     const px = (b.r * 2) / SPRITE_N;
     drawSprite(ctx, b.sprite, b.x, b.y, px, b.blink > 0);
+    ctx.restore();
+  }
+
+  function drawSack(b) {
+    ctx.save();
+    if (!reduced) { ctx.globalAlpha = 0.3; ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.ellipse(b.x, b.y + b.r * 0.85, b.r * 0.95, b.r * 0.3, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+    // chunky hessian pouch with a tied neck
+    const g = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.25, b.r * 0.2, b.x, b.y + 2, b.r * 1.1);
+    g.addColorStop(0, '#e0a95a'); g.addColorStop(0.6, '#b97f34'); g.addColorStop(1, '#7d5218');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(b.x - b.r * 0.35, b.y - b.r * 0.72);
+    ctx.quadraticCurveTo(b.x - b.r * 1.15, b.y - b.r * 0.25, b.x - b.r * 0.92, b.y + b.r * 0.45);
+    ctx.quadraticCurveTo(b.x - b.r * 0.7, b.y + b.r * 0.98, b.x, b.y + b.r * 0.98);
+    ctx.quadraticCurveTo(b.x + b.r * 0.7, b.y + b.r * 0.98, b.x + b.r * 0.92, b.y + b.r * 0.45);
+    ctx.quadraticCurveTo(b.x + b.r * 1.15, b.y - b.r * 0.25, b.x + b.r * 0.35, b.y - b.r * 0.72);
+    ctx.closePath(); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#54350d'; ctx.stroke();
+    // neck + tie
+    ctx.fillStyle = '#a06a26';
+    ctx.fillRect(b.x - b.r * 0.34, b.y - b.r * 1.02, b.r * 0.68, b.r * 0.4);
+    ctx.strokeStyle = '#ffd24d'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(b.x - b.r * 0.4, b.y - b.r * 0.68); ctx.lineTo(b.x + b.r * 0.4, b.y - b.r * 0.68); ctx.stroke();
+    // £ value tag
+    ctx.fillStyle = '#ffe9b8';
+    ctx.font = '800 ' + Math.round(b.r * 0.72) + 'px "Space Grotesk", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('£' + b.value, b.x, b.y + b.r * 0.18);
+    // glint
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.ellipse(b.x - b.r * 0.4, b.y - b.r * 0.2, b.r * 0.16, b.r * 0.3, 0.5, 0, 7); ctx.fill();
     ctx.restore();
   }
 
@@ -1130,12 +1311,45 @@
       ctx.strokeStyle = 'rgba(120,80,20,0.8)'; ctx.lineWidth = 1.4; ctx.stroke();
     }
 
-    // pins
-    for (const p of pegs) {
-      const pg = ctx.createRadialGradient(p.x - 2, p.y - 2, 1, p.x, p.y, PEG_R);
-      pg.addColorStop(0, '#c8bcff'); pg.addColorStop(1, '#6a5bc4');
-      ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(p.x, p.y, PEG_R, 0, 7); ctx.fill();
+    // pins (bonus pins pulse cyan; freshly hit ones flash then go dark)
+    const pinPulse = reduced ? 0.5 : (0.5 + 0.5 * Math.sin(Date.now() / 190));
+    for (let pi = 0; pi < pegs.length; pi++) {
+      const p = pegs[pi];
+      const lit = litPins.indexOf(pi) !== -1;
+      let flash = false;
+      for (const f of flashPins) if (f.i === pi) flash = true;
+      const r = lit ? PEG_R + 1.6 + pinPulse * 1.4 : PEG_R;
+      if (lit) {
+        const glow = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, r * 2.6);
+        glow.addColorStop(0, 'rgba(92,255,228,' + (0.35 + pinPulse * 0.3) + ')');
+        glow.addColorStop(1, 'rgba(92,255,228,0)');
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(p.x, p.y, r * 2.6, 0, 7); ctx.fill();
+      }
+      const pg = ctx.createRadialGradient(p.x - 2, p.y - 2, 1, p.x, p.y, r);
+      if (flash) { pg.addColorStop(0, '#ffffff'); pg.addColorStop(1, '#ffd24d'); }
+      else if (lit) { pg.addColorStop(0, '#d8fff7'); pg.addColorStop(1, '#1fbfa4'); }
+      else { pg.addColorStop(0, '#c8bcff'); pg.addColorStop(1, '#6a5bc4'); }
+      ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(p.x, p.y, flash ? r + 2 : r, 0, 7); ctx.fill();
       ctx.fillStyle = 'rgba(92,255,228,0.7)'; ctx.beginPath(); ctx.arc(p.x - 2, p.y - 2, 1.6, 0, 7); ctx.fill();
+    }
+
+    // hopper flap in the canopy above the tray — opens while a burst rains
+    {
+      const open = simTime < hopperOpenUntil;
+      const hw = HOPPER.w / 2;
+      ctx.fillStyle = '#241d52'; rr(HOPPER.x - hw - 6, HOPPER.y - 12, HOPPER.w + 12, 14, 4); ctx.fill();
+      ctx.strokeStyle = 'rgba(126,109,255,0.5)'; ctx.lineWidth = 1.5;
+      rr(HOPPER.x - hw - 6, HOPPER.y - 12, HOPPER.w + 12, 14, 4); ctx.stroke();
+      ctx.fillStyle = open ? 'rgba(255,210,77,0.85)' : 'rgba(255,210,77,0.3)';
+      ctx.font = '700 9px "DM Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('BONUS HOPPER', HOPPER.x, HOPPER.y - 5);
+      // flap doors swing open
+      ctx.strokeStyle = open ? '#ffd24d' : '#4a3f8c'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      const swing = open ? 0.9 : 0;
+      ctx.beginPath(); ctx.moveTo(HOPPER.x - hw, HOPPER.y + 2);
+      ctx.lineTo(HOPPER.x - hw + Math.cos(swing) * (hw - 4), HOPPER.y + 2 + Math.sin(swing) * (hw - 4)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(HOPPER.x + hw, HOPPER.y + 2);
+      ctx.lineTo(HOPPER.x + hw - Math.cos(swing) * (hw - 4), HOPPER.y + 2 + Math.sin(swing) * (hw - 4)); ctx.stroke();
     }
 
     // upper tray (oscillating shelf) with wear highlights
@@ -1184,9 +1398,10 @@
     ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(pbBack + 2, PLAT_TOP - PUSH_H + 2, PUSH_W - 4, 2);
     ctx.fillStyle = 'rgba(92,255,228,0.5)'; ctx.fillRect(pusherX - 3, PLAT_TOP - PUSH_H, 3, PUSH_H);
 
-    // bodies: prizes behind coins for depth, then coins
+    // bodies: prizes/sacks behind coins for depth, then coins
     for (const b of bodies) if (b.live && b.kind === 'prize') drawPrize(b);
-    for (const b of bodies) if (b.live && b.kind !== 'prize') drawCoin(b);
+    for (const b of bodies) if (b.live && b.kind === 'sack') drawSack(b);
+    for (const b of bodies) if (b.live && b.kind !== 'prize' && b.kind !== 'sack') drawCoin(b);
 
     // collection sparkles (drawn in-world so they never spill over the panel)
     for (const s of sparks) {
@@ -1250,6 +1465,28 @@
     if (m) m.textContent = magazine > 0 ? '× ' + magazine : (quizExhausted ? 'empty' : 'answer to mint');
   }
 
+  function updateMegaUI() {
+    const wrap = document.getElementById('mega-row');
+    if (!wrap) return;
+    const ready = megaCharge >= MEGA_NEED && !mega;
+    wrap.classList.toggle('full', ready);
+    wrap.querySelectorAll('.mp-seg').forEach((s, i) => s.classList.toggle('on', i < megaCharge));
+    const btn = document.getElementById('btn-mega');
+    if (btn) btn.disabled = !ready || state !== 'playing';
+  }
+
+  function fireMega() {
+    if (megaCharge < MEGA_NEED || mega || state !== 'playing') return false;
+    megaCharge = 0;
+    mega = { t: 0, from: pusherX };
+    Arcade.sfx.heartbeat();
+    Arcade.sfx.riser();
+    if (!reduced) shakeMag = Math.max(shakeMag, 3);
+    announce.textContent = 'Mega push! The bar drives deep into the pile.';
+    updateMegaUI();
+    return true;
+  }
+
   function bindControls() {
     const left = document.getElementById('btn-left');
     const right = document.getElementById('btn-right');
@@ -1270,6 +1507,8 @@
     hold(zoneL, -1); hold(zoneR, 1);
     drop.addEventListener('click', dropCoin);
     zoneM.addEventListener('pointerdown', e => { e.preventDefault(); dropCoin(); });
+    const megaBtn = document.getElementById('btn-mega');
+    if (megaBtn) megaBtn.addEventListener('click', fireMega);
 
     document.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1282,6 +1521,7 @@
       if (e.key === 'ArrowLeft') { moveDir = -1; e.preventDefault(); }
       else if (e.key === 'ArrowRight') { moveDir = 1; e.preventDefault(); }
       else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); dropCoin(); }
+      else if (e.key === 'm' || e.key === 'M') { e.preventDefault(); fireMega(); }
     });
     document.addEventListener('keyup', e => {
       if (e.key === 'ArrowLeft' && moveDir === -1) moveDir = 0;
@@ -1313,9 +1553,18 @@
               '<button id="btn-drop" aria-label="Drop a coin">DROP <span class="mag"></span></button>' +
               '<button id="btn-right" class="deck-move" aria-label="Aim launcher right">▶</button>' +
             '</div>' +
-            '<div class="pu-hint-row pu-kbd">◀ ▶ or hold the edges to aim · Space / tap centre to drop · 1–4 to answer</div>' +
+            '<div class="pu-hint-row pu-kbd">◀ ▶ or hold the edges to aim · Space / tap centre to drop · 1–4 to answer · M = mega push</div>' +
           '</div>' +
-          '<div class="pu-quiz"><div class="qp" id="qp"></div></div>' +
+          '<div class="pu-quiz">' +
+            '<div class="qp" id="qp"></div>' +
+            '<div id="mega-row">' +
+              '<div class="mp-label">MEGA<br>PUSH</div>' +
+              '<div class="mp-segs">' +
+                '<i class="mp-seg"></i><i class="mp-seg"></i><i class="mp-seg"></i><i class="mp-seg"></i>' +
+              '</div>' +
+              '<button type="button" id="btn-mega" aria-label="Fire the mega push" disabled>FIRE</button>' +
+            '</div>' +
+          '</div>' +
         '</div>' +
       '</div>';
 
@@ -1337,6 +1586,7 @@
   buildQueue();
   nextQuestion();
   updateDropBtn();
+  updateMegaUI();
   startLoop();
   Arcade.logMission && Arcade.logMission({ game: 'coin-pusher', stem: stem, topic: topic });
 
@@ -1354,6 +1604,19 @@
       get goldenPending() { return goldenPending; },
       get coinsCollected() { return coinsCollected; },
       get prizesCollected() { return prizesCollected; },
+      get sacksCollected() { return sacksCollected; },
+      get litPins() { return litPins.slice(); },
+      get pendingSpawnCount() { return pendingSpawns.length; },
+      get megaCharge() { return megaCharge; },
+      get megaActive() { return !!mega; },
+      get pusherX() { return pusherX; },
+      get bodyCap() { return BODY_CAP; },
+      armMega() { megaCharge = MEGA_NEED; updateMegaUI(); return true; },
+      fireMega: fireMega,
+      burst(n, dur) { spawnBurst(n, dur || 1.2); },
+      // force the lit pair onto specific pegs (deterministic pin-hit tests)
+      setLitPins(a, b2) { litPins = [a, b2].filter(i => i >= 0 && i < pegs.length); return litPins.slice(); },
+      get pegs() { return pegs.map(p => ({ x: p.x, y: p.y })); },
       get feverActive() { return simTime < feverUntil; },
       get simTime() { return simTime; },
       get currentTerm() { return currentConcept ? currentConcept.term : null; },
@@ -1362,7 +1625,7 @@
       get correctIdx() { return qCorrectIdx; },
       get liveCount() { return bodies.filter(b => b.live).length; },
       get restingCount() { return bodies.filter(b => b.live && b.sleep).length; },
-      geometry: { WX0, WX1, TRAY_TOP, PLAT_TOP, FLIP, TROUGH_Y, LAUNCH_MIN, LAUNCH_MAX, PUSH_FRONT, PUSH_BACK, PUSH_H, DEFL, SEAL },
+      geometry: { WX0, WX1, TRAY_TOP, PLAT_TOP, FLIP, TROUGH_Y, LAUNCH_MIN, LAUNCH_MAX, PUSH_FRONT, PUSH_BACK, PUSH_H, MEGA_FRONT, DEFL, SEAL, HOPPER },
       answer(right) {
         if (!currentConcept || qLocked) return false;
         answerQuestion(right ? qCorrectIdx : (qCorrectIdx === 0 ? 1 : 0), false);
