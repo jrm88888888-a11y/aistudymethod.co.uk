@@ -339,6 +339,11 @@ const VOCAB_DATA = (REEL
 const META = REEL
   ? { topic: REEL.topicDisplay, subject: REEL.subject, board: REEL.level }
   : JSON.parse(sessionStorage.getItem('vocabMeta') || '{}');
+// Reel mode: every carrier question is forced to this hero concept (see showQuestion).
+// Guarded behind REEL; normal vocab play reads the shot carrier as-is.
+const REEL_HERO_ITEM = (REEL && REEL.hero)
+  ? (VOCAB_DATA.find(v => v.term === REEL.hero.term) || VOCAB_DATA[0])
+  : null;
 
 if (!VOCAB_DATA.length) {
   document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#8b90a8;font-family:sans-serif;text-align:center;padding:2rem;"><div><p style="font-size:1.2rem;margin-bottom:1rem">This game needs a vocabulary list first.</p><a href="vocab-hub.html?game=spaceinvaders" style="color:#00ffa3">Choose your subject &amp; topic →</a></div></div>';
@@ -1326,6 +1331,10 @@ function updateTimerDisplay() {
 function showQuestion(item) {
   state = 'question';
   vocabAnswered++;
+
+  // Reel mode HERO BEAT: whichever carrier was shot, the QUESTION is always the
+  // hero concept (term + options + trap). Reuses the hero-option branch below.
+  if (REEL_HERO_ITEM) item = REEL_HERO_ITEM;
 
   document.getElementById('q-term').textContent = item.term;
   document.getElementById('q-points').textContent = '';

@@ -248,6 +248,9 @@
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = reel ? reel.concepts.slice() : ((spec && spec.concepts) || [])
     .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  // Reel mode: the hero concept every served question is forced to (see
+  // nextQuestion / buildOptions). Guarded behind `reel`; normal play unchanged.
+  const heroConcept = reel ? (concepts.find(c => c.term === reel.hero.term) || concepts[0]) : null;
   // Distractor pool from the misconception bank — DEFINITION-shaped strings only.
   const isDefShaped = s => typeof s === 'string' && s.trim().length >= 20 && /\s/.test(s) && !/^[\d\s.,%-]+$/.test(s);
   const bankMisc = reel ? [] : (((bank && bank.items) || [])
@@ -1058,7 +1061,11 @@
   function nextQuestion() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     if (!qQueue.length) { onQuizExhausted(); return; }
-    currentConcept = qQueue.shift();
+    // Reel mode HERO BEAT: every served question is the hero concept (term +
+    // options + trap), whichever card the queue advances. The queue still drains
+    // normally so the 'Question X of N' progression and exhaustion are unchanged.
+    const served = qQueue.shift();
+    currentConcept = reel ? heroConcept : served;
     qLocked = false;
     const opts = buildOptions(currentConcept);
     const golden = streak >= 2;   // answering this correctly makes 3-in-a-row

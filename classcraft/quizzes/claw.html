@@ -241,6 +241,9 @@
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = reel ? reel.concepts.slice() : ((spec && spec.concepts) || [])
     .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  // Reel mode: the hero concept every question is forced to (see startQuestion /
+  // buildOptions). Guarded strictly behind `reel` so normal spec play is unchanged.
+  const heroConcept = reel ? (concepts.find(c => c.term === reel.hero.term) || concepts[0]) : null;
   // Distractor pool from the misconception bank — but only DEFINITION-shaped
   // strings. Banks contain junk like "22", "44", "Phenotype", "In the cell
   // membrane"; a good distractor must read like a definition, so require a
@@ -956,7 +959,11 @@
   function startQuestion() {
     currentToy = held;
     const toy = held;
-    const opts = buildOptions(toy);
+    // Reel mode HERO BEAT: whichever plushie was grabbed, the QUESTION is always
+    // the hero concept (term + options + trap). The grabbed toy stays as-is
+    // visually and for scoring; only the asked concept is forced to the hero.
+    const qConcept = reel ? heroConcept : toy;
+    const opts = buildOptions(qConcept);
     setState('question');
     document.getElementById('cab-wrap').classList.remove('aim');
     const ov = document.getElementById('q-overlay');
@@ -964,7 +971,7 @@
     const dgTag = dgStage ? '<span class="gold">DOUBLE GRAB · toy ' + dgStage + ' of 2</span> · ' : '';
     ov.innerHTML =
       '<div class="q-ask">' + dgTag + 'Which is the definition?</div>' +
-      '<h3 class="q-term">' + esc(toy.term) + goldTag + '</h3>' +
+      '<h3 class="q-term">' + esc(qConcept.term) + goldTag + '</h3>' +
       '<div id="q-timer"><i></i></div>' +
       '<div class="q-opts">' +
         opts.map((o, i) =>
@@ -976,7 +983,7 @@
     document.body.classList.add('claw-q');   // park the mute FAB clear of the answers
     ov.querySelectorAll('.q-opt').forEach(b =>
       b.addEventListener('click', () => answerQuestion(parseInt(b.dataset.idx, 10))));
-    announce.textContent = 'Question: which is the definition of ' + toy.term + '?';
+    announce.textContent = 'Question: which is the definition of ' + qConcept.term + '?';
 
     qStartMs = performance.now();
     const fill = ov.querySelector('#q-timer i');
