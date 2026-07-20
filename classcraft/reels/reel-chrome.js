@@ -50,14 +50,14 @@
 
     /* branding bar */
     '#' + STAGE_ID + ' .reel-bar{flex:0 0 auto;display:flex;align-items:center;',
-    '  justify-content:space-between;gap:8px;height:72px;padding:8px 12px;',
+    '  justify-content:space-between;gap:6px;height:128px;padding:8px 10px;',
     '  background:linear-gradient(180deg,rgba(26,19,64,.96),rgba(13,10,48,.96));',
     '  border-bottom:2px solid #7e6dff;box-shadow:0 2px 14px rgba(126,109,255,.35)}',
-    '#' + STAGE_ID + ' .reel-brand{display:flex;align-items:center;gap:8px;flex:0 0 auto}',
-    '#' + STAGE_ID + ' .reel-vtile{width:34px;height:34px;border-radius:8px;flex:0 0 auto;',
+    '#' + STAGE_ID + ' .reel-brand{display:flex;align-items:center;gap:7px;flex:0 0 auto}',
+    '#' + STAGE_ID + ' .reel-vtile{width:38px;height:38px;border-radius:9px;flex:0 0 auto;',
     '  background:linear-gradient(135deg,#1fb89a,#4f6bd8 55%,#8b5cf6);',
     '  display:flex;align-items:center;justify-content:center;',
-    '  font-family:"Playfair Display",Georgia,serif;font-weight:700;font-size:21px;color:#fff;',
+    '  font-family:"Playfair Display",Georgia,serif;font-weight:700;font-size:23px;color:#fff;',
     '  box-shadow:0 0 14px rgba(79,107,216,.55),0 0 4px rgba(31,184,154,.6)}',
     '#' + STAGE_ID + ' .reel-word{display:flex;flex-direction:column;line-height:1.2}',
     '#' + STAGE_ID + ' .reel-word b{font-family:"Press Start 2P",monospace;font-size:6px;',
@@ -65,10 +65,10 @@
     '#' + STAGE_ID + ' .reel-word span{font-family:"Press Start 2P",monospace;font-size:6px;',
     '  letter-spacing:1px;color:#5cffe4;margin-top:3px}',
     '#' + STAGE_ID + ' .reel-marq{flex:1 1 auto;min-width:0;text-align:center;',
-    '  font-family:"Press Start 2P",monospace;font-size:10px;line-height:1.5;letter-spacing:.5px;',
-    '  color:#ffd24d;text-shadow:0 0 6px rgba(255,210,77,.85),0 0 16px rgba(255,159,28,.5),2px 2px 0 #7a2bd6;',
-    '  animation:reelFlick 4s infinite}',
-    '#' + STAGE_ID + ' .reel-mascot{flex:0 0 auto;line-height:0;width:40px;height:40px;',
+    '  font-family:"Press Start 2P",monospace;font-size:31px;line-height:1.12;letter-spacing:1px;',
+    '  color:#ffd24d;text-shadow:0 0 8px rgba(255,210,77,.9),0 0 22px rgba(255,159,28,.55),3px 3px 0 #7a2bd6;',
+    '  animation:reelFlick 4s infinite;white-space:nowrap}',
+    '#' + STAGE_ID + ' .reel-mascot{flex:0 0 auto;line-height:0;width:48px;height:48px;',
     '  display:flex;align-items:center;justify-content:center}',
     '#' + STAGE_ID + ' .reel-mascot svg{display:block;filter:drop-shadow(0 0 6px rgba(126,109,255,.5))}',
 
@@ -156,15 +156,15 @@
     brand.appendChild(vtile);
     brand.appendChild(word);
 
-    /* centre — SUBJECTS ARCADE pixel marquee */
+    /* centre — SUBJECTS ARCADE pixel marquee, stacked big to fill the bar */
     var marq = el('div', 'reel-marq');
-    marq.textContent = 'SUBJECTS ARCADE';
+    marq.innerHTML = 'SUBJECTS<br>ARCADE';
 
     /* right — pixel mascot (optional) */
     var mascot = el('div', 'reel-mascot');
     mascot.setAttribute('aria-hidden', 'true');
     if (window.ArcadeIcons && typeof window.ArcadeIcons.svg === 'function') {
-      var svg = window.ArcadeIcons.svg('mascot', 40);
+      var svg = window.ArcadeIcons.svg('mascot', 48);
       if (svg) { mascot.innerHTML = svg; }
     }
 
