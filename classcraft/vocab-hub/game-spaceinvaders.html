@@ -309,6 +309,9 @@
 <div id="announce" aria-live="polite" class="sr-only"></div>
 <script src="../quizzes/arcade.js"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
+<script src="../quizzes/arcade-icons.js?v=20260720"></script>
+<script src="../reels/reel-data.js?v=20260720"></script>
+<script src="../reels/reel-chrome.js?v=20260720"></script>
 <script>
 /* ============================================================
    SPACE INVADERS VOCAB — v2 engine
@@ -316,13 +319,26 @@
    combo multiplier · power-ups · synth audio · screen shake
    ============================================================ */
 
+// ── Reel mode: curated single-topic pack for TikTok recording ──
+// When ?reel=<key> matches a window.REELS pack we BYPASS sessionStorage and
+// build the vocab list from the pack, brand the page as a 9:16 stage, and
+// force the myth-buster hero beat. No-reel behaviour is unchanged.
+const REEL_KEY = new URLSearchParams(location.search).get('reel');
+const REEL = (REEL_KEY && window.REELS && window.REELS[REEL_KEY]) ? window.REELS[REEL_KEY] : null;
+if (REEL) { window.__aismStudyInstalled = true; }   // skip the study-first screen in reel mode
+
 // ── Load vocab ──
 // Normalise the definition field: hub/arcade hand-offs use `def`, some older
-// payloads used `definition`. Everything downstream reads `.def`.
-const VOCAB_DATA = JSON.parse(sessionStorage.getItem('vocab') || '[]')
+// payloads used `definition`. Everything downstream reads `.def`. Reel packs
+// already carry `def`, so they flow through the same normaliser.
+const VOCAB_DATA = (REEL
+  ? REEL.concepts.map(c => ({ term: c.term, def: c.def }))
+  : JSON.parse(sessionStorage.getItem('vocab') || '[]'))
   .map(v => ({ term: v.term, def: v.def != null ? v.def : v.definition }))
   .filter(v => v.term && v.def);
-const META       = JSON.parse(sessionStorage.getItem('vocabMeta') || '{}');
+const META = REEL
+  ? { topic: REEL.topicDisplay, subject: REEL.subject, board: REEL.level }
+  : JSON.parse(sessionStorage.getItem('vocabMeta') || '{}');
 
 if (!VOCAB_DATA.length) {
   document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#8b90a8;font-family:sans-serif;text-align:center;padding:2rem;"><div><p style="font-size:1.2rem;margin-bottom:1rem">This game needs a vocabulary list first.</p><a href="vocab-hub.html?game=spaceinvaders" style="color:#00ffa3">Choose your subject &amp; topic →</a></div></div>';
@@ -335,6 +351,46 @@ if (META.topic) {
 }
 
 document.getElementById('btn-quit').addEventListener('click', () => window.location.href = 'vocab-hub.html');
+
+/* ============================================================
+   REEL MODE — portrait branded stage + forced hero beat
+   ============================================================ */
+function reelApply() {
+  if (!REEL || !window.ReelChrome) return;
+  ReelChrome.apply({ subject: REEL.subject, level: REEL.level, topicDisplay: REEL.topicDisplay });
+  const stage = ReelChrome.stageEl;
+  if (!stage) return;
+  // Keep the branding header (bar + rule + topic chip) above the in-stage question
+  // modal so the AI Study Method branding never drops out of a recording. Scoped
+  // to #reel-chrome-stage, which only exists in reel mode — no effect on normal play.
+  if (!document.getElementById('reel-bar-lift')) {
+    const st = document.createElement('style');
+    st.id = 'reel-bar-lift';
+    st.textContent = '#reel-chrome-stage .reel-bar,#reel-chrome-stage .reel-rule,#reel-chrome-stage .reel-chip-row{position:relative;z-index:600}';
+    document.head.appendChild(st);
+  }
+  // Relocate the game screens + overlays into the portrait stage so they render
+  // below the branding bar (and inside the stage stacking context, so the
+  // question overlay sits above the bar rather than behind it).
+  ['screen-start', 'screen-game', 'overlay-q', 'overlay-pause', 'overlay-result', 'announce']
+    .forEach(function (id) {
+      const node = document.getElementById(id);
+      if (node && node.parentNode !== stage) stage.appendChild(node);
+    });
+}
+// Bias the first carrier question of the run to the hero term so the beat films fast.
+function reelPrioritiseHero() {
+  if (!REEL || !REEL.hero) return;
+  const heroTerm = REEL.hero.term;
+  const i = vocabQueue.findIndex(function (v) { return v.term === heroTerm; });
+  if (i > 0) {
+    vocabQueue.unshift(vocabQueue.splice(i, 1)[0]);
+  } else if (i < 0) {
+    const src = VOCAB_DATA.find(function (v) { return v.term === heroTerm; });
+    if (src) vocabQueue.unshift(src);
+  }
+}
+if (REEL) reelApply();
 
 const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -565,6 +621,7 @@ function startGame() {
   combo = 0; comboTimer = 0; multiplier = 1;
   gameTime = 0; lastWholeSecond = -1;
   vocabQueue = shuffle([...VOCAB_DATA]).slice(0, MAX_VOCAB);
+  if (REEL) reelPrioritiseHero();
   vocabShownCount = 0; vocabCorrect = 0; vocabAnswered = 0;
   nextVocabAt = VOCAB_INTERVAL;
   nextReinforceAt = REINFORCE_INTERVAL;
@@ -1274,10 +1331,18 @@ function showQuestion(item) {
   document.getElementById('q-points').textContent = '';
   document.getElementById('btn-continue').classList.remove('visible');
 
-  const wrong = shuffle(VOCAB_DATA.filter(v => v.term !== item.term))
-    .slice(0, 3)
-    .map(v => v.def);
-  const options = shuffle([item.def, ...wrong]);
+  let options;
+  if (REEL && REEL.hero && item.term === REEL.hero.term) {
+    // Forced myth-buster beat: correct def + the hero trap (wrong by construction)
+    // + two filler concept defs. Trap always present, random position, never right.
+    const fillers = shuffle(VOCAB_DATA.filter(v => v.term !== item.term).map(v => v.def)).slice(0, 2);
+    options = shuffle([item.def, REEL.hero.trap].concat(fillers));
+  } else {
+    const wrong = shuffle(VOCAB_DATA.filter(v => v.term !== item.term))
+      .slice(0, 3)
+      .map(v => v.def);
+    options = shuffle([item.def, ...wrong]);
+  }
 
   const cont = document.getElementById('q-options');
   cont.innerHTML = '';
@@ -1431,7 +1496,7 @@ function endGame(reason) {
     ],
     emojiGrid: emojiGrid,
     bestKey: `aism-best:spaceinvaders:${META.subject || ''}:${META.topic || ''}`,
-    bestValue: score,
+    bestValue: REEL ? 0 : score,   // reel mode never mounts / submits the leaderboard
     bestSuffix: ' pts',
     insight: insight,
     shareLines: [

@@ -206,6 +206,8 @@
 
 <script src="arcade.js"></script>
 <script src="share-score.js"></script>
+<script src="../reels/reel-data.js"></script>
+<script src="../reels/reel-chrome.js"></script>
 <script>
 (async function () {
   'use strict';
@@ -217,34 +219,44 @@
   const announce = document.getElementById('announce');
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  Arcade.mountMuteButton();
-  Arcade.maybeShowChallenge && Arcade.maybeShowChallenge();
+  // ---- REEL MODE ----------------------------------------------------------
+  // When ?reel=<key> matches a curated pack in window.REELS, the game skips the
+  // normal spec/bank fetch and quality gate and builds its content from the
+  // pack, then brands the page as a 9:16 recording stage. EVERYTHING below is
+  // guarded behind `reel`; with no matching pack the game is byte-unchanged.
+  const reelKey = params.get('reel');
+  const reel = (reelKey && window.REELS && Object.prototype.hasOwnProperty.call(window.REELS, reelKey))
+    ? window.REELS[reelKey] : null;
 
-  if (!stem) {
+  Arcade.mountMuteButton();
+  if (!reel) { Arcade.maybeShowChallenge && Arcade.maybeShowChallenge(); }
+
+  if (!stem && !reel) {
     root.innerHTML = '<div class="ar-error">Missing <code>?spec=</code> parameter.</div>';
     return;
   }
 
-  const [spec, bank] = await Promise.all([
+  const [spec, bank] = reel ? [null, null] : await Promise.all([
     Arcade.fetchSpecJson(stem, '../adventures/_specs'),
     Arcade.fetchSpecJson(stem, '../evaluate/misconception-banks'),
   ]);
 
-  const topic = (spec && (spec.topic_display || spec.title)) || stem;
-  const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
-  const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const topic = reel ? reel.topicDisplay : ((spec && (spec.topic_display || spec.title)) || stem);
+  const level = reel ? reel.level : ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
+  const subj  = reel ? reel.subject : ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
-  const concepts = ((spec && spec.concepts) || [])
+  const concepts = reel ? reel.concepts.slice() : ((spec && spec.concepts) || [])
     .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
   // Distractor pool from the misconception bank — DEFINITION-shaped strings only.
   const isDefShaped = s => typeof s === 'string' && s.trim().length >= 20 && /\s/.test(s) && !/^[\d\s.,%-]+$/.test(s);
-  const bankMisc = (((bank && bank.items) || [])
+  const bankMisc = reel ? [] : (((bank && bank.items) || [])
     .flatMap(it => [it && it.misconception, it && it.random_wrong])
     .filter(isDefShaped));
 
-  // Quality gate — need at least 4 authored definitions to build a 4-way question.
-  if (!spec || concepts.length < 4) {
+  // Quality gate — need at least 4 authored definitions to build a 4-way
+  // question. Skipped in reel mode: the curated pack is pre-vetted.
+  if (!reel && (!spec || concepts.length < 4)) {
     root.innerHTML =
       '<div class="ar-badge">V · Push · The Pusher</div>' +
       '<h1 class="ar-title">' + esc(topic) + '</h1>' +
@@ -257,6 +269,43 @@
         '<a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>' +
       '</div>';
     return;
+  }
+
+  // In reel mode, brand the page as a 9:16 portrait stage and stack the machine
+  // above the question panel to fill it. Injected style + chrome are guarded, so
+  // normal play is untouched. Leaderboard / mission logging are skipped below.
+  const REEL_CSS = [
+    'html.reel-mode .ar-mute{display:none!important}',
+    'html.reel-mode #root{padding:0!important;margin:0!important;max-width:none!important;',
+    '  width:100%!important;height:100%!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}',
+    'html.reel-mode #root>.ar-badge,html.reel-mode #root>.ar-title,',
+    'html.reel-mode #root>.ar-sub,html.reel-mode #root>.ar-meta{display:none!important}',
+    'html.reel-mode .pu-stage{margin:0!important;width:100%!important;flex:1 1 auto!important;',
+    '  min-height:0!important;display:flex!important;flex-direction:column!important;padding:6px!important;box-sizing:border-box!important}',
+    'html.reel-mode .pu-layout{flex-direction:column!important;gap:8px!important;flex:1 1 auto!important;min-height:0!important}',
+    'html.reel-mode .pu-machine{flex:1 1 auto!important;min-height:0!important;display:flex!important;flex-direction:column!important}',
+    'html.reel-mode #cab-wrap{flex:1 1 auto!important;height:auto!important;min-height:0!important;border-radius:12px!important}',
+    'html.reel-mode .pu-quiz{flex:0 0 auto!important;max-width:none!important}',
+    'html.reel-mode .pu-deck{display:none!important}',
+    'html.reel-mode #mega-row{display:none!important}',
+    'html.reel-mode .pu-hint-row{display:none!important}'
+  ].join('\n');
+  if (reel) {
+    if (!window.ArcadeIcons) {
+      await new Promise(res => {
+        const s = document.createElement('script');
+        s.src = 'arcade-icons.js';
+        s.onload = res; s.onerror = res;
+        document.head.appendChild(s);
+      });
+    }
+    const rs = document.createElement('style');
+    rs.id = 'reel-game-style';
+    rs.textContent = REEL_CSS;
+    document.head.appendChild(rs);
+    if (window.ReelChrome && typeof window.ReelChrome.apply === 'function') {
+      window.ReelChrome.apply({ subject: subj, level: level, topicDisplay: topic });
+    }
   }
 
   const BEST_KEY = 'aism-pusher-best:' + stem;
@@ -937,10 +986,37 @@
     const base = [];
     while (base.length < QUESTION_TARGET) base.push.apply(base, Arcade.shuffle(concepts));
     qQueue = base.slice(0, QUESTION_TARGET);
+    // Reel mode: serve the hero term FIRST so the owner can film the
+    // wrong-tap-then-right-tap myth-busting beat immediately.
+    if (reel) {
+      const hero = concepts.find(c => c.term === reel.hero.term);
+      if (hero) {
+        qQueue = qQueue.filter(c => c.term !== reel.hero.term);
+        qQueue.unshift(hero);
+        qQueue = qQueue.slice(0, QUESTION_TARGET);
+      }
+    }
   }
 
   function buildOptions(concept) {
     const correct = concept.def;
+    // Reel mode HERO BEAT: the hero term MUST offer exactly [true def] +
+    // [pack trap] + two other concept defs. The trap always appears (shuffled
+    // among the four) and is scored WRONG by construction — only the true def
+    // is the correct index.
+    if (reel && concept.term === reel.hero.term) {
+      const trap = reel.hero.trap;
+      const fillers = [];
+      const seenH = new Set([correct, trap]);
+      for (const c of Arcade.shuffle(concepts)) {
+        if (fillers.length >= 2) break;
+        if (c.def !== correct && !seenH.has(c.def)) { seenH.add(c.def); fillers.push(c.def); }
+      }
+      const opts = Arcade.shuffle([correct, trap].concat(fillers).slice(0, 4));
+      qCorrectIdx = opts.indexOf(correct);
+      qOpts = opts;
+      return opts;
+    }
     const pool = [];
     const seen = new Set([correct]);
     for (const c of Arcade.shuffle(concepts)) {
@@ -1095,8 +1171,8 @@
         { v: '🔥 ' + bestStreak, l: 'best streak' },
       ],
       emojiGrid: grid,
-      bestKey: BEST_KEY,
-      bestValue: score,
+      bestKey: reel ? undefined : BEST_KEY,
+      bestValue: reel ? undefined : score,
       bestSuffix: ' pts',
       insight: insight,
       shareLines: [
@@ -1587,8 +1663,14 @@
   nextQuestion();
   updateDropBtn();
   updateMegaUI();
+  // Reel mode: keep the canvas sized to the portrait stage as the machine flexes
+  // (the question panel changes height between questions).
+  if (reel && window.ResizeObserver) {
+    const cw = document.getElementById('cab-wrap');
+    if (cw) { const ro = new ResizeObserver(() => fit()); ro.observe(cw); }
+  }
   startLoop();
-  Arcade.logMission && Arcade.logMission({ game: 'coin-pusher', stem: stem, topic: topic });
+  if (!reel) { Arcade.logMission && Arcade.logMission({ game: 'coin-pusher', stem: stem, topic: topic }); }
 
   /* ---- debug hook for the test harness ---- */
   if (DEBUG) {
