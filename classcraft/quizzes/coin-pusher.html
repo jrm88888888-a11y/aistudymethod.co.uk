@@ -248,9 +248,6 @@
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = reel ? reel.concepts.slice() : ((spec && spec.concepts) || [])
     .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
-  // Reel mode: the hero concept every served question is forced to (see
-  // nextQuestion / buildOptions). Guarded behind `reel`; normal play unchanged.
-  const heroConcept = reel ? (concepts.find(c => c.term === reel.hero.term) || concepts[0]) : null;
   // Distractor pool from the misconception bank — DEFINITION-shaped strings only.
   const isDefShaped = s => typeof s === 'string' && s.trim().length >= 20 && /\s/.test(s) && !/^[\d\s.,%-]+$/.test(s);
   const bankMisc = reel ? [] : (((bank && bank.items) || [])
@@ -1007,37 +1004,23 @@
     const base = [];
     while (base.length < QUESTION_TARGET) base.push.apply(base, Arcade.shuffle(concepts));
     qQueue = base.slice(0, QUESTION_TARGET);
-    // Reel mode: serve the hero term FIRST so the owner can film the
-    // wrong-tap-then-right-tap myth-busting beat immediately.
-    if (reel) {
-      const hero = concepts.find(c => c.term === reel.hero.term);
-      if (hero) {
-        qQueue = qQueue.filter(c => c.term !== reel.hero.term);
-        qQueue.unshift(hero);
-        qQueue = qQueue.slice(0, QUESTION_TARGET);
-      }
-    }
+    // Reel mode asks the SAME hero prompt on every served card (concepts are
+    // set-dressing), so no hero-first reordering is needed — the queue only
+    // drives the 'Question X of N' progression and exhaustion.
   }
 
   function buildOptions(concept) {
-    const correct = concept.def;
-    // Reel mode HERO BEAT: the hero term MUST offer exactly [true def] +
-    // [pack trap] + two other concept defs. The trap always appears (shuffled
-    // among the four) and is scored WRONG by construction — only the true def
-    // is the correct index.
-    if (reel && concept.term === reel.hero.term) {
-      const trap = reel.hero.trap;
-      const fillers = [];
-      const seenH = new Set([correct, trap]);
-      for (const c of Arcade.shuffle(concepts)) {
-        if (fillers.length >= 2) break;
-        if (c.def !== correct && !seenH.has(c.def)) { seenH.add(c.def); fillers.push(c.def); }
-      }
-      const opts = Arcade.shuffle([correct, trap].concat(fillers).slice(0, 4));
-      qCorrectIdx = opts.indexOf(correct);
+    // Reel mode HERO BEAT: every served question is the single myth-busting hero
+    // prompt with EXACTLY TWO options — the truth (hero.correct, scored right)
+    // and the misconception (hero.wrong, scored wrong), shuffled. Concept defs are
+    // set-dressing and never appear as options.
+    if (reel) {
+      const opts = Arcade.shuffle([reel.hero.correct, reel.hero.wrong]);
+      qCorrectIdx = opts.indexOf(reel.hero.correct);
       qOpts = opts;
       return opts;
     }
+    const correct = concept.def;
     const pool = [];
     const seen = new Set([correct]);
     for (const c of Arcade.shuffle(concepts)) {
@@ -1061,11 +1044,10 @@
   function nextQuestion() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     if (!qQueue.length) { onQuizExhausted(); return; }
-    // Reel mode HERO BEAT: every served question is the hero concept (term +
-    // options + trap), whichever card the queue advances. The queue still drains
-    // normally so the 'Question X of N' progression and exhaustion are unchanged.
-    const served = qQueue.shift();
-    currentConcept = reel ? heroConcept : served;
+    // Reel mode HERO BEAT: the queue still drains normally (so 'Question X of N'
+    // and exhaustion are unchanged), but every served question is the single hero
+    // prompt with two options. The served card is set-dressing only in reel mode.
+    currentConcept = qQueue.shift();
     qLocked = false;
     const opts = buildOptions(currentConcept);
     const golden = streak >= 2;   // answering this correctly makes 3-in-a-row
@@ -1075,8 +1057,8 @@
         '<span class="qp-count">Question ' + (asked + 1) + ' of ' + QUESTION_TARGET + '</span>' +
         '<span class="qp-streak' + (streak >= 2 ? ' hot' : '') + '">' + (streak > 0 ? '🔥 ' + streak + ' streak' : 'Build a streak') + '</span>' +
       '</div>' +
-      '<div class="qp-ask">Which is the definition?' + (golden ? ' · next correct mints GOLD' : '') + '</div>' +
-      '<h3 class="qp-term">' + esc(currentConcept.term) + '</h3>' +
+      '<div class="qp-ask">' + (reel ? (golden ? 'Next correct mints GOLD' : '') : ('Which is the definition?' + (golden ? ' · next correct mints GOLD' : ''))) + '</div>' +
+      '<h3 class="qp-term">' + (reel ? esc(reel.hero.prompt) : esc(currentConcept.term)) + '</h3>' +
       '<div id="qp-timer"><i></i></div>' +
       '<div class="qp-opts">' +
         opts.map((o, i) =>
@@ -1087,7 +1069,9 @@
       '<div id="qp-corr"></div>';
     qp.querySelectorAll('.qp-opt').forEach(b =>
       b.addEventListener('click', () => answerQuestion(parseInt(b.dataset.idx, 10), false)));
-    announce.textContent = 'Question ' + (asked + 1) + '. Which is the definition of ' + currentConcept.term + '?';
+    announce.textContent = reel
+      ? ('Question ' + (asked + 1) + '. ' + reel.hero.prompt + ' Choose the correct answer.')
+      : ('Question ' + (asked + 1) + '. Which is the definition of ' + currentConcept.term + '?');
     qStartMs = performance.now();
     const fill = qp.querySelector('#qp-timer i');
     timerCtl = Arcade.timer(fill, Q_MS, { onEnd: () => answerQuestion(-1, true) });
@@ -1132,11 +1116,16 @@
       }
       askRecords.push({ term: concept.term, outcome: 'wrong' });
       const corr = qp.querySelector('#qp-corr');
+      // Reel mode: the correction locks in the true hero answer, not a concept def.
       corr.innerHTML =
         '<div class="lead">✗ ' + (timedOut ? 'Time up' : 'Not quite') + ' — no coin this time</div>' +
-        '<div class="body"><b>' + esc(concept.term) + '</b>: ' + esc(concept.def) + '</div>';
+        '<div class="body">' + (reel
+          ? ('<b>' + esc(reel.hero.prompt) + '</b> ' + esc(reel.hero.correct))
+          : ('<b>' + esc(concept.term) + '</b>: ' + esc(concept.def))) + '</div>';
       corr.classList.add('show');
-      announce.textContent = (timedOut ? 'Time up. ' : 'Wrong. ') + concept.term + ' means ' + concept.def;
+      announce.textContent = reel
+        ? ((timedOut ? 'Time up. ' : 'Wrong. ') + reel.hero.prompt + ' ' + reel.hero.correct)
+        : ((timedOut ? 'Time up. ' : 'Wrong. ') + concept.term + ' means ' + concept.def);
       setTimeout(nextQuestion, reduced ? 900 : 1700);
     }
   }

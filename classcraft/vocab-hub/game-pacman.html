@@ -295,11 +295,6 @@ const VOCAB_DATA = REEL
 const META = REEL
   ? { topic: REEL.topicDisplay, subject: REEL.subject, board: REEL.level }
   : JSON.parse(sessionStorage.getItem('vocabMeta') || '{}');
-// Reel mode: every dot question is forced to this hero concept (see showQuestion).
-// Guarded behind REEL; normal vocab play reads the eaten dot as-is.
-const REEL_HERO_ITEM = (REEL && REEL.hero)
-  ? (VOCAB_DATA.find(v => v.term === REEL.hero.term) || VOCAB_DATA[0])
-  : null;
 
 if (!VOCAB_DATA.length) {
   document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#8b90a8;font-family:sans-serif;text-align:center;padding:2rem;"><div><p style="font-size:1.2rem;margin-bottom:1rem">This game needs a vocabulary list first.</p><a href="vocab-hub.html?game=pacman" style="color:#00ffa3">Choose your subject &amp; topic →</a></div></div>';
@@ -338,18 +333,9 @@ function reelApply() {
       if (node && node.parentNode !== stage) stage.appendChild(node);
     });
 }
-// Bias the first vocab question of the run to the hero term so the beat films fast.
-function reelPrioritiseHero() {
-  if (!REEL || !REEL.hero) return;
-  const heroTerm = REEL.hero.term;
-  const i = vocabQueue.findIndex(function (v) { return v.term === heroTerm; });
-  if (i > 0) {
-    vocabQueue.unshift(vocabQueue.splice(i, 1)[0]);
-  } else if (i < 0) {
-    const src = VOCAB_DATA.find(function (v) { return v.term === heroTerm; });
-    if (src) vocabQueue.unshift(src);
-  }
-}
+// Reel mode asks the SAME hero prompt on every dot (concepts are set-dressing),
+// so no queue reordering is needed — kept as a no-op for the call site below.
+function reelPrioritiseHero() {}
 if (REEL) reelApply();
 
 const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1088,26 +1074,25 @@ function showQuestion(item) {
   questionSeq++;
   vocabAnswered++;
 
-  // Reel mode HERO BEAT: whichever red dot was eaten, the QUESTION is always the
-  // hero concept (term + options + trap). Reuses the hero-option branch below.
-  if (REEL_HERO_ITEM) item = REEL_HERO_ITEM;
-
-  document.getElementById('q-term').textContent = item.term;
-  document.getElementById('q-points').textContent = '';
-  document.getElementById('btn-continue').classList.remove('visible');
-
+  // Reel mode HERO BEAT: whichever red dot was eaten (set-dressing only), the
+  // question is the single hero prompt with EXACTLY TWO options — the truth
+  // (REEL.hero.correct, scored right) and the misconception (REEL.hero.wrong,
+  // scored wrong), shuffled. Concept defs are never options in reel mode.
+  const qPromptEl = document.querySelector('#overlay-q .q-prompt');
   let options;
-  if (REEL && REEL.hero && item.term === REEL.hero.term) {
-    // Forced myth-buster beat: correct def + the hero trap (wrong by construction)
-    // + two filler concept defs. Trap always present, random position, never right.
-    const fillers = shuffle(VOCAB_DATA.filter(v => v.term !== item.term).map(v => v.definition)).slice(0, 2);
-    options = shuffle([item.definition, REEL.hero.trap].concat(fillers));
+  if (REEL && REEL.hero) {
+    document.getElementById('q-term').textContent = REEL.hero.prompt;
+    if (qPromptEl) qPromptEl.style.display = 'none';   // only the prompt shows
+    options = shuffle([REEL.hero.correct, REEL.hero.wrong]);
   } else {
+    document.getElementById('q-term').textContent = item.term;
     const wrong = shuffle(VOCAB_DATA.filter(v => v.term !== item.term))
       .slice(0, 3)
       .map(v => v.definition);
     options = shuffle([item.definition, ...wrong]);
   }
+  document.getElementById('q-points').textContent = '';
+  document.getElementById('btn-continue').classList.remove('visible');
 
   const cont = document.getElementById('q-options');
   cont.innerHTML = '';
@@ -1123,12 +1108,14 @@ function showQuestion(item) {
     cont.appendChild(btn);
   });
 
-  announce('Vocab question: what is the definition of ' + item.term + '? Press A to D to answer.');
+  announce((REEL && REEL.hero)
+    ? (REEL.hero.prompt + ' Press A or B to answer.')
+    : ('Vocab question: what is the definition of ' + item.term + '? Press A to D to answer.'));
   document.getElementById('overlay-q').classList.add('open');
 }
 
 function answerQuestion(chosen, item, btn, cont) {
-  const correct = item.definition;
+  const correct = (REEL && REEL.hero) ? REEL.hero.correct : item.definition;
   cont.querySelectorAll('.q-option').forEach(o => {
     o.style.pointerEvents = 'none';
     if (o.dataset.value === correct) o.classList.add('correct');
@@ -1145,7 +1132,9 @@ function answerQuestion(chosen, item, btn, cont) {
     startFright();                       // knowledge is power: ghosts flee
     pointsEl.textContent = '+100 points! Ghost Frenzy — go hunting!';
     pointsEl.className = 'q-points gain';
-    announce('Correct! ' + item.term + ' means: ' + correct + '. Plus 100 points and Ghost Frenzy.');
+    announce((REEL && REEL.hero)
+      ? ('Correct! ' + correct + '. Plus 100 points and Ghost Frenzy.')
+      : ('Correct! ' + item.term + ' means: ' + correct + '. Plus 100 points and Ghost Frenzy.'));
     // Correct answers keep the flow: auto-continue shortly after the verdict.
     const seq = questionSeq;
     setTimeout(() => { if (state === 'question' && seq === questionSeq) closeQuestion(); }, 800);
@@ -1153,10 +1142,10 @@ function answerQuestion(chosen, item, btn, cont) {
     btn.classList.add('wrong');
     AudioFX.wrong();
     Arcade.shake();
-    // the educational beat: lock the real definition in before play resumes
-    pointsEl.textContent = 'Not quite — ' + item.term + ' means: ' + correct;
+    // the educational beat: lock the real answer in before play resumes
+    pointsEl.textContent = (REEL && REEL.hero) ? ('Not quite — ' + correct) : ('Not quite — ' + item.term + ' means: ' + correct);
     pointsEl.className = 'q-points miss';
-    announce('Not quite. ' + item.term + ' means: ' + correct + '.');
+    announce((REEL && REEL.hero) ? ('Not quite. ' + correct + '.') : ('Not quite. ' + item.term + ' means: ' + correct + '.'));
     // Missed terms respawn as red dots a little later in the run.
     if (!item._requeued) {
       const at = Math.min(vocabQueue.length, vocabShownCount + 2 + Math.floor(Math.random() * 2));

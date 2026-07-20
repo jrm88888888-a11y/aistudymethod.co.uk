@@ -241,9 +241,6 @@
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = reel ? reel.concepts.slice() : ((spec && spec.concepts) || [])
     .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
-  // Reel mode: the hero concept every question is forced to (see startQuestion /
-  // buildOptions). Guarded strictly behind `reel` so normal spec play is unchanged.
-  const heroConcept = reel ? (concepts.find(c => c.term === reel.hero.term) || concepts[0]) : null;
   // Distractor pool from the misconception bank — but only DEFINITION-shaped
   // strings. Banks contain junk like "22", "44", "Phenotype", "In the cell
   // membrane"; a good distractor must read like a definition, so require a
@@ -474,9 +471,10 @@
     // Reel mode: one toy per pack concept, in pack order, and the hero term is
     // the golden "myth" plushie the owner will grab on camera.
     if (reel) {
+      // Concepts are set-dressing only in reel mode (plushie labels); the first
+      // one wears the golden shell. The QUESTION is always the hero prompt.
       const chosen = concepts.slice();
-      let gi = chosen.findIndex(c => c.term === reel.hero.term);
-      if (gi < 0) gi = 0;
+      const gi = 0;
       goldenTerm = chosen[gi].term;
       return chosen.map((c, i) => ({ concept: c, golden: i === gi }));
     }
@@ -915,24 +913,17 @@
   }
 
   function buildOptions(toy) {
-    const correct = toy.def;
-    // Reel mode HERO BEAT: the hero term MUST offer exactly [true def] +
-    // [pack trap] + two other concept defs. The trap always appears (shuffled
-    // among the four) and is scored WRONG by construction — only the true def
-    // is the correct index.
-    if (reel && toy.term === reel.hero.term) {
-      const trap = reel.hero.trap;
-      const fillers = [];
-      const seenH = new Set([correct, trap]);
-      for (const c of Arcade.shuffle(concepts)) {
-        if (fillers.length >= 2) break;
-        if (c.def !== correct && !seenH.has(c.def)) { seenH.add(c.def); fillers.push(c.def); }
-      }
-      const opts = Arcade.shuffle([correct, trap].concat(fillers).slice(0, 4));
-      qCorrectIdx = opts.indexOf(correct);
+    // Reel mode HERO BEAT: whichever plushie was grabbed, the question is the
+    // single myth-busting hero prompt with EXACTLY TWO options — the truth
+    // (hero.correct, scored right) and the misconception (hero.wrong, scored
+    // wrong), shuffled. Concept defs are set-dressing and never appear as options.
+    if (reel) {
+      const opts = Arcade.shuffle([reel.hero.correct, reel.hero.wrong]);
+      qCorrectIdx = opts.indexOf(reel.hero.correct);
       qOpts = opts;
       return opts;
     }
+    const correct = toy.def;
     const pool = [];
     const seen = new Set([correct]);
     // golden toy pulls distractors from the misconception bank first
@@ -959,19 +950,19 @@
   function startQuestion() {
     currentToy = held;
     const toy = held;
-    // Reel mode HERO BEAT: whichever plushie was grabbed, the QUESTION is always
-    // the hero concept (term + options + trap). The grabbed toy stays as-is
-    // visually and for scoring; only the asked concept is forced to the hero.
-    const qConcept = reel ? heroConcept : toy;
-    const opts = buildOptions(qConcept);
+    const opts = buildOptions(toy);
     setState('question');
     document.getElementById('cab-wrap').classList.remove('aim');
     const ov = document.getElementById('q-overlay');
     const goldTag = toy.golden ? ' <span class="gold">★ GOLDEN</span>' : '';
     const dgTag = dgStage ? '<span class="gold">DOUBLE GRAB · toy ' + dgStage + ' of 2</span> · ' : '';
+    // Reel mode HERO BEAT: any grabbed plushie asks the single hero prompt with
+    // two options. The concept-term eyebrow is dropped so ONLY the prompt shows.
+    const askLine = reel ? '' : ('<div class="q-ask">' + dgTag + 'Which is the definition?</div>');
+    const headLine = reel ? esc(reel.hero.prompt) : (esc(toy.term) + goldTag);
     ov.innerHTML =
-      '<div class="q-ask">' + dgTag + 'Which is the definition?</div>' +
-      '<h3 class="q-term">' + esc(qConcept.term) + goldTag + '</h3>' +
+      askLine +
+      '<h3 class="q-term">' + headLine + '</h3>' +
       '<div id="q-timer"><i></i></div>' +
       '<div class="q-opts">' +
         opts.map((o, i) =>
@@ -983,7 +974,9 @@
     document.body.classList.add('claw-q');   // park the mute FAB clear of the answers
     ov.querySelectorAll('.q-opt').forEach(b =>
       b.addEventListener('click', () => answerQuestion(parseInt(b.dataset.idx, 10))));
-    announce.textContent = 'Question: which is the definition of ' + qConcept.term + '?';
+    announce.textContent = reel
+      ? (reel.hero.prompt + ' Choose the correct answer.')
+      : ('Question: which is the definition of ' + toy.term + '?');
 
     qStartMs = performance.now();
     const fill = ov.querySelector('#q-timer i');
@@ -1034,9 +1027,15 @@
       credits = Math.max(0, credits - 1);   // a wrong call wastes the trip — costs a credit
       Arcade.sfx.wrong();
       Arcade.vibrate([40, 30, 40]);
-      corrText = '<b>' + esc(toy.term) + '</b>: ' + esc(toy.def);
-      announce.textContent = (timedOut ? 'Time up. ' : 'Wrong. ') + toy.term + ' means ' + toy.def
-        + ' Minus one credit — ' + credits + ' left.';
+      // Reel mode: the correction locks in the true hero answer, not a concept def.
+      corrText = reel
+        ? ('<b>' + esc(reel.hero.prompt) + '</b> ' + esc(reel.hero.correct))
+        : ('<b>' + esc(toy.term) + '</b>: ' + esc(toy.def));
+      announce.textContent = reel
+        ? ((timedOut ? 'Time up. ' : 'Wrong. ') + reel.hero.prompt + ' ' + reel.hero.correct
+           + ' Minus one credit — ' + credits + ' left.')
+        : ((timedOut ? 'Time up. ' : 'Wrong. ') + toy.term + ' means ' + toy.def
+           + ' Minus one credit — ' + credits + ' left.');
       answerCorrect = false;
       setState('reveal');
     }
