@@ -282,11 +282,29 @@
     'html.reel-mode #root>.ar-sub,html.reel-mode #root>.ar-meta{display:none!important}',
     'html.reel-mode .pu-stage{margin:0!important;width:100%!important;flex:1 1 auto!important;',
     '  min-height:0!important;display:flex!important;flex-direction:column!important;padding:6px!important;box-sizing:border-box!important}',
-    'html.reel-mode .pu-layout{flex-direction:column!important;gap:8px!important;flex:1 1 auto!important;min-height:0!important}',
-    'html.reel-mode .pu-machine{flex:1 1 auto!important;min-height:0!important;display:flex!important;flex-direction:column!important}',
+    'html.reel-mode .pu-layout{flex-direction:column!important;gap:6px!important;flex:1 1 auto!important;min-height:0!important}',
+    // MACHINE IS THE HERO: it takes ~72% of the play area (top), the question
+    // strip ~28% (bottom). min-height locks the machine share so the canvas is
+    // >60% of the full portrait stage.
+    'html.reel-mode .pu-machine{position:relative!important;flex:1 1 auto!important;min-height:72%!important;',
+    '  display:flex!important;flex-direction:column!important}',
     'html.reel-mode #cab-wrap{flex:1 1 auto!important;height:auto!important;min-height:0!important;border-radius:12px!important}',
-    'html.reel-mode .pu-quiz{flex:0 0 auto!important;max-width:none!important}',
-    'html.reel-mode .pu-deck{display:none!important}',
+    // Fold the AIM dead-zones: hide the wide in-canvas hint text and overlay a
+    // compact controls row (AIM at the machine bottom corners, DROP centred) so
+    // no horizontal space is wasted on empty side columns.
+    'html.reel-mode .pu-zone .hint{display:none!important}',
+    'html.reel-mode .pu-deck{display:flex!important;position:absolute!important;left:10px;right:10px;bottom:10px;z-index:5;',
+    '  margin:0!important;gap:8px!important;pointer-events:none}',
+    'html.reel-mode .pu-deck>*{pointer-events:auto}',
+    'html.reel-mode .pu-deck .deck-move{flex:0 0 auto!important;width:50px!important;min-height:42px!important;font-size:19px!important}',
+    'html.reel-mode #btn-drop{min-height:42px!important;font-size:15px!important}',
+    // Compact question strip in the bottom band.
+    'html.reel-mode .pu-quiz{flex:0 0 auto!important;max-height:28%!important;max-width:none!important;overflow-y:auto!important}',
+    'html.reel-mode .pu-quiz .qp-head{display:none!important}',
+    'html.reel-mode .pu-quiz .qp{padding:9px 11px 11px!important;gap:6px!important}',
+    'html.reel-mode .pu-quiz .qp-opts{gap:6px!important}',
+    'html.reel-mode .pu-quiz .qp-opt{padding:6px 10px!important;font-size:12px!important;line-height:1.22!important}',
+    'html.reel-mode .pu-quiz .qp-term{font-size:15px!important}',
     'html.reel-mode #mega-row{display:none!important}',
     'html.reel-mode .pu-hint-row{display:none!important}'
   ].join('\n');
@@ -1206,6 +1224,7 @@
     state = 'playing';
     buildQueue();
     nextQuestion();
+    if (reel) { magazine = 10; }   // reel demo: keep the free coins on replay too
     updateDropBtn();
     updateMegaUI();
     startLoop();
@@ -1661,6 +1680,11 @@
   state = 'playing';
   buildQueue();
   nextQuestion();
+  // Reel mode ONLY: pre-load 10 free demo coins so the owner can drop
+  // immediately for the video. Guarded by `reel`; normal play still mints every
+  // coin from a correct answer (magazine starts at 0). Correct answers in reel
+  // mode mint further coins on top of these.
+  if (reel) { magazine = 10; }
   updateDropBtn();
   updateMegaUI();
   // Reel mode: keep the canvas sized to the portrait stage as the machine flexes
