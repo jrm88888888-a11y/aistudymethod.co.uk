@@ -64,10 +64,12 @@
     '  letter-spacing:1px;color:#ece8ff;font-weight:400}',
     '#' + STAGE_ID + ' .reel-word span{font-family:"Press Start 2P",monospace;font-size:6px;',
     '  letter-spacing:1px;color:#5cffe4;margin-top:3px}',
-    '#' + STAGE_ID + ' .reel-marq{flex:1 1 auto;min-width:0;text-align:center;',
-    '  font-family:"Press Start 2P",monospace;font-size:31px;line-height:1.12;letter-spacing:1px;',
-    '  color:#ffd24d;text-shadow:0 0 8px rgba(255,210,77,.9),0 0 22px rgba(255,159,28,.55),3px 3px 0 #7a2bd6;',
-    '  animation:reelFlick 4s infinite;white-space:nowrap}',
+    /* centre — chunky 3D pixel wordmark (SVG); flex-centred, glow via filter */
+    '#' + STAGE_ID + ' .reel-marq{flex:1 1 auto;min-width:0;display:flex;',
+    '  align-items:center;justify-content:center;padding:0 6px;overflow:hidden;',
+    '  animation:reelFlick 4s infinite}',
+    '#' + STAGE_ID + ' .reel-marq svg{display:block;width:100%;height:auto;max-height:108px;',
+    '  filter:drop-shadow(0 0 6px rgba(255,210,77,.55)) drop-shadow(0 0 14px rgba(255,159,28,.35))}',
     '#' + STAGE_ID + ' .reel-mascot{flex:0 0 auto;line-height:0;width:48px;height:48px;',
     '  display:flex;align-items:center;justify-content:center}',
     '#' + STAGE_ID + ' .reel-mascot svg{display:block;filter:drop-shadow(0 0 6px rgba(126,109,255,.5))}',
@@ -106,6 +108,141 @@
     if (opts.subject) { parts.push(String(opts.subject)); }
     if (opts.topicDisplay) { parts.push(String(opts.topicDisplay)); }
     return parts.join(' · ').toUpperCase();
+  }
+
+  /* ---------------------------------------------------------------------------
+   * Chunky 3D pixel wordmark — "SUBJECTS ARCADE".
+   *
+   * A tiny blocky bitmap font (7 wide x 9 tall cells, roughly 2-unit-thick
+   * strokes) covering only the glyphs the two lines need: S U B J E C T A R D
+   * and space. reelWordmarkSVG() paints, per lit pixel and back-to-front, a
+   * dark outline, a purple side extruded down-and-right for depth, then the
+   * bright-yellow face and a faint top-left highlight — so the letters read as
+   * solid 3D arcade blocks. Hard pixels only (shape-rendering:crispEdges).
+   * '#' marks a lit pixel; '.' is empty.
+   * ------------------------------------------------------------------------- */
+  var WM_FONT = {
+    'S': ['.#####.', '#######', '##.....', '######.', '.#####.', '.....##', '##...##', '#######', '.#####.'],
+    'U': ['##...##', '##...##', '##...##', '##...##', '##...##', '##...##', '##...##', '#######', '.#####.'],
+    'B': ['######.', '######.', '##...##', '######.', '######.', '##...##', '##...##', '######.', '######.'],
+    'J': ['..#####', '..#####', '....##.', '....##.', '....##.', '....##.', '##..##.', '######.', '.####..'],
+    'E': ['#######', '#######', '##.....', '######.', '######.', '##.....', '##.....', '#######', '#######'],
+    'C': ['.#####.', '#######', '##...##', '##.....', '##.....', '##.....', '##...##', '#######', '.#####.'],
+    'T': ['#######', '#######', '...##..', '...##..', '...##..', '...##..', '...##..', '...##..', '...##..'],
+    'A': ['..###..', '.#####.', '##...##', '##...##', '#######', '#######', '##...##', '##...##', '##...##'],
+    'R': ['######.', '######.', '##...##', '######.', '######.', '##.##..', '##..##.', '##..##.', '##...##'],
+    'D': ['#####..', '######.', '##...##', '##...##', '##...##', '##...##', '##...##', '######.', '#####..'],
+    ' ': null
+  };
+  var WM_GW = 7, WM_GH = 9, WM_GAP = 2, WM_LINEGAP = 4, WM_DEPTH = 3;
+  var WM_COL = { face: '#ffd24d', side: '#7a2bd6', line: '#0d0a30', hi: '#fff2a8' };
+  var WM_LINES = ['SUBJECTS', 'ARCADE'];
+
+  function wmLineWidth(text) {
+    return text.length * (WM_GW + WM_GAP) - WM_GAP;
+  }
+
+  /* stamp a line of glyphs into the face-pixel map (keys "x,y") */
+  function wmStamp(text, ox, oy, face) {
+    for (var i = 0; i < text.length; i++) {
+      var g = WM_FONT[text.charAt(i)];
+      var cx = ox + i * (WM_GW + WM_GAP);
+      if (!g) { continue; }
+      for (var y = 0; y < g.length; y++) {
+        var row = g[y];
+        for (var x = 0; x < row.length; x++) {
+          if (row.charAt(x) === '#') { face[(cx + x) + ',' + (oy + y)] = 1; }
+        }
+      }
+    }
+  }
+
+  /* merge a pixel set into horizontal run rects of one colour */
+  function wmRuns(set, color, out) {
+    var rows = {}, key, p, y;
+    for (key in set) {
+      p = key.split(',');
+      (rows[p[1]] || (rows[p[1]] = [])).push(parseInt(p[0], 10));
+    }
+    for (y in rows) {
+      var xs = rows[y].sort(function (a, b) { return a - b; });
+      var run = 1;
+      for (var i = 1; i <= xs.length; i++) {
+        if (i < xs.length && xs[i] === xs[i - 1] + 1) { run++; continue; }
+        out.push('<rect x="' + xs[i - run] + '" y="' + y + '" width="' + run +
+          '" height="1" fill="' + color + '"/>');
+        run = 1;
+      }
+    }
+  }
+
+  function reelWordmarkSVG() {
+    var maxW = Math.max(wmLineWidth(WM_LINES[0]), wmLineWidth(WM_LINES[1]));
+
+    /* face pixels, each line centred within the wider line */
+    var face = {}, li;
+    for (li = 0; li < WM_LINES.length; li++) {
+      var lw = wmLineWidth(WM_LINES[li]);
+      wmStamp(WM_LINES[li], Math.round((maxW - lw) / 2), li * (WM_GH + WM_LINEGAP), face);
+    }
+
+    var k, p, fx, fy, d, kk;
+
+    /* extruded side: step each face pixel down-and-right, keep only new cells */
+    var side = {};
+    for (k in face) {
+      p = k.split(','); fx = +p[0]; fy = +p[1];
+      for (d = 1; d <= WM_DEPTH; d++) {
+        kk = (fx + d) + ',' + (fy + d);
+        if (!face[kk]) { side[kk] = 1; }
+      }
+    }
+
+    /* solid = face + side; dark outline = any empty 8-neighbour of a solid cell */
+    var all = {}, outline = {};
+    for (k in face) { all[k] = 1; }
+    for (k in side) { all[k] = 1; }
+    for (k in all) {
+      p = k.split(','); fx = +p[0]; fy = +p[1];
+      for (var dy = -1; dy <= 1; dy++) {
+        for (var dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) { continue; }
+          kk = (fx + dx) + ',' + (fy + dy);
+          if (!all[kk]) { outline[kk] = 1; }
+        }
+      }
+    }
+
+    /* lighter-yellow top rim: face pixels whose upper neighbour is empty — a
+       subtle lit-sign highlight along the top-left facing edges of each letter */
+    var hi = {};
+    for (k in face) {
+      p = k.split(','); fx = +p[0]; fy = +p[1];
+      if (!face[fx + ',' + (fy - 1)]) { hi[k] = 1; }
+    }
+
+    /* bounds across every drawn layer (outline can reach -1) */
+    var minX = 0, minY = 0, maxX = 0, maxY = 0, first = true, pool = [outline, side, face], pi;
+    for (pi = 0; pi < pool.length; pi++) {
+      for (k in pool[pi]) {
+        p = k.split(','); fx = +p[0]; fy = +p[1];
+        if (first) { minX = maxX = fx; minY = maxY = fy; first = false; }
+        if (fx < minX) { minX = fx; } if (fx > maxX) { maxX = fx; }
+        if (fy < minY) { minY = fy; } if (fy > maxY) { maxY = fy; }
+      }
+    }
+
+    var rects = [];
+    wmRuns(outline, WM_COL.line, rects);
+    wmRuns(side, WM_COL.side, rects);
+    wmRuns(face, WM_COL.face, rects);
+    wmRuns(hi, WM_COL.hi, rects);
+
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + minX + ' ' + minY +
+      ' ' + (maxX - minX + 1) + ' ' + (maxY - minY + 1) +
+      '" preserveAspectRatio="xMidYMid meet" style="shape-rendering:crispEdges;' +
+      'image-rendering:pixelated" role="img" aria-label="Subjects Arcade">' +
+      rects.join('') + '</svg>';
   }
 
   var Reel = {
@@ -156,9 +293,9 @@
     brand.appendChild(vtile);
     brand.appendChild(word);
 
-    /* centre — SUBJECTS ARCADE pixel marquee, stacked big to fill the bar */
+    /* centre — chunky 3D pixel wordmark "SUBJECTS / ARCADE", stacked to fill the bar */
     var marq = el('div', 'reel-marq');
-    marq.innerHTML = 'SUBJECTS<br>ARCADE';
+    marq.innerHTML = reelWordmarkSVG();
 
     /* right — pixel mascot (optional) */
     var mascot = el('div', 'reel-mascot');
