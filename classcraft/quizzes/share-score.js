@@ -43,7 +43,7 @@
     opts = opts || {};
     var url;
     try { url = new URL('../../for-parents.html', location.href); }
-    catch (e) { url = new URL('https://aistudymethod.co.uk/for-parents.html'); }
+    catch (e) { url = new URL('https://aistudymethod.com/for-parents.html'); }
     var p = url.searchParams;
     if (opts.score != null) p.set('s', String(opts.score));
     if (opts.total != null) p.set('t', String(opts.total));
@@ -303,7 +303,7 @@
     // doesn't survive that journey; this line is all that's left).
     ctx.fillStyle = PAL.cyan;
     ctx.font = '900 26px ' + MONO;
-    ctx.fillText('aistudymethod.co.uk', W / 2, 1024);
+    ctx.fillText('aistudymethod.com', W / 2, 1024);
     ctx.fillStyle = PAL.textDim;
     ctx.font = '500 15px ' + MONO;
     ctx.fillText('· The Velvet Method™ ·', W / 2, 1050);
@@ -462,7 +462,7 @@
     ctx.fillText('▼  BEAT THIS SCORE  ▼', W / 2, 1570);
     ctx.fillStyle = PAL.cyan;
     ctx.font = '900 30px ' + MONO;
-    ctx.fillText('aistudymethod.co.uk', W / 2, 1626);
+    ctx.fillText('aistudymethod.com', W / 2, 1626);
     ctx.fillStyle = PAL.textDim;
     ctx.font = '500 15px ' + MONO;
     ctx.fillText('· The Velvet Method™ ·', W / 2, 1658);

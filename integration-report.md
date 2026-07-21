@@ -1,7 +1,7 @@
-# Integration Report — classcraft/ → aistudymethod.co.uk
+# Integration Report — classcraft/ → aistudymethod.com
 
 **Date:** 2026-05-29
-**Scope:** Merge the in-repo `classcraft/` content folder into the AI Study Method site so that every game, story, simulation, book, joke pack and nature gallery serves from `aistudymethod.co.uk`. Retire `classcraft.co.uk`.
+**Scope:** Merge the in-repo `classcraft/` content folder into the AI Study Method site so that every game, story, simulation, book, joke pack and nature gallery serves from `aistudymethod.com`. Retire `classcraft.co.uk`.
 
 ---
 
@@ -115,18 +115,18 @@ Game/story interactive `<script>` / `<canvas>` / `<svg>` blocks were not touched
 
 `classcraft/` contains six non-content files: `download_nature_photos.py`, `download_nature_photos.sh`, `check_missing_photos.py`, `fix_broken.py`, `seo_audit.xlsx`, `project-notes.md`. **None of them are linked from any HTML page** (verified by grep). They remain in the repo as dev tooling.
 
-The nested `classcraft/CNAME` file (which previously contained `classcraft.co.uk` and was dead weight — GitHub Pages only honours the root CNAME) has been neutralised to `aistudymethod.co.uk` so a stray serve from the subfolder cannot accidentally claim the old domain.
+The nested `classcraft/CNAME` file (which previously contained `classcraft.co.uk` and was dead weight — GitHub Pages only honours the root CNAME) has been neutralised to `aistudymethod.com` so a stray serve from the subfolder cannot accidentally claim the old domain.
 
 ## 9. Sitemap + SEO
 
-- New unified `sitemap.xml` at the site root with **877 URLs** on `aistudymethod.co.uk` covering: root pages (index, subjects, velvet-method, courses, ai-study-guide, parents, about), the 7 section landing pages, and every unique resource href from `RESOURCES`.
+- New unified `sitemap.xml` at the site root with **877 URLs** on `aistudymethod.com` covering: root pages (index, subjects, velvet-method, courses, ai-study-guide, parents, about), the 7 section landing pages, and every unique resource href from `RESOURCES`.
 - New `robots.txt` at the site root pointing crawlers at the new sitemap.
 - Old `classcraft/sitemap.xml` neutralised (replaced with a stub `urlset` that explicitly points crawlers at the new root sitemap).
 - Zero `classcraft.co.uk` strings remain in any HTML, JS, CSS or XML file in the repo outside of `project-notes.md`, `migration-report.md`, `subtopic-remap.md`, and the rebrand script source (`scripts/rebrand_classcraft.py`). All four of those are dev artefacts that aren't served.
 
 **Redirects from the old classcraft.co.uk URLs cannot be implemented from this repo** — GitHub Pages doesn't support server-side redirects. To complete the cut-over you'll want to either:
 1. Replace the old `classcraft.co.uk` repo's index pages with HTML `<meta http-equiv="refresh">` shims pointing at the corresponding new URLs, or
-2. Set up a Cloudflare page rule (or equivalent at the DNS host) doing a 301 from `classcraft.co.uk/*` → `aistudymethod.co.uk/classcraft/*`.
+2. Set up a Cloudflare page rule (or equivalent at the DNS host) doing a 301 from `classcraft.co.uk/*` → `aistudymethod.com/classcraft/*`.
 
 ## 10. Known data points (deprioritised — not blocking)
 
@@ -155,7 +155,7 @@ Broken local CSS/JS refs .......................... 0
 - `subjects.html` — `SUBTOPICS` map fully replaced; card render switched to same-tab default; "Browse by format" strip added to the hero.
 - `sitemap.xml`, `robots.txt` — created at site root.
 - `classcraft/classcraft-pages.css` — renamed from `classcraft/style.css`.
-- `classcraft/CNAME` — content swapped from `classcraft.co.uk` to `aistudymethod.co.uk`.
+- `classcraft/CNAME` — content swapped from `classcraft.co.uk` to `aistudymethod.com`.
 - `classcraft/sitemap.xml` — neutralised stub.
 - `classcraft/nav.js`, `classcraft/classcraft-pages.css` — visible brand strings updated.
 - `classcraft/vocab-hub/vocab-*.js` (10 files) — source-comment brand strings updated.

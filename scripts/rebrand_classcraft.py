@@ -3,7 +3,7 @@
 rebrand_classcraft.py
 =====================
 Rebrand every classcraft-origin HTML page inside /classcraft so the chrome
-(title, meta, header, footer, branding) matches the rest of aistudymethod.co.uk.
+(title, meta, header, footer, branding) matches the rest of aistudymethod.com.
 
 The interactive game/story/simulation/vocab content inside each page is NOT
 touched — only the outer wrapper (head, top-of-body nav/logo, bottom-of-body
@@ -165,7 +165,7 @@ def aism_footer_html(html_path: Path) -> str:
         f'   </div>\n'
         f'  </div>\n'
         f'  <div class="footer-bottom">\n'
-        f'   <p>&copy; 2026 AI Study Method &middot; aistudymethod.co.uk &middot; All rights reserved</p>\n'
+        f'   <p>&copy; 2026 AI Study Method &middot; aistudymethod.com &middot; All rights reserved</p>\n'
         f'   <div class="footer-velvet">Powered by <span>The Velvet Method&trade;</span></div>\n'
         f'  </div>\n'
         f' </div>\n'
@@ -205,7 +205,7 @@ def clean_title(text: str) -> str:
     for pat in TITLE_TRAILER_PATTERNS:
         t = re.sub(pat, "", t, flags=re.IGNORECASE)
     # Replace any remaining inline "ClassCraft" / "classcraft.co.uk"
-    t = re.sub(r"classcraft\.co\.uk", "aistudymethod.co.uk", t, flags=re.IGNORECASE)
+    t = re.sub(r"classcraft\.co\.uk", "aistudymethod.com", t, flags=re.IGNORECASE)
     t = re.sub(r"\bClassCraft\b", "AI Study Method", t)
     t = t.strip(" -–—|")
     return t
@@ -260,7 +260,7 @@ def _classcraft_url_to_rel(url: str, html_path: Path) -> str:
 # ---------------------------------------------------------------------------
 
 VISIBLE_BRAND_SUBS = [
-    (re.compile(r"classcraft\.co\.uk", re.IGNORECASE), "aistudymethod.co.uk"),
+    (re.compile(r"classcraft\.co\.uk", re.IGNORECASE), "aistudymethod.com"),
     (re.compile(r"\bClassCraft\b"),                    "AI Study Method"),
     (re.compile(r"\bclassCraft\b"),                    "AI Study Method"),
     (re.compile(r"\bClass[Cc]raft\b"),                 "AI Study Method"),

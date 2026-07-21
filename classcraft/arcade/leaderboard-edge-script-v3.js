@@ -66,8 +66,8 @@ const LB_SECRET = env("LB_SECRET") || LB_SECRET_FALLBACK;
 
 /* ── request-facing config ───────────────────────────────────────────────── */
 const ALLOWED_ORIGINS = [
-  "https://aistudymethod.co.uk",
-  "https://www.aistudymethod.co.uk",
+  "https://aistudymethod.com",
+  "https://www.aistudymethod.com",
   "http://localhost:8765",
   "http://127.0.0.1:8765",
 ];

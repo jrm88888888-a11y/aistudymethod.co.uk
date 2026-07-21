@@ -30,7 +30,7 @@ git add -A
 find . -name '.DS_Store' -not -path './.git/*' -exec git rm --cached --quiet {} + 2>/dev/null || true
 
 echo "→ Committing"
-git commit -m "Integrate classcraft/ content into aistudymethod.co.uk
+git commit -m "Integrate classcraft/ content into aistudymethod.com
 
 - resources.js: 892 hrefs repointed to local classcraft/ paths
 - subjects.html: 85-key SUBTOPICS taxonomy so the topic filter returns
@@ -42,13 +42,13 @@ git commit -m "Integrate classcraft/ content into aistudymethod.co.uk
 - classcraft/style.css renamed -> classcraft-pages.css to avoid colliding
   with root style.css
 - new sitemap.xml (877 URLs) and robots.txt at site root;
-  classcraft/sitemap.xml neutralised; nested CNAME -> aistudymethod.co.uk
+  classcraft/sitemap.xml neutralised; nested CNAME -> aistudymethod.com
 - ClassCraft brand strings replaced in vocab JS data files, CSS, nav.js
 - scripts/rebrand_classcraft.py is the idempotent rewriter
 - integration-report.md and subtopic-remap.md document the work
 
 Ends runtime dependency on classcraft.co.uk (every card now links to a
-file already on aistudymethod.co.uk) and fixes the topic filter returning
+file already on aistudymethod.com) and fixes the topic filter returning
 zero results."
 
 echo "→ Done. Branch: $(git branch --show-current). Commit:"

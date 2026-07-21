@@ -1,4 +1,4 @@
-# Site Audit — aistudymethod.co.uk
+# Site Audit — aistudymethod.com
 
 **Date:** 2026-05-29
 **Scope:** 808 HTML pages (7 root + 801 under `classcraft/`), all assets, sitemap, robots, deployment.
@@ -47,7 +47,7 @@ Every `classcraft/stories/**/*.html` is missing a meta description. Search resul
 
 ### B2. No `<link rel="canonical">` anywhere
 
-All 808 pages lack a canonical tag. Without it, Google could index the same content under both `aistudymethod.co.uk/...` and the now-redirected `classcraft.co.uk/...` (when traffic comes via the old domain). Adding `<link rel="canonical" href="https://aistudymethod.co.uk/<relative-path>">` to every page would close this. Trivial to script.
+All 808 pages lack a canonical tag. Without it, Google could index the same content under both `aistudymethod.com/...` and the now-redirected `classcraft.co.uk/...` (when traffic comes via the old domain). Adding `<link rel="canonical" href="https://aistudymethod.com/<relative-path>">` to every page would close this. Trivial to script.
 
 ### B3. 23 overlong titles (>70 chars)
 

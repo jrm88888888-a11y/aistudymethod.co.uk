@@ -408,7 +408,7 @@
     opts = opts || {};
     let url;
     try { url = new URL('../../for-parents.html', location.href); }
-    catch (e) { url = new URL('https://aistudymethod.co.uk/for-parents.html'); }
+    catch (e) { url = new URL('https://aistudymethod.com/for-parents.html'); }
     const p = url.searchParams;
     if (opts.score != null) p.set('s', String(opts.score));
     if (opts.total != null) p.set('t', String(opts.total));
@@ -539,7 +539,7 @@
             })()}
           </div>
           <button type="button" id="ar-parents" class="ar-parents-link" style="background:none;border:none;box-shadow:none;display:inline-block;margin-top:12px;padding:4px 8px;font-family:var(--ar-mono,ui-monospace,Menlo,Consolas,monospace);font-size:11px;font-weight:600;letter-spacing:1px;color:var(--ar-muted,#8a8fa3);text-decoration:underline;text-underline-offset:3px;cursor:pointer;">📲 Show your parents</button>
-          <div class="ar-watermark">aistudymethod.co.uk</div>
+          <div class="ar-watermark">aistudymethod.com</div>
         </div>
       </div>
     `;
@@ -617,7 +617,7 @@
       }
       // Legacy fallback (used only if share-score.js failed to load): text share.
       const lines = (opts.shareLines && opts.shareLines.slice()) || [];
-      lines.push('🎓 aistudymethod.co.uk');
+      lines.push('🎓 aistudymethod.com');
       const text = lines.join('\n');
       let ok = false;
       try {

@@ -1,4 +1,4 @@
-# Debug Report — "None of the games open" on aistudymethod.co.uk
+# Debug Report — "None of the games open" on aistudymethod.com
 
 **Date:** 2026-05-29
 **Branch:** `debug-games-not-opening` (created)
@@ -38,7 +38,7 @@ node → SUBTOPICS keys: 85
        Combos with at least one topic that returns ≥1 result: every combo
 ```
 
-### Live `aistudymethod.co.uk` deploy state
+### Live `aistudymethod.com` deploy state
 
 ```
 HEAD on origin/main = 77e65cf "Fix hrefs to use classcraft.co.uk URLs and fix pill layout"
@@ -52,13 +52,13 @@ Every subdir on the new layout returns 200:
 
 | URL | Status |
 | --- | :---: |
-| `aistudymethod.co.uk/classcraft/games/bio-cells-memory.html` | **200** |
-| `aistudymethod.co.uk/classcraft/stories/biology/gcse/S0074_the_mitosis_spy.html` | **200** |
-| `aistudymethod.co.uk/classcraft/Books/A-Level%20Biology/A-Level%20Biology.pdf` | **200** |
-| `aistudymethod.co.uk/classcraft/vocab-hub/game-pacman.html` | **200** |
-| `aistudymethod.co.uk/classcraft/simulations/AI_Ethics_Board_A-level.html` | **200** |
-| `aistudymethod.co.uk/classcraft/jokes/spanish/Spanish%20Jokes.docx` | **200** |
-| `aistudymethod.co.uk/classcraft/nature.html` | **200** |
+| `aistudymethod.com/classcraft/games/bio-cells-memory.html` | **200** |
+| `aistudymethod.com/classcraft/stories/biology/gcse/S0074_the_mitosis_spy.html` | **200** |
+| `aistudymethod.com/classcraft/Books/A-Level%20Biology/A-Level%20Biology.pdf` | **200** |
+| `aistudymethod.com/classcraft/vocab-hub/game-pacman.html` | **200** |
+| `aistudymethod.com/classcraft/simulations/AI_Ethics_Board_A-level.html` | **200** |
+| `aistudymethod.com/classcraft/jokes/spanish/Spanish%20Jokes.docx` | **200** |
+| `aistudymethod.com/classcraft/nature.html` | **200** |
 
 So the `classcraft/` folder **is** deployed and reachable from the new domain — the catalog just isn't pointing at it yet.
 
@@ -91,7 +91,7 @@ Sanity-checked one URL from each subdir on the old domain — every one still se
 - 801 classcraft HTML pages rebranded into the AI Study Method shell.
 - `classcraft/style.css` renamed to `classcraft-pages.css` (root `style.css` collision avoided).
 - New unified `sitemap.xml` (877 URLs) and `robots.txt` at site root.
-- Nested `classcraft/CNAME` neutralised to `aistudymethod.co.uk`.
+- Nested `classcraft/CNAME` neutralised to `aistudymethod.com`.
 - All visible `ClassCraft` strings removed from HTML, JS, CSS.
 
 ## 4. What this debug pass added on top
@@ -102,7 +102,7 @@ Sanity-checked one URL from each subdir on the old domain — every one still se
 
 ## 5. Per-subdir sample failure pattern
 
-There **is no per-subdir failure pattern** in the live filesystem. Every subdir's sample URL serves 200 on `aistudymethod.co.uk`, and every sample URL on `classcraft.co.uk` also still serves 200. The failure is upstream of the file system — it's at the catalog/filter layer (topic filter returns no cards) and is about-to-be at the link layer (the moment classcraft.co.uk dies). Both are fixed by the staged commit.
+There **is no per-subdir failure pattern** in the live filesystem. Every subdir's sample URL serves 200 on `aistudymethod.com`, and every sample URL on `classcraft.co.uk` also still serves 200. The failure is upstream of the file system — it's at the catalog/filter layer (topic filter returns no cards) and is about-to-be at the link layer (the moment classcraft.co.uk dies). Both are fixed by the staged commit.
 
 ## 6. Outstanding — please run this on your machine
 
@@ -139,12 +139,12 @@ git push origin main
 
 ## 7. After deployment — quick smoke check
 
-1. Open `aistudymethod.co.uk/subjects.html`, pick a subject + level (e.g. Biology / GCSE), then a topic from the dropdown (e.g. Cell Biology). You should see cards — currently you get "No resources found".
+1. Open `aistudymethod.com/subjects.html`, pick a subject + level (e.g. Biology / GCSE), then a topic from the dropdown (e.g. Cell Biology). You should see cards — currently you get "No resources found".
 2. Click any card's "Open →". It should open in the **same tab** and load the in-repo classcraft page. Only "Revision Book" cards (PDF books) should open in a new tab.
-3. Hit `aistudymethod.co.uk/sitemap.xml` and confirm 877 URLs, all on `aistudymethod.co.uk`.
+3. Hit `aistudymethod.com/sitemap.xml` and confirm 877 URLs, all on `aistudymethod.com`.
 
 ## 8. Not in scope / not done
 
 - I did **not** delete or modify any source content files outside the integration changes already in the working tree. No game logic / canvas / SVG was touched.
 - I did **not** push to `origin`.
-- I did **not** attempt to set up a 301 from `classcraft.co.uk` → `aistudymethod.co.uk` — that needs to happen at the DNS host or in the old repo, not from here. With the integration deployed the new domain is self-sufficient, so this is no longer urgent — but it's still the right next step for any external links / bookmarks people already have.
+- I did **not** attempt to set up a 301 from `classcraft.co.uk` → `aistudymethod.com` — that needs to happen at the DNS host or in the old repo, not from here. With the integration deployed the new domain is self-sufficient, so this is no longer urgent — but it's still the right next step for any external links / bookmarks people already have.
