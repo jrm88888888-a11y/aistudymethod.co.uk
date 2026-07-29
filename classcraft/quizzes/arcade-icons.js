@@ -1,4 +1,4 @@
-/* ArcadeIcons — hand-drawn pixel icon set for the Subjects Arcade.
+/* ArcadeIcons — hand-drawn pixel icon set for the Revision Arcade.
    Dependency-free IIFE. Every icon is a pixel map (array of strings, one
    char per pixel) rendered to SVG (crispEdges) or canvas from the same data.
    Palette chars:

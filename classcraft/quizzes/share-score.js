@@ -79,7 +79,7 @@
   // canvas silently kept the last successful font — that's why "AISTUDY METHOD"
   // was rendering huge in serif and "148" was tiny in the default fallback).
   const ARCADE_HEAD = '"Arial Black", "Helvetica Neue Black", Impact, "Franklin Gothic Heavy", sans-serif';
-  // Subjects Arcade palette — pulled from the live marquee
+  // Revision Arcade palette — pulled from the live marquee
   const PAL = {
     bgTop:    '#1a1340',
     bgMid:    '#0d0a30',
@@ -124,7 +124,7 @@
   }
 
   /* ----------------------------------------------------------------------- *
-   * Card renderer — Subjects Arcade marquee aesthetic
+   * Card renderer — Revision Arcade marquee aesthetic
    * Purple starfield backdrop, yellow pixel-style headline, cyan/magenta
    * accents, the Velvet "V" badge drawn programmatically (same-origin safe).
    * ----------------------------------------------------------------------- */

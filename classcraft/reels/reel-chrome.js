@@ -111,7 +111,7 @@
   }
 
   /* ---------------------------------------------------------------------------
-   * Chunky 3D pixel wordmark — "SUBJECTS ARCADE".
+   * Chunky 3D pixel wordmark — "REVISION ARCADE".
    *
    * A tiny blocky bitmap font (7 wide x 9 tall cells, roughly 2-unit-thick
    * strokes) covering only the glyphs the two lines need: S U B J E C T A R D
@@ -241,7 +241,7 @@
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + minX + ' ' + minY +
       ' ' + (maxX - minX + 1) + ' ' + (maxY - minY + 1) +
       '" preserveAspectRatio="xMidYMid meet" style="shape-rendering:crispEdges;' +
-      'image-rendering:pixelated" role="img" aria-label="Subjects Arcade">' +
+      'image-rendering:pixelated" role="img" aria-label="Revision Arcade">' +
       rects.join('') + '</svg>';
   }
 
