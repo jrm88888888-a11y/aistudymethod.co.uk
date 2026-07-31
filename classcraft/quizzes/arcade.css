@@ -575,8 +575,10 @@ body.arcade:has(.ar-wrap.ar-fit) { overflow: hidden; }
   .ar-fit-grid .ar-fit-panel .gr-opts > * { padding-top: 8px; padding-bottom: 8px; font-size: 14px; }
   .ar-fit-grid .ar-fit-panel .gr-q { font-size: 15px; margin-bottom: 6px; }
 }
-/* A squashed board must clip rather than spill over the question below it. */
-.ar-fit-grid .ar-fit-board { overflow: hidden; }
+/* A squashed board must not spill over the question - but it must never make
+   its own content unreachable either. auto scrolls only if genuinely needed,
+   which for a drag-sort list beats clipping items off the bottom. */
+.ar-fit-grid .ar-fit-board { overflow: auto; overscroll-behavior: contain; }
 /* Status strip (HUD + progress dots) lives in the header: one compact row. */
 .ar-fit-grid .ar-fit-head .ar-hud { margin-bottom: 6px; flex-wrap: wrap; }
 .ar-fit-grid .ar-fit-head .ar-dots { margin: 0 0 8px; }
@@ -603,3 +605,41 @@ body.arcade:has(.ar-wrap.ar-fit) { overflow: hidden; }
   .ar-fit-grid .ar-fit-head .gr-banner,
   .ar-fit-grid .ar-fit-head .gr-callout { display: none; }
 }
+/* Sequence: compact the drag cards so all of them fit the board cell before
+   the internal scrollbar is ever needed. */
+@media (max-height: 820px), (max-width: 899px) {
+  .ar-fit-grid .ar-fit-board .seq-list { gap: 6px; margin-bottom: 0; }
+  .ar-fit-grid .ar-fit-board .seq-item { min-height: 44px; }
+  .ar-fit-grid .ar-fit-board .seq-term { font-size: 14px; }
+  .ar-fit-grid .ar-fit-board .seq-def  { font-size: 12px; }
+}
+@media (max-width: 899px) and (max-height: 700px) {
+  .ar-fit-grid .ar-fit-board .seq-item { min-height: 38px; }
+  .ar-fit-grid .ar-fit-board .seq-list { gap: 5px; }
+  .ar-fit-grid .ar-fit-board .seq-def { display: none; }
+}
+/* On a phone the sort list is the game; the action buttons need little room. */
+@media (max-width: 899px) {
+  .ar-fit-grid .ar-fit-panel .seq-actions { margin: 0; }
+  .ar-fit-grid:has(.seq-list) .ar-fit-panel { max-height: 34dvh; }
+}
+@media (max-width: 899px) and (max-height: 700px) {
+  .ar-fit-grid:has(.seq-list) .ar-fit-panel { max-height: 26dvh; }
+  .ar-fit-grid .ar-fit-head .ar-prompt { font-size: 14px; margin-bottom: 4px; }
+  .ar-fit-grid .ar-fit-head .ar-label  { margin-bottom: 4px; }
+  .ar-fit-grid .ar-fit-head .seq-ends  { margin-bottom: 4px; }
+  .ar-fit-grid .ar-fit-head .ar-kbd-hint { display: none; }
+}
+/* -webkit-box + line-clamp reports a taller box than it paints, so the clamped
+   intro was overlapping the meta line. Plain block + max-height is honest. */
+.ar-wrap.ar-fit > .ar-sub,
+.ar-fit-grid .ar-fit-head .ar-sub {
+  display: block; -webkit-line-clamp: none;
+  line-height: 1.45; max-height: 2.95em; overflow: hidden;
+  margin: 0 0 10px;
+}
+/* Final call on the intro paragraph: hide it in fit mode. Clamping it to two
+   lines kept cutting a line in half against the meta row, and every game
+   carries its own label and keyboard hint, so nothing is actually lost. */
+.ar-wrap.ar-fit > .ar-sub,
+.ar-fit-grid .ar-fit-head .ar-sub { display: none; }
