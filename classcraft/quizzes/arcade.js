@@ -73,8 +73,84 @@
   /* Last-mission breadcrumb — the arcade lobby records the launched game here
      so it can offer a one-tap CONTINUE chip on the next visit. Best-effort:
      storage failures are swallowed, a launch must never be blocked. */
+  /* ── Analytics ──────────────────────────────────────────────────────────
+     Fire-and-forget. Never blocks a launch, never throws, never retries.
+     `synthetic` is NOT sent from here — the server decides that from a header
+     the browser does not have, so real and phantom traffic stay separable. */
+  Arcade.ANALYTICS_URL = 'https://aism-analytics-bm8gz.bunny.run';
+
+  Arcade.sessionId = function () {
+    try {
+      let id = sessionStorage.getItem('aism-session');
+      if (!id) {
+        id = (crypto.randomUUID ? crypto.randomUUID()
+             : String(Date.now()) + '-' + Math.random().toString(16).slice(2));
+        sessionStorage.setItem('aism-session', id);
+      }
+      return id;
+    } catch (e) { return null; }
+  };
+
+  Arcade.deviceType = function () {
+    try {
+      const w = Math.min(screen.width, screen.height);
+      if (/Mobi|Android|iPhone/i.test(navigator.userAgent) && w < 768) return 'mobile';
+      if (/iPad|Tablet|Android/i.test(navigator.userAgent)) return 'tablet';
+      return 'desktop';
+    } catch (e) { return ''; }
+  };
+
+  /* Campaign attribution: read once per session from the first URL that had
+     it, so a TikTok link is still credited after the student navigates on. */
+  Arcade.campaign = function () {
+    try {
+      const saved = sessionStorage.getItem('aism-campaign');
+      if (saved) return JSON.parse(saved);
+      const q = new URLSearchParams(location.search);
+      let host = '';
+      try { host = document.referrer ? new URL(document.referrer).hostname : ''; } catch (e) {}
+      if (host && host.indexOf('aistudymethod.') > -1) host = '';   // internal, not a source
+      const c = { utm_source: q.get('utm_source') || '', utm_campaign: q.get('utm_campaign') || '', referrer_host: host };
+      sessionStorage.setItem('aism-campaign', JSON.stringify(c));
+      return c;
+    } catch (e) { return { utm_source: '', utm_campaign: '', referrer_host: '' }; }
+  };
+
+  Arcade.track = function (event, data) {
+    try {
+      if (!Arcade.ANALYTICS_URL || Arcade.ANALYTICS_URL.indexOf('PLACEHOLDER') > -1) return;
+      const c = Arcade.campaign();
+      const body = JSON.stringify(Object.assign({
+        event: event,
+        session_id: Arcade.sessionId(),
+        device_id: (Arcade.lb && Arcade.lb.device) ? Arcade.lb.device() : null,
+        device_type: Arcade.deviceType(),
+        content_version: Arcade.CONTENT_VERSION || '',
+        utm_source: c.utm_source, utm_campaign: c.utm_campaign,
+        referrer_host: c.referrer_host,
+      }, data || {}));
+      const url = Arcade.ANALYTICS_URL + '/collect';
+      // sendBeacon survives the page unload that follows a game launch.
+      /* text/plain, NOT application/json: text/plain is a CORS-safelisted
+         content type, so the request goes straight out with no preflight.
+         application/json forces a preflight, which sendBeacon cannot perform
+         reliably — the beacon reports success and the data silently never
+         arrives. The server parses the body as JSON regardless of the header. */
+      if (navigator.sendBeacon && navigator.sendBeacon(url, new Blob([body], { type: 'text/plain' }))) return;
+      fetch(url, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: body, keepalive: true }).catch(function () {});
+    } catch (e) { /* analytics must never break the arcade */ }
+  };
+
+  /* Last-mission breadcrumb — the arcade lobby records the launched game here
+     so it can offer a one-tap CONTINUE chip on the next visit. Best-effort:
+     storage failures are swallowed, a launch must never be blocked. */
   Arcade.logMission = function (mission) {
     try { localStorage.setItem('aism-last-mission', JSON.stringify(mission)); } catch (e) { /* no-op */ }
+    Arcade.track('game_launch', {
+      game: mission && mission.game, subject: mission && mission.subject,
+      level: mission && mission.level, board: mission && mission.board,
+      topic: mission && mission.topic, topic_label: mission && mission.topicLabel,
+    });
   };
 
   // Some on-disk stems contain a colon the URL param drops. Try the plain
@@ -961,6 +1037,19 @@
         try {
           const payload = { game: run.game, score: run.score, initials, topic: run.topic || '', stem: run.stem || '' };
           if (crew) payload.crew = crew;
+          /* Analytics copy. The leaderboard payload has no subject/level/board,
+             so recover them from the mission breadcrumb written at launch. */
+          try {
+            let m = {};
+            try { m = JSON.parse(localStorage.getItem('aism-last-mission') || '{}') || {}; } catch (e) {}
+            Arcade.track('score_submit', {
+              game: run.game, score: run.score,
+              subject: m.subject, level: m.level, board: m.board,
+              topic: m.topic || run.topic || '', topic_label: m.topicLabel,
+              max_score: run.max || null, correct: run.correct || null, total: run.total || null,
+              duration_ms: run.durationMs || null, completed: 1,
+            });
+          } catch (e) {}
           const res = await this.submit(payload);
           this.initials(initials);
           submitted = true;
