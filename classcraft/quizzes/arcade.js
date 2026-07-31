@@ -1140,3 +1140,66 @@
     else init();
   })();
 })();
+
+/* ── fullscreen toggle ──────────────────────────────────────────────────────
+   Self-initialising: arcade.js is already loaded by every game page, so no
+   per-game edit is needed. Adds a button only when the browser actually
+   supports the Fullscreen API; otherwise the page is untouched.
+   Fullscreen reclaims the site nav plus the browser's own chrome, which on a
+   phone includes the URL bar - the single largest block of vertical space
+   available without changing any game's layout.                              */
+(function () {
+  if (typeof document === 'undefined') return;
+
+  function ready(fn) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+    else fn();
+  }
+
+  ready(function () {
+    var wrap = document.querySelector('.ar-wrap');
+    if (!wrap) return;                                  // not a game page
+
+    var el = document.documentElement;
+    var canFs = !!(el.requestFullscreen || el.webkitRequestFullscreen);
+    if (!canFs) return;                                 // no API - leave the page alone
+
+    function isFs() {
+      return !!(document.fullscreenElement || document.webkitFullscreenElement);
+    }
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ar-fs-btn';
+    document.body.appendChild(btn);
+
+    function paint() {
+      var on = isFs();
+      btn.textContent = on ? '✕' : '⛶';
+      btn.title = on ? 'Exit fullscreen (Esc)' : 'Play fullscreen';
+      btn.setAttribute('aria-label', btn.title);
+    }
+    paint();
+
+    btn.addEventListener('click', function () {
+      try {
+        if (isFs()) {
+          (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        } else {
+          (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+        }
+      } catch (e) { /* a refused request must never break the game */ }
+    });
+
+    ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
+      document.addEventListener(ev, paint);
+    });
+
+    // F toggles, unless the player is typing into the game.
+    document.addEventListener('keydown', function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if (e.key === 'f' || e.key === 'F') btn.click();
+    });
+  });
+})();
