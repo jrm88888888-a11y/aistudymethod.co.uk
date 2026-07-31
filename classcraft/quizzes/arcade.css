@@ -369,3 +369,156 @@ body.ar-shake { animation: arShakeBody 0.35s ease; }
   .ar-card { padding: 18px 14px; }
   .ar-grade { font-size: 76px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ONE-SCREEN COCKPIT LAYOUT
+   Opt in by adding .ar-fit to .ar-wrap and tagging three regions:
+     .ar-fit-head   title / badge / meta
+     .ar-fit-board  the board, canvas or SVG - the thing you look at
+     .ar-fit-panel  the question and answers - the thing you act on
+   Default .ar-wrap is max-width:640px, which on a 1440px desktop wastes 55%
+   of the width and forces the question below the board. Here the board and
+   the question sit side by side and the page never scrolls during play.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* --- wide + tall enough: two columns, no page scroll --------------------- */
+@media (min-width: 900px) and (min-height: 540px) {
+  .ar-wrap.ar-fit {
+    max-width: min(1360px, 96vw);
+    height: 100dvh;
+    padding: calc(var(--nav-h, 68px) + 10px) 1.1rem 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(330px, 0.88fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "head head" "board panel";
+    column-gap: 22px;
+    row-gap: 10px;
+    overflow: hidden;
+  }
+  .ar-wrap.ar-fit .ar-fit-head  { grid-area: head; min-width: 0; }
+  .ar-wrap.ar-fit .ar-fit-board {
+    grid-area: board; min-height: 0; min-width: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ar-wrap.ar-fit .ar-fit-board > * { max-height: 100%; max-width: 100%; }
+  .ar-wrap.ar-fit .ar-fit-board svg,
+  .ar-wrap.ar-fit .ar-fit-board canvas { height: 100%; width: 100%; object-fit: contain; }
+  .ar-wrap.ar-fit .ar-fit-panel {
+    grid-area: panel; min-height: 0;
+    overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  /* The intro paragraph orients a new player; during play it is just height. */
+  .ar-wrap.ar-fit .ar-fit-head .ar-sub {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; margin-bottom: 6px;
+  }
+  .ar-wrap.ar-fit .ar-fit-head .ar-title { margin-bottom: 4px; }
+}
+
+/* --- narrow or short: board on top, question as a bottom sheet ----------- */
+@media (max-width: 899px), (max-height: 539px) {
+  .ar-wrap.ar-fit {
+    max-width: 100%; height: 100dvh;
+    padding: calc(var(--nav-h, 68px) + 8px) 0.85rem 0;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .ar-wrap.ar-fit .ar-fit-head  { flex: 0 0 auto; }
+  .ar-wrap.ar-fit .ar-fit-head .ar-sub { display: none; }   /* pure chrome on a phone */
+  .ar-wrap.ar-fit .ar-fit-head .ar-title { font-size: 1.25rem; margin-bottom: 2px; }
+  .ar-wrap.ar-fit .ar-fit-board {
+    flex: 1 1 auto; min-height: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ar-wrap.ar-fit .ar-fit-board > * { max-height: 100%; max-width: 100%; }
+  .ar-wrap.ar-fit .ar-fit-board svg,
+  .ar-wrap.ar-fit .ar-fit-board canvas { height: 100%; width: 100%; object-fit: contain; }
+  /* The sheet: rises over the board instead of pushing it off-screen. */
+  .ar-wrap.ar-fit .ar-fit-panel {
+    flex: 0 0 auto;
+    max-height: min(58dvh, 460px);
+    overflow-y: auto; overscroll-behavior: contain;
+    margin: 0 -0.85rem; padding: 10px 0.85rem calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--ar-bg, #0b0f1a);
+    border-top: 1px solid var(--ar-border, rgba(255,255,255,0.12));
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -14px 34px rgba(0,0,0,0.55);
+  }
+  .ar-wrap.ar-fit .ar-fit-panel:empty { display: none; }
+}
+
+/* Never let the nav scroll away mid-game on a fitted page. */
+body.arcade:has(.ar-wrap.ar-fit) { overflow: hidden; }
+
+/* --- height budget: on short screens the chrome yields to the question ---- */
+@media (max-height: 820px) {
+  .ar-wrap.ar-fit .ar-fit-head .ar-sub { display: none; }
+}
+@media (max-height: 700px) {
+  .ar-wrap.ar-fit .ar-fit-head .ar-badge { display: none; }
+  .ar-wrap.ar-fit .ar-fit-head .ar-title { font-size: 1.2rem; margin-bottom: 2px; }
+  .ar-wrap.ar-fit .ar-fit-head .ar-meta  { margin-bottom: 4px; }
+  .ar-wrap.ar-fit .ar-fit-panel .ar-card { padding: 12px 13px; }
+  .ar-wrap.ar-fit .ar-fit-panel .ar-hud  { margin-bottom: 8px; }
+  .ar-wrap.ar-fit .ar-fit-panel .ar-tile { padding-top: 9px; padding-bottom: 9px; }
+}
+/* Short answers pair up rather than stacking into a scroll. */
+@media (min-width: 900px) {
+  .ar-wrap.ar-fit .ar-fit-panel .ww-options {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 8px;
+  }
+}
+/* On a phone the question is the game; let the sheet take the room it needs. */
+@media (max-width: 899px) {
+  .ar-wrap.ar-fit .ar-fit-panel { max-height: min(72dvh, 580px); }
+  .ar-wrap.ar-fit .ar-fit-board { min-height: 130px; }
+}
+/* Small phones (e.g. 360x640): the board yields further so nothing clips. */
+@media (max-width: 899px) and (max-height: 700px) {
+  .ar-wrap.ar-fit .ar-fit-panel { max-height: 80dvh; }
+  .ar-wrap.ar-fit .ar-fit-board { min-height: 88px; }
+  .ar-wrap.ar-fit .ar-fit-head .ar-meta { display: none; }
+  .ar-wrap.ar-fit .ar-fit-panel .ar-tile { padding-top: 8px; padding-bottom: 8px; font-size: 14px; }
+}
+/* The HUD chips wrap to three rows on a small phone; keep them to one. */
+@media (max-width: 899px) and (max-height: 700px) {
+  .ar-wrap.ar-fit .ar-fit-panel .ar-hud { gap: 6px; margin-bottom: 7px; flex-wrap: nowrap; }
+  .ar-wrap.ar-fit .ar-fit-panel .ar-hud-stat { padding: 4px 8px; font-size: 9px; letter-spacing: .5px; }
+  .ar-wrap.ar-fit .ar-fit-panel .ar-hud-stat b { font-size: 15px; }
+}
+/* Final narrow-screen budget: the sheet takes its natural height (capped),
+   the board absorbs the remainder. Stops the confirm button sitting 6-19px
+   under the fold, which is the difference between a tap and a scroll. */
+@media (max-width: 899px) {
+  .ar-wrap.ar-fit .ar-fit-panel { max-height: min(82dvh, 660px); }
+  .ar-wrap.ar-fit .ar-fit-board { min-height: 96px; }
+}
+/* The sheet must be allowed to shrink, or on a 360x640 phone the column
+   overflows its own 100dvh box and the confirm button lands under the fold. */
+@media (max-width: 899px) {
+  .ar-wrap.ar-fit .ar-fit-panel { flex: 0 1 auto; }
+  .ar-wrap.ar-fit .ar-fit-board { flex: 1 1 0; min-height: 76px; }
+}
+@media (max-width: 899px) and (max-height: 700px) {
+  .ar-wrap.ar-fit { padding-top: calc(var(--nav-h, 68px) - 12px); }
+}
+
+/* --- board fills its cell -------------------------------------------------
+   Game boards are authored as `width:100%; height:auto` inside a 640px
+   column, so in a tall grid cell they render small with dead space beneath.
+   In fit mode the board stretches to the cell and the SVG scales with it. */
+.ar-wrap.ar-fit .ar-fit-board { align-items: stretch; }
+.ar-wrap.ar-fit .ar-fit-board > * {
+  flex: 1 1 auto; width: 100%; height: 100%;
+  margin-bottom: 0 !important;
+  display: flex; align-items: center; justify-content: center;
+}
+.ar-wrap.ar-fit .ar-fit-board > * > svg,
+.ar-wrap.ar-fit .ar-fit-board svg {
+  width: 100%; height: 100%; max-height: 100%;
+}
+/* Grid rows should consume the full column height, not hug their content. */
+@media (min-width: 900px) and (min-height: 540px) {
+  .ar-wrap.ar-fit { align-content: stretch; }
+  .ar-wrap.ar-fit .ar-fit-panel { align-self: start; max-height: 100%; }
+}
