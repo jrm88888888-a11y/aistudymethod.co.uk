@@ -1141,13 +1141,21 @@
   })();
 })();
 
-/* ── fullscreen toggle ──────────────────────────────────────────────────────
-   Self-initialising: arcade.js is already loaded by every game page, so no
-   per-game edit is needed. Adds a button only when the browser actually
-   supports the Fullscreen API; otherwise the page is untouched.
-   Fullscreen reclaims the site nav plus the browser's own chrome, which on a
-   phone includes the URL bar - the single largest block of vertical space
-   available without changing any game's layout.                              */
+/* ── in-game tools rail: back-to-arcade + fullscreen ───────────────────────
+   Self-initialising: every game page (quizzes/ and vocab-hub/) already loads
+   arcade.js, so no per-game edit is needed.
+
+   Back-to-arcade: before launching, arcade.html stores its own query string in
+   sessionStorage['aism-arcade-return'], so returning restores the player's
+   subject / level / board / topic rather than dumping them at the top. Only
+   daily-drill used that, and only on its end screen - so a player who opened
+   the wrong game had no way back mid-play. 14 of 15 quizzes games had no back
+   affordance at all, and the vocab-hub games returned to vocab-hub.html, a
+   different hub, without the presets.
+
+   Fullscreen reclaims the site nav plus the browser's own chrome (on a phone,
+   the URL bar) - the largest block of vertical space available without
+   touching any game's layout.                                                */
 (function () {
   if (typeof document === 'undefined') return;
 
@@ -1157,46 +1165,62 @@
   }
 
   ready(function () {
-    var wrap = document.querySelector('.ar-wrap');
-    if (!wrap) return;                                  // not a game page
+    if (!document.querySelector('.ar-wrap') && !document.querySelector('.app')) return;
+    if (document.querySelector('.ar-tools')) return;          // already mounted
 
+    var rail = document.createElement('div');
+    rail.className = 'ar-tools';
+
+    /* ── back to the arcade, with the player's selection intact ── */
+    var ret = '';
+    try { ret = sessionStorage.getItem('aism-arcade-return') || ''; } catch (e) {}
+    if (ret && ret.charAt(0) !== '?') ret = '?' + ret;
+    var back = document.createElement('a');
+    back.className = 'ar-tool ar-back-btn';
+    back.href = '../arcade.html' + ret;
+    back.textContent = '← Arcade';
+    back.title = ret ? 'Back to the arcade, with your subject and topic still selected'
+                     : 'Back to the arcade';
+    back.setAttribute('aria-label', back.title);
+    rail.appendChild(back);
+
+    /* ── fullscreen ── */
     var el = document.documentElement;
     var canFs = !!(el.requestFullscreen || el.webkitRequestFullscreen);
-    if (!canFs) return;                                 // no API - leave the page alone
+    var btn = null;
+    if (canFs) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ar-tool ar-fs-btn';
+      rail.appendChild(btn);
 
-    function isFs() {
-      return !!(document.fullscreenElement || document.webkitFullscreenElement);
+      var isFs = function () {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement);
+      };
+      var paint = function () {
+        var on = isFs();
+        btn.textContent = on ? '✕' : '⛶';
+        btn.title = on ? 'Exit fullscreen (Esc)' : 'Play fullscreen';
+        btn.setAttribute('aria-label', btn.title);
+      };
+      paint();
+
+      btn.addEventListener('click', function () {
+        try {
+          if (isFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+          else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+        } catch (e) { /* a refused request must never break the game */ }
+      });
+      ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
+        document.addEventListener(ev, paint);
+      });
     }
 
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ar-fs-btn';
-    document.body.appendChild(btn);
+    document.body.appendChild(rail);
 
-    function paint() {
-      var on = isFs();
-      btn.textContent = on ? '✕' : '⛶';
-      btn.title = on ? 'Exit fullscreen (Esc)' : 'Play fullscreen';
-      btn.setAttribute('aria-label', btn.title);
-    }
-    paint();
-
-    btn.addEventListener('click', function () {
-      try {
-        if (isFs()) {
-          (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-        } else {
-          (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
-        }
-      } catch (e) { /* a refused request must never break the game */ }
-    });
-
-    ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
-      document.addEventListener(ev, paint);
-    });
-
-    // F toggles, unless the player is typing into the game.
+    // F toggles fullscreen, unless the player is typing into the game.
     document.addEventListener('keydown', function (e) {
+      if (!btn) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
       if (e.key === 'f' || e.key === 'F') btn.click();
