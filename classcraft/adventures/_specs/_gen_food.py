@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate 18 A-Level Food Technology JSON specs."""
+"""Generate 18 A-Level Food Preparation and Nutrition JSON specs."""
 import json, os
 
 OUT_DIR = "/sessions/awesome-busy-dirac/mnt/AI Study Method/classcraft/adventures/_specs"
