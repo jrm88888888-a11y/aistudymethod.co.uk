@@ -114,7 +114,7 @@
    * Chunky 3D pixel wordmark — "REVISION ARCADE".
    *
    * A tiny blocky bitmap font (7 wide x 9 tall cells, roughly 2-unit-thick
-   * strokes) covering only the glyphs the two lines need: S U B J E C T A R D
+   * strokes) covering only the glyphs the two lines need: R E V I S O N A C D
    * and space. reelWordmarkSVG() paints, per lit pixel and back-to-front, a
    * dark outline, a purple side extruded down-and-right for depth, then the
    * bright-yellow face and a faint top-left highlight — so the letters read as
@@ -132,11 +132,15 @@
     'A': ['..###..', '.#####.', '##...##', '##...##', '#######', '#######', '##...##', '##...##', '##...##'],
     'R': ['######.', '######.', '##...##', '######.', '######.', '##.##..', '##..##.', '##..##.', '##...##'],
     'D': ['#####..', '######.', '##...##', '##...##', '##...##', '##...##', '##...##', '######.', '#####..'],
+    'V': ['##...##', '##...##', '##...##', '.#...#.', '.#...#.', '.#...#.', '..#.#..', '..#.#..', '...#...'],
+    'I': ['#######', '#######', '...##..', '...##..', '...##..', '...##..', '...##..', '#######', '#######'],
+    'O': ['.#####.', '#######', '##...##', '##...##', '##...##', '##...##', '##...##', '#######', '.#####.'],
+    'N': ['##...##', '###..##', '###..##', '##.#.##', '##.#.##', '##.#.##', '##..###', '##..###', '##...##'],
     ' ': null
   };
   var WM_GW = 7, WM_GH = 9, WM_GAP = 2, WM_LINEGAP = 4, WM_DEPTH = 3;
   var WM_COL = { face: '#ffd24d', side: '#7a2bd6', line: '#0d0a30', hi: '#fff2a8' };
-  var WM_LINES = ['SUBJECTS', 'ARCADE'];
+  var WM_LINES = ['REVISION', 'ARCADE'];
 
   function wmLineWidth(text) {
     return text.length * (WM_GW + WM_GAP) - WM_GAP;
