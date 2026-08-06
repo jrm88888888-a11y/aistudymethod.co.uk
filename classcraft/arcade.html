@@ -466,14 +466,46 @@ body::after{
 
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade/index.js"></script>
+<script src="arcade/boot.js"></script>
 <script src="quizzes/arcade.js"></script>
 <script src="quizzes/arcade-icons.js?v=20260718a"></script>
 <script>
 (function () {
 'use strict';
 const E = Arcade.escapeHtml;
-const IDX = window.ARCADE_INDEX || { subjects: [], legacy: {} };
+const BOOT = window.ARCADE_BOOT || { subjects: [], daily: {}, dailyFrom: 0, dailyTo: -1 };
+const IDX = { subjects: BOOT.subjects };          /* stubs: {id, d, lv[]} */
+const _full = Object.create(null);                /* id -> full subject record */
+const _legacy = Object.create(null);              /* "subject|level" -> array */
+let _flat = null;                                 /* Quick Play pool, fetched on click */
+
+const _getJson = (u) => fetch(u).then(r => r.ok ? r.json() : Promise.reject(r.status));
+
+/* Pull only what the current state needs. Everything downstream stays
+   synchronous — this just guarantees the data is there before it runs. */
+function ensureData() {
+  const jobs = [];
+  if (state.subject && !_full[state.subject]) {
+    jobs.push(_getJson('arcade/subjects/' + state.subject + '.json')
+      .then(j => { _full[state.subject] = j; })
+      .catch(() => { _full[state.subject] = { id: state.subject, d: state.subject, levels: [] }; }));
+  }
+  if (state.subject && state.level) {
+    const k = state.subject + '|' + state.level;
+    if (!(k in _legacy)) {
+      jobs.push(_getJson('arcade/legacy/' + state.subject + '__' + state.level + '.json')
+        .then(j => { _legacy[k] = j; })
+        .catch(() => { _legacy[k] = []; }));
+    }
+  }
+  return jobs.length ? Promise.all(jobs) : Promise.resolve();
+}
+function getFlat() {
+  if (_flat) return Promise.resolve(_flat);
+  return _getJson('arcade/flat.json')
+    .then(rows => (_flat = rows.map(r => ({ subject: r[0], level: r[1], board: r[2], topic: r[3] }))))
+    .catch(() => (_flat = []));
+}
 const announce = t => { document.getElementById('announce').textContent = t; };
 
 /* Pixel-art icon helper (quizzes/arcade-icons.js). Always guarded: if the
@@ -592,8 +624,8 @@ function coinFlash(text) {
   setTimeout(() => el.remove(), 950);
 }
 
-function node(s) { return IDX.subjects.find(x => x.id === s); }
-function nodeL() { const s = node(state.subject); return s && s.levels.find(x => x.id === state.level); }
+function node(s) { return _full[s] || IDX.subjects.find(x => x.id === s); }
+function nodeL() { const s = node(state.subject); return s && s.levels && s.levels.find(x => x.id === state.level); }
 function nodeB() { const l = nodeL(); return l && l.boards.find(x => x.id === state.board); }
 // Subjects whose topics are mutually-exclusive exam-board OPTIONS rather than
 // shared content (verified June 2026: the per-board tags are accurate, but the
@@ -654,15 +686,17 @@ function renderChoices(gridId, items, selectedId, onPick) {
 
 function show(id, on) { $(id).hidden = !on; }
 
-function renderAll() {
+function renderAll() { ensureData().then(renderNow); }
+function renderNow() {
   renderChoices('grid-subject', IDX.subjects.map(s => ({
     id: s.id, d: s.d, ico: pxIcon(s.id, 34, SUBJECT_ICONS[s.id] || '📚'),
-    metaTags: s.levels.map(l => l.d),
+    metaTags: s.lv || (s.levels || []).map(l => l.d),
   })), state.subject, pickSubject);
 
   const s = node(state.subject);
-  show('lbl-level', !!s); show('grid-level', !!s);
-  if (s) renderChoices('grid-level', s.levels.map(l => ({
+  const sLoaded = !!(s && s.levels);
+  show('lbl-level', sLoaded); show('grid-level', sLoaded);
+  if (sLoaded) renderChoices('grid-level', s.levels.map(l => ({
     id: l.id, d: l.d, meta: l.boards.reduce((n, b) => n + b.topics.length, 0) + ' topics',
   })), state.level, pickLevel);
 
@@ -818,7 +852,7 @@ function renderCabinets() {
 
 function renderLegacy() {
   const key = state.subject + '|' + state.level;
-  const list = (state.subject && state.level && IDX.legacy[key]) || [];
+  const list = (state.subject && state.level && _legacy[key]) || [];
   show('lbl-legacy', list.length > 0); show('grid-legacy', list.length > 0);
   if (!list.length) return;
   $('grid-legacy').innerHTML = list.slice(0, 24).map(g => `
@@ -970,10 +1004,7 @@ const QUICK_PLAY_CABS = ['higher-lower', 'conveyor', 'two-truths', 'falling-word
   const btn = $('quick-play');
   if (!btn) return;
   btn.addEventListener('click', () => {
-    try {
-      const flat = [];
-      IDX.subjects.forEach(s => s.levels.forEach(l => l.boards.forEach(b =>
-        b.topics.forEach(t => { if (t.s) flat.push({ subject: s.id, level: l.id, board: b.id, topic: t.slug }); }))));
+    getFlat().then(flat => {
       if (!flat.length) return;
       const gcse = flat.filter(x => x.level === 'gcse');   // prefer GCSE when present
       const pool = gcse.length ? gcse : flat;
@@ -985,7 +1016,7 @@ const QUICK_PLAY_CABS = ['higher-lower', 'conveyor', 'two-truths', 'falling-word
       const cab = QUICK_PLAY_CABS[Math.floor(Math.random() * QUICK_PLAY_CABS.length)];
       announce('Quick play — launching ' + gameLabel('quiz', cab));
       launch('quiz', cab);
-    } catch (e) { /* quick play is a bonus — the lobby must never break */ }
+    }).catch(() => { /* quick play is a bonus — the lobby must never break */ });
   });
 })();
 
@@ -999,11 +1030,16 @@ function syncUrl() {
   const q = p.toString();
   history.replaceState(null, '', location.pathname + (q ? '?' + q : ''));
 }
-(function restore() {
+/* Deep-link restore. The subject record is now fetched on demand, so this
+   has to wait for it — everything below reads node(s).levels. renderAll() at
+   the foot of the file is gated on the promise this returns. */
+const _restored = (function restore() {
   const p = new URLSearchParams(location.search);
   const s = p.get('subject');
-  if (s && node(s)) {
-    state.subject = s;
+  if (!(s && node(s))) return Promise.resolve();
+  state.subject = s;
+  return ensureData().then(function () {
+    if (!(node(s) && node(s).levels)) return;
     const l = p.get('level');
     if (l && node(s).levels.some(x => x.id === l)) {
       state.level = l;
@@ -1024,7 +1060,7 @@ function syncUrl() {
         requestAnimationFrame(function () { window.scrollTo(0, 0); });
       }
     }
-  }
+  });
 })();
 
 /* ───────────────────────── mascot + THE DAILY hero strip ─────────────────
@@ -1091,14 +1127,18 @@ function syncUrl() {
 
     // 🎯 TODAY — one deterministic topic per day, same for every player.
     try {
-      const flat = [];
-      IDX.subjects.forEach(s => s.levels.forEach(l => l.boards.forEach(b =>
-        b.topics.forEach(t => flat.push({
-          subject: s.id, subjectLabel: s.d, level: l.id, board: b.id,
-          topic: t.slug, topicLabel: t.d,
-        })))));
-      if (flat.length && Arcade.seededShuffle && Arcade.dayNumber) {
-        const pick = Arcade.seededShuffle(flat, Arcade.dayNumber())[0];
+      const _day = Arcade.dayNumber ? Arcade.dayNumber() : 0;
+      const _row = BOOT.daily && BOOT.daily[String(_day)];
+      /* Precomputed at build time — seededShuffle(flat, dayNumber()) is
+         deterministic, so every player already gets the same pick. If the
+         table has run out, fall back to computing it live from flat.json. */
+      if (!_row) { getFlat().then(() => {}); }
+      if (_row) {
+        const pick = {
+          subject: _row[0], level: _row[1], board: _row[2], topic: _row[3],
+          topicLabel: _row[4],
+          subjectLabel: (IDX.subjects.find(x => x.id === _row[0]) || {}).d || _row[0],
+        };
         const p = new URLSearchParams();
         p.set('subject', pick.subject);
         p.set('level', pick.level);
@@ -1253,7 +1293,7 @@ function syncUrl() {
 })();
 
 Arcade.mountMuteButton();
-renderAll();
+_restored.then(renderAll);
 var __w=document.querySelector('.wrap'); if(__w) __w.classList.add('ready');
 setTimeout(function(){var w=document.querySelector('.wrap'); if(w) w.classList.add('ready');},1500);
 })();
