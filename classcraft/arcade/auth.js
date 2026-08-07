@@ -137,12 +137,12 @@
     s.textContent = [
       ":root{--aism-px:'Press Start 2P',monospace;--aism-vt:'VT323',monospace}",
       /* corner widget */
-      "#aism-auth-corner{position:fixed;bottom:14px;right:14px;z-index:99998;font-family:var(--aism-px)}",
+      "#aism-auth-corner{position:fixed;bottom:16px;left:16px;z-index:99998;font-family:var(--aism-px)}",
       ".aism-btn{cursor:pointer;border:0;border-radius:999px;font-family:var(--aism-px);font-size:10px;letter-spacing:.5px}",
-      ".aism-corner-login{display:flex;align-items:center;gap:8px;background:#131028;border:1px solid #f5c542;color:#f5c542;padding:8px 14px;box-shadow:0 2px 10px #0007}",
-      ".aism-corner-in{display:flex;align-items:center;gap:9px;background:#131028;border:1px solid #332a5e;border-radius:999px;padding:6px 12px 6px 8px;box-shadow:0 2px 10px #0007;cursor:pointer}",
-      ".aism-corner-in .bal{color:#f5c542;font-size:11px}",
-      ".aism-corner-in .who{color:#8f88b8;font-size:8px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+      ".aism-corner-login{display:flex;align-items:center;gap:9px;background:#1b1636;border:1px solid #f5c542;color:#f5c542;padding:11px 18px;box-shadow:0 6px 20px #0009}",
+      ".aism-corner-in{display:flex;align-items:center;gap:11px;background:#1b1636;border:1px solid #3a3568;border-radius:999px;padding:5px 18px 5px 5px;box-shadow:0 6px 20px #0009;cursor:pointer;transition:border-color .15s}",
+      ".aism-corner-in:hover{border-color:#5ee4e0}",
+      ".aism-corner-in .bal{color:#f5c542;font-size:14px}",
       /* velvet pixel coin — corner (static, gentle glint; not rotating) */
       ".aism-coin{position:relative;flex:none;display:inline-block;line-height:0}",
       ".aism-coin>svg{display:block}",
@@ -161,7 +161,7 @@
       ".aism-coin-cap{display:inline-block;flex:none;opacity:.8;animation:aism-spin 1.8s linear infinite}",
       "@media (prefers-reduced-motion:reduce){.aism-coin-win,.aism-coin-cap{animation:none}}",
       /* dropdown */
-      ".aism-menu{position:absolute;bottom:46px;right:0;background:#1b1636;border:1px solid #332a5e;border-radius:12px;padding:10px;min-width:190px;box-shadow:0 8px 28px #000a}",
+      ".aism-menu{position:absolute;bottom:60px;left:0;background:#1b1636;border:1px solid #332a5e;border-radius:12px;padding:10px;min-width:200px;box-shadow:0 8px 28px #000a}",
       ".aism-menu .row{font-family:var(--aism-vt);font-size:18px;color:#e8e4ff;padding:6px 8px}",
       ".aism-menu .row b{color:#f5c542}",
       ".aism-menu button{width:100%;margin-top:8px}",
@@ -205,9 +205,10 @@
       ".aism-av-name{font-family:var(--aism-px);font-size:8px;color:var(--f);line-height:1.4;min-height:22px;display:flex;align-items:center;justify-content:center}",
       ".aism-av-meta{font-size:14px;color:#8f88b8;margin-top:3px;line-height:1.2}",
       ".aism-av-unlock{color:#ffd60a}",
-      /* corner avatar thumbnail */
-      ".aism-av-mini{width:22px;height:22px;border-radius:50%;overflow:hidden;flex:none;background:#221b44;border:1px solid #5ee4e0;display:inline-block;line-height:0}",
+      /* corner avatar thumbnail — big + clear */
+      ".aism-av-mini{width:42px;height:42px;border-radius:50%;overflow:hidden;flex:none;background:#221b44;border:2px solid #5ee4e0;display:inline-flex;align-items:center;justify-content:center;line-height:0}",
       ".aism-av-mini img{width:100%;height:100%;object-fit:cover}",
+      ".aism-av-mini.empty{border-style:dashed;border-color:#5a5388;color:#8f88b8;font-family:var(--aism-vt);font-size:22px}",
     ].join("\n");
     document.head.appendChild(s);
   }
@@ -260,8 +261,10 @@
         var bal = (walletSnap && typeof walletSnap.coins === "number") ? walletSnap.coins : 0;
         var chip = el("div", "aism-corner-in");
         var av = auth.avatar();
-        var avHtml = av ? '<span class="aism-av-mini"><img alt="" src="' + avatarImg(av, 256) + "\" onerror=\"this.parentNode.style.display='none'\"></span>" : "";
-        chip.innerHTML = avHtml + '<span class="aism-coin" aria-hidden="true">' + coinSvg(18, "") + '</span><span class="bal">' + bal + '</span><span class="who">' + esc(auth.user() || "") + "</span>";
+        var avHtml = av
+          ? '<span class="aism-av-mini"><img alt="" src="' + avatarImg(av, 256) + "\" onerror=\"this.parentNode.classList.add('empty');this.parentNode.textContent='+';\"></span>"
+          : '<span class="aism-av-mini empty" title="Choose an avatar">+</span>';
+        chip.innerHTML = avHtml + '<span class="aism-coin" aria-hidden="true">' + coinSvg(20, "") + '</span><span class="bal">' + bal + "</span>";
         chip.setAttribute("role", "button"); chip.setAttribute("tabindex", "0");
         chip.setAttribute("aria-label", "Account: " + (auth.user() || "") + ", " + bal + " coins");
         var open = function () { toggleMenu(host, chip); };
