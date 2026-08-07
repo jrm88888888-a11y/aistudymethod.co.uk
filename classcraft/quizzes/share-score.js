@@ -9,7 +9,9 @@
  * Public API:
  *   Arcade.shareScore({ gameName, subject, level, topic, score, total, pct,
  *                       rank, rankLine, bigLabel, statLine })
- *       Builds the card image, attempts navigator.share({files,text,url}).
+ *       Builds the card image, attempts navigator.share({files,text}) with the
+ *       challenge link folded into the caption text (a separate `url` field makes
+ *       chat apps unfurl a second link-preview card alongside the image).
  *       Desktop / unsupported browsers: downloads the PNG + copies a challenge
  *       URL to the clipboard with a toast confirmation.
  *
@@ -845,7 +847,14 @@
     if (!opts || typeof opts !== 'object') return { ok: false, error: 'no-opts' };
 
     const challengeUrl = buildChallengeUrl(opts);
-    const text = buildShareText(opts);
+    // The challenge link rides INSIDE the caption text, not in a separate
+    // navigator.share `url` field. When a share carries both an image file and a
+    // `url`, WhatsApp/iMessage post the image AND unfurl the url into its own
+    // link-preview card (the game page carries og:image), so the recipient gets
+    // two visuals for one share — the "scrappy" double. A link inside a media
+    // caption stays tappable, preserving the ?from=share challenge deep-link and
+    // UTMs that maybeShowChallenge reads, without spawning that second preview.
+    const text = buildShareText(opts) + '\n' + challengeUrl;
 
     // Mascot library — one lazy-load attempt at share time (never at page
     // load). Cosmetic: proceed with or without it, in total silence.
@@ -860,32 +869,31 @@
       return fallbackDownloadAndCopy(null, challengeUrl);
     }
 
-    // Story companion (9:16) — best-effort. The square card is the product;
-    // a story render failure must never block the share.
-    let storyBlob = null;
-    try {
-      storyBlob = await drawStoryCard(opts);
-    } catch (err) {
-      storyBlob = null;
-    }
-
+    // A chat share sends the square card ONLY. The 9:16 story card is a
+    // different medium (IG/Snap stories); attaching it to a chat share just
+    // drops a second, redundant image into the thread. A caller that genuinely
+    // targets a story can opt in with opts.includeStory — and even then the
+    // story only rides along when the share target accepts both files.
     const file = new File([blob], 'aism-score.png', { type: 'image/png' });
-    // Offer square + story together only when the share target accepts both;
-    // otherwise fall back to the square alone (the proven path).
     let files = [file];
-    if (storyBlob) {
+    if (opts.includeStory) {
       try {
-        const storyFile = new File([storyBlob], 'aism-score-story.png', { type: 'image/png' });
-        if (navigator.canShare && navigator.canShare({ files: [file, storyFile] })) {
-          files = [file, storyFile];
+        const storyBlob = await drawStoryCard(opts);
+        if (storyBlob) {
+          const storyFile = new File([storyBlob], 'aism-score-story.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file, storyFile] })) {
+            files = [file, storyFile];
+          }
         }
       } catch (err) { files = [file]; }
     }
 
-    // Mobile path: native share sheet with file(s).
+    // Mobile path: native share sheet with the card image + caption. No `url`
+    // field — the challenge link lives in the caption (see above), so the share
+    // is a single clean image instead of image + a separate unfurled link card.
     if (navigator.canShare && navigator.canShare({ files: files }) && navigator.share) {
       try {
-        await navigator.share({ files: files, text, url: challengeUrl });
+        await navigator.share({ files: files, text: text });
         return { method: 'native-share', ok: true, cards: files.length };
       } catch (err) {
         if (err && err.name === 'AbortError') {
