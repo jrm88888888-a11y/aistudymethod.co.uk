@@ -137,7 +137,8 @@
     s.textContent = [
       ":root{--aism-px:'Press Start 2P',monospace;--aism-vt:'VT323',monospace}",
       /* corner widget */
-      "#aism-auth-corner{position:fixed;bottom:16px;left:16px;z-index:99998;font-family:var(--aism-px)}",
+      "#aism-auth-corner{position:fixed;top:16px;right:16px;z-index:99998;font-family:var(--aism-px);touch-action:none}",
+      "#aism-auth-corner.dragging,#aism-auth-corner.dragging *{cursor:grabbing !important}",
       ".aism-btn{cursor:pointer;border:0;border-radius:999px;font-family:var(--aism-px);font-size:10px;letter-spacing:.5px}",
       ".aism-corner-login{display:flex;align-items:center;gap:9px;background:#1b1636;border:1px solid #f5c542;color:#f5c542;padding:11px 18px;box-shadow:0 6px 20px #0009}",
       ".aism-corner-in{display:flex;align-items:center;gap:11px;background:#1b1636;border:1px solid #3a3568;border-radius:999px;padding:5px 18px 5px 5px;box-shadow:0 6px 20px #0009;cursor:pointer;transition:border-color .15s}",
@@ -161,7 +162,7 @@
       ".aism-coin-cap{display:inline-block;flex:none;opacity:.8;animation:aism-spin 1.8s linear infinite}",
       "@media (prefers-reduced-motion:reduce){.aism-coin-win,.aism-coin-cap{animation:none}}",
       /* dropdown */
-      ".aism-menu{position:absolute;bottom:60px;left:0;background:#1b1636;border:1px solid #332a5e;border-radius:12px;padding:10px;min-width:200px;box-shadow:0 8px 28px #000a}",
+      ".aism-menu{position:absolute;background:#1b1636;border:1px solid #332a5e;border-radius:12px;padding:10px;min-width:200px;box-shadow:0 8px 28px #000a}",
       ".aism-menu .row{font-family:var(--aism-vt);font-size:18px;color:#e8e4ff;padding:6px 8px}",
       ".aism-menu .row b{color:#f5c542}",
       ".aism-menu button{width:100%;margin-top:8px}",
@@ -255,6 +256,46 @@
     injectCss();
     var host = document.getElementById("aism-auth-corner");
     if (!host) { host = el("div"); host.id = "aism-auth-corner"; (target || document.body).appendChild(host); }
+
+    // Draggable: default top-right (CSS), but the user can drag it off any
+    // button and we remember where they left it.
+    (function applyPos() {
+      var p = null; try { p = JSON.parse(localStorage.getItem("aism-corner-pos") || "null"); } catch (e) {}
+      if (p && typeof p.left === "number" && typeof p.top === "number") {
+        var l = Math.min(Math.max(4, p.left), Math.max(4, window.innerWidth - 64));
+        var t = Math.min(Math.max(4, p.top), Math.max(4, window.innerHeight - 44));
+        host.style.left = l + "px"; host.style.top = t + "px"; host.style.right = "auto"; host.style.bottom = "auto";
+      }
+    })();
+    if (!host._dragInit) {
+      host._dragInit = true;
+      host.addEventListener("pointerdown", function (e) {
+        if (e.button != null && e.button !== 0) return;
+        var r = host.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, ox = r.left, oy = r.top, dragging = false;
+        host._dragged = false;
+        var mv = function (ev) {
+          var dx = ev.clientX - sx, dy = ev.clientY - sy;
+          if (!dragging && Math.abs(dx) + Math.abs(dy) > 5) { dragging = true; host._dragged = true; host.classList.add("dragging"); }
+          if (dragging) {
+            var nl = Math.min(Math.max(4, ox + dx), window.innerWidth - host.offsetWidth - 4);
+            var nt = Math.min(Math.max(4, oy + dy), window.innerHeight - host.offsetHeight - 4);
+            host.style.left = nl + "px"; host.style.top = nt + "px"; host.style.right = "auto"; host.style.bottom = "auto";
+            ev.preventDefault();
+          }
+        };
+        var up = function () {
+          document.removeEventListener("pointermove", mv); document.removeEventListener("pointerup", up);
+          host.classList.remove("dragging");
+          if (dragging) {
+            var r2 = host.getBoundingClientRect();
+            try { localStorage.setItem("aism-corner-pos", JSON.stringify({ left: Math.round(r2.left), top: Math.round(r2.top) })); } catch (e) {}
+            setTimeout(function () { host._dragged = false; }, 60); // let the click fire, then clear
+          }
+        };
+        document.addEventListener("pointermove", mv); document.addEventListener("pointerup", up);
+      });
+    }
+
     function paint() {
       host.innerHTML = "";
       if (auth.isLoggedIn()) {
@@ -267,14 +308,14 @@
         chip.innerHTML = avHtml + '<span class="aism-coin" aria-hidden="true">' + coinSvg(20, "") + '</span><span class="bal">' + bal + "</span>";
         chip.setAttribute("role", "button"); chip.setAttribute("tabindex", "0");
         chip.setAttribute("aria-label", "Account: " + (auth.user() || "") + ", " + bal + " coins");
-        var open = function () { toggleMenu(host, chip); };
+        var open = function () { if (host._dragged) return; toggleMenu(host, chip); };
         chip.addEventListener("click", open);
         chip.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
         host.appendChild(chip);
       } else {
         var b = el("button", "aism-btn aism-corner-login");
         b.innerHTML = '<span class="aism-coin" aria-hidden="true">' + coinSvg(18, "") + '</span>Log in';
-        b.addEventListener("click", function () { auth.open("login"); });
+        b.addEventListener("click", function () { if (host._dragged) return; auth.open("login"); });
         host.appendChild(b);
       }
     }
@@ -296,6 +337,14 @@
       m.appendChild(mkItem("Element shop", null, AUTH_BASE + "elements.html"));
       m.appendChild(mkItem("Log out", function () { auth.logout(); m.remove(); }));
       host.appendChild(m);
+      // Place the menu on whichever side keeps it on screen (the chip may have been dragged anywhere).
+      var r = host.getBoundingClientRect();
+      var below = r.top < window.innerHeight * 0.5;
+      var rightSide = (r.left + r.width / 2) > window.innerWidth * 0.5;
+      m.style.top = below ? (host.offsetHeight + 8) + "px" : "auto";
+      m.style.bottom = below ? "auto" : (host.offsetHeight + 8) + "px";
+      m.style.left = rightSide ? "auto" : "0";
+      m.style.right = rightSide ? "0" : "auto";
       setTimeout(function () {
         var off = function (e) { if (!host.contains(e.target)) { m.remove(); document.removeEventListener("click", off); } };
         document.addEventListener("click", off);
@@ -479,6 +528,13 @@
     return { ok: false, error: r.error };
   };
 
+  // tiny select sound (honours the arcade mute flag)
+  var _ac2;
+  function actx2() { try { if (!_ac2) _ac2 = new (window.AudioContext || window.webkitAudioContext)(); if (_ac2.state === "suspended") _ac2.resume(); return _ac2; } catch (e) { return null; } }
+  function amuted() { try { return localStorage.getItem("aism-arcade-muted") === "1"; } catch (e) { return false; } }
+  function atone(f, d, ty, w, v) { var ac = actx2(); if (!ac || amuted()) return; var t = ac.currentTime + (w || 0), o = ac.createOscillator(), g = ac.createGain(); o.type = ty || "square"; o.frequency.value = f; o.connect(g); g.connect(ac.destination); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v || .14, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.start(t); o.stop(t + d + .03); }
+  function sfxSelect() { atone(880, .06, "square", 0, .12); atone(1245, .1, "triangle", .045, .12); }
+
   auth.openAvatars = function () { injectCss(); loadAvatars(renderAvatarPicker); };
   function renderAvatarPicker() {
     close();
@@ -523,7 +579,14 @@
           '<div class="aism-av-name">' + esc(a.name) + "</div>" +
           '<div class="aism-av-meta">' + (unlocked ? esc((f.label || "") + " · " + a.dates)
             : '<span class="aism-av-unlock">' + esc(window.velvetAvatarUnlockLabel ? velvetAvatarUnlockLabel(a) : "Locked") + "</span>") + "</div>";
-        if (unlocked) card.addEventListener("click", function () { auth.setAvatar(a.id).then(function (r) { if (r.ok) render(); }); });
+        if (unlocked) card.addEventListener("click", function () {
+          if (card.classList.contains("on")) return;
+          var on = card.parentNode ? card.parentNode.querySelectorAll(".aism-av.on") : [];
+          for (var k = 0; k < on.length; k++) on[k].classList.remove("on");
+          card.classList.add("on");            // instant highlight
+          sfxSelect();
+          auth.setAvatar(a.id).then(function (r) { if (!r.ok) render(); }); // background; revert on failure
+        });
         grid.appendChild(card);
       });
       modal.appendChild(grid);
