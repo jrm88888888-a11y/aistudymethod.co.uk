@@ -142,6 +142,10 @@
       ".aism-coin-win{width:26px;height:26px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#ffe479,#f5c542 58%,#b8860b);box-shadow:inset -3px -3px 0 #b8860b,0 0 10px #f5c54288;animation:aism-spin 1.1s linear infinite}",
       "@keyframes aism-spin{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}",
       "@media (prefers-reduced-motion:reduce){.aism-coin-win{animation:none}}",
+      /* end-card cap notice — feedback when a game earns nothing because today's cap is hit */
+      ".aism-cap{display:flex;align-items:center;justify-content:center;gap:9px;margin:2px 0 14px;font-family:var(--aism-vt);font-size:17px;color:#8f88b8;line-height:1.35;text-align:left}",
+      ".aism-cap b{color:#f5c542;font-family:var(--aism-px);font-size:11px}",
+      ".aism-coin-cap{width:20px;height:20px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#d9c98f,#b8a24a 60%,#7a6a2a);box-shadow:inset -2px -2px 0 #7a6a2a;opacity:.85}",
       /* dropdown */
       ".aism-menu{position:absolute;top:46px;right:0;background:#1b1636;border:1px solid #332a5e;border-radius:12px;padding:10px;min-width:180px;box-shadow:0 8px 28px #000a}",
       ".aism-menu .row{font-family:var(--aism-vt);font-size:18px;color:#e8e4ff;padding:6px 8px}",
@@ -399,6 +403,15 @@
       + (capRemaining != null && capRemaining <= 12 ? '<span class="aism-win-cap">' + capRemaining + " left today</span>" : "");
     insertTop(mount, d);
   }
+  // Shown when a game earns 0 coins because today's 45-coin cap is already hit.
+  // The point of the cap is to bound coins, never the play — so the copy says so.
+  function capNote(mount) {
+    injectCss();
+    var d = el("div", "aism-cap");
+    d.innerHTML = '<span class="aism-coin-cap" aria-hidden="true"></span>'
+      + "<span>Daily coin limit reached — <b>45/45</b> today. Keep playing; your coins reset tomorrow.</span>";
+    insertTop(mount, d);
+  }
   function registerCta(mount, letter, worth) {
     injectCss();
     var d = el("div"); d.style.cssText = "text-align:center;margin:4px 0 12px";
@@ -422,7 +435,11 @@
           var worth = GRADE_COINS[letter] || 0;
           var mount = container && container.querySelector ? container.querySelector(".ar-end-inner") : null;
           if (auth.isLoggedIn()) {
-            auth.award(opts.pct).then(function (res) { if (mount && res && res.ok && res.credited > 0) winNote(mount, res.credited, res.wallet && res.wallet.capRemaining); });
+            auth.award(opts.pct).then(function (res) {
+              if (!mount || !res || !res.ok) return;
+              if (res.credited > 0) winNote(mount, res.credited, res.wallet && res.wallet.capRemaining);
+              else capNote(mount); // grade was worth coins but the daily cap blocked them
+            });
           } else if (mount && worth > 0) {
             registerCta(mount, letter, worth);
           }
