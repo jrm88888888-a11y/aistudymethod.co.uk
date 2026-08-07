@@ -23,6 +23,19 @@
 
   var API = String(window.AISM_ACCOUNTS_URL || "https://aism-accounts-7aktx.bunny.run").replace(/\/+$/, "");
   var LS = "aism-auth"; // { token, userId, username }
+  // Directory of THIS file (…/classcraft/arcade/), so avatar art + the avatar
+  // dataset resolve correctly whether we're on the lobby, a game page or the
+  // collection page. Defensive for the no-DOM test environment.
+  var AUTH_BASE = (function () {
+    try {
+      var s = (document.currentScript && document.currentScript.src) || "";
+      if (!s && document.getElementsByTagName) {
+        var ss = document.getElementsByTagName("script");
+        for (var i = ss.length - 1; i >= 0; i--) { if (ss[i].src && /arcade\/auth\.js(\?|#|$)/.test(ss[i].src)) { s = ss[i].src; break; } }
+      }
+      return s ? s.replace(/auth\.js([?#].*)?$/, "") : "";
+    } catch (e) { return ""; }
+  })();
 
   var state = load();      // logged-in session or null
   var walletSnap = null;   // latest wallet snapshot from the server
@@ -130,22 +143,23 @@
       ".aism-corner-in{display:flex;align-items:center;gap:9px;background:#131028;border:1px solid #332a5e;border-radius:999px;padding:6px 12px 6px 8px;box-shadow:0 2px 10px #0007;cursor:pointer}",
       ".aism-corner-in .bal{color:#f5c542;font-size:11px}",
       ".aism-corner-in .who{color:#8f88b8;font-size:8px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
-      /* glitter coin */
-      ".aism-coin{width:18px;height:18px;border-radius:50%;position:relative;flex:none;background:radial-gradient(circle at 35% 30%,#ffe479,#f5c542 55%,#b8860b);box-shadow:inset -2px -2px 0 #b8860b,0 0 6px #f5c54277}",
-      ".aism-coin::after{content:'';position:absolute;top:1px;left:3px;width:6px;height:6px;background:radial-gradient(circle,#fff 0,#fff 30%,transparent 60%);border-radius:50%;opacity:0;animation:aism-glint 3.6s ease-in-out infinite}",
+      /* velvet pixel coin — corner (static, gentle glint; not rotating) */
+      ".aism-coin{position:relative;flex:none;display:inline-block;line-height:0}",
+      ".aism-coin>svg{display:block}",
+      ".aism-coin::after{content:'';position:absolute;top:-1px;right:0;width:5px;height:5px;background:radial-gradient(circle,#fff 0,#fff 30%,transparent 60%);border-radius:50%;opacity:0;animation:aism-glint 3.6s ease-in-out infinite;pointer-events:none}",
       "@keyframes aism-glint{0%,58%{opacity:0;transform:scale(.4)}68%{opacity:.95;transform:scale(1)}82%,100%{opacity:0;transform:scale(.5)}}",
       "@media (prefers-reduced-motion:reduce){.aism-coin::after{animation:none;opacity:.5}}",
       /* end-card win note — reward moment, rotating coin (distinct from the calm corner) */
       ".aism-win{display:flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 14px;font-family:var(--aism-px);font-size:13px;color:#f5c542;line-height:1.4}",
       ".aism-win b{color:#fff}",
       ".aism-win-cap{font-family:var(--aism-vt);font-size:14px;color:#8f88b8}",
-      ".aism-coin-win{width:26px;height:26px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#ffe479,#f5c542 58%,#b8860b);box-shadow:inset -3px -3px 0 #b8860b,0 0 10px #f5c54288;animation:aism-spin 1.1s linear infinite}",
+      ".aism-coin-win{display:inline-block;flex:none;animation:aism-spin 1.1s linear infinite}",
       "@keyframes aism-spin{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}",
-      "@media (prefers-reduced-motion:reduce){.aism-coin-win{animation:none}}",
       /* end-card cap notice — feedback when a game earns nothing because today's cap is hit */
       ".aism-cap{display:flex;align-items:center;justify-content:center;gap:9px;margin:2px 0 14px;font-family:var(--aism-vt);font-size:17px;color:#8f88b8;line-height:1.35;text-align:left}",
-      ".aism-cap b{color:#f5c542;font-family:var(--aism-px);font-size:11px}",
-      ".aism-coin-cap{width:20px;height:20px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#d9c98f,#b8a24a 60%,#7a6a2a);box-shadow:inset -2px -2px 0 #7a6a2a;opacity:.85}",
+      ".aism-cap b{color:#c6a8ff;font-family:var(--aism-px);font-size:11px}",
+      ".aism-coin-cap{display:inline-block;flex:none;opacity:.8;animation:aism-spin 1.8s linear infinite}",
+      "@media (prefers-reduced-motion:reduce){.aism-coin-win,.aism-coin-cap{animation:none}}",
       /* dropdown */
       ".aism-menu{position:absolute;top:46px;right:0;background:#1b1636;border:1px solid #332a5e;border-radius:12px;padding:10px;min-width:180px;box-shadow:0 8px 28px #000a}",
       ".aism-menu .row{font-family:var(--aism-vt);font-size:18px;color:#e8e4ff;padding:6px 8px}",
@@ -178,11 +192,62 @@
       ".aism-warn{font-size:17px;color:#ffd60a;line-height:1.3;margin:2px 0 12px}",
       ".aism-check{display:flex;gap:9px;align-items:flex-start;font-size:17px;color:#cfc9ef;line-height:1.3;cursor:pointer;margin-bottom:12px}",
       ".aism-check input{margin-top:3px;width:16px;height:16px;accent-color:#f5c542;flex:none}",
+      /* avatar picker */
+      ".aism-modal-wide{max-width:680px}",
+      ".aism-av-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;padding:8px 18px 20px;max-height:58vh;overflow:auto}",
+      ".aism-av{background:#131028;border:2px solid #332a5e;border-radius:12px;padding:8px;cursor:pointer;text-align:center;color:#e8e4ff;font-family:var(--aism-vt)}",
+      ".aism-av:hover{border-color:var(--f)}",
+      ".aism-av.on{border-color:var(--f);box-shadow:inset 0 0 0 2px var(--f)}",
+      ".aism-av.locked{cursor:default;opacity:.7;filter:saturate(.45)}",
+      ".aism-av-pic{aspect-ratio:1;border-radius:8px;overflow:hidden;background:#221b44;display:flex;align-items:center;justify-content:center;margin-bottom:6px}",
+      ".aism-av-pic img{width:100%;height:100%;object-fit:cover}",
+      ".aism-av-lock{font-size:26px;opacity:.6}",
+      ".aism-av-name{font-family:var(--aism-px);font-size:8px;color:var(--f);line-height:1.4;min-height:22px;display:flex;align-items:center;justify-content:center}",
+      ".aism-av-meta{font-size:14px;color:#8f88b8;margin-top:3px;line-height:1.2}",
+      ".aism-av-unlock{color:#ffd60a}",
+      /* corner avatar thumbnail */
+      ".aism-av-mini{width:22px;height:22px;border-radius:50%;overflow:hidden;flex:none;background:#221b44;border:1px solid #5ee4e0;display:inline-block;line-height:0}",
+      ".aism-av-mini img{width:100%;height:100%;object-fit:cover}",
     ].join("\n");
     document.head.appendChild(s);
   }
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
+
+  /* ---------------- Velvet Coin (pixel-art) ----------------
+   * A brand-coloured (violet + cyan V) pixel coin, drawn in the same crisp
+   * blocky style as the arcade's icon sprites. Self-contained so it works on
+   * every page. Callers add a class (e.g. aism-coin-win) to spin it. */
+  var COIN_MAP = [
+    "....EEEE....",
+    "..EELMMMEE..",
+    ".EDLMMMMMDE.",
+    ".EDVVMMVVDE.",
+    "EDMMVVVVMMDE",
+    "EDMMMVVMMMDE",
+    ".EDMMMMMMDE.",
+    ".EDMMMMMMDE.",
+    ".EDMMMMMMDE.",
+    ".EDDMMMMDDE.",
+    "..EEDDDDEE..",
+    "....EEEE...."
+  ];
+  var COIN_PAL = { E: "#34176a", D: "#5a2fb8", M: "#8b5cf6", L: "#b794ff", V: "#5ee4e0" };
+  function coinSvg(size, cls) {
+    var n = COIN_MAP.length, rects = "";
+    for (var y = 0; y < n; y++) {
+      var row = COIN_MAP[y];
+      for (var x = 0; x < row.length;) {
+        var ch = row.charAt(x);
+        if (ch === ".") { x++; continue; }
+        var s = x; while (x < row.length && row.charAt(x) === ch) x++;
+        rects += '<rect x="' + s + '" y="' + y + '" width="' + (x - s) + '" height="1" fill="' + COIN_PAL[ch] + '"/>';
+      }
+    }
+    return '<svg class="' + (cls || "") + '" width="' + size + '" height="' + size + '" viewBox="0 0 ' + n + " " + n +
+      '" style="shape-rendering:crispEdges;image-rendering:pixelated;vertical-align:middle" aria-hidden="true">' + rects + "</svg>";
+  }
+  auth._coin = coinSvg; // exposed for preview/testing
 
   /* ---------------- UI: corner widget ---------------- */
   auth.mountCorner = function (target) {
@@ -194,7 +259,9 @@
       if (auth.isLoggedIn()) {
         var bal = (walletSnap && typeof walletSnap.coins === "number") ? walletSnap.coins : 0;
         var chip = el("div", "aism-corner-in");
-        chip.innerHTML = '<span class="aism-coin" aria-hidden="true"></span><span class="bal">' + bal + '</span><span class="who">' + esc(auth.user() || "") + "</span>";
+        var av = auth.avatar();
+        var avHtml = av ? '<span class="aism-av-mini"><img alt="" src="' + avatarImg(av, 256) + "\" onerror=\"this.parentNode.style.display='none'\"></span>" : "";
+        chip.innerHTML = avHtml + '<span class="aism-coin" aria-hidden="true">' + coinSvg(18, "") + '</span><span class="bal">' + bal + '</span><span class="who">' + esc(auth.user() || "") + "</span>";
         chip.setAttribute("role", "button"); chip.setAttribute("tabindex", "0");
         chip.setAttribute("aria-label", "Account: " + (auth.user() || "") + ", " + bal + " coins");
         var open = function () { toggleMenu(host, chip); };
@@ -203,7 +270,7 @@
         host.appendChild(chip);
       } else {
         var b = el("button", "aism-btn aism-corner-login");
-        b.innerHTML = '<span class="aism-coin" aria-hidden="true"></span>Log in';
+        b.innerHTML = '<span class="aism-coin" aria-hidden="true">' + coinSvg(18, "") + '</span>Log in';
         b.addEventListener("click", function () { auth.open("login"); });
         host.appendChild(b);
       }
@@ -215,9 +282,16 @@
       var owned = (walletSnap && walletSnap.owned) ? walletSnap.owned.length : 0;
       m.innerHTML = '<div class="row"><b>' + esc(auth.user() || "") + '</b></div>' +
         '<div class="row">' + bal + ' coins · ' + owned + ' collected</div>';
-      var out = el("button", "aism-btn aism-corner-login"); out.style.justifyContent = "center"; out.textContent = "Log out";
-      out.addEventListener("click", function () { auth.logout(); m.remove(); });
-      m.appendChild(out);
+      var mkItem = function (label, fn, href) {
+        var b = href ? el("a", "aism-btn aism-corner-login") : el("button", "aism-btn aism-corner-login");
+        b.style.cssText = "width:100%;margin-top:8px;justify-content:center;text-decoration:none;box-sizing:border-box";
+        b.textContent = label;
+        if (href) b.href = href; else b.addEventListener("click", fn);
+        return b;
+      };
+      m.appendChild(mkItem("Choose avatar", function () { m.remove(); auth.openAvatars(); }));
+      m.appendChild(mkItem("Element shop", null, AUTH_BASE + "elements.html"));
+      m.appendChild(mkItem("Log out", function () { auth.logout(); m.remove(); }));
       host.appendChild(m);
       setTimeout(function () {
         var off = function (e) { if (!host.contains(e.target)) { m.remove(); document.removeEventListener("click", off); } };
@@ -383,6 +457,76 @@
   function close() { if (auth._closeModal) { auth._closeModal(); auth._closeModal = null; } else { var o = document.getElementById("aism-auth-ov"); if (o) o.remove(); } }
   auth.close = close;
 
+  /* ---------------- avatars ---------------- */
+  function loadAvatars(cb) {
+    if (window.VELVET_AVATARS) return cb();
+    var s = document.createElement("script");
+    s.src = AUTH_BASE + "avatars-data.js"; s.async = false;
+    s.onload = function () { cb(); }; s.onerror = function () { cb(); };
+    (document.head || document.documentElement).appendChild(s);
+  }
+  function avatarRec(id) { var arr = window.VELVET_AVATARS || []; for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i]; return null; }
+  function avatarImg(id, size) { var a = avatarRec(id); return a ? AUTH_BASE + "assets/avatars/" + (size || 256) + "/" + String(a.id).padStart(2, "0") + "-" + a.slug + ".webp" : ""; }
+
+  auth.avatar = function () { return walletSnap && walletSnap.avatar ? parseInt(walletSnap.avatar, 10) : null; };
+  auth.avatarImg = avatarImg;
+  auth.setAvatar = async function (id) {
+    var r = await api("/avatar", { body: { avatar: id }, auth: true });
+    if (r.ok) { walletSnap = r.data.wallet; emit(); return { ok: true }; }
+    return { ok: false, error: r.error };
+  };
+
+  auth.openAvatars = function () { injectCss(); loadAvatars(renderAvatarPicker); };
+  function renderAvatarPicker() {
+    close();
+    var ov = el("div", "aism-ov"); ov.id = "aism-auth-ov";
+    var modal = el("div", "aism-modal aism-modal-wide");
+    ov.appendChild(modal);
+    ov.addEventListener("mousedown", function (e) { if (e.target === ov) close(); });
+    document.addEventListener("keydown", escC);
+    document.body.appendChild(ov);
+    auth._closeModal = function () { document.removeEventListener("keydown", escC); ov.remove(); };
+    function escC(e) { if (e.key === "Escape") close(); }
+
+    var view = "all", fields = window.VELVET_AVATAR_FIELDS || {};
+    render();
+    function render() {
+      modal.innerHTML = "";
+      var x = el("button", "aism-x", "✕"); x.setAttribute("aria-label", "Close"); x.addEventListener("click", close); modal.appendChild(x);
+      modal.appendChild(el("h2", null, "Choose your avatar"));
+      var owned = (walletSnap && walletSnap.owned) ? walletSnap.owned.length : 0;
+      var unlockedN = (window.VELVET_AVATARS || []).filter(function (a) { return window.velvetAvatarUnlocked ? velvetAvatarUnlocked(a, walletSnap) : true; }).length;
+      var sub = el("div"); sub.style.cssText = "font-family:var(--aism-vt);font-size:16px;color:#8f88b8;padding:0 18px 4px";
+      sub.innerHTML = "<b style='color:#5ee4e0'>" + unlockedN + "</b> of " + (window.VELVET_AVATARS || []).length + " unlocked — collect elements to unlock more.";
+      modal.appendChild(sub);
+      var chips = el("div", "aism-tabs"); chips.style.flexWrap = "wrap";
+      [["all", "ALL"]].concat(Object.keys(fields).map(function (k) { return [k, fields[k].label.toUpperCase()]; })).forEach(function (t) {
+        var b = el("button", "aism-tab" + (view === t[0] ? " on" : ""), t[1]);
+        b.style.cssText = "flex:0 0 auto;border-radius:8px";
+        b.addEventListener("click", function () { view = t[0]; render(); });
+        chips.appendChild(b);
+      });
+      modal.appendChild(chips);
+      var grid = el("div", "aism-av-grid"), cur = auth.avatar();
+      (window.VELVET_AVATARS || []).filter(function (a) { return view === "all" || a.field === view; }).forEach(function (a) {
+        var unlocked = window.velvetAvatarUnlocked ? velvetAvatarUnlocked(a, walletSnap) : true;
+        var card = el("button", "aism-av" + (unlocked ? "" : " locked") + (cur === a.id ? " on" : ""));
+        var f = fields[a.field] || {};
+        card.style.setProperty("--f", f.color || "#8f88b8");
+        card.innerHTML =
+          '<div class="aism-av-pic">' + (unlocked
+            ? '<img loading="lazy" alt="" src="' + avatarImg(a.id, 256) + "\" onerror=\"this.style.display='none'\">"
+            : '<span class="aism-av-lock">🔒</span>') + "</div>" +
+          '<div class="aism-av-name">' + esc(a.name) + "</div>" +
+          '<div class="aism-av-meta">' + (unlocked ? esc((f.label || "") + " · " + a.dates)
+            : '<span class="aism-av-unlock">' + esc(window.velvetAvatarUnlockLabel ? velvetAvatarUnlockLabel(a) : "Locked") + "</span>") + "</div>";
+        if (unlocked) card.addEventListener("click", function () { auth.setAvatar(a.id).then(function (r) { if (r.ok) render(); }); });
+        grid.appendChild(card);
+      });
+      modal.appendChild(grid);
+    }
+  }
+
   /* ---------------- end-of-game award hook ----------------
    * Wraps Arcade.renderEndCard (the one shared end card across all cabinets).
    * Logged in  -> bank coins on the server, show "+N coins".
@@ -390,7 +534,7 @@
    *   rate, not a claim; no anonymous banking). Double-award guarded by opts. */
   var GRADE_COINS = { S: 12, A: 9, B: 6, C: 3, D: 1 };
   function gradeLetter(pct) { pct = Number(pct); return pct >= 95 ? "S" : pct >= 80 ? "A" : pct >= 60 ? "B" : pct >= 40 ? "C" : "D"; }
-  function coinDot() { return '<span style="display:inline-block;width:13px;height:13px;border-radius:50%;vertical-align:-2px;background:radial-gradient(circle at 35% 30%,#ffe479,#f5c542 60%,#b8860b);box-shadow:inset -1px -1px 0 #b8860b"></span>'; }
+  function coinDot() { return coinSvg(15, ""); }
   function insertLine(mount, node) { var w = mount.querySelector(".ar-watermark"); if (w && w.parentNode === mount) mount.insertBefore(node, w); else mount.appendChild(node); }
   // Win note sits near the TOP of the card (right after the grade) — "alongside
   // the grade", the reward beat. Rotating coin is deliberate here.
@@ -398,7 +542,7 @@
   function winNote(mount, credited, capRemaining) {
     injectCss();
     var d = el("div", "aism-win");
-    d.innerHTML = '<span class="aism-coin-win" aria-hidden="true"></span>'
+    d.innerHTML = coinSvg(28, "aism-coin-win")
       + "<span>You won <b>" + credited + "</b> coin" + (credited === 1 ? "" : "s") + "!</span>"
       + (capRemaining != null && capRemaining <= 12 ? '<span class="aism-win-cap">' + capRemaining + " left today</span>" : "");
     insertTop(mount, d);
@@ -408,7 +552,7 @@
   function capNote(mount) {
     injectCss();
     var d = el("div", "aism-cap");
-    d.innerHTML = '<span class="aism-coin-cap" aria-hidden="true"></span>'
+    d.innerHTML = coinSvg(22, "aism-coin-cap")
       + "<span>Daily coin limit reached — <b>45/45</b> today. Keep playing; your coins reset tomorrow.</span>";
     insertTop(mount, d);
   }
@@ -456,7 +600,7 @@
   function boot() {
     if (!installEndCardHook()) { var n = 0, t = function () { if (installEndCardHook() || ++n > 40) return; setTimeout(t, 50); }; setTimeout(t, 50); }
     if (!window.AISM_NO_CORNER) { try { auth.mountCorner(); } catch (e) {} }
-    if (auth.isLoggedIn()) { auth.pull(); } // refresh balance/collection from the server
+    if (auth.isLoggedIn()) { auth.pull(); loadAvatars(function () { emit(); }); } // refresh from server + load avatar art
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 
