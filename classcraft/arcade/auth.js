@@ -137,7 +137,7 @@
     s.textContent = [
       ":root{--aism-px:'Press Start 2P',monospace;--aism-vt:'VT323',monospace}",
       /* corner widget */
-      "#aism-auth-corner{position:fixed;top:12px;right:12px;z-index:99998;font-family:var(--aism-px)}",
+      "#aism-auth-corner{position:fixed;bottom:14px;right:14px;z-index:99998;font-family:var(--aism-px)}",
       ".aism-btn{cursor:pointer;border:0;border-radius:999px;font-family:var(--aism-px);font-size:10px;letter-spacing:.5px}",
       ".aism-corner-login{display:flex;align-items:center;gap:8px;background:#131028;border:1px solid #f5c542;color:#f5c542;padding:8px 14px;box-shadow:0 2px 10px #0007}",
       ".aism-corner-in{display:flex;align-items:center;gap:9px;background:#131028;border:1px solid #332a5e;border-radius:999px;padding:6px 12px 6px 8px;box-shadow:0 2px 10px #0007;cursor:pointer}",
@@ -161,7 +161,7 @@
       ".aism-coin-cap{display:inline-block;flex:none;opacity:.8;animation:aism-spin 1.8s linear infinite}",
       "@media (prefers-reduced-motion:reduce){.aism-coin-win,.aism-coin-cap{animation:none}}",
       /* dropdown */
-      ".aism-menu{position:absolute;top:46px;right:0;background:#1b1636;border:1px solid #332a5e;border-radius:12px;padding:10px;min-width:180px;box-shadow:0 8px 28px #000a}",
+      ".aism-menu{position:absolute;bottom:46px;right:0;background:#1b1636;border:1px solid #332a5e;border-radius:12px;padding:10px;min-width:190px;box-shadow:0 8px 28px #000a}",
       ".aism-menu .row{font-family:var(--aism-vt);font-size:18px;color:#e8e4ff;padding:6px 8px}",
       ".aism-menu .row b{color:#f5c542}",
       ".aism-menu button{width:100%;margin-top:8px}",
