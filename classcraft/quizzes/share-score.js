@@ -15,6 +15,12 @@
  *       Desktop / unsupported browsers: downloads the PNG + copies a challenge
  *       URL to the clipboard with a toast confirmation.
  *
+ *   Arcade.shareElement({ sym, name, atomicNumber, mass, state, categoryLabel,
+ *                         categoryColor, fact, by, ownedCount, total, url })
+ *       The collection counterpart: renders a personalised periodic-tile card
+ *       for an unlocked element and shares it through the same unified payload
+ *       path (image + caption, no separate `url`). Used by the element shop.
+ *
  *   Arcade.maybeShowChallenge()
  *       On game load, if the URL carries ?from=share&s=…&t=… params, injects
  *       a "Your mate scored X — beat them" banner above #root.
@@ -475,6 +481,213 @@
   }
 
   /* ----------------------------------------------------------------------- *
+   * Element card renderer — 1080×1080, same marquee aesthetic as the score
+   * card, but the hero is a periodic-table tile for the unlocked element.
+   * Fully canvas-drawn (no external art image) so toBlob() is never tainted,
+   * exactly like the score card. Reuses every score-card helper: stars, frame,
+   * badge, marquee headline, palette. Accent colour comes from the element's
+   * category so each element's card reads distinctly.
+   * ----------------------------------------------------------------------- */
+  async function drawElementCard(opts) {
+    const c = document.createElement('canvas');
+    c.width = CARD_SIZE;
+    c.height = CARD_SIZE;
+    const ctx = c.getContext('2d');
+    const W = CARD_SIZE, H = CARD_SIZE;
+    const accent = opts.categoryColor || '#6ab7ff';
+
+    // Background gradient + deterministic starfield (seed 7, like the score card)
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, PAL.bgTop);
+    bg.addColorStop(0.55, PAL.bgMid);
+    bg.addColorStop(1, PAL.bgBot);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    drawStars(ctx, 140, 7);
+
+    // Glow vignette tinted by the element's category colour
+    const vg = ctx.createRadialGradient(W / 2, 560, 60, W / 2, 560, 620);
+    vg.addColorStop(0, hexA(accent, 0.20));
+    vg.addColorStop(1, hexA(accent, 0));
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Outer frame + corner brackets
+    ctx.shadowColor = PAL.borderGlow;
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = PAL.border;
+    ctx.lineWidth = 2.5;
+    roundRect(ctx, 36, 36, W - 72, H - 72, 22);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = PAL.border;
+    ctx.lineWidth = 6;
+    drawCornerBrackets(ctx, 36, 36, W - 72, H - 72, 56);
+
+    // Header: V badge + wordmark (identical to the score card)
+    const badgeY = 70, badgeSize = 88, headerGroupW = 600;
+    const headerStartX = (W - headerGroupW) / 2;
+    drawVelvetBadge(ctx, headerStartX, badgeY, badgeSize);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PAL.text;
+    ctx.font = '900 36px ' + ARCADE_HEAD;
+    ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
+    ctx.fillStyle = PAL.cyan;
+    ctx.font = '700 17px ' + MONO;
+    ctx.fillText('THE VELVET METHOD™', headerStartX + badgeSize + 18, badgeY + 54);
+    ctx.textBaseline = 'alphabetic';
+
+    // Caption
+    ctx.textAlign = 'center';
+    ctx.fillStyle = PAL.cyanDim;
+    ctx.font = '700 16px ' + MONO;
+    ctx.fillText('· · ·  ELEMENT UNLOCKED  · · ·', W / 2, badgeY + badgeSize + 30);
+
+    // Element name marquee — the hero headline
+    drawMarqueeHeadline(ctx, String(opts.name || 'Element').toUpperCase(), W / 2, 300);
+
+    // Category strip (accent caps)
+    if (opts.categoryLabel) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = accent;
+      ctx.font = '700 22px ' + MONO;
+      ctx.fillText(String(opts.categoryLabel).toUpperCase(), W / 2, 400);
+    }
+
+    // Periodic-table tile centrepiece
+    drawElementTile(ctx, opts, accent, W / 2, 452);
+
+    // "UNLOCKED BY <friend>" — gives the card an owner (like the score PLAYER tag)
+    const by = String(opts.by || '').trim();
+    if (by) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = PAL.cyan;
+      ctx.font = '900 30px ' + MONO;
+      const safeBy = by.length > 22 ? by.slice(0, 21) + '…' : by;
+      ctx.fillText('UNLOCKED BY ' + safeBy.toUpperCase(), W / 2, 812);
+    }
+
+    // Progress ribbon
+    const total = opts.total || 118;
+    if (opts.ownedCount != null) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = PAL.magenta;
+      ctx.font = '700 24px ' + MONO;
+      ctx.fillText(opts.ownedCount + ' / ' + total + ' COLLECTED', W / 2, 862);
+    }
+
+    // Fact — wrapped to at most two centred serif lines
+    if (opts.fact) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = PAL.textDim;
+      ctx.font = '400 22px ' + SERIF;
+      const words = String(opts.fact).split(/\s+/);
+      const lines = [];
+      let cur = '';
+      words.forEach(function (wd) {
+        const t = cur ? cur + ' ' + wd : wd;
+        if (ctx.measureText(t).width > W - 180 && cur) { lines.push(cur); cur = wd; }
+        else { cur = t; }
+      });
+      if (cur) lines.push(cur);
+      const two = lines.slice(0, 2);
+      if (lines.length > 2) two[1] = two[1].replace(/\s+\S*$/, '') + '…';
+      two.forEach(function (ln, i) { ctx.fillText(ln, W / 2, 902 + i * 30); });
+    }
+
+    // Challenge tagline + footer (mirrors the score card)
+    ctx.textAlign = 'center';
+    ctx.fillStyle = PAL.magenta;
+    ctx.font = '900 24px ' + MONO;
+    ctx.fillText('▼  COLLECT THEM ALL  ▼', W / 2, 980);
+    ctx.fillStyle = PAL.cyan;
+    ctx.font = '900 26px ' + MONO;
+    ctx.fillText('aistudymethod.com', W / 2, 1020);
+    ctx.fillStyle = PAL.textDim;
+    ctx.font = '500 15px ' + MONO;
+    ctx.fillText('· The Velvet Method™ ·', W / 2, 1046);
+
+    const blob = await new Promise(resolve => c.toBlob(resolve, 'image/png', 0.95));
+    if (!blob) throw new Error('toBlob returned null');
+    return blob;
+  }
+
+  // The periodic-table cell: category-coloured rounded panel with the atomic
+  // number (top-left), state (top-right), the big symbol, and the atomic mass.
+  function drawElementTile(ctx, opts, accent, cx, tileY) {
+    const w = 360, h = 300, x = cx - w / 2, y = tileY;
+    // Panel fill + glow
+    ctx.save();
+    ctx.shadowColor = hexA(accent, 0.5);
+    ctx.shadowBlur = 26;
+    ctx.fillStyle = hexA(accent, 0.12);
+    roundRect(ctx, x, y, w, h, 20);
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 3;
+    roundRect(ctx, x, y, w, h, 20);
+    ctx.stroke();
+
+    // Atomic number — top-left
+    if (opts.atomicNumber != null) {
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = accent;
+      ctx.font = '900 40px ' + MONO;
+      ctx.fillText(String(opts.atomicNumber), x + 22, y + 54);
+    }
+    // State — top-right
+    if (opts.state) {
+      ctx.textAlign = 'right';
+      ctx.fillStyle = PAL.textDim;
+      ctx.font = '700 18px ' + MONO;
+      ctx.fillText(String(opts.state).toUpperCase(), x + w - 22, y + 48);
+    }
+    // Symbol — the hero glyph, shrink-to-fit, white with dark outline + glow
+    const sym = String(opts.sym || '');
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let size = 150;
+    ctx.font = '900 ' + size + 'px ' + ARCADE_HEAD;
+    while (size > 60 && ctx.measureText(sym).width > w - 90) {
+      size -= 8;
+      ctx.font = '900 ' + size + 'px ' + ARCADE_HEAD;
+    }
+    const symY = y + h / 2 + 8;
+    ctx.lineWidth = Math.max(8, size * 0.09);
+    ctx.strokeStyle = '#0d0a30';
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+    ctx.strokeText(sym, cx, symY);
+    ctx.save();
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(sym, cx, symY);
+    ctx.restore();
+    // Atomic mass — bottom
+    if (opts.mass) {
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = PAL.text;
+      ctx.font = '700 24px ' + MONO;
+      ctx.fillText(String(opts.mass), cx, y + h - 26);
+    }
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // #rrggbb / #rgb → rgba() string. Used to tint panels/glows by category.
+  function hexA(hex, a) {
+    let h = String(hex || '').replace('#', '');
+    if (h.length === 3) h = h.split('').map(function (x) { return x + x; }).join('');
+    const r = parseInt(h.slice(0, 2), 16) || 0;
+    const g = parseInt(h.slice(2, 4), 16) || 0;
+    const b = parseInt(h.slice(4, 6), 16) || 0;
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+
+  /* ----------------------------------------------------------------------- *
    * Helpers
    * ----------------------------------------------------------------------- */
   // Player identity — the leaderboard initials saved under aism-initials.
@@ -811,13 +1024,16 @@
   /* ----------------------------------------------------------------------- *
    * Fallback — download PNG + clipboard URL when native share isn't available
    * ----------------------------------------------------------------------- */
-  async function fallbackDownloadAndCopy(blob, challengeUrl) {
+  async function fallbackDownloadAndCopy(blob, linkUrl, opts) {
+    opts = opts || {};
+    const filename  = opts.filename  || 'aism-score.png';
+    const linkLabel = opts.linkLabel || 'Challenge link';
     let downloaded = false, copied = false;
     if (blob) {
       try {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'aism-score.png';
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
@@ -826,18 +1042,42 @@
     }
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(challengeUrl);
+        await navigator.clipboard.writeText(linkUrl);
         copied = true;
       }
     } catch (err) { /* swallow — likely permissions */ }
 
     showToast(
-      downloaded && copied ? 'Image saved. Challenge link copied — paste in any chat.'
+      downloaded && copied ? 'Image saved. ' + linkLabel + ' copied — paste in any chat.'
       : downloaded ? 'Image saved. Drag it into a chat to share.'
-      : copied ? 'Challenge link copied — paste in any chat.'
+      : copied ? linkLabel + ' copied — paste in any chat.'
       : 'Share unavailable in this browser.'
     );
     return { method: 'fallback', downloaded, copied };
+  }
+
+  /* ----------------------------------------------------------------------- *
+   * Unified native-share path — the single place that talks to
+   * navigator.share, shared by shareScore and shareElement. Sends the card
+   * image(s) + caption and NEVER a separate `url` field: a `url` alongside a
+   * file makes WhatsApp/iMessage unfurl a second link-preview card next to the
+   * image (the "scrappy double"). The link lives in the caption text instead,
+   * where it stays tappable. Falls back to download + clipboard on desktop /
+   * unsupported browsers. Fixing the double here fixes it for both share types.
+   * ----------------------------------------------------------------------- */
+  async function nativeShareOrFallback(files, captionText, primaryBlob, fallbackUrl, opts) {
+    if (navigator.canShare && navigator.canShare({ files: files }) && navigator.share) {
+      try {
+        await navigator.share({ files: files, text: captionText });
+        return { method: 'native-share', ok: true, cards: files.length };
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          return { method: 'native-share', ok: false, cancelled: true };
+        }
+        // fall through to fallback so the user still gets something usable
+      }
+    }
+    return fallbackDownloadAndCopy(primaryBlob, fallbackUrl, opts);
   }
 
   /* ----------------------------------------------------------------------- *
@@ -888,22 +1128,49 @@
       } catch (err) { files = [file]; }
     }
 
-    // Mobile path: native share sheet with the card image + caption. No `url`
-    // field — the challenge link lives in the caption (see above), so the share
-    // is a single clean image instead of image + a separate unfurled link card.
-    if (navigator.canShare && navigator.canShare({ files: files }) && navigator.share) {
-      try {
-        await navigator.share({ files: files, text: text });
-        return { method: 'native-share', ok: true, cards: files.length };
-      } catch (err) {
-        if (err && err.name === 'AbortError') {
-          return { method: 'native-share', ok: false, cancelled: true };
-        }
-        // fall through to fallback so the user still gets something usable
-      }
+    // Single unified payload path — image(s) + caption, never a separate `url`.
+    return nativeShareOrFallback(files, text, blob, challengeUrl);
+  };
+
+  /* ----------------------------------------------------------------------- *
+   * Public: Arcade.shareElement — the collection counterpart to shareScore.
+   * Renders a personalised element card and shares it through the SAME unified
+   * payload path (image + caption, no separate `url`), so the periodic-arcade
+   * element share is now a real flex image in the chat instead of a bare link,
+   * and inherits the double-preview fix automatically.
+   *
+   * opts: { sym, name, atomicNumber, mass, state, categoryLabel, categoryColor,
+   *         fact, by, ownedCount, total, url, shareText }
+   *   url      — the shared.html landing link (rides in the caption)
+   *   by       — the sharer's username, stamped on the card
+   *   shareText— optional caption override
+   * ----------------------------------------------------------------------- */
+  Arcade.shareElement = async function (opts) {
+    if (!opts || typeof opts !== 'object') return { ok: false, error: 'no-opts' };
+
+    const url = opts.url || (typeof location !== 'undefined' ? location.href : '');
+    const name = opts.name || 'an element';
+    const total = opts.total || 118;
+    const caption = opts.shareText || (
+      '🧪 I just unlocked ' + name + ' on the Revision Arcade'
+      + (opts.ownedCount != null ? ' — ' + opts.ownedCount + '/' + total + ' collected!' : '!')
+      + ' Can you?'
+    );
+    // Link in the caption, not a separate share `url` field (see nativeShareOrFallback).
+    const text = caption + '\n' + url;
+
+    let blob = null;
+    try {
+      blob = await drawElementCard(opts);
+    } catch (err) {
+      console.warn('[shareElement] canvas/toBlob failed:', err);
+      return fallbackDownloadAndCopy(null, url, { linkLabel: 'Collection link' });
     }
-    // Desktop / unsupported: download the square only + copy the URL.
-    return fallbackDownloadAndCopy(blob, challengeUrl);
+
+    const file = new File([blob], 'aism-element.png', { type: 'image/png' });
+    return nativeShareOrFallback([file], text, blob, url, {
+      filename: 'aism-element.png', linkLabel: 'Collection link'
+    });
   };
 
   /* ----------------------------------------------------------------------- *

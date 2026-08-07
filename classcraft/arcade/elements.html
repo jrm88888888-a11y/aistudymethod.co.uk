@@ -178,6 +178,16 @@
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   #toast.err{border-color:var(--red);color:var(--red)}
 
+  /* share-with-a-friend prompt (after a collect) */
+  #sharePrompt{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:99999;
+    display:none;align-items:center;gap:12px;background:#1b1636;border:1px solid var(--cyan);border-radius:12px;
+    padding:11px 12px 11px 16px;box-shadow:0 10px 30px #000a;max-width:92vw;opacity:0;transition:opacity .2s,transform .2s}
+  #sharePrompt.show{display:flex;opacity:1;transform:translateX(-50%) translateY(0)}
+  #sharePrompt .sp-txt{font-family:var(--vt);font-size:19px;color:var(--text)}
+  #sharePrompt .sp-txt b{color:var(--green)}
+  #sharePrompt .sp-share{font-family:var(--px);font-size:9px;cursor:pointer;background:var(--cyan);color:#131028;border:0;border-radius:8px;padding:11px 15px;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+  #sharePrompt .sp-x{background:none;border:0;color:var(--dim);font-size:20px;cursor:pointer;font-family:var(--vt);line-height:1}
+
   footer{max-width:1180px;margin:40px auto 0;text-align:center;font-size:19px;color:var(--dim)}
 </style>
 </head>
@@ -215,9 +225,11 @@
 </footer>
 
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="sharePrompt" role="status" aria-live="polite"></div>
 
 <script src="elements-data.js"></script>
 <script src="auth.js"></script>
+<script src="../quizzes/share-score.js"></script>
 <script>
 (function(){
   var SERIES = 'periodic-table';
@@ -378,6 +390,44 @@
     return d;
   }
 
+  /* ---- share with a friend ------------------------------------------ */
+  function shareUrl(el){
+    var user = (A() && A().user()) || '';
+    try { return new URL('shared.html?el=' + el.n + (user ? ('&by=' + encodeURIComponent(user)) : ''), location.href).toString(); }
+    catch(e){ return 'https://aistudymethod.com/classcraft/arcade/shared.html?el=' + el.n; }
+  }
+  async function shareElement(el){
+    var url = shareUrl(el);
+    var user = (A() && A().user()) || '';
+    var cat = (typeof VELVET_CATEGORIES !== 'undefined' && VELVET_CATEGORIES[el.cat]) || {};
+    if (window.Arcade && Arcade.shareElement){
+      return Arcade.shareElement({
+        sym: el.sym, name: el.name, atomicNumber: el.n, mass: el.mass,
+        state: (el.state || '').replace('*',''),
+        categoryLabel: cat.label, categoryColor: cat.color, fact: el.fact,
+        by: user, ownedCount: ownedCount(), total: 118, url: url
+      });
+    }
+    // Fallback (card module absent): link-only share
+    var msg = '🧪 I just unlocked ' + el.name + ' on the Revision Arcade — ' + ownedCount() + '/118 collected! Can you?';
+    try { if (navigator.share){ await navigator.share({ title:'Revision Arcade', text: msg, url: url }); return; } }
+    catch(e){ if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(msg + ' ' + url); toast('Share link copied!'); return; } catch(e){}
+    try { window.open(url, '_blank'); } catch(e){}
+  }
+  var _spTimer;
+  function sharePrompt(el){
+    var sp = document.getElementById('sharePrompt');
+    sp.innerHTML = '<span class="sp-txt">🎉 You collected <b>' + el.name + '</b>! Show a friend?</span>' +
+      '<button class="sp-share">' + vcoin(14) + 'Share</button>' +
+      '<button class="sp-x" aria-label="Dismiss">✕</button>';
+    sp.querySelector('.sp-share').addEventListener('click', function(){ shareElement(el); });
+    sp.querySelector('.sp-x').addEventListener('click', function(){ sp.className = ''; });
+    sp.className = 'show';
+    if (_spTimer) clearTimeout(_spTimer);
+    _spTimer = setTimeout(function(){ sp.className = ''; }, 8000);
+  }
+
   /* ---- buy (server-authoritative, via the account) ------------------- */
   async function tryBuy(el){
     var a = A();
@@ -400,6 +450,7 @@
     buying--; delete pendingOwned[el.n];
     if (res.ok){
       paintWallet();                   // real snapshot is now authoritative
+      sharePrompt(el);                 // invite them to show a friend
     } else {
       var cur = cardOf(el.n), relock = card(el); if (cur) cur.replaceWith(relock);
       paintWallet();
