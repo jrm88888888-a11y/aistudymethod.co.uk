@@ -372,5 +372,63 @@
   function close() { if (auth._closeModal) { auth._closeModal(); auth._closeModal = null; } else { var o = document.getElementById("aism-auth-ov"); if (o) o.remove(); } }
   auth.close = close;
 
+  /* ---------------- end-of-game award hook ----------------
+   * Wraps Arcade.renderEndCard (the one shared end card across all cabinets).
+   * Logged in  -> bank coins on the server, show "+N coins".
+   * Logged out -> show "Rank X — worth N coins. Register to bank them" (the
+   *   rate, not a claim; no anonymous banking). Double-award guarded by opts. */
+  var GRADE_COINS = { S: 12, A: 9, B: 6, C: 3, D: 1 };
+  function gradeLetter(pct) { pct = Number(pct); return pct >= 95 ? "S" : pct >= 80 ? "A" : pct >= 60 ? "B" : pct >= 40 ? "C" : "D"; }
+  function coinDot() { return '<span style="display:inline-block;width:13px;height:13px;border-radius:50%;vertical-align:-2px;background:radial-gradient(circle at 35% 30%,#ffe479,#f5c542 60%,#b8860b);box-shadow:inset -1px -1px 0 #b8860b"></span>'; }
+  function insertLine(mount, node) { var w = mount.querySelector(".ar-watermark"); if (w) mount.insertBefore(node, w); else mount.appendChild(node); }
+  function coinLine(mount, credited, capRemaining) {
+    var d = el("div"); d.style.cssText = "display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 12px;font-family:var(--aism-px);font-size:11px;color:#f5c542";
+    d.innerHTML = coinDot() + "+" + credited + " coins" + (capRemaining != null && capRemaining <= 12 ? ' <span style="color:#8f88b8;font-size:9px">(' + capRemaining + " left today)</span>" : "");
+    insertLine(mount, d);
+  }
+  function registerCta(mount, letter, worth) {
+    injectCss();
+    var d = el("div"); d.style.cssText = "text-align:center;margin:4px 0 12px";
+    d.innerHTML = '<div style="font-family:var(--aism-px);font-size:10px;color:#f5c542;margin-bottom:8px">' + coinDot() + " Rank " + letter + " — worth " + worth + " coins</div>";
+    var b = el("button", "aism-btn", "▸ Register to bank them");
+    b.style.cssText = "cursor:pointer;border:1px solid #5ee4e0;background:#221b44;color:#5ee4e0;border-radius:8px;padding:9px 14px;font-family:var(--aism-px);font-size:9px";
+    b.addEventListener("click", function () { auth.open("register"); });
+    d.appendChild(b);
+    insertLine(mount, d);
+  }
+  var _lastCardOpts = null;
+  function installEndCardHook() {
+    if (!Arcade.renderEndCard || Arcade.renderEndCard.__authWrapped) return !!(Arcade.renderEndCard && Arcade.renderEndCard.__authWrapped);
+    var inner = Arcade.renderEndCard;
+    var wrapped = function (container, opts) {
+      var out = inner.call(this, container, opts);
+      try {
+        if (opts && opts !== _lastCardOpts && typeof opts.pct === "number" && isFinite(opts.pct)) {
+          _lastCardOpts = opts;
+          var letter = (Arcade.grade ? Arcade.grade(opts.pct).letter : gradeLetter(opts.pct));
+          var worth = GRADE_COINS[letter] || 0;
+          var mount = container && container.querySelector ? container.querySelector(".ar-end-inner") : null;
+          if (auth.isLoggedIn()) {
+            auth.award(opts.pct).then(function (res) { if (mount && res && res.ok && res.credited > 0) coinLine(mount, res.credited, res.wallet && res.wallet.capRemaining); });
+          } else if (mount && worth > 0) {
+            registerCta(mount, letter, worth);
+          }
+        }
+      } catch (e) { /* the end card must never break */ }
+      return out;
+    };
+    wrapped.__authWrapped = true;
+    Arcade.renderEndCard = wrapped;
+    return true;
+  }
+
+  /* ---------------- boot ---------------- */
+  function boot() {
+    if (!installEndCardHook()) { var n = 0, t = function () { if (installEndCardHook() || ++n > 40) return; setTimeout(t, 50); }; setTimeout(t, 50); }
+    if (!window.AISM_NO_CORNER) { try { auth.mountCorner(); } catch (e) {} }
+    if (auth.isLoggedIn()) { auth.pull(); } // refresh balance/collection from the server
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+
   Arcade.auth = auth;
 })();

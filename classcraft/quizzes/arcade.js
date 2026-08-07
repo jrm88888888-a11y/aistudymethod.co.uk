@@ -1227,3 +1227,29 @@
     });
   });
 })();
+
+/* ── accounts + coin front-end loader ──────────────────────────────────────
+   Every game page and the lobby already load this file (quizzes/arcade.js), so
+   injecting auth.js here gives all of them the login corner widget AND the
+   end-of-game award hook with ZERO per-page edits. auth.js self-installs its
+   award wrapper on Arcade.renderEndCard and auto-mounts the corner. Path is
+   resolved from THIS file's own URL: quizzes/arcade.js -> ../arcade/auth.js.
+   Best-effort: a load failure leaves games fully playable, just without coins. */
+(function () {
+  if (typeof document === 'undefined') return;
+  try {
+    if (window.Arcade && window.Arcade.auth) return; // already present
+    var base = (document.currentScript && document.currentScript.src) || '';
+    if (!base) {
+      var ss = document.getElementsByTagName('script');
+      for (var i = ss.length - 1; i >= 0; i--) {
+        if (ss[i].src && /quizzes\/arcade\.js(\?|#|$)/.test(ss[i].src)) { base = ss[i].src; break; }
+      }
+    }
+    var url = base ? base.replace(/quizzes\/arcade\.js([?#].*)?$/, 'arcade/auth.js')
+                   : '../arcade/auth.js';
+    var s = document.createElement('script');
+    s.src = url; s.async = false;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (e) { /* auth load is best-effort */ }
+})();
