@@ -1008,14 +1008,25 @@ const QUICK_PLAY_CABS = ['higher-lower', 'conveyor', 'two-truths', 'falling-word
       if (!flat.length) return;
       const gcse = flat.filter(x => x.level === 'gcse');   // prefer GCSE when present
       const pool = gcse.length ? gcse : flat;
-      const pick = pool[Math.floor(Math.random() * pool.length)];
-      state.subject = pick.subject; state.level = pick.level;
-      state.board = pick.board; state.topic = pick.topic;
-      renderAll();   // syncs the URL so the return snapshot restores this mission
-      loadPack();    // warm the word bank for when the player comes back
-      const cab = QUICK_PLAY_CABS[Math.floor(Math.random() * QUICK_PLAY_CABS.length)];
-      announce('Quick play — launching ' + gameLabel('quiz', cab));
-      launch('quiz', cab);
+      // Pick a tuple, FETCH its subject+legacy data (subjects load on demand now),
+      // then launch. Without ensureData() the topic list is empty, nodeT() is
+      // undefined and launch() silently bails — the load-split regression that
+      // slipped past the deep-link fix. Retry a few times if a tuple doesn't
+      // resolve to a real topic (rare data gap) so Quick Play always launches.
+      const tryPick = (attempt) => {
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        state.subject = pick.subject; state.level = pick.level;
+        state.board = pick.board; state.topic = pick.topic;
+        return ensureData().then(() => {
+          if (!nodeT() && attempt < 5) return tryPick(attempt + 1);
+          renderAll();   // syncs the URL so the return snapshot restores this mission
+          loadPack();    // warm the word bank for when the player comes back
+          const cab = QUICK_PLAY_CABS[Math.floor(Math.random() * QUICK_PLAY_CABS.length)];
+          announce('Quick play — launching ' + gameLabel('quiz', cab));
+          launch('quiz', cab);
+        });
+      };
+      return tryPick(0);
     }).catch(() => { /* quick play is a bonus — the lobby must never break */ });
   });
 })();

@@ -135,6 +135,13 @@
       ".aism-coin::after{content:'';position:absolute;top:1px;left:3px;width:6px;height:6px;background:radial-gradient(circle,#fff 0,#fff 30%,transparent 60%);border-radius:50%;opacity:0;animation:aism-glint 3.6s ease-in-out infinite}",
       "@keyframes aism-glint{0%,58%{opacity:0;transform:scale(.4)}68%{opacity:.95;transform:scale(1)}82%,100%{opacity:0;transform:scale(.5)}}",
       "@media (prefers-reduced-motion:reduce){.aism-coin::after{animation:none;opacity:.5}}",
+      /* end-card win note — reward moment, rotating coin (distinct from the calm corner) */
+      ".aism-win{display:flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 14px;font-family:var(--aism-px);font-size:13px;color:#f5c542;line-height:1.4}",
+      ".aism-win b{color:#fff}",
+      ".aism-win-cap{font-family:var(--aism-vt);font-size:14px;color:#8f88b8}",
+      ".aism-coin-win{width:26px;height:26px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#ffe479,#f5c542 58%,#b8860b);box-shadow:inset -3px -3px 0 #b8860b,0 0 10px #f5c54288;animation:aism-spin 1.1s linear infinite}",
+      "@keyframes aism-spin{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}",
+      "@media (prefers-reduced-motion:reduce){.aism-coin-win{animation:none}}",
       /* dropdown */
       ".aism-menu{position:absolute;top:46px;right:0;background:#1b1636;border:1px solid #332a5e;border-radius:12px;padding:10px;min-width:180px;box-shadow:0 8px 28px #000a}",
       ".aism-menu .row{font-family:var(--aism-vt);font-size:18px;color:#e8e4ff;padding:6px 8px}",
@@ -380,11 +387,17 @@
   var GRADE_COINS = { S: 12, A: 9, B: 6, C: 3, D: 1 };
   function gradeLetter(pct) { pct = Number(pct); return pct >= 95 ? "S" : pct >= 80 ? "A" : pct >= 60 ? "B" : pct >= 40 ? "C" : "D"; }
   function coinDot() { return '<span style="display:inline-block;width:13px;height:13px;border-radius:50%;vertical-align:-2px;background:radial-gradient(circle at 35% 30%,#ffe479,#f5c542 60%,#b8860b);box-shadow:inset -1px -1px 0 #b8860b"></span>'; }
-  function insertLine(mount, node) { var w = mount.querySelector(".ar-watermark"); if (w) mount.insertBefore(node, w); else mount.appendChild(node); }
-  function coinLine(mount, credited, capRemaining) {
-    var d = el("div"); d.style.cssText = "display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 12px;font-family:var(--aism-px);font-size:11px;color:#f5c542";
-    d.innerHTML = coinDot() + "+" + credited + " coins" + (capRemaining != null && capRemaining <= 12 ? ' <span style="color:#8f88b8;font-size:9px">(' + capRemaining + " left today)</span>" : "");
-    insertLine(mount, d);
+  function insertLine(mount, node) { var w = mount.querySelector(".ar-watermark"); if (w && w.parentNode === mount) mount.insertBefore(node, w); else mount.appendChild(node); }
+  // Win note sits near the TOP of the card (right after the grade) — "alongside
+  // the grade", the reward beat. Rotating coin is deliberate here.
+  function insertTop(mount, node) { mount.insertBefore(node, (mount.children && mount.children[1]) || null); }
+  function winNote(mount, credited, capRemaining) {
+    injectCss();
+    var d = el("div", "aism-win");
+    d.innerHTML = '<span class="aism-coin-win" aria-hidden="true"></span>'
+      + "<span>You won <b>" + credited + "</b> coin" + (credited === 1 ? "" : "s") + "!</span>"
+      + (capRemaining != null && capRemaining <= 12 ? '<span class="aism-win-cap">' + capRemaining + " left today</span>" : "");
+    insertTop(mount, d);
   }
   function registerCta(mount, letter, worth) {
     injectCss();
@@ -409,7 +422,7 @@
           var worth = GRADE_COINS[letter] || 0;
           var mount = container && container.querySelector ? container.querySelector(".ar-end-inner") : null;
           if (auth.isLoggedIn()) {
-            auth.award(opts.pct).then(function (res) { if (mount && res && res.ok && res.credited > 0) coinLine(mount, res.credited, res.wallet && res.wallet.capRemaining); });
+            auth.award(opts.pct).then(function (res) { if (mount && res && res.ok && res.credited > 0) winNote(mount, res.credited, res.wallet && res.wallet.capRemaining); });
           } else if (mount && worth > 0) {
             registerCta(mount, letter, worth);
           }
