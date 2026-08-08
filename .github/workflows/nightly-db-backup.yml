@@ -1,0 +1,39 @@
+name: Nightly DB backup
+
+# Bunny Edge Scripting has no native scheduler, so GitHub Actions is the nightly
+# trigger: it simply calls the backup endpoint, which does the export→Storage work.
+# Times are UTC. GitHub may delay scheduled runs under load — fine for a nightly job.
+# Repo secrets required (Settings → Secrets and variables → Actions):
+#   BACKUP_URL     e.g. https://aism-backup-1ddxx.bunny.run/backup
+#   BACKUP_SECRET  the same strong secret set as BACKUP_SECRET on the edge script
+
+on:
+  schedule:
+    - cron: "17 2 * * *"      # 02:17 UTC nightly
+  workflow_dispatch: {}        # lets you run it on demand from the Actions tab
+
+concurrency:
+  group: nightly-db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger Bunny backup endpoint
+        env:
+          BACKUP_URL: ${{ secrets.BACKUP_URL }}
+          BACKUP_SECRET: ${{ secrets.BACKUP_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BACKUP_URL:-}" ] || [ -z "${BACKUP_SECRET:-}" ]; then
+            echo "::error::BACKUP_URL and BACKUP_SECRET repo secrets must be set"; exit 1
+          fi
+          code=$(curl -sS --max-time 180 -o resp.json -w '%{http_code}' \
+            -X POST "$BACKUP_URL" -H "x-backup-secret: $BACKUP_SECRET")
+          echo "HTTP status: $code"
+          echo "--- response ---"; cat resp.json || true; echo
+          if [ "$code" != "200" ]; then echo "::error::backup endpoint returned $code"; exit 1; fi
+          grep -q '"ok":true' resp.json || { echo "::error::response did not report ok:true"; exit 1; }
+          echo "Backup succeeded."
