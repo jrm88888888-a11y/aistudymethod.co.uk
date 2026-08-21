@@ -19,7 +19,7 @@ emitted (Google ignores them).
 
 Output:
     sitemap.xml              sitemap index
-    sitemaps/core.xml        root pages, guides/, classcraft/*.html hubs
+    sitemaps/core.xml        root pages, guides/, games/, classcraft/*.html hubs
     sitemaps/revise.xml      revise/
     sitemaps/adventures.xml  classcraft/adventures/
 """
@@ -31,7 +31,7 @@ CHECK = "--check" in sys.argv
 
 # section name -> list of (root dir, recurse?)
 SECTIONS = {
-    "core": [(".", False), ("guides", True), ("classcraft", False)],
+    "core": [(".", False), ("guides", True), ("games", True), ("classcraft", False)],
     "revise": [("revise", True)],
     "adventures": [("classcraft/adventures", True)],
 }
