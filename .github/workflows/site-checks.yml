@@ -1,0 +1,40 @@
+name: Site checks
+
+# Static checks that catch the drift a hand-maintained static site accumulates:
+# a sitemap that lists noindex or non-canonical pages, and broken internal links.
+# Both scripts exit non-zero on a problem, which fails the run.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # build-sitemap.py reads lastmod from git history
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sitemap lists exactly the indexable pages on disk
+        # Compares the URL sets only; lastmod legitimately differs between a local
+        # build and a clean checkout, so it is ignored here.
+        run: |
+          grep -ho "<loc>[^<]*</loc>" sitemaps/*.xml | sort > /tmp/committed.txt
+          python3 tools/build-sitemap.py > /tmp/build.txt
+          cat /tmp/build.txt
+          grep -ho "<loc>[^<]*</loc>" sitemaps/*.xml | sort > /tmp/rebuilt.txt
+          if ! diff -q /tmp/committed.txt /tmp/rebuilt.txt; then
+            echo "::error::sitemaps/ are out of date. Run: python3 tools/build-sitemap.py and commit."
+            diff /tmp/committed.txt /tmp/rebuilt.txt | head -40
+            exit 1
+          fi
+      - name: Mini-lesson sibling links are current
+        run: python3 tools/add-related-lessons.py --check | tee /tmp/rel.txt && ! grep -q "would change [1-9]" /tmp/rel.txt
+      - name: No broken internal links
+        run: python3 tools/check-links.py
