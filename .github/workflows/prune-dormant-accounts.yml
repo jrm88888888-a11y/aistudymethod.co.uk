@@ -1,0 +1,42 @@
+name: Prune dormant arcade accounts
+
+# Enforces the 18-month dormancy rule stated in privacy.html ("Student data at a
+# glance") and in the site footer. Bunny Edge Scripting has no native scheduler,
+# so GitHub Actions calls POST /prune-dormant on the accounts edge script once a
+# week; the script deletes accounts (users + wallets + owned) not used for 548 days.
+# Repo secrets required (Settings → Secrets and variables → Actions):
+#   ACCOUNTS_URL   e.g. https://aism-accounts-7aktx.bunny.run   (no trailing slash)
+#   PRUNE_SECRET   the same strong secret set as PRUNE_SECRET on the accounts edge script
+# A run that returns ok:true with deleted:0 is a SUCCESS — nothing was dormant.
+# A red run means the promise is NOT being enforced: investigate.
+
+on:
+  schedule:
+    - cron: "41 3 * * 1"       # 03:41 UTC every Monday (after the 02:17 backup)
+  workflow_dispatch: {}        # run on demand from the Actions tab
+
+concurrency:
+  group: prune-dormant-accounts
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call /prune-dormant on the accounts edge script
+        env:
+          ACCOUNTS_URL: ${{ secrets.ACCOUNTS_URL }}
+          PRUNE_SECRET: ${{ secrets.PRUNE_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ACCOUNTS_URL:-}" ] || [ -z "${PRUNE_SECRET:-}" ]; then
+            echo "::error::ACCOUNTS_URL and PRUNE_SECRET repo secrets must be set"; exit 1
+          fi
+          code=$(curl -sS --max-time 120 -o resp.json -w '%{http_code}' \
+            -X POST "${ACCOUNTS_URL%/}/prune-dormant" -H "x-prune-secret: $PRUNE_SECRET")
+          echo "HTTP status: $code"
+          echo "--- response ---"; cat resp.json || true; echo
+          if [ "$code" != "200" ]; then echo "::error::prune endpoint returned $code"; exit 1; fi
+          grep -q '"ok":true' resp.json || { echo "::error::response did not report ok:true"; exit 1; }
+          echo "Dormancy prune ran. Deleted count is in the response above (0 is normal)."
