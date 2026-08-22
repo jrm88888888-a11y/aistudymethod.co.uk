@@ -193,7 +193,7 @@
     ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
     ctx.fillStyle = PAL.cyan;
     ctx.font = '700 17px ' + MONO;
-    ctx.fillText('THE VELVET METHOD™', headerStartX + badgeSize + 18, badgeY + 54);
+    ctx.fillText('THE VELVET METHOD®', headerStartX + badgeSize + 18, badgeY + 54);
     ctx.textBaseline = 'alphabetic';
 
     // "Score transmission" caption beneath, centred
@@ -314,7 +314,7 @@
     ctx.fillText('aistudymethod.com', W / 2, 1024);
     ctx.fillStyle = PAL.textDim;
     ctx.font = '500 15px ' + MONO;
-    ctx.fillText('· The Velvet Method™ ·', W / 2, 1050);
+    ctx.fillText('· The Velvet Method® ·', W / 2, 1050);
 
     const blob = await new Promise(resolve => c.toBlob(resolve, 'image/png', 0.95));
     if (!blob) throw new Error('toBlob returned null');
@@ -376,7 +376,7 @@
     ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
     ctx.fillStyle = PAL.cyan;
     ctx.font = '700 17px ' + MONO;
-    ctx.fillText('THE VELVET METHOD™', headerStartX + badgeSize + 18, badgeY + 54);
+    ctx.fillText('THE VELVET METHOD®', headerStartX + badgeSize + 18, badgeY + 54);
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'center';
     ctx.fillStyle = PAL.cyanDim;
@@ -473,7 +473,7 @@
     ctx.fillText('aistudymethod.com', W / 2, 1626);
     ctx.fillStyle = PAL.textDim;
     ctx.font = '500 15px ' + MONO;
-    ctx.fillText('· The Velvet Method™ ·', W / 2, 1658);
+    ctx.fillText('· The Velvet Method® ·', W / 2, 1658);
 
     const blob = await new Promise(resolve => c.toBlob(resolve, 'image/png', 0.95));
     if (!blob) throw new Error('toBlob returned null');
@@ -535,7 +535,7 @@
     ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
     ctx.fillStyle = PAL.cyan;
     ctx.font = '700 17px ' + MONO;
-    ctx.fillText('THE VELVET METHOD™', headerStartX + badgeSize + 18, badgeY + 54);
+    ctx.fillText('THE VELVET METHOD®', headerStartX + badgeSize + 18, badgeY + 54);
     ctx.textBaseline = 'alphabetic';
 
     // Caption
@@ -606,7 +606,7 @@
     ctx.fillText('aistudymethod.com', W / 2, 1020);
     ctx.fillStyle = PAL.textDim;
     ctx.font = '500 15px ' + MONO;
-    ctx.fillText('· The Velvet Method™ ·', W / 2, 1046);
+    ctx.fillText('· The Velvet Method® ·', W / 2, 1046);
 
     const blob = await new Promise(resolve => c.toBlob(resolve, 'image/png', 0.95));
     if (!blob) throw new Error('toBlob returned null');

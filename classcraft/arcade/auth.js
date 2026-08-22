@@ -438,7 +438,9 @@
       var pErr = el("div", "aism-err", ""); pf.appendChild(pErr);
 
       var btn = el("button", "aism-btn aism-primary", "Create account");
-      body.appendChild(uf); body.appendChild(pf); body.appendChild(btn);
+      var priv = el("div", "aism-hint");
+      priv.innerHTML = 'No name or email needed. Stored securely in the EU; deleted after 18 months unused. <a href="/privacy.html#student-data" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">How we handle student data</a>';
+      body.appendChild(uf); body.appendChild(pf); body.appendChild(btn); body.appendChild(priv);
 
       var go = async function () {
         uErr.textContent = ""; pErr.textContent = "";
