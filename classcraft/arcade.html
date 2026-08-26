@@ -1045,7 +1045,7 @@ function buildVocab() {
 function pickSubject(id) {
   state.subject = id; state.level = state.board = state.topic = null; vocabPack = null;
   collapseAll('subject'); topicFilter = '';
-  track('wizard_step', { step: 'subject' });
+  track('mission_select', { step: 'subject' });
   withLoading(renderAll()).then(() => scrollToStep('lbl-level'));
   announce('Subject ' + node(id).d + ' selected. Now choose a level.');
 }
@@ -1056,14 +1056,14 @@ function pickLevel(id) {
   // auto-pick the only board (many subjects have just 'general')
   const l = nodeL();
   if (l && l.boards.length === 1) { state.board = l.boards[0].id; }
-  track('wizard_step', { step: 'level' });
+  track('mission_select', { step: 'level' });
   withLoading(renderAll()).then(() => scrollToStep(state.board ? 'lbl-topic' : 'lbl-board'));
   announce('Level selected. ' + (state.board ? 'Now choose a topic.' : 'Now choose an exam board.'));
 }
 function pickBoard(id) {
   state.board = id; state.topic = null;
   collapseAll('board'); topicFilter = '';
-  track('wizard_step', { step: 'board' });
+  track('mission_select', { step: 'board' });
   withLoading(renderAll()).then(() => scrollToStep('lbl-topic'));
   announce('Board selected. Now choose a topic.');
 }
@@ -1073,7 +1073,7 @@ function pickTopic(id) {
   Arcade.sfx.coin();
   buzz([20, 50, 20]);
   coinFlash('MISSION LOCKED!');
-  track('wizard_step', { step: 'topic' });
+  track('mission_select', { step: 'topic' });
   withLoading(renderAll()).then(() => {
     $('lbl-games').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -1149,7 +1149,7 @@ const QUICK_PLAY_CABS = ['higher-lower', 'conveyor', 'two-truths', 'falling-word
   const btn = $('quick-play');
   if (!btn) return;
   btn.addEventListener('click', () => {
-    track('quick_play', {});
+    track('mission_select', { step: 'quick-play', game: 'quick-play' });
     getFlat().then(flat => {
       if (!flat.length) return;
       const gcse = flat.filter(x => x.level === 'gcse');   // prefer GCSE when present
@@ -1481,9 +1481,13 @@ const _restored = (function restore() {
   } catch (e) { /* decoration only */ }
 })();
 
-/* Funnel denominator: one lobby_view per pageload (campaign attribution is
-   added inside Arcade.track). wizard_step events then measure drop-off. */
-track('lobby_view', { deep_link: location.search.indexOf('subject=') > -1 ? 1 : 0 });
+/* Funnel denominator: one page_view per pageload. The /collect endpoint
+   whitelists event names (page_view, mission_select, game_launch, ...) and
+   silently drops anything else, so the funnel speaks that vocabulary:
+   page_view = lobby arrival, mission_select {step} = wizard progress.
+   Fired after the deep-link restore so a shared-link arrival carries its
+   subject/level/board/topic — deep links are the page_views with subject set. */
+_restored.then(function () { track('page_view', {}); });
 
 Arcade.mountMuteButton();
 _restored.then(renderAll);
