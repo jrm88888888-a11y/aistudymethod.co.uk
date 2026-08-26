@@ -302,6 +302,28 @@ body::after{
 .footer-note b{color:var(--vm1)}
 .coin-flash{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);z-index:900;font-family:var(--px);font-size:clamp(18px,5vw,34px);color:var(--yellow);text-shadow:0 0 20px rgba(255,216,61,.9),3px 3px 0 #7a2bd6;animation:coinpop .9s ease-out forwards;pointer-events:none;letter-spacing:2px}
 @keyframes coinpop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}35%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-62%)}}
+/* ---- collapsed wizard steps (completed step -> selected chip + CHANGE) ---- */
+.choice-grid.collapsed{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.choice-grid.collapsed .choice{display:inline-flex;align-items:center;gap:9px;min-height:0;padding:9px 14px;flex:0 1 auto}
+.choice-grid.collapsed .choice .ico{margin-bottom:0;font-size:18px}
+.choice-grid.collapsed .choice .ico svg{width:22px;height:22px}
+.choice-grid.collapsed .choice .meta{display:none}
+.choice-grid.collapsed .choice.selected::after{display:none}
+.change-btn{background:none;border:2px dashed rgba(138,138,192,.6);border-radius:8px;color:var(--dim);font-family:var(--body);font-size:12.5px;font-weight:700;letter-spacing:.8px;padding:8px 12px;cursor:pointer}
+.change-btn:hover,.change-btn:focus-visible{border-color:var(--cyan);color:var(--cyan)}
+.just-picked{animation:pickPop .3s ease}
+@keyframes pickPop{0%{transform:scale(.92)}55%{transform:scale(1.05)}100%{transform:scale(1)}}
+/* ---- topic type-to-filter ---- */
+#topic-filter-row{margin:0 0 10px}
+#topic-filter{width:100%;max-width:420px;background:var(--bg2);border:2px solid #26266a;border-radius:8px;color:var(--text);font-family:var(--vt);font-size:19px;letter-spacing:1px;padding:9px 12px}
+#topic-filter:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 12px rgba(0,240,255,.25)}
+#topic-filter::placeholder{color:var(--dim)}
+#topic-none{font-family:var(--vt);font-size:17px;color:var(--dim);letter-spacing:1px;padding:8px 2px}
+/* ---- wizard loading toast (only shows when a fetch outlives 150ms) ---- */
+#wiz-loading{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:950;font-family:var(--px);font-size:10px;letter-spacing:2px;color:var(--cyan);background:rgba(4,4,20,.92);border:2px solid rgba(0,240,255,.5);border-radius:8px;padding:10px 16px;text-shadow:0 0 8px rgba(0,240,255,.6);animation:blink 1.1s steps(1) infinite}
+/* ---- first-visit QUICK PLAY pulse ---- */
+.quickplay-btn.pulse-new{animation:qpGlow 2.6s ease-in-out infinite,qpPulse 1s ease-in-out 5}
+@keyframes qpPulse{50%{transform:scale(1.02)}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 @media(max-width:600px){
@@ -417,6 +439,10 @@ body::after{
   <div id="board-skip" hidden></div>
 
   <div class="step-label" id="lbl-topic" hidden>STEP 4 — SELECT TOPIC</div>
+  <div id="topic-filter-row" hidden>
+    <input id="topic-filter" type="search" autocomplete="off" placeholder="Type to filter topics…" aria-label="Filter topics">
+    <div id="topic-none" hidden>No topics match — try fewer letters.</div>
+  </div>
   <div class="choice-grid topics" id="grid-topic" role="listbox" aria-label="Choose a topic" hidden></div>
 
   <div class="step-label" id="lbl-games" style="margin-top:34px">
@@ -464,6 +490,7 @@ body::after{
   </div>
 </div>
 
+<div id="wiz-loading" hidden>LOADING…</div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
 <script src="arcade/boot.js"></script>
@@ -475,6 +502,16 @@ body::after{
 const E = Arcade.escapeHtml;
 const BOOT = window.ARCADE_BOOT || { subjects: [], daily: {}, dailyFrom: 0, dailyTo: -1 };
 const IDX = { subjects: BOOT.subjects };          /* stubs: {id, d, lv[]} */
+/* Popularity-first ordering: the core GCSE subjects a TikTok/YouTube arrival
+   is most likely revising lead the grid (alphabetical put Social & Cultural
+   Anthropology first). Everything unlisted stays alphabetical after them. */
+const SUBJECT_PRIORITY = ['biology', 'chemistry', 'physics', 'maths',
+  'english-language', 'english-literature', 'geography', 'history',
+  'psychology', 'business-studies', 'computer-science'];
+IDX.subjects.sort((a, b) => {
+  const pa = SUBJECT_PRIORITY.indexOf(a.id), pb = SUBJECT_PRIORITY.indexOf(b.id);
+  return (pa < 0 ? 99 : pa) - (pb < 0 ? 99 : pb) || String(a.d).localeCompare(String(b.d));
+});
 const _full = Object.create(null);                /* id -> full subject record */
 const _legacy = Object.create(null);              /* "subject|level" -> array */
 let _flat = null;                                 /* Quick Play pool, fetched on click */
@@ -665,9 +702,100 @@ function topicsFor() {
 }
 function nodeT() { return topicsFor().find(x => x.slug === state.topic); }
 
+/* ── engagement layer: collapse state, haptics, beacons, loading toast ──
+   (2026-08-26 pass: restores the pulled-along wizard feel lost in the
+   lazy-load split, and keeps completed steps one chip tall.) */
+const stepOpen = { subject: false, level: false, board: false, topic: false };
+let _justPicked = null;      /* which step just got picked → plays pickPop once */
+let topicFilter = '';
+const STEP_LBL = { subject: 'lbl-subject', level: 'lbl-level', board: 'lbl-board', topic: 'lbl-topic' };
+const STEP_GRID = { subject: 'grid-subject', level: 'grid-level', board: 'grid-board', topic: 'grid-topic' };
+function collapseAll(just) {
+  stepOpen.subject = stepOpen.level = stepOpen.board = stepOpen.topic = false;
+  _justPicked = just || null;
+}
+function scrollToStep(id) {
+  const el = $(id);
+  if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function expandStep(key) {
+  stepOpen[key] = true;
+  renderNow();
+  scrollToStep(STEP_LBL[key]);
+  const g = $(STEP_GRID[key]);
+  const sel = g && g.querySelector('.choice.selected');
+  if (sel) sel.focus();
+}
+function buzz(pattern) {
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* no haptics */ }
+}
+/* Wizard funnel beacons ride the existing Arcade.track pipeline — same
+   rules: fire-and-forget, never throws, never blocks a pick. */
+function track(event, data) {
+  try {
+    Arcade.track(event, Object.assign({
+      subject: state.subject, level: state.level,
+      board: state.board, topic: state.topic,
+    }, data || {}));
+  } catch (e) { /* analytics must never break the lobby */ }
+}
+/* LOADING toast gate: only appears when a step change is still fetching
+   after 150ms, so cached/prefetched transitions never flash it. */
+function withLoading(p) {
+  const t = setTimeout(() => { const el = $('wiz-loading'); if (el) el.hidden = false; }, 150);
+  const off = () => { clearTimeout(t); const el = $('wiz-loading'); if (el) el.hidden = true; };
+  return p.then(v => { off(); return v; }, e => { off(); throw e; });
+}
+/* Type-to-filter for long topic lists (>12 tiles): pure DOM show/hide so
+   typing never re-renders the grid or steals focus. */
+function syncTopicFilter(boardNode) {
+  const row = $('topic-filter-row'), input = $('topic-filter');
+  if (!row || !input) return;
+  const open = !!boardNode && (!state.topic || stepOpen.topic);
+  const show = open && topicsFor().length > 12;
+  row.hidden = !show;
+  if (!show) return;
+  if (input.value !== topicFilter) input.value = topicFilter;
+  applyTopicFilter();
+}
+function applyTopicFilter() {
+  const q = topicFilter.trim().toLowerCase();
+  let hits = 0;
+  document.querySelectorAll('#grid-topic .choice').forEach(b => {
+    const on = !q || b.textContent.toLowerCase().indexOf(q) > -1;
+    b.hidden = !on;
+    if (on) hits++;
+  });
+  const none = $('topic-none');
+  if (none) none.hidden = hits > 0;
+}
+(function wireTopicFilter() {
+  const input = $('topic-filter');
+  if (!input) return;
+  input.addEventListener('input', () => { topicFilter = input.value; applyTopicFilter(); });
+})();
+
 /* ───────────────────────── renderers ───────────────────────── */
-function renderChoices(gridId, items, selectedId, onPick) {
+function renderChoices(gridId, items, selectedId, onPick, stepKey) {
   const grid = $(gridId);
+  // Collapsed mode: a completed step shrinks to its selected chip + CHANGE,
+  // so the wizard stays about one screen tall instead of four grids long.
+  // Tapping the chip or CHANGE re-opens the full grid (focus on selection).
+  const sel = stepKey && items.find(it => it.id === selectedId);
+  if (sel && !stepOpen[stepKey]) {
+    grid.classList.add('collapsed');
+    grid.innerHTML = `
+      <button type="button" class="choice selected${stepKey === _justPicked ? ' just-picked' : ''}"
+              aria-expanded="false" aria-label="${E(sel.d)} selected — change ${E(stepKey)}">
+        ${sel.ico ? `<span class="ico" aria-hidden="true">${sel.ico}</span>` : ''}
+        <span class="ttl">${E(sel.d)}</span>
+      </button>
+      <button type="button" class="change-btn" aria-label="Change ${E(stepKey)}">CHANGE ▸</button>`;
+    grid.querySelectorAll('button').forEach(b =>
+      b.addEventListener('click', () => { Arcade.sfx.click(); buzz(10); expandStep(stepKey); }));
+    return;
+  }
+  grid.classList.remove('collapsed');
   // metaTags render each tag in a no-wrap span so lines break BETWEEN tags,
   // never mid-tag ("A-Level" can never split across lines).
   const metaHtml = it => it.metaTags && it.metaTags.length
@@ -681,24 +809,24 @@ function renderChoices(gridId, items, selectedId, onPick) {
       ${metaHtml(it)}
     </button>`).join('');
   grid.querySelectorAll('.choice').forEach(b =>
-    b.addEventListener('click', () => { Arcade.sfx.click(); onPick(b.dataset.id); }));
+    b.addEventListener('click', () => { Arcade.sfx.click(); buzz(10); onPick(b.dataset.id); }));
 }
 
 function show(id, on) { $(id).hidden = !on; }
 
-function renderAll() { ensureData().then(renderNow); }
+function renderAll() { return ensureData().then(renderNow); }
 function renderNow() {
   renderChoices('grid-subject', IDX.subjects.map(s => ({
     id: s.id, d: s.d, ico: pxIcon(s.id, 34, SUBJECT_ICONS[s.id] || '📚'),
     metaTags: s.lv || (s.levels || []).map(l => l.d),
-  })), state.subject, pickSubject);
+  })), state.subject, pickSubject, 'subject');
 
   const s = node(state.subject);
   const sLoaded = !!(s && s.levels);
   show('lbl-level', sLoaded); show('grid-level', sLoaded);
   if (sLoaded) renderChoices('grid-level', s.levels.map(l => ({
     id: l.id, d: l.d, meta: l.boards.reduce((n, b) => n + b.topics.length, 0) + ' topics',
-  })), state.level, pickLevel);
+  })), state.level, pickLevel, 'level');
 
   const l = nodeL();
   show('lbl-board', !!l); show('grid-board', !!l);
@@ -707,7 +835,7 @@ function renderNow() {
     renderChoices('grid-board', l.boards.map(b => ({
       id: b.id, d: b.d,
       meta: (b.id === 'general' ? b.topics.length : b.topics.length + genN) + ' topics',
-    })), state.board, pickBoard);
+    })), state.board, pickBoard, 'board');
   }
 
   // Visible escape hatch on the exam-board step. Reuses the same pathway as
@@ -728,13 +856,15 @@ function renderNow() {
   show('lbl-topic', !!b); show('grid-topic', !!b);
   if (b) renderChoices('grid-topic', topicsFor().map(t => ({
     id: t.slug, d: t.d,
-  })), state.topic, pickTopic);
+  })), state.topic, pickTopic, 'topic');
+  syncTopicFilter(b);
 
   renderCabinets();
   renderLegacy();
   syncStrip();
   renderSummary();
   syncUrl();
+  _justPicked = null;   /* pickPop plays once, on the render right after a pick */
 }
 
 /* Selection summary chip — appears once at least one wizard choice is made
@@ -755,10 +885,11 @@ function renderSummary() {
     + parts.map(p => '<button type="button" class="wiz-part" data-target="' + p.target + '">' + E(p.d) + '</button>')
         .join('<span class="wiz-dot" aria-hidden="true">·</span>')
     + '<span class="wiz-hint">tap any part to change it</span></div>';
+  const LBL_STEP = { 'lbl-subject': 'subject', 'lbl-level': 'level', 'lbl-board': 'board', 'lbl-topic': 'topic' };
   holder.querySelectorAll('.wiz-part').forEach(btn =>
     btn.addEventListener('click', () => {
       Arcade.sfx.click();
-      $(btn.dataset.target).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      expandStep(LBL_STEP[btn.dataset.target] || 'subject');
     }));
 }
 
@@ -774,7 +905,8 @@ function syncStrip() {
     : '<span style="color:var(--dim)">— lock in a mission above to power up the cabinets</span>';
   const r = $('reset-run');
   if (r) r.addEventListener('click', () => { Arcade.sfx.wrong();
-    state.subject = state.level = state.board = state.topic = null; vocabPack = null; renderAll();
+    state.subject = state.level = state.board = state.topic = null; vocabPack = null;
+    collapseAll(); topicFilter = ''; renderAll();
     scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
@@ -834,7 +966,8 @@ function renderCabinets() {
     note.textContent = '+ ' + hiddenCount + ' more cabinets — lock in a mission to power them up ⤴';
     note.onclick = () => {
       Arcade.sfx.click();
-      $('lbl-subject').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      scrollToStep(!state.subject ? 'lbl-subject' : !state.level ? 'lbl-level'
+        : !state.board ? 'lbl-board' : 'lbl-topic');
     };
   } else {
     $('grid-quiz').innerHTML = quizCells.join('');
@@ -905,34 +1038,45 @@ function buildVocab() {
 }
 
 /* ───────────────────────── pick handlers ───────────────────────── */
+/* Every pick: scroll AFTER renderAll's promise resolves — the lazy-load
+   split made rendering async, and scrolling synchronously targeted a
+   still-hidden (display:none) label, which is why the arcade stopped
+   pulling players from step to step. */
 function pickSubject(id) {
   state.subject = id; state.level = state.board = state.topic = null; vocabPack = null;
-  renderAll();
-  $('lbl-level').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  collapseAll('subject'); topicFilter = '';
+  track('wizard_step', { step: 'subject' });
+  withLoading(renderAll()).then(() => scrollToStep('lbl-level'));
   announce('Subject ' + node(id).d + ' selected. Now choose a level.');
 }
 function pickLevel(id) {
   state.level = id; state.board = state.topic = null;
+  collapseAll('level'); topicFilter = '';
   loadPack();
   // auto-pick the only board (many subjects have just 'general')
   const l = nodeL();
   if (l && l.boards.length === 1) { state.board = l.boards[0].id; }
-  renderAll();
-  $(state.board ? 'lbl-topic' : 'lbl-board').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  track('wizard_step', { step: 'level' });
+  withLoading(renderAll()).then(() => scrollToStep(state.board ? 'lbl-topic' : 'lbl-board'));
   announce('Level selected. ' + (state.board ? 'Now choose a topic.' : 'Now choose an exam board.'));
 }
 function pickBoard(id) {
   state.board = id; state.topic = null;
-  renderAll();
-  $('lbl-topic').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  collapseAll('board'); topicFilter = '';
+  track('wizard_step', { step: 'board' });
+  withLoading(renderAll()).then(() => scrollToStep('lbl-topic'));
   announce('Board selected. Now choose a topic.');
 }
 function pickTopic(id) {
   state.topic = id;
+  collapseAll('topic');
   Arcade.sfx.coin();
+  buzz([20, 50, 20]);
   coinFlash('MISSION LOCKED!');
-  renderAll();
-  $('lbl-games').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  track('wizard_step', { step: 'topic' });
+  withLoading(renderAll()).then(() => {
+    $('lbl-games').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   announce('Topic ' + (nodeT() || {}).d + ' locked in. Cabinets are live — choose your game.');
 }
 
@@ -955,6 +1099,7 @@ function logMission(game, href) {
 }
 function launch(kind, id) {
   Arcade.sfx.coin();
+  buzz([20, 50, 20]);
   // Snapshot the arcade's URL state so the game's end screen can offer a
   // "Back to arcade" link that restores the player's subject/level/board/topic.
   try { sessionStorage.setItem('aism-arcade-return', location.search || ''); } catch (e) {}
@@ -1004,6 +1149,7 @@ const QUICK_PLAY_CABS = ['higher-lower', 'conveyor', 'two-truths', 'falling-word
   const btn = $('quick-play');
   if (!btn) return;
   btn.addEventListener('click', () => {
+    track('quick_play', {});
     getFlat().then(flat => {
       if (!flat.length) return;
       const gcse = flat.filter(x => x.level === 'gcse');   // prefer GCSE when present
@@ -1302,6 +1448,42 @@ const _restored = (function restore() {
   sel.addEventListener('change', () => { Arcade.sfx.click(); loadGameBoard(); });
   loadGameBoard();
 })();
+
+/* Idle prefetch: warm the six most-picked subject files (~13kB each) so the
+   first wizard transition is instant. Skipped for Save-Data connections;
+   ensureData() re-checks _full so an in-flight pick never double-loads. */
+(function prefetchPopular() {
+  try {
+    if (navigator.connection && navigator.connection.saveData) return;
+    const warm = () => SUBJECT_PRIORITY.slice(0, 6).forEach(id => {
+      if (_full[id] || !IDX.subjects.some(s => s.id === id)) return;
+      _getJson('arcade/subjects/' + id + '.json')
+        .then(j => { if (!_full[id]) _full[id] = j; })
+        .catch(() => { /* prefetch is a bonus, never an error */ });
+    });
+    if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 4000 });
+    else setTimeout(warm, 2500);
+  } catch (e) { /* never break the lobby */ }
+})();
+
+/* Brand-new player (no results, no breadcrumb, no streak): pulse QUICK PLAY
+   a few times — the zero-decision door is the best first experience for a
+   cold TikTok/YouTube arrival. Runs once per device, ever. */
+(function firstVisitNudge() {
+  try {
+    if (localStorage.getItem('aism-results') || localStorage.getItem('aism-last-mission')
+      || localStorage.getItem('aism-daily-streak') || localStorage.getItem('aism-qp-nudged')) return;
+    const btn = $('quick-play');
+    if (!btn) return;
+    btn.classList.add('pulse-new');
+    setTimeout(() => btn.classList.remove('pulse-new'), 6500);
+    localStorage.setItem('aism-qp-nudged', '1');
+  } catch (e) { /* decoration only */ }
+})();
+
+/* Funnel denominator: one lobby_view per pageload (campaign attribution is
+   added inside Arcade.track). wizard_step events then measure drop-off. */
+track('lobby_view', { deep_link: location.search.indexOf('subject=') > -1 ? 1 : 0 });
 
 Arcade.mountMuteButton();
 _restored.then(renderAll);
