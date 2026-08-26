@@ -23,6 +23,7 @@
 
   var API = String(window.AISM_ACCOUNTS_URL || "https://aism-accounts-7aktx.bunny.run").replace(/\/+$/, "");
   var LS = "aism-auth"; // { token, userId, username }
+  var WLS = "aism-wallet"; // { uid, w: <wallet snapshot> } — instant-paint cache
   // Directory of THIS file (…/classcraft/arcade/), so avatar art + the avatar
   // dataset resolve correctly whether we're on the lobby, a game page or the
   // collection page. Defensive for the no-DOM test environment.
@@ -38,11 +39,33 @@
   })();
 
   var state = load();      // logged-in session or null
-  var walletSnap = null;   // latest wallet snapshot from the server
 
   function load() { try { return JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) { return null; } }
   function save() { try { state ? localStorage.setItem(LS, JSON.stringify(state)) : localStorage.removeItem(LS); } catch (e) {} }
+  /* Wallet snapshot cache (2026-08-26): the snapshot used to live only in
+     memory, so every page waited on GET /pull — a slow round-trip when the
+     edge script is cold — before coins/collection could paint, and the
+     element shop opened showing zeros. The last known snapshot is now
+     cached per user and painted instantly; pull() still runs at boot and
+     reconciles, so the server stays the source of truth for the balance.
+     Cleared on logout and 401. */
+  function loadWallet() {
+    try {
+      if (!state || !state.token) return null;
+      var c = JSON.parse(localStorage.getItem(WLS) || "null");
+      return (c && c.uid === state.userId) ? c.w : null;
+    } catch (e) { return null; }
+  }
+  function saveWallet() {
+    try {
+      if (state && walletSnap) localStorage.setItem(WLS, JSON.stringify({ uid: state.userId, w: walletSnap }));
+      else localStorage.removeItem(WLS);
+    } catch (e) {}
+  }
+  var walletSnap = loadWallet();   // cached snapshot for instant paint; pull() refreshes it
+
   function emit() {
+    saveWallet();   // emit() follows every session/wallet change — one choke point
     try { window.dispatchEvent(new CustomEvent("aism-auth-change", { detail: { loggedIn: !!state, user: state && state.username, wallet: walletSnap } })); } catch (e) {}
   }
 
