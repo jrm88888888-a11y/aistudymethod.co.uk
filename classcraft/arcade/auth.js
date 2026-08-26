@@ -607,22 +607,30 @@
   // Win note sits near the TOP of the card (right after the grade) — "alongside
   // the grade", the reward beat. Rotating coin is deliberate here.
   function insertTop(mount, node) { mount.insertBefore(node, (mount.children && mount.children[1]) || null); }
+  function winHtml(credited, capRemaining) {
+    return coinSvg(28, "aism-coin-win")
+      + "<span>You won <b>" + credited + "</b> coin" + (credited === 1 ? "" : "s") + "!</span>"
+      + (capRemaining != null && capRemaining <= 12 ? '<span class="aism-win-cap">' + capRemaining + " left today</span>" : "");
+  }
   function winNote(mount, credited, capRemaining) {
     injectCss();
     var d = el("div", "aism-win");
-    d.innerHTML = coinSvg(28, "aism-coin-win")
-      + "<span>You won <b>" + credited + "</b> coin" + (credited === 1 ? "" : "s") + "!</span>"
-      + (capRemaining != null && capRemaining <= 12 ? '<span class="aism-win-cap">' + capRemaining + " left today</span>" : "");
+    d.innerHTML = winHtml(credited, capRemaining);
     insertTop(mount, d);
+    return d;
   }
   // Shown when a game earns 0 coins because today's 45-coin cap is already hit.
   // The point of the cap is to bound coins, never the play — so the copy says so.
+  function capHtml() {
+    return coinSvg(22, "aism-coin-cap")
+      + "<span>Daily coin limit reached — <b>45/45</b> today. Keep playing; your coins reset tomorrow.</span>";
+  }
   function capNote(mount) {
     injectCss();
     var d = el("div", "aism-cap");
-    d.innerHTML = coinSvg(22, "aism-coin-cap")
-      + "<span>Daily coin limit reached — <b>45/45</b> today. Keep playing; your coins reset tomorrow.</span>";
+    d.innerHTML = capHtml();
     insertTop(mount, d);
+    return d;
   }
   function registerCta(mount, letter, worth) {
     injectCss();
@@ -647,10 +655,44 @@
           var worth = GRADE_COINS[letter] || 0;
           var mount = container && container.querySelector ? container.querySelector(".ar-end-inner") : null;
           if (auth.isLoggedIn()) {
+            /* Optimistic reward beat (2026-08-26): the /award round-trip can
+               take seconds on a cold edge script, and the player used to
+               stare at a coin-less card until it returned. Show the EXPECTED
+               win instantly, predicted from the local wallet snapshot
+               (min(grade worth, capRemaining) — /pull at page boot supplies
+               capRemaining), then reconcile when the server answers. The
+               server stays the source of truth: the number is amended if it
+               disagrees, swaps to the cap note if the cap blocked it, and
+               becomes an honest failure line if banking never happened. */
+            var snap = auth.wallet();
+            var capRem = (snap && typeof snap.capRemaining === "number") ? snap.capRemaining : null;
+            var expected = (capRem == null) ? worth : Math.min(worth, capRem);
+            var note = null;
+            if (mount) {
+              if (expected > 0) note = winNote(mount, expected, (capRem == null) ? null : (capRem - expected));
+              else if (worth > 0) note = capNote(mount);
+            }
             auth.award(opts.pct).then(function (res) {
-              if (!mount || !res || !res.ok) return;
-              if (res.credited > 0) winNote(mount, res.credited, res.wallet && res.wallet.capRemaining);
-              else capNote(mount); // grade was worth coins but the daily cap blocked them
+              if (!mount) return;
+              if (!res || !res.ok) {
+                // Banking failed — never leave a win claim standing that the
+                // server didn't honour.
+                if (note) {
+                  note.className = "aism-cap";
+                  note.innerHTML = coinSvg(22, "aism-coin-cap")
+                    + "<span>Couldn't reach the coin bank — this run wasn't banked. Your score still counts.</span>";
+                }
+                return;
+              }
+              var cr = res.credited || 0;
+              var rem = res.wallet ? res.wallet.capRemaining : null;
+              if (cr > 0) {
+                if (note) { note.className = "aism-win"; note.innerHTML = winHtml(cr, rem); }
+                else winNote(mount, cr, rem);
+              } else {
+                if (note) { note.className = "aism-cap"; note.innerHTML = capHtml(); }
+                else capNote(mount);
+              }
             });
           } else if (mount && worth > 0) {
             registerCta(mount, letter, worth);
