@@ -476,8 +476,9 @@
   // Shareable results card. Renders into `container` and wires buttons.
   /* ---------------------------------------------------------------------- *
    * Parent share — student sends their result + a link to the parent landing
-   * page (for-parents.html), which carries the £25 course pitch. This is the
-   * bridge from free player (the student) to buyer (the parent). Works in
+   * page (for-parents.html). The student's message is informational only — it must
+   * NOT ask the parent to buy (DMCC Act 2024 Sch 20: no direct exhortation to
+   * children to buy or to persuade adults to buy). Any pitch lives on the parent page. Works in
    * every game: native share sheet on mobile, clipboard copy on desktop.
    * ---------------------------------------------------------------------- */
   Arcade.shareWithParents = async function (opts) {
@@ -502,8 +503,7 @@
     const topicBit = opts.topic ? (' ' + opts.topic) : '';
     const msg = '📚 I’ve been revising' + topicBit + ' on AI Study Method'
       + (scoreStr ? ' and just scored ' + scoreStr : '')
-      + '! Can we get the full Velvet Method course? It teaches you to revise any subject'
-      + ' using AI — built by teachers, £25 for life.';
+      + '. Here’s how it works:';
 
     if (navigator.share) {
       try {
@@ -709,7 +709,7 @@
       }
     });
 
-    // Parent share — bridge to the £25 course via for-parents.html
+    // Parent share — informational link to for-parents.html (no purchase ask)
     const parentsBtn = container.querySelector('#ar-parents');
     if (parentsBtn) {
       const PARENT_LABEL = parentsBtn.textContent;

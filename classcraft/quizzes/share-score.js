@@ -39,7 +39,8 @@
      arcade-icons.js URL for the one-shot lazy load at share time. */
   var SCRIPT_SRC = (document.currentScript && document.currentScript.src) || '';
 
-  /* Parent share — bridge to the Velvet Method course via for-parents.html (the course pitch).
+  /* Parent share — links to for-parents.html. Message must NOT ask the parent to buy
+     (DMCC Act 2024 Sch 20 — no exhortation to children to get adults to buy); keep in sync with arcade.js.
      Native share sheet on mobile; clipboard copy / open on desktop. Mirrors arcade.js.
 
      CONTEXT-AWARE — do not clobber an existing definition. Arcade game pages load
@@ -64,8 +65,7 @@
     var topicBit = opts.topic ? (' ' + opts.topic) : '';
     var msg = '📚 I’ve been revising' + topicBit + ' on AI Study Method'
       + (scoreStr ? ' and just scored ' + scoreStr : '')
-      + '! Can we get the full Velvet Method course? It teaches you to revise any subject'
-      + ' using AI — built by teachers, £25 for life.';
+      + '. Here’s how it works:';
     if (navigator.share) {
       try { await navigator.share({ title: 'AI Study Method', text: msg, url: link }); return { ok: true, method: 'native-share' }; }
       catch (err) { if (err && err.name === 'AbortError') return { ok: false, cancelled: true }; }

@@ -7,11 +7,11 @@
   const path = window.location.pathname;
   document.querySelectorAll('.nav-links a').forEach(link => {
     const href = link.getAttribute('href');
-    if (href && path.endsWith(href)) {
+    if (href && href !== '/' && path.endsWith(href)) {
       link.classList.add('active');
     }
     if (path === '/' || path.endsWith('index.html')) {
-      if (href === 'index.html') link.classList.add('active');
+      if (href === 'index.html' || href === '/') link.classList.add('active');
     }
   });
 })();
