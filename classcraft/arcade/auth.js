@@ -11,10 +11,20 @@
      award(pct), buy(series,item), pull()   (used by wallet.js; authed)
      onChange(fn) -> unsubscribe
      mountCorner(target?)          top-corner auth/balance widget
-     open(mode)                    open the auth modal ('login'|'register'|'recover')
+     open(mode, {source})          open the auth modal ('login'|'register'|'recover');
+                                   source ('corner'|'end card'|'prompt') is reported
+                                   with the Plausible "Arcade signup: registered" event
 
-   Config: window.AISM_ACCOUNTS_URL overrides the endpoint. Emits window event
-   'aism-auth-change' {loggedIn, user, wallet} on any state change. */
+   Also installs the once-per-device sign-up prompt after a logged-out
+   player's first end card (see "first-game sign-up prompt" below).
+
+   Config: window.AISM_ACCOUNTS_URL overrides the endpoint;
+   window.AISM_NO_CORNER hides the corner widget; window.AISM_NO_SIGNUP_PROMPT
+   disables the sign-up prompt (demo/test pages). Emits window event
+   'aism-auth-change' {loggedIn, user, wallet} on any state change.
+   Analytics: fires Plausible custom events when window.plausible exists
+   (Arcade signup prompt: shown / create account / not now; Arcade signup:
+   registered {source}). Nothing is sent if Plausible isn't on the page. */
 (function () {
   "use strict";
   if (typeof window === "undefined") return;
@@ -138,6 +148,17 @@
     if (COMMON.indexOf(p.toLowerCase()) > -1) return "That password is too common — pick something harder to guess.";
     return null;
   }
+  /* Plausible custom event, if the page carries the Plausible snippet (it
+     defines window.plausible as a queue before the script loads). Props are
+     optional. Never throws — analytics must never break the arcade. */
+  function track(name, props) {
+    try {
+      if (typeof window.plausible !== "function") return;
+      window.plausible(name, props ? { props: props } : undefined);
+    } catch (e) {}
+  }
+  var openSource = null; // where the auth modal was opened from — see auth.open
+
   // friendly text for server error codes
   function errText(code) {
     return ({
@@ -233,6 +254,22 @@
       ".aism-av-mini{width:42px;height:42px;border-radius:50%;overflow:hidden;flex:none;background:#221b44;border:2px solid #5ee4e0;display:inline-flex;align-items:center;justify-content:center;line-height:0}",
       ".aism-av-mini img{width:100%;height:100%;object-fit:cover}",
       ".aism-av-mini.empty{border-style:dashed;border-color:#5a5388;color:#8f88b8;font-family:var(--aism-vt);font-size:22px}",
+      /* first-game sign-up prompt (same modal chrome; shown once per device) */
+      ".aism-nudge{animation:aism-fade .18s ease-out;outline:none}",
+      "@keyframes aism-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}",
+      "@media (prefers-reduced-motion:reduce){.aism-nudge{animation:none}}",
+      ".aism-nudge .aism-body{padding-top:12px}",
+      ".aism-nudge-lead{display:flex;align-items:center;gap:10px;font-family:var(--aism-px);font-size:10px;color:#f5c542;line-height:1.7;margin:0 0 14px}",
+      ".aism-nudge-lead b{color:#fff}",
+      ".aism-nudge-list{list-style:none;margin:0 0 14px;padding:0}",
+      ".aism-nudge-list li{display:flex;gap:9px;align-items:flex-start;font-size:19px;color:#e8e4ff;line-height:1.25;margin:0 0 7px}",
+      ".aism-nudge-list li::before{content:'▸';color:#5ee4e0;flex:none}",
+      ".aism-nudge-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}",
+      ".aism-nudge-row .aism-btn{flex:1 1 150px;padding:13px 10px;border-radius:8px;font-size:9px;line-height:1.5}",
+      ".aism-nudge-go{background:#f5c542;color:#131028}",
+      ".aism-nudge-no{background:#221b44;color:#cfc9ef;border:1px solid #3a3568}",
+      ".aism-nudge-no:hover{border-color:#5ee4e0;color:#fff}",
+      ".aism-nudge-fine{font-size:15px;color:#8f88b8;margin-top:12px;text-align:center;line-height:1.3}",
     ].join("\n");
     document.head.appendChild(s);
   }
@@ -338,7 +375,7 @@
       } else {
         var b = el("button", "aism-btn aism-corner-login");
         b.innerHTML = '<span class="aism-coin" aria-hidden="true">' + coinSvg(18, "") + '</span>Log in';
-        b.addEventListener("click", function () { if (host._dragged) return; auth.open("login"); });
+        b.addEventListener("click", function () { if (host._dragged) return; auth.open("login", { source: "corner" }); });
         host.appendChild(b);
       }
     }
@@ -380,9 +417,10 @@
   };
 
   /* ---------------- UI: modal ---------------- */
-  auth.open = function (mode) {
+  auth.open = function (mode, opts) {
     injectCss();
     close();
+    openSource = (opts && opts.source) || "other";
     var ov = el("div", "aism-ov"); ov.id = "aism-auth-ov";
     var modal = el("div", "aism-modal");
     ov.appendChild(modal);
@@ -471,7 +509,7 @@
         busy(btn, true, "Create account");
         var r = await auth.register(u.value.trim(), p.value);
         busy(btn, false, "Create account");
-        if (r.ok) { recoveryScreen(r.recoveryKey); }
+        if (r.ok) { track("Arcade signup: registered", { source: openSource || "other" }); markNudge(); recoveryScreen(r.recoveryKey); }
         else if (r.error === "username-taken" || r.error === "username-invalid") uErr.textContent = errText(r.error);
         else pErr.textContent = errText(r.error);
       };
@@ -661,10 +699,88 @@
     d.innerHTML = '<div style="font-family:var(--aism-px);font-size:10px;color:#f5c542;margin-bottom:8px">' + coinDot() + " Rank " + letter + " — worth " + worth + " coins</div>";
     var b = el("button", "aism-btn", "▸ Register to bank them");
     b.style.cssText = "cursor:pointer;border:1px solid #5ee4e0;background:#221b44;color:#5ee4e0;border-radius:8px;padding:9px 14px;font-family:var(--aism-px);font-size:9px";
-    b.addEventListener("click", function () { auth.open("register"); });
+    b.addEventListener("click", function () { auth.open("register", { source: "end card" }); });
     d.appendChild(b);
     insertLine(mount, d);
   }
+
+  /* ---------------- first-game sign-up prompt (2026-09-28) ----------------
+   * Until now the only thing that ever ASKED a logged-out player to register
+   * was the small "Register to bank them" line under the score, and sign-ups
+   * stalled (6 accounts, none after 31 Aug). This is one dismissible card
+   * after the first end card a device sees: what an account gets you, then
+   * "Create account" or "Not now". It is never shown again either way.
+   * Rules: once per device (localStorage; in-memory fallback if storage is
+   * blocked), never while logged in, never on top of an open auth modal, and
+   * only if the end card is still on screen when the short delay elapses —
+   * a quick "Play again" must not get a pop-up mid-game (the prompt is then
+   * simply kept for a later end card). An account needs no name or email,
+   * so the ask stays inside the ICO Age-Appropriate Design Code's line on
+   * nudging children; "Not now" is as prominent as "Create account".
+   * Every outcome is a Plausible event so conversion is measured, not guessed. */
+  var NUDGE_LS = "aism-signup-prompt";
+  var NUDGE_DELAY = 1800;               // after the rank reveal + confetti, before boredom
+  var nudgeDone = false;                // in-memory fallback when localStorage is unavailable
+  var _nudgedOpts = null;               // one attempt per end card
+  function nudgeSeen() { if (nudgeDone) return true; try { return localStorage.getItem(NUDGE_LS) === "1"; } catch (e) { return false; } }
+  function markNudge() { nudgeDone = true; try { localStorage.setItem(NUDGE_LS, "1"); } catch (e) {} }
+  function scheduleSignupPrompt(container, opts) {
+    if (window.AISM_NO_SIGNUP_PROMPT || auth.isLoggedIn() || nudgeSeen() || opts === _nudgedOpts) return;
+    _nudgedOpts = opts;
+    var pct = (opts && typeof opts.pct === "number" && isFinite(opts.pct)) ? opts.pct : null;
+    setTimeout(function () {
+      try {
+        if (auth.isLoggedIn() || nudgeSeen()) return;
+        if (document.getElementById("aism-auth-ov")) return;      // already registering / logging in
+        var card = container && container.querySelector ? container.querySelector(".ar-end") : null;
+        if (!card || !document.body.contains(card) || !card.getClientRects().length) return; // card gone: keep the prompt for later
+        showSignupPrompt(pct);
+      } catch (e) { /* the prompt must never break the arcade */ }
+    }, NUDGE_DELAY);
+  }
+  function showSignupPrompt(pct) {
+    injectCss();
+    markNudge();                          // shown = spent, whatever happens next (a reload never re-asks)
+    var letter = pct == null ? null : (Arcade.grade ? Arcade.grade(pct).letter : gradeLetter(pct));
+    var worth = letter ? (GRADE_COINS[letter] || 0) : 0;
+
+    var ov = el("div", "aism-ov"); ov.id = "aism-signup-ov";
+    var modal = el("div", "aism-modal aism-nudge");
+    modal.setAttribute("role", "dialog"); modal.setAttribute("aria-modal", "true"); modal.setAttribute("aria-labelledby", "aism-nudge-h"); modal.tabIndex = -1;
+    ov.appendChild(modal);
+    var h = el("h2", null, "Keep what you win"); h.id = "aism-nudge-h"; modal.appendChild(h);
+    var body = el("div", "aism-body");
+    if (worth > 0) {
+      body.appendChild(el("div", "aism-nudge-lead", coinSvg(22, "") + "<span>That run was Rank <b>" + esc(letter) + "</b> — worth <b>" + worth + "</b> coin" + (worth === 1 ? "" : "s") + ". A free account keeps them.</span>"));
+    }
+    body.appendChild(el("ul", "aism-nudge-list",
+      "<li>Coins banked across every game you play</li>" +
+      "<li>Spend them on elements for your collection</li>" +
+      "<li>Up to 45 coins a day — the limit resets daily</li>"));
+    var row = el("div", "aism-nudge-row");
+    var go = el("button", "aism-btn aism-nudge-go", "Create account"); go.type = "button"; // no "▸": Press Start 2P lacks the glyph
+    var no = el("button", "aism-btn aism-nudge-no", "Not now"); no.type = "button";
+    row.appendChild(go); row.appendChild(no);
+    body.appendChild(row);
+    body.appendChild(el("div", "aism-nudge-fine", "No name or email — just a username and password.<br>We'll only ask once."));
+    modal.appendChild(body);
+
+    function dismiss(why) {
+      document.removeEventListener("keydown", onKey);
+      ov.remove();
+      track(why === "create" ? "Arcade signup prompt: create account" : "Arcade signup prompt: not now");
+      if (why === "create") auth.open("register", { source: "prompt" });
+    }
+    function onKey(e) { if (e.key === "Escape") dismiss("not now"); }
+    go.addEventListener("click", function () { dismiss("create"); });
+    no.addEventListener("click", function () { dismiss("not now"); });
+    ov.addEventListener("mousedown", function (e) { if (e.target === ov) dismiss("not now"); });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(ov);
+    try { modal.focus(); } catch (e) {}
+    track("Arcade signup prompt: shown");
+  }
+  auth._showSignupPrompt = showSignupPrompt; // exposed for preview/testing
   var _lastCardOpts = null;
   function installEndCardHook() {
     if (!Arcade.renderEndCard || Arcade.renderEndCard.__authWrapped) return !!(Arcade.renderEndCard && Arcade.renderEndCard.__authWrapped);
@@ -722,6 +838,7 @@
           }
         }
       } catch (e) { /* the end card must never break */ }
+      try { if (opts) scheduleSignupPrompt(container, opts); } catch (e) { /* never break the card */ }
       return out;
     };
     wrapped.__authWrapped = true;
