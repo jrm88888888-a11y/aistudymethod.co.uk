@@ -244,14 +244,14 @@ function truncateStatement(s, max) {
   bankItems.forEach(it => {
     if (it.correct) {
       const t = truncateStatement(it.correct, 60);
-      if (!truthMap.has(t)) truthMap.set(t, { ctx: truncateStatement(it.q, 80), why: it.why || '' });
+      if (!truthMap.has(t)) truthMap.set(t, { ctx: truncateStatement(it.q, 80), why: it.why || '', item: it });
     }
   });
   const truths = [...truthMap.keys()].filter(t => t.length > 1);
   const miscMap = new Map();
   bankItems.forEach(it => {
     const t = truncateStatement(it.misconception, 60);
-    if (!miscMap.has(t) && !truthMap.has(t)) miscMap.set(t, { ctx: truncateStatement(it.q, 80), why: it.why || (it.correct ? 'The accurate version: ' + it.correct : '') });
+    if (!miscMap.has(t) && !truthMap.has(t)) miscMap.set(t, { ctx: truncateStatement(it.q, 80), why: it.why || (it.correct ? 'The accurate version: ' + it.correct : ''), item: it });
   });
   const miscs = [...miscMap.keys()].filter(t => t.length > 1);
 
@@ -274,8 +274,8 @@ function truncateStatement(s, max) {
     return;
   }
 
-  TRUTHS = truths.map(text => ({ text, kind: 'truth', ctx: truthMap.get(text).ctx, why: truthMap.get(text).why }));
-  MISCS  = miscs.map(text => ({ text, kind: 'misc', ctx: miscMap.get(text).ctx, why: miscMap.get(text).why }));
+  TRUTHS = truths.map(text => ({ text, kind: 'truth', ctx: truthMap.get(text).ctx, why: truthMap.get(text).why, item: truthMap.get(text).item }));
+  MISCS  = miscs.map(text => ({ text, kind: 'misc', ctx: miscMap.get(text).ctx, why: miscMap.get(text).why, item: miscMap.get(text).item }));
   TOPIC = topic;
   document.title = `Conveyor Belt — ${topic} — AI Study Method`;
   document.getElementById('page-title').textContent = topic;
@@ -477,7 +477,7 @@ function verdict(guessKind, zoneEl) {
     card.classList.add(guessKind === 'truth' ? 'out-truth' : 'out-cap');
     // The learning beat: flash the why before the next card.
     const whyEl = document.getElementById('cv-why');
-    whyEl.innerHTML = `<div class="ar-feedback no"><strong>That was a ${esc(kindLabel)}.</strong> ${esc(item.why || '')}</div>`;
+    whyEl.innerHTML = `<div class="ar-feedback no"><strong>That was a ${esc(kindLabel)}.</strong> ${esc(item.why || '')}${Arcade.statementHtml(item.item)}</div>`;
     announce('Wrong. That was a ' + (item.kind === 'truth' ? 'truth' : 'misconception') + '. ' + (item.why || ''));
     updateHUD();
     maybeSpeedUp();

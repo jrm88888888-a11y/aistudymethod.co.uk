@@ -10,7 +10,7 @@
 <style>
   /* Streak strip */
   .dd-streak-strip { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; background: var(--ar-grad-card); border: 1px solid var(--ar-border); border-radius: var(--ar-r); padding: 14px 18px; margin-bottom: 16px; }
-  .dd-streak-big { font-family: var(--ar-font); font-size: 24px; font-weight: 700; line-height: 1.1; white-space: nowrap; color: var(--ar-gold); text-shadow: 0 0 18px rgba(255,214,10,0.4); }
+  .dd-streak-big { font-family: var(--ar-font); font-size: 24px; font-weight: 700; line-height: 1.1; min-width: 0; color: var(--ar-gold); text-shadow: 0 0 18px rgba(255,214,10,0.4); }
   .dd-streak-big small { display: block; font-family: var(--ar-mono); font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ar-muted); font-weight: 400; margin-top: 4px; text-shadow: none; }
   .dd-week { display: flex; gap: 6px; }
   .dd-day { width: 34px; }
@@ -824,18 +824,26 @@
       const qRng = mulberry32(xmur3(seedStr + '|' + stem)());
       const mcqIndex = Math.floor(qRng() * mcqs.length);
       const m = mcqs[mcqIndex];
-      const opts = m.options.map(o => Array.isArray(o)
-        ? { text: String(o[0]), correct: !!o[1] }
-        : { text: String(o.text), correct: !!o.correct });
+      const rats = Array.isArray(m.rationales) ? m.rationales : [];
+      const opts = m.options.map((o, i) => Array.isArray(o)
+        ? { text: String(o[0]), correct: !!o[1], rationale: rats[i] || '' }
+        : { text: String(o.text), correct: !!o.correct, rationale: rats[i] || '' });
       const correctOpt = opts.find(o => o.correct);
       usedStems.add(stem);
+      const options = Arcade.shuffle(opts); // option order is per-session only
       qs.push({
         q: String(m.q),
-        options: Arcade.shuffle(opts), // option order is per-session only
+        options,
         subject: subjectLabel(spec.subject || ''),
         level: levelLabel(spec.level || ''),
         topic: String(spec.topic_display || spec.title || ''),
-        explain: explanationFor(spec, correctOpt ? correctOpt.text : '', String(m.q)),
+        // Authored explanation (science MCQs) wins; concept-def lookup is the fallback.
+        explain: m.explain || explanationFor(spec, correctOpt ? correctOpt.text : '', String(m.q)),
+        rationales: rats.length ? options.map(o => o.rationale) : null,
+        working: m.working || '',
+        figure: m.figure || null,
+        specStatement: m.specStatement || '',
+        specStatementText: m.specStatementText || '',
       });
     }
     // NEVER-ERROR top-up: if the network (or the content pool) let us down and
@@ -914,6 +922,7 @@
         `<span class="${i < results.length ? (results[i] === '🟩' ? 'done' : 'fail') : i === state.idx ? 'now' : ''}"></span>`).join('')}</div>
       <div class="ar-card">
         <div class="ar-label">${esc(context)}</div>
+        ${Arcade.figureHtml(q)}
         <p class="ar-prompt">${esc(q.q)}</p>
         <div class="ar-timer" aria-hidden="true"><i id="q-timer"></i></div>
         <div class="dd-options ar-stagger" role="group" aria-label="Answer options — tap to answer">${q.options.map((o, i) =>
@@ -967,12 +976,16 @@
         }
 
         const fb = document.getElementById('fb');
-        const explain = q.explain ? ' ' + esc(q.explain) : '';
+        // Science MCQs carry rationales/working: the shared feedback block
+        // shows those; the one-line explain stays for everything else.
+        const rich = Arcade.feedbackHtml(q, chosenIdx);
+        const explain = (q.explain && !rich) ? ' ' + esc(q.explain) : '';
         fb.className = 'ar-feedback ' + (correct ? 'ok' : 'no');
-        fb.innerHTML = correct
-          ? '<strong>Correct.</strong>' + (explain || ' Sharp work — next one.')
+        fb.innerHTML = (correct
+          ? '<strong>Correct.</strong>' + (explain || (rich ? '' : ' Sharp work — next one.'))
           : (chosenIdx == null ? '<strong>⏰ Time’s up.</strong>' : '<strong>Not quite.</strong>')
-            + ` Correct answer: <em>${esc(q.options[correctIdx].text)}</em>.` + (explain || ' Worth a flashcard — get the next one.');
+            + ` Correct answer: <em>${esc(q.options[correctIdx].text)}</em>.` + (explain || (rich ? '' : ' Worth a flashcard — get the next one.')))
+          + rich;
         announce((correct
           ? `Correct. Score so far: ${state.score} of ${state.idx + 1}.`
           : (chosenIdx == null ? 'Time is up. ' : 'Not quite. ') + `The correct answer was: ${q.options[correctIdx].text}.`)

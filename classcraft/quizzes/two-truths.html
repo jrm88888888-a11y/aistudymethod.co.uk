@@ -9,7 +9,8 @@
 <link rel="stylesheet" href="arcade.css">
 <style>
   .tt-stmts { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
-  .tt-q { font-family:var(--ar-mono); font-size:10.5px; letter-spacing:0.8px; text-transform:uppercase; color:var(--ar-muted); margin-bottom:6px; line-height:1.5; }
+  /* Statement prompt — never uppercased: unit and symbol case is meaning (mA vs MA, μ vs Μ). */
+  .tt-q { font-size:12.5px; color:var(--ar-text2); margin-bottom:6px; line-height:1.5; }
   .tt-a { line-height:1.5; }
   /* ---- Lightning Round (earned by a 3-streak: 20s of ×2, no dwell padding) ---- */
   .tt-bolt-badge { background:linear-gradient(180deg,#ffe27a,#ffb020) !important; color:#1a0d02 !important; box-shadow:0 0 18px rgba(255,214,10,0.55); }
@@ -189,7 +190,7 @@
     const item = Arcade.shuffle(bankItems)[0];
     const [c1, c2] = Arcade.shuffle(concepts);
     const statements = Arcade.shuffle([
-      { lie: true,  prompt: item.q, claim: item.misconception, why: item.why || '' },
+      { lie: true,  prompt: item.q, claim: item.misconception, why: item.why || '', item },
       { lie: false, prompt: `What does “${c1.term}” mean?`, claim: c1.def },
       { lie: false, prompt: `What does “${c2.term}” mean?`, claim: c2.def },
     ]);
@@ -207,7 +208,7 @@
     return Arcade.shuffle(authored.concat(derived).slice(0, ROUNDS)).map(item => {
       const [c1, c2] = Arcade.shuffle(concepts);
       const statements = Arcade.shuffle([
-        { lie: true,  prompt: item.q, claim: item.misconception, why: item.why || '' },
+        { lie: true,  prompt: item.q, claim: item.misconception, why: item.why || '', item },
         { lie: false, prompt: `What does “${c1.term}” mean?`, claim: c1.def },
         { lie: false, prompt: `What does “${c2.term}” mean?`, claim: c2.def },
       ]);
@@ -270,6 +271,7 @@
       <div class="ar-card">
         <div class="ar-label">Round ${state.idx + 1} · tap to lock your call</div>
         <div class="ar-prompt">Which one is the lie?</div>
+        ${Arcade.figureHtml(round.statements[round.lieIdx].item)}
         <div class="tt-stmts ar-stagger" role="radiogroup" aria-label="Three statements — pick the lie">
           ${round.statements.map((s, i) => `
             <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">
@@ -373,7 +375,7 @@
         : timedOut
           ? `<strong>The clock beat you.</strong> The lie was: <em>${esc(lie.claim)}</em>. `
           : `<strong>That one was true.</strong> The lie was: <em>${esc(lie.claim)}</em>. `)
-        + esc(lie.why || '');
+        + esc(lie.why || '') + Arcade.statementHtml(lie.item);
       announce.textContent = (correct
         ? `Correct — you caught the lie. Plus ${pts} points. `
         : timedOut ? 'Time up — round lost. ' : 'Incorrect — that statement was true. ')

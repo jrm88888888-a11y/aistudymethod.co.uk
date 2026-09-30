@@ -86,7 +86,8 @@
     font-family:var(--ar-mono); font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--ar-muted);
   }
 
-  .gr-q  { font-family:var(--ar-mono); font-size:10.5px; letter-spacing:0.8px; text-transform:uppercase; color:var(--ar-muted); margin-bottom:6px; line-height:1.5; }
+  /* Question stem — never uppercased: unit and symbol case is meaning (mA vs MA, μ vs Μ). */
+  .gr-q  { font-size:13.5px; color:var(--ar-text2); margin-bottom:6px; line-height:1.5; }
   .gr-opts { display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
   .gr-opts .ar-tile { line-height:1.4; }
 
@@ -272,6 +273,7 @@
       stemText: it.q,
       correct: it.correct,
       distract: [it.misconception, it.random_wrong].filter(Boolean),
+      src: it,
     }));
     const chosen = seededShuffle(conceptQ.concat(bankQ), rng).slice(0, ROUNDS);
     return chosen.map(item => {
@@ -288,7 +290,7 @@
         }
       }
       const options = seededShuffle([item.correct].concat(distractors), rng);
-      return { stemText: item.stemText, options, correctIdx: options.indexOf(item.correct) };
+      return { stemText: item.stemText, options, correctIdx: options.indexOf(item.correct), src: item.src || null };
     });
   }
 
@@ -507,6 +509,7 @@
       <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
       <div class="ar-card">
         <div class="ar-label">Question ${state.idx + 1} · tap the definition</div>
+        ${Arcade.figureHtml(q.src)}
         <div class="gr-q">${esc(q.stemText)}</div>
         <div class="ar-prompt">Which one is right?</div>
         <div class="gr-opts ar-stagger" role="radiogroup" aria-label="Four options — pick the correct one">
@@ -642,6 +645,7 @@
         : timedOut
           ? `<strong>The clock beat you.</strong> The answer: <em>${esc(rightAnswer)}</em>.`
           : `<strong>Not quite.</strong> The answer: <em>${esc(rightAnswer)}</em>.`;
+      fb.innerHTML += Arcade.statementHtml(q.src);
       announce.textContent = (correct ? 'Correct. Plus ' + pts + ' points. ' : (timedOut ? 'Time up. ' : 'Incorrect. '))
         + (state.nitroArmed ? 'Nitro charged for the next question. ' : '')
         + (racing ? ('You ' + state.youProgress + ', ghost ' + state.ghostProgress + '.') : '');

@@ -181,6 +181,8 @@
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
   const bankItems = ((bank && bank.items) || []).filter(it => it && it.misconception);
+  // Guide-statement line for a round's term (science specs tag each concept).
+  const stmtFor = term => Arcade.statementHtml(concepts.find(c => c.term === term), spec);
 
   // A four-option MCQ needs four distinct concepts; the gauntlet wants more to
   // feel varied. Degrade gracefully like two-truths when content is thin.
@@ -477,7 +479,7 @@
         Arcade.sfx.wrong();
         Arcade.flashMsg('MISS · –1 LIFE', '#ff2e88');
         fb.className = 'ar-feedback no';
-        fb.innerHTML = `<strong>Wrong — that costs a life.</strong> “${esc(round.term)}” means: <em>${esc(round.def)}</em>. It joins the boss attack deck.`;
+        fb.innerHTML = `<strong>Wrong — that costs a life.</strong> “${esc(round.term)}” means: <em>${esc(round.def)}</em>. It joins the boss attack deck.` + stmtFor(round.term);
         announce.textContent = 'Wrong. Life lost. ' + round.term + ' means ' + round.def;
       }
       document.getElementById('hudScore').textContent = S.score;
@@ -698,6 +700,7 @@
         fb.innerHTML = timedOut
           ? `<strong>Out of time.</strong> The term was <em>${esc(item.term)}</em>.`
           : `<strong>Not quite.</strong> The term was <em>${esc(item.term)}</em>.`;
+        fb.innerHTML += stmtFor(item.term);
         announce.textContent = (timedOut ? 'Time up. ' : 'Wrong. ') + 'The term was ' + item.term;
       }
 

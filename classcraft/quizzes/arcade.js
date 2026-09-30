@@ -10,6 +10,20 @@
    Arcade.dayNumber()                    days since epoch (daily seeds)
    Arcade.seededShuffle(arr, seed)       deterministic shuffle (mulberry32)
 
+   Arcade.figureHtml(item)               <figure class="ar-fig"> for item.figure
+                                         {svg, alt}, or '' — SVG is trusted
+                                         first-party content (scripts stripped)
+   Arcade.statementHtml(item, spec)      muted "IB guide A.1.3 — text" line from
+                                         item.specStatementText, or '' (spec is
+                                         optional: resolves a bare code via
+                                         spec.specStatements)
+   Arcade.feedbackHtml(item, chosenIdx)  after-answer block for an MCQ item:
+                                         wrong-option rationale, answer
+                                         rationale (explain), working, statement
+                                         line; '' when the item carries none.
+                                         item.rationales must align with the
+                                         option order the caller rendered.
+
    Arcade.sfx.correct(streak) .wrong() .click() .tick() .timeup() .coin()
              .riser() .fanfare() .swoosh() .heartbeat()
    Arcade.sfx.muted                      getter/setter, persisted
@@ -69,6 +83,59 @@
     return a;
   };
   Arcade.dayNumber = function () { return Math.floor(Date.now() / 86400000); };
+
+  /* ---------------- figures, spec statements, MCQ feedback ---------------
+     Generated science content (IB Physics first) attaches to each item:
+       figure            {svg, alt}   inline SVG using currentColor + --fig-* vars
+       specStatementText / specStatement   the guide statement it assesses
+       working           worked solution, plain text with Unicode notation
+       rationales        per-option explanations, aligned with `options`
+     Every helper returns '' when the item lacks the field, so non-science
+     content renders exactly as before. */
+  const E = Arcade.escapeHtml;
+
+  Arcade.figureHtml = function (item) {
+    const fig = item && item.figure;
+    if (!fig || !fig.svg) return '';
+    // First-party SVG, inserted unescaped; scripts stripped defensively.
+    const svg = String(fig.svg).replace(/<script[\s\S]*?<\/script\s*>/gi, '').replace(/<script/gi, '');
+    return '<figure class="ar-fig" role="img" aria-label="' + E(fig.alt || '') + '">' + svg + '</figure>';
+  };
+
+  Arcade.statementHtml = function (item, spec) {
+    if (!item) return '';
+    let code = item.specStatement || '';
+    let text = item.specStatementText || '';
+    if (!text && code && spec && Array.isArray(spec.specStatements)) {
+      const s = spec.specStatements.find(x => x && x.code === code);
+      if (s) text = s.text || '';
+    }
+    if (!text) return '';
+    return '<p class="ar-spec">IB guide ' + (code ? '<span class="ar-spec-code">' + E(code) + '</span> — ' : '')
+      + E(text) + '</p>';
+  };
+
+  Arcade.feedbackHtml = function (item, chosenIdx) {
+    if (!item) return '';
+    const rats = Array.isArray(item.rationales) && item.rationales.length ? item.rationales : null;
+    // Only items carrying the richer science fields get this block; a plain
+    // MCQ with just `explain` keeps its game's own one-line feedback.
+    if (!rats && !item.working && !item.specStatementText) return '';
+    const correctIdx = Array.isArray(item.options)
+      ? item.options.findIndex(o => Array.isArray(o) ? (String(o[1]) === '1' || o[1] === true) : !!(o && o.correct))
+      : -1;
+    const wrongPick = chosenIdx != null && chosenIdx >= 0 && chosenIdx !== correctIdx;
+    let html = '';
+    if (wrongPick && rats && rats[chosenIdx]) {
+      html += '<p class="ar-fb-why"><strong>Why that’s wrong:</strong> ' + E(rats[chosenIdx]) + '</p>';
+    }
+    if (item.explain) html += '<p class="ar-fb-ans"><strong>Answer:</strong> ' + E(item.explain) + '</p>';
+    if (item.working) {
+      html += '<details class="ar-working" open><summary>Working</summary><pre>' + E(item.working) + '</pre></details>';
+    }
+    html += Arcade.statementHtml(item);
+    return html ? '<div class="ar-fb">' + html + '</div>' : '';
+  };
 
   /* Last-mission breadcrumb — the arcade lobby records the launched game here
      so it can offer a one-tap CONTINUE chip on the next visit. Best-effort:

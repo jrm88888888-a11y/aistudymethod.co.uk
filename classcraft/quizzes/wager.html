@@ -180,9 +180,11 @@
         }
       }
       const src = pool.shift();
-      const options = Arcade.shuffle(src.options.map(o => ({
+      const rats = Array.isArray(src.rationales) ? src.rationales : [];
+      const options = Arcade.shuffle(src.options.map((o, i) => ({
         text: o[0],
         correct: String(o[1]) === '1' || o[1] === true,
+        rationale: rats[i] || '',   // travels with its option through the shuffle
       })));
       queue.push({ src, q: src.q, options, correctIdx: options.findIndex(o => o.correct) });
     }
@@ -190,6 +192,15 @@
   }
 
   let rounds, state;
+
+  // After-answer explanation block (science MCQs only; '' otherwise). The
+  // round's options are already shuffled, so pass rationales in that order.
+  function roundFeedback(round, chosen) {
+    return Arcade.feedbackHtml(Object.assign({}, round.src, {
+      options: round.options,
+      rationales: round.options.some(o => o.rationale) ? round.options.map(o => o.rationale) : null,
+    }), chosen);
+  }
 
   function startGame() {
     rounds = buildRounds();
@@ -290,6 +301,7 @@
 
         <div id="answer-phase" hidden>
           <span class="ar-pill gold" id="stake-tag"></span>
+          ${Arcade.figureHtml(round.src)}
           <p class="ar-prompt" style="margin-top:12px">${E(round.q)}</p>
           <div class="wg-stmts ar-stagger" role="radiogroup" aria-label="Answer options">
             ${round.options.map((o, i) => `
@@ -445,6 +457,7 @@
         : busted
           ? `<strong>Busted.</strong> You staked everything and lost the lot. The correct answer was “${E(round.options[round.correctIdx].text)}”.`
           : `<strong>Wrong.</strong> You lose your stake of ${stake}.${mystery ? ` The hidden pot was ×${mystery} — it only pays on a correct answer.` : ''} The correct answer was “${E(round.options[round.correctIdx].text)}”. Bank: ${state.bank}.`;
+      fb.innerHTML += roundFeedback(round, chosen);
 
       announce.textContent = (correct
         ? (mystery ? 'Correct. The mystery pot reveals times ' + mystery + ' — you win ' + delta + '. ' : 'Correct. You win ' + delta + '. ')
@@ -523,6 +536,7 @@
       ${hudHtml()}
       <div class="ar-card">
         <span class="ar-pill bad">🎲 DOUBLE OR NOTHING — ${state.bank} at stake</span>
+        ${Arcade.figureHtml(round.src)}
         <p class="ar-prompt" style="margin-top:12px">${E(round.q)}</p>
         <div class="wg-stmts ar-stagger" role="radiogroup" aria-label="Answer options">
           ${round.options.map((o, i) => `
@@ -603,7 +617,7 @@
         Arcade.vibrate([30, 40, 80]);
         if (bankEl) Arcade.popTextOver(bankEl, '+' + stake, '#ffd60a');
         fb.className = 'ar-feedback ok';
-        fb.innerHTML = `<strong>DOUBLED.</strong> ${stake} becomes <strong>${state.bank}</strong>. Ice in your veins.`;
+        fb.innerHTML = `<strong>DOUBLED.</strong> ${stake} becomes <strong>${state.bank}</strong>. Ice in your veins.` + roundFeedback(round, chosen);
         announce.textContent = 'Correct! Your bank doubled to ' + state.bank + '.';
       } else {
         Arcade.sfx.wrong();
@@ -612,7 +626,7 @@
         Arcade.flashMsg('BUSTED 💥', '#ff2e88');
         if (bankEl) Arcade.popTextOver(bankEl, '−' + stake, '#ff2e88');
         fb.className = 'ar-feedback no';
-        fb.innerHTML = `<strong>Busted.</strong> The whole bank, gone. The correct answer was “${E(round.options[round.correctIdx].text)}”.`;
+        fb.innerHTML = `<strong>Busted.</strong> The whole bank, gone. The correct answer was “${E(round.options[round.correctIdx].text)}”.` + roundFeedback(round, chosen);
         announce.textContent = 'Wrong. You lost everything. The correct answer was ' + round.options[round.correctIdx].text + '.';
       }
 
