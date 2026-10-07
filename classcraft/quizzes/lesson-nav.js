@@ -153,3 +153,16 @@
   if (document.readyState !== "loading") init();
   else document.addEventListener("DOMContentLoaded", init);
 })();
+
+/* Load the "What next?" card (lesson-next.js) alongside the rail, so every
+   mini-lesson that carries lesson-nav.js gets it with no per-lesson edit. */
+(function () {
+  try {
+    var me = document.currentScript || document.querySelector('script[src*="lesson-nav.js"]');
+    var base = me && me.src ? me.src.replace(/lesson-nav\.js.*$/, "") : "../quizzes/";
+    var s = document.createElement("script");
+    s.src = base + "lesson-next.js?v=20261007";
+    s.defer = true;
+    document.head.appendChild(s);
+  } catch (e) {}
+})();
