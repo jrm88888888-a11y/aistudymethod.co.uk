@@ -3,7 +3,7 @@
      1. the next mini-lesson in spec order for the same subject / level / board
      2. the Revision Arcade, preset to what was just studied
    Data: quizzes/lesson-next/<subject>-<level>-<board>.json, built by
-   _dev/tools/build-lesson-next.py (re-run it when lessons or arcade topics change).
+   tools/build-lesson-next.py (re-run it when lessons or arcade topics change).
    Fires Plausible events: "Mini-lesson: completed", "Mini-lesson next: lesson",
    "Mini-lesson next: arcade". If anything is missing it does nothing. */
 (function () {

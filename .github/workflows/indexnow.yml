@@ -1,0 +1,64 @@
+name: IndexNow
+
+# After each push that changes pages, tell IndexNow (Bing and the other
+# participating engines; not Google) exactly which URLs changed, so they are
+# re-crawled promptly instead of waiting for the next sitemap crawl.
+# Logic and rules live in tools/indexnow.py.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**.html"
+      - "sitemaps/**"
+      - "[0-9a-f]*.txt"            # the key file: first set-up or a rotated key
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "Submit every sitemap URL (not just what changed)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: read
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # needs history to diff against the previous push
+
+      - name: Wait until GitHub Pages has published this commit
+        # Engines fetch the URLs (and the key file) straight away, so the new
+        # version must be live first. Falls back to a fixed wait if the Pages
+        # API cannot be read.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 60); do
+            out=$(gh api "repos/${{ github.repository }}/pages/builds/latest" --jq '.status + " " + .commit' 2>/dev/null) || { echo "Pages API unavailable; waiting 4 minutes instead."; sleep 240; exit 0; }
+            echo "Pages build: $out"
+            [ "$out" = "built ${{ github.sha }}" ] && exit 0
+            case "$out" in errored*) echo "::error::Pages build errored"; exit 1;; esac
+            sleep 20
+          done
+          echo "::warning::Pages build for this commit not confirmed after 20 minutes; submitting anyway."
+
+      - name: Submit changed URLs
+        run: |
+          before="${{ github.event.before }}"
+          if [ "${{ inputs.all }}" = "true" ]; then
+            python3 tools/indexnow.py --all
+          elif [ -z "$before" ] || ! git cat-file -e "$before^{commit}" 2>/dev/null; then
+            echo "No previous commit to compare with (manual run or forced push): nothing submitted. Re-run with 'all' ticked to submit everything."
+          else
+            python3 tools/indexnow.py --since "$before"
+          fi
