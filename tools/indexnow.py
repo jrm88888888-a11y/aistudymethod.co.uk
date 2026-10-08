@@ -16,7 +16,7 @@ The key is the 32-hex-character file at the site root, <key>.txt, whose content
 is the key. It is public by design: it only proves the sender controls the site.
 Runs automatically after each push: .github/workflows/indexnow.yml.
 """
-import json, os, re, subprocess, sys, urllib.request, urllib.error
+import json, os, re, subprocess, sys, time, urllib.request, urllib.error
 
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 HOST = "aistudymethod.com"
@@ -79,19 +79,46 @@ def changed_urls(since, key):
     return sorted(urls)
 
 
-def submit(urls, key):
-    for i in range(0, len(urls), BATCH):
-        chunk = urls[i:i + BATCH]
-        body = json.dumps({"host": HOST, "key": key, "keyLocation": "%s%s.txt" % (SITE, key),
-                           "urlList": chunk}).encode()
+def wait_for_key(key, tries=20, pause=30):
+    """The key file must be live before engines will accept a submission."""
+    url = "%s%s.txt" % (SITE, key)
+    for n in range(tries):
+        try:
+            with urllib.request.urlopen(url + "?t=%d" % time.time(), timeout=30) as r:
+                if r.status == 200 and r.read().decode().strip() == key:
+                    return
+        except Exception:
+            pass
+        print("Key file not live yet (%s); retrying in %ds" % (url, pause))
+        time.sleep(pause)
+    sys.exit("Key file never became reachable at %s" % url)
+
+
+def post(body, tries=6, pause=120):
+    """POST one batch. A new key can take a few minutes to verify (HTTP 403
+    SiteVerificationNotCompleted), and 429 means slow down: retry both."""
+    for n in range(tries):
         req = urllib.request.Request(ENDPOINT, data=body,
                                      headers={"Content-Type": "application/json; charset=utf-8"})
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
-                code = r.status
+                return r.status
         except urllib.error.HTTPError as e:
-            sys.exit("IndexNow rejected the submission: HTTP %s %s" % (e.code, e.read().decode()[:300]))
-        print("Submitted %d URLs: HTTP %s" % (len(chunk), code))   # 200 or 202 = accepted
+            msg = e.read().decode()[:300]
+            if e.code in (403, 429) and n < tries - 1:
+                print("HTTP %s %s - retrying in %ds" % (e.code, msg, pause))
+                time.sleep(pause)
+                continue
+            sys.exit("IndexNow rejected the submission: HTTP %s %s" % (e.code, msg))
+
+
+def submit(urls, key):
+    wait_for_key(key)
+    for i in range(0, len(urls), BATCH):
+        chunk = urls[i:i + BATCH]
+        body = json.dumps({"host": HOST, "key": key, "keyLocation": "%s%s.txt" % (SITE, key),
+                           "urlList": chunk}).encode()
+        print("Submitted %d URLs: HTTP %s" % (len(chunk), post(body)))   # 200 or 202 = accepted
 
 
 def main():
