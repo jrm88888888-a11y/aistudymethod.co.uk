@@ -16,7 +16,7 @@ CC = os.path.join(ROOT, 'classcraft')
 DATA = os.path.join(CC, 'quizzes', 'lesson-next')
 OUT = os.path.join(ROOT, 'teach')
 SITE = 'https://aistudymethod.com'
-V = '20261008'
+V = '20261008b'
 
 def load_js_object(path, name):
     s = open(path, encoding='utf8').read()
@@ -212,10 +212,10 @@ def main():
         n = len(rows)
         doc = DOC.get(d['l'], 'specification')
         name = d['d']
-        title = f'{name}: free interactive mini-lessons for classes'
-        desc = (f'{n} free interactive {name} mini-lesson{"s" if n != 1 else ""}'
-                + (f', listed in the order of the {doc}. ' if main_rows else '. ')
-                + 'Assign one through Teams, Google Classroom, a link or a QR code. No student login.')
+        title = f'{name} teaching resources: free lessons to set your class'
+        desc = (f'Free {name} teaching resources: {n} interactive lesson{"s" if n != 1 else ""}'
+                + (f' in {doc} order' if main_rows else '')
+                + ', to set as class work, homework or cover. Assign through Teams, Google Classroom, a link or a QR code. No student login.')
         canon = f'{SITE}/teach/{k}.html'
 
         def item(i, r):
@@ -238,7 +238,21 @@ def main():
 
         body = ''
         if main_rows:
-            body += '<ol class="tc-list">' + ''.join(item(i + 1, r) for i, r in enumerate(main_rows)) + '</ol>'
+            # group by the section named before " — " in the title (KS3: Biology / Chemistry / Physics)
+            secs = []
+            for r in main_rows:
+                sec = r[1].split(' — ', 1)[0] if ' — ' in r[1] else ''
+                if secs and secs[-1][0] == sec: secs[-1][1].append(r)
+                else: secs.append((sec, [r]))
+            if len(secs) > 1 and all(sec for sec, _ in secs) and len(secs) < len(main_rows):
+                pos = 0
+                for sec, rs in secs:
+                    body += (f'<h2 class="tc-h2">{e(name)}: {e(sec)}</h2><ol class="tc-list" start="{pos + 1}">'
+                             + ''.join(item(pos + j + 1, r) for j, r in enumerate(rs)) + '</ol>')
+                    pos += len(rs)
+            else:
+                body += (f'<h2 class="tc-h2">{e(name)} lessons, in {e(doc)} order</h2>'
+                         '<ol class="tc-list">' + ''.join(item(i + 1, r) for i, r in enumerate(main_rows)) + '</ol>')
         if extra_rows and main_rows:
             body += ('<h2 class="tc-h2">Additional lessons</h2><p class="tc-note" style="margin:-.4rem 0 .9rem">'
                      f"These lessons aren't matched to a topic in the {doc} list above.</p>"
@@ -258,25 +272,41 @@ def main():
                 for s in sibs)
             boards = f'<h2 class="tc-h2">Other exam boards</h2><div class="tc-boards">{chips}</div>'
 
+        uses = ('<h2 class="tc-h2">How teachers use these lessons</h2><ul class="tc-uses">'
+                '<li><b>Homework:</b> set a lesson, quiz or game. Students get instant feedback on every question.</li>'
+                '<li><b>Cover lessons:</b> students work through a lesson on their own. No login or account needed.</li>'
+                '<li><b>Retrieval practice and starters:</b> a short quiz or game on an earlier topic.</li>'
+                '<li><b>Before a test:</b> a class session takes students through the quiz, the lesson and the games in order.</li>'
+                '</ul>')
         ld = {'@context': 'https://schema.org', '@type': 'ItemList', 'name': f'{name} mini-lessons',
               'numberOfItems': n,
               'itemListElement': [{'@type': 'ListItem', 'position': i + 1, 'name': r[1],
                                    'url': f'{SITE}/classcraft/adventures/{k}-{r[0]}-mini-lesson.html'}
                                   for i, r in enumerate(main_rows + extra_rows)]}
-        extra = '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>\n'
+        page_ld = {'@context': 'https://schema.org', '@type': 'CollectionPage', 'name': title, 'description': desc,
+                   'url': canon, 'inLanguage': 'en-GB', 'isAccessibleForFree': True,
+                   'audience': {'@type': 'EducationalAudience', 'educationalRole': 'teacher'},
+                   'educationalLevel': LEVEL_SHORT[d['l']],
+                   'isPartOf': {'@type': 'WebSite', 'name': 'AI Study Method', 'url': SITE + '/'},
+                   'breadcrumb': {'@type': 'BreadcrumbList', 'itemListElement': [
+                       {'@type': 'ListItem', 'position': 1, 'name': 'For teachers', 'item': SITE + '/teachers.html'},
+                       {'@type': 'ListItem', 'position': 2, 'name': f'{name} teaching resources', 'item': canon}]},
+                   'mainEntity': {k2: v2 for k2, v2 in ld.items() if k2 != '@context'}}
+        extra = '<script type="application/ld+json">' + json.dumps(page_ld, ensure_ascii=False) + '</script>\n'
 
         page = head(title, desc, canon, extra) + f'''<body data-course="{k}">{NAV}
 <div class="page-hero">
  <div class="page-hero-inner">
   <div class="tc-crumb"><a href="/teachers.html">For teachers</a> · <a href="/teachers.html#courses">All courses</a> · {e(LEVEL_SHORT[d['l']])}</div>
-  <h1>{e(name)}</h1>
-  <p>{n} free interactive mini-lesson{"s" if n != 1 else ""}{order_txt}. No student login. Press <b>Assign</b> to choose what to set (quiz, lesson, games or any mix) and share it through Teams, Google Classroom, a link or a QR code.</p>
+  <h1>{e(name)}: free lessons to set your class</h1>
+  <p>{n} free interactive {e(name)} lesson{"s" if n != 1 else ""}{order_txt}, for class work, homework, cover or retrieval practice. No student login. Press <b>Assign</b> to choose what to set (quiz, lesson, games or any mix) and share it through Teams, Google Classroom, a link or a QR code.</p>
  </div>
 </div>
 <section class="section">
  <div class="tc-wrap">
  {body}
  {order_note}
+ {uses}
  {boards}
  <p class="tc-note"><a href="/teachers.html#contact" style="color:var(--accent);font-weight:600;text-decoration:none">Teaching {e(name)}? Tell us what you need →</a></p>
  </div>
@@ -316,7 +346,77 @@ def main():
     stale = sorted(f for f in os.listdir(OUT) if f.endswith('.html') and f not in ('session.html',) and f[:-5] not in courses)
     if stale:
         print('STALE course pages (delete these):', ' '.join('teach/' + f for f in stale))
+    stats['revise_linked'] = link_revise_pages(courses)
     print(dict(stats))
+
+
+TL_START, TL_END = '<!-- TEACH-LINK-START -->', '<!-- TEACH-LINK-END -->'
+
+
+def link_revise_pages(courses):
+    """Add a static 'Teaching this course?' link to every revise/ page that links to
+    mini-lessons, pointing at the matching teach/<course>.html page(s). The course is
+    read from the mini-lessons the page already links to. Idempotent (markers)."""
+    keys = sorted(courses, key=len, reverse=True)
+    rd = os.path.join(ROOT, 'revise')
+    changed = 0
+    pages, plan = {}, {}
+    for f in sorted(os.listdir(rd)):
+        if not f.endswith('.html'):
+            continue
+        s = open(os.path.join(rd, f), encoding='utf8').read()
+        if RX_NOINDEX.search(s[:6000]):
+            continue
+        pages[f] = s
+        cnt = collections.Counter()
+        for m in re.finditer(r'classcraft/adventures/([a-z0-9-]+)-mini-lesson\.html', s):
+            stem = m.group(1)
+            k = next((k for k in keys if stem.startswith(k + '-')), None)
+            if k: cnt[k] += 1
+        if cnt:
+            top = cnt.most_common(1)[0][0]
+            plan[f] = (top, [k for k in by_sl_keys(courses, courses[top]['s'], courses[top]['l']) if k in cnt] or [top])
+    # topic guides (alevel-biology-cells-transport.html) inherit their hub's courses (alevel-biology.html)
+    hubs = sorted((f[:-5] for f in plan), key=len, reverse=True)
+    for f in pages:
+        if f not in plan:
+            h = next((h for h in hubs if f.startswith(h + '-')), None)
+            if h: plan[f] = plan[h + '.html']
+    for f, s in pages.items():
+        p = os.path.join(rd, f)
+        old = re.search(re.escape(TL_START) + r'.*?' + re.escape(TL_END), s, re.S)
+        if f not in plan:
+            if old:
+                open(p, 'w', encoding='utf8').write(s[:old.start()] + s[old.end():]); changed += 1
+            continue
+        top, ks = plan[f]
+        lv = courses[top]['l']
+        sd = (SPECS.get(top) or {}).get('subjectDisplay', courses[top]['s'].replace('-', ' ').title())
+        who = courses[top]['d'] if lv == 'ks3' else f'{LEVEL_SHORT[lv]} {sd}'
+        if len(ks) == 1:
+            links = f'<a href="/teach/{ks[0]}.html" style="font-weight:600">{e(courses[ks[0]]["d"])} teaching resources →</a>'
+        else:
+            links = ' · '.join(f'<a href="/teach/{k}.html" style="font-weight:600">{e(board_label(lv, courses[k]["b"], SPECS.get(k)))}</a>' for k in ks)
+        block = (f'{TL_START}<div class="teach-link" style="max-width:860px;margin:2rem auto;padding:14px 18px;border:1px solid rgba(124,92,191,.25);'
+                 f'border-radius:12px;background:rgba(124,92,191,.05);font-size:15px;line-height:1.6">'
+                 f'<b>Teaching {e(who)}?</b> Free interactive lessons to set as class work, homework or cover. No student login. {links}</div>{TL_END}')
+        if old:
+            s2 = s[:old.start()] + block + s[old.end():]
+        else:
+            i = s.rfind('<footer')
+            if i < 0:
+                i = s.rfind('</body>')
+            if i < 0:
+                continue
+            s2 = s[:i] + block + '\n' + s[i:]
+        if s2 != s:
+            open(p, 'w', encoding='utf8').write(s2); changed += 1
+    return changed
+
+
+def by_sl_keys(courses, subj, level):
+    ks = [k for k in courses if courses[k]['s'] == subj and courses[k]['l'] == level]
+    return sorted(ks, key=lambda k: BOARD_ORDER.index(courses[k]['b']) if courses[k]['b'] in BOARD_ORDER else 99)
 
 
 if __name__ == '__main__':

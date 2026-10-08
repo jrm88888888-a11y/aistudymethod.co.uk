@@ -42,6 +42,12 @@ for key, fs in groups.items():
     rank = {p: i for i, p in enumerate(order)}
     fs.sort(key=lambda p: (rank.get(p, 10**6), p))
 
+TEACH = sorted((f[:-5] for f in os.listdir("teach") if f.endswith(".html") and f != "session.html"), key=len, reverse=True) if os.path.isdir("teach") else []
+
+def teach_key(f):
+    b = os.path.basename(f)
+    return next((k for k in TEACH if b.startswith(k + "-")), None)
+
 changed = 0
 inbound = {}
 for f, info in pages.items():
@@ -61,7 +67,9 @@ for f, info in pages.items():
     label = html.escape(info["course"] or "this course")
     block = (f'{START}\n      <nav class="related" aria-label="More {label} mini-lessons" style="margin-top:22px;text-align:left;font-size:.95rem">'
              f'<p style="margin:0 0 6px;color:var(--soft)"><b>More {label} mini-lessons</b></p>'
-             f'<ul style="margin:0;padding-left:1.2em;columns:2;column-gap:1.5em">{items}</ul></nav>\n      {END}')
+             f'<ul style="margin:0;padding-left:1.2em;columns:2;column-gap:1.5em">{items}</ul>'
+             + (f'<p style="margin:10px 0 0"><a href="../../teach/{teach_key(f)}.html" style="font-weight:700">Teaching {label}? Set these lessons for your class →</a></p>' if teach_key(f) else '')
+             + f'</nav>\n      {END}')
     s = open(f, encoding="utf-8").read()
     if START in s:
         new = re.sub(re.escape(START) + r".*?" + re.escape(END), lambda _: block, s, flags=re.S)

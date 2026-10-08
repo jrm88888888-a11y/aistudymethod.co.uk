@@ -96,7 +96,10 @@ for (subj, level, board), slugs in sorted(groups.items()):
     stats['group_' + (kind or 'none')] += 1
     rows = []
     for s in order:
-        title = names.get(s) or page_title(os.path.join(ADV, f'{key}-{s}{SUF}')) or s.replace('-', ' ').title()
+        nm = names.get(s)
+        if nm and re.fullmatch(r'[a-z0-9-]+', nm):   # topic list gives only the slug (IB Biology): use the lesson's own title
+            nm = None
+        title = nm or page_title(os.path.join(ADV, f'{key}-{s}{SUF}')) or s.replace('-', ' ').title()
         has = 1 if (kind == 'board' and s in atopics) else 0
         stats['lesson_' + (kind or 'none')] += 1
         stats['lesson_topic_preset'] += has
