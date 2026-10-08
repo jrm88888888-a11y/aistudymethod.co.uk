@@ -13,7 +13,7 @@
    Arcade.figureHtml(item)               <figure class="ar-fig"> for item.figure
                                          {svg, alt}, or '' — SVG is trusted
                                          first-party content (scripts stripped)
-   Arcade.statementHtml(item, spec)      muted "IB guide A.1.3 — text" line from
+   Arcade.statementHtml(item, spec)      muted "IB guide A.1.3 — text" line (or "<specLabel>: text") from
                                          item.specStatementText, or '' (spec is
                                          optional: resolves a bare code via
                                          spec.specStatements)
@@ -111,6 +111,10 @@
       if (s) text = s.text || '';
     }
     if (!text) return '';
+    // KS3 items carry specLabel ("KS3 programme of study"); their statement codes
+    // are internal, so they are not shown. IB items keep the default label + code.
+    const label = item.specLabel || (spec && spec.specLabel) || '';
+    if (label) return '<p class="ar-spec">' + E(label) + ': ' + E(text) + '</p>';
     return '<p class="ar-spec">IB guide ' + (code ? '<span class="ar-spec-code">' + E(code) + '</span> — ' : '')
       + E(text) + '</p>';
   };
