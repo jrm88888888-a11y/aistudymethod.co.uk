@@ -64,7 +64,7 @@
   <p class="cs-how">Do the steps in order. Each one opens in a new tab: when you finish it, come back here for the next.</p>
   <ol class="cs-steps" id="csSteps"></ol>
   <div class="cs-foot">
-    <button type="button" class="cs-tbtn" id="csAssign" hidden>👩‍🏫 Teachers: assign this session</button>
+    <button type="button" class="cs-tbtn" id="csAssign" hidden>👩‍🏫 Teachers: assign this</button>
     <a id="csCourseLink" href="/teachers.html" hidden>All lessons for this course →</a>
   </div>
 </main>
@@ -86,14 +86,16 @@
   }
   if (!A || !ok.test(c) || !ok.test(t)) { fail(); return; }
 
-  var KEY = "aism-session:" + c + "/" + t;
+  var KEY = "aism-session:" + c + "/" + t;   // ticks are per topic, shared across step selections
   function getDone() { try { return JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { return []; } }
   function setDone(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
 
   A.loadCourse(c).then(function (data) {
     var row = data && A.rowFor(data, t);
     if (!row) { fail(); return; }
-    var steps = A.sessionSteps(c, data, t);
+    var only = (p.get("s") || "").split(",").filter(function (x) { return /^(quiz|lesson|games)$/.test(x); });
+    var steps = A.sessionSteps(c, data, t, only);
+    if (!steps.length) steps = A.sessionSteps(c, data, t);
     document.title = "Class session: " + row[1] + " — AI Study Method";
     document.getElementById("csTitle").textContent = row[1];
     document.getElementById("csCourse").textContent = data.d;
@@ -103,7 +105,7 @@
       var d = done.indexOf(st.id) >= 0;
       return '<li class="cs-step' + (d ? " done" : "") + '" data-id="' + st.id + '"><a href="' + esc(local(st.url)) +
         '" target="_blank" rel="noopener"><span class="cs-num">' + (d ? "✓" : i + 1) + '</span><span class="cs-body"><strong>' +
-        esc(st.label) + "</strong><span>" + esc(st.sub) + '</span></span><span class="cs-go">' + (d ? "Opened" : "Open ↗") + "</span></a></li>";
+        esc(st.lead) + "</strong><span>" + esc(st.label) + '</span></span><span class="cs-go">' + (d ? "Opened" : "Open ↗") + "</span></a></li>";
     }).join("");
     ol.addEventListener("click", function (e) {
       var li = e.target.closest && e.target.closest(".cs-step");
@@ -122,12 +124,7 @@
     var tb = document.getElementById("csAssign");
     tb.hidden = false;
     tb.addEventListener("click", function () {
-      A.open({
-        lesson: { url: A.lessonUrl(c, t), title: row[1] },
-        session: steps.length > 1 ? { url: A.sessionUrl(c, t), steps: steps } : null,
-        course: { url: A.courseUrl(c), name: data.d },
-        from: c + "/" + t
-      });
+      A.openFor(c, t, { preselect: steps.map(function (st) { return st.id; }) });
     });
   });
 })();

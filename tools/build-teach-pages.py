@@ -124,18 +124,7 @@ PAGE_JS = '''<script src="/classcraft/quizzes/assign.js?v=%s"></script>
   document.addEventListener("click", function (ev) {
     var b = ev.target.closest && ev.target.closest("[data-assign]");
     if (!b) return;
-    var t = b.getAttribute("data-assign");
-    A.loadCourse(C).then(function (d) {
-      var row = d && A.rowFor(d, t);
-      if (!row) return;
-      var steps = A.sessionSteps(C, d, t);
-      A.open({
-        lesson: { url: A.lessonUrl(C, t), title: row[1] },
-        session: steps.length > 1 ? { url: A.sessionUrl(C, t), steps: steps } : null,
-        course: null,
-        from: C + "/" + t
-      });
-    });
+    A.openFor(C, b.getAttribute("data-assign"), { noCourseLink: true });
   });
 })();
 </script>''' % V
@@ -281,7 +270,7 @@ def main():
  <div class="page-hero-inner">
   <div class="tc-crumb"><a href="/teachers.html">For teachers</a> · <a href="/teachers.html#courses">All courses</a> · {e(LEVEL_SHORT[d['l']])}</div>
   <h1>{e(name)}</h1>
-  <p>{n} free interactive mini-lesson{"s" if n != 1 else ""}{order_txt}. No student login. Press <b>Assign</b> to share one through Teams, Google Classroom, a link or a QR code, or set a <b>class session</b>: quiz, then lesson, then games.</p>
+  <p>{n} free interactive mini-lesson{"s" if n != 1 else ""}{order_txt}. No student login. Press <b>Assign</b> to choose what to set (quiz, lesson, games or any mix) and share it through Teams, Google Classroom, a link or a QR code.</p>
  </div>
 </div>
 <section class="section">
