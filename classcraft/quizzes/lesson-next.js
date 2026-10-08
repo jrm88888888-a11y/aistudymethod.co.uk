@@ -49,6 +49,7 @@
 
     if (rows.length > 1) {
       var last = at === rows.length - 1, nx = rows[last ? 0 : at + 1];
+      try { window.__aismNext = { u: fileFor(nx[0]), t: nx[1] }; if (window.AismProgress) window.AismProgress.noteNext(fileFor(nx[0]), nx[1]); } catch (e) {}
       html += '<a class="lnx-main" data-lnx="lesson" href="' + esc(fileFor(nx[0])) + '"><small>' +
         (last ? "Back to the first lesson" : "Next lesson") + "</small>" + esc(nx[1]) + " ➡</a>";
     }
@@ -70,6 +71,7 @@
     });
     var anchor = fin.querySelector(".sharebox");
     if (anchor) fin.insertBefore(box, anchor); else fin.appendChild(box);
+    try { if (window.AismProgress) window.AismProgress.mark(box); } catch (e) {}
   }
 
   var group = "";

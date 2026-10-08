@@ -116,7 +116,8 @@ PLAUSIBLE = '''<!-- Privacy-friendly analytics by Plausible -->
   plausible.init()
 </script>'''
 
-PAGE_JS = '''<script src="/classcraft/quizzes/assign.js?v=%s"></script>
+PAGE_JS = '''<script src="/classcraft/quizzes/progress.js?v=%s" defer></script>
+<script src="/classcraft/quizzes/assign.js?v=%s"></script>
 <script>
 (function () {
   var A = window.AismAssign, C = document.body.getAttribute("data-course");
@@ -127,7 +128,7 @@ PAGE_JS = '''<script src="/classcraft/quizzes/assign.js?v=%s"></script>
     A.openFor(C, b.getAttribute("data-assign"), { noCourseLink: true });
   });
 })();
-</script>''' % V
+</script>''' % (V, V)
 
 
 RX_NOINDEX = re.compile(r'<meta\s[^>]*name=["\']robots["\'][^>]*content=["\'][^"\']*noindex', re.I)
@@ -399,7 +400,8 @@ def link_revise_pages(courses):
             links = ' · '.join(f'<a href="/teach/{k}.html" style="font-weight:600">{e(board_label(lv, courses[k]["b"], SPECS.get(k)))}</a>' for k in ks)
         block = (f'{TL_START}<div class="teach-link" style="max-width:860px;margin:2rem auto;padding:14px 18px;border:1px solid rgba(124,92,191,.25);'
                  f'border-radius:12px;background:rgba(124,92,191,.05);font-size:15px;line-height:1.6">'
-                 f'<b>Teaching {e(who)}?</b> Free interactive lessons to set as class work, homework or cover. No student login. {links}</div>{TL_END}')
+                 f'<b>Teaching {e(who)}?</b> Free interactive lessons to set as class work, homework or cover. No student login. {links}</div>'
+                 f'<script src="/classcraft/quizzes/progress.js?v={V}" defer></script>{TL_END}')
         if old:
             s2 = s[:old.start()] + block + s[old.end():]
         else:
