@@ -7,6 +7,8 @@ For every mini-lesson it records, per group (subject-level-board):
       board, or "" when the arcade has no matching shelf)
   t : ordered lessons [[slug, title, 1 if the arcade has this exact topic,
                         1 if a confidence quiz exists for this topic]]
+  af : 0 for a KS3 course whose arcade shelf has fewer topics than half its lessons
+       (no course-shelf fallback for lessons without their own games)
   s, l, b : subject, level, board ids;  d : course display name
             ("AQA GCSE Chemistry") — used by assign.js, teach/session.html and
             tools/build-teach-pages.py
@@ -102,7 +104,16 @@ for (subj, level, board), slugs in sorted(groups.items()):
         stats['lesson_quiz'] += q
         rows.append([s, title, has, q])
     name = key + '.json'
-    json.dump({'a': a, 's': subj, 'l': level, 'b': board, 'd': course_name(subj, level, board), 't': rows}, open(os.path.join(OUT, name), 'w', encoding='utf8'),
+    # af = 0 (KS3 only): a KS3 course such as science spans biology, chemistry and
+    # physics on ONE shelf that is being filled topic by topic, so a lesson without its
+    # own games must not be sent to the course shelf - it would land on another strand's
+    # topics. lesson-next.js then offers the plain arcade instead. Other levels keep the
+    # course-shelf fallback (their shelves are the same subject and board).
+    out = {'a': a, 's': subj, 'l': level, 'b': board, 'd': course_name(subj, level, board), 't': rows}
+    if level == 'ks3' and kind == 'board' and len(atopics) * 2 < len(rows):
+        out['af'] = 0
+        stats['group_course_fallback_off'] += 1
+    json.dump(out, open(os.path.join(OUT, name), 'w', encoding='utf8'),
               ensure_ascii=False, separators=(',', ':'))
     written.add(name)
 for old in os.listdir(OUT):

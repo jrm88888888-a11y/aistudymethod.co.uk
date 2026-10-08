@@ -55,7 +55,8 @@
 
     var q = data.a || "", label, sub;
     if (q && me[2]) { q += "&topic=" + encodeURIComponent(me[0]); sub = "Practise what you just learned"; label = "🎮 Play games on " + esc(me[1]); }
-    else if (q) { sub = "Practise in the Revision Arcade"; label = "🎮 Play games for this course"; }
+    else if (q && data.af !== 0) { sub = "Practise in the Revision Arcade"; label = "🎮 Play games for this course"; }
+    else if (q) { q = ""; sub = "Take a break that still counts"; label = "🎮 Try the Revision Arcade"; }
     else { sub = "Take a break that still counts"; label = "🎮 Try the Revision Arcade"; }
     html += '<a data-lnx="arcade" href="../arcade.html' + (q ? "?" + esc(q) : "") + '"><small>' + sub + "</small>" + label + "</a>";
 
