@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Class session — AI Study Method</title>
+<meta name="description" content="A short class session: check what you know, learn it with an interactive mini-lesson, then practise with revision games.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { background: var(--bg-primary); }
+  .cs-top { display:flex; align-items:center; justify-content:space-between; gap:12px; max-width:760px; margin:0 auto; padding:18px 16px 0; }
+  .cs-top .logo { text-decoration:none; }
+  .cs-wrap { max-width:760px; margin:0 auto; padding:24px 16px 64px; }
+  .cs-label { font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1.4px; text-transform:uppercase; color:var(--accent2); margin-bottom:6px; }
+  .cs-wrap h1 { font-family:'Playfair Display',serif; font-size:clamp(26px,5vw,38px); line-height:1.15; color:var(--text-primary); margin-bottom:6px; }
+  .cs-course { color:var(--text-secondary); font-size:15px; margin-bottom:22px; }
+  .cs-how { font-size:15px; color:var(--text-secondary); margin-bottom:18px; }
+  .cs-steps { list-style:none; display:flex; flex-direction:column; gap:12px; counter-reset:st; }
+  .cs-step a { display:flex; align-items:center; gap:16px; background:var(--bg-card); border:1.5px solid var(--border); border-radius:var(--radius-lg);
+    padding:18px; text-decoration:none; color:var(--text-primary); box-shadow:var(--shadow-sm); transition:border-color .15s, transform .08s; }
+  .cs-step a:hover { border-color:var(--accent); }
+  .cs-step a:active { transform:translateY(1px); }
+  .cs-step a:focus-visible { outline:3px solid var(--accent2); outline-offset:2px; }
+  .cs-num { flex-shrink:0; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'Playfair Display',serif; font-weight:700; font-size:20px; background:var(--accent-soft); color:var(--accent); border:2px solid var(--accent); }
+  .cs-body { flex:1; min-width:0; }
+  .cs-body strong { display:block; font-size:18px; line-height:1.3; }
+  .cs-body span { display:block; font-size:14px; color:var(--text-secondary); }
+  .cs-go { flex-shrink:0; font-weight:600; font-size:14px; color:var(--accent); white-space:nowrap; }
+  .cs-step.done .cs-num { background:var(--accent); color:#fff; }
+  .cs-step.done .cs-go { color:var(--text-muted); }
+  .cs-foot { margin-top:26px; display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; font-size:14px; }
+  .cs-foot a { color:var(--accent); font-weight:600; text-decoration:none; }
+  .cs-tbtn { background:var(--bg-card); border:1.5px solid var(--text-primary); border-radius:10px; padding:8px 14px; font:600 14px 'DM Sans',sans-serif; cursor:pointer; color:var(--text-primary); }
+  .cs-tbtn:hover { background:var(--bg-secondary); }
+  .cs-err { background:var(--bg-card); border:1.5px solid var(--border); border-radius:var(--radius-lg); padding:22px; }
+  .cs-err a { color:var(--accent); font-weight:600; }
+  @media (max-width:520px) { .cs-step a { padding:14px; gap:12px; } .cs-go { display:none; } }
+</style>
+<!-- Privacy-friendly analytics by Plausible -->
+<script async src="https://plausible.io/js/pa-y_3K19wHddzHShFk02JEm.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+</head>
+<body>
+<header class="cs-top">
+  <a href="/" class="logo">
+    <div class="logo-mark">V</div>
+    <div class="logo-text">
+      <span class="logo-primary">AI Study Method</span>
+      <span class="logo-secondary">The Velvet Method®</span>
+    </div>
+  </a>
+</header>
+<main class="cs-wrap" id="cs">
+  <div class="cs-label">Class session</div>
+  <h1 id="csTitle">Loading…</h1>
+  <p class="cs-course" id="csCourse"></p>
+  <p class="cs-how">Do the steps in order. Each one opens in a new tab: when you finish it, come back here for the next.</p>
+  <ol class="cs-steps" id="csSteps"></ol>
+  <div class="cs-foot">
+    <button type="button" class="cs-tbtn" id="csAssign" hidden>👩‍🏫 Teachers: assign this session</button>
+    <a id="csCourseLink" href="/teachers.html" hidden>All lessons for this course →</a>
+  </div>
+</main>
+<script src="/classcraft/quizzes/assign.js?v=20261008"></script>
+<script>
+(function () {
+  "use strict";
+  var A = window.AismAssign;
+  var SITE = "https://aistudymethod.com";
+  var p = new URLSearchParams(location.search);
+  var c = p.get("c") || "", t = p.get("t") || "";
+  var ok = /^[a-z0-9-]{3,120}$/;
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
+  function local(u) { return u.indexOf(SITE) === 0 ? u.slice(SITE.length) : u; }
+  function fail() {
+    document.getElementById("cs").innerHTML =
+      '<div class="cs-err"><h1 style="font-family:\'Playfair Display\',serif;font-size:26px;margin-bottom:8px">This session link isn\'t complete.</h1>' +
+      '<p>Ask your teacher for the link again, or <a href="/subjects.html">find your subject here</a>.</p></div>';
+  }
+  if (!A || !ok.test(c) || !ok.test(t)) { fail(); return; }
+
+  var KEY = "aism-session:" + c + "/" + t;
+  function getDone() { try { return JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { return []; } }
+  function setDone(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
+
+  A.loadCourse(c).then(function (data) {
+    var row = data && A.rowFor(data, t);
+    if (!row) { fail(); return; }
+    var steps = A.sessionSteps(c, data, t);
+    document.title = "Class session: " + row[1] + " — AI Study Method";
+    document.getElementById("csTitle").textContent = row[1];
+    document.getElementById("csCourse").textContent = data.d;
+    var done = getDone();
+    var ol = document.getElementById("csSteps");
+    ol.innerHTML = steps.map(function (st, i) {
+      var d = done.indexOf(st.id) >= 0;
+      return '<li class="cs-step' + (d ? " done" : "") + '" data-id="' + st.id + '"><a href="' + esc(local(st.url)) +
+        '" target="_blank" rel="noopener"><span class="cs-num">' + (d ? "✓" : i + 1) + '</span><span class="cs-body"><strong>' +
+        esc(st.label) + "</strong><span>" + esc(st.sub) + '</span></span><span class="cs-go">' + (d ? "Opened" : "Open ↗") + "</span></a></li>";
+    }).join("");
+    ol.addEventListener("click", function (e) {
+      var li = e.target.closest && e.target.closest(".cs-step");
+      if (!li) return;
+      var id = li.getAttribute("data-id"), list = getDone();
+      if (list.indexOf(id) < 0) { list.push(id); setDone(list); }
+      li.classList.add("done");
+      li.querySelector(".cs-num").textContent = "✓";
+      li.querySelector(".cs-go").textContent = "Opened";
+      A.track("Class session: step opened", { step: id });
+    });
+
+    var cl = document.getElementById("csCourseLink");
+    cl.href = "/teach/" + c + ".html"; cl.textContent = "All " + data.d + " lessons →"; cl.hidden = false;
+
+    var tb = document.getElementById("csAssign");
+    tb.hidden = false;
+    tb.addEventListener("click", function () {
+      A.open({
+        lesson: { url: A.lessonUrl(c, t), title: row[1] },
+        session: steps.length > 1 ? { url: A.sessionUrl(c, t), steps: steps } : null,
+        course: { url: A.courseUrl(c), name: data.d },
+        from: c + "/" + t
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

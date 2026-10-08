@@ -5,7 +5,11 @@ For every mini-lesson it records, per group (subject-level-board):
   a : arcade preset query for the group ("subject=..&level=..&board=..",
       "subject=..&level=.." when the arcade has the subject+level but not the
       board, or "" when the arcade has no matching shelf)
-  t : ordered lessons [[slug, title, 1 if the arcade has this exact topic]]
+  t : ordered lessons [[slug, title, 1 if the arcade has this exact topic,
+                        1 if a confidence quiz exists for this topic]]
+  s, l, b : subject, level, board ids;  d : course display name
+            ("AQA GCSE Chemistry") — used by assign.js, teach/session.html and
+            tools/build-teach-pages.py
 Order = spec order from classcraft/topic-slugs.js, then any extras A-Z.
 Run from the repo root:  python3 tools/build-lesson-next.py
 """
@@ -51,6 +55,19 @@ def page_title(path):
     t = html.unescape(m.group(1)) if m else ''
     return re.split(r'\s+[—–|]\s+', t)[0].strip()
 
+EVAL = {x[:-5] for x in json.load(open(os.path.join(CC, 'evaluate-manifest.json'), encoding='utf8'))}
+SPECS = {e['key']: e for e in json.load(open(os.path.join(CC, 'specs-manifest.json'), encoding='utf8'))}
+
+def course_name(subj, level, board):
+    e = SPECS.get(f'{subj}-{level}-{board}')
+    sd = e['subjectDisplay'] if e else subj.replace('-', ' ').title()
+    bd = e['boardDisplay'] if e else board.upper()
+    if level == 'ks3':   return f'KS3 {sd}'
+    if level == 'gcse':  return f'{bd} {sd}' if 'IGCSE' in bd or 'International GCSE' in bd else f'{bd} GCSE {sd}'
+    if level == 'a-level': return f'{bd} A-Level {sd}'
+    if level == 'ibdp':  return f'IB Diploma {sd} {bd.replace("IB ", "")}'
+    return f'{bd} {sd}'
+
 groups = collections.defaultdict(list)
 bad = []
 for f in sorted(os.listdir(ADV)):
@@ -81,9 +98,11 @@ for (subj, level, board), slugs in sorted(groups.items()):
         has = 1 if (kind == 'board' and s in atopics) else 0
         stats['lesson_' + (kind or 'none')] += 1
         stats['lesson_topic_preset'] += has
-        rows.append([s, title, has])
+        q = 1 if f'{key}-{s}' in EVAL else 0
+        stats['lesson_quiz'] += q
+        rows.append([s, title, has, q])
     name = key + '.json'
-    json.dump({'a': a, 't': rows}, open(os.path.join(OUT, name), 'w', encoding='utf8'),
+    json.dump({'a': a, 's': subj, 'l': level, 'b': board, 'd': course_name(subj, level, board), 't': rows}, open(os.path.join(OUT, name), 'w', encoding='utf8'),
               ensure_ascii=False, separators=(',', ':'))
     written.add(name)
 for old in os.listdir(OUT):

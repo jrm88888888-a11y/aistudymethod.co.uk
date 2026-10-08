@@ -7,7 +7,7 @@ Usage (from repo root):
     add --dry-run to print what would be sent without sending
 
 What is sent:
-  * only URLs listed in sitemaps/core.xml, revise.xml, adventures.xml (the
+  * only URLs listed in sitemaps/core.xml, revise.xml, adventures.xml, teach.xml (the
     indexable pages; build-sitemap.py owns that rule), plus
   * pages deleted since <commit> that the old sitemaps listed, so engines drop them.
   * if the key file itself changed (first set-up, or a rotated key), everything.
@@ -22,7 +22,7 @@ os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 HOST = "aistudymethod.com"
 SITE = "https://%s/" % HOST
 ENDPOINT = "https://api.indexnow.org/indexnow"
-SITEMAPS = ["sitemaps/core.xml", "sitemaps/revise.xml", "sitemaps/adventures.xml"]
+SITEMAPS = ["sitemaps/core.xml", "sitemaps/revise.xml", "sitemaps/adventures.xml", "sitemaps/teach.xml"]
 BATCH = 10000                      # IndexNow's per-request limit
 DRY = "--dry-run" in sys.argv
 RX_LOC = re.compile(r"<loc>([^<]+)</loc>")

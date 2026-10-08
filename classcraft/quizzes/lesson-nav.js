@@ -154,8 +154,9 @@
   else document.addEventListener("DOMContentLoaded", init);
 })();
 
-/* Load the "What next?" card (lesson-next.js) alongside the rail, so every
-   mini-lesson that carries lesson-nav.js gets it with no per-lesson edit. */
+/* Load the "What next?" card (lesson-next.js) and the teacher assign button
+   (assign.js) alongside the rail, so every mini-lesson that carries
+   lesson-nav.js gets them with no per-lesson edit. */
 (function () {
   try {
     var me = document.currentScript || document.querySelector('script[src*="lesson-nav.js"]');
@@ -164,5 +165,9 @@
     s.src = base + "lesson-next.js?v=20261007";
     s.defer = true;
     document.head.appendChild(s);
+    var a = document.createElement("script");          // teacher "assign this" button
+    a.src = base + "assign.js?v=20261008";
+    a.defer = true;
+    document.head.appendChild(a);
   } catch (e) {}
 })();
