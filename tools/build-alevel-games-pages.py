@@ -298,9 +298,9 @@ def subject_page(s):
         rel.append('the free <a href="%s">A-Level %s revision guide</a> covers the key concepts and common mistakes topic by topic' % (s["revise"], E(nm)))
     p = ' <p>For the depth to go with the drilling, '
     if rel:
-        p += rel[0] + ', and the <a href="velvet-method.html">Velvet Method</a> and our <a href="courses.html">courses</a> show you how to use AI to explain a tricky idea, quiz you and mark your answers — the games stay free either way.</p>\n'
+        p += rel[0] + ', and the <a href="velvet-method.html">Velvet Method</a> shows you how to use AI to explain a tricky idea, quiz you and mark your answers — the games stay free either way.</p>\n'
     else:
-        p += 'the <a href="velvet-method.html">Velvet Method</a> and our <a href="courses.html">courses</a> show you how to use AI to explain a tricky idea, quiz you and mark your answers — the games stay free either way.</p>\n'
+        p += 'the <a href="velvet-method.html">Velvet Method</a> shows you how to use AI to explain a tricky idea, quiz you and mark your answers — the games stay free either way.</p>\n'
     o.append(p)
     o.append('\n <div class="cta-box">\n  <h3>No account. No email. Just play.</h3>\n'
              '  <p>Jump into the %s games now, or explore free games for every other A-Level subject.</p>\n'
@@ -477,7 +477,7 @@ def hub_page():
     <p>Jump into the Arcade for free &mdash; or learn the full six-step system the games are built around.</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
       <a href="classcraft/arcade.html" class="neon-btn">&#127918; Play the Arcade &rarr;</a>
-      <a href="courses.html" class="btn-secondary" style="color:#fff;border-color:rgba(255,255,255,.25);">View the course</a>
+      <a href="velvet-method.html" class="btn-secondary" style="color:#fff;border-color:rgba(255,255,255,.25);">See the Velvet Method</a>
     </div>
   </div>
 </section>
