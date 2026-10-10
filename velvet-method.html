@@ -253,7 +253,9 @@
 
 /* ---- step cards ---- */
 .vm-steps{display:flex;flex-direction:column;gap:8px;}
-.vm-step{display:grid;grid-template-columns:80px 1fr;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--bg-card);scroll-margin-top:calc(var(--nav-h,64px) + 90px);}
+/* step cards fade in without sliding, so a jump to a card lands exactly */
+.vm-step.fade-up{transform:none !important;}
+.vm-step{display:grid;grid-template-columns:80px 1fr;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--bg-card);scroll-margin-top:calc(var(--nav-h,64px) + 6px + var(--vm-switch-h,250px) + 16px);}
 .vm-step-rail{background:var(--velvet-gradient);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 10px;}
 .vm-step-letter{font-family:'Playfair Display',serif;font-size:44px;font-weight:900;color:#fff;line-height:1;}
 .vm-step-num{font-size:8px;color:rgba(255,255,255,.72);letter-spacing:1.4px;text-transform:uppercase;font-family:'DM Mono',monospace;margin-top:6px;}
@@ -657,6 +659,28 @@ form.fp-optin{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-wid
   <p class="vm-who-note">We built the Velvet Method after noticing that the students who did best were rarely the ones working longest. They were the ones who knew what to do next. <a href="parents.html#contact">Get in touch &rarr;</a></p>
  </div>
 </section>
+<script>
+(function () {
+  // The course selector sticks under the nav. Tell the step cards how tall it is,
+  // so a jump to a step stops with the card just below the selector, not under it.
+  var sw = document.getElementById('vmSwitch');
+  if (!sw) return;
+  function set() {
+    // on phones the selector is not sticky, so it needs no allowance
+    var sticky = getComputedStyle(sw).position === 'sticky';
+    document.documentElement.style.setProperty('--vm-switch-h', (sticky ? sw.offsetHeight : 0) + 'px');
+  }
+  set();
+  if (window.ResizeObserver) { new ResizeObserver(set).observe(sw); }
+  window.addEventListener('resize', set);
+  window.addEventListener('load', function () {
+    set();
+    // arriving on a #step-n link: re-align once the selector has its final height
+    var h = location.hash;
+    if (/^#step-[1-6]$/.test(h)) { var el = document.querySelector(h); if (el) setTimeout(function () { el.scrollIntoView(); }, 300); }
+  });
+})();
+</script>
 <footer>
  <div class="footer-inner">
  <div class="footer-top">
