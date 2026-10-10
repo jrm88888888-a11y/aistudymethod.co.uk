@@ -52,9 +52,23 @@
     <h1 id="hTopic">Transform</h1>
     <div class="lr-ctx" id="hCtx"></div>
   </div>
-  <p class="lr-intro">Transform is the final step: turn knowledge into something you make. Recreating a diagram from memory, or explaining a topic in a new situation, forces the deepest kind of understanding — the generation effect. These activities open with your course context.</p>
-  <div class="lr-grid" id="cards"></div>
-  <p class="lr-note">More Transform activities are being added for every topic. Pick one above to begin.</p>
+  <p class="lr-intro">Transform is the final step: look back, then plan. Work out what is secure now, what still isn't, and which way of studying worked — then decide what to come back to, and when.</p>
+  <div class="tf-card">
+    <h3>Reflect and plan with AI</h3>
+    <p>Paste this into ChatGPT, Claude or Gemini at the end of a session. It asks you three questions, then turns your answers into a plan for the next two weeks.</p>
+    <div class="tf-prompt" id="tfPrompt"></div>
+    <button type="button" class="tf-copy" id="tfCopy">Copy the prompt</button>
+    <span class="tf-done" id="tfDone" role="status"></span>
+  </div>
+  <p class="lr-note">More Transform activities are being added.</p>
+  <style>
+  .tf-card{background:var(--bg-card);border:1px solid var(--border);border-left:4px solid var(--lr-c);border-radius:16px;padding:26px 28px;max-width:820px;box-shadow:var(--shadow-card);}
+  .tf-card h3{font-family:'Playfair Display',serif;font-size:22px;color:var(--text-primary);margin:0 0 8px;}
+  .tf-card p{font-size:15px;color:var(--text-secondary);line-height:1.65;margin:0 0 16px;}
+  .tf-prompt{font-family:'DM Mono',monospace;font-size:13.5px;line-height:1.7;color:var(--text-primary);background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:0 0 16px;white-space:pre-wrap;}
+  .tf-copy{appearance:none;border:0;cursor:pointer;background:var(--lr-c);color:#fff;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;padding:11px 18px;border-radius:9px;}
+  .tf-done{font-size:13px;color:var(--lr-c);font-weight:600;margin-left:12px;}
+  </style>
 </main>
 
 <footer>
@@ -96,18 +110,19 @@
   document.getElementById('hCtx').textContent = [subjName, LVL[level] || level, BRD[board] || board].filter(Boolean).join('  ·  ');
   document.getElementById('backLink').href = '../subjects.html?subject=' + subject + '&level=' + level + '&board=' + board;
 
-  var ACTIVITIES = [
-    { title: 'Roleplay', href: 'roleplay.html', desc: 'Step into a scenario and use the topic for real — argue, decide, advise. Applying knowledge in a new context cements it.' },
-    { title: 'Draw It', href: 'draw-it.html', desc: 'Recreate the key diagram from memory, pixel by pixel. Building it yourself is far stickier than copying it.' }
-  ];
-  var wrap = document.getElementById('cards');
-  ACTIVITIES.forEach(function (a) {
-    var sep = a.href.indexOf('?') > -1 ? '&' : '?';
-    var el = document.createElement('a');
-    el.className = 'lr-card';
-    el.href = a.href + sep + q;
-    el.innerHTML = '<h3>' + a.title + '</h3><p>' + a.desc + '</p><span class="lr-go">Open →</span>';
-    wrap.appendChild(el);
+  var lv = LVL[level] || level, bd = BRD[board] || board;
+  var course = [lv, subjName].filter(Boolean).join(' ') + (bd ? ' (' + bd + ')' : '');
+  var prompt = "I have just finished a revision session on " + topicName + (course.trim() ? ", " + course : "") + ". "
+    + "Ask me three questions, one at a time, and wait for each answer: what I can now do from memory, what I still get wrong, and which way of studying worked best today. "
+    + "Then turn my answers into a short plan: what to come back to, and on which days over the next two weeks. "
+    + "Use only what I tell you. If you state a fact about the course, remind me to check it against my " + (bd ? bd + " " : "") + "specification.";
+  var box = document.getElementById('tfPrompt'), btn = document.getElementById('tfCopy'), done = document.getElementById('tfDone');
+  box.textContent = prompt;
+  btn.addEventListener('click', function () {
+    function ok() { done.textContent = 'Copied'; setTimeout(function () { done.textContent = ''; }, 2500); }
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(prompt).then(ok, function () { done.textContent = 'Select the text and copy it'; }); }
+    else { done.textContent = 'Select the text and copy it'; }
+    try { window.plausible && window.plausible('Transform prompt copied'); } catch (e) {}
   });
 })();
 </script>
