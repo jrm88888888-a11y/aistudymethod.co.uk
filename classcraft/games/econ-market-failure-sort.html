@@ -179,7 +179,7 @@
     root.innerHTML = `
       <div class="ar-badge">📦 Arcade · Sorting Rush</div>
       <h1 class="ar-title">${esc(HEADING)}</h1>
-      <p class="ar-sub">${esc(RUN_SECS)} seconds. Drop each item into the right bin. Chain correct sorts to grow your combo — five in a row sparks a ×2 frenzy.</p>
+      <p class="ar-sub">${esc(RUN_SECS)} seconds. Drop each item into the right bin. Each sort pays 100 × your combo (up to ×5) — five in a row also sparks a ×2 frenzy.</p>
       <div class="ar-hud">
         <div class="ar-hud-stat">Score <b id="hudScore">0</b></div>
         <div class="ar-hud-stat${state.combo >= 3 ? ' hot' : ''}">Combo <b id="hudCombo">×1</b></div>
@@ -255,25 +255,28 @@
       state.correct++;
       state.combo++;
       state.bestCombo = Math.max(state.bestCombo, state.combo);
-      // FRENZY payout: a correct sort inside the window banks 2 points, not 1.
-      // Accuracy stats (sorted / correct) stay untouched — score only.
+      // Combo pays (Oct 2026): the HUD showed ×5 but every sort paid 1 point.
+      // Now 100 × the combo tier (×1–×5), doubled inside a frenzy. Accuracy
+      // stats (sorted / correct), and so the rank and coins, are untouched.
       const inFrenzy = state.frenzy;
-      const gained = inFrenzy ? 2 : 1;
+      const tier = Math.min(5, state.combo);
+      const base = 100 * tier;
+      const gained = inFrenzy ? base * 2 : base;
       state.pts += gained;
-      if (inFrenzy) state.frenzyExtra++;
+      if (inFrenzy) state.frenzyExtra += base;
       state.grid.push('🟩');
       Arcade.sfx.correct(state.combo);
       chosenBin.classList.add('right');
       card.classList.add('fly');
-      Arcade.popTextOver(chosenBin, inFrenzy ? '+2 ⚡' : '×' + state.combo, inFrenzy ? '#ffd60a' : '#00ffa3');
+      Arcade.popTextOver(chosenBin, '+' + gained + (inFrenzy ? ' ⚡' : ''), inFrenzy ? '#ffd60a' : '#00ffa3');
       Arcade.vibrate(15);
       if (state.combo === 5 || state.combo === 10) { Arcade.streakCall(state.combo); Arcade.confettiBurst({ count: 45 }); }
       // EVENT — FRENZY: earned at every 5-combo milestone while no frenzy runs.
       if (!state.frenzy && state.combo % FRENZY_COMBO === 0) startFrenzy();
       fb.className = 'ar-feedback ok';
-      fb.innerHTML = `<strong>Correct!${inFrenzy ? ' ⚡ +2' : ''}</strong> “${esc(item.text)}” belongs in <em>${esc(CATEGORIES[item.cat])}</em>.`;
+      fb.innerHTML = `<strong>Correct! +${gained}${inFrenzy ? ' ⚡ ×2' : (tier > 1 ? ' (×' + tier + ' combo)' : '')}</strong> “${esc(item.text)}” belongs in <em>${esc(CATEGORIES[item.cat])}</em>.`;
       announce.textContent = `Correct. ${item.text} is ${CATEGORIES[item.cat]}. Combo ${state.combo}.`
-        + (inFrenzy ? ' Frenzy: two points banked.' : '')
+        + ' Plus ' + gained + ' points.' + (inFrenzy ? ' Frenzy doubled it.' : '')
         + (state.frenzy && !inFrenzy ? ' Frenzy! Double points for ten seconds.' : '');
     } else {
       state.combo = 0;
@@ -311,6 +314,9 @@
       chosenBin.classList.remove('right', 'wrongbin');
       bins.forEach(b => { b.disabled = false; });
       state.pos++;
+      // A fresh order each time the deck comes round (it used to repeat the
+      // same sequence, so the second lap was memorised order, not sorting).
+      if (state.pos % queue.length === 0) queue = Arcade.shuffle(queue);
       locked = false;
       if (timerCtl) { showItem(); }
     }, delay);

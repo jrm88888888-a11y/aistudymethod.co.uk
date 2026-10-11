@@ -475,6 +475,7 @@ let hintsLeft   = MAX_HINTS;
 let score       = 0;
 let correct     = 0;
 let skipped     = 0;
+let firstTried = 0, redeemedSolved = 0;   // honest-rank counters
 let gameActive  = false;
 let tileIdCounter = 0;
 let streak      = 0;
@@ -522,7 +523,7 @@ const AN_PLAY = (function () {
 function startGame() {
   AudioFX.unlock();
   wordList = shuffle([...AN_PLAY]).slice(0, AN_RUN);
-  wordIndex = 0; score = 0; correct = 0; skipped = 0;
+  wordIndex = 0; score = 0; correct = 0; skipped = 0; firstTried = 0; redeemedSolved = 0;
   streak = 0; bestStreak = 0; wordResults = [];
   document.getElementById('screen-start').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
@@ -536,6 +537,7 @@ function startGame() {
 function loadWord(idx) {
   if (idx >= wordList.length) { showFinalScore(); return; }
   const item = wordList[idx];
+  if (!item._redemption) firstTried++;
   currentTerm = item.term.toUpperCase();
   currentDef  = item.definition;
   termWords   = currentTerm.split(' ').map(w => w.split(''));
@@ -748,6 +750,7 @@ function checkAnswer() {
     const wordScore   = Math.max(0, base + speedBonus + streakBonus - checkPenalty);
     score += wordScore;
     correct++;
+    if (wordList[wordIndex] && wordList[wordIndex]._redemption) redeemedSolved++;
     document.getElementById('score-display').textContent = score;
     updateStreakPill();
     AudioFX.solve();
@@ -853,7 +856,12 @@ function showFinalScore() {
   gameActive = false;
   document.getElementById('progress-fill').style.width = '100%';
   const total = wordList.length;
-  const pct = total ? Math.round(correct / total * 100) : 0;
+  /* Honest rank (Oct 2026): out of the distinct words reached — at least 5,
+     or the whole run if shorter — so "1 word + End" is neither an S nor
+     divided by the whole pack; a second-chance solve is half credit. */
+  const runDistinct = wordList.filter(x => !x._redemption).length;
+  const denom = Math.max(1, firstTried, Math.min(5, runDistinct));
+  const pct = Math.min(100, Math.round((correct - 0.5 * redeemedSolved) / denom * 100));
   const topic = META.topic || 'Vocabulary';
   const emojiGrid = wordResults.join('');
 

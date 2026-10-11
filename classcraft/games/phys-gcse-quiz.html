@@ -354,10 +354,12 @@
   }
 
   function renderEnd() {
-    // A question counts as correct if answered right either first time or on
-    // redemption; % is out of the planned rounds, not the redemption re-asks.
+    // Rank (and coins) out of the planned rounds. A redemption answer is half
+    // credit (Oct 2026): it used to count in full, so 3 misses all redeemed
+    // read "10/10 · Flawless" and earned an S.
     const total = state.totalPlanned;
-    const pct = Math.round((state.correct / total) * 100);
+    const firstTry = state.correct - state.redeemed;
+    const pct = Math.round(((firstTry + 0.5 * state.redeemed) / total) * 100);
     const avg = state.times.length
       ? (state.times.reduce((a, b) => a + b, 0) / state.times.length).toFixed(1)
       : '0.0';
@@ -376,7 +378,7 @@
       big: state.score,
       bigLabel: 'points',
       rows: [
-        { v: `${state.correct}/${total}`, l: 'correct' },
+        { v: `${firstTry}/${total}`, l: 'first try' },
         ...(state.redemptionStarted ? [{ v: `🟨 ${state.redeemed}`, l: 'redeemed' }] : []),
         { v: '🔥 ' + state.bestStreak, l: 'best streak' },
         { v: avg + 's', l: 'avg time' },
@@ -393,7 +395,7 @@
       ],
       onAgain: startGame,
     });
-    announce.textContent = `Game over. Score ${state.score} points. ${state.correct} of ${total} correct — ${pct} percent.`;
+    announce.textContent = `Game over. Score ${state.score} points. ${firstTry} of ${total} right first time${state.redeemed ? `, ${state.redeemed} redeemed` : ''} — ${pct} percent.`;
   }
 
   // Keyboard: 1-4 / T / F answer, Enter advances.

@@ -110,12 +110,12 @@
 
     register: async function (username, password) {
       var r = await api("/register", { body: { username: username, password: password } });
-      if (r.ok) { setSession(r.data); return { ok: true, recoveryKey: r.data.recoveryKey, wallet: r.data.wallet }; }
+      if (r.ok) { setSession(r.data); bankPendingRun(); return { ok: true, recoveryKey: r.data.recoveryKey, wallet: r.data.wallet }; }
       return { ok: false, error: r.error, status: r.status };
     },
     login: async function (username, password) {
       var r = await api("/login", { body: { username: username, password: password } });
-      if (r.ok) { setSession(r.data); return { ok: true, wallet: r.data.wallet }; }
+      if (r.ok) { setSession(r.data); bankPendingRun(); return { ok: true, wallet: r.data.wallet }; }
       return { ok: false, error: r.error, status: r.status };
     },
     recover: async function (username, recoveryKey, newPassword) {
@@ -709,6 +709,24 @@
     insertTop(mount, d);
     return d;
   }
+  /* Coins promised on the card (L16, Oct 2026). A logged-out end card says
+     "worth N coins — an account keeps them", and the sign-up prompt repeats
+     it, but nothing banked that run after registering. The last unbanked run
+     on this page is remembered; registering or logging in within 30 minutes
+     banks it once (through the normal /award, so the daily cap applies) and
+     the card's register line turns into the coin win. */
+  var _pendingRun = null;   // { pct, mount, cta, at }
+  function bankPendingRun() {
+    var p = _pendingRun; _pendingRun = null;
+    if (!p || Date.now() - p.at > 30 * 60 * 1000) return;
+    auth.award(p.pct).then(function (res) {
+      if (!res || !res.ok) return;          // nothing claimed, nothing to correct
+      var cr = res.credited || 0, rem = res.wallet ? res.wallet.capRemaining : null;
+      if (p.cta && p.cta.parentNode) p.cta.remove();
+      if (!p.mount || !p.mount.isConnected) return;
+      if (cr > 0) winNote(p.mount, cr, rem); else capNote(p.mount);
+    }).catch(function () {});
+  }
   function registerCta(mount, letter, worth) {
     injectCss();
     var d = el("div"); d.style.cssText = "text-align:center;margin:4px 0 12px";
@@ -718,6 +736,7 @@
     b.addEventListener("click", function () { auth.open("register", { source: "end card" }); });
     d.appendChild(b);
     insertLine(mount, d);
+    return d;
   }
 
   /* ---------------- first-game sign-up prompt (2026-09-28) ----------------
@@ -863,8 +882,9 @@
                 else capNote(mount);
               }
             });
-          } else if (mount && worth > 0) {
-            registerCta(mount, letter, worth);
+          } else if (worth > 0) {
+            var cta = mount ? registerCta(mount, letter, worth) : null;
+            _pendingRun = { pct: opts.pct, mount: mount, cta: cta, at: Date.now() };
           }
         }
       } catch (e) { /* the end card must never break */ }

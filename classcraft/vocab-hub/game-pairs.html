@@ -56,6 +56,10 @@
     text-shadow: 0 0 14px rgba(139,92,246,0.7);
     transition: border-color 0.13s ease, transform 0.13s ease, box-shadow 0.13s ease;
   }
+  /* Typed backs (Oct 2026): you can see which cards are terms and which are
+     definitions, so a turn is always a real term + definition attempt. */
+  .pv-back.term { border-color: rgba(0,229,255,0.55); color: var(--ar-cyan); text-shadow: 0 0 14px rgba(0,229,255,0.6); }
+  .pv-back.def  { border-color: rgba(0,255,163,0.5);  color: var(--ar-mint); text-shadow: 0 0 14px rgba(0,255,163,0.55); }
   .pv-card:hover:not(.matched):not(.flipped) .pv-back { border-color: var(--ar-cyan); box-shadow: 0 6px 20px rgba(0,229,255,0.18); }
   .pv-front { transform: rotateY(180deg); }
   .pv-front.term { background: var(--ar-cyan-dim); border: 2px solid rgba(0,229,255,0.55); }
@@ -170,6 +174,14 @@ let locked = false, gameOver = false;
 let combo = 0, bestCombo = 0;
 let startTime = 0, clockInterval = null, elapsed = 0;
 let missedTerms = new Set();
+/* Fair grading (Oct 2026). Every mismatch used to count as an error, so two
+   blind opening flips + perfect play scored a C and listed those cards as
+   "weak links". Now a miss counts only when you could have known: the first
+   card's partner had already been seen, or the second card was one you had
+   already seen. Accuracy = pairs / (pairs + real misses). */
+let seenCards = new Set(), realMisses = 0;
+const cardKey = c => c.dataset.pairId + '|' + c.dataset.type;
+const partnerKey = c => c.dataset.pairId + '|' + (c.dataset.type === 'term' ? 'def' : 'term');
 let lightningScore = 0, lightningHits = 0, lightningTotal = 0, lightningCtl = null;
 
 function shuffle(arr) { return Arcade.shuffle(arr); }
@@ -205,7 +217,7 @@ function renderSetup() {
   stopClock();
   root.innerHTML = `
     ${headerHtml('Pick your level')}
-    <p class="ar-sub">Flip cards to pair each term with its definition. Back-to-back matches build a combo — fewer moves, better grade.</p>
+    <p class="ar-sub">Flip cards to pair each term with its definition. Back-to-back matches build a combo. Blind first flips are free — your grade only counts the cards you had already seen and lost track of.</p>
     <div class="ar-card">
       <div class="pv-legend">
         <div class="pv-legend-item"><span class="pv-swatch term"></span>Cyan = Term</div>
@@ -256,7 +268,7 @@ function startGame() {
   runTotal = pool.length;
   moves = 0; totalMatched = 0;
   gameOver = false; combo = 0; bestCombo = 0; elapsed = 0;
-  missedTerms = new Set();
+  missedTerms = new Set(); seenCards = new Set(); realMisses = 0;
   lightningScore = 0; lightningHits = 0; lightningTotal = 0;
   if (lightningCtl) { lightningCtl.stop(); lightningCtl = null; }
   startClock();
@@ -310,10 +322,10 @@ function startBoard() {
     card.dataset.type = c.type;
     card.dataset.term = c.item.term;
     card.dataset.def = c.item.definition;
-    card.setAttribute('aria-label', 'Card ' + (idx + 1) + ', face down');
+    card.setAttribute('aria-label', 'Card ' + (idx + 1) + ', ' + (c.type === 'term' ? 'term' : 'definition') + ', face down');
     card.innerHTML = `
       <span class="pv-inner">
-        <span class="pv-face pv-back" aria-hidden="true">?</span>
+        <span class="pv-face pv-back ${c.type}" aria-hidden="true">${c.type === 'term' ? 'T' : 'D'}</span>
         <span class="pv-face pv-front ${c.type}">
           <span class="pv-tag">${c.type === 'term' ? 'Term' : 'Definition'}</span>
           <span class="pv-text">${esc(c.text)}</span>
@@ -345,6 +357,13 @@ function onCardClick(card) {
   if (locked || gameOver) return;
   if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
   if (flipped.length >= 2) return;
+  if (flipped.length === 1 && flipped[0].dataset.type === card.dataset.type) {
+    const want = card.dataset.type === 'term' ? 'definition (D)' : 'term (T)';
+    const fbEl = document.getElementById('fb');
+    if (fbEl) { fbEl.className = 'ar-feedback mid'; fbEl.innerHTML = 'Pick a <strong>' + want + '</strong> card to pair with it — no move used.'; }
+    Arcade.sfx.tick && Arcade.sfx.tick();
+    return;
+  }
   card.classList.add('flipped');
   card.setAttribute('aria-label', card.dataset.type === 'term'
     ? 'Term: ' + card.dataset.term
@@ -361,6 +380,8 @@ function checkMatch() {
   const [a, b] = flipped;
   const isMatch = a.dataset.pairId === b.dataset.pairId && a.dataset.type !== b.dataset.type;
   const fb = document.getElementById('fb');
+  const seenBefore = new Set(seenCards);
+  seenCards.add(cardKey(a)); seenCards.add(cardKey(b));
 
   if (isMatch) {
     combo++;
@@ -392,8 +413,13 @@ function checkMatch() {
     }, 350);
   } else {
     combo = 0;
-    missedTerms.add(a.dataset.term);
-    missedTerms.add(b.dataset.term);
+    // seenBefore = what was known before this turn.
+    const couldKnow = seenBefore.has(partnerKey(a)) || seenBefore.has(cardKey(b));
+    if (couldKnow) {
+      realMisses++;
+      missedTerms.add(a.dataset.term);
+      missedTerms.add(b.dataset.term);
+    }
     setTimeout(() => {
       a.classList.add('wrong'); b.classList.add('wrong');
       Arcade.sfx.wrong();
@@ -539,16 +565,17 @@ function endGame() {
   stopClock();
   if (lightningCtl) { lightningCtl.stop(); lightningCtl = null; }
   elapsed = Math.max(elapsed, 1);
-  const accuracy = moves > 0 ? Math.min(100, Math.round(runTotal / moves * 100)) : 100;
+  const accuracy = Math.round(runTotal / Math.max(1, runTotal + realMisses) * 100);
 
   let insight;
-  if (accuracy === 100) insight = 'Perfect recall — every flip was a first-try match. Next level up: bigger board, same accuracy.';
+  if (accuracy === 100) insight = 'Perfect recall — once you had seen a card, you never lost track of it. Next level up: bigger board, same accuracy.';
   else if (accuracy >= 70) insight = 'Sharp memory. The pairs that took extra flips are the definitions to re-read — they were spelled out under the board every time you missed.';
   else insight = 'Every mismatch printed both definitions in full — that was the revision happening live. Run it back and watch the move count drop.';
 
   const rows = [
     { v: fmtTime(elapsed), l: 'time' },
     { v: String(moves), l: 'moves' },
+    { v: String(realMisses), l: realMisses === 1 ? 'slip' : 'slips' },
     { v: '🔥 ' + bestCombo, l: 'best combo' },
   ];
   if (lightningTotal) rows.push({ v: '⚡ +' + lightningScore, l: `lightning ${lightningHits}/${lightningTotal}` });

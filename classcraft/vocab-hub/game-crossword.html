@@ -1100,7 +1100,7 @@ function checkAnswers() {
 function submitCrossword(fromAuto) {
   if (submitted) return;
   submitted = true;
-  let correct=0, wrong=0, empty=0, wordsCorrect=0;
+  let correct=0, wrong=0, empty=0, wordsCorrect=0, revealedCorrect=0;
 
   // Check each cell
   grid.forEach((row, r) => row.forEach((cell, c) => {
@@ -1112,6 +1112,7 @@ function submitCrossword(fromAuto) {
     } else if (cell.inputLetter === cell.letter) {
       el?.classList.add('correct');
       correct++;
+      if (cell.revealed) revealedCorrect++;
     } else {
       el?.classList.add('wrong');
       if (el && !REDUCED_MOTION) {
@@ -1144,8 +1145,9 @@ function submitCrossword(fromAuto) {
   // Wrong-cell feedback before the card covers the grid
   if (!fromAuto && wrong > 0) { AudioFX.buzz(); Arcade.shake(); }
 
-  // Accuracy + time + hints → shareable arcade end card
-  const pct = Math.round(correct / (correct+wrong+empty) * 100);
+  // Accuracy + time + hints → shareable arcade end card. Revealed letters are
+  // shown, not earned (Oct 2026: "Reveal all" used to score 100% and an S).
+  const pct = Math.round((correct - revealedCorrect) / (correct+wrong+empty) * 100);
   const elapsed = puzzleStart ? Math.max(0, Math.round((Date.now() - puzzleStart) / 1000)) : 0;
   const mm = Math.floor(elapsed / 60), ss = String(elapsed % 60).padStart(2, '0');
   const timeStr = mm + ':' + ss;
@@ -1216,6 +1218,7 @@ function revealWord() {
     const wc = w.dir === 'across' ? w.col + i : w.col;
     if (grid[wr][wc].inputLetter !== grid[wr][wc].letter) {
       grid[wr][wc].inputLetter = grid[wr][wc].letter;
+      grid[wr][wc].revealed = true;           // shown, not earned
       updateCellDisplay(wr, wc);
       revealed++;
       const letEl = document.getElementById(`cell-${wr}-${wc}`);
@@ -1249,6 +1252,7 @@ function revealAll() {
       cell.inputLetter = cell.letter;
       updateCellDisplay(r, c);
       if (!wasCorrect) {
+        cell.revealed = true;                 // shown, not earned
         revealed++;
         const letEl = document.getElementById(`cell-${r}-${c}`);
         if (letEl && !REDUCED_MOTION) {

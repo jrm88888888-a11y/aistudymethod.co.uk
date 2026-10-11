@@ -6,7 +6,7 @@
 <title>Reveal Race — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Name the concept as its definition reveals — buzz early to score more. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   .rv-stage { position: relative; border-radius: var(--ar-r); overflow: hidden; background: #0f1117; border: 1px solid var(--ar-border-hi); box-shadow: 0 14px 40px rgba(0,0,0,0.5); }
   .rv-canvas { display: block; width: 100%; height: auto; }
@@ -83,7 +83,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script>
 'use strict';
@@ -403,6 +403,11 @@ function renderPoster(term, subject, W, H) {
   const SLOW_KEY = 'aism-reveal-slow';
   const TOTAL_ROUNDS = Math.min(6, concepts.length);  // one round per concept, cap 6
   const START_PTS = 500, FLOOR_PTS = 50;
+  /* Buzz discipline (Oct 2026). A wrong guess cost nothing, so buzzing blind
+     at 0% (500 frozen, 1-in-4 guess, decay resumes) out-scored reading. Now
+     the buzzer arms once 10% of the definition is showing, and each wrong
+     guess takes 150 off whatever the round finally pays (never below 0). */
+  const MIN_BUZZ_FRAC = 0.10, WRONG_PENALTY = 150;
   const STAGES = 12;
   const BASE_STAGE_MS = 1200;                          // ~1.2s per reveal piece
   const GRID_COLS = 16, GRID_ROWS = 10;
@@ -449,7 +454,7 @@ function renderPoster(term, subject, W, H) {
     return `
       <div class="ar-badge">V · Verify · Reveal Race</div>
       <h1 class="ar-title">${esc(topic)}</h1>
-      <p class="ar-sub">A definition reveals word by word — and 500 points drain away while it does. Buzz the second you can name it. Wrong guess? The decay resumes. Two wrong guesses ends the round.</p>
+      <p class="ar-sub">A definition reveals word by word — and 500 points drain away while it does. Buzz the second you can name it (the buzzer arms once a tenth is showing). Wrong guess? −${WRONG_PENALTY} and the decay resumes. Two wrong guesses ends the round.</p>
       <div class="ar-meta">${esc([level, subjDisplay].filter(Boolean).join(' · '))} · ${esc(metaTail)}</div>
     `;
   }
@@ -618,6 +623,11 @@ function renderPoster(term, subject, W, H) {
 
   function onBuzz() {
     if (phase !== 'revealing') return;
+    if (currentFrac() < MIN_BUZZ_FRAC) {
+      Arcade.flashMsg('READ FIRST 👀', '#ffd60a');
+      announce('The buzzer arms once a tenth of the definition is showing.');
+      return;
+    }
     revealElapsed = performance.now() - revealT0;
     frozenFrac = currentFrac();
     phase = 'options';
@@ -709,8 +719,8 @@ function renderPoster(term, subject, W, H) {
     }
 
     // Wrong guess: reveal resumes, points keep decaying, buzz again.
-    Arcade.flashMsg('NOPE — DECAY RESUMES ⏳', '#ff2e88');
-    announce('Not it. The reveal resumes and points keep falling. Buzz again when you know it.');
+    Arcade.flashMsg('NOPE — −' + WRONG_PENALTY + ' ⏳', '#ff2e88');
+    announce('Not it — that costs ' + WRONG_PENALTY + ' points from this round. The reveal resumes and points keep falling. Buzz again when you know it.');
     document.getElementById('options-zone').innerHTML = '';
     document.getElementById('buzz-row').innerHTML =
       '<button type="button" class="ar-btn hot big" id="buzz" style="max-width:340px;">⚡ BUZZ AGAIN</button>';
@@ -729,7 +739,7 @@ function renderPoster(term, subject, W, H) {
 
     let earned = 0;
     if (won) {
-      earned = frozenPts;
+      earned = Math.max(0, frozenPts - WRONG_PENALTY * wrongGuesses);
       state.score += earned;
       state.correct++;
       state.correctFracs.push(frozenFrac);

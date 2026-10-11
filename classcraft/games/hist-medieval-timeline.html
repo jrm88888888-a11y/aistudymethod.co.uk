@@ -467,7 +467,10 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1066","text":"Battle of Hastings — W
     const outcomes = st.eventOrder.map(rank => st.resByRank[rank]);
     const n = outcomes.length;
     const c = outcomes.filter(o => o === true || o === 'retry').length;
-    const pct = Math.round((c / n) * 100);
+    // A fix on the retry is half credit for the rank (and coins), matching its
+    // half points (Oct 2026: it used to count in full).
+    const first = outcomes.filter(o => o === true).length, fixedOnRetry = c - first;
+    const pct = Math.round(((first + 0.5 * fixedOnRetry) / n) * 100);
     const secs = fmtSecs(Date.now() - st.t0);
     const emoji = outcomes.map(o => (o === true ? '🟩' : o === 'retry' ? '🟨' : '🟥')).join('');
 
@@ -487,7 +490,8 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1066","text":"Battle of Hastings — W
       big: st.score,
       bigLabel: 'points',
       rows: [
-        { v: c + '/' + n, l: 'placed right' },
+        { v: first + '/' + n, l: 'first try' },
+        ...(fixedOnRetry ? [{ v: '🟨 ' + fixedOnRetry, l: 'fixed on retry' }] : []),
         ...(st.fixed > 0 ? [{ v: '🟨 ' + st.fixed, l: 'fixed on retry' }] : []),
         ...(st.goldCount > 0 ? [{ v: '✨ ' + st.goldCount, l: 'golden cards' }] : []),
         { v: String(st.bestStreak), l: 'best streak' },
