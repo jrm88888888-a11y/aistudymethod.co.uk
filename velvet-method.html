@@ -418,6 +418,7 @@ form.fp-optin{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-wid
  button.vm-clip-poster{appearance:none;font:inherit;color:inherit;cursor:pointer;padding:0;}
  .vm-clip-poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
  .vm-clip-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;}
+ .vm-clip-frame video{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000;object-fit:contain;}
  .vm-clip-poster:hover .vm-play-orb,.vm-clip-poster:focus-visible .vm-play-orb{transform:translate(-50%,-50%) scale(1.08);background:var(--accent);}
  @media (max-width:700px) and (orientation:portrait){
   .vm-clip,.vm-hero-video .vm-clip{max-width:300px;margin-left:auto;margin-right:auto;}
@@ -1189,8 +1190,13 @@ form.fp-optin{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-wid
 /* ===== Velvet step videos =====
    Seven Bunny Stream videos (library 680127, collection "Velvet Method step videos"), each uploaded twice: l = landscape 16:9,
    p = portrait 9:16. A clip is shown only when its landscape ID is present. On click the
-   poster is replaced by the Bunny player: the portrait upload on a phone held upright,
-   the landscape one everywhere else. Nothing loads from Bunny before the click. */
+   poster is replaced by the video: the portrait upload on a phone held upright,
+   the landscape one everywhere else. Nothing loads from Bunny before the click.
+   Oct 2026: plays Bunny's MP4 rendition (play_720p.mp4, faststart) in a native
+   <video> instead of the Bunny iframe player. The iframe pulled ~700 KB of player
+   code from 6-14 hosts before asking for any video; measured click-to-playing:
+   iframe ~2.2-3.0 s on a fast connection and ~5.0 s on a slow one, native
+   <video> ~0.6 s and ~1.0 s. If the MP4 ever fails, the iframe player is used. */
 (function(){
   var LIB = '680127';
   var PORTRAIT = '(max-width: 700px) and (orientation: portrait)';
@@ -1204,28 +1210,59 @@ form.fp-optin{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-wid
     transform: { l: '9fbf5130-5a0b-4199-9776-485c2fc96b52', p: 'ba2dc7b4-3a88-4535-8bac-2e047ae7077c', title: 'Transform: look back, plan ahead' }
   };
   function track(props){ try{ if(window.plausible) plausible('Velvet step video', {props: props}); }catch(e){} }
+  var CDN = 'https://vz-c1deea8d-829.b-cdn.net/';   // this library's Bunny Stream video host
+  // Open the connection to the video host as soon as a poster is hovered,
+  // touched or focused, so the click does not also pay for DNS + TLS.
+  function warmCdn(){
+    if (warmCdn.done) return; warmCdn.done = true;
+    try { var l = document.createElement('link'); l.rel = 'preconnect'; l.href = CDN; document.head.appendChild(l); } catch(e){}
+  }
+  function bunnyIframe(id, title){
+    var f = document.createElement('iframe');
+    f.src = 'https://iframe.mediadelivery.net/embed/' + LIB + '/' + id + '?autoplay=true&preload=true&responsive=true';
+    f.title = title;
+    f.setAttribute('allow', 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;');
+    f.setAttribute('allowfullscreen', '');
+    return f;
+  }
+  function nativeVideo(id, title, poster, onFail){
+    var vd = document.createElement('video');
+    vd.controls = true; vd.playsInline = true; vd.setAttribute('playsinline', '');
+    vd.preload = 'auto';
+    if (poster) vd.poster = poster;
+    vd.setAttribute('aria-label', title);
+    vd.addEventListener('error', onFail, { once: true });
+    vd.src = CDN + id + '/play_720p.mp4';
+    return vd;
+  }
   var figs = document.querySelectorAll('.vm-clip[data-clip]');
   Array.prototype.forEach.call(figs, function(fig){
     var key = fig.getAttribute('data-clip'), v = VIDEOS[key];
     var btn = fig.querySelector('.vm-clip-poster');
     if (!v || !v.l || !btn) return;          // not uploaded yet: stay hidden
     fig.hidden = false;
+    ['pointerenter', 'touchstart', 'focus'].forEach(function(ev){ btn.addEventListener(ev, warmCdn, { passive: true, once: true }); });
     btn.addEventListener('click', function(){
       var portrait = !!v.p && !!window.matchMedia && window.matchMedia(PORTRAIT).matches;
-      var f = document.createElement('iframe');
-      f.src = 'https://iframe.mediadelivery.net/embed/' + LIB + '/' + (portrait ? v.p : v.l) +
-              '?autoplay=true&preload=true&responsive=true';
-      f.title = v.title;
-      f.setAttribute('allow', 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;');
-      f.setAttribute('allowfullscreen', '');
+      var id = portrait ? v.p : v.l;
+      var img = btn.querySelector('img');
+      var poster = img && (img.currentSrc || img.src);
       var wrap = document.createElement('div');
       wrap.className = 'vm-clip-frame';
       // Lock the shape to the upload that is playing, so turning the phone does not reshape it.
       wrap.style.aspectRatio = portrait ? '9 / 16' : '16 / 9';
       fig.style.maxWidth = portrait ? '300px' : (fig.classList.contains('vm-clip-hero') ? 'none' : '560px');
-      wrap.appendChild(f);
+      var vd = nativeVideo(id, v.title, poster, function(){
+        // MP4 unavailable: fall back to the Bunny player.
+        var f = bunnyIframe(id, v.title);
+        if (vd.parentNode) vd.parentNode.replaceChild(f, vd);
+        track({ step: key, orientation: portrait ? 'vertical' : 'landscape', player: 'iframe-fallback' });
+      });
+      wrap.appendChild(vd);
       btn.parentNode.replaceChild(wrap, btn);
-      f.focus && f.focus();
+      var pr = vd.play();
+      if (pr && pr.catch) pr.catch(function(){ /* autoplay refused: the controls are showing */ });
+      try { vd.focus(); } catch(e){}
       track({ step: key, orientation: portrait ? 'vertical' : 'landscape' });
     }, { once: true });
   });

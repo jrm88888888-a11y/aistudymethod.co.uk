@@ -537,6 +537,9 @@
 (function () {
   // Promo video. Nothing from Bunny loads until the tile is clicked. A phone held
   // upright gets the vertical upload; everything else gets the landscape one.
+  // Oct 2026: native <video> on Bunny's MP4 rendition (play_720p.mp4) instead of
+  // the Bunny iframe player, which loaded ~700 KB of player code first (measured
+  // click-to-playing ~2.5 s → ~0.6 s on a fast connection). Iframe kept as fallback.
   var LIB = '680127', LANDSCAPE = 'd788099b-87ad-4840-9636-0eac334401d5', VERTICAL = '2e95d52e-fc24-4441-9b19-a29e9b1c65e2';
   var btn = document.getElementById('heroVideoBtn'), ov = document.getElementById('hvOverlay'),
       box = document.getElementById('hvBox'), close = document.getElementById('hvClose');
@@ -545,17 +548,33 @@
     var portrait = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
     box.style.aspectRatio = portrait ? '9 / 16' : '16 / 9';
     box.style.width = portrait ? 'min(88vw, calc(82vh * 9 / 16))' : 'min(94vw, calc(84vh * 16 / 9), 1100px)';
-    var f = document.createElement('iframe');
-    f.src = 'https://iframe.mediadelivery.net/embed/' + LIB + '/' + (portrait ? VERTICAL : LANDSCAPE) + '?autoplay=true&preload=true&responsive=true';
-    f.title = 'Take control of your studies';
-    f.setAttribute('allow', 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;');
-    f.setAttribute('allowfullscreen', '');
-    box.innerHTML = ''; box.appendChild(f);
+    var id = portrait ? VERTICAL : LANDSCAPE;
+    var vd = document.createElement('video');
+    vd.controls = true; vd.playsInline = true; vd.setAttribute('playsinline', ''); vd.preload = 'auto';
+    vd.setAttribute('aria-label', 'Take control of your studies');
+    vd.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;background:#000;object-fit:contain;';
+    vd.addEventListener('error', function () {
+      var f = document.createElement('iframe');
+      f.src = 'https://iframe.mediadelivery.net/embed/' + LIB + '/' + id + '?autoplay=true&preload=true&responsive=true';
+      f.title = 'Take control of your studies';
+      f.setAttribute('allow', 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;');
+      f.setAttribute('allowfullscreen', '');
+      if (vd.parentNode) vd.parentNode.replaceChild(f, vd);
+    }, { once: true });
+    vd.src = CDN + id + '/play_720p.mp4';
+    box.innerHTML = ''; box.appendChild(vd);
     ov.hidden = false;
+    var pr = vd.play(); if (pr && pr.catch) pr.catch(function () { /* controls are showing */ });
     try { close.focus(); } catch (e) {}
     try { window.plausible && window.plausible('Velvet step video', { props: { step: 'promo', orientation: portrait ? 'vertical' : 'landscape' } }); } catch (e) {}
   }
   function shutV() { ov.hidden = true; box.innerHTML = ''; try { btn.focus(); } catch (e) {} }
+  var CDN = 'https://vz-c1deea8d-829.b-cdn.net/';   // this library's Bunny Stream video host
+  function warmCdn() {
+    if (warmCdn.done) return; warmCdn.done = true;
+    try { var l = document.createElement('link'); l.rel = 'preconnect'; l.href = CDN; document.head.appendChild(l); } catch (e) {}
+  }
+  ['pointerenter', 'touchstart', 'focus'].forEach(function (ev) { btn.addEventListener(ev, warmCdn, { passive: true, once: true }); });
   btn.addEventListener('click', openV);
   close.addEventListener('click', shutV);
   ov.addEventListener('click', function (e) { if (e.target === ov) shutV(); });
