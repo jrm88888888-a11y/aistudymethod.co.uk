@@ -8,7 +8,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Anagram Vocabulary Game | Free Revision Quiz — AI Study Method</title>
 <meta content="Play Anagram — a free vocabulary revision game for all subjects. No login required. Learn key terms and definitions the fun way. Try it now." name="description"/>
-<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010c" rel="stylesheet"/>
 <style>
     :root {
       --bg:#06060f; --surface:#11112b; --surface2:#181838;
@@ -361,7 +361,7 @@
 <div id="end-root"></div>
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab ──
@@ -468,6 +468,12 @@ let wordList    = [];
 let wordIndex   = 0;
 let currentTerm = '';       // e.g. "CELL MEMBRANE"
 let currentDef  = '';
+let missedWords = [];   // skipped terms (end-card list)
+let clueMask = null;    // X8: the term never appears inside its own clue
+function noteSkip() {
+  const it = wordList[wordIndex];
+  if (it && !missedWords.some(w => w.term === it.term)) missedWords.push({ term: it.term, def: it.definition });
+}
 let termWords   = [];       // e.g. [["C","E","L","L"],["M","E","M","B","R","A","N","E"]]
 let answerSlots = [];       // answerSlots[wi][li] = {letter, tileId, isHint} or null
 let bankTiles   = [];       // scrambled letters still in bank [{letter, id}]
@@ -524,7 +530,7 @@ function startGame() {
   AudioFX.unlock();
   wordList = shuffle([...AN_PLAY]).slice(0, AN_RUN);
   wordIndex = 0; score = 0; correct = 0; skipped = 0; firstTried = 0; redeemedSolved = 0;
-  streak = 0; bestStreak = 0; wordResults = [];
+  streak = 0; bestStreak = 0; wordResults = []; missedWords = [];
   document.getElementById('screen-start').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
   document.querySelectorAll('.hd-stat').forEach(el => el.style.display = '');
@@ -540,6 +546,8 @@ function loadWord(idx) {
   if (!item._redemption) firstTried++;
   currentTerm = item.term.toUpperCase();
   currentDef  = item.definition;
+  if (!clueMask) clueMask = Arcade.makeMasker(VOCAB_DATA.map(v => ({ term: v.term, def: v.definition })), { strict: true });
+  const clue = clueMask(currentDef, item.fullTerm || item.term);
   termWords   = currentTerm.split(' ').map(w => w.split(''));
   hintsLeft   = MAX_HINTS;
   gameActive  = true;
@@ -565,8 +573,8 @@ function loadWord(idx) {
   document.getElementById('round-badge').textContent =
     `Word ${idx + 1} of ${wordList.length}` + (item._redemption ? ' · second chance' : '');
   document.getElementById('progress-fill').style.width = (idx / wordList.length * 100) + '%';
-  document.getElementById('clue-box').textContent    = currentDef;
-  announce('Word ' + (idx + 1) + ' of ' + wordList.length + '. Definition: ' + currentDef);
+  document.getElementById('clue-box').textContent    = clue;
+  announce('Word ' + (idx + 1) + ' of ' + wordList.length + '. Definition: ' + clue.replace(/_{2,}/g, 'blank'));
   document.getElementById('hint-count').textContent  = `(${hintsLeft} left)`;
   document.getElementById('btn-hint').disabled       = false;
   document.getElementById('overlay-word').classList.remove('open');
@@ -847,7 +855,7 @@ function nextWord() {
 
 // ── SKIP (end early button on per-word screen) ──
 document.getElementById('btn-end-early').addEventListener('click', () => {
-  if (gameActive) { skipped++; wordResults.push('🟥'); gameActive = false; }
+  if (gameActive) { skipped++; wordResults.push('🟥'); noteSkip(); gameActive = false; }
   showFinalScore();
 });
 
@@ -893,6 +901,7 @@ function showFinalScore() {
       '🎯 ' + score + ' pts · ' + correct + '/' + total + ' solved · 🔥×' + bestStreak + ' streak',
       emojiGrid,
     ],
+    missed: missedWords,
     onAgain: restartGame,
   });
 
@@ -979,6 +988,7 @@ function skipWord() {
   skipped++;
   streak = 0;
   wordResults.push('🟥');
+  noteSkip();
   // Skipped words return once at the end of the run for a second chance.
   const item = wordList[wordIndex];
   if (item && !item._redemption) {

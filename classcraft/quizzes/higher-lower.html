@@ -6,7 +6,7 @@
 <title>Higher or Lower — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Compare real figures from your syllabus and call higher or lower. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* Higher-or-Lower-specific layer on top of arcade.css */
   .hl-stage { display:flex; gap:12px; align-items:stretch; margin-bottom:4px; }
@@ -118,7 +118,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -326,7 +326,7 @@
     const left = queue.shift();
     const right = drawNext(left);
     state = { left, right, banked: 0, pot: 0, streak: 0, qNum: 0, correctCount: 0, busy: false, vault: 0, vaultStreak: 0, crack: null };
-    stats = { overshoot: 0, undershoot: 0, yearRounds: 0, yearRight: 0, lastWrongGuess: null, longestStreak: 0, biggestBurn: 0, marks: [], vaultBuilt: 0, vaultLost: 0, jackpotPaid: 0, biggestJackpot: 0, crackAsked: 0, crackRight: 0 };
+    stats = { overshoot: 0, undershoot: 0, yearRounds: 0, yearRight: 0, lastWrongGuess: null, longestStreak: 0, biggestBurn: 0, marks: [], vaultBuilt: 0, vaultLost: 0, jackpotPaid: 0, biggestJackpot: 0, crackAsked: 0, crackRight: 0, missed: [] };
     seenRun = new Set([left, right]);
     renderGame(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -467,6 +467,16 @@
     return rStr + ' vs ' + lStr + '.';
   }
 
+  // End-card misses list: the comparison the player called wrong.
+  function noteMiss(base, card, isHigher) {
+    const u = c => (c.unit ? ' ' + c.unit : '');
+    stats.missed.push({
+      ask: 'Higher or lower?',
+      q: '“' + card.q + '” compared with “' + base.q + '” (' + fmt(base.value, base) + u(base) + ')',
+      a: (isHigher ? 'Higher' : 'Lower') + ': ' + fmt(card.value, card) + u(card),
+    });
+  }
+
   function endedByCap() { return state.qNum >= MAX_Q; }
 
   function guess(dir) {
@@ -480,6 +490,7 @@
 
     if (right.year) { stats.yearRounds++; if (correct) stats.yearRight++; }
     if (!correct) {
+      noteMiss(left, right, isHigher);
       stats.lastWrongGuess = dir;
       if (dir === 'higher') stats.overshoot++; else stats.undershoot++;
     }
@@ -671,6 +682,7 @@
     const { base, card } = crack;
     const isHigher = card.value > base.value;
     const correct = (dir === 'higher') === isHigher;
+    if (!correct) noteMiss(base, card, isHigher);
 
     ['btnHigher', 'btnLower'].forEach(id => { document.getElementById(id).disabled = true; });
     const cardR = root.querySelector('#colR .hl-card');
@@ -859,6 +871,7 @@
         '🏦 ' + state.banked + ' banked · ⚡ streak ' + stats.longestStreak + (stats.jackpotPaid ? ' · 💎 jackpot ' + stats.jackpotPaid : '') + (stats.biggestBurn ? ' · 🔥 burned ' + stats.biggestBurn : ''),
         grid,
       ],
+      missed: stats.missed,
       onAgain: startGame,
     });
 

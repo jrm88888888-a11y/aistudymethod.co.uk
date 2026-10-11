@@ -53,7 +53,12 @@
    Arcade.renderEndCard(container, opts) shareable results card; wires buttons
        opts: {gameName, gameEmoji, topic, meta, pct, statHtml(optional),
               big, bigLabel, rows:[{v,l}], emojiGrid, bestKey, bestValue,
-              insight, shareLines:[...], onAgain, hot(bool)}
+              insight, shareLines:[...], onAgain, hot(bool),
+              missed:[{q,a,why?,ask?}|{term,def}], missedListed(bool), onDrill(fn)}
+   Arcade.drill(items, {gameName, onAgain})  self-check run over missed items
+   Arcade.makeMasker(items) -> mask(text, term)  hide a term inside its own clue
+   Arcade.maskTerm(text, term)           one-off form of the above
+   Arcade.defOptionMasker(concepts) -> f(optionText)  same, for definition options
    ========================================================================== */
 (function () {
   'use strict';
@@ -605,10 +610,282 @@
     catch (err) { return { ok: false }; }
   };
 
+  /* ---------------- answer masking (X8) -----------------------------------
+     A definition shown as a clue must not contain its own answer
+     ("measured in amperes" for Ampere, "The mass of the material" for Mass).
+     Arcade.makeMasker(items) learns which words are generic in this topic
+     (they appear in many definitions or in other terms, so they don't give
+     the answer away) and returns mask(text, term):
+       - the whole term (and its plural/hyphen forms) → ____
+       - each distinctive word of the term, matched by stem → ____
+         (a one-word term is always distinctive)
+       - the term's symbol ("Mass, m", "Current (I)") inside ( ) or [ ] → __
+     Prompts only: the answer itself, end-card lists and feedback keep the
+     full text. Arcade.maskTerm(text, term) is the one-off form. */
+  const MASK = '____';
+  const MASK_STOP = new Set(('a an the of and or in on to for by with at from as is are be its it this that ' +
+    'into per than not no one two').split(' '));
+  function mkStem(w) {
+    w = w.toLowerCase().replace(/[’']s$/, '');
+    if (w.length > 4 && /ies$/.test(w)) return w.slice(0, -3) + 'y';
+    if (w.length > 4 && /(ss|x|z|ch|sh)es$/.test(w)) return w.slice(0, -2);
+    if (w.length > 3 && /s$/.test(w) && !/(ss|us|is)$/.test(w)) return w.slice(0, -1);
+    return w;
+  }
+  // Crude derivational root: reduction/reduced → "reduc", oxidation/oxidised → "oxid".
+  const ROOT_SUFFIX = ['isation', 'ization', 'ation', 'ition', 'tion', 'sion', 'ising', 'izing', 'ised', 'ized',
+    'ises', 'izes', 'ise', 'ize', 'ing', 'ed', 'es', 's', 'ive', 'ity', 'al', 'er', 'or', 'y', 'e'];
+  function mkRoot(w) {
+    for (const suf of ROOT_SUFFIX) if (w.length - suf.length >= 4 && w.endsWith(suf)) return w.slice(0, -suf.length);
+    return w;
+  }
+  function mkMatch(dw, tw) {             // dw: word in the text; tw: word of the term
+    const a = dw.toLowerCase(), b = tw.toLowerCase();
+    if (a === b || mkStem(a) === mkStem(b)) return true;
+    if (b.length >= 5 && a.length >= 5) {
+      const ra = mkRoot(a), rb = mkRoot(b);
+      const [s, l] = ra.length <= rb.length ? [ra, rb] : [rb, ra];
+      if (s.length >= 4 && l.indexOf(s) === 0 && l.length - s.length <= 2) return true;
+    }
+    if (b.length >= 5 && a.indexOf(b) === 0 && a.length - b.length <= 3) return true;  // ampere/amperes, react/reacts
+    if (b.length >= 7 && a.length >= 7) {                                                // photosynthesis/-ise
+      let k = 0; while (k < a.length && k < b.length && a[k] === b[k]) k++;
+      if (k >= b.length - 1) return true;
+    }
+    return false;
+  }
+  function mkSplit(term) {               // "Mass, m" → {main:"Mass", sym:"m"}; "Current (I)" → sym "I"
+    const raw = String(term || '');
+    let sym = '';
+    const comma = raw.split(/\s*,\s*/);
+    if (comma.length > 1 && comma[1].length && comma[1].length <= 4) sym = comma[1];
+    const br = raw.match(/\(([^)]{1,4})\)/);
+    if (!sym && br) sym = br[1].trim();
+    const main = comma[0].replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    return { main, sym };
+  }
+  const WORD_RE = /[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ'’]*/g;
+  function mkWords(s) { return (String(s || '').match(WORD_RE) || []); }
+  function mkEsc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // opts.strict: hide every content word of the term, generic or not — for the
+  // letter games (Crossword, System Breach, TermGuess, Anagram), where any word
+  // of the answer shown in the clue gives letters away.
+  Arcade.makeMasker = function (items, opts) {
+    const strict = !!(opts && opts.strict);
+    const list = (items || []).map(it => ({ term: it && (it.term || it[0]) || '', def: it && (it.def || it.definition || it[1]) || '' }));
+    const n = list.length;
+    if (n >= 6) Arcade._maskCtx = list;     // the topic's list, reused by the drill
+    // document frequency (by stem) over the definitions, and use in other terms
+    const df = new Map(), tf = new Map();
+    list.forEach(it => {
+      new Set(mkWords(it.def).map(mkStem)).forEach(s => df.set(s, (df.get(s) || 0) + 1));
+      new Set(mkWords(mkSplit(it.term).main).map(mkStem)).forEach(s => tf.set(s, (tf.get(s) || 0) + 1));
+    });
+    function generic(w) {
+      const s = mkStem(w);
+      if ((tf.get(s) || 0) >= 3) return true;                       // shared by 3+ terms (…cell, …energy)
+      const d = df.get(s) || 0;
+      return n >= 6 && d >= 3 && d / n >= 0.3;                      // runs through the topic's definitions
+    }
+    return function mask(text, term) {
+      let out = String(text == null ? '' : text);
+      const { main, sym } = mkSplit(term);
+      const tws = mkWords(main).filter(w => !MASK_STOP.has(w.toLowerCase()));
+      if (!tws.length) return out;
+      // 1. the whole phrase, any spacing/hyphenation, optional plural
+      if (tws.length > 1) {
+        const ph = mkWords(main).map(mkEsc).join('[\\s\\-‐–]+');
+        out = out.replace(new RegExp('\\b' + ph + '(?:e?s)?\\b', 'gi'), MASK);
+      }
+      // 2. distinctive words of the term
+      let keep = tws.length === 1 ? tws : tws.filter(w => w.length >= (strict ? 3 : 4) && (strict || !generic(w)));
+      if (!keep.length && tws.length > 1) {                            // all generic: hide the rarest
+        keep = [tws.slice().sort((x, y) => (df.get(mkStem(x)) || 0) - (df.get(mkStem(y)) || 0))[0]];
+      }
+      if (keep.length) {
+        out = out.replace(WORD_RE, w => keep.some(k => mkMatch(w, k)) ? MASK : w);
+      }
+      // 3. the symbol, only inside ( ) or [ ] (never the article "a" in prose)
+      if (sym && /^[A-Za-zΑ-ωµΩ][A-Za-z0-9Α-ωµΩ₀-₉_]{0,3}$/.test(sym)) {
+        const sRe = new RegExp('(^|[^A-Za-z0-9Α-ωµΩ])' + mkEsc(sym) + '(?![A-Za-z0-9Α-ωµΩ])', 'g');
+        out = out.replace(/[([][^()[\]]{0,80}[)\]]/g, grp => grp.replace(sRe, '$1__'));
+      }
+      return out.replace(/(____)(?:[\s\-]*____)+/g, '____');
+    };
+  };
+  // For "which definition is TERM?" options: a definition that belongs to a
+  // concept is shown with that concept's own term hidden; other text unchanged.
+  Arcade.defOptionMasker = function (concepts) {
+    const m = Arcade.makeMasker(concepts), owner = new Map();
+    (concepts || []).forEach(c => { if (c && c.def && !owner.has(c.def)) owner.set(c.def, c.term); });
+    return t => owner.has(t) ? m(t, owner.get(t)) : t;
+  };
+  Arcade.maskTerm = function (text, term) { return Arcade.makeMasker([{ term, def: text }])(text, term); };
+
+  /* ---------------- misses list + drill (X10) -----------------------------
+     Games pass opts.missed to renderEndCard: [{q, a, why?}] (question → right
+     answer) or [{term, def}] (definition → term). The end card lists them
+     under "Look again" and offers "Drill these N": a self-check card run
+     (prompt → think → show answer → Got it / Not yet; "Not yet" comes back
+     at the end, up to 3 times). opts.missedListed: the game already shows the
+     list itself, so the card shows only the drill button. */
+  // Bank text can carry light markup (<strong>, &amp;); the list and drill show plain text.
+  function plainText(t) {
+    return String(t == null ? '' : t).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+  }
+  Arcade.normMissed = function (raw) {
+    const out = [], seen = new Set();
+    (Array.isArray(raw) ? raw : []).forEach(m => {
+      if (!m) return;
+      let it;
+      if (m.kind === 'term' || (m.term != null && m.q == null)) {
+        if (m.kind === 'term') m = { term: m.term || m.a, def: m.q, why: m.why };
+        it = { kind: 'term', q: String(m.def || '').trim(), a: String(m.term).trim(), term: String(m.term), why: m.why ? String(m.why) : '' };
+      } else {
+        it = { kind: 'q', q: String(m.q || '').trim(), a: String(m.a == null ? '' : m.a).trim(), why: m.why ? String(m.why) : '', figure: m.figure || null, ask: m.ask ? String(m.ask) : '' };
+      }
+      it.q = plainText(it.q); it.a = plainText(it.a); it.why = plainText(it.why);
+      if (it.term) it.term = plainText(it.term);
+      if (!it.q || !it.a) return;
+      const key = (it.q + '|' + it.a).toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key); out.push(it);
+    });
+    return out;
+  };
+
+  function missedHtml(items, listed) {
+    const e = Arcade.escapeHtml, n = items.length;
+    if (!n) return '';
+    const btn = `<button type="button" class="ar-btn ar-btn-drill" id="ar-drill">🎯 Drill ${n === 1 ? 'this one' : 'these ' + n}</button>`;
+    if (listed) return `<div class="ar-missed listed">${btn}</div>`;
+    const SHOW = 3;
+    const li = items.map((m, i) => `<li${i >= SHOW ? ' class="more" hidden' : ''}>`
+      + (m.kind === 'term'
+        ? `<b>${e(m.a)}</b><span>${e(m.q)}</span>`
+        : `<span class="ar-missed-q">${e(m.q)}${m.figure ? ' <i class="ar-missed-fig">(with a diagram — open the drill to see it)</i>' : ''}</span><b>✓ ${e(m.a)}</b>${m.why ? `<em>${e(m.why)}</em>` : ''}`)
+      + '</li>').join('');
+    return `<div class="ar-missed" id="ar-missed">
+        <div class="ar-missed-cap">LOOK AGAIN · ${n} ${n === 1 ? 'MISS' : 'MISSES'}</div>
+        <ol class="ar-missed-list">${li}</ol>
+        ${n > SHOW ? `<button type="button" class="ar-missed-more" id="ar-missed-more">Show all ${n}</button>` : ''}
+        ${btn}
+      </div>`;
+  }
+
+  Arcade.drill = function (rawItems, o) {
+    o = o || {};
+    const items = Arcade.normMissed(rawItems);
+    if (!items.length) return;
+    const e = Arcade.escapeHtml;
+    const own = items.filter(i => i.kind === 'term').map(i => ({ term: i.term, def: i.q }));
+    const ctx = Arcade._maskCtx || [];
+    const masker = Arcade.makeMasker(ctx.concat(own.filter(o => !ctx.some(c => c.term === o.term))));
+    let queue = items.map((it, i) => ({ it, i, tries: 0 }));
+    const firstTime = new Set(), shaky = new Set(), resolved = new Set();
+    let cur = null, revealed = false;
+    const prevFocus = document.activeElement;
+    const ov = document.createElement('div');
+    ov.className = 'ar-drill';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-label', 'Drill your misses');
+    ov.innerHTML = `<div class="ar-drill-box">
+        <div class="ar-drill-top"><span class="ar-drill-count" aria-live="polite"></span>
+          <button type="button" class="ar-drill-x" aria-label="Close drill">✕</button></div>
+        <div class="ar-drill-body"></div>
+        <div class="ar-drill-btns"></div>
+      </div>`;
+    document.body.appendChild(ov);
+    document.body.classList.add('ar-drilling');
+    const body = ov.querySelector('.ar-drill-body'), btns = ov.querySelector('.ar-drill-btns'),
+          count = ov.querySelector('.ar-drill-count');
+    function close() {
+      document.removeEventListener('keydown', onKey, true);
+      ov.remove();
+      document.body.classList.remove('ar-drilling');
+      try { (o.returnFocus || prevFocus) && (o.returnFocus || prevFocus).focus(); } catch (err) {}
+      o.onClose && o.onClose({ total: items.length, firstTime: firstTime.size, shaky: shaky.size });
+    }
+    function show() {
+      revealed = false;
+      if (!queue.length) return done();
+      cur = queue.shift();
+      const it = cur.it, left = items.length - resolved.size;
+      count.textContent = `${left} left` + (cur.tries ? ' · second look' : '');
+      const prompt = it.kind === 'term' ? masker(it.q, it.term) : it.q;
+      body.innerHTML = `${it.kind === 'term' ? '<div class="ar-drill-ask">Which term is this?</div>' : it.ask ? `<div class="ar-drill-ask">${e(it.ask)}</div>` : ''}
+        <div class="ar-drill-q">${e(prompt)}</div>
+        ${it.figure ? `<div class="ar-drill-fig">${Arcade.figureHtml({ figure: it.figure })}</div>` : ''}
+        <div class="ar-drill-hint">Say it or write it down first — then check.</div>
+        <div class="ar-drill-a" hidden><b>${e(it.a)}</b>${it.why ? `<span>${e(it.why)}</span>` : ''}</div>`;
+      btns.innerHTML = '<button type="button" class="ar-btn" data-act="show">Show answer</button>';
+      btns.querySelector('button').focus();
+    }
+    function reveal() {
+      revealed = true;
+      body.querySelector('.ar-drill-a').hidden = false;
+      body.querySelector('.ar-drill-hint').hidden = true;
+      btns.innerHTML = '<button type="button" class="ar-btn ghost" data-act="again">↺ Not yet</button>'
+        + '<button type="button" class="ar-btn" data-act="got">✓ Got it</button>';
+      btns.querySelector('[data-act="got"]').focus();
+    }
+    function mark(got) {
+      Arcade.sfx && (got ? Arcade.sfx.correct && Arcade.sfx.correct() : Arcade.sfx.click && Arcade.sfx.click());
+      if (got) { if (!cur.tries) firstTime.add(cur.i); resolved.add(cur.i); }
+      else {
+        cur.tries++;
+        if (cur.tries >= 3) { shaky.add(cur.i); resolved.add(cur.i); }
+        else queue.push(cur);
+      }
+      show();
+    }
+    function done() {
+      cur = null;
+      const n = items.length, f = firstTime.size, s = shaky.size;
+      count.textContent = 'Done';
+      body.innerHTML = `<div class="ar-drill-done">
+          <div class="ar-drill-big">${f} / ${n}</div>
+          <div class="ar-drill-ask">first time</div>
+          <p>${s ? `${s} still shaky — they're worth a second look tomorrow. ` : ''}${f === n ? 'Every one recalled first time. ' : ''}Now play it again and see if they stick under the clock.</p>
+        </div>`;
+      btns.innerHTML = (o.onAgain ? '<button type="button" class="ar-btn" data-act="play">▶ Play again</button>' : '')
+        + '<button type="button" class="ar-btn ghost" data-act="close">Back to results</button>';
+      btns.querySelector('button').focus();
+      try { if (typeof window.plausible === 'function') window.plausible('Arcade drill', { props: { game: o.gameName || '', n: String(n), first: String(f) } }); } catch (err) {}
+    }
+    ov.addEventListener('click', ev => {
+      const b = ev.target.closest('button');
+      if (ev.target === ov) return close();
+      if (!b) return;
+      if (b.classList.contains('ar-drill-x')) return close();
+      const a = b.dataset.act;
+      if (a === 'show') reveal();
+      else if (a === 'got') mark(true);
+      else if (a === 'again') mark(false);
+      else if (a === 'close') close();
+      else if (a === 'play') { close(); o.onAgain && o.onAgain(); }
+    });
+    function onKey(ev) {
+      if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(); return; }
+      if (!cur) return;
+      const k = ev.key.toLowerCase();
+      if (!revealed && (k === ' ' || k === 'enter') && ev.target === document.body) { ev.preventDefault(); reveal(); }
+      else if (revealed && (k === 'y' || k === 'arrowright')) { ev.preventDefault(); mark(true); }
+      else if (revealed && (k === 'n' || k === 'arrowleft')) { ev.preventDefault(); mark(false); }
+      ev.stopPropagation();
+    }
+    document.addEventListener('keydown', onKey, true);
+    show();
+  };
+
   Arcade.renderEndCard = function (container, opts) {
     const e = Arcade.escapeHtml;
     const g = Arcade.grade(opts.pct);
     const hot = opts.hot || g.cls === 'd';
+    const missed = Arcade.normMissed(opts.missed);
 
     let best = null, newBest = false;
     if (opts.bestKey != null && opts.bestValue != null) {
@@ -695,6 +972,7 @@
               return '<a class="ar-btn ghost" href="../../subjects.html">More games</a>';
             })()}
           </div>
+          ${missedHtml(missed, opts.missedListed)}
           <button type="button" id="ar-parents" class="ar-parents-link" style="background:none;border:none;box-shadow:none;display:inline-block;margin-top:12px;padding:4px 8px;font-family:var(--ar-mono,ui-monospace,Menlo,Consolas,monospace);font-size:11px;font-weight:600;letter-spacing:1px;color:var(--ar-muted,#8a8fa3);text-decoration:underline;text-underline-offset:3px;cursor:pointer;">📲 Show your parents</button>
           <div class="ar-watermark">aistudymethod.com</div>
         </div>
@@ -712,6 +990,18 @@
     else if (opts.pct >= 60) { Arcade.confettiBurst({ count: 50 }); Arcade.sfx.coin(); }
     else { Arcade.sfx.timeup(); }
     if (newBest) setTimeout(() => Arcade.confettiBurst({ count: 80, y: window.innerHeight * 0.25 }), 500);
+
+    const moreBtn = container.querySelector('#ar-missed-more');
+    if (moreBtn) moreBtn.addEventListener('click', () => {
+      container.querySelectorAll('.ar-missed-list li.more').forEach(li => { li.hidden = false; });
+      moreBtn.remove();
+    });
+    const drillBtn = container.querySelector('#ar-drill');
+    if (drillBtn) drillBtn.addEventListener('click', () => {
+      Arcade.sfx.click();
+      if (typeof opts.onDrill === 'function') return opts.onDrill(missed);
+      Arcade.drill(missed, { gameName: opts.gameName, onAgain: opts.onAgain, returnFocus: drillBtn });
+    });
 
     container.querySelector('#ar-again').addEventListener('click', () => {
       Arcade.sfx.click();

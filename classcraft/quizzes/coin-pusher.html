@@ -6,7 +6,7 @@
 <title>The Pusher — Free Revision Coin-Pusher Game — AI Study Method</title>
 <meta name="description" content="Answer to mint coins, drop them through the pins, shove the pile off the ledge. A free GCSE, A-Level and IB coin-pusher revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* ---- The Pusher: machine canvas + live question panel ---- */
   #root { max-width: 760px; }
@@ -209,7 +209,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script src="../reels/reel-data.js"></script>
 <script src="../reels/reel-chrome.js"></script>
@@ -253,6 +253,8 @@
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = reel ? reel.concepts.slice() : ((spec && spec.concepts) || [])
     .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  let _showOpt = null;   // X8: a definition option never names its own term
+  const showOpt = o => (_showOpt || (_showOpt = Arcade.defOptionMasker(concepts)))(o);
   // Distractor pool from the misconception bank — DEFINITION-shaped strings only.
   const isDefShaped = s => typeof s === 'string' && s.trim().length >= 20 && /\s/.test(s) && !/^[\d\s.,%-]+$/.test(s);
   const bankMisc = reel ? [] : (((bank && bank.items) || [])
@@ -1074,7 +1076,7 @@
       '<div class="qp-opts">' +
         opts.map((o, i) =>
           '<button type="button" class="qp-opt" data-idx="' + i + '">' +
-          '<span class="k">' + (i + 1) + '</span><span>' + esc(o) + '</span></button>'
+          '<span class="k">' + (i + 1) + '</span><span>' + esc(reel ? o : showOpt(o)) + '</span></button>'
         ).join('') +
       '</div>' +
       '<div id="qp-corr"></div>';
@@ -1146,7 +1148,7 @@
         concept._wrongOnce = true;
         qQueue.splice(Math.max(qQueue.length - 1, 0), 0, concept);
       }
-      askRecords.push({ term: concept.term, outcome: 'wrong' });
+      askRecords.push({ term: concept.term, outcome: 'wrong', def: concept.def });
       const corr = qp.querySelector('#qp-corr');
       // Reel mode: the correction locks in the true hero answer, not a concept def.
       corr.innerHTML =
@@ -1233,6 +1235,8 @@
         subject: subj, level: level, bigLabel: 'POINTS',
         statLine: '🪙 ' + coinsCollected + ' coins  ·  🧸 ' + prizesCollected + '/' + PRIZE_N + ' prizes (' + sacksCollected + ' sacks)  ·  🔥 ' + bestStreak,
       },
+      missed: reel ? [] : askRecords.filter(r => r.outcome === 'wrong')
+        .map(r => ({ q: r.term, a: r.def, ask: 'What does it mean?' })),
       onAgain: restart,
     });
     announce.textContent = 'Game over. Score ' + score + ' points. ' + correctCount + ' of ' + asked + ' correct, ' + pct + ' percent.';

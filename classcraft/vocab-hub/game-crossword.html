@@ -8,7 +8,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Crossword Vocabulary Game | Free Revision Quiz — AI Study Method</title>
 <meta content="Play Crossword — a free vocabulary revision game for all subjects. No login required. Learn key terms and definitions the fun way. Try it now." name="description"/>
-<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010c" rel="stylesheet"/>
 <style>
     :root {
       --bg:#06060f; --surface:#11112b; --surface2:#181838;
@@ -347,7 +347,7 @@
 <div id="end-root"></div>
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab ──
@@ -550,13 +550,20 @@ function generateAndRender() {
 // ═══════════════════════════════════════════════
 // CROSSWORD GENERATION ALGORITHM
 // ═══════════════════════════════════════════════
+let cwMask = null;
+function cwClue(v) {
+  if (!cwMask) cwMask = Arcade.makeMasker(VOCAB_DATA.map(x => ({ term: x.term, def: x.definition })), { strict: true });
+  return cwMask(v.definition, v.fullTerm || v.term);
+}
 function generateCrossword(vocabPool, targetCount) {
   // Prepare word list: uppercase, letters only for grid matching
   // but keep original for display
   const words = vocabPool.map(v => ({
     word: v.term.toUpperCase().replace(/\s+/g, ''),  // letters only for grid
     display: v.term.toUpperCase(),
-    clue: v.definition,
+    clue: cwClue(v),          // X8: the answer never appears inside its own clue
+    term: v.term,
+    def: v.definition,
   })).filter(w => w.word.length >= 3 && w.word.length <= 15);
 
   if (words.length === 0) return [];
@@ -1101,6 +1108,7 @@ function submitCrossword(fromAuto) {
   if (submitted) return;
   submitted = true;
   let correct=0, wrong=0, empty=0, wordsCorrect=0, revealedCorrect=0;
+  const missedWords = [];
 
   // Check each cell
   grid.forEach((row, r) => row.forEach((cell, c) => {
@@ -1128,12 +1136,14 @@ function submitCrossword(fromAuto) {
 
   // Count fully correct words
   placedWords.forEach(w => {
-    let allCorrect = true;
+    let allCorrect = true, anyRevealed = false;
     for (let i = 0; i < w.word.length; i++) {
       const r = w.dir==='down'   ? w.row+i : w.row;
       const c = w.dir==='across' ? w.col+i : w.col;
+      if (grid[r][c].revealed) anyRevealed = true;
       if (grid[r][c].inputLetter !== grid[r][c].letter) { allCorrect=false; break; }
     }
+    if ((!allCorrect || anyRevealed) && w.term) missedWords.push({ term: w.term, def: w.def });
     if (allCorrect) {
       wordsCorrect++;
       document.getElementById(`clue-${w.dir}-${w.number}`)?.classList.add('done');
@@ -1182,6 +1192,7 @@ function submitCrossword(fromAuto) {
       '🧩 Crossword — ' + topic,
       '🎯 ' + pct + '% · ' + wordsCorrect + '/' + placedWords.length + ' words · ⏱ ' + timeStr + ' · 💡 ' + hintsUsed + ' hints',
     ],
+    missed: missedWords,
     onAgain: newPuzzle,
     hot: pct < 40,
   });

@@ -8,7 +8,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Vocab Pac-Man | Free Revision Game — AI Study Method</title>
 <meta content="Play Vocab Pac-Man — eat red dots to trigger vocabulary questions. Free revision game for all subjects. No login required." name="description"/>
-<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010c" rel="stylesheet"/>
 <style>
     :root {
       --bg:#06060f; --surface:#11112b; --surface2:#181838;
@@ -272,7 +272,7 @@
 <div id="end-root"></div>
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script src="../quizzes/arcade-icons.js?v=20260720"></script>
 <script src="../reels/reel-data.js?v=20260720"></script>
@@ -608,8 +608,15 @@ function resetActors() {
   }));
 }
 
+let missedTerms = [];   // wrong answers (end-card list)
+let pmMask = null;      // X8: the term never appears inside its own clue
+function pmClue(item) {
+  if (!pmMask) pmMask = Arcade.makeMasker(VOCAB_DATA.map(v => ({ term: v.term, def: v.definition })));
+  return pmMask(item.definition, item.term);
+}
 function startGame() {
   document.body.classList.add('playing');
+  missedTerms = [];
   AudioFX.unlock();
   document.getElementById('screen-start').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
@@ -1093,7 +1100,7 @@ function showQuestion(item) {
     // Definition is the prompt, four TERMS are the options: one definition to
     // read instead of four (median ~24 words on screen instead of ~63).
     const qTermEl = document.getElementById('q-term');
-    qTermEl.textContent = item.definition;
+    qTermEl.textContent = pmClue(item);
     qTermEl.classList.add('is-def');
     if (qPromptEl) { qPromptEl.style.display = ''; qPromptEl.textContent = 'Which term matches this definition?'; }
     const wrong = [];
@@ -1123,7 +1130,7 @@ function showQuestion(item) {
 
   announce((REEL && REEL.hero)
     ? (REEL.hero.prompt + ' Press A or B to answer.')
-    : ('Vocab question: which term matches this definition? ' + item.definition + ' Press A to D to answer.'));
+    : ('Vocab question: which term matches this definition? ' + pmClue(item).replace(/_{2,}/g, 'blank') + ' Press A to D to answer.'));
   document.getElementById('overlay-q').classList.add('open');
 }
 
@@ -1159,6 +1166,7 @@ function answerQuestion(chosen, item, btn, cont) {
     pointsEl.textContent = (REEL && REEL.hero) ? ('Not quite — ' + correct) : ('Not quite — the term is ' + item.term + '.');
     pointsEl.className = 'q-points miss';
     announce((REEL && REEL.hero) ? ('Not quite. ' + correct + '.') : ('Not quite. The term is ' + item.term + '.'));
+    if (!(REEL && REEL.hero) && !missedTerms.some(m => m.term === item.term)) missedTerms.push({ term: item.term, def: item.definition });
     // Missed terms respawn as red dots a little later in the run.
     if (!item._requeued) {
       const at = Math.min(vocabQueue.length, vocabShownCount + 2 + Math.floor(Math.random() * 2));
@@ -1267,6 +1275,7 @@ function endGame(reason) {
       '🎯 ' + score + ' pts · 📚 ' + vocabCorrect + '/' + vocabAnswered + ' terms · level ' + level,
       emojiGrid,
     ],
+    missed: missedTerms,
     onAgain: startGame,
   });
 

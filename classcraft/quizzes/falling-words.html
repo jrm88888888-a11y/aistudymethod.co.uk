@@ -6,7 +6,7 @@
 <title>Falling Words — Free Vocabulary Revision Game — AI Study Method</title>
 <meta name="description" content="Match each term to its definition before it falls. A free revision game for GCSE, A-Level and IB across every subject and exam board. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* ============ Falling-Words-specific layer on top of arcade.css ============ */
   .screen { display:none; }
@@ -193,7 +193,7 @@
 
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 'use strict';
@@ -272,6 +272,10 @@ let META = '';
 let canvas, ctx, canvasReady = false;
 let gameState = 'idle';   // idle | running | over
 let questions = [];       // [{term, def}]
+let missedQs = [];        // concepts tapped wrong or let through (end-card list)
+let clueMask = null;      // Arcade.makeMasker over this topic (X8: no answer inside its clue)
+function clueFor(q) { if (!clueMask) clueMask = Arcade.makeMasker(CONCEPTS); return clueMask(q.def, q.term); }
+function noteMiss(q) { if (q && !missedQs.includes(q)) missedQs.push(q); }
 let qIdx = 0;             // index of current (or next-to-spawn) question
 let resolvedCount = 0;    // questions resolved (tap-correct or missed)
 let correctCount = 0;
@@ -458,6 +462,7 @@ function tapFaller(f) {
   } else {
     // ---- WRONG ----
     if (f.state !== 'live') return;
+    noteMiss(questions[qIdx]);
     f.state = 'dying';
     f.dieT = 0;
     lives--;
@@ -498,6 +503,7 @@ function startGame() {
   questions = shuffle(CONCEPTS).slice(0, Math.min(TOTAL_QUESTIONS, CONCEPTS.length));
 
   qIdx = 0;
+  missedQs = [];
   resolvedCount = 0;
   correctCount = 0;
   score = 0;
@@ -515,7 +521,7 @@ function startGame() {
   particles = [];
   waveActive = false;
   nextSpawnDist = 30;   // first wave arrives almost immediately
-  bannerText = questions[0].def;
+  bannerText = clueFor(questions[0]);
   bannerIsDef = true;
   bgPulseT = 0;
 
@@ -570,7 +576,7 @@ function measureTerm(term) {
 function spawnWave() {
   const q = questions[qIdx];
   const cfg = DIFF_SETTINGS[difficulty];
-  bannerText = q.def;
+  bannerText = clueFor(q);
   bannerIsDef = true;
   const spawnTop = measureBannerBottom();
 
@@ -707,6 +713,7 @@ function update(dt) {
   }
 
   if (missedCorrect) {
+    noteMiss(questions[qIdx]);
     if (missedCorrect.golden) {
       // A meteor that lands unsniped just streaks past — no life lost, no
       // combo break, no shake. It was a bonus, never a trap.
@@ -1221,6 +1228,7 @@ function endGame() {
       '🎯 ' + score + ' pts · ' + accuracy + '% · combo ×' + aismMaxStreak + ' · ' + diff.label,
       emojiGrid,
     ],
+    missed: missedQs.map(q => ({ term: q.term, def: q.def })),
     onAgain: startGame,
   });
 

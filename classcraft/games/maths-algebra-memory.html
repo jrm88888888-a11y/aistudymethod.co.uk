@@ -6,7 +6,7 @@
 <title>Algebra — Memory Match — AI Study Method</title>
 <meta name="description" content="Play the Cell Biology memory match — a free GCSE biology revision game. No login required. Match key terms and definitions to boost your exam prep.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="../quizzes/arcade.css">
+<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010c">
 <style>
   /* ---- memory-match specifics (mm-) ------------------------------------ */
   .mm-strip {
@@ -144,7 +144,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only" role="status"></div>
 
-<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 (function () {
@@ -246,9 +246,11 @@
     if (elapsedInt) { clearInterval(elapsedInt); elapsedInt = null; }
 
     const deck = Arcade.shuffle(RAW).slice(0, pairCount);
+    // X8: the definition card never names its own term (that would make the match trivial).
+    const mmMask = Arcade.makeMasker ? Arcade.makeMasker(RAW) : ((d) => d);
     const cards = Arcade.shuffle(deck.flatMap((p, i) => ([
       { pairId: i, kind: 'term', text: p.term, pair: p },
-      { pairId: i, kind: 'def',  text: p.def,  pair: p },
+      { pairId: i, kind: 'def',  text: mmMask(p.def, p.term),  pair: p },
     ])));
 
     state = {
@@ -463,9 +465,9 @@
 
     c.flippedFlag = true;
     c.el.classList.add('flipped');
-    c.el.setAttribute('aria-label', (c.kind === 'term' ? 'Term: ' : 'Definition: ') + c.text);
+    c.el.setAttribute('aria-label', (c.kind === 'term' ? 'Term: ' : 'Definition: ') + c.text.replace(/_{2,}/g, 'blank'));
     Arcade.sfx.click();
-    announce.textContent = 'Flipped ' + (c.kind === 'term' ? 'term: ' : 'definition: ') + c.text;
+    announce.textContent = 'Flipped ' + (c.kind === 'term' ? 'term: ' : 'definition: ') + c.text.replace(/_{2,}/g, 'blank');
 
     state.flipped.push(i);
     if (state.flipped.length === 2) {
@@ -504,7 +506,7 @@
       state.matched++;
 
       const firstTry = !state.missed.has(a.pairId);
-      state.order.push({ term: a.pair.term, firstTry });
+      state.order.push({ term: a.pair.term, def: a.pair.def, firstTry });
 
       [a, b].forEach(c => {
         c.matchedFlag = true;
@@ -677,6 +679,7 @@
           ' pairs · ×' + Math.max(1, state.bestCombo) + ' combo · ' + timeShown,
         emojiGrid,
       ],
+      missed: state.order.filter(o => !o.firstTry).map(o => ({ term: o.term, def: o.def })),
       onAgain: startGame,
     });
     announce.textContent = (completed ? 'Board cleared! ' : 'Time up. ') +

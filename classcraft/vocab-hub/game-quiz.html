@@ -6,7 +6,7 @@
 <title>Vocabulary Quiz | Free GCSE Revision Game — AI Study Method</title>
 <meta content="Test your vocabulary with this free GCSE revision quiz. 3,500+ terms across 18 subjects. No login required. Try it now." name="description"/>
 <link href="../../style.css" rel="stylesheet"/>
-<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010c" rel="stylesheet"/>
 <script src="../../script.js" defer></script>
 <style>
   .vq-opt-row { display: flex; flex-direction: column; gap: 10px; }
@@ -78,7 +78,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab (set by vocab-hub.html via sessionStorage) ──
@@ -191,24 +191,32 @@ function startGame() {
   Arcade.sfx.swoosh();
   const pool = shuffle([...VOCAB_DATA]).slice(0, selectedCount);
   activeQs = pool.map(item => buildQuestion(item));
-  state = { idx: 0, correct: 0, score: 0, streak: 0, bestStreak: 0, grid: [] };
+  state = { idx: 0, correct: 0, score: 0, streak: 0, bestStreak: 0, grid: [], missed: [] };
   renderQuestion();
 }
 
 // Distractors are drawn from the FULL vocab bank, not just this run's slice.
+// X8: a definition shown on screen never contains its own term — the prompt
+// in Definition→Term mode, each option in Term→Definition mode.
+let vqMask = null;
+function vqClue(def, term) {
+  if (!vqMask) vqMask = Arcade.makeMasker(VOCAB_DATA.map(v => ({ term: v.term, def: v.definition })));
+  return vqMask(def, term);
+}
 function buildQuestion(item, redemption) {
   const correct = selectedMode === 'def' ? item.term : item.definition;
-  const question = selectedMode === 'def' ? item.definition : item.term;
-  const wrongs = [];
+  const question = selectedMode === 'def' ? vqClue(item.definition, item.term) : item.term;
+  const wrongs = [], shownOf = new Map([[correct, selectedMode === 'def' ? correct : vqClue(item.definition, item.term)]]);
   for (const o of shuffle(VOCAB_DATA)) {
     if (o === item) continue;
     const w = selectedMode === 'def' ? o.term : o.definition;
     if (w === correct || wrongs.includes(w)) continue;
     wrongs.push(w);
+    shownOf.set(w, selectedMode === 'def' ? w : vqClue(o.definition, o.term));
     if (wrongs.length === 3) break;
   }
   const options = shuffle([correct, ...wrongs]);
-  return { question, correct, options, item, redemption: !!redemption };
+  return { question, correct, options, shown: options.map(o => shownOf.get(o) || o), item, redemption: !!redemption };
 }
 
 function hudHtml() {
@@ -236,7 +244,7 @@ function renderQuestion() {
       <div class="vq-opt-row ar-stagger" role="group" aria-label="Answer options">
         ${q.options.map((opt, i) => `
           <button type="button" class="ar-tile" data-idx="${i}">
-            <span class="vq-key" aria-hidden="true">${KEYS[i]}</span><span class="vq-opt-text">${esc(opt)}</span>
+            <span class="vq-key" aria-hidden="true">${KEYS[i]}</span><span class="vq-opt-text">${esc(q.shown ? q.shown[i] : opt)}</span>
           </button>`).join('')}
       </div>
       <div class="ar-kbd-hint">Keyboard: 1–4 or A–D answers · Enter for next</div>
@@ -244,7 +252,7 @@ function renderQuestion() {
       <div id="nextWrap" style="margin-top:14px;"></div>
     </div>
   `;
-  announce.textContent = `Question ${state.idx + 1} of ${activeQs.length}. ${q.question}`;
+  announce.textContent = `Question ${state.idx + 1} of ${activeQs.length}. ${q.question.replace(/_{2,}/g, 'blank')}`;
 
   const tiles = Array.from(root.querySelectorAll('.vq-opt-row .ar-tile'));
   let phase = 'answer';
@@ -293,6 +301,7 @@ function renderQuestion() {
     } else {
       state.streak = 0;
       state.grid.push(timedOut ? '⬛' : '🟥');
+      if (!state.missed.some(m => m.term === q.item.term)) state.missed.push({ term: q.item.term, def: q.item.definition });
       // Redemption: a missed question returns once at the end of the run.
       if (!q.redemption) activeQs.push(buildQuestion(q.item, true));
       if (timedOut) { Arcade.sfx.timeup(); Arcade.flashMsg("TIME'S UP ⏱", '#ffd60a'); }
@@ -365,8 +374,8 @@ function renderEnd() {
 
   let insight;
   if (pct === 100) insight = `Flawless run on ${META.topic || 'this topic'}. Final boss move: explain each term out loud to someone else — if you can teach it, you own it.`;
-  else if (pct >= 60) insight = 'Strong run. Every miss above restated the term with its full definition — re-read those, then run it back faster for the speed bonus.';
-  else insight = 'This run just mapped out exactly which terms need rebuilding. Scroll back through the definitions you missed, then come back for the revenge run.';
+  else if (pct >= 60) insight = 'Strong run. Your misses are listed below with their full definitions — drill them, then run it back faster for the speed bonus.';
+  else insight = 'This run just mapped out exactly which terms need rebuilding. They are listed below — drill them, then come back for the revenge run.';
 
   root.innerHTML = headerHtml('Results') + '<div id="end"></div>';
   Arcade.renderEndCard(document.getElementById('end'), {
@@ -392,6 +401,7 @@ function renderEnd() {
       `Score ${state.score} pts · ${state.correct}/${total} · 🔥 best streak ${state.bestStreak}`,
       state.grid.join(''),
     ],
+    missed: state.missed,
     onAgain: startGame,
   });
   announce.textContent = `Quiz over. Score ${state.score} points. ${state.correct} of ${total} correct — ${pct} percent.`;

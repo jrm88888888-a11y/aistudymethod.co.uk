@@ -6,7 +6,7 @@
 <title>Ghost Race — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Race the ghost of the friend who challenged you. A free GCSE, A-Level and IB speed-quiz across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* --- Ghost Race: the head-to-head race strip ------------------------- */
   .gr-banner {
@@ -165,7 +165,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -198,6 +198,8 @@
   // Placeholder concept defs make hollow questions — treat as unauthored.
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  let _showOpt = null;   // X8: a definition option never names its own term
+  const showOpt = o => (_showOpt || (_showOpt = Arcade.defOptionMasker(concepts)))(o);
   // Low-quality banks are suppressed (see two-truths for the rationale). When
   // absent or low, the game runs on concept questions alone.
   const bankUsable = bank && bank.quality !== 'low';
@@ -384,6 +386,7 @@
     if (ghostRAF) { cancelAnimationFrame(ghostRAF); ghostRAF = null; }
     state = {
       idx: 0, score: 0, youCorrect: 0, grid: [],
+      missed: [],            // {q, a, figure} wrong or timed-out questions (end card)
       records: [],           // { ms, correct } per question, for encoding
       youProgress: 0,        // your correct-count so far (runner position)
       ghostProgress: 0,      // ghost head-to-head crossings so far
@@ -512,7 +515,7 @@
         <div class="ar-prompt">Which one is right?</div>
         <div class="gr-opts ar-stagger" role="radiogroup" aria-label="Four options — pick the correct one">
           ${q.options.map((opt, i) => `
-            <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">${esc(opt)}</button>
+            <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">${esc(showOpt(opt))}</button>
           `).join('')}
         </div>
         <div class="ar-kbd-hint">Keyboard: 1–4 locks your answer · Enter for next</div>
@@ -569,6 +572,7 @@
       elapsed = Math.max(0, Math.min(elapsed, TIME_CAP_UNITS * TIME_UNIT_MS));
       const correct = !timedOut && chosen === q.correctIdx;
       state.records.push({ ms: elapsed, correct: correct });
+      if (!correct) state.missed.push({ q: q.stemText, a: q.options[q.correctIdx], why: (q.src && q.src.why) || '', figure: (q.src && q.src.figure) || null });
 
       // Final head-to-head check: the ghost crosses this question if it was
       // correct AND its time was no slower than yours (tie goes to the ghost).
@@ -787,6 +791,7 @@
         bigLabel: 'POINTS',
         statLine: shareStat,
       },
+      missed: state.missed,
       onAgain: startGame,
     });
 

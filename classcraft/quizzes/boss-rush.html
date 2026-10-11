@@ -6,7 +6,7 @@
 <title>Boss Rush — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Survive a three-stage gauntlet where every term you miss comes back as the boss's attack. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* ---- Boss Rush specifics ---- */
   .br-hearts { display:inline-flex; gap:3px; align-items:center; }
@@ -148,7 +148,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -178,6 +178,13 @@
   // Placeholder concept defs make hollow questions — treat as unauthored.
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  // X8 maskers: the multiple-choice stage hides distinctive words of the term;
+  // the typed stages hide every word of it (any word shown gives letters away).
+  let _brMask = null, _brMaskStrict = null;
+  function brMask(strict) {
+    if (strict) return _brMaskStrict || (_brMaskStrict = Arcade.makeMasker(concepts, { strict: true }));
+    return _brMask || (_brMask = Arcade.makeMasker(concepts));
+  }
   const bankItems = ((bank && bank.items) || []).filter(it => it && it.misconception);
   // Guide-statement line for a round's term (science specs tag each concept).
   const stmtFor = term => Arcade.statementHtml(concepts.find(c => c.term === term), spec);
@@ -301,6 +308,7 @@
     const termsLC = concepts.map(c => c.term.toLowerCase());
     const miscTexts = bankItems.map(it => it.misconception)
       .filter(m => m && m.length >= 25 && !termsLC.includes(m.toLowerCase()));
+    const termOfDef = new Map(concepts.map(c => [c.def, c.term]));
     return targets.map(t => {
       const others = concepts.filter(c => c.term !== t.term).map(c => c.def);
       let distractPool = Arcade.shuffle(others.slice());
@@ -314,6 +322,8 @@
       const options = Arcade.shuffle(
         [{ text: t.def, correct: true }].concat(distractors.map(d => ({ text: d, correct: false })))
       );
+      // X8: a definition option never names its own term ("…two alleles" for Allele).
+      options.forEach(o => { o.shown = termOfDef.has(o.text) ? brMask()(o.text, termOfDef.get(o.text)) : o.text; });
       return { term: t.term, def: t.def, options, answerIdx: options.findIndex(o => o.correct) };
     });
   }
@@ -477,7 +487,7 @@
         <div class="tt-stmts ar-stagger" id="opts" role="radiogroup" aria-label="Pick the correct definition">
           ${round.options.map((o, i) => `
             <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">
-              <div class="tt-a">${esc(o.text)}</div>
+              <div class="tt-a">${esc(o.shown || o.text)}</div>
             </button>`).join('')}
         </div>
         <div class="ar-kbd-hint">Keyboard: 1–4 locks your call · Enter for next</div>
@@ -660,7 +670,7 @@
         ${cfg.timed ? '<div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>' : ''}
         ${critRow}
         <div class="ar-prompt">Which term is this?</div>
-        <div class="br-def">${esc(item.def)}</div>
+        <div class="br-def">${esc(brMask(true)(item.def, item.term))}</div>
         <div class="br-typewrap">
           <input class="br-input" id="ans" type="text" autocomplete="off" autocorrect="off"
                  autocapitalize="none" spellcheck="false" enterkeyhint="done"
@@ -822,18 +832,10 @@
         statLine: statLine,
       },
       onAgain: startGame,
+      missed: S.missed.map(m => ({ term: m.term, def: m.def })),
     });
 
-    // Honest defeat card: list the missed pairs for revision.
-    if (!won && S.missed.length) {
-      const end = document.getElementById('end');
-      const box = document.createElement('div');
-      box.className = 'ar-card';
-      box.style.marginTop = '16px';
-      box.innerHTML = `<div class="ar-label">Revise these — the boss built its attacks from them</div>
-        <ul class="br-missed-list">${S.missed.map(m => `<li><b>${esc(m.term)}</b><span>${esc(m.def)}</span></li>`).join('')}</ul>`;
-      end.appendChild(box);
-    }
+    // Misses are listed on the end card itself (opts.missed), win or lose.
 
     announce.textContent = won
       ? `Victory. The boss is defeated. Score ${S.score} points, ${S.lives} lives left.`

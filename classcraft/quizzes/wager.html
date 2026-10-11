@@ -6,7 +6,7 @@
 <title>Wager — Free Revision Quiz Game — AI Study Method</title>
 <meta name="description" content="Stake points on what you know before the options appear. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* Wager-specific layer on top of arcade.css */
   .wg-chips { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-bottom:18px; }
@@ -91,7 +91,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -200,6 +200,12 @@
     }), chosen);
   }
 
+  function noteMiss(round) {
+    const o = round.options[round.correctIdx];
+    state.missed.push({ q: round.q, a: (o && (o.text != null ? o.text : o)) || '', why: (o && o.rationale) || (round.src && (round.src.explain || round.src.why)) || '',
+      figure: (round.src && round.src.figure) || null });
+  }
+
   function startGame() {
     rounds = buildRounds();
     rounds[MYSTERY_IDX].mystery = MYSTERY_MULTS[Math.floor(Math.random() * MYSTERY_MULTS.length)];
@@ -210,6 +216,7 @@
       streak: 0,
       bankedOut: false,
       history: [],   // { stakeKey, stake, delta, correct, bankBefore }
+      missed: [],    // {q, a, why, figure} for the end-card list
     };
     renderRound();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -384,6 +391,7 @@
       const stake = round.stake;
       const correct = chosen === round.correctIdx;
       const prevBank = state.bank;
+      if (!correct) noteMiss(round);
       let delta, busted = false;
 
       if (correct) {
@@ -581,6 +589,7 @@
       const stake = state.bank;
       const prevBank = state.bank;
       const correct = chosen === round.correctIdx;
+      if (!correct) noteMiss(round);
       let busted = false;
 
       if (correct) {
@@ -747,6 +756,7 @@
         row1,
         '💰 ' + row2,
       ],
+      missed: state.missed,
       onAgain: startGame,
     });
 

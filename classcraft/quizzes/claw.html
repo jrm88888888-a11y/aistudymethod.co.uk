@@ -6,7 +6,7 @@
 <title>The Claw — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Grab the plushie, name the term. A free GCSE, A-Level and IB claw-machine revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* ---- The Claw: full-canvas cabinet + control deck ---- */
   .claw-stage { max-width: 560px; margin: 0 auto; }
@@ -203,7 +203,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script src="../reels/reel-data.js"></script>
 <script src="../reels/reel-chrome.js"></script>
@@ -247,6 +247,8 @@
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = reel ? reel.concepts.slice() : ((spec && spec.concepts) || [])
     .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  let _showOpt = null;   // X8: a definition option never names its own term
+  const showOpt = o => (_showOpt || (_showOpt = Arcade.defOptionMasker(concepts)))(o);
   // Distractor pool from the misconception bank — but only DEFINITION-shaped
   // strings. Banks contain junk like "22", "44", "Phenotype", "In the cell
   // membrane"; a good distractor must read like a definition, so require a
@@ -414,6 +416,7 @@
      STATE
      ====================================================================== */
   let toys = [];
+  let missedToys = [];      // toys answered wrong at least once (end-card misses list)
   let total = 0, goldenTerm = null;
   let credits = 10, score = 0, streak = 0, bestStreak = 0;
   let bankedCount = 0, emptyGrabs = 0;
@@ -511,6 +514,7 @@
     // Lay out across the full floor width in stacked rows so they heap 2-3 high.
     const perRow = Math.min(5, Math.max(3, Math.ceil(n / 2)));
     const usable = (GX1 - GX0) - 76;
+    missedToys = [];
     toys = specsShuf.map((p, i) => {
       const r = 31 + Math.random() * 6;
       const col = i % perRow, rowN = Math.floor(i / perRow);
@@ -974,7 +978,7 @@
       '<div class="q-opts">' +
         opts.map((o, i) =>
           '<button type="button" class="q-opt" data-idx="' + i + '">' +
-          '<span class="k">' + (i + 1) + '</span><span>' + esc(o) + '</span></button>'
+          '<span class="k">' + (i + 1) + '</span><span>' + esc(reel ? o : showOpt(o)) + '</span></button>'
         ).join('') +
       '</div>';
     ov.classList.add('up');
@@ -1034,6 +1038,7 @@
     } else {
       streak = 0;
       toy.status = 'wrong';           // now redeemable at half points
+      if (!missedToys.includes(toy)) missedToys.push(toy);
       credits = Math.max(0, credits - 1);   // a wrong call wastes the trip — costs a credit
       Arcade.sfx.wrong();
       Arcade.vibrate([40, 30, 40]);
@@ -1223,6 +1228,7 @@
         subject: subj, level: level, bigLabel: 'POINTS',
         statLine: '🧸 ' + bankedCount + '/' + total + ' banked  ·  🔥 best streak ' + bestStreak,
       },
+      missed: reel ? [] : missedToys.map(t => ({ q: t.term, a: t.def, ask: 'What does it mean?' })),
       onAgain: restart,
     });
     announce.textContent = 'Game over. Score ' + score + ' points. You banked ' + bankedCount + ' of ' + total + ' — ' + pct + ' percent.';

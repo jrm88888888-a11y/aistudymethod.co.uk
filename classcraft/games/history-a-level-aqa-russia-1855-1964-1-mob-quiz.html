@@ -6,7 +6,7 @@
 <title>AQA: Russia 1855-1964 — Mob Quiz — AI Study Method</title>
 <meta name="description" content="AQA Mob Quiz for Russia 1855-1964 — multi-choice A-Level History revision.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010b">
+<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010c">
 <style>
   /* Mob Quiz — page-specific styles on top of the arcade design system */
   .screen { display: none; }
@@ -175,7 +175,7 @@
 
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 /* ============================================================
@@ -228,6 +228,7 @@ function buildQuestions(pairs, n) {
   const sameTerm = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
   const used = shuffle([...pairs]).slice(0, n);
   const out = [];
+  const mobMask = Arcade.makeMasker(pairs);   // X8: the term never appears inside its own clue
   used.forEach(p => {
     const terms = [];
     shuffle(pairs.filter(x => x !== p)).forEach(x => {
@@ -239,7 +240,7 @@ function buildQuestions(pairs, n) {
     if (!terms.length) return;   // a one-door gate answers itself — skip the item
     const doors = shuffle([{ t: p.term, ok: true }].concat(terms.map(t => ({ t: t, ok: false }))));
     out.push({
-      q: p.def,
+      q: mobMask(p.def, p.term),
       options: doors.map(d => d.t),
       correct: doors.findIndex(d => d.ok),
       term: p.term,
@@ -647,7 +648,7 @@ function spawnGate() {
     result: null
   });
   currentIdx++;
-  announce.textContent = 'Gate ' + currentIdx + '. Which term matches: ' + q.q + '. Doors left to right: ' + q.options.join('; ') + '.';
+  announce.textContent = 'Gate ' + currentIdx + '. Which term matches: ' + String(q.q).replace(/_{2,}/g, 'blank') + '. Doors left to right: ' + q.options.join('; ') + '.';
   // Distance until next gate (in pixels of player travel)
   nextSpawnDist = GATE_SPACING;
 }
@@ -1433,37 +1434,14 @@ function endGame() {
       gateGrid.join('')
     ],
     onAgain: restartGame,
+    // Every gate that cost a life (wrong gate or idle miss), with its answer.
+    missed: missedQ.map(qi => questions[qi]).filter(Boolean).map(q => q.term
+      ? { term: q.term, def: q.def }
+      : { q: q.q, a: q.options[q.correct] }),
     hot: lives <= 0
   });
 
-  // Missed-pairs revision list — every term that cost a life (wrong gate or
-  // idle miss), with its correct definition, appended inside the end card.
-  if (missedQ.length) {
-    const seen = new Set();
-    const items = [];
-    missedQ.forEach(qi => {
-      if (seen.has(qi)) return;
-      seen.add(qi);
-      const q = questions[qi];
-      if (q) {
-        items.push('<div style="margin:7px 0;line-height:1.45;font-size:13px;">'
-          + '<strong style="color:' + AR.text + ';">' + Arcade.escapeHtml(q.term || q.q) + '</strong>'
-          + '<span style="color:' + AR.muted + ';"> — </span>'
-          + '<span style="color:' + AR.mint + ';">' + Arcade.escapeHtml(q.def || q.options[q.correct]) + '</span>'
-          + '</div>');
-      }
-    });
-    const inner = endRoot.querySelector('.ar-end-inner');
-    if (inner && items.length) {
-      const box = document.createElement('div');
-      box.className = 'ar-insight';
-      box.id = 'mq-revision';
-      box.style.textAlign = 'left';
-      box.innerHTML = '<div style="font-weight:700;margin-bottom:6px;">📖 Revision list — the gates that got you</div>'
-        + items.join('');
-      inner.insertBefore(box, inner.querySelector('.ar-ctas') || null);
-    }
-  }
+  // Missed gates are listed by the end card itself (opts.missed, with a drill).
 
   // Extra CTA: back to the difficulty picker
   const ctas = endRoot.querySelector('.ar-ctas');

@@ -6,7 +6,7 @@
 <title>Label The Eye Diagram | Free GCSE Biology — AI Study Method</title>
 <meta name="description" content="Label The Eye diagram — a free interactive GCSE biology revision game. No login required. Test yourself and learn key structures now.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010b">
+<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010c">
 <style>
   /* ── Label It ──────────────────────────────────────────────────── */
   .dg-stage { position:relative; }
@@ -122,7 +122,7 @@
 </div>
 <div id="announce" class="sr-only" aria-live="polite"></div>
 
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 const GAME_DATA = {"ORGANS":[{"id":"cornea","name":"Cornea","dot":[50,25],"slot":[78,8]},{"id":"pupil","name":"Pupil","dot":[50,36],"slot":[14,8]},{"id":"iris","name":"Iris","dot":[50,37],"slot":[14,18]},{"id":"lens","name":"Lens","dot":[50,44],"slot":[78,20]},{"id":"ciliary","name":"Ciliary body","dot":[40,48],"slot":[14,30]},{"id":"suspensory","name":"Suspensory ligaments","dot":[44,46],"slot":[78,32]},{"id":"retina","name":"Retina","dot":[18,55],"slot":[14,46]},{"id":"choroid","name":"Choroid","dot":[16,50],"slot":[14,58]},{"id":"sclera","name":"Sclera","dot":[14,44],"slot":[14,70]},{"id":"fovea","name":"Fovea","dot":[50,66],"slot":[78,56]},{"id":"blind-spot","name":"Blind spot","dot":[50,77],"slot":[78,68]},{"id":"optic-nerve","name":"Optic nerve","dot":[50,81],"slot":[78,80]}]};
@@ -242,7 +242,10 @@ const GAME_DATA = {"ORGANS":[{"id":"cornea","name":"Cornea","dot":[50,25],"slot"
     });
   }
 
-  function startGame() {
+  // subset: a drill run over just the parts missed last time (no end card,
+  // no coins, no best — it is practice, not a scored run).
+  function startGame(subset) {
+    const drill = Array.isArray(subset) && subset.length > 0;
     if (st && st.timer) st.timer.stop();
     endC.innerHTML = '';
     wrap.appendChild(endC);            // restore end container below everything
@@ -252,7 +255,8 @@ const GAME_DATA = {"ORGANS":[{"id":"cornea","name":"Cornea","dot":[50,25],"slot"
     fb.className = '';
     fb.innerHTML = '';
     st = {
-      order: Arcade.shuffle(PARTS),
+      order: Arcade.shuffle(drill ? subset : PARTS),
+      drill: drill,
       ti: 0, misses: 0, pass: 1,
       score: 0, streak: 0, bestStreak: 0,
       res: {}, t0: Date.now(), timer: null, phase: 'play',
@@ -514,7 +518,7 @@ const GAME_DATA = {"ORGANS":[{"id":"cornea","name":"Cornea","dot":[50,25],"slot"
   function finish() {
     st.phase = 'done';
     if (st.timer) st.timer.stop();
-    const n = PARTS.length;
+    const n = st.order.length;
     const tally = { first: 0, second: 0, revealed: 0, redeemed: 0 };
     st.order.forEach(p => { tally[st.res[p.id]]++; });
     const pct = Math.round((tally.first / n) * 100);
@@ -531,6 +535,24 @@ const GAME_DATA = {"ORGANS":[{"id":"cornea","name":"Cornea","dot":[50,25],"slot"
     targetLabel.classList.remove('dg-gold-label');
     targetLabel.textContent = 'Revision · the full labelled diagram';
     wrap.insertBefore(endC, document.querySelector('.ar-hud')); // results card above the labelled diagram
+
+    if (st.drill) {
+      const missedAgain = st.order.filter(p => st.res[p.id] !== 'first');
+      endC.innerHTML = '<div class="ar-card" style="text-align:center">'
+        + '<div class="ar-label">🎯 Drill done · not scored</div>'
+        + '<div style="font-size:34px;font-weight:700;margin:6px 0">' + tally.first + ' / ' + n + '</div>'
+        + '<div style="color:var(--ar-text2);font-size:14px;margin-bottom:14px">first tap. '
+        + (missedAgain.length ? 'Still shaky: ' + esc(missedAgain.map(p => p.name).join(', ')) + '.' : 'All of them stuck.') + '</div>'
+        + '<div class="ar-ctas">'
+        + (missedAgain.length ? '<button type="button" class="ar-btn" id="dg-redrill">🎯 Drill those ' + missedAgain.length + '</button>' : '')
+        + '<button type="button" class="ar-btn' + (missedAgain.length ? ' ghost' : '') + '" id="dg-full">▶ Full run</button></div></div>';
+      const rd = document.getElementById('dg-redrill');
+      if (rd) rd.addEventListener('click', () => { Arcade.sfx.click(); startGame(missedAgain); });
+      document.getElementById('dg-full').addEventListener('click', () => { Arcade.sfx.click(); startGame(); });
+      announce.textContent = 'Drill done. ' + tally.first + ' of ' + n + ' first tap.';
+      endC.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
 
     let insight;
     if (pct === 100) insight = 'Every part named first tap — that is genuine recall, not recognition. Next step: cover the labels and say what each part DOES, not just where it sits.';
@@ -563,7 +585,11 @@ const GAME_DATA = {"ORGANS":[{"id":"cornea","name":"Cornea","dot":[50,25],"slot"
         'Score ' + st.score + ' pts · ' + tally.first + '/' + n + ' first try · ' + secs,
         emoji,
       ],
-      onAgain: startGame,
+      onAgain: () => startGame(),
+      // The labelled diagram below is the list; the drill re-runs just these parts.
+      missed: st.order.filter(p => st.res[p.id] !== 'first').map(p => ({ q: 'Find it on the diagram', a: p.name })),
+      missedListed: true,
+      onDrill: () => startGame(st.order.filter(p => st.res[p.id] !== 'first')),
     });
     announce.textContent = 'Diagram complete. ' + tally.first + ' of ' + n + ' first try, '
       + tally.revealed + ' revealed. Score ' + st.score + ' points in ' + secs
@@ -573,7 +599,7 @@ const GAME_DATA = {"ORGANS":[{"id":"cornea","name":"Cornea","dot":[50,25],"slot"
 
   // The clock used to start on page load, before the player had read the
   // screen; it now waits for Start (older cached arcade.js: start at once).
-  (Arcade.readyThen || (fn => fn()))(startGame, { text: "Each label has a clock for a speed bonus. It starts when you press Start." });
+  (Arcade.readyThen || (fn => fn()))(() => startGame(), { text: "Each label has a clock for a speed bonus. It starts when you press Start." });
 })();
 </script>
 

@@ -6,7 +6,7 @@
 <title>Odd One Out — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Three statements are true, one is the odd one out. A free GCSE, A-Level and IB revision game that trains you to tell close concepts apart. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   .oo-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
   .oo-card { display:flex; flex-direction:column; gap:6px; min-height:44px; }
@@ -83,7 +83,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -290,7 +290,7 @@
   function startGame() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     queue = buildRounds();
-    state = { idx: 0, correct: 0, played: 0, score: 0, streak: 0, bestStreak: 0, fastestMs: null, grid: [] };
+    state = { idx: 0, correct: 0, played: 0, score: 0, streak: 0, bestStreak: 0, fastestMs: null, grid: [], missed: [] };
     renderRound();
   }
 
@@ -405,6 +405,16 @@
       } else {
         state.streak = 0;
         state.grid.push(round.redemption ? '🟪' : (timedOut ? '⬛' : '🟥'));
+        {
+          const oc = round.cards[round.oddIdx];
+          const truth = concepts.find(c => lc(c.term) === lc(oc.term));
+          if (!state.missed.some(m => m.q === oc.term + ': ' + oc.def)) state.missed.push({
+            ask: 'True or false?', q: oc.term + ': ' + oc.def,
+            a: 'False' + (truth && lc(truth.def) !== lc(oc.def) ? ' — ' + oc.term + ' means: ' + truth.def : ''),
+            // the answer already gives the true definition; the why only adds when there is none
+            why: truth && lc(truth.def) !== lc(oc.def) ? '' : (round.why || ''),
+          });
+        }
         if (timedOut) { Arcade.sfx.timeup(); Arcade.flashMsg("TIME'S UP ⏱", '#ffd60a'); }
         else { Arcade.sfx.wrong(); Arcade.flashMsg('THAT ONE WAS TRUE', '#ff2e88'); }
         Arcade.shake();
@@ -526,6 +536,7 @@
         bigLabel: 'POINTS',
         statLine: '🔥 best streak ' + state.bestStreak + '  ·  ' + pct + '% accuracy',
       },
+      missed: state.missed,
       onAgain: startGame,
     });
 

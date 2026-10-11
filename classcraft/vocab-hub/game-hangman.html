@@ -6,7 +6,7 @@
 <title>Hangman Vocabulary Game | Free Revision Quiz — AI Study Method</title>
 <meta content="Play Hangman — a free vocabulary revision game for all subjects. No login required. Learn key terms and definitions the fun way. Try it now." name="description"/>
 <link href="../../style.css" rel="stylesheet"/>
-<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010c" rel="stylesheet"/>
 <script src="../../script.js" defer></script>
 <style>
   /* ── shield / energy meter ── */
@@ -125,7 +125,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab (set by vocab-hub.html via sessionStorage) ──
@@ -168,7 +168,9 @@ const BEST_KEY  = `aism-best:hangman:${META.subject || ''}:${META.topic || ''}`;
 // ── STATE ──
 let fullList = [], runOffset = 0;
 let wordList = [], wordIndex = 0;
-let currentWord = '', currentDef = '', currentItem = null;
+let currentWord = '', currentDef = '', currentClue = '', currentItem = null;
+let missedWords = [];   // breached words (end-card list)
+let clueMask = null;    // X8: the term never appears inside its own clue
 let guessed = new Set(), wrongCount = 0;
 let score = 0, correct = 0, failed = 0, streak = 0, bestStreak = 0;
 let gameActive = false;
@@ -236,7 +238,7 @@ function startGame() {
 function beginRun() {
   wordList = fullList.slice(runOffset, runOffset + RUN_SIZE);
   wordIndex = 0; score = 0; correct = 0; failed = 0; streak = 0; bestStreak = 0;
-  resultGrid = [];
+  resultGrid = []; missedWords = [];
   loadWord(0);
 }
 
@@ -245,12 +247,14 @@ function loadWord(idx) {
   currentItem = wordList[idx];
   currentWord = currentItem.term.toUpperCase();
   currentDef  = currentItem.definition;
+  if (!clueMask) clueMask = Arcade.makeMasker(HM_ALL.map(v => ({ term: v.fullTerm || v.term, def: v.definition })), { strict: true });
+  currentClue = clueMask(currentDef, currentItem.fullTerm || currentItem.term);
   guessed = new Set();
   wrongCount = 0;
   MAX_WRONG = wordBaseLetters().size >= 10 ? 5 : 7;
   gameActive = true;
   renderRound();
-  announce.textContent = `Word ${idx + 1} of ${wordList.length}. Clue: ${currentDef}`;
+  announce.textContent = `Word ${idx + 1} of ${wordList.length}. Clue: ${currentClue.replace(/_{2,}/g, 'blank')}`;
 }
 
 function hudHtml() {
@@ -273,7 +277,7 @@ function renderRound() {
         <div class="hb-status s4" id="hbStatus">FIREWALL STABLE</div>
       </div>
       <div class="ar-label">Decryption clue — guess the term</div>
-      <div class="ar-prompt" style="font-size:15.5px;font-weight:600;color:var(--ar-text2);">${esc(currentDef)}</div>
+      <div class="ar-prompt" style="font-size:15.5px;font-weight:600;color:var(--ar-text2);">${esc(currentClue)}</div>
       <div class="hb-word" id="wordDisplay" aria-hidden="true"></div>
       <div style="display:flex;justify-content:center;margin-bottom:10px;">
         <button class="hb-hint" type="button" id="btnHint" title="Reveal a letter (−5 pts)">💡 Hint −5 pts</button>
@@ -458,6 +462,7 @@ function settleWord(won) {
     failed++;
     streak = 0;
     resultGrid.push('🟥');
+    if (!missedWords.some(w => w.term === currentItem.term)) missedWords.push({ term: currentItem.term, def: currentDef });
     // Failed words return once at the end of the run — a second miss is final.
     if (!currentItem._redemption) {
       wordList.push(Object.assign({}, currentItem, { _redemption: true }));
@@ -537,6 +542,7 @@ function showFinal() {
       `Score ${score} pts · ${correct} cracked · 🔥 best streak ${bestStreak}`,
       resultGrid.join(''),
     ],
+    missed: missedWords,
     onAgain: startGame,
   });
   // Continuation: when more of the bank remains, offer the next batch of 10.

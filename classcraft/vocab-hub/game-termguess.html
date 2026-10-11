@@ -6,7 +6,7 @@
 <title>TermGuess Vocabulary Game | Free Revision Quiz — AI Study Method</title>
 <meta content="Play TermGuess — a free vocabulary revision game for all subjects. No login required. Learn key terms and definitions the fun way. Try it now." name="description"/>
 <link href="../../style.css" rel="stylesheet"/>
-<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010c" rel="stylesheet"/>
 <script src="../../script.js" defer></script>
 <style>
   /* ── guess grid ── */
@@ -115,7 +115,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab (set by vocab-hub.html via sessionStorage) ──
@@ -152,6 +152,12 @@ const BEST_KEY = `aism-best:termguess:${META.subject || ''}:${META.topic || ''}`
 let wordList = [], wordIndex = 0;
 let target = '', targetLetters = [], wordStructure = [];
 let currentRow = 0, currentInput = [], keyStates = {};
+let missedWords = [];   // escaped terms (end-card list)
+let clueMask = null;    // X8: the term never appears inside its own clue
+function clueOf(item) {
+  if (!clueMask) clueMask = Arcade.makeMasker(VOCAB_DATA.map(v => ({ term: v.term, def: v.definition })), { strict: true });
+  return clueMask(item.definition, item.fullTerm || item.term);
+}
 let gameActive = false, revealing = false, resultShown = false;
 let score = 0, solved = 0, failed = 0, streak = 0, bestStreak = 0;
 let resultGrid = [];
@@ -217,7 +223,7 @@ function startGame() {
   Arcade.sfx.swoosh();
   wordList = shuffle([...PLAY_DATA]);
   wordIndex = 0; score = 0; solved = 0; failed = 0; streak = 0; bestStreak = 0;
-  resultGrid = [];
+  resultGrid = []; missedWords = [];
   loadWord(0);
 }
 
@@ -252,7 +258,7 @@ function loadWord(idx) {
     </div>
     <div class="ar-card">
       <div class="ar-label">Definition — guess the term · ${targetLetters.length} letters</div>
-      <div class="ar-prompt" style="font-size:15.5px;font-weight:600;color:var(--ar-text2);">${esc(item.definition)}</div>
+      <div class="ar-prompt" style="font-size:15.5px;font-weight:600;color:var(--ar-text2);">${esc(clueOf(item))}</div>
       <div class="wg-grid" id="grid" style="--wg-size:${size}px;" aria-hidden="true"></div>
       <button class="ar-btn big" id="btn-submit" style="margin-bottom:10px;">Submit guess ↵</button>
       <div class="wg-kb" id="keyboard" role="group" aria-label="Letter keyboard"></div>
@@ -264,7 +270,7 @@ function loadWord(idx) {
   buildGrid();
   buildKeyboard();
   document.getElementById('btn-submit').addEventListener('click', submitGuess);
-  announce.textContent = `Word ${idx + 1} of ${wordList.length}, ${targetLetters.length} letters. Clue: ${item.definition}`;
+  announce.textContent = `Word ${idx + 1} of ${wordList.length}, ${targetLetters.length} letters. Clue: ${clueOf(item).replace(/_{2,}/g, 'blank')}`;
 }
 
 function buildGrid() {
@@ -528,6 +534,7 @@ function settleWord(won, tries) {
   const item = wordList[wordIndex];
   // 🟨 marks a word redeemed on its second chance — the grid stays honest.
   resultGrid.push(won ? (item._redemption ? '🟨' : '🟩') : '🟥');
+  if (!won && !missedWords.some(w => w.term === item.term)) missedWords.push({ term: item.term, def: item.definition });
   // Failed words return once at the end of the run — a second miss is final.
   if (!won && !item._redemption) {
     wordList.push(Object.assign({}, item, { _redemption: true }));
@@ -600,6 +607,7 @@ function showFinal() {
       `Score ${score} pts · ${solved} solved · 🔥 best streak ${bestStreak}`,
       resultGrid.join(''),
     ],
+    missed: missedWords,
     onAgain: startGame,
   });
   announce.textContent = `Run over. Score ${score} points. ${solved} solved, ${failed} failed.`;

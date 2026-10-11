@@ -6,7 +6,7 @@
 <title>Word Web — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Rebuild the topic&#x27;s concept web by matching terms to clues. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* ── SVG web stage ── */
   .ww-stage { background:var(--ar-grad-card); border:1px solid var(--ar-border); border-radius:var(--ar-r-lg); padding:8px; box-shadow:0 18px 50px rgba(0,0,0,0.45); margin-bottom:16px; }
@@ -116,7 +116,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -325,7 +325,7 @@
     chosenTerm = null;
     spokeEls.forEach((el, j) => el.g.classList.toggle('active', j === i));
     renderQuiz();
-    announce(`Spoke ${i + 1} selected. ${sp.variant === 0 ? 'Which term has this definition?' : 'Which term means:'} ${sp.def}`);
+    announce(`Spoke ${i + 1} selected. ${sp.variant === 0 ? 'Which term has this definition?' : 'Which term means:'} ${sp.clue.replace(/_{2,}/g, 'blank')}`);
   }
 
   function renderQuiz() {
@@ -350,7 +350,7 @@
     quiz.innerHTML = `
       <div class="ar-label">Spoke ${i + 1} of 6 · ${sp.tries === 0 ? 'first try +100' : 'second try +50'}</div>
       <h2 class="ar-prompt" id="wwQuizQ" style="font-size:17px;">${heading}</h2>
-      <blockquote class="ww-def">“${escapeHtml(sp.def)}”</blockquote>
+      <blockquote class="ww-def">“${escapeHtml(sp.clue)}”</blockquote>
       <div class="ww-options ar-stagger" role="group" aria-labelledby="wwQuizQ">
         ${sp.options.map((t, k) => `
           <button type="button" class="ar-tile${sp.wrongPicks.includes(t) ? ' wrong dim' : ''}" data-term="${escapeHtml(t)}" ${sp.wrongPicks.includes(t) ? 'disabled' : ''} aria-pressed="false">
@@ -547,6 +547,8 @@
         `Score ${state.score} pts · first-try ${state.firstTryCount}/6`,
         emoji,
       ],
+      missed: state.spokes.filter(sp => sp.status === 'missed' || sp.firstTry === false).map(sp => ({ term: sp.term, def: sp.def })),
+      missedListed: true,   // the full definition list (amber = missed) follows the card
       onAgain: startGame,
     });
     panel.insertAdjacentHTML('beforeend', `
@@ -566,12 +568,14 @@
   /* ── boot / reboot ── */
   function startGame() {
     const picked = Arcade.shuffle(allConcepts).slice(0, N);
+    const clueMask = Arcade.makeMasker(allConcepts);   // X8: no term inside its own clue
     state = {
       spokes: picked.map(c => {
         const distractors = Arcade.shuffle(picked.filter(o => o.term !== c.term).map(o => o.term)).slice(0, 3);
         return {
           term: c.term,
           def: c.def,
+          clue: clueMask(c.def, c.term),
           options: Arcade.shuffle([c.term, ...distractors]),
           variant: Math.random() < 0.5 ? 0 : 1, // 0 = "has this definition?", 1 = "means:"
           tries: 0,

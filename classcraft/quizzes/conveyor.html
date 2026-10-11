@@ -6,7 +6,7 @@
 <title>Conveyor Belt — Free Revision Game (True or False) — AI Study Method</title>
 <meta name="description" content="Sort statements as true or false against the clock. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* ---- screens ---- */
   .screen { display: none; }
@@ -169,7 +169,7 @@
 
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 'use strict';
@@ -304,6 +304,7 @@ let combo = 0, bestCombo = 0, level = 0;
 let results = [];             // '🟩' | '🟥'
 let lastFoolerMisc = null;    // most recently missed misconception
 let lastMissAny = null;
+let missedCards = [];          // wrong sorts, for the end-card misses list
 
 let cycleT = [], cycleM = [];
 
@@ -376,7 +377,7 @@ function startGame() {
   gameState = 'running';
   score = 0; sorted = 0; correctCount = 0;
   combo = 0; bestCombo = 0; level = 0;
-  results = []; lastFoolerMisc = null; lastMissAny = null;
+  results = []; lastFoolerMisc = null; lastMissAny = null; missedCards = [];
   locked = false; timeUp = false; lastText = '';
   endSurge(true); surgeSorts = 0; surgeCount = 0;
   cycleT = Arcade.shuffle(TRUTHS);
@@ -472,6 +473,7 @@ function verdict(guessKind, zoneEl) {
     if (surgeActive()) endSurge(true);
     if (item.kind === 'misc') lastFoolerMisc = item;
     lastMissAny = item;
+    if (!missedCards.includes(item)) missedCards.push(item);
     Arcade.sfx.wrong();
     Arcade.shake();
     Arcade.vibrate([40, 30, 40]);
@@ -590,6 +592,12 @@ function endGame() {
       sorted + ' sorted in 60s · ' + accuracy + '% accuracy · 🔥 best combo ×' + bestCombo,
       grid,
     ],
+    missed: missedCards.map(it => ({
+      ask: 'Truth or misconception?',
+      q: (it.ctx ? it.ctx + ' → ' : '') + '“' + it.text + '”',
+      a: it.kind === 'truth' ? 'Truth ✅' : 'Misconception 🧢',
+      why: it.why || '',
+    })),
     onAgain: startGame,
   });
 

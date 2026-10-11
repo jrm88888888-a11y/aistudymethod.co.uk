@@ -6,7 +6,7 @@
 <title>Label The Kidney Nephron Diagram | GCSE Bio — AI Study Method</title>
 <meta name="description" content="Label The Kidney Nephron diagram — a free interactive GCSE biology revision game. No login required. Test yourself and learn key structures now.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010b">
+<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010c">
 <style>
   /* ── Label It ──────────────────────────────────────────────────── */
   .dg-stage { position:relative; }
@@ -120,7 +120,7 @@
 </div>
 <div id="announce" class="sr-only" aria-live="polite"></div>
 
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 const GAME_DATA = {"ORGANS":[{"id":"glomerulus","name":"Glomerulus","dot":[50,14],"slot":[78,8]},{"id":"bowman","name":"Bowman's capsule","dot":[50,14],"slot":[14,8]},{"id":"afferent","name":"Afferent arteriole","dot":[27,10],"slot":[14,18]},{"id":"efferent","name":"Efferent arteriole","dot":[27,19],"slot":[14,28]},{"id":"pct","name":"Proximal convoluted tubule","dot":[55,30],"slot":[78,22]},{"id":"desc-loop","name":"Descending limb","dot":[50,46],"slot":[14,44]},{"id":"loop","name":"Loop of Henle","dot":[53,61],"slot":[78,60]},{"id":"asc-loop","name":"Ascending limb","dot":[60,50],"slot":[78,40]},{"id":"dct","name":"Distal convoluted tubule","dot":[63,34],"slot":[78,76]},{"id":"coll-duct","name":"Collecting duct","dot":[64,72],"slot":[14,70]},{"id":"vasa","name":"Vasa recta","dot":[41,50],"slot":[14,57]}]};
@@ -240,7 +240,10 @@ const GAME_DATA = {"ORGANS":[{"id":"glomerulus","name":"Glomerulus","dot":[50,14
     });
   }
 
-  function startGame() {
+  // subset: a drill run over just the parts missed last time (no end card,
+  // no coins, no best — it is practice, not a scored run).
+  function startGame(subset) {
+    const drill = Array.isArray(subset) && subset.length > 0;
     if (st && st.timer) st.timer.stop();
     endC.innerHTML = '';
     wrap.appendChild(endC);            // restore end container below everything
@@ -250,7 +253,8 @@ const GAME_DATA = {"ORGANS":[{"id":"glomerulus","name":"Glomerulus","dot":[50,14
     fb.className = '';
     fb.innerHTML = '';
     st = {
-      order: Arcade.shuffle(PARTS),
+      order: Arcade.shuffle(drill ? subset : PARTS),
+      drill: drill,
       ti: 0, misses: 0, pass: 1,
       score: 0, streak: 0, bestStreak: 0,
       res: {}, t0: Date.now(), timer: null, phase: 'play',
@@ -512,7 +516,7 @@ const GAME_DATA = {"ORGANS":[{"id":"glomerulus","name":"Glomerulus","dot":[50,14
   function finish() {
     st.phase = 'done';
     if (st.timer) st.timer.stop();
-    const n = PARTS.length;
+    const n = st.order.length;
     const tally = { first: 0, second: 0, revealed: 0, redeemed: 0 };
     st.order.forEach(p => { tally[st.res[p.id]]++; });
     const pct = Math.round((tally.first / n) * 100);
@@ -529,6 +533,24 @@ const GAME_DATA = {"ORGANS":[{"id":"glomerulus","name":"Glomerulus","dot":[50,14
     targetLabel.classList.remove('dg-gold-label');
     targetLabel.textContent = 'Revision · the full labelled diagram';
     wrap.insertBefore(endC, document.querySelector('.ar-hud')); // results card above the labelled diagram
+
+    if (st.drill) {
+      const missedAgain = st.order.filter(p => st.res[p.id] !== 'first');
+      endC.innerHTML = '<div class="ar-card" style="text-align:center">'
+        + '<div class="ar-label">🎯 Drill done · not scored</div>'
+        + '<div style="font-size:34px;font-weight:700;margin:6px 0">' + tally.first + ' / ' + n + '</div>'
+        + '<div style="color:var(--ar-text2);font-size:14px;margin-bottom:14px">first tap. '
+        + (missedAgain.length ? 'Still shaky: ' + esc(missedAgain.map(p => p.name).join(', ')) + '.' : 'All of them stuck.') + '</div>'
+        + '<div class="ar-ctas">'
+        + (missedAgain.length ? '<button type="button" class="ar-btn" id="dg-redrill">🎯 Drill those ' + missedAgain.length + '</button>' : '')
+        + '<button type="button" class="ar-btn' + (missedAgain.length ? ' ghost' : '') + '" id="dg-full">▶ Full run</button></div></div>';
+      const rd = document.getElementById('dg-redrill');
+      if (rd) rd.addEventListener('click', () => { Arcade.sfx.click(); startGame(missedAgain); });
+      document.getElementById('dg-full').addEventListener('click', () => { Arcade.sfx.click(); startGame(); });
+      announce.textContent = 'Drill done. ' + tally.first + ' of ' + n + ' first tap.';
+      endC.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
 
     let insight;
     if (pct === 100) insight = 'Every part named first tap — that is genuine recall, not recognition. Next step: cover the labels and say what each part DOES, not just where it sits.';
@@ -561,7 +583,11 @@ const GAME_DATA = {"ORGANS":[{"id":"glomerulus","name":"Glomerulus","dot":[50,14
         'Score ' + st.score + ' pts · ' + tally.first + '/' + n + ' first try · ' + secs,
         emoji,
       ],
-      onAgain: startGame,
+      onAgain: () => startGame(),
+      // The labelled diagram below is the list; the drill re-runs just these parts.
+      missed: st.order.filter(p => st.res[p.id] !== 'first').map(p => ({ q: 'Find it on the diagram', a: p.name })),
+      missedListed: true,
+      onDrill: () => startGame(st.order.filter(p => st.res[p.id] !== 'first')),
     });
     announce.textContent = 'Diagram complete. ' + tally.first + ' of ' + n + ' first try, '
       + tally.revealed + ' revealed. Score ' + st.score + ' points in ' + secs
@@ -571,7 +597,7 @@ const GAME_DATA = {"ORGANS":[{"id":"glomerulus","name":"Glomerulus","dot":[50,14
 
   // The clock used to start on page load, before the player had read the
   // screen; it now waits for Start (older cached arcade.js: start at once).
-  (Arcade.readyThen || (fn => fn()))(startGame, { text: "Each label has a clock for a speed bonus. It starts when you press Start." });
+  (Arcade.readyThen || (fn => fn()))(() => startGame(), { text: "Each label has a clock for a speed bonus. It starts when you press Start." });
 })();
 </script>
 

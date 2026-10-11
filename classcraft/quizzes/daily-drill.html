@@ -6,7 +6,7 @@
 <title>Daily Drill — Free Daily Revision Quiz — AI Study Method</title>
 <meta name="description" content="Five questions a day, the same for everyone. A free daily revision quiz for GCSE, A-Level and IB across every subject — build your streak. No login.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   /* Streak strip */
   .dd-streak-strip { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; background: var(--ar-grad-card); border: 1px solid var(--ar-border); border-radius: var(--ar-r); padding: 14px 18px; margin-bottom: 16px; }
@@ -95,7 +95,7 @@
 <div class="sr-only" aria-live="polite" id="srLive"></div>
 
 <script src="../evaluate/real-content-ready.js"></script>
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="arcade-icons.js?v=20260718a"></script>
 <script src="share-score.js"></script>
 <script>
@@ -930,6 +930,7 @@
   let questions = [];
   const state = { idx: 0, score: 0 };
   let results = [];        // '🟩' | '🟥' per question
+  let missedQs = [];       // {q, a, why, figure} wrong or timed-out (end-card list)
   let practice = false;
   let qTimer = null;
 
@@ -998,6 +999,7 @@
           else b.classList.add('dim');
         });
         results.push(correct ? '🟩' : '🟥');
+        if (!correct) missedQs.push({ q: q.q, a: q.options[correctIdx].text, why: q.explain || '', figure: q.figure || null });
         const dots = root.querySelectorAll('.ar-dots span');
         if (dots[state.idx]) { dots[state.idx].classList.remove('now'); dots[state.idx].classList.add(correct ? 'done' : 'fail'); }
 
@@ -1059,7 +1061,7 @@
   function startPracticeRun() {
     practice = true;
     state.idx = 0; state.score = 0;
-    results = [];
+    results = []; missedQs = [];
     renderQuestion();
   }
 
@@ -1108,6 +1110,7 @@
         shareLines: official
           ? shareLinesFor(official.correct, official.grid || '', s.streak)
           : shareLinesFor(state.score, grid, s.streak),
+        missed: missedQs,
         onAgain: startPracticeRun,
       });
       const againBtn = document.querySelector('#ar-again');
@@ -1171,6 +1174,7 @@
         shareText: shareLinesFor(state.score, grid, newStreak).join('\n'),
       },
       shareLines: shareLinesFor(state.score, grid, newStreak),
+      missed: missedQs,
       onAgain: startPracticeRun,
     });
     const againBtn = document.querySelector('#ar-again');

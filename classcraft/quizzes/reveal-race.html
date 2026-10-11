@@ -6,7 +6,7 @@
 <title>Reveal Race — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Name the concept as its definition reveals — buzz early to score more. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css?v=20261010b">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   .rv-stage { position: relative; border-radius: var(--ar-r); overflow: hidden; background: #0f1117; border: 1px solid var(--ar-border-hi); box-shadow: 0 14px 40px rgba(0,0,0,0.5); }
   .rv-canvas { display: block; width: 100%; height: auto; }
@@ -83,7 +83,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js?v=20261010b"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 'use strict';
@@ -442,11 +442,12 @@ function renderPoster(term, subject, W, H) {
   let wrongGuesses = 0, roundTimedOut = false;
   let correctStreak = 0;
   let milestones = {};
+  let clueMask = null;
 
   function startGame() {
     Arcade.sfx.click();
     rounds = buildRounds();
-    state = { idx: 0, score: 0, correct: 0, buzzFracs: [], correctFracs: [], emoji: [] };
+    state = { idx: 0, score: 0, correct: 0, buzzFracs: [], correctFracs: [], emoji: [], missed: [] };
     renderRound();
   }
 
@@ -505,7 +506,9 @@ function renderPoster(term, subject, W, H) {
     `;
 
     // Definition reveal: split into word tokens, start fully masked.
-    defTokens = String(round.target.def || '').split(/\s+/).filter(Boolean);
+    // X8: the term (and its symbol) never appears inside its own clue.
+    if (!clueMask) clueMask = Arcade.makeMasker(concepts);
+    defTokens = clueMask(String(round.target.def || ''), round.target.term).split(/\s+/).filter(Boolean);
     revealCellsTo(0);
 
     document.getElementById('buzz').addEventListener('click', onBuzz);
@@ -736,6 +739,7 @@ function renderPoster(term, subject, W, H) {
     showOptions._dead = null;
     const round = rounds[state.idx];
     state.buzzFracs.push(frozenFrac);
+    if (!won || wrongGuesses > 0) state.missed.push({ term: round.target.term, def: round.target.def });
 
     let earned = 0;
     if (won) {
@@ -840,6 +844,7 @@ function renderPoster(term, subject, W, H) {
         state.score + ' pts · named ' + state.correct + '/' + TOTAL_ROUNDS + ' · avg buzz @ ' + avgPct + '% revealed',
         state.emoji.join(''),
       ],
+      missed: state.missed,
       onAgain: startGame,
     });
 

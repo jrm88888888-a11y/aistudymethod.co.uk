@@ -6,7 +6,7 @@
 <title>Label the DNA Structure Diagram | GCSE Bio — AI Study Method</title>
 <meta name="description" content="Label the DNA Structure diagram — a free interactive GCSE biology revision game. No login required. Test yourself and learn key structures now.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010b">
+<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010c">
 <style>
   /* ── Label It ──────────────────────────────────────────────────── */
   .dg-stage { position:relative; }
@@ -141,7 +141,7 @@
 </div>
 <div id="announce" class="sr-only" aria-live="polite"></div>
 
-<script src="../quizzes/arcade.js?v=20261010b"></script>
+<script src="../quizzes/arcade.js?v=20261010c"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 const GAME_DATA = {"ORGANS":[{"id":"backbone","name":"Sugar-phosphate backbone","dot":[37,16],"slot":[14,10]},{"id":"base-pair","name":"Base pair","dot":[50,17],"slot":[78,10]},{"id":"adenine","name":"Adenine (A)","dot":[44,16],"slot":[14,24]},{"id":"thymine","name":"Thymine (T)","dot":[56,16],"slot":[78,24]},{"id":"guanine","name":"Guanine (G)","dot":[40,34],"slot":[14,38]},{"id":"cytosine","name":"Cytosine (C)","dot":[60,34],"slot":[78,38]},{"id":"h-bond","name":"Hydrogen bond","dot":[50,33],"slot":[78,52]},{"id":"phosphate","name":"Phosphate group","dot":[37,26],"slot":[14,52]},{"id":"double-helix","name":"Double helix","dot":[37,8],"slot":[14,66]},{"id":"5-prime","name":"5' to 3' direction","dot":[24,8],"slot":[78,66]}]};
@@ -261,7 +261,10 @@ const GAME_DATA = {"ORGANS":[{"id":"backbone","name":"Sugar-phosphate backbone",
     });
   }
 
-  function startGame() {
+  // subset: a drill run over just the parts missed last time (no end card,
+  // no coins, no best — it is practice, not a scored run).
+  function startGame(subset) {
+    const drill = Array.isArray(subset) && subset.length > 0;
     if (st && st.timer) st.timer.stop();
     endC.innerHTML = '';
     wrap.appendChild(endC);            // restore end container below everything
@@ -271,7 +274,8 @@ const GAME_DATA = {"ORGANS":[{"id":"backbone","name":"Sugar-phosphate backbone",
     fb.className = '';
     fb.innerHTML = '';
     st = {
-      order: Arcade.shuffle(PARTS),
+      order: Arcade.shuffle(drill ? subset : PARTS),
+      drill: drill,
       ti: 0, misses: 0, pass: 1,
       score: 0, streak: 0, bestStreak: 0,
       res: {}, t0: Date.now(), timer: null, phase: 'play',
@@ -533,7 +537,7 @@ const GAME_DATA = {"ORGANS":[{"id":"backbone","name":"Sugar-phosphate backbone",
   function finish() {
     st.phase = 'done';
     if (st.timer) st.timer.stop();
-    const n = PARTS.length;
+    const n = st.order.length;
     const tally = { first: 0, second: 0, revealed: 0, redeemed: 0 };
     st.order.forEach(p => { tally[st.res[p.id]]++; });
     const pct = Math.round((tally.first / n) * 100);
@@ -550,6 +554,24 @@ const GAME_DATA = {"ORGANS":[{"id":"backbone","name":"Sugar-phosphate backbone",
     targetLabel.classList.remove('dg-gold-label');
     targetLabel.textContent = 'Revision · the full labelled diagram';
     wrap.insertBefore(endC, document.querySelector('.ar-hud')); // results card above the labelled diagram
+
+    if (st.drill) {
+      const missedAgain = st.order.filter(p => st.res[p.id] !== 'first');
+      endC.innerHTML = '<div class="ar-card" style="text-align:center">'
+        + '<div class="ar-label">🎯 Drill done · not scored</div>'
+        + '<div style="font-size:34px;font-weight:700;margin:6px 0">' + tally.first + ' / ' + n + '</div>'
+        + '<div style="color:var(--ar-text2);font-size:14px;margin-bottom:14px">first tap. '
+        + (missedAgain.length ? 'Still shaky: ' + esc(missedAgain.map(p => p.name).join(', ')) + '.' : 'All of them stuck.') + '</div>'
+        + '<div class="ar-ctas">'
+        + (missedAgain.length ? '<button type="button" class="ar-btn" id="dg-redrill">🎯 Drill those ' + missedAgain.length + '</button>' : '')
+        + '<button type="button" class="ar-btn' + (missedAgain.length ? ' ghost' : '') + '" id="dg-full">▶ Full run</button></div></div>';
+      const rd = document.getElementById('dg-redrill');
+      if (rd) rd.addEventListener('click', () => { Arcade.sfx.click(); startGame(missedAgain); });
+      document.getElementById('dg-full').addEventListener('click', () => { Arcade.sfx.click(); startGame(); });
+      announce.textContent = 'Drill done. ' + tally.first + ' of ' + n + ' first tap.';
+      endC.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
 
     let insight;
     if (pct === 100) insight = 'Every part named first tap — that is genuine recall, not recognition. Next step: cover the labels and say what each part DOES, not just where it sits.';
@@ -582,7 +604,11 @@ const GAME_DATA = {"ORGANS":[{"id":"backbone","name":"Sugar-phosphate backbone",
         'Score ' + st.score + ' pts · ' + tally.first + '/' + n + ' first try · ' + secs,
         emoji,
       ],
-      onAgain: startGame,
+      onAgain: () => startGame(),
+      // The labelled diagram below is the list; the drill re-runs just these parts.
+      missed: st.order.filter(p => st.res[p.id] !== 'first').map(p => ({ q: 'Find it on the diagram', a: p.name })),
+      missedListed: true,
+      onDrill: () => startGame(st.order.filter(p => st.res[p.id] !== 'first')),
     });
     announce.textContent = 'Diagram complete. ' + tally.first + ' of ' + n + ' first try, '
       + tally.revealed + ' revealed. Score ' + st.score + ' points in ' + secs
@@ -592,7 +618,7 @@ const GAME_DATA = {"ORGANS":[{"id":"backbone","name":"Sugar-phosphate backbone",
 
   // The clock used to start on page load, before the player had read the
   // screen; it now waits for Start (older cached arcade.js: start at once).
-  (Arcade.readyThen || (fn => fn()))(startGame, { text: "Each label has a clock for a speed bonus. It starts when you press Start." });
+  (Arcade.readyThen || (fn => fn()))(() => startGame(), { text: "Each label has a clock for a speed bonus. It starts when you press Start." });
 })();
 </script>
 
