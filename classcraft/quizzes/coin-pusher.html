@@ -494,7 +494,12 @@
   let magazine = 0, score = 0, streak = 0, bestStreak = 0;
   let coinsCollected = 0, goldCollected = 0, prizesCollected = 0, sacksCollected = 0;
   let state = 'boot';                     // boot | playing | ended
-  let simTime = 0, lastDropTime = -999, hardCapAt = 180;
+  /* hardCapAt used to be a flat 180 s from the start of play — but the
+     questions are answered while the board runs, so with +50% or "no clock"
+     reading time a run could end mid-question. The cap now starts when the
+     questions run out: 90 s to spend the remaining coins. */
+  const SPEND_WINDOW_S = 90;
+  let simTime = 0, lastDropTime = -999, hardCapAt = Infinity;
   let launcherX = TRAY_CX0, moveDir = 0;
   let shakeMag = 0, shakeX = 0, shakeY = 0;
 
@@ -1161,6 +1166,7 @@
 
   function onQuizExhausted() {
     quizExhausted = true;
+    hardCapAt = simTime + SPEND_WINDOW_S;
     currentConcept = null;
     const qp = document.getElementById('qp');
     qp.innerHTML =
@@ -1235,7 +1241,7 @@
   function restart() {
     magazine = 0; score = 0; streak = 0; bestStreak = 0;
     coinsCollected = 0; goldCollected = 0; prizesCollected = 0; sacksCollected = 0;
-    simTime = 0; lastDropTime = -999; feverUntil = -1; collectTimes.length = 0; sparks = [];
+    simTime = 0; lastDropTime = -999; hardCapAt = Infinity; feverUntil = -1; collectTimes.length = 0; sparks = [];
     asked = 0; correctCount = 0; quizExhausted = false; goldenPending = 0;
     askRecords.length = 0; currentConcept = null;
     megaCharge = 0; mega = null; pushPhase = 0;

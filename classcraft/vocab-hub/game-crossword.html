@@ -8,7 +8,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Crossword Vocabulary Game | Free Revision Quiz — AI Study Method</title>
 <meta content="Play Crossword — a free vocabulary revision game for all subjects. No login required. Learn key terms and definitions the fun way. Try it now." name="description"/>
-<link href="../quizzes/arcade.css" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
 <style>
     :root {
       --bg:#06060f; --surface:#11112b; --surface2:#181838;
@@ -225,9 +225,18 @@
 
     /* Responsive — clues drop below the grid on narrow screens */
     @media(max-width:640px){
-      #screen-game{flex-direction:column;}
+      #screen-game{flex-direction:column;padding-bottom:58px;}
       .clues-panel{width:100%;border-left:none;border-top:1px solid var(--border-hi);max-height:34vh;}
       .grid-panel{padding:0.5rem;}
+      /* Check / Reveal / New used to sit under the clue list on phones (the
+         panel clips its overflow), unreachable. Pin them to the bottom. */
+      .grid-actions{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0;
+        padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));gap:6px;
+        background:var(--surface);border-top:1px solid var(--border-hi);}
+      .grid-actions button{flex:1 1 0;min-width:0;padding:0.6rem 0.25rem;font-size:0.66rem;letter-spacing:0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+      .grid-actions .cw-long{display:none;}
+      @media(max-height:700px){ .clues-panel{max-height:28vh;} }
+      .grid-panel{justify-content:flex-start;}
     }
     @media(max-width:400px){
       .hd{padding:0 0.85rem;}
@@ -307,10 +316,10 @@
 <div class="size-label">Medium</div>
 <div class="size-detail">9 words</div>
 </div>
-<div class="size-card" data-words="12" onclick="selectSize(this)">
+<div class="size-card" data-words="10" onclick="selectSize(this)">
 <span class="size-icon">🔥</span>
 <div class="size-label">Large</div>
-<div class="size-detail">12 words</div>
+<div class="size-detail">10 words</div>
 </div>
 </div>
 <button class="btn-start" id="btn-start" onclick="startGame()">Generate Crossword →</button>
@@ -320,10 +329,10 @@
 <div class="grid-panel" id="grid-panel">
 <div id="grid-container"></div>
 <div class="grid-actions">
-<button class="btn-submit-cw" onclick="checkAnswers()">✓ Check Answers</button>
-<button class="btn-reveal" onclick="revealWord()">💡 Reveal Word</button>
+<button class="btn-submit-cw" onclick="checkAnswers()">✓ Check<span class="cw-long"> Answers</span></button>
+<button class="btn-reveal" onclick="revealWord()">💡 Reveal<span class="cw-long"> Word</span></button>
 <button class="btn-reveal" onclick="revealAll()">Reveal All</button>
-<button class="btn-new" onclick="newPuzzle()">↺ New Puzzle</button>
+<button class="btn-new" onclick="newPuzzle()">↺ New<span class="cw-long"> Puzzle</span></button>
 </div>
 <!-- Hidden input captures on-screen keyboard on tablets -->
 <input autocapitalize="characters" autocomplete="off" autocorrect="off" id="tablet-input" spellcheck="false" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;" type="text"/>
@@ -338,7 +347,7 @@
 <div id="end-root"></div>
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
-<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/arcade.js?v=20261010b"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab ──
@@ -453,7 +462,7 @@ function selectSize(el) {
   document.querySelectorAll('.size-card').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected');
   selectedWords = parseInt(el.dataset.words);
-  const avail = VOCAB_DATA.filter(v => /^[A-Za-z\s]+$/.test(v.term)).length;
+  const avail = VOCAB_DATA.filter(v => /^[A-Za-z\s]+$/.test(String(v.term || '').split(/\s*,\s*/)[0].replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim())).length;
   const btn = document.getElementById('btn-start');
   if (selectedWords > avail) {
     btn.textContent = `Only ${avail} suitable words`;
@@ -486,11 +495,22 @@ function generateAndRender() {
 
   // Use setTimeout so the spinner renders before the CPU-heavy generation
   setTimeout(() => {
-    const vocab = shuffle(VOCAB_DATA
-      .filter(v => /^[A-Za-z\s]+$/.test(v.term))
-    ).slice(0, selectedWords * 2); // take extra for fallback
-
-    const puzzle = generateCrossword(vocab, selectedWords);
+    // Terms are played by NAME (", symbol" and brackets dropped), so "Mass, m"
+    // is now a usable entry rather than being excluded.
+    const termMain = t => String(t || '').split(/\s*,\s*/)[0].replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    const usable = VOCAB_DATA.map(v => Object.assign({}, v, { term: termMain(v.term), fullTerm: v.term }))
+      .filter(v => /^[A-Za-z\s]+$/.test(v.term) && v.term.replace(/\s/g, '').length >= 2);
+    // Silent re-roll (Oct 2026): a grid used to ship short ("Placed 8 of 9")
+    // whenever the first layout jammed. Try up to 12 fresh shuffles within a
+    // ~600 ms budget and keep the fullest; only a genuine shortfall is shown.
+    let puzzle = null;
+    const t0 = performance.now();
+    for (let attempt = 0; attempt < 12; attempt++) {
+      const vocab = shuffle(usable.slice()).slice(0, selectedWords * 2); // extra for fallback
+      const p = generateCrossword(vocab, selectedWords);
+      if (p && (!puzzle || p.length > puzzle.length)) puzzle = p;
+      if ((puzzle && puzzle.length >= selectedWords) || performance.now() - t0 > 600) break;
+    }
     if (!puzzle || puzzle.length === 0) {
       container.innerHTML = '<div class="generating"><div>Could not generate a crossword.<br>Try fewer words.</div></div>';
       return;
@@ -507,29 +527,23 @@ function generateAndRender() {
     puzzleStart = Date.now();
     hintsUsed = 0;
     completedWords.clear();
+    { const prev = document.getElementById('underfill-note'); if (prev) prev.remove(); }
     // Generation accepts ≥4 placed words — when the grid came out smaller than
     // requested, say so and offer a re-roll instead of silently shipping it.
     if (placedWords.length < selectedWords) {
+      // Only after 12 silent re-rolls: a one-line note at the top of the clue
+      // list (it used to sit under the grid and push it off small phones).
+      const old = document.getElementById('underfill-note'); if (old) old.remove();
       const note = document.createElement('div');
       note.id = 'underfill-note';
-      note.style.cssText = 'display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;justify-content:center;margin-top:0.6rem;padding:0.5rem 0.85rem;background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.35);border-radius:12px;font-size:0.78rem;color:var(--text-mid);';
-      note.innerHTML = '<span>Placed <strong style="color:var(--text)">' + placedWords.length +
-        ' of ' + selectedWords + '</strong> words</span>';
-      const regen = document.createElement('button');
-      regen.className = 'btn-new';
-      regen.type = 'button';
-      regen.textContent = '↻ Regenerate';
-      regen.addEventListener('click', () => generateAndRender());
-      const keep = document.createElement('button');
-      keep.className = 'btn-new';
-      keep.type = 'button';
-      keep.textContent = 'Keep this grid';
-      keep.addEventListener('click', () => note.remove());
-      note.appendChild(regen);
-      note.appendChild(keep);
-      container.appendChild(note);
-      announce('Only ' + placedWords.length + ' of ' + selectedWords + ' words fitted this grid. You can regenerate or keep it.');
+      note.style.cssText = 'padding:0.45rem 0.85rem;font-size:0.72rem;color:var(--text-mid);border-bottom:1px solid var(--border-hi);background:rgba(255,214,10,0.06);';
+      note.innerHTML = 'This topic\u2019s words fit <strong style="color:var(--text)">' + placedWords.length +
+        ' of ' + selectedWords + '</strong> in one grid.';
+      const clues = document.querySelector('.clues-panel');
+      if (clues) clues.insertBefore(note, clues.firstChild); else container.appendChild(note);
+      announce('Only ' + placedWords.length + ' of ' + selectedWords + ' words fitted this grid.');
     }
+    { const was = cellSize; computeCellSize(); if (cellSize !== was) renderGrid(); }
   }, 50);
 }
 
@@ -723,12 +737,21 @@ function buildGridData() {
     if (w.number === undefined) { w.number = num++; }
   });
 
-  // Calculate cell size based on available space
+  computeCellSize();
+}
+
+// Cell size from the space the grid panel actually has. Called again once the
+// clue list (and any note) is in place — on phones the clues share the column,
+// so sizing before they rendered let the grid run under them.
+function computeCellSize() {
   const panel = document.getElementById('grid-panel');
   const availW = panel.clientWidth  - 32;
-  const availH = panel.clientHeight - 80; // leave room for actions
+  // Phones: the action bar is pinned to the screen bottom (not in this
+  // panel), and cells may shrink to 18px so a full grid fits above the clues.
+  const phone = window.matchMedia && window.matchMedia('(max-width:640px)').matches;
+  const availH = panel.clientHeight - (phone ? 12 : 80); // leave room for actions
   cellSize = Math.min(38, Math.floor(Math.min(availW / grid[0].length, availH / grid.length)));
-  cellSize = Math.max(22, cellSize);
+  cellSize = Math.max(phone ? 18 : 22, cellSize);
 }
 
 // ── RENDER GRID ──

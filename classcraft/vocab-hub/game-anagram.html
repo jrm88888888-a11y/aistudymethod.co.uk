@@ -8,7 +8,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Anagram Vocabulary Game | Free Revision Quiz — AI Study Method</title>
 <meta content="Play Anagram — a free vocabulary revision game for all subjects. No login required. Learn key terms and definitions the fun way. Try it now." name="description"/>
-<link href="../quizzes/arcade.css" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
 <style>
     :root {
       --bg:#06060f; --surface:#11112b; --surface2:#181838;
@@ -361,7 +361,7 @@
 <div id="end-root"></div>
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
-<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/arcade.js?v=20261010b"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab ──
@@ -498,10 +498,30 @@ function scramble(word) {
   return result;
 }
 
+/* PLAYABLE TERMS (Oct 2026). Unscramble the term's NAME (", symbol" and
+   brackets dropped — "Mass, m" used to scatter a comma and an M into the
+   rack), and only terms that make a fair puzzle: ≤3 words and ≤14 tiles,
+   relaxed to ≤18 if a topic has fewer than three ("REQUIRED PRACTICAL
+   ACTIVITY 4" was 25 tiles). Runs are capped at 10 words. */
+function termMain(t) {
+  return String(t || '').split(/\s*,\s*/)[0].replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+const AN_RUN = 10;
+const AN_PLAY = (function () {
+  const all = VOCAB_DATA.map(v => Object.assign({}, v, { term: termMain(v.term), fullTerm: v.term }))
+    .filter(v => v.term.replace(/\s/g, '').length >= 3);
+  const tiles = t => t.replace(/\s/g, '').length, words = t => t.split(/\s+/).length;
+  for (const lim of [14, 18]) {
+    const fit = all.filter(v => words(v.term) <= 3 && tiles(v.term) <= lim);
+    if (fit.length >= 3) return fit;
+  }
+  return all.filter(v => tiles(v.term) <= 18).length ? all.filter(v => tiles(v.term) <= 18) : all;
+})();
+
 // ── START ──
 function startGame() {
   AudioFX.unlock();
-  wordList = shuffle([...VOCAB_DATA]);
+  wordList = shuffle([...AN_PLAY]).slice(0, AN_RUN);
   wordIndex = 0; score = 0; correct = 0; skipped = 0;
   streak = 0; bestStreak = 0; wordResults = [];
   document.getElementById('screen-start').classList.remove('active');

@@ -6,7 +6,7 @@
 <title>TermGuess Vocabulary Game | Free Revision Quiz — AI Study Method</title>
 <meta content="Play TermGuess — a free vocabulary revision game for all subjects. No login required. Learn key terms and definitions the fun way. Try it now." name="description"/>
 <link href="../../style.css" rel="stylesheet"/>
-<link href="../quizzes/arcade.css" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
 <script src="../../script.js" defer></script>
 <style>
   /* ── guess grid ── */
@@ -115,7 +115,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/arcade.js?v=20261010b"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab (set by vocab-hub.html via sessionStorage) ──
@@ -131,15 +131,20 @@ Arcade.mountMuteButton();
 const MAX_GUESSES = 6;
 const KB_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
 
-// Wordle format plays best with short single words. When the bank has enough
-// 4–9-letter single-word terms (≥5), play only those; otherwise keep everything.
-const WORDLE_FIT = VOCAB_DATA.filter(v => {
-  const t = String(v.term || '').trim();
-  const letters = t.replace(/[^A-Za-z]/g, '');
-  return !/\s/.test(t) && letters.length >= 4 && letters.length <= 9;
-});
-const PLAY_DATA = WORDLE_FIT.length >= 5 ? WORDLE_FIT : VOCAB_DATA;
-const BANK_FILTERED = WORDLE_FIT.length >= 5 && WORDLE_FIT.length < VOCAB_DATA.length;
+// Wordle format only works for short single words: play the term's NAME
+// (", symbol" and brackets dropped — "Mass, m" plays as MASS) when it is one
+// word of 4–9 letters. It used to fall back to the whole pack when fewer than
+// five fitted, putting "TIME IN SECONDS" on a 13-wide grid; now it never does —
+// a topic with no fitting words points to Anagram and System Breach instead.
+function termMain(t) {
+  return String(t || '').split(/\s*,\s*/)[0].replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+// Plain A–Z only: the keyboard has no accented keys (accented terms stay
+// playable in System Breach, which matches É to E).
+const WORDLE_FIT = VOCAB_DATA.map(v => Object.assign({}, v, { term: termMain(v.term), fullTerm: v.term }))
+  .filter(v => /^[A-Za-z]{4,9}$/.test(v.term));
+const PLAY_DATA = WORDLE_FIT;
+const BANK_FILTERED = WORDLE_FIT.length > 0 && WORDLE_FIT.length < VOCAB_DATA.length;
 const topicLine = [META.subject, META.board, META.topic].filter(Boolean).join(' · ');
 const BEST_KEY = `aism-best:termguess:${META.subject || ''}:${META.topic || ''}`;
 
@@ -170,6 +175,16 @@ if (!VOCAB_DATA.length) {
       <div style="font-size:46px;line-height:1;margin-bottom:12px">🕹</div>
       <p style="color:var(--ar-text2);margin:0 0 18px;">This machine needs a vocabulary list first. Pick a subject and topic in the arcade lobby.</p>
       <a class="ar-btn" href="vocab-hub.html?game=termguess" style="text-decoration:none;display:inline-block;">Choose subject &amp; topic →</a>
+    </div>`;
+} else if (!PLAY_DATA.length) {
+  root.innerHTML = `
+    <div class="ar-badge">🟩 Terms Tester · TermGuess</div>
+    <h1 class="ar-title">No short words in this topic</h1>
+    <div class="ar-card" style="text-align:center;padding:40px 24px;">
+      <div style="font-size:46px;line-height:1;margin-bottom:12px">🔡</div>
+      <p style="color:var(--ar-text2);margin:0 0 18px;">TermGuess needs single-word terms of 4–9 letters, and this topic's terms are all longer phrases. They play well in Anagram and System Breach.</p>
+      <a class="ar-btn" href="game-anagram.html" style="text-decoration:none;display:inline-block;margin:4px;">Play Anagram →</a>
+      <a class="ar-btn ghost" href="game-hangman.html" style="text-decoration:none;display:inline-block;margin:4px;">Play System Breach →</a>
     </div>`;
 } else {
   renderIntro();

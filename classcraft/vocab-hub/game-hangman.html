@@ -6,7 +6,7 @@
 <title>Hangman Vocabulary Game | Free Revision Quiz — AI Study Method</title>
 <meta content="Play Hangman — a free vocabulary revision game for all subjects. No login required. Learn key terms and definitions the fun way. Try it now." name="description"/>
 <link href="../../style.css" rel="stylesheet"/>
-<link href="../quizzes/arcade.css" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
 <script src="../../script.js" defer></script>
 <style>
   /* ── shield / energy meter ── */
@@ -125,7 +125,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/arcade.js?v=20261010b"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab (set by vocab-hub.html via sessionStorage) ──
@@ -138,7 +138,28 @@ const announce = document.getElementById('announce');
 
 Arcade.mountMuteButton();
 
-const MAX_WRONG = 7;
+/* PLAYABLE TERMS (Oct 2026). The pack's terms carry symbols and glosses
+   ("Mass, m", "Ampere (A)") and some are whole phrases ("Required practical
+   activity 1"), which made 7 lives unloseable: guess the vowels and the word
+   falls out. Play the term's name only (", symbol" and brackets dropped), and
+   only terms of ≤2 words and 3–16 letters — relaxed step by step if a topic
+   has too few. Long words with many different letters get 5 lives, not 7. */
+function termMain(t) {
+  return String(t || '').split(/\s*,\s*/)[0].replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+const HM_LETTERS = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z]/g, '').length;
+const HM_WORDS = t => t.split(/[\s-]+/).filter(Boolean).length;
+const HM_ALL = VOCAB_DATA.map(v => Object.assign({}, v, { term: termMain(v.term), fullTerm: v.term }))
+  .filter(v => HM_LETTERS(v.term) >= 3);
+const HM_PLAY = (function () {
+  const tiers = [[2, 16], [3, 20], [99, 99]];
+  for (const [w, l] of tiers) {
+    const fit = HM_ALL.filter(v => HM_WORDS(v.term) <= w && HM_LETTERS(v.term) <= l);
+    if (fit.length >= 3) return fit;
+  }
+  return HM_ALL;
+})();
+let MAX_WRONG = 7;      // per word: 5 when the word has 10+ different letters
 const RUN_SIZE  = 10;   // words per run — the end card offers the next batch
 const KB_ROWS   = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
 const topicLine = [META.subject, META.board, META.topic].filter(Boolean).join(' · ');
@@ -190,12 +211,12 @@ function renderIntro() {
     <div class="ar-card">
       <div class="ar-label">Mission briefing</div>
       <div style="display:flex;flex-direction:column;gap:9px;color:var(--ar-text2);font-size:14px;line-height:1.5;">
-        <div>🛡 <strong style="color:var(--ar-text)">7 shield cells</strong> per word — wrong letters drain them</div>
+        <div>🛡 <strong style="color:var(--ar-text)">7 shield cells</strong> per word (5 for long words) — wrong letters drain them</div>
         <div>💡 Stuck? A <strong style="color:var(--ar-text)">hint</strong> reveals a letter for <strong style="color:var(--ar-text)">−5 pts</strong></div>
         <div>🔥 Crack words back-to-back to build a <strong style="color:var(--ar-text)">streak</strong></div>
         <div>⌨️ Tap the on-screen keys or type on your keyboard</div>
         <div>🎯 More shield left when you solve = more points</div>
-        ${VOCAB_DATA.length > RUN_SIZE ? '<div>📦 Words come in runs of ' + RUN_SIZE + ' — carry on from the results card when more remain</div>' : ''}
+        ${HM_PLAY.length > RUN_SIZE ? '<div>📦 Words come in runs of ' + RUN_SIZE + ' — carry on from the results card when more remain</div>' : ''}
       </div>
       <div style="margin-top:18px;"><button class="ar-btn big" id="btn-begin">▶ Start the breach</button></div>
     </div>
@@ -206,7 +227,7 @@ function renderIntro() {
 /* ── Game (global so the study-first overlay can wrap it) ── */
 function startGame() {
   Arcade.sfx.swoosh();
-  fullList = shuffle([...VOCAB_DATA]);
+  fullList = shuffle([...HM_PLAY]);
   runOffset = 0;
   beginRun();
 }
@@ -226,6 +247,7 @@ function loadWord(idx) {
   currentDef  = currentItem.definition;
   guessed = new Set();
   wrongCount = 0;
+  MAX_WRONG = wordBaseLetters().size >= 10 ? 5 : 7;
   gameActive = true;
   renderRound();
   announce.textContent = `Word ${idx + 1} of ${wordList.length}. Clue: ${currentDef}`;

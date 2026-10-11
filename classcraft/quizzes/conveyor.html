@@ -24,6 +24,8 @@
     will-change: transform; position: relative; z-index: 2;
   }
   .cv-statement:active { cursor: grabbing; }
+  .cv-statement.long { font-size: 15px; line-height: 1.38; padding: 20px 16px; }
+  .cv-statement.long .cv-ctx { font-size: 10.5px; }
   .cv-ctx { font-family: var(--ar-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.6px; color: var(--ar-text2); margin-bottom: 8px; line-height: 1.4; }
   .cv-statement.enter { animation: cvEnter var(--cv-enter, 0.45s) cubic-bezier(0.2, 1.3, 0.4, 1) both; }
   .cv-statement.out-truth { animation: cvOutLeft 0.28s ease-in both; }
@@ -65,6 +67,7 @@
     .cv-card-slot { padding: 12px 72px; }
     .cv-zone { width: 62px; }
     .cv-statement { font-size: 15.5px; padding: 22px 14px; }
+    .cv-statement.long { font-size: 14px; padding: 16px 12px; }
   }
 </style>
 <link rel="canonical" href="https://aistudymethod.com/classcraft/quizzes/conveyor.html">
@@ -194,14 +197,6 @@ let TRUTHS = [];          // [{text, kind:'truth', why}]
 let MISCS = [];           // [{text, kind:'misc',  why}]
 let TOPIC = 'Conveyor Belt';
 
-function truncateStatement(s, max) {
-  s = String(s || '').trim();
-  if (s.length <= max) return s;
-  let cut = s.slice(0, max);
-  const sp = cut.lastIndexOf(' ');
-  if (sp > max * 0.6) cut = cut.slice(0, sp);
-  return cut.replace(/[\s,;:.—-]+$/, '') + '…';
-}
 
 (async function init() {
   const params = new URLSearchParams(location.search);
@@ -229,27 +224,35 @@ function truncateStatement(s, max) {
   // Hard-suppress quality:"low" banks (over-level KS3 content was leaking through).
   const bankItems = (bank && bank.quality === 'low')
     ? []
-    : ((bank && bank.items) || []).filter(it => it && it.misconception);
+    : ((bank && bank.items) || []).filter(it => it && it.misconception && !it.figure);   // the belt shows no figures
 
   // Each entry: truncated text → {ctx, why}. ctx is a short context line
   // (the term or the question) rendered above the claim — bank answers like
   // "Oil" or "1967" are unjudgeable without their question.
+  // FULL TEXT (Oct 2026): claims used to be cut at 60 characters and their
+  // questions at 80, which often removed the deciding words ("…because the
+  // temperature …"), so items couldn't be judged. Now every claim is shown
+  // whole; the few too long to read on a moving belt (claim > 160 or question
+  // > 200 characters) are left out. Measured 10 Oct 2026: this keeps all
+  // 1,135 playable topics playable; misconceptions run p50 49 / p90 97 chars.
+  const MAX_CLAIM = 160, MAX_CTX = 200;
+  const fits = (claim, ctx) => String(claim || '').trim().length <= MAX_CLAIM && String(ctx || '').trim().length <= MAX_CTX;
   const truthMap = new Map();
   concepts.forEach(c => {
-    const t = truncateStatement(c.def, 60);
-    if (!truthMap.has(t)) truthMap.set(t, { ctx: c.term, why: c.term + ' — ' + c.def });
+    const t = String(c.def).trim();
+    if (fits(t, c.term) && !truthMap.has(t)) truthMap.set(t, { ctx: c.term, why: c.term + ' — ' + c.def });
   });
   bankItems.forEach(it => {
     if (it.correct) {
-      const t = truncateStatement(it.correct, 60);
-      if (!truthMap.has(t)) truthMap.set(t, { ctx: truncateStatement(it.q, 80), why: it.why || '', item: it });
+      const t = String(it.correct).trim();
+      if (fits(t, it.q) && !truthMap.has(t)) truthMap.set(t, { ctx: String(it.q || '').trim(), why: it.why || '', item: it });
     }
   });
   const truths = [...truthMap.keys()].filter(t => t.length > 1);
   const miscMap = new Map();
   bankItems.forEach(it => {
-    const t = truncateStatement(it.misconception, 60);
-    if (!miscMap.has(t) && !truthMap.has(t)) miscMap.set(t, { ctx: truncateStatement(it.q, 80), why: it.why || (it.correct ? 'The accurate version: ' + it.correct : ''), item: it });
+    const t = String(it.misconception).trim();
+    if (fits(t, it.q) && !miscMap.has(t) && !truthMap.has(t)) miscMap.set(t, { ctx: String(it.q || '').trim(), why: it.why || (it.correct ? 'The accurate version: ' + it.correct : ''), item: it });
   });
   const miscs = [...miscMap.keys()].filter(t => t.length > 1);
 
@@ -419,6 +422,7 @@ function nextCard() {
   // whole belt runs at ×1.6.
   const dur = Math.max(0.18, 0.5 - level * 0.05) / (surgeActive() ? SURGE_SPEED : 1);
   card.style.setProperty('--cv-enter', dur + 's');
+  card.classList.toggle('long', (current.text.length + (current.ctx || '').length) > 120);
   card.innerHTML = (current.ctx
     ? '<div class="cv-ctx">' + esc(current.ctx) + '</div>'
     : '') + '<div>' + esc(current.text) + '</div>';
