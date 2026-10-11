@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Connections Grid — Free GCSE &amp; A-Level Revision Game — AI Study Method</title>
-<meta name="description" content="Pick the terms that belong to your topic and dodge the decoys. A free revision game for GCSE, A-Level and IB across every subject and exam board. No login.">
+<meta name="description" content="Sixteen terms from four topics: find the four groups of four before you run out of mistakes. A free revision game for GCSE, A-Level and IB across every subject and exam board. No login.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   .cg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
   @media (max-width:480px) { .cg-grid { grid-template-columns:repeat(2,1fr); } }
@@ -15,6 +15,38 @@
   .cg-mark.tick { color:var(--ar-mint); }
   .cg-mark.cross { color:var(--ar-pink); }
   .ar-tile.missed-in { border-style:dashed; border-color:rgba(0,255,163,0.6); }
+
+  /* ---- Connections 4×4 ---- */
+  .cx-card { padding:14px; }
+  .cx-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:0 0 12px; }
+  .cx-tile { min-height:72px; padding:8px 6px; border-radius:12px; border:2px solid var(--ar-border);
+    background:var(--ar-card); color:var(--ar-text); font-family:var(--ar-font); font-weight:700;
+    font-size:14px; line-height:1.25; text-align:center; cursor:pointer; overflow-wrap:anywhere; hyphens:auto;
+    -webkit-tap-highlight-color:transparent; transition:transform .1s ease, background .12s ease, border-color .12s ease; }
+  .cx-tile:hover { border-color:var(--ar-cyan); }
+  .cx-tile.on { background:#e8e4ff; color:#14102e; border-color:#e8e4ff; transform:translateY(-1px); }
+  .cx-tile.shake { animation:arShakeX .4s ease; }
+  .cx-band { background:var(--cx-bg); color:var(--cx-fg); border-radius:12px; padding:10px 12px; margin:0 0 8px; text-align:center; animation:arPop .35s ease; }
+  .cx-band.revealed { opacity:.82; }
+  .cx-band-name { font-weight:800; font-size:14px; letter-spacing:.3px; text-transform:uppercase; }
+  .cx-mine { font-family:var(--ar-mono); font-size:9.5px; letter-spacing:1px; padding:1px 6px; border-radius:8px; background:rgba(0,0,0,.18); margin-left:4px; vertical-align:2px; }
+  .cx-band-terms { font-size:13.5px; margin-top:3px; line-height:1.35; }
+  .cx-defs { margin-top:6px; text-align:left; }
+  .cx-defs summary { cursor:pointer; font-family:var(--ar-mono); font-size:10.5px; letter-spacing:1px; text-transform:uppercase; text-align:center; opacity:.8; }
+  .cx-defs dl { margin:8px 0 2px; font-size:13px; line-height:1.45; }
+  .cx-defs dt { font-weight:800; margin-top:6px; }
+  .cx-defs dd { margin:1px 0 0; }
+  .cx-lives { text-align:center; font-family:var(--ar-mono); font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ar-text2); margin:2px 0 10px; }
+  .cx-lives i { display:inline-block; width:11px; height:11px; border-radius:50%; background:rgba(255,255,255,.12); margin:0 3px; vertical-align:-1px; }
+  .cx-lives i.on { background:var(--ar-text2); }
+  .cx-actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .cx-actions .ar-btn { min-width:96px; }
+  @media (max-width:520px) {
+    .cx-card { padding:10px 8px; }
+    .cx-grid { gap:6px; }
+    .cx-tile { min-height:64px; padding:6px 3px; font-size:11.5px; line-height:1.2; border-radius:10px; }
+    .cx-actions .ar-btn { min-width:0; flex:1 1 0; padding-left:8px; padding-right:8px; }
+  }
 </style>
 <link rel="canonical" href="https://aistudymethod.com/classcraft/quizzes/connections.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -67,7 +99,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010c"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -189,6 +221,295 @@
   const shapedDecoys = realDecoys.slice().sort((a,b)=>_shape(a)-_shape(b)).slice(0, 48);
   const decoyPool = shapedDecoys.length >= 6 ? Arcade.shuffle(shapedDecoys) : glossaryPool;
 
+  /* ======================================================================
+     CONNECTIONS 4×4 (Oct 2026) — the real format: 16 terms, 4 hidden groups
+     of 4, four mistakes allowed, "one away" when 3 of 4 share a group.
+     The groups are this topic and three neighbouring topics on the same
+     exam board, each group drawn from that topic's own authored concepts.
+     A term is only used if it is not a concept of any other group on the
+     board, so every group is decidable from the specification. Topics where
+     that can't be built fall through to the original six-card game below.
+     ====================================================================== */
+  const CX_COLOURS = [
+    { key: 'y', emoji: '🟨', bg: '#f5c84a', fg: '#1d1604' },
+    { key: 'g', emoji: '🟩', bg: '#7fd36a', fg: '#0c1d07' },
+    { key: 'b', emoji: '🟦', bg: '#6fb2f2', fg: '#06182b' },
+    { key: 'p', emoji: '🟪', bg: '#b58cf0', fg: '#1a0b2e' },
+  ];
+  const CX_MAX_MISTAKES = 4;
+
+  // Years in a term must sit inside its topic's date range (±15 years):
+  // a guard against a concept filed under the wrong topic.
+  function cxYearRange(name) {
+    const m = String(name).match(/c?(1\d{3}|20\d{2})\s*[-–]\s*c?(\d{2,4})/);
+    if (!m) return null;
+    const a = +m[1]; let b = m[2];
+    b = b.length === 4 ? +b : +(String(a).slice(0, 4 - b.length) + b);
+    return b > a ? [a - 15, b + 15] : null;
+  }
+  function cxTermOk(term, groupName) {
+    const t = String(term || '').trim();
+    if (!t || t.length > 34 || t.split(/\s+/).length > 5) return false;
+    const rng = cxYearRange(groupName);
+    if (rng) {
+      const ys = (t.match(/\b(1\d{3}|20[0-2]\d)\b/g) || []).map(Number);
+      if (ys.length && ys.every(y => y < rng[0] || y > rng[1])) return false;
+    }
+    return true;
+  }
+  function cxConcepts(sp) {
+    return ((sp && sp.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
+  }
+
+  async function buildFourByFour() {
+    try {
+      if (!spec || !subjKey) return null;
+      const r = await fetch('../arcade/subjects/' + encodeURIComponent(subjKey) + '.json?v=' + (Arcade.CONTENT_VERSION || ''));
+      if (!r.ok) return null;
+      const idx = await r.json();
+      let board = null, at = -1;
+      for (const L of (idx.levels || [])) for (const B of (L.boards || [])) {
+        if (board) break;
+        const ts = B.topics || [];
+        let k = ts.findIndex(t => t && t.s === stem);
+        if (k < 0 && spec.topic_slug && L.id === spec.level && stem.indexOf('-' + B.id + '-') > -1) k = ts.findIndex(t => t && t.slug === spec.topic_slug);
+        if (k > -1) { board = B; at = k; }
+      }
+      if (!board) return null;
+      const T = board.topics;
+      const me = { name: T[at].d || topic, concepts: concepts };
+      // Neighbours first (same part of the course), a little shuffled.
+      const near = T.map((t, j) => j).filter(j => j !== at)
+        .sort((x, y) => Math.abs(x - at) - Math.abs(y - at)).slice(0, 8);
+      const order = Arcade.shuffle(near.slice(0, 5)).concat(Arcade.shuffle(near.slice(5)));
+      const sibs = (await Promise.all(order.map(async j => {
+        const sp = await Arcade.fetchSpecJson(T[j].s, '../adventures/_specs').catch(() => null);
+        return sp ? { name: T[j].d || sp.topic_display || T[j].slug, concepts: cxConcepts(sp) } : null;
+      }))).filter(Boolean);
+
+      // Every concept term of every candidate topic: a term that appears in
+      // another chosen topic is ambiguous and never used.
+      const all = [me].concat(sibs);
+      const termsOf = g => new Set(g.concepts.map(c => norm(c.term)));
+      function usable(g, others) {
+        const otherSet = new Set(); others.forEach(o => termsOf(o).forEach(x => otherSet.add(x)));
+        const seen = new Set();
+        return g.concepts.filter(c => {
+          const n = norm(c.term);
+          if (!n || seen.has(n) || otherSet.has(n) || !cxTermOk(c.term, g.name)) return false;
+          if (others.some(o => o.concepts.some(oc => tooSimilar(oc.term, c.term)))) return false;
+          seen.add(n); return true;
+        });
+      }
+      const chosen = [me];
+      for (const g of sibs) {
+        if (chosen.length === 4) break;
+        const trial = chosen.concat([g]);
+        if (trial.every(x => usable(x, trial.filter(y => y !== x)).length >= 4)) chosen.push(g);
+      }
+      if (chosen.length < 4) return null;
+      const groups = Arcade.shuffle(chosen).map((g, i) => {
+        const pick = Arcade.shuffle(usable(g, chosen.filter(y => y !== g))).slice(0, 4);
+        return { name: g.name, mine: g === me, colour: CX_COLOURS[i], items: pick.map(c => ({ term: c.term, def: c.def })) };
+      });
+      return groups;
+    } catch (e) {
+      console.warn('[connections] 4×4 build failed, using the six-card game', e);
+      return null;
+    }
+  }
+
+  function runFourByFour(groups) {
+    const BEST4 = 'aism-connections4-best:' + stem;
+    let st;
+
+    function start() {
+      const tiles = [];
+      groups.forEach((g, gi) => g.items.forEach(it => tiles.push({ term: it.term, def: it.def, g: gi })));
+      st = {
+        tiles: Arcade.shuffle(tiles), sel: new Set(), solved: [], revealed: [],
+        mistakes: 0, guesses: [], tried: new Set(), missed: [], score: 0, over: false, busy: false,
+      };
+      Arcade.playMode && Arcade.playMode(true);
+      render();
+    }
+
+    function header() {
+      return `
+        <div class="ar-badge">V · Verify · Connections</div>
+        <h1 class="ar-title">${esc(topic)}</h1>
+        <p class="ar-sub">Sixteen terms from four ${esc(subj || 'course')} topics, ${esc(topic)} among them. Find the four groups of four. Four mistakes and the grid wins.</p>
+        <div class="ar-meta">${esc([level, subj].filter(Boolean).join(' · '))} · 4 groups</div>`;
+    }
+
+    function bandHtml(gi, revealed) {
+      const g = groups[gi], c = g.colour;
+      return `<div class="cx-band${revealed ? ' revealed' : ''}" style="--cx-bg:${c.bg};--cx-fg:${c.fg}">
+          <div class="cx-band-name">${esc(g.name)}${g.mine ? ' <span class="cx-mine">this topic</span>' : ''}</div>
+          <div class="cx-band-terms">${g.items.map(it => esc(it.term)).join(' · ')}</div>
+          <details class="cx-defs"><summary>Definitions</summary>
+            <dl>${g.items.map(it => `<dt>${esc(it.term)}</dt><dd>${esc(it.def)}</dd>`).join('')}</dl></details>
+        </div>`;
+    }
+
+    function render() {
+      const left = CX_MAX_MISTAKES - st.mistakes;
+      const live = st.tiles.filter(t => !st.solved.includes(t.g) && !st.revealed.includes(t.g));
+      root.innerHTML = `
+        ${header()}
+        <div class="ar-card cx-card">
+          <div id="cx-bands">${st.solved.map(gi => bandHtml(gi, false)).join('')}${st.revealed.map(gi => bandHtml(gi, true)).join('')}</div>
+          ${st.over ? '' : `<div class="cx-grid" role="group" aria-label="Sixteen terms — pick four that share a topic">
+            ${live.map(t => {
+              const i = st.tiles.indexOf(t);
+              const on = st.sel.has(i);
+              return `<button type="button" class="cx-tile${on ? ' on' : ''}" data-i="${i}" aria-pressed="${on}">${esc(t.term)}</button>`;
+            }).join('')}
+          </div>
+          <div class="cx-lives" aria-label="${left} mistakes left">Mistakes left: ${'<i class="on"></i>'.repeat(left)}${'<i></i>'.repeat(st.mistakes)}</div>
+          <div class="cx-actions">
+            <button type="button" class="ar-btn ghost" id="cx-shuffle">Shuffle</button>
+            <button type="button" class="ar-btn ghost" id="cx-clear" ${st.sel.size ? '' : 'disabled'}>Deselect</button>
+            <button type="button" class="ar-btn" id="cx-submit" ${st.sel.size === 4 ? '' : 'disabled'}>Submit</button>
+          </div>`}
+          <div id="fb" role="status"></div>
+        </div>
+        <div id="end"></div>`;
+      if (st.over) return;
+      root.querySelectorAll('.cx-tile').forEach(b => b.addEventListener('click', () => toggle(+b.dataset.i, b)));
+      document.getElementById('cx-shuffle').addEventListener('click', () => {
+        Arcade.sfx.swoosh();
+        const keep = [...st.sel].map(i => st.tiles[i]);            // selection survives the shuffle
+        const done = st.tiles.filter(t => st.solved.includes(t.g) || st.revealed.includes(t.g));
+        st.tiles = done.concat(Arcade.shuffle(st.tiles.filter(t => !done.includes(t))));
+        st.sel = new Set(keep.map(t => st.tiles.indexOf(t)));
+        render();
+      });
+      document.getElementById('cx-clear').addEventListener('click', () => { st.sel.clear(); render(); });
+      document.getElementById('cx-submit').addEventListener('click', submit);
+    }
+
+    function toggle(i, btn) {
+      if (st.busy || st.over) return;
+      if (st.sel.has(i)) st.sel.delete(i);
+      else if (st.sel.size < 4) st.sel.add(i);
+      else return;
+      Arcade.sfx.click();
+      btn.classList.toggle('on', st.sel.has(i));
+      btn.setAttribute('aria-pressed', String(st.sel.has(i)));
+      document.getElementById('cx-submit').disabled = st.sel.size !== 4;
+      document.getElementById('cx-clear').disabled = st.sel.size === 0;
+    }
+
+    function say(cls, html, sr) {
+      const fb = document.getElementById('fb');
+      if (fb) { fb.className = 'ar-feedback ' + cls; fb.innerHTML = html; }
+      announce.textContent = sr || (fb ? fb.textContent : '');
+    }
+
+    function submit() {
+      if (st.busy || st.over || st.sel.size !== 4) return;
+      const picks = [...st.sel].map(i => st.tiles[i]);
+      const key = picks.map(t => norm(t.term)).sort().join('|');
+      if (st.tried.has(key)) { say('mid', '<strong>Already guessed.</strong> No mistake charged — try a different four.'); return; }
+      st.tried.add(key);
+      const counts = {};
+      picks.forEach(t => { counts[t.g] = (counts[t.g] || 0) + 1; });
+      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+      const topG = +top[0], topN = top[1];
+      st.guesses.push(picks.map(t => groups[t.g].colour.emoji).join(''));
+      if (topN === 4) {
+        const left = CX_MAX_MISTAKES - st.mistakes;
+        const pts = 100 + 50 * left;
+        st.score += pts;
+        st.solved.push(topG);
+        st.sel.clear();
+        Arcade.sfx.correct(st.solved.length);
+        Arcade.confettiBurst({ count: 50 });
+        Arcade.vibrate(25);
+        // three found: the last four can only be one group
+        const remaining = groups.map((g, gi) => gi).filter(gi => !st.solved.includes(gi));
+        if (remaining.length === 1) { st.solved.push(remaining[0]); st.score += 100 + 50 * left; }
+        render();
+        say('ok', `<strong>${esc(groups[topG].name)} · +${pts}.</strong> ${remaining.length === 1 ? 'And that leaves the last group — grid cleared!' : 'Tap “Definitions” on the band to check each one.'}`);
+        if (st.solved.length === 4) finishSoon();
+        return;
+      }
+      st.mistakes++;
+      // the terms that didn't belong with the majority are this guess's misses
+      picks.filter(t => t.g !== topG).forEach(t => noteMiss(t));
+      Arcade.sfx.wrong();
+      Arcade.shake && Arcade.shake();
+      Arcade.vibrate([40, 30, 40]);
+      const btns = root.querySelectorAll('.cx-tile.on');
+      btns.forEach(b => { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); });
+      if (st.mistakes >= CX_MAX_MISTAKES) {
+        st.revealed = groups.map((g, gi) => gi).filter(gi => !st.solved.includes(gi));
+        st.revealed.forEach(gi => groups[gi].items.forEach(it => noteMiss({ term: it.term, def: it.def, g: gi })));
+        st.over = true;
+        render();
+        say('no', '<strong>Out of mistakes.</strong> The remaining groups are shown above.');
+        finishSoon();
+        return;
+      }
+      const left = CX_MAX_MISTAKES - st.mistakes;
+      const lives = root.querySelector('.cx-lives');
+      if (lives) lives.innerHTML = 'Mistakes left: ' + '<i class="on"></i>'.repeat(left) + '<i></i>'.repeat(st.mistakes);
+      say(topN === 3 ? 'mid' : 'no', topN === 3
+        ? `<strong>One away…</strong> Three of those share a topic. ${left} ${left === 1 ? 'mistake' : 'mistakes'} left.`
+        : `<strong>Not a group.</strong> ${left} ${left === 1 ? 'mistake' : 'mistakes'} left.`);
+    }
+
+    function noteMiss(t) {
+      if (st.missed.some(m => m.q === t.term)) return;
+      st.missed.push({ ask: 'Which topic is it from?', q: t.term, a: groups[t.g].name, why: t.def });
+    }
+
+    function finishSoon() { st.busy = true; setTimeout(end, 1300); }
+
+    function end() {
+      Arcade.playMode && Arcade.playMode(false);
+      const solvedByPlayer = st.solved.length;
+      const pct = Math.max(0, Math.min(100, Math.round(100 * (solvedByPlayer - 0.25 * st.mistakes) / 4)));
+      if (st.mistakes === 0 && solvedByPlayer === 4) st.score += 200;
+      const grid = st.guesses.join('\n');
+      let insight;
+      if (solvedByPlayer === 4 && st.mistakes === 0) insight = `A clean sweep — you placed sixteen terms in their topics without a slip. Knowing which topic owns a term is what lets you find the right knowledge in a mixed exam paper.`;
+      else if (solvedByPlayer === 4) insight = `All four groups found. The terms that tripped you up are the ones whose topic you weren't sure of — they're listed below with their topic and definition.`;
+      else insight = `The grid won this time. Every term below sits in a specific part of the course — drill them, then run it back and find all four groups.`;
+      const endEl = document.getElementById('end');
+      Arcade.renderEndCard(endEl, {
+        gameName: 'Connections',
+        gameEmoji: '🧩',
+        topic: topic,
+        meta: [level, subj].filter(Boolean).join(' · '),
+        pct: pct,
+        big: st.score,
+        bigLabel: 'points',
+        rows: [
+          { v: solvedByPlayer + '/4', l: 'groups found' },
+          { v: String(st.mistakes), l: 'mistakes' },
+        ],
+        emojiGrid: grid,
+        bestKey: BEST4,
+        bestValue: st.score,
+        bestSuffix: ' pts',
+        insight: insight,
+        share: { subject: subj, level: level, bigLabel: 'POINTS', statLine: solvedByPlayer + '/4 groups  ·  ' + st.mistakes + ' mistake' + (st.mistakes === 1 ? '' : 's') },
+        shareLines: ['🧩 Connections — ' + topic, solvedByPlayer + '/4 groups · ' + st.mistakes + ' mistakes', grid],
+        missed: st.missed,
+        onAgain: async () => { const fresh = await buildFourByFour(); if (fresh) groups = fresh; start(); },   // new neighbours each run
+      });
+      announce.textContent = `Game over. ${solvedByPlayer} of 4 groups, ${st.mistakes} mistakes. Score ${st.score}.`;
+    }
+
+    if (params.get('debug') === '1') window.__cx = { get groups() { return groups; }, get state() { return st; } };   // test harness only
+    start();
+  }
+
+  const cxGroups = await buildFourByFour();
+  if (cxGroups) { runFourByFour(cxGroups); return; }
+
   if (!spec || concepts.length < 4 || decoyPool.length < 2) {
     root.innerHTML = `
       <div class="ar-badge">V · Verify · Connections Grid</div>
@@ -234,7 +555,7 @@
   function startGame() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     rounds = buildRounds();
-    state = { idx: 0, score: 0, hits: 0, perfects: 0, streak: 0, bestStreak: 0, grid: [] };
+    state = { idx: 0, score: 0, hits: 0, perfects: 0, streak: 0, bestStreak: 0, grid: [], missed: [] };
     renderRound();
   }
 
@@ -352,6 +673,14 @@
       round.cards.forEach((c, i) => {
         if (picked.has(i) && c.isIn) hits++;
         else if (picked.has(i) && !c.isIn) wrongPicks++;
+      });
+      // misses for the end-card list: in-topic cards left out, decoys picked
+      round.cards.forEach((c, i) => {
+        if (picked.has(i) === c.isIn) return;
+        if (!state.missed.some(m => m.q === c.label)) state.missed.push({
+          ask: 'Is it part of ' + topic + '?', q: c.label,
+          a: c.isIn ? 'Yes — it belongs to ' + topic : 'No — it is from elsewhere in ' + (subj || 'the subject'),
+        });
       });
       const perfect = hits === PICK;
 
@@ -481,6 +810,7 @@
         `Score ${state.score} pts · ${state.perfects} perfect grid${state.perfects === 1 ? '' : 's'}`,
         ...state.grid,
       ],
+      missed: state.missed,
       onAgain: startGame,
     });
     announce.textContent = `Game over. Score ${state.score} points. ${state.hits} of ${total} correct picks — ${pct} percent.`;

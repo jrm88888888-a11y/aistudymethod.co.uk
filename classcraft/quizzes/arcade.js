@@ -56,6 +56,7 @@
               insight, shareLines:[...], onAgain, hot(bool),
               missed:[{q,a,why?,ask?}|{term,def}], missedListed(bool), onDrill(fn)}
    Arcade.drill(items, {gameName, onAgain})  self-check run over missed items
+   Arcade.playMode(on) / Arcade.isPhone() phone header collapse during a run
    Arcade.makeMasker(items) -> mask(text, term)  hide a term inside its own clue
    Arcade.maskTerm(text, term)           one-off form of the above
    Arcade.defOptionMasker(concepts) -> f(optionText)  same, for definition options
@@ -711,6 +712,10 @@
         const sRe = new RegExp('(^|[^A-Za-z0-9Α-ωµΩ])' + mkEsc(sym) + '(?![A-Za-z0-9Α-ωµΩ])', 'g');
         out = out.replace(/[([][^()[\]]{0,80}[)\]]/g, grp => grp.replace(sRe, '$1__'));
       }
+      // 4. a unit or symbol right after the blank ("measured in ____, C" / "____ (A)"):
+      //    the term's own symbol, or a capital/Greek symbol of up to 3 characters.
+      out = out.replace(/(____)(,\s*|\s*\(\s*)([A-ZΑ-Ωµ][a-zA-Z]?\d?|[A-Za-z]{1,3})(?=\s*[),.;:]|\s*$)(?!,\s*[A-Z](?:\s*,|\s+and\b))/g,
+        (m0, b, sep, x) => (x === sym || /^[A-ZΑ-Ωµ][a-z]?\d?$/.test(x) || /^[A-Z]{1,3}$/.test(x)) ? b + sep + '__' : m0);
       return out.replace(/(____)(?:[\s\-]*____)+/g, '____');
     };
   };
@@ -1648,6 +1653,15 @@
     const r = nav.getBoundingClientRect();
     return r.height && getComputedStyle(nav).position === 'fixed' ? Math.max(0, r.bottom) : 0;
   }
+  // Phone play mode: during a run, a phone shows only a one-line title above
+  // the game (rules paragraph, meta line and badge hidden; CSS in arcade.css).
+  // Only removes descriptive text: no heights, no overflow clamps.
+  Arcade.playMode = function (on) {
+    try { document.body.classList.toggle('ar-play', !!on); } catch (e) {}
+  };
+  Arcade.isPhone = function () {
+    try { return window.matchMedia('(max-width: 760px)').matches; } catch (e) { return false; }
+  };
   Arcade.bringIntoView = function (els, o) {
     try {
       const list = (Array.isArray(els) ? els : [els]).filter(el => el && el.isConnected && !inFixedLayer(el));

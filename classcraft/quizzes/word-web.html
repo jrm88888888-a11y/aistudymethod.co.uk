@@ -10,7 +10,7 @@
 <style>
   /* ── SVG web stage ── */
   .ww-stage { background:var(--ar-grad-card); border:1px solid var(--ar-border); border-radius:var(--ar-r-lg); padding:8px; box-shadow:0 18px 50px rgba(0,0,0,0.45); margin-bottom:16px; }
-  .ww-stage svg { display:block; width:100%; height:auto; }
+  .ww-stage svg { display:block; width:100%; height:auto; max-height:62vh; }
   .ww-guide { stroke:rgba(255,255,255,0.10); stroke-width:1.5; stroke-dasharray:4 7; }
   .ww-link { stroke:var(--ar-mint); stroke-width:2.5; fill:none; transition:stroke-dashoffset 0.7s ease; filter:drop-shadow(0 0 5px rgba(0,255,163,0.65)); }
   .ww-spoke { cursor:pointer; transform-box:fill-box; transform-origin:center; }
@@ -59,6 +59,23 @@
   .ww-defrow span { font-size:13px; color:var(--ar-text2); line-height:1.5; }
   .ww-retry-tag { font-family:var(--ar-mono); font-size:10px; color:var(--ar-gold); font-weight:600; margin-left:6px; }
 
+  /* Phone (Oct 2026): web, question, options and Lock it in on one screen.
+     The web shrinks (the SVG keeps its shape), options go 2×2, the HUD hides
+     during the run (the web itself shows progress) — nothing is height-clamped
+     except the SVG's own max-height. */
+  @media (max-width: 760px) {
+    body.ar-play .ww-stage { padding:4px; margin-bottom:10px; }
+    body.ar-play .ww-stage svg { max-height:30vh; }
+    body.ar-play #wwHud { display:none; }
+    body.ar-play #wwQuiz { padding:12px 12px 14px; }
+    body.ar-play #wwQuiz .ar-label { margin-bottom:4px; }
+    body.ar-play #wwQuizQ { font-size:15px !important; margin:0 0 8px; }
+    body.ar-play .ww-def { font-size:14px; line-height:1.45; padding:9px 11px; margin-bottom:10px; }
+    body.ar-play .ww-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+    body.ar-play .ww-options .ar-tile { padding:10px 10px; font-size:13.5px; line-height:1.3; min-height:48px; }
+    body.ar-play .ww-key { display:none; }
+    body.ar-play .ww-idle { padding:4px 0; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .ww-link, .ww-spoke circle { transition:none; }
     .ww-spoke.pop, .ww-spoke.shake, .ww-hub.pulse { animation:none; }
@@ -325,6 +342,7 @@
     chosenTerm = null;
     spokeEls.forEach((el, j) => el.g.classList.toggle('active', j === i));
     renderQuiz();
+    Arcade.bringIntoView && Arcade.bringIntoView(document.getElementById('wwQuiz'));   // question + Lock it in on screen
     announce(`Spoke ${i + 1} selected. ${sp.variant === 0 ? 'Which term has this definition?' : 'Which term means:'} ${sp.clue.replace(/_{2,}/g, 'blank')}`);
   }
 
@@ -484,9 +502,13 @@
       // Linger on the feedback, then invite the next spoke.
       setTimeout(() => {
         if (state.done || activeSpoke != null) return; // player already moved on
-        renderQuiz();
         const next = state.spokes.findIndex((s, j) => s.status === 'empty' && j > i);
-        const tgt = spokeEls[next !== -1 ? next : state.spokes.findIndex(s => s.status === 'empty')];
+        const nextIdx = next !== -1 ? next : state.spokes.findIndex(s => s.status === 'empty');
+        // Phones: the web sits above the question, so open the next spoke for
+        // the player instead of asking them to scroll up and tap it.
+        if (Arcade.isPhone && Arcade.isPhone() && nextIdx !== -1) { activateSpoke(nextIdx); return; }
+        renderQuiz();
+        const tgt = spokeEls[nextIdx];
         if (tgt) tgt.g.focus();
       }, REDUCED ? 400 : 1600);
     }
@@ -503,6 +525,7 @@
 
   /* ── end of game ── */
   function finishGame() {
+    Arcade.playMode && Arcade.playMode(false);
     state.done = true;
     state.elapsed = Date.now() - state.t0;
     if (svgRoot) svgRoot.classList.add('ww-complete');
@@ -598,7 +621,7 @@
     root.innerHTML = `
       ${renderHeader()}
       <div class="ww-stage" id="wwStage"></div>
-      <div class="ar-hud">
+      <div class="ar-hud" id="wwHud">
         <div class="ar-hud-stat">Score <b id="wwScoreNum">0</b></div>
         <div class="ar-hud-stat">First-try <b id="wwFirstTryNum">0/6</b></div>
         <div class="ar-hud-stat gold">Spokes <b id="wwSpokeNum">0/6</b></div>
@@ -608,6 +631,7 @@
     `;
     document.getElementById('wwStage').appendChild(buildWeb());
     renderQuiz();
+    Arcade.playMode && Arcade.playMode(true);
   }
 
   // Keyboard: 1–4 pick an option, Enter confirms (when the MCQ is live).

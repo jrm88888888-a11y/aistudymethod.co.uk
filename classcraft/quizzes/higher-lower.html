@@ -36,6 +36,7 @@
   .hl-cashout { display:block; margin-top:16px; text-align:center; font-family:var(--ar-mono); font-size:10.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ar-muted); background:none; border:none; cursor:pointer; text-decoration:underline; text-underline-offset:3px; width:100%; }
   .hl-cashout:hover { color:var(--ar-cyan); }
   .hl-cashout:focus-visible { outline:2px solid var(--ar-cyan); outline-offset:2px; }
+  .hl-cashout:disabled { opacity:0.35; cursor:default; text-decoration:none; }
   /* ---- JACKPOT VAULT (signature event) ---- */
   .hl-vault { display:flex; align-items:center; gap:10px; background:var(--ar-card); border:1px solid var(--ar-border-hi); border-radius:14px; padding:9px 14px; margin:2px 0 12px; }
   .hl-vault-label { font-family:var(--ar-mono); font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--ar-gold); white-space:nowrap; }
@@ -495,7 +496,7 @@
       if (dir === 'higher') stats.overshoot++; else stats.undershoot++;
     }
 
-    ['btnHigher', 'btnLower'].forEach(id => { document.getElementById(id).disabled = true; });
+    ['btnHigher', 'btnLower', 'btnCashout'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });   // no cash-out mid-reveal
 
     const cardR = root.querySelector('#colR .hl-card');
     cardR.classList.add('revealed');
@@ -504,6 +505,7 @@
     if (right.unit) numEl.insertAdjacentHTML('afterend', `<span class="hl-unit">${E(right.unit)}</span>`);
 
     countUp(numEl, right, left.value, () => {
+      { const cb = document.getElementById('btnCashout'); if (cb) cb.disabled = false; }
       const revealed = fmt(right.value, right) + (right.unit ? ' ' + right.unit : '');
       const take = takeaway(left, right, isHigher);
       const fb = document.getElementById('fb');
@@ -684,7 +686,7 @@
     const correct = (dir === 'higher') === isHigher;
     if (!correct) noteMiss(base, card, isHigher);
 
-    ['btnHigher', 'btnLower'].forEach(id => { document.getElementById(id).disabled = true; });
+    ['btnHigher', 'btnLower', 'btnCashout'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });   // no cash-out mid-reveal
     const cardR = root.querySelector('#colR .hl-card');
     cardR.classList.add('revealed');
     if (!correct) cardR.classList.add('busted');
@@ -692,6 +694,7 @@
     if (card.unit) numEl.insertAdjacentHTML('afterend', `<span class="hl-unit">${E(card.unit)}</span>`);
 
     countUp(numEl, card, base.value, () => {
+      { const cb = document.getElementById('btnCashout'); if (cb) cb.disabled = false; }
       const take = takeaway(base, card, isHigher);
       const fb = document.getElementById('fb');
       const decision = document.getElementById('decision');
@@ -803,6 +806,7 @@
   }
 
   function cashOut() {
+    if (this && this.disabled) return;
     Arcade.sfx.click();
     bankPot(false);
     finish(false);

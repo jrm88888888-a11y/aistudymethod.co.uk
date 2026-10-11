@@ -157,6 +157,44 @@
     #cab-wrap { height: min(52vh, 460px); }
   }
   @media (max-width: 480px) { .deck-move { width: 58px; } #btn-drop { font-size: 19px; } }
+
+  /* Phone rhythm (Oct 2026): ask → drop → ask. The question rides up as a
+     bottom sheet; once it's answered the sheet drops to a slim tab so the
+     whole cabinet is free to play, and the next question comes up when the
+     magazine is spent (or on a tap of the tab). The clock never runs while
+     the sheet is down. */
+  #qp-tab { display: none; }
+  @media (max-width: 760px) {
+    body.pu-phone #cab-wrap { height: max(300px, min(62vh, calc(100dvh - 300px))); min-height: 0; }
+    body.pu-phone .pu-deck { margin: 8px 0 2px; gap: 8px; }
+    body.pu-phone .deck-move { min-height: 52px; width: 54px; font-size: 22px; }
+    body.pu-phone #btn-drop { min-height: 52px; }
+    body.pu-phone .pu-stage { padding-bottom: 64px; }
+    body.pu-phone #qp {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; margin: 0;
+      overflow: auto; overscroll-behavior: contain;
+      border-radius: 16px 16px 0 0; border-bottom: none;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      box-shadow: 0 -16px 44px rgba(0,0,0,0.6);
+      transform: translateY(0); transition: transform 0.3s cubic-bezier(0.2,1.1,0.3,1);
+    }
+    body.pu-phone.pu-sheet-down #qp { transform: translateY(105%); }
+    body.pu-phone #qp { max-height: 80vh; padding-top: 10px; gap: 6px; }
+    body.pu-phone #qp .qp-ask { display: none; }
+    body.pu-phone #qp .qp-term { font-size: 16px; }
+    body.pu-phone #qp .qp-opts { gap: 6px; }
+    body.pu-phone #qp .qp-opt { font-size: 13px; line-height: 1.38; padding: 8px 10px; }
+    body.pu-phone #qp .qp-opt .k { display: none; }
+    body.pu-phone.pu-sheet-down #qp-tab {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; min-height: 54px;
+      padding: 8px 14px calc(8px + env(safe-area-inset-bottom)); border: none; border-top: 2px solid rgba(126,109,255,0.55);
+      background: rgba(10,8,32,0.97); color: var(--ar-text); font-family: var(--ar-font); font-weight: 700; font-size: 15px;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.5); cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    body.pu-phone.pu-sheet-down #qp-tab:disabled { cursor: default; color: var(--ar-text2); }
+    body.pu-phone #qp-tab .up { color: var(--ar-cyan); }
+  }
 </style>
 <link rel="canonical" href="https://aistudymethod.com/classcraft/quizzes/coin-pusher.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -1054,6 +1092,34 @@
     return opts;
   }
 
+  /* ---- phone sheet: ask → drop → ask (see CSS) ---- */
+  const phoneSheet = () => !reel && !!(Arcade.isPhone && Arcade.isPhone());
+  let pendingNext = false, sheetTimer = null;
+  function sheetUp() { document.body.classList.remove('pu-sheet-down'); }
+  function sheetDown(html, tappable) {
+    const tab = document.getElementById('qp-tab');
+    if (tab) { tab.innerHTML = html; tab.disabled = !tappable; }
+    document.body.classList.add('pu-sheet-down');
+  }
+  function openNext() {
+    if (!pendingNext || state !== 'playing') return;
+    pendingNext = false;
+    nextQuestion();
+    sheetUp();
+  }
+  // After a correct answer: on phones, park the question and free the cabinet.
+  function afterAnswer() {
+    if (!phoneSheet()) { nextQuestion(); return; }
+    if (!qQueue.length) { nextQuestion(); return; }       // exhaustion has its own tab
+    pendingNext = true;
+    sheetDown('🪙 Drop your coin' + (magazine > 1 ? 's (' + magazine + ')' : '') + ' <span class="up">· Next question ▴</span>', true);
+  }
+  // The next question comes up by itself once the magazine is spent and the
+  // last coin has had a moment to land.
+  function sheetTick() {
+    if (pendingNext && magazine <= 0 && simTime - lastDropTime > 1.4) openNext();
+  }
+
   function nextQuestion() {
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     if (!qQueue.length) { onQuizExhausted(); return; }
@@ -1138,7 +1204,7 @@
       Arcade.sfx.correct(streak);
       Arcade.streakCall && Arcade.streakCall(streak);
       announce.textContent = 'Correct. ' + (golden ? 'Golden coin minted. ' : 'Coin minted. ') + 'Magazine ' + magazine + '.';
-      setTimeout(nextQuestion, reduced ? 260 : 520);
+      setTimeout(afterAnswer, reduced ? 260 : 520);
     } else {
       streak = 0;
       Arcade.sfx.wrong();
@@ -1180,6 +1246,7 @@
         'Drop what is left in the magazine and shove the pile over the ledge before the machine settles.</p>' +
       '</div>';
     announce.textContent = 'All questions answered. Spend your remaining coins.';
+    if (phoneSheet()) { pendingNext = false; sheetDown('🏁 Questions done — drop the rest and push the pile!', false); }
     lastDropTime = simTime;                   // grace window before the run can settle out
   }
 
@@ -1189,6 +1256,9 @@
   function endGame() {
     if (state === 'ended') return;
     state = 'ended';
+    if (sheetTimer) { clearInterval(sheetTimer); sheetTimer = null; }
+    document.body.classList.remove('pu-sheet-down', 'pu-phone');
+    Arcade.playMode && Arcade.playMode(false);
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     stopLoop();
     const pct = asked ? Math.round((correctCount / asked) * 100) : 0;
@@ -1639,6 +1709,8 @@
     zoneM.addEventListener('pointerdown', e => { e.preventDefault(); dropCoin(); });
     const megaBtn = document.getElementById('btn-mega');
     if (megaBtn) megaBtn.addEventListener('click', fireMega);
+    const tab = document.getElementById('qp-tab');
+    if (tab) tab.addEventListener('click', openNext);
 
     document.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1663,6 +1735,12 @@
      MOUNT
      ====================================================================== */
   function mountGame() {
+    document.body.classList.toggle('pu-phone', phoneSheet());
+    document.body.classList.remove('pu-sheet-down');
+    pendingNext = false;
+    if (sheetTimer) clearInterval(sheetTimer);
+    sheetTimer = setInterval(sheetTick, 300);
+    Arcade.playMode && Arcade.playMode(true);
     root.innerHTML =
       '<div class="ar-badge">V · Push · The Pusher</div>' +
       '<h1 class="ar-title">' + esc(topic) + '</h1>' +
@@ -1687,6 +1765,7 @@
           '</div>' +
           '<div class="pu-quiz">' +
             '<div class="qp" id="qp"></div>' +
+            '<button type="button" id="qp-tab" aria-live="polite"></button>' +
             '<div id="mega-row">' +
               '<div class="mp-label">MEGA<br>PUSH</div>' +
               '<div class="mp-segs">' +

@@ -41,6 +41,23 @@
   .dg-chip.dim { opacity:0.3; border-color:var(--ar-pink); animation:arShakeX 0.4s ease; }
   .dg-chip.used { opacity:0.22; border-style:dashed; }
   .dg-chip.flash { border-color:var(--ar-gold); background:var(--ar-gold-dim); box-shadow:0 0 18px rgba(255,214,10,0.4); }
+  /* Phone and short screens (Oct 2026): diagram and labels on one screen.
+     The stage's WIDTH is capped from the diagram's aspect ratio in JS (so the
+     dot overlay stays aligned — never cap the SVG's height on its own). The
+     label tray sticks to the bottom; used labels drop out on phones. */
+  .dg-stage { margin:0 auto; }
+  .dg-lead { stroke:rgba(255,255,255,0.55); stroke-width:1; stroke-dasharray:2 2; }
+  .dg-bank { position:sticky; bottom:0; z-index:5; padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+    background:linear-gradient(to bottom, rgba(10,10,22,0.0), var(--ar-bg) 14px); }
+  @media (max-width: 760px) {
+    body.ar-play .ar-hud { margin-bottom:6px; }
+    body.ar-play #stageCard { padding:8px 8px 6px; }
+    body.ar-play #targetLabel { font-size:10px; margin-bottom:4px; }
+    .dg-bank { margin:8px -4px 0; padding-left:4px; padding-right:4px; gap:6px; }
+    .dg-chip { min-height:40px; padding:7px 10px; font-size:12.5px; flex:1 1 40%; }
+    body.ar-play .dg-chip.used { display:none; }
+    body.ar-play .ar-kbd-hint { display:none; }
+  }
   .dg-fly { position:fixed; z-index:999; pointer-events:none; padding:9px 13px; border-radius:12px;
     background:var(--ar-cyan-dim); border:2px solid var(--ar-cyan); color:var(--ar-cyan);
     font-family:var(--ar-font); font-weight:700; font-size:13px; max-width:60vw; overflow-wrap:anywhere;
@@ -240,16 +257,66 @@ const GAME_DATA = {"ORGANS":[{"id":"evaporation","name":"Evaporation","dot":[20,
     if (k) k.textContent = st.streak;
   }
 
+  // Cap the stage's width so the diagram and the label tray fit one screen;
+  // the dot/tag overlays are % of the stage, so they stay aligned.
+  function fitStage() {
+    try {
+      const stage = document.getElementById('stage');
+      const svg = stage.querySelector('svg:not(.dg-lines)');
+      const vb = svg && svg.viewBox && svg.viewBox.baseVal;
+      let ratio = vb && vb.width && vb.height ? vb.width / vb.height : 0;
+      if (!ratio && svg) { const r = svg.getBoundingClientRect(); ratio = r.height ? r.width / r.height : 0; }
+      if (!ratio) return;
+      // Height left between the stage's top and the label tray (measured from
+      // the top of the page, as the board appears), within 220 px – 62% of
+      // the screen; the stage's width follows from the diagram's shape.
+      const vh = document.documentElement.clientHeight || window.innerHeight;
+      const top = stage.getBoundingClientRect().top + window.scrollY;
+      const trayH = (Arcade.isPhone && Arcade.isPhone()) ? 150 : 170;   // the tray shows up to 5 labels
+      const capH = Math.max(220, Math.min(vh * 0.62, vh - top - trayH - 16));
+      stage.style.maxWidth = Math.round(capH * ratio) + 'px';
+    } catch (e) { /* layout aid only */ }
+  }
+
+  // Dots closer than 24 px (Nucleus / Nucleolus) are nudged apart; a dashed
+  // leader joins each moved dot to the exact spot it marks.
+  function spreadDots() {
+    const r = document.getElementById('stage').getBoundingClientRect();
+    const W = r.width || 300, H = r.height || 300, MIN = 24;
+    PARTS.forEach(p => { p.show = p.dot.slice(); });
+    for (let pass = 0; pass < 3; pass++) {
+      for (let i = 0; i < PARTS.length; i++) for (let j = 0; j < i; j++) {
+        const a = PARTS[i].show, b = PARTS[j].show;
+        let dx = (a[0] - b[0]) / 100 * W, dy = (a[1] - b[1]) / 100 * H;
+        const d = Math.hypot(dx, dy);
+        if (d >= MIN) continue;
+        if (d < 1) { dx = 1; dy = 0; }
+        const k = (MIN - d) / Math.max(1, Math.hypot(dx, dy));
+        a[0] = Math.max(3, Math.min(97, a[0] + dx * k / W * 100));
+        a[1] = Math.max(3, Math.min(97, a[1] + dy * k / H * 100));
+      }
+    }
+  }
+
   function buildBoard() {
     dotsC.innerHTML = '';
     tagsC.innerHTML = '';
     linesSvg.innerHTML = '';
+    fitStage();
+    spreadDots();
     PARTS.forEach(p => {
+      if (p.show[0] !== p.dot[0] || p.show[1] !== p.dot[1]) {
+        const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        ln.setAttribute('x1', p.dot[0]); ln.setAttribute('y1', p.dot[1]);
+        ln.setAttribute('x2', p.show[0]); ln.setAttribute('y2', p.show[1]);
+        ln.setAttribute('class', 'dg-lead'); ln.setAttribute('vector-effect', 'non-scaling-stroke');
+        linesSvg.appendChild(ln);
+      }
       const d = document.createElement('div');
       d.className = 'dg-dot';
       d.id = 'dot-' + p.id;
-      d.style.left = p.dot[0] + '%';
-      d.style.top = p.dot[1] + '%';
+      d.style.left = p.show[0] + '%';
+      d.style.top = p.show[1] + '%';
       d.textContent = p.num;
       dotsC.appendChild(d);
     });
@@ -286,6 +353,7 @@ const GAME_DATA = {"ORGANS":[{"id":"evaporation","name":"Evaporation","dot":[20,
       goldenNext: false, goldenTurn: false, goldCount: 0,
     };
     st.queue = st.order.slice();
+    Arcade.playMode && Arcade.playMode(true);
     buildBoard();
     syncHud();
     setTarget();
@@ -540,6 +608,7 @@ const GAME_DATA = {"ORGANS":[{"id":"evaporation","name":"Evaporation","dot":[20,
 
   function finish() {
     st.phase = 'done';
+    Arcade.playMode && Arcade.playMode(false);
     if (st.timer) st.timer.stop();
     const n = st.order.length;
     const tally = { first: 0, second: 0, revealed: 0, redeemed: 0 };
