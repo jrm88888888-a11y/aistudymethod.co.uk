@@ -6,7 +6,7 @@
 <title>Boss Rush — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Survive a three-stage gauntlet where every term you miss comes back as the boss's attack. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   /* ---- Boss Rush specifics ---- */
   .br-hearts { display:inline-flex; gap:3px; align-items:center; }
@@ -148,7 +148,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -239,13 +239,51 @@
     }
     return prev[n];
   }
-  function matchesTerm(input, term) {
-    const a = normalise(input), b = normalise(term);
-    if (!a) return false;
-    if (a === b) return true;
-    if (b.length >= 6 && levenshtein(a, b) <= 1) return true;
-    return false;
+  /* Accepted answers (Oct 2026). Terms carry symbols and glosses the player
+     is never asked for: "Specific heat capacity, c", "Ampere (A)",
+     "Mitosis / cell division". Typing the name itself used to be marked
+     wrong. Accept: the full term; the part before ", symbol"; the term without
+     brackets; a bracketed acronym on its own ("DNA"); either side of "X / Y".
+     Typo allowance scales with length; a leading article and a plural "s"
+     are ignored. */
+  function termMain(term) {
+    return String(term || '').split(/\s*,\s*/)[0].replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
   }
+  function acceptedAnswers(term) {
+    const t = String(term || '');
+    const out = new Set([t, termMain(t), t.replace(/\s*\([^)]*\)\s*/g, ' ')]);
+    (t.match(/\(([^)]*)\)/g) || []).forEach(b => {
+      const inner = b.slice(1, -1).trim();
+      if (/^[A-Z][A-Za-z0-9]{1,6}$/.test(inner) && /[A-Z].*[A-Z]|^[A-Z]{2,}/.test(inner)) out.add(inner);   // acronyms only
+    });
+    termMain(t).split(/\s*\/\s*/).forEach(x => out.add(x));
+    return Array.from(out).map(normalise).filter(x => x.length >= 2);
+  }
+  function tolerance(n) { return n >= 18 ? 3 : n >= 11 ? 2 : n >= 6 ? 1 : 0; }
+  function matchesTerm(input, term) {
+    let a = normalise(input).replace(/^(the|a|an) /, '');
+    if (!a) return false;
+    return acceptedAnswers(term).some(b => {
+      b = b.replace(/^(the|a|an) /, '');
+      if (a === b) return true;
+      // singular typed for a plural term ("ion" for "Ions") — but "mas" is
+      // not the singular of "mass"; and a plural typed for a singular term.
+      if (a.length >= 3 && !/ss$/.test(b) && (a + 's' === b || a + 'es' === b)) return true;
+      if (b.length >= 3 && (a === b + 's' || a === b + 'es')) return true;
+      return levenshtein(a, b) <= tolerance(b.length);
+    });
+  }
+  // A term you can type on a phone keyboard: no equations, Greek letters,
+  // superscripts or subscripts in the part we ask for, and not an essay.
+  function typeable(c) {
+    const m = termMain(c.term);
+    if (!m || m.length > 40 || /=/.test(m)) return false;
+    if (/[^A-Za-z0-9 '’,()\/&.+\-–]/.test(m.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))) return false;
+    return normalise(m).length >= 2;
+  }
+  const typeConcepts = concepts.filter(typeable);
+  const typePool = typeConcepts.length >= 2 ? typeConcepts : concepts;   // never strand the boss
+
   // Debug hooks for automated testing only (do not affect play).
   try { window.__brMatch = matchesTerm; } catch (e) {}
   try { window.__brState = function () { return S; }; } catch (e) {}
@@ -283,8 +321,8 @@
   // Stage 2: definition shown, type the term.
   function buildStage2(used) {
     // Prefer concepts not already drilled in stage 1, then backfill.
-    const fresh = concepts.filter(c => !used.has(c.term));
-    const pool = fresh.length >= S2_ROUNDS ? fresh : fresh.concat(concepts.filter(c => used.has(c.term)));
+    const fresh = typePool.filter(c => !used.has(c.term));
+    const pool = fresh.length >= S2_ROUNDS ? fresh : fresh.concat(typePool.filter(c => used.has(c.term)));
     return pick(pool, S2_ROUNDS).map(c => ({ term: c.term, def: c.def }));
   }
 
@@ -299,10 +337,11 @@
       if (seen.has(k)) return;
       seen.add(k); deck.push({ term: item.term, def: item.def });
     };
-    missed.forEach(add);
-    const unseen = concepts.filter(c => !tested.has(c.term)).sort((a, b) => b.def.length - a.def.length);
+    const typeSet = new Set(typePool.map(c => c.term));
+    missed.filter(m => typeSet.has(m.term)).forEach(add);   // the boss attacks by typed term
+    const unseen = typePool.filter(c => !tested.has(c.term)).sort((a, b) => b.def.length - a.def.length);
     unseen.forEach(add);
-    concepts.slice().sort((a, b) => b.def.length - a.def.length).forEach(add);
+    typePool.slice().sort((a, b) => b.def.length - a.def.length).forEach(add);
     return deck;
   }
 
@@ -634,6 +673,8 @@
 
     const input = document.getElementById('ans');
     const hint = document.getElementById('hint');
+    // Reading-time setting applies (the 20 s floor covers the typing).
+    const roundMs = cfg.timed ? Arcade.readMs([item.def], BOSS_MS) : 0;
     let phase = 'answer';
     const roundStart = performance.now();
     input.focus({ preventScroll: true });
@@ -663,13 +704,13 @@
     // First-letter + length hint after 8s of hesitation.
     hintTimer = setTimeout(() => {
       if (phase !== 'answer') return;
-      const clean = normalise(item.term);
-      const first = (item.term.trim()[0] || '').toUpperCase();
+      const clean = normalise(termMain(item.term));
+      const first = (termMain(item.term)[0] || '').toUpperCase();
       hint.textContent = 'Hint: ' + first + ' · ' + clean.replace(/ /g, '').length + ' letters';
     }, HINT_MS);
 
     if (cfg.timed) {
-      timerCtl = Arcade.timer(document.getElementById('tfill'), BOSS_MS, {
+      timerCtl = Arcade.timer(document.getElementById('tfill'), roundMs, {
         onEnd: () => { if (phase === 'answer') submit(true); },
       });
     }
@@ -677,7 +718,10 @@
     function submit(timedOut) {
       if (phase !== 'answer') return;
       phase = 'verdict';
-      const remaining = (cfg.timed && timerCtl) ? (timedOut ? 0 : timerCtl.remaining) : 0;
+      // Speed bonus is scored on the share of the clock left, scaled back to
+      // BOSS_MS, so a longer (or no) clock can never inflate it.
+      const remaining = (cfg.timed && timerCtl && !timedOut && isFinite(roundMs) && roundMs > 0)
+        ? Math.max(0, Math.min(1, timerCtl.remaining / roundMs)) * BOSS_MS : 0;
       const elapsedMs = performance.now() - roundStart;
       clearTimers();
       const correct = !timedOut && matchesTerm(input.value, item.term);

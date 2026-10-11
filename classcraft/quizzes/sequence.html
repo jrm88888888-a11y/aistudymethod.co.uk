@@ -6,7 +6,7 @@
 <title>Sort the Sequence — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Put the steps in the right order against the clock. A free GCSE, A-Level and IB revision game across every subject and exam board. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   .seq-list { list-style:none; margin:0 0 18px; padding:0; display:flex; flex-direction:column; gap:10px; }
   .seq-item { display:flex; align-items:stretch; min-height:56px; background:var(--ar-card); border:2px solid var(--ar-border); border-radius:var(--ar-r); cursor:grab; user-select:none; -webkit-user-select:none; transition:border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease; position:relative; width:100%; color:var(--ar-text); }
@@ -24,6 +24,7 @@
   .seq-item.wrong .seq-pos { color:var(--ar-pink); background:var(--ar-pink-dim); border-color:rgba(255,46,136,0.4); }
   .seq-body { flex:1 1 auto; padding:10px 14px 10px 12px; display:flex; flex-direction:column; justify-content:center; min-width:0; }
   .seq-term { font-size:15px; font-weight:700; line-height:1.35; }
+  .seq-def[hidden] { display:none !important; }
   .seq-def { font-size:12.5px; color:var(--ar-text2); line-height:1.45; margin-top:2px; }
   .seq-tag { align-self:center; flex:0 0 auto; margin-right:14px; font-family:var(--ar-mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; font-weight:700; white-space:nowrap; }
   .seq-item.locked .seq-tag { color:var(--ar-mint); }
@@ -90,7 +91,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -212,6 +213,22 @@
     return;
   }
 
+  /* The order used to be printed on the cards: years in terms ("Hooke
+     (1665)"), and in authored lists the definition usually states the ordering
+     key itself ("1926: …", "3 carbons", "newest here", "the smallest unit",
+     "first", "final" — ~1,750 of 6,191 items, measured 10 Oct 2026). Sorting
+     was reading, not knowing. While sorting, a card shows its TERM only, with
+     dates, step numbers and ordinal words masked; the full term and its
+     definition appear once the card locks, and on every card at the end. */
+  const MASK = '····';
+  function maskOrder(t) {
+    t = String(t || '')
+      .replace(/\b(?:c\.\s*)?(?:AD\s*)?(?:1\d{3}|20\d{2})s?(?:\s*[–—-]\s*(?:\d{4}|\d{2})s?)?\b|\bAD\s*\d{1,4}\b|\bc\.\s*\d{3,4}\b|\b\d{1,4}\s*BCE?\b/g, MASK)
+      .replace(/^\s*(?:(?:step|stage|phase)\s*)?[1-9]\s*[.):–-]\s*/i, '')
+      .replace(/\b(step|stage|phase)\s*[1-9]\b/gi, '$1 ' + MASK)
+      .replace(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth)(ly)?\b/gi, MASK);
+    return t.replace(/\(\s*(····\s*)+\)/g, '(' + MASK + ')').replace(/\s{2,}/g, ' ').trim();
+  }
   // ITEMS[i].order = correct rank (0 = first / earliest / smallest).
   const ITEMS = built.items.map((it, i) => ({
     term: it.term,
@@ -219,6 +236,14 @@
     order: i,
     year: it.year,
   }));
+  ITEMS.forEach(it => { it.mTerm = maskOrder(it.term) || it.term; });
+  function unmask(card) {
+    const it = ITEMS.find(x => x.order === +card.dataset.order);
+    if (!it) return;
+    const t = card.querySelector('.seq-term'), d = card.querySelector('.seq-def');
+    if (t) t.textContent = it.term + (it.year && it.term.indexOf(String(it.year)) < 0 ? ' (' + it.year + ')' : '');
+    if (d) { d.textContent = it.def; d.hidden = false; }
+  }
   const N = ITEMS.length;
   const BEST_KEY = 'aism-seq-best:' + stem;
 
@@ -265,7 +290,7 @@
     return `
       <div class="ar-badge">V · Verify · Sort the Sequence</div>
       <h1 class="ar-title">${esc(topic)}</h1>
-      <p class="ar-sub">Drag everything into the right order, then hit check. Nail it first try for full points — anything wrong gets ONE second-wind fix at half credit.</p>
+      <p class="ar-sub">Drag everything into the right order, then hit check — each card explains itself once it locks. Nail it first try for full points — anything wrong gets ONE second-wind fix at half credit.</p>
       <div class="ar-meta">${esc([level, subj].filter(Boolean).join(' · '))} · ${esc(metaTail)}</div>
     `;
   }
@@ -294,8 +319,8 @@
               <span class="seq-handle" aria-hidden="true">⋮⋮</span>
               <span class="seq-pos" aria-hidden="true"></span>
               <div class="seq-body">
-                <div class="seq-term">${esc(it.term)}</div>
-                ${it.def ? `<div class="seq-def">${esc(it.def)}</div>` : ''}
+                <div class="seq-term">${esc(it.mTerm)}</div>
+                ${it.def ? `<div class="seq-def" hidden></div>` : ''}
               </div>
               <span class="seq-tag" aria-hidden="true"></span>
             </li>
@@ -454,6 +479,7 @@
           c.setAttribute('tabindex', '-1');
           c.setAttribute('aria-disabled', 'true');
           c.querySelector('.seq-tag').textContent = '✓ locked';
+          unmask(c);
           Arcade.sfx.correct(k + 1);
         }, k * 130);
       });
@@ -507,6 +533,7 @@
           p.c.setAttribute('tabindex', '-1');
           p.c.setAttribute('aria-disabled', 'true');
           p.c.querySelector('.seq-tag').textContent = p.ok ? '+50 second wind' : '→ ' + (+p.c.dataset.order + 1);
+          unmask(p.c);
         }, k * 140);
       });
 

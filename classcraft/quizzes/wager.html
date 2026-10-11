@@ -6,7 +6,7 @@
 <title>Wager — Free Revision Quiz Game — AI Study Method</title>
 <meta name="description" content="Stake points on what you know before the options appear. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   /* Wager-specific layer on top of arcade.css */
   .wg-chips { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-bottom:18px; }
@@ -91,7 +91,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -276,8 +276,10 @@
       ${dotsHtml()}
       ${hudHtml()}
       <div class="ar-card">
+        ${Arcade.figureHtml(round.src)}
+        <p class="ar-prompt" id="wg-stem">${E(round.q)}</p>
         <div id="stake-phase">
-          <div class="ar-label">Place your stake — before you see the choices</div>
+          <div class="ar-label">How sure are you? Stake it — the choices appear after</div>
           ${mystery ? `
           <div class="wg-mystery" id="mystery-banner" role="status">
             <span class="m-ico">🎁</span>
@@ -299,9 +301,7 @@
 
         <div id="answer-phase" hidden>
           <span class="ar-pill gold" id="stake-tag"></span>
-          ${Arcade.figureHtml(round.src)}
-          <p class="ar-prompt" style="margin-top:12px">${E(round.q)}</p>
-          <div class="wg-stmts ar-stagger" role="radiogroup" aria-label="Answer options">
+          <div class="wg-stmts ar-stagger" role="radiogroup" aria-label="Answer options" style="margin-top:12px">
             ${round.options.map((o, i) => `
               <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">
                 ${E(o.text)}
@@ -321,7 +321,9 @@
       // Telegraph the pot before any chip is touched — earned suspense.
       Arcade.flashMsg('🎁 MYSTERY POT', '#ffd60a');
       Arcade.sfx.heartbeat();
-      announce.textContent = 'Mystery pot round. The payout multiplier is hidden — one and a half, two, or three times your stake — revealed after you answer. Place your stake.';
+      announce.textContent = 'Mystery pot round. The payout multiplier is hidden — one and a half, two, or three times your stake — revealed after you answer. Question: ' + round.q + ' Place your stake.';
+    } else {
+      announce.textContent = 'Round ' + (state.idx + 1) + '. Question: ' + round.q + ' Place your stake; the choices appear after.';
     }
 
     // ---------- Stake phase ----------
@@ -353,7 +355,7 @@
         ? '🔥 ALL IN — ' + round.stake + ' on the table'
         : '🪙 Stake: ' + round.stake) + (mystery ? ' · 🎁 pot ×?' : '');
       if (chosenChip.allin) { tag.className = 'ar-pill bad'; }
-      announce.textContent = 'Stake confirmed: ' + round.stake + '. Question: ' + round.q;
+      announce.textContent = 'Stake confirmed: ' + round.stake + '. Choose your answer.';
       const first = ap.querySelector('.ar-tile');
       if (first) first.focus();
     });
@@ -501,9 +503,14 @@
         <p class="ar-prompt">DOUBLE OR NOTHING 🎲</p>
         <p style="color:var(--ar-text2);font-size:14.5px;line-height:1.55;margin:0 0 4px;">
           Walk away with <strong style="color:var(--ar-gold)">${state.bank}</strong> chips…
-          or answer one final question with your <em>entire bank</em> on the line.
-          Right doubles it. Wrong takes everything.
+          or answer this final question with your <em>entire bank</em> on the line.
+          Right doubles it. Wrong takes everything. The choices appear if you play.
         </p>
+        <div class="wg-final-q">
+          <div class="ar-label" style="margin-top:12px">The final question</div>
+          ${Arcade.figureHtml(rounds[ROUNDS - 1].src)}
+          <p class="ar-prompt" style="font-size:1.05rem">${E(rounds[ROUNDS - 1].q)}</p>
+        </div>
         <div class="wg-finale-btns">
           <button class="ar-btn big hot" id="btn-double">🎲 Double or nothing — risk ${state.bank}</button>
           <button class="ar-btn big ghost" id="btn-bank">🏦 Bank it — walk with ${state.bank}</button>
@@ -511,7 +518,7 @@
         <div class="ar-kbd-hint">Keyboard: D double · B bank</div>
       </div>
     `;
-    announce.textContent = 'Final round. Double or nothing: bank your ' + state.bank + ' chips, or risk them all on one last question.';
+    announce.textContent = 'Final round. Double or nothing: bank your ' + state.bank + ' chips, or risk them all on this question: ' + rounds[ROUNDS - 1].q;
     Arcade.sfx.heartbeat();
 
     document.getElementById('btn-bank').addEventListener('click', () => {

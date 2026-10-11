@@ -105,22 +105,67 @@
   const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
   const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
   const bankItems = ((bank && bank.items) || []).filter(it => it && it.q && it.misconception);
+  /* SAME-SHAPE ROUNDS (Oct 2026). The truths used to be glossary lines
+     ("What does 'Mass, m' mean?") beside one scenario question carrying the
+     misconception — the lie was the card that looked different, callable
+     without knowing any science. Now all three cards are bank questions shown
+     as question → answer: two with their correct answer, one with its
+     researched misconception. Three different questions, so a truth is never
+     the right answer to the lie's own question, and each card has to be
+     judged on its merits. Calculation items (they need working, not reading)
+     and answers that only make sense beside options ("all of the above") are
+     left out of this game. */
+  const OPTION_BOUND_RE = /\b(all|none|both|neither) of (the|these)\b|\b(above|below)\b|^(both|neither|all three)\b/i;
+  /* 44% of correct answers in the deep banks open "No." (the bank asks "Does
+     X …?" to probe a misconception); 0.5% of misconceptions do. Shown as is,
+     two "No." cards would name the third as the lie. Truth cards drop the
+     leading Yes/No and keep the explanation, which answers the question on
+     its own; the feedback still gives the full answer. */
+  const YN_RE = /^\s*(no|yes)\b\s*[.,:;!]?\s*[-–—]?\s*/i;
+  function shownAnswer(it) {
+    const t = String(it.correct).replace(YN_RE, '');
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  const stop = t => { t = String(t || '').trim(); return /[.!?…)\]"'”’]$/.test(t) ? t : t + '.'; };
+  const ttPool = (function () {
+    const seen = new Set(), out = [];
+    bankItems.forEach(it => {
+      if (!it.correct || it.working) return;
+      if (shownAnswer(it).length < 12) return;   // a bare "No." is no claim
+      if (OPTION_BOUND_RE.test(it.correct) || OPTION_BOUND_RE.test(it.misconception)) return;
+      if (String(it.correct).trim().toLowerCase() === String(it.misconception).trim().toLowerCase()) return;
+      const key = String(it.q).trim().toLowerCase();
+      if (seen.has(key)) return;                 // one item per question text
+      seen.add(key); out.push(it);
+    });
+    return out;
+  })();
   // Hard-suppress quality:"low" banks. 96% of KS3 banks are tagged low because
   // the generation pipeline routinely produced over-level content (quantum,
   // spectroscopy, etc.). Without this gate the engine still drew items from
   // them, so KS3 students were seeing A-Level misconceptions.
   const bankIsLowQuality = bank && bank.quality === 'low';
 
-  if (!spec || !bank || bankIsLowQuality || concepts.length < 4 || bankItems.length < 2) {
+  /* Same-shape rounds need a deep bank: with only a handful of questions the
+     same ones recycle, and a question seen as a truth would later give itself
+     away as a lie. Measured 10 Oct 2026: 56 of 1,337 playable topics have
+     ≥12 usable questions (IB DP, checked KS3 Chemistry). Thinner banks keep
+     the older construction — one misconception vs two glossary definitions —
+     until their banks are enlarged. */
+  const SAME_SHAPE_MIN = 12;
+  const sameShape = ttPool.length >= SAME_SHAPE_MIN;
+  const legacyOk = concepts.length >= 4 && bankItems.length >= 2;
+
+  if (!spec || !bank || bankIsLowQuality || (!sameShape && !legacyOk)) {
     root.innerHTML = `
       <div class="ar-badge">V · Verify · Two Truths One Lie</div>
       <h1 class="ar-title">${esc(topic)}</h1>
-      <p class="ar-sub">This game needs a full set of concept definitions plus a bank of researched misconceptions — generic filler wouldn't earn its place on the site. Come back soon.</p>
+      <p class="ar-sub">This game needs a bank of researched questions and misconceptions — generic filler wouldn't earn its place on the site. Come back soon.</p>
       <div class="ar-meta">${esc([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
       <div class="ar-card" style="text-align:center;padding:40px 28px;">
         <div style="font-size:48px;line-height:1;margin-bottom:14px">🕵️</div>
         <h2 style="font-size:1.3rem;margin:0 0 8px">Statements in production</h2>
-        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Two Truths One Lie needs at least four authored concept definitions and two researched misconceptions for this exact topic. That set hasn't been written at the required depth yet.</p>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Two Truths One Lie needs researched questions, each with a checked answer and a real misconception, for this exact topic. That set hasn't been written at the required depth yet.</p>
         <a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>
       </div>
     `;
@@ -182,10 +227,52 @@
     }
   }
 
-  // One extra round, same construction as buildRounds — a real misconception
-  // versus two authored truths. Lightning never recycles thin filler.
-  function buildExtraRound() {
-    const item = Arcade.shuffle(bankItems)[0];
+  /* ---- round construction ---------------------------------------------- */
+  // Same-shape: the lie is one question with its misconception; the truths
+  // are two OTHER questions with their correct answers. An item never appears
+  // in both roles in one game. Misconceptions run shorter than correct
+  // answers (76% of items), so the truths are picked to put the lie at a
+  // random length rank — shortest, middle or longest — with equal odds.
+  const shownAs = new Map();   // item -> 'lie' | 'truth'
+  function pickLie(pref) {
+    const fresh = ttPool.filter(it => !shownAs.has(it));
+    const pool = fresh.length ? fresh : ttPool.filter(it => shownAs.get(it) === 'lie');
+    return (pref && pool.indexOf(pref) >= 0) ? pref : Arcade.shuffle(pool)[0];
+  }
+  function pickTruths(lie) {
+    const L = String(lie.misconception).length;
+    let cands = ttPool.filter(it => it !== lie && shownAs.get(it) !== 'lie');
+    const fresh = cands.filter(it => !shownAs.has(it));
+    if (fresh.length >= 2) cands = fresh;
+    const len = it => shownAnswer(it).length;
+    const shorter = Arcade.shuffle(cands.filter(it => len(it) < L));
+    const longer  = Arcade.shuffle(cands.filter(it => len(it) > L));
+    const rank = Math.floor(Math.random() * 3);   // 0: lie shortest, 1: middle, 2: longest
+    let pick = rank === 0 ? longer.slice(0, 2)
+             : rank === 2 ? shorter.slice(0, 2)
+             : shorter.slice(0, 1).concat(longer.slice(0, 1));
+    if (pick.length < 2) {                         // not enough on one side: closest lengths
+      const rest = cands.filter(it => pick.indexOf(it) < 0)
+        .sort((a, b) => Math.abs(len(a) - L) - Math.abs(len(b) - L));
+      pick = pick.concat(rest).slice(0, 2);
+    }
+    return pick;
+  }
+  function makeRound(pref) {
+    if (!sameShape) return legacyRound(pref);
+    const lie = pickLie(pref);
+    const truths = pickTruths(lie);
+    shownAs.set(lie, 'lie'); truths.forEach(t => shownAs.set(t, 'truth'));
+    const statements = Arcade.shuffle([
+      { lie: true,  prompt: lie.q, claim: lie.misconception, why: lie.why || '', item: lie },
+      { lie: false, prompt: truths[0].q, claim: shownAnswer(truths[0]), item: truths[0] },
+      { lie: false, prompt: truths[1].q, claim: shownAnswer(truths[1]), item: truths[1] },
+    ]);
+    return { statements, lieIdx: statements.findIndex(s => s.lie) };
+  }
+  // Thin banks: one misconception vs two glossary definitions (pre-Oct 2026).
+  function legacyRound(item) {
+    item = item || Arcade.shuffle(bankItems)[0];
     const [c1, c2] = Arcade.shuffle(concepts);
     const statements = Arcade.shuffle([
       { lie: true,  prompt: item.q, claim: item.misconception, why: item.why || '', item },
@@ -194,24 +281,16 @@
     ]);
     return { statements, lieIdx: statements.findIndex(s => s.lie) };
   }
-
-  // Build rounds: each pairs one misconception (the lie) with two
-  // randomly-drawn concept definitions (the truths). Every statement is
-  // shown as a prompt + claim so the lie isn't given away by format.
-  // Hand-written bank items (no `src` marker) lead; MCQ-derived items
+  // Lightning extra round — same construction, never thin filler.
+  function buildExtraRound() { return makeRound(null); }
+  // Hand-written bank items (no `src` marker) lead as lies; MCQ-derived items
   // only backfill the remaining rounds.
   function buildRounds() {
-    const authored = Arcade.shuffle(bankItems.filter(it => !it.src));
-    const derived  = Arcade.shuffle(bankItems.filter(it => it.src));
-    return Arcade.shuffle(authored.concat(derived).slice(0, ROUNDS)).map(item => {
-      const [c1, c2] = Arcade.shuffle(concepts);
-      const statements = Arcade.shuffle([
-        { lie: true,  prompt: item.q, claim: item.misconception, why: item.why || '', item },
-        { lie: false, prompt: `What does “${c1.term}” mean?`, claim: c1.def },
-        { lie: false, prompt: `What does “${c2.term}” mean?`, claim: c2.def },
-      ]);
-      return { statements, lieIdx: statements.findIndex(s => s.lie) };
-    });
+    shownAs.clear();
+    const src = sameShape ? ttPool : bankItems;
+    const authored = Arcade.shuffle(src.filter(it => !it.src));
+    const derived  = Arcade.shuffle(src.filter(it => it.src));
+    return Arcade.shuffle(authored.concat(derived).slice(0, ROUNDS)).map(makeRound);
   }
 
   let rounds, state, timerCtl = null;
@@ -269,10 +348,10 @@
       <div class="ar-card">
         <div class="ar-label">Round ${state.idx + 1} · tap to lock your call</div>
         <div class="ar-prompt">Which one is the lie?</div>
-        ${Arcade.figureHtml(round.statements[round.lieIdx].item)}
         <div class="tt-stmts ar-stagger" role="radiogroup" aria-label="Three statements — pick the lie">
           ${round.statements.map((s, i) => `
             <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">
+              ${Arcade.figureHtml(s.item)}
               <div class="tt-q">${esc(s.prompt)}</div>
               <div class="tt-a">${esc(s.claim)}</div>
               <span class="tt-pill-slot"></span>
@@ -373,8 +452,9 @@
       fb.innerHTML = (correct
         ? `<strong>Caught it. +${pts} pts.</strong> `
         : timedOut
-          ? `<strong>The clock beat you.</strong> The lie was: <em>${esc(lie.claim)}</em>. `
-          : `<strong>That one was true.</strong> The lie was: <em>${esc(lie.claim)}</em>. `)
+          ? `<strong>The clock beat you.</strong> The lie was: <em>${esc(stop(lie.claim))}</em> `
+          : `<strong>That one was true.</strong> The lie was: <em>${esc(stop(lie.claim))}</em> `)
+        + (lie.item && lie.item.correct ? `The right answer: <em>${esc(stop(lie.item.correct))}</em> ` : '')
         + esc(lie.why || '') + Arcade.statementHtml(lie.item);
       announce.textContent = (correct
         ? `Correct — you caught the lie. Plus ${pts} points. `
