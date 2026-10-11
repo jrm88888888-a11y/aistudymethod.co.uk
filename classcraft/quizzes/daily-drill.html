@@ -6,7 +6,7 @@
 <title>Daily Drill — Free Daily Revision Quiz — AI Study Method</title>
 <meta name="description" content="Five questions a day, the same for everyone. A free daily revision quiz for GCSE, A-Level and IB across every subject — build your streak. No login.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   /* Streak strip */
   .dd-streak-strip { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; background: var(--ar-grad-card); border: 1px solid var(--ar-border); border-radius: var(--ar-r); padding: 14px 18px; margin-bottom: 16px; }
@@ -20,6 +20,8 @@
   .dd-day-lbl { font-family: var(--ar-mono); font-size: 8.5px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--ar-muted); text-align: center; margin-top: 4px; }
 
   /* Filters */
+  .dd-level-ask { font-family: var(--ar-mono); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--ar-cyan); margin: 0 0 8px; }
+  .dd-level-ask.quiet { color: var(--ar-muted); text-transform: none; letter-spacing: 0.3px; }
   .dd-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
   .dd-chip { background: var(--ar-card); border: 1.5px solid var(--ar-border); border-radius: 30px; padding: 7px 14px; font-family: var(--ar-mono); font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 600; color: var(--ar-text2); cursor: pointer; transition: all 0.15s ease; }
   .dd-chip:hover { border-color: var(--ar-cyan); color: var(--ar-cyan); }
@@ -93,7 +95,7 @@
 <div class="sr-only" aria-live="polite" id="srLive"></div>
 
 <script src="../evaluate/real-content-ready.js"></script>
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="arcade-icons.js?v=20260718a"></script>
 <script src="share-score.js"></script>
 <script>
@@ -229,9 +231,26 @@
   /* ── URL params + filters ── */
   const params = new URLSearchParams(location.search);
   const subjectFilter = (params.get('subject') || '').toLowerCase().trim();
-  const levelFilter = (params.get('level') || '').toLowerCase().trim();
-
   const LEVELS = ['ks3', 'gcse', 'a-level', 'ibdp'];
+  /* Level (Oct 2026): the Daily used to mix KS3, GCSE, A-Level and IB for
+     everyone. Precedence: ?level= in the URL → the player's own choice on a
+     chip (remembered) → the level of their last arcade game → all levels.
+     levelSource 'none' = we know nothing yet: show the one-time picker. */
+  const DAILY_LEVEL_KEY = 'aism-daily-level';
+  let levelFilter = '', levelSource = 'none';
+  if (params.has('level')) {
+    levelFilter = (params.get('level') || '').toLowerCase().trim(); levelSource = 'url';
+  } else {
+    const saved = LS.get(DAILY_LEVEL_KEY);
+    if (saved) { levelFilter = saved === 'all' ? '' : saved; levelSource = 'saved'; }
+    else {
+      let m = null; try { m = JSON.parse(LS.get('aism-last-mission') || 'null'); } catch (e) {}
+      const ml = m && String(m.level || '').toLowerCase();
+      if (ml && LEVELS.indexOf(ml) >= 0) { levelFilter = ml; levelSource = 'mission'; }
+    }
+  }
+  if (levelFilter === 'all' || (levelFilter && LEVELS.indexOf(levelFilter) < 0)) levelFilter = '';
+
   const LEVEL_LABELS = { 'ks3': 'KS3', 'gcse': 'GCSE', 'a-level': 'A-Level', 'ibdp': 'IBDP' };
   function levelLabel(l) { return LEVEL_LABELS[String(l || '').toLowerCase()] || String(l || '').toUpperCase(); }
   function subjectLabel(s) {
@@ -327,6 +346,11 @@
   });
   const allSubjects = Array.from(subjectsSet).sort();
 
+  // A level we only guessed (from the last game) must not leave a thin pool.
+  if (levelSource === 'mission' &&
+      allStems.filter(s => s.level === levelFilter && (!subjectFilter || s.subject === subjectFilter)).length < 5) {
+    levelFilter = ''; levelSource = 'none';
+  }
   const pool = allStems.filter(s =>
     (!subjectFilter || s.subject === subjectFilter) &&
     (!levelFilter || s.level === levelFilter)
@@ -352,7 +376,7 @@
     return `
       <div class="ar-badge">V · Verify · Daily Drill #${drillNo}</div>
       <h1 class="ar-title">Daily Drill</h1>
-      <p class="ar-sub">Five questions, 15 seconds each. ${scopeLine} One shot — then it locks until tomorrow.</p>
+      <p class="ar-sub">Five questions, at least 15 seconds each — longer questions get more time. ${scopeLine} One shot — then it locks until tomorrow.</p>
       <div class="dd-date">${esc(prettyDate())}</div>
       <div class="ar-meta">${esc(filterDesc())}${metaExtra || ''}</div>
     `;
@@ -413,7 +437,11 @@
     const opts = ['<option value="">All subjects</option>']
       .concat(allSubjects.map(s =>
         `<option value="${esc(s)}"${subjectFilter === s ? ' selected' : ''}>${esc(subjectLabel(s))}</option>`));
+    const ask = levelSource === 'none' && !subjectFilter
+      ? '<div class="dd-level-ask">Which level are you? Pick once — your Daily remembers.</div>'
+      : (levelSource === 'mission' ? '<div class="dd-level-ask quiet">Set to ' + esc(LEVEL_LABELS[levelFilter]) + ' from your last game — tap to change.</div>' : '');
     return `
+      ${ask}
       <div class="dd-filters" role="group" aria-label="Drill filters">
         ${chips.join('')}
         <select class="dd-subject-select" id="subjSelect" aria-label="Filter by subject">${opts.join('')}</select>
@@ -424,13 +452,14 @@
     root.querySelectorAll('.dd-chip').forEach(b => {
       b.addEventListener('click', () => {
         const lvl = b.dataset.level || '';
-        if (lvl === levelFilter) return;
-        location.href = buildUrl(subjectFilter, lvl);
+        LS.set(DAILY_LEVEL_KEY, lvl || 'all');      // the player's choice sticks
+        if (lvl === levelFilter && levelSource !== 'none') return;
+        location.href = buildUrl(subjectFilter, '');  // no ?level=: the saved choice applies
       });
     });
     const sel = document.getElementById('subjSelect');
     if (sel) sel.addEventListener('change', () => {
-      location.href = buildUrl(sel.value, levelFilter);
+      location.href = buildUrl(sel.value, levelSource === 'url' ? levelFilter : '');
     });
   }
 
@@ -450,6 +479,17 @@
     }
     tick();
     countdownInterval = setInterval(tick, 1000);
+  }
+
+  /* The challenge link must open the SAME five: carry the real level and
+     subject. (It used to carry level="Drill #284", parsed from the end-card
+     meta line, and the friend who tapped it got "no drill available".)
+     An empty string = all levels / all subjects (no param is written). */
+  function shareScope() {
+    return {
+      level: levelFilter ? levelLabel(levelFilter) : '',
+      subject: subjectFilter ? subjectLabel(subjectFilter) : '',
+    };
   }
 
   /* ── Share lines (Wordle-style — the feature) ── */
@@ -908,9 +948,12 @@
     return accLine + streakLine;
   }
 
-  /* ── Question flow: tap to answer, 15s soft timer, dramatic reveal ── */
+  /* ── Question flow: tap to answer, reading-sized timer, dramatic reveal ── */
   function renderQuestion() {
     const q = questions[state.idx];
+    // Clock sized to the stem + every option on screen (15 s is the floor).
+    const qMs = Arcade.readMs([q.q, q.options.map(o => o.text)], 15000);
+    const clockLine = isFinite(qMs) ? (qMs / 1000) + 's on the clock' : 'no clock';
     const context = `Q${state.idx + 1} · ${q.subject} ${q.level}` + (q.topic ? ` · ${q.topic}` : '');
     root.innerHTML = `
       ${headerHtml(practice ? ' · Practice replay — not recorded' : ` · Question ${state.idx + 1} of 5`)}
@@ -926,15 +969,15 @@
         <div class="dd-options ar-stagger" role="group" aria-label="Answer options — tap to answer">${q.options.map((o, i) =>
           `<button class="ar-tile" data-idx="${i}" type="button">${esc(o.text)}</button>`).join('')}</div>
         <div id="fb"></div>
-        <div class="ar-kbd-hint">1–${q.options.length} to answer · Enter for next · 15s on the clock</div>
+        <div class="ar-kbd-hint">1–${q.options.length} to answer · Enter for next · ${clockLine}</div>
       </div>
     `;
     wireFilters();
-    announce(`Question ${state.idx + 1} of 5. ${q.subject} ${q.level}${q.topic ? ', ' + q.topic : ''}. ${q.q}. 15 seconds.`);
+    announce(`Question ${state.idx + 1} of 5. ${q.subject} ${q.level}${q.topic ? ', ' + q.topic : ''}. ${q.q}. ${isFinite(qMs) ? (qMs / 1000) + ' seconds.' : 'No clock.'}`);
 
     let done = false;
     if (qTimer) qTimer.stop();
-    qTimer = Arcade.timer(document.getElementById('q-timer'), 15000, {
+    qTimer = Arcade.timer(document.getElementById('q-timer'), qMs, {
       onEnd() { if (!done) settle(null); },
     });
 
@@ -1052,9 +1095,15 @@
         emojiGrid: grid,
         insight: 'Practice reps don’t touch your streak — but they do touch your memory. Every retrieval, scored or not, makes tomorrow’s drill cheaper.',
         share: {
-          bigLabel: 'OUT OF 5',
+          // A practice share is the practice run (rank, score, grid all agree);
+          // the official result, if any, rides in the ribbon.
+          score: state.score,
+          ...shareScope(),
+          bigLabel: 'Daily Drill #' + drillNo + ' · practice',
           total: 5,
           statLine: (official ? official.correct + '/5 official  ·  ' : '') + '🔥 ' + s.streak + '-day streak',
+          shareText: ['📚 Daily Drill #' + drillNo + ' (practice)',
+            grid + ' ' + state.score + '/5 · 🔥 ' + s.streak + '-day streak'].join('\n'),
         },
         shareLines: official
           ? shareLinesFor(official.correct, official.grid || '', s.streak)
@@ -1111,6 +1160,16 @@
       ],
       emojiGrid: grid,
       insight,
+      // The share is today's RESULT (score + grid), with the streak as a
+      // ribbon — it used to send the streak as the score ("Score: 1 · Rank D").
+      share: {
+        score: state.score,
+        total: 5,
+        ...shareScope(),
+        bigLabel: 'Daily Drill #' + drillNo,
+        statLine: '🔥 ' + newStreak + '-day streak',
+        shareText: shareLinesFor(state.score, grid, newStreak).join('\n'),
+      },
       shareLines: shareLinesFor(state.score, grid, newStreak),
       onAgain: startPracticeRun,
     });

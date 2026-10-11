@@ -8,7 +8,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Space Invaders Vocab | Free Revision Game — AI Study Method</title>
 <meta content="Play Space Invaders Vocab — a free revision game for all subjects. Shoot vocab enemies for bonus points. No login required." name="description"/>
-<link href="../quizzes/arcade.css" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
 <style>
     :root {
       --bg:#06060f; --surface:#11112b; --surface2:#181838;
@@ -123,7 +123,8 @@
     /* ── Question overlay ── */
     .overlay{display:none;position:fixed;inset:0;background:rgba(8,10,18,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:500;align-items:center;justify-content:center;padding:1.25rem;}
     .overlay.open{display:flex;}
-    .q-card{background:var(--surface);border:1px solid var(--border-hi);border-radius:18px;padding:1.75rem 2rem;max-width:480px;width:100%;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden;}
+    .q-card{background:var(--surface);border:1px solid var(--border-hi);border-radius:18px;padding:1.75rem 2rem;max-width:480px;width:100%;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow-x:hidden;overflow-y:auto;max-height:calc(100dvh - 2.5rem);overscroll-behavior:contain;}
+    .q-term.is-def{font-size:1.02rem;font-weight:600;line-height:1.5;letter-spacing:0;color:var(--text);}
     .q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));}
     @keyframes slideUp{from{opacity:0;transform:translateY(28px) scale(0.95)}to{opacity:1;transform:none}}
     .q-badge{display:inline-flex;align-items:center;gap:0.4rem;font-family:var(--font-d);font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent2);background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.3);border-radius:20px;padding:0.2rem 0.65rem;margin-bottom:0.75rem;}
@@ -290,7 +291,7 @@
 <div class="q-card">
 <div class="q-badge">📚 Vocab Carrier Destroyed!</div>
 <div class="q-term" id="q-term"></div>
-<div class="q-prompt">What is the definition of this term?</div>
+<div class="q-prompt">Which term matches this definition?</div>
 <div class="q-options" id="q-options"></div>
 <div class="q-points" id="q-points"></div>
 <button class="btn-continue" id="btn-continue" onclick="closeQuestion()">Continue →</button>
@@ -311,7 +312,7 @@
 <div id="end-root"></div>
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
-<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/arcade.js?v=20261010b"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script src="../quizzes/arcade-icons.js?v=20260720"></script>
 <script src="../reels/reel-data.js?v=20260720"></script>
@@ -1333,11 +1334,19 @@ function showQuestion(item) {
     if (qPromptEl) qPromptEl.style.display = 'none';   // only the prompt shows
     options = shuffle([REEL.hero.correct, REEL.hero.wrong]);
   } else {
-    document.getElementById('q-term').textContent = item.term;
-    const wrong = shuffle(VOCAB_DATA.filter(v => v.term !== item.term))
-      .slice(0, 3)
-      .map(v => v.def);
-    options = shuffle([item.def, ...wrong]);
+    // Definition is the prompt, four TERMS are the options: one definition to
+    // read instead of four (median ~24 words on screen instead of ~63).
+    const qTermEl = document.getElementById('q-term');
+    qTermEl.textContent = item.def;
+    qTermEl.classList.add('is-def');
+    if (qPromptEl) { qPromptEl.style.display = ''; qPromptEl.textContent = 'Which term matches this definition?'; }
+    const wrong = [];
+    for (const v of shuffle(VOCAB_DATA)) {
+      if (v.term === item.term || wrong.includes(v.term)) continue;
+      wrong.push(v.term);
+      if (wrong.length === 3) break;
+    }
+    options = shuffle([item.term, ...wrong]);
   }
   document.getElementById('q-points').textContent = '';
   document.getElementById('btn-continue').classList.remove('visible');
@@ -1358,12 +1367,12 @@ function showQuestion(item) {
 
   announce((REEL && REEL.hero)
     ? (REEL.hero.prompt + ' Press A or B to answer.')
-    : ('Vocab question: what is the definition of ' + item.term + '? Press A to D to answer.'));
+    : ('Vocab question: which term matches this definition? ' + item.def + ' Press A to D to answer.'));
   document.getElementById('overlay-q').classList.add('open');
 }
 
 function answerQuestion(chosen, item, btn, cont) {
-  const correct = (REEL && REEL.hero) ? REEL.hero.correct : item.def;
+  const correct = (REEL && REEL.hero) ? REEL.hero.correct : item.term;
   cont.querySelectorAll('.q-option').forEach(o => {
     o.style.pointerEvents = 'none';
     if (o.dataset.value === correct) o.classList.add('correct');
@@ -1391,7 +1400,7 @@ function answerQuestion(chosen, item, btn, cont) {
     pointsEl.className = 'q-points gain';
     announce((REEL && REEL.hero)
       ? ('Correct! ' + correct + '. Plus 100 points and ' + st.label + '.')
-      : ('Correct! ' + item.term + ' means: ' + correct + '. Plus 100 points and ' + st.label + '.'));
+      : ('Correct! ' + item.term + '. Plus 100 points and ' + st.label + '.'));
   } else {
     btn.classList.add('wrong');
     // A wrong answer breaks the kill-chain combo.
@@ -1399,9 +1408,9 @@ function answerQuestion(chosen, item, btn, cont) {
     AudioFX.wrong();
     Arcade.shake();
     // the educational beat: lock the real answer in before play resumes
-    pointsEl.textContent = (REEL && REEL.hero) ? ('Not quite — ' + correct) : ('Not quite — ' + item.term + ' means: ' + correct);
+    pointsEl.textContent = (REEL && REEL.hero) ? ('Not quite — ' + correct) : ('Not quite — the term is ' + item.term + '.');
     pointsEl.className = 'q-points miss';
-    announce((REEL && REEL.hero) ? ('Not quite. ' + correct + '.') : ('Not quite. ' + item.term + ' means: ' + correct + '.'));
+    announce((REEL && REEL.hero) ? ('Not quite. ' + correct + '.') : ('Not quite. The term is ' + item.term + '.'));
     // Missed terms return as carriers later in the same run.
     if (!item._requeued) {
       const at = Math.min(vocabQueue.length, vocabShownCount + 2 + Math.floor(Math.random() * 2));
@@ -1774,8 +1783,9 @@ function drawVocabEnemy(e, frame) {
     ctx.beginPath(); ctx.arc(lx, 8, 2, 0, Math.PI * 2); ctx.fill();
   });
 
-  // term chip below the ship — readable, not squeezed inside it
-  const label = e.vocabItem.term.length > 14 ? e.vocabItem.term.slice(0, 13) + '…' : e.vocabItem.term;
+  // Mystery chip below the ship. It used to show the TERM — which, since the
+  // question became "which term matches this definition?", was the answer.
+  const label = '? VOCAB ?';
   ctx.font = `bold 9px 'Space Grotesk', sans-serif`;
   const tw = ctx.measureText(label).width;
   ctx.fillStyle = 'rgba(6,6,15,0.85)';

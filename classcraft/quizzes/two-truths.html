@@ -6,7 +6,7 @@
 <title>Two Truths, One Lie — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Spot the misconception hidden among two true statements. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   .tt-stmts { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
   /* Statement prompt — never uppercased: unit and symbol case is meaning (mA vs MA, μ vs Μ). */
@@ -72,7 +72,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -236,7 +236,7 @@
     return `
       <div class="ar-badge">V · Verify · Two Truths One Lie</div>
       <h1 class="ar-title">${esc(topic)}</h1>
-      <p class="ar-sub">Three claims about ${esc(topic)}. Two are true — one is a misconception built to fool you. 20 seconds. Call the lie. Catch three in a row to spark a ⚡ Lightning Round: twenty seconds of double points with no waiting between rounds.</p>
+      <p class="ar-sub">Three claims about ${esc(topic)}. Two are true — one is a misconception built to fool you. The clock grows with how much there is to read. Call the lie. Catch three in a row to spark a ⚡ Lightning Round: twenty seconds of double points with no waiting between rounds.</p>
       <div class="ar-meta">${esc([level, subj].filter(Boolean).join(' · '))} · ${esc(metaTail)}</div>
     `;
   }
@@ -288,7 +288,9 @@
     const tiles = Array.from(root.querySelectorAll('.tt-stmts .ar-tile'));
     let phase = 'answer';
 
-    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+    // Clock sized to the three prompts + claims on screen (ROUND_MS is the floor).
+    const roundMs = Arcade.readMs(round.statements.map(st => st.prompt + ' ' + st.claim), ROUND_MS);
+    timerCtl = Arcade.timer(document.getElementById('tfill'), roundMs, {
       onEnd: () => { if (phase === 'answer') settle(null, true); },
     });
 
@@ -325,7 +327,7 @@
         state.streak++;
         state.bestStreak = Math.max(state.bestStreak, state.streak);
         const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
-        const speed = Math.round(50 * (remaining / ROUND_MS));
+        const speed = isFinite(roundMs) ? Math.round(50 * (remaining / roundMs)) : 0;
         pts = Math.round((100 + speed) * mult) * (inLightning ? LIGHTNING_MULT : 1);
         state.score += pts;
         state.grid.push('🟩');

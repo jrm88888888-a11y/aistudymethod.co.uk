@@ -112,6 +112,13 @@ body.arcade ::selection { background: var(--ar-mint); color: #06121c; }
 }
 .ar-timer i.warn   { background: var(--ar-gold); box-shadow: 0 0 12px rgba(255,214,10,0.6); }
 .ar-timer i.danger { background: var(--ar-pink); box-shadow: 0 0 12px rgba(255,46,136,0.7); }
+/* Ready gate (Arcade.readyThen) */
+.ar-ready { position: fixed; inset: 0; z-index: 900; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(6,6,15,0.78); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.ar-ready-card { max-width: 420px; width: 100%; background: var(--ar-grad-card, var(--ar-card)); border: 1px solid var(--ar-border-hi); border-radius: var(--ar-r, 14px); padding: 22px 20px 18px; text-align: center; }
+.ar-ready-card h2 { font-family: var(--ar-font); font-size: 20px; line-height: 1.3; margin: 4px 0 8px; color: var(--ar-text); }
+.ar-ready-card p { font-family: var(--ar-font); font-size: 14.5px; line-height: 1.5; color: var(--ar-text2); margin: 0 0 16px; }
+.ar-ready-card .ar-btn { width: 100%; }
+.ar-timer i.off    { background: var(--ar-border-hi); box-shadow: none; opacity: 0.45; }
 
 /* ---------- cards & tiles ------------------------------------------------ */
 .ar-card {
@@ -354,7 +361,11 @@ body.arcade ::selection { background: var(--ar-mint); color: #06121c; }
   text-shadow: 0 0 30px currentColor;
 }
 #ar-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 997; }
-body.ar-shake { animation: arShakeBody 0.35s ease; }
+/* Shake the page, not <body>: a transformed body becomes the containing block
+   for the fixed nav, so the closed off-canvas menu drawer counted as page
+   width (695px on a 375px phone) and phones zoomed out on every wrong answer.
+   The nav (with the HUD rail) now holds still. */
+body.ar-shake > :not(nav):not(script):not(style) { animation: arShakeBody 0.35s ease; }
 
 .ar-mute {
   position: fixed; right: 14px; bottom: 14px; z-index: 1000;
@@ -365,6 +376,17 @@ body.ar-shake { animation: arShakeBody 0.35s ease; }
   transition: transform 0.12s ease, border-color 0.12s ease;
 }
 .ar-mute:hover { transform: scale(1.08); border-color: var(--ar-cyan); }
+/* Reading-time toggle — sits left of the mute button on timed games */
+.ar-pace {
+  position: fixed; right: 66px; bottom: 14px; z-index: 1000;
+  height: 44px; min-width: 44px; padding: 0 12px; border-radius: 22px;
+  background: var(--ar-card); border: 1px solid var(--ar-border-hi);
+  color: var(--ar-text); font-family: var(--ar-mono); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.5px; cursor: pointer; white-space: nowrap;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.ar-pace:hover { transform: scale(1.05); border-color: var(--ar-cyan); }
+.ar-pace:focus-visible, .ar-mute:focus-visible { outline: 2px solid var(--ar-cyan); outline-offset: 2px; }
 
 /* ---------- error / fallback --------------------------------------------- */
 .ar-error { padding: 20px; background: var(--ar-pink-dim); border: 1px solid rgba(255,46,136,0.3); border-radius: var(--ar-r); color: #ffc4dd; font-size: 14px; }
@@ -463,9 +485,57 @@ body.arcade { --nav-h: 48px; }
   .ar-back-btn::before { content: "←"; font-size: 17px; }
 }
 
-:fullscreen           body.arcade nav,
-:-webkit-full-screen  body.arcade nav { display: none; }
-:fullscreen           .ar-wrap,
-:-webkit-full-screen  .ar-wrap { padding-top: 14px; }
-:fullscreen           .ar-tools,
-:-webkit-full-screen  .ar-tools { top: 12px; }
+:fullscreen           body.arcade:not(.ar-has-rail) nav,
+:-webkit-full-screen  body.arcade:not(.ar-has-rail) nav { display: none; }
+:fullscreen           body.arcade:not(.ar-has-rail) .ar-wrap,
+:-webkit-full-screen  body.arcade:not(.ar-has-rail) .ar-wrap { padding-top: 14px; }
+:fullscreen           .ar-tools:not(.in-nav),
+:-webkit-full-screen  .ar-tools:not(.in-nav) { top: 12px; }
+
+/* ── ONE HUD rail in the nav row                              (Oct 2026) ──
+   ← Arcade · ⏱ · 🔊 · ⛶ · login/coins, as an ordinary flex item of the site
+   nav. Nothing in it is position:fixed any more, so it cannot cover a game's
+   own controls at any width. Order is fixed by CSS whatever mounts first. */
+.ar-tools.in-nav, .ar-tools.in-topbar {
+  position: static; top: auto; right: auto;
+  display: flex; align-items: center; gap: 6px; flex: none; z-index: auto;
+}
+.ar-tools .ar-back-btn { order: 1; }
+.ar-tools .ar-pace     { order: 2; }
+.ar-tools .ar-mute     { order: 3; }
+.ar-tools .ar-fs-btn   { order: 4; }
+.ar-tools .ar-mute, .ar-tools .ar-pace {
+  position: static; right: auto; bottom: auto; z-index: auto;
+  height: 34px; min-width: 34px; border-radius: 11px;
+  border-color: var(--ar-border, rgba(255,255,255,0.16));
+}
+.ar-tools .ar-mute { width: 34px; font-size: 15px; }
+.ar-tools .ar-pace { padding: 0 9px; font-size: 11px; }
+.ar-tools.in-nav .ar-tool { height: 34px; }
+.ar-tools.in-nav .ar-fs-btn { width: 34px; }
+/* The nav CTA gives way to the rail on game pages (it is already hidden
+   below 1100px, and it lives on in the phone drawer). */
+body.ar-has-rail nav .nav-right { display: none; }
+/* Arrow-only back button wherever space is tight. */
+@media (max-width: 1100px) {
+  .ar-tools.in-nav .ar-back-btn { font-size: 0; width: 34px; padding: 0; }
+  .ar-tools.in-nav .ar-back-btn::before { content: "←"; font-size: 17px; }
+}
+/* Phone nav: logo mark + rail + hamburger. */
+@media (max-width: 820px) {
+  body.ar-has-rail nav .nav-inner { padding: 0 10px; gap: 8px; }
+  body.ar-has-rail nav .logo-text { display: none; }
+  .ar-tools.in-nav { margin-left: auto; gap: 5px; }
+}
+@media (max-width: 400px) {
+  .ar-tools.in-nav .ar-fs-btn { display: none; }   /* room for the chip */
+}
+/* Fullscreen keeps the nav as a slim HUD bar: rail only. */
+:fullscreen           body.ar-has-rail nav .logo,
+:-webkit-full-screen  body.ar-has-rail nav .logo,
+:fullscreen           body.ar-has-rail nav .nav-links,
+:-webkit-full-screen  body.ar-has-rail nav .nav-links,
+:fullscreen           body.ar-has-rail nav .nav-toggle,
+:-webkit-full-screen  body.ar-has-rail nav .nav-toggle { display: none; }
+:fullscreen           .ar-tools.in-nav,
+:-webkit-full-screen  .ar-tools.in-nav { margin-left: auto; }

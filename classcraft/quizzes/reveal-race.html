@@ -428,7 +428,7 @@ function renderPoster(term, subject, W, H) {
   }
 
   let rounds, state;
-  let phase = 'idle';        // idle | revealing | options | feedback | done
+  let phase = 'idle';        // idle | ready (round 1, before Start) | revealing | options | feedback | done
   let cellOrder = [], revealedCount = 0, revealedStages = 0;
   let artCanvas = null, viewCtx = null, defTokens = null;
   let revealT0 = 0, revealElapsed = 0;
@@ -519,9 +519,33 @@ function renderPoster(term, subject, W, H) {
       announce(slowMode ? 'Slow mode on — reveal time doubled.' : 'Slow mode off.');
     });
 
+    // Round 1 used to start revealing (and draining points) on page load,
+    // before the player had read the rules. It now waits for a Start tap;
+    // later rounds start from the Next button, as before.
+    if (state.idx === 0) {
+      const buzz = document.getElementById('buzz');
+      buzz.style.display = 'none';
+      const go = document.createElement('button');
+      go.type = 'button'; go.className = 'ar-btn big'; go.id = 'rv-start';
+      go.style.maxWidth = '340px'; go.textContent = '▶ Start — reveal the first definition';
+      buzz.parentNode.insertBefore(go, buzz);
+      phase = 'ready';
+      const begin = () => {
+        if (phase !== 'ready') return;
+        go.remove(); buzz.style.display = '';
+        buzz.focus({ preventScroll: true });
+        announce('Round 1 of ' + TOTAL_ROUNDS + '. Definition revealing. 500 points on the table and falling. Press space to buzz.');
+        startReveal();
+      };
+      go.addEventListener('click', begin);
+      startRound1 = begin;
+      announce('Round 1 of ' + TOTAL_ROUNDS + '. Press Start, or Space, when you are ready.');
+      return;
+    }
     announce('Round ' + (state.idx + 1) + ' of ' + TOTAL_ROUNDS + '. Definition revealing. 500 points on the table and falling. Press space to buzz.');
     startReveal();
   }
+  let startRound1 = null;
 
   /* ---- reveal engine: staged cells + continuously decaying points ---- */
   function startReveal() {
@@ -816,6 +840,11 @@ function renderPoster(term, subject, W, H) {
   document.addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if ((e.key === ' ' || e.key === 'Enter') && phase === 'ready' && startRound1) {
+      e.preventDefault();
+      startRound1();
+      return;
+    }
     if (e.key === ' ' && phase === 'revealing') {
       e.preventDefault();
       onBuzz();

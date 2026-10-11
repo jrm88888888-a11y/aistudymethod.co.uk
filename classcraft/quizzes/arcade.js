@@ -39,6 +39,16 @@
    Arcade.countUp(el, to, ms, suffix)    animated number
    Arcade.vibrate(pattern)               navigator.vibrate, safe no-op
 
+   Arcade.timer(fillEl, ms, cb)          countdown bar; ms=Infinity → no clock
+   Arcade.readMs(texts, minMs)           per-question clock sized to the words
+                                         on screen (200 wpm + 2 s) × pace
+   Arcade.feedbackMs(texts, minMs)       reading floor for auto-advancing feedback
+   Arcade.readPace                       'standard' | 'extra' | 'untimed' (persisted)
+   Arcade.mountPaceButton()              floating ⏱ toggle (auto-mounted by readMs)
+   Arcade.readyThen(fn, {title, text})   "Ready? ▶ Start" card; fn runs on Start
+   Arcade.readingSummary()/flushReading() per-run reading telemetry; one Plausible
+                                         "Arcade reading" event per finished run
+
    Arcade.grade(pct) -> {letter, cls, line}
    Arcade.renderEndCard(container, opts) shareable results card; wires buttons
        opts: {gameName, gameEmoji, topic, meta, pct, statHtml(optional),
@@ -405,7 +415,7 @@
       sync();
       if (!muted) Arcade.sfx.coin();
     });
-    document.body.appendChild(b);
+    (document.querySelector('.ar-tools') || document.body).appendChild(b);
   };
 
   /* ---------------- confetti --------------------------------------------- */
@@ -749,8 +759,9 @@
             pct:     opts.pct,
             rank:    g.letter,
             rankLine: g.line,
-            bigLabel: opts.bigLabel,
+            bigLabel: sh.bigLabel != null ? sh.bigLabel : opts.bigLabel,
             statLine: sh.statLine != null ? sh.statLine : defaultStat,
+            shareText: sh.shareText || null,   // a game's own caption (e.g. the Daily's grid)
           });
           if (r && r.ok) shareBtn.textContent = '✅ Sent!';
           else shareBtn.textContent = orig;
@@ -819,13 +830,26 @@
 
   /* ---------------- countdown timer controller ---------------------------- */
   // Drives an .ar-timer fill bar. Returns {stop, remaining, addTime}.
+  // ms === Infinity (reading pace "No clock") → bar shown dimmed and full,
+  // never ends, remaining = 0 so time-based bonuses are simply not paid.
   Arcade.timer = function (fillEl, ms, callbacks) {
     const cb = callbacks || {};
+    // Reading telemetry: a clock that follows Arcade.readMs() adopts that
+    // question's word count; its stop()/end records one answer (see below).
+    const rec = readCur; readCur = null;
+    if (rec) rec.t0 = performance.now();
+    if (!isFinite(ms)) {
+      if (fillEl) { fillEl.style.transform = 'scaleX(1)'; fillEl.classList.add('off'); }
+      return { stop() { logRead(rec, false); }, get remaining() { return 0; }, addTime() {} };
+    }
+    if (fillEl) fillEl.classList.remove('off');
     let total = ms, left = ms, last = performance.now(), raf = null, dead = false;
     let lastWholeSec = Math.ceil(ms / 1000);
     function step(now) {
       if (dead) return;
-      left -= (now - last);
+      // Clamp each frame's step: rAF stops in a hidden tab, and without the
+      // clamp the whole hidden interval was charged in one frame on return.
+      left -= Math.min(now - last, 250);
       last = now;
       const frac = Math.max(0, left / total);
       fillEl.style.transform = 'scaleX(' + frac + ')';
@@ -840,6 +864,7 @@
       if (left <= 0) {
         dead = true;
         fillEl.style.transform = 'scaleX(0)';
+        logRead(rec, true);
         cb.onEnd && cb.onEnd();
         return;
       }
@@ -847,10 +872,164 @@
     }
     raf = requestAnimationFrame(step);
     return {
-      stop() { dead = true; if (raf) cancelAnimationFrame(raf); },
+      stop() { if (!dead) logRead(rec, false); dead = true; if (raf) cancelAnimationFrame(raf); },
       get remaining() { return Math.max(0, left); },
       addTime(extra) { left = Math.min(total, left + extra); },
     };
+  };
+
+  /* ---------------- reading time ----------------------------------------
+     Per-question clocks are sized to the text actually on screen, so a
+     question with four sentence-length options gets more time than one with
+     four single-word options. Model: words ÷ 200 wpm + 2 s to decide and tap.
+     200 wpm sits just under published silent-reading rates for Years 10–11
+     (Taylor 1965, grades 9–10: 214–224 wpm, via Brysbaert 2019), allowing for
+     technical vocabulary and for comparing options.
+     The player's pace setting multiplies it: standard ×1, extra ×1.5,
+     untimed → Infinity (Arcade.timer then never ends and pays no bonus). */
+  Arcade.READ_WPM = 200;
+  Arcade.READ_DECIDE_MS = 2000;
+  const PACE_KEY = 'aism-read-pace';
+  const PACES = ['standard', 'extra', 'untimed'];
+  let pace = 'standard';
+  try { const p = localStorage.getItem(PACE_KEY); if (PACES.indexOf(p) >= 0) pace = p; } catch (e) {}
+  Arcade.wordCount = function () {
+    let n = 0;
+    (function walk(v) {
+      if (v == null) return;
+      if (Array.isArray(v)) { v.forEach(walk); return; }
+      const m = String(v).match(/[A-Za-z0-9À-ɏͰ-Ͽ]+(?:['’\-][A-Za-z0-9À-ɏ]+)*/g);
+      n += m ? m.length : 0;
+    })(Array.prototype.slice.call(arguments));
+    return n;
+  };
+  Object.defineProperty(Arcade, 'readPace', {
+    get() { return pace; },
+    set(v) {
+      if (PACES.indexOf(v) < 0) return;
+      pace = v;
+      try { localStorage.setItem(PACE_KEY, v); } catch (e) {}
+      document.querySelectorAll('.ar-pace').forEach(syncPaceBtn);
+    },
+  });
+  // readMs(textsOnScreen, minMs) → ms for this question (Infinity if untimed).
+  // Pass every string the player must read: stem + all options.
+  Arcade.readMs = function (texts, minMs) {
+    Arcade.mountPaceButton();
+    const words = Arcade.wordCount(texts);
+    let ms;
+    if (pace === 'untimed') ms = Infinity;
+    else {
+      ms = Math.max(minMs || 0, Math.round(words / Arcade.READ_WPM * 60000 + Arcade.READ_DECIDE_MS));
+      if (pace === 'extra') ms = Math.round(ms * 1.5);
+      ms = Math.ceil(ms / 1000) * 1000;   // whole seconds read better on screen
+    }
+    readCur = { words: words, allowed: ms, t0: null };
+    return ms;
+  };
+
+  /* Reading telemetry — tests the 200 wpm model against real players.
+     Each timed answer records {words on screen, ms to answer, timed out}.
+     ONE Plausible custom event per finished run ("Arcade reading"), sent from
+     renderEndCard, with banded props only (no free text, no per-answer
+     events, so it costs one event per run against the Plausible quota). */
+  let readCur = null;
+  const readLog = [];
+  function logRead(rec, timedOut) {
+    if (!rec || rec.done || rec.t0 == null) return;
+    rec.done = true;
+    readLog.push({ words: rec.words, ms: performance.now() - rec.t0, allowed: rec.allowed, timedOut: !!timedOut });
+  }
+  function median(a) { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+  function band(v, edges, labels) { for (let i = 0; i < edges.length; i++) if (v < edges[i]) return labels[i]; return labels[labels.length - 1]; }
+  Arcade.readingSummary = function () {
+    const n = readLog.length;
+    if (!n) return null;
+    const answered = readLog.filter(r => !r.timedOut && r.ms > 300);
+    const wpm = median(answered.map(r => r.words / (r.ms / 60000)));
+    const used = median(readLog.filter(r => isFinite(r.allowed)).map(r => Math.min(1, r.ms / r.allowed)));
+    const tos = readLog.filter(r => r.timedOut).length;
+    return {
+      pace: pace,
+      questions: n,
+      timeouts: tos === 0 ? '0' : tos === 1 ? '1' : tos <= 3 ? '2-3' : '4+',
+      timeout_rate: band(tos / n, [0.001, 0.1, 0.25, 0.5], ['0%', '<10%', '10-24%', '25-49%', '50%+']),
+      answer_wpm: wpm == null ? 'n/a' : band(wpm, [100, 150, 200, 250, 300], ['<100', '100-149', '150-199', '200-249', '250-299', '300+']),
+      time_used: used == null ? 'no clock' : band(used, [0.25, 0.5, 0.75, 0.95], ['<25%', '25-49%', '50-74%', '75-94%', '95%+']),
+      words_median: band(median(readLog.map(r => r.words)), [20, 40, 60, 80], ['<20', '20-39', '40-59', '60-79', '80+']),
+    };
+  };
+  Arcade.flushReading = function (gameName) {
+    const sum = Arcade.readingSummary();
+    readLog.length = 0;
+    if (!sum) return;
+    try {
+      if (typeof window.plausible === 'function') {
+        window.plausible('Arcade reading', { props: {
+          game: String(gameName || document.title || '').slice(0, 40),
+          pace: sum.pace, timeout_rate: sum.timeout_rate, answer_wpm: sum.answer_wpm,
+          time_used: sum.time_used, words: sum.words_median,
+        } });
+      }
+    } catch (e) { /* telemetry never breaks a game */ }
+  };
+  // Reading floor for feedback that auto-advances (no pace multiplier needed
+  // for "untimed": feedback that waits for a tap is handled by the caller).
+  Arcade.feedbackMs = function (texts, minMs) {
+    const words = Arcade.wordCount(texts);
+    let ms = Math.max(minMs || 0, Math.round(words / Arcade.READ_WPM * 60000 + 600));
+    if (pace !== 'standard') ms = Math.round(ms * 1.5);
+    return ms;
+  };
+  const PACE_LABEL = { standard: '⏱ 1×', extra: '⏱ +50%', untimed: '⏱ OFF' };
+  const PACE_SAY = { standard: 'standard', extra: 'fifty percent extra', untimed: 'no clock' };
+  function syncPaceBtn(b) {
+    b.textContent = PACE_LABEL[pace];
+    b.setAttribute('aria-label', 'Reading time: ' + PACE_SAY[pace] + '. Tap to change. Applies from the next question.');
+    b.title = 'Reading time: ' + { standard: 'standard', extra: '+50% extra time', untimed: 'no clock (no speed bonus)' }[pace];
+  }
+  /* Ready gate for games that used to start their clock on page load.
+     Shows a small card over the page; fn() runs on Start / Enter / Space. */
+  Arcade.readyThen = function (fn, opts) {
+    const o = opts || {};
+    if (document.documentElement.classList.contains('reel-mode')) { fn(); return; }
+    const ov = document.createElement('div');
+    ov.className = 'ar-ready';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-labelledby', 'ar-ready-h');
+    ov.innerHTML = '<div class="ar-ready-card">'
+      + '<div class="ar-label">' + Arcade.escapeHtml(o.label || 'Ready?') + '</div>'
+      + '<h2 id="ar-ready-h">' + Arcade.escapeHtml(o.title || (document.querySelector('h1') || {}).textContent || 'Ready?') + '</h2>'
+      + (o.text ? '<p>' + Arcade.escapeHtml(o.text) + '</p>' : '')
+      + '<button type="button" class="ar-btn big">▶ Start</button>'
+      + '<div class="ar-kbd-hint">Enter or Space to start</div></div>';
+    document.body.appendChild(ov);
+    const btn = ov.querySelector('button');
+    let gone = false;
+    const go = () => {
+      if (gone) return; gone = true;
+      document.removeEventListener('keydown', onKey, true);
+      ov.remove();
+      fn();
+    };
+    const onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); go(); } };
+    btn.addEventListener('click', go);
+    document.addEventListener('keydown', onKey, true);
+    try { btn.focus({ preventScroll: true }); } catch (e) {}
+  };
+
+  Arcade.mountPaceButton = function () {
+    if (document.querySelector('.ar-pace')) return;
+    const b = document.createElement('button');
+    b.className = 'ar-pace';
+    b.type = 'button';
+    syncPaceBtn(b);
+    b.addEventListener('click', () => {
+      Arcade.readPace = PACES[(PACES.indexOf(pace) + 1) % PACES.length];
+      Arcade.flashMsg && Arcade.flashMsg({ standard: 'CLOCK 1×', extra: 'CLOCK +50%', untimed: 'NO CLOCK' }[pace], 'var(--ar-cyan)');
+    });
+    (document.querySelector('.ar-tools') || document.body).appendChild(b);
   };
 
   /* ---------------- leaderboards (Bunny Edge + Bunny Database) ----------
@@ -1157,10 +1336,122 @@
   // elapsed time between token issue and score submission).
   lbFetchToken();
 
+  /* ---------------- keep the moment on screen (Oct 2026) ----------------
+     On phones the verdict + explanation + Next, and later the end card, were
+     rendered below the fold: players never saw why they were wrong, and the
+     rank stamp / score count-up played off-screen.
+     Arcade.bringIntoView(els, {align}) scrolls the page — never upward past
+     the fixed nav, never inside a fixed overlay, instantly (so an animation
+     that is just starting is actually seen). align 'top' puts the first
+     element just under the nav; default only scrolls as far as needed to
+     show the bottom of the group without pushing its top under the nav. */
+  function inFixedLayer(el) {
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      const p = getComputedStyle(n).position;
+      if (p === 'fixed' || p === 'sticky') return true;
+    }
+    return false;
+  }
+  function navBottom() {
+    const nav = document.querySelector('nav');
+    if (!nav) return 0;
+    const r = nav.getBoundingClientRect();
+    return r.height && getComputedStyle(nav).position === 'fixed' ? Math.max(0, r.bottom) : 0;
+  }
+  Arcade.bringIntoView = function (els, o) {
+    try {
+      const list = (Array.isArray(els) ? els : [els]).filter(el => el && el.isConnected && !inFixedLayer(el));
+      const rects = list.map(el => el.getBoundingClientRect()).filter(r => r.height > 0 || r.width > 0);
+      if (!rects.length) return;
+      const top = Math.min.apply(null, rects.map(r => r.top));
+      const bottom = Math.max.apply(null, rects.map(r => r.bottom));
+      // clientHeight, not innerHeight: on phones innerHeight follows the
+      // layout viewport, which balloons if anything overflows sideways.
+      const vh = document.documentElement.clientHeight || window.innerHeight;
+      const ceil = navBottom() + 8, floor = vh - 12;
+      let dy;
+      if (o && o.align === 'top') dy = top - ceil;
+      else {
+        if (bottom <= floor) return;                    // already fully visible
+        dy = Math.min(bottom - floor, top - ceil);      // never hide the top
+      }
+      if (dy > 2 || (o && o.align === 'top' && Math.abs(dy) > 2)) { jumpTo(window.scrollY + dy); return true; }
+    } catch (e) { /* scrolling must never break a game */ }
+    return false;
+  };
+  // Instant, even though the site sets html { scroll-behavior: smooth }:
+  // the moment (verdict, rank stamp) must be on screen as it starts.
+  function jumpTo(y) {
+    y = Math.max(0, Math.round(y));
+    try { window.scrollTo({ top: y, behavior: 'instant' }); }
+    catch (e) { window.scrollTo(0, y); }
+  }
+
+  // Every game marks its verdict with .ar-feedback (made fresh, or re-classed).
+  // Watch for it and bring verdict + Next button into view together.
+  (function watchFeedback() {
+    if (typeof MutationObserver === 'undefined' || !document.documentElement) return;
+    let pending = null;
+    const nextBtnFor = fb => {
+      const ids = ['next', 'next-btn', 'btn-next', 'lock-in'];
+      for (const id of ids) { const b = document.getElementById(id); if (b && b.offsetParent) return b; }
+      const wrap = document.getElementById('nextWrap');
+      return wrap && wrap.querySelector('button') || null;
+    };
+    // When we scrolled down to a verdict, scroll back once that verdict is
+    // cleared for the next round — otherwise the new question sits above the
+    // screen. Skipped if the player scrolled meanwhile, or an end card is up.
+    let back = null;   // { fb, from }
+    const endUp = () => { const ec = document.querySelector('.ar-end-inner'); return !!(ec && ec.offsetParent); };
+    const maybeRestore = () => {
+      if (!back) return;
+      const f = back.fb;
+      if (f.isConnected && f.offsetParent && (f.textContent || '').trim()) return;   // still showing
+      const b = back; back = null;
+      if (endUp()) return;
+      jumpTo(b.from);                 // where they were when they answered
+    };
+    const fire = fb => {
+      pending = fb;
+      requestAnimationFrame(() => setTimeout(() => {   // let the Next button land too
+        const f = pending; pending = null;
+        if (!f || !f.isConnected || endUp()) return;
+        if (!(f.textContent || '').trim()) return;
+        const from = window.scrollY;
+        if (Arcade.bringIntoView([f, nextBtnFor(f)])) back = { fb: f, from: from };
+      }, 30));
+    };
+    const isFb = n => n && n.nodeType === 1 && n.classList &&
+      (n.classList.contains('ar-feedback') || n.classList.contains('oo-why'));
+    const mo = new MutationObserver(muts => {
+      maybeRestore();
+      for (const m of muts) {
+        if (m.type === 'attributes') { if (isFb(m.target)) { fire(m.target); return; } continue; }
+        for (const n of m.addedNodes) {
+          if (n.nodeType !== 1) continue;
+          const f = isFb(n) ? n : (n.querySelector && n.querySelector('.ar-feedback, .oo-why'));
+          if (f) { fire(f); return; }
+        }
+      }
+    });
+    const start = () => mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+  })();
+
   // Hook: every end card with a numeric best value gets the leaderboard UI.
   const _renderEndCard = Arcade.renderEndCard;
   Arcade.renderEndCard = function (container, opts) {
     const out = _renderEndCard(container, opts);
+    // The rank stamp + count-up start now: show the card from its top.
+    try {
+      const card = container && (container.querySelector('.ar-end') || container);
+      if (card) {
+        Arcade.bringIntoView(card, { align: 'top' });
+        // again once the game has hidden its play area (the card moves up)
+        setTimeout(() => { if (window.scrollY > 0 || card.getBoundingClientRect().top > 60) Arcade.bringIntoView(card, { align: 'top' }); }, 120);
+      }
+    } catch (e) {}
+    Arcade.flushReading(opts && opts.gameName);
     try {
       if (Arcade.lb.enabled() && typeof opts.bestValue === 'number' && opts.bestValue > 0) {
         const inner = container.querySelector('.ar-end-inner');
@@ -1236,11 +1527,27 @@
   }
 
   ready(function () {
-    if (!document.querySelector('.ar-wrap') && !document.querySelector('.app')) return;
     if (document.querySelector('.ar-tools')) return;          // already mounted
+    /* One HUD rail (Oct 2026). The ⏱ / 🔊 buttons used to float bottom-right
+       and the login/coin chip top-right; between them they covered Hangman's
+       keys, the Space Invaders FIRE button, the Claw ▶ button, answer tiles,
+       Pause/Quit and the rail's own ← Arcade. Everything now lives in ONE rail
+       that sits in the site nav's own flex row (or the lobby's top bar), so the
+       browser lays it out and it can never sit on top of a game's controls. */
+    var navInner = document.querySelector('nav .nav-inner');
+    var lobbyBar = !navInner && /\/arcade\.html$/.test(location.pathname) && document.querySelector('.topbar');
+    var gamePage = document.body.classList.contains('arcade') || document.querySelector('.ar-wrap') || document.querySelector('.app');
+    if (!lobbyBar && !gamePage) return;
 
     var rail = document.createElement('div');
     rail.className = 'ar-tools';
+
+    if (lobbyBar) {                       // lobby: sound + account only
+      rail.classList.add('in-topbar');
+      lobbyBar.appendChild(rail);
+      adopt(rail);
+      return;
+    }
 
     /* ── back to the arcade, with the player's selection intact ── */
     var ret = '';
@@ -1287,16 +1594,38 @@
       });
     }
 
-    document.body.appendChild(rail);
+    if (navInner) {
+      rail.classList.add('in-nav');
+      document.body.classList.add('ar-has-rail');
+      navInner.insertBefore(rail, navInner.querySelector('.nav-right') || navInner.querySelector('.nav-toggle'));
+    } else {
+      document.body.appendChild(rail);    // no site nav: old floating position
+    }
+    adopt(rail);
 
     // F toggles fullscreen, unless the player is typing into the game.
     document.addEventListener('keydown', function (e) {
       if (!btn) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      // Letter games take F as a guess (it used to toggle fullscreen mid-word).
+      if (e.defaultPrevented || LETTER_GAME) return;
       if (e.key === 'f' || e.key === 'F') btn.click();
     });
   });
+
+  var LETTER_GAME = /\/game-(hangman|termguess|anagram|crossword)\.html$/.test(location.pathname);
+
+  // Pull in whichever rail items were mounted before the rail existed
+  // (⏱ / 🔊 can mount early; auth.js mounts the chip whenever it loads).
+  function adopt(rail) {
+    ['.ar-pace', '.ar-mute', '#aism-auth-corner'].forEach(function (sel) {
+      var n = document.querySelector(sel);
+      if (n && n.parentNode !== rail) rail.appendChild(n);
+    });
+    var c = document.getElementById('aism-auth-corner');
+    if (c) { c.classList.add('in-rail'); c.style.left = c.style.top = c.style.right = c.style.bottom = ''; }
+  }
 })();
 
 /* ── accounts + coin front-end loader ──────────────────────────────────────
@@ -1317,7 +1646,8 @@
         if (ss[i].src && /quizzes\/arcade\.js(\?|#|$)/.test(ss[i].src)) { base = ss[i].src; break; }
       }
     }
-    var url = base ? base.replace(/quizzes\/arcade\.js([?#].*)?$/, 'arcade/auth.js')
+    // auth.js inherits arcade.js's ?v= so the two always ship as a pair.
+    var url = base ? base.replace(/quizzes\/arcade\.js(\?[^#]*)?(#.*)?$/, function (m, q) { return 'arcade/auth.js' + (q || ''); })
                    : '../arcade/auth.js';
     var s = document.createElement('script');
     s.src = url; s.async = false;

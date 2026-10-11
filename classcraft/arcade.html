@@ -58,6 +58,12 @@ body::after{
   border:2px solid var(--dim);background:transparent;color:var(--dim);letter-spacing:1px;text-decoration:none;
 }
 .back-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+/* HUD rail (quizzes/arcade.js): 🔊 + login/coins, in the top bar instead of
+   floating over it (the chip used to sit on top of ◀ ALL RESOURCES). */
+.topbar .ar-tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+.topbar .ar-mute{width:34px;height:34px;border-radius:8px;border:2px solid var(--dim);background:transparent;color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.topbar .ar-mute:hover{border-color:var(--cyan)}
+.topbar .ar-mute:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 
 /* ---- pixel icons (arcade-icons.js) ---- */
 .px-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:middle}
@@ -70,6 +76,16 @@ body::after{
 
 /* ---- marquee ---- */
 .marquee{text-align:center;padding:22px 12px 14px}
+/* Phone lobby (Oct 2026): for a returning player the marquee, ticker, mission
+   chips and Revenge rail pushed Quick Play to ~705px and The Daily to ~920px —
+   both below an iPhone's visible area. On phones the marquee keeps only the
+   title + tagline (the V tile, mascots and two extra lines go), and the page
+   order is Continue → Quick Play → The Daily → Revenge → reading time. */
+@media(max-width:600px){
+  .marquee{padding:10px 10px 6px}
+  .marquee .vrow,.marquee .over,.marquee .insert-coin{display:none}
+  .marquee .sub{margin-top:6px}
+}
 .marq-row{display:flex;align-items:center;justify-content:center;gap:16px}
 .vrow{display:flex;align-items:center;justify-content:center;gap:26px;margin-bottom:14px}
 .v-mascot{flex:0 0 auto;line-height:0}
@@ -90,6 +106,15 @@ body::after{
 
 /* ---- quick play front door ---- */
 .quickplay-row{margin:18px 0 4px}
+/* Reading-time setting — same value as the ⏱ button inside timed games */
+.pace-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:12px 0 2px;font-family:var(--body)}
+.pace-row .pace-lbl{font-family:var(--px);font-size:9px;letter-spacing:1px;color:var(--dim)}
+.pace-seg{display:inline-flex;border:1px solid rgba(0,240,255,.35);border-radius:22px;overflow:hidden}
+.pace-seg button{background:transparent;border:0;color:var(--text);font:700 13px var(--body);padding:9px 14px;min-height:40px;cursor:pointer}
+.pace-seg button+button{border-left:1px solid rgba(0,240,255,.25)}
+.pace-seg button[aria-pressed="true"]{background:rgba(0,240,255,.16);color:var(--cyan)}
+.pace-seg button:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+.pace-row .pace-note{font-size:12.5px;color:var(--dim);flex-basis:100%}
 .quickplay-btn{
   display:block;width:100%;padding:18px 16px 15px;border-radius:12px;cursor:pointer;
   background:linear-gradient(160deg,#2a0f33,#181055);border:3px solid var(--yellow);
@@ -415,13 +440,13 @@ body::after{
   <div class="score-ticker" id="score-ticker" hidden><div class="score-ticker-inner" id="score-ticker-inner"></div></div>
 
   <div id="mission-chips" hidden></div>
-  <div id="revenge-rail" hidden></div>
 
   <div class="quickplay-row">
     <button type="button" id="quick-play" class="quickplay-btn">⚡ QUICK PLAY
       <span class="qp-sub">Throw me into a game — random topic, instant cabinet, zero decisions</span>
     </button>
   </div>
+
 
   <a class="daily-hero" id="daily-hero" href="quizzes/daily-drill.html">
     <span class="dh-mascot" id="dh-mascot" aria-hidden="true"></span>
@@ -431,6 +456,18 @@ body::after{
     </span>
     <span class="dh-streak" id="dh-streak"></span>
   </a>
+
+  <div id="revenge-rail" hidden></div>
+
+  <div class="pace-row" role="group" aria-labelledby="pace-lbl">
+    <span class="pace-lbl" id="pace-lbl">READING TIME</span>
+    <span class="pace-seg">
+      <button type="button" data-pace="standard" aria-pressed="true">Standard</button>
+      <button type="button" data-pace="extra" aria-pressed="false">+50%</button>
+      <button type="button" data-pace="untimed" aria-pressed="false">No clock</button>
+    </span>
+    <span class="pace-note" id="pace-note">Clocks grow with how much there is to read. Change it any time with ⏱ in a game.</span>
+  </div>
 
   <div id="wiz-summary" hidden></div>
 
@@ -500,7 +537,7 @@ body::after{
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
 <script src="arcade/boot.js"></script>
-<script src="quizzes/arcade.js"></script>
+<script src="quizzes/arcade.js?v=20261010b"></script>
 <script src="quizzes/arcade-icons.js?v=20260718a"></script>
 <script>
 (function () {
@@ -1075,6 +1112,7 @@ function pickBoard(id) {
 }
 function pickTopic(id) {
   state.topic = id;
+  try { const tt = nodeT(); if (tt) { warmSpec(tt.s, state.subject, state.level); warmShared(); } } catch (e) {}
   collapseAll('topic');
   Arcade.sfx.coin();
   buzz([20, 50, 20]);
@@ -1103,6 +1141,38 @@ function logMission(game, href) {
     });
   } catch (e) { /* never block a launch */ }
 }
+// The GAME ON flash plays while the next page loads; it no longer holds the
+// navigation back (was 350 ms of dead time on every launch).
+const NAV_DELAY_MS = 120;
+
+/* Warm the browser cache for a game the player is about to open: the game
+   page itself and the spec / misconception-bank / vocab-pack JSON it fetches
+   on boot (same URLs, so the game's own fetch() is a cache hit — works in
+   Safari too, unlike <link rel=prefetch>). Low priority, once per URL,
+   failures ignored. */
+const _warmed = new Set();
+function warm(url) {
+  if (!url || _warmed.has(url)) return;
+  _warmed.add(url);
+  try { fetch(url, { priority: 'low', credentials: 'same-origin' }).catch(() => {}); } catch (e) {}
+}
+const CV = () => (window.Arcade && Arcade.CONTENT_VERSION) || CONTENT_VERSION;
+function warmSpec(stem, subject, level) {
+  if (!stem) return;
+  const q = '.json?v=' + CV();
+  warm('adventures/_specs/' + encodeURIComponent(stem) + q);
+  warm('evaluate/misconception-banks/' + encodeURIComponent(stem) + q);
+  if (subject && level) warm('arcade/vocab/' + subject + '-' + level + q);
+}
+
+/* Files every game page loads before it can draw (render-blocking CSS and the
+   shared scripts). Same URLs as the game pages use — keep the ?v= strings in
+   step with quizzes/*.html when they are bumped. */
+function warmShared() {
+  ['quizzes/arcade.css?v=20261010b', 'quizzes/arcade.js?v=20261010b', 'quizzes/share-score.js',
+   'quizzes/share-score.js?v=20260717a', '../style.css', '../script.js', 'arcade/auth.js'].forEach(warm);
+}
+
 function launch(kind, id) {
   Arcade.sfx.coin();
   buzz([20, 50, 20]);
@@ -1115,7 +1185,7 @@ function launch(kind, id) {
     coinFlash('GAME ON!');
     const href = 'quizzes/' + id + '.html?spec=' + encodeURIComponent(t.s);
     logMission(gameLabel(kind, id), href);
-    setTimeout(() => { location.href = href; }, 350);
+    setTimeout(() => { location.href = href; }, NAV_DELAY_MS);
     return;
   }
   // terms tester: seed sessionStorage exactly like vocab-hub does
@@ -1141,7 +1211,7 @@ function launch(kind, id) {
   // CONTINUE breadcrumb points back at this wizard (pre-filled) rather than
   // at a game page that would open with an empty word bank.
   logMission(gameLabel(kind, id), 'arcade.html' + (location.search || ''));
-  setTimeout(() => { location.href = 'vocab-hub/game-' + id + '.html'; }, 350);
+  setTimeout(() => { location.href = 'vocab-hub/game-' + id + '.html'; }, NAV_DELAY_MS);
 }
 
 /* ───────────────────────── QUICK PLAY: zero-decision front door ──────────
@@ -1154,32 +1224,97 @@ const QUICK_PLAY_CABS = ['higher-lower', 'conveyor', 'two-truths', 'falling-word
 (function quickPlay() {
   const btn = $('quick-play');
   if (!btn) return;
+  /* PRE-PICK (Oct 2026): the pick used to start on click — flat.json, then
+     the subject + legacy JSON, then the vocab pack, then a 350 ms delay, then
+     the game page and its data: ~7 sequential requests between the tap and a
+     playable game. Now the pick is made when the lobby goes idle, its data
+     and game page are fetched into the browser cache, and the click only
+     navigates. Pure — never touches the wizard's state until the click. */
+  let primed = null;   // { pick, cab, href }
+  function loadSubject(sub) {
+    if (_full[sub]) return Promise.resolve(_full[sub]);
+    return _getJson('arcade/subjects/' + sub + '.json').then(j => (_full[sub] = j));
+  }
+  function resolveTopic(pick) {
+    const s = _full[pick.subject]; if (!s || !s.levels) return null;
+    const l = s.levels.find(x => x.id === pick.level); if (!l) return null;
+    const b = l.boards.find(x => x.id === pick.board);
+    let t = b && b.topics.find(x => x.slug === pick.topic);
+    if (!t && pick.board !== 'general') {
+      const g = l.boards.find(x => x.id === 'general');
+      t = g && g.topics.find(x => x.slug === pick.topic);
+    }
+    return t || null;
+  }
+  /* PERSONAL (Oct 2026): Quick Play used to pick a random subject for
+     everyone. With a last mission on this device it now stays in that
+     subject + level (any board, preferring theirs) — random topic, random
+     cabinet — and the button says so. Always, not "80% of the time": a label
+     that names Chemistry GCSE must not launch History. New players keep the
+     old random-GCSE pick. */
+  const LV_LABEL = { gcse: 'GCSE', 'a-level': 'A-Level', ibdp: 'IBDP', ks3: 'KS3' };
+  let mine = null;     // { subject, level, board, label }
+  try {
+    const m = JSON.parse(localStorage.getItem('aism-last-mission') || 'null');
+    const sub = m && String(m.subject || ''), lv = m && String(m.level || '').toLowerCase();
+    const stub = sub && IDX.subjects.find(x => x.id === sub);
+    if (stub && LV_LABEL[lv]) mine = { subject: sub, level: lv, board: m.board || '', label: stub.d + ' ' + LV_LABEL[lv] };
+  } catch (e) {}
+  if (mine) {
+    btn.firstChild.textContent = '⚡ QUICK PLAY · ' + mine.label.toUpperCase();
+    const sub = btn.querySelector('.qp-sub');
+    if (sub) sub.textContent = 'A random ' + mine.label + ' topic, straight into a game — zero decisions';
+    btn.setAttribute('aria-label', 'Quick play: a random ' + mine.label + ' topic, straight into a game');
+  }
+  function prime(attempt) {
+    attempt = attempt || 0;
+    return getFlat().then(flat => {
+      if (!flat.length) return null;
+      let pool = null;
+      if (mine && attempt < 3) {          // 3 misses → fall back to the open pool
+        const same = flat.filter(x => x.subject === mine.subject && x.level === mine.level);
+        const board = same.filter(x => x.board === mine.board);
+        pool = board.length ? board : same;
+      }
+      if (!pool || !pool.length) {
+        const gcse = flat.filter(x => x.level === 'gcse');   // prefer GCSE when present
+        pool = gcse.length ? gcse : flat;
+      }
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      return loadSubject(pick.subject).then(() => {
+        const t = resolveTopic(pick);
+        if (!t || !t.s) return attempt < 5 ? prime(attempt + 1) : null;
+        const cab = QUICK_PLAY_CABS[Math.floor(Math.random() * QUICK_PLAY_CABS.length)];
+        const href = 'quizzes/' + cab + '.html?spec=' + encodeURIComponent(t.s);
+        warm(href);
+        warmSpec(t.s, pick.subject, pick.level);
+        warmShared();
+        primed = { pick, cab, href };
+        return primed;
+      });
+    }).catch(() => null);
+  }
+  const idle = window.requestIdleCallback || (fn => setTimeout(fn, 1200));
+  // Prime once the lobby has rendered; touching/hovering the button primes
+  // immediately if idle hasn't fired yet.
+  const kick = () => idle(() => { if (!primed) prime(); }, { timeout: 2500 });
+  if (document.readyState === 'complete') kick(); else window.addEventListener('load', kick, { once: true });
+  ['pointerenter', 'touchstart', 'focus'].forEach(ev =>
+    btn.addEventListener(ev, () => { if (!primed) prime(); }, { passive: true, once: true }));
+
   btn.addEventListener('click', () => {
     track('mission_select', { step: 'quick-play', game: 'quick-play' });
-    getFlat().then(flat => {
-      if (!flat.length) return;
-      const gcse = flat.filter(x => x.level === 'gcse');   // prefer GCSE when present
-      const pool = gcse.length ? gcse : flat;
-      // Pick a tuple, FETCH its subject+legacy data (subjects load on demand now),
-      // then launch. Without ensureData() the topic list is empty, nodeT() is
-      // undefined and launch() silently bails — the load-split regression that
-      // slipped past the deep-link fix. Retry a few times if a tuple doesn't
-      // resolve to a real topic (rare data gap) so Quick Play always launches.
-      const tryPick = (attempt) => {
-        const pick = pool[Math.floor(Math.random() * pool.length)];
-        state.subject = pick.subject; state.level = pick.level;
-        state.board = pick.board; state.topic = pick.topic;
-        return ensureData().then(() => {
-          if (!nodeT() && attempt < 5) return tryPick(attempt + 1);
-          renderAll();   // syncs the URL so the return snapshot restores this mission
-          loadPack();    // warm the word bank for when the player comes back
-          const cab = QUICK_PLAY_CABS[Math.floor(Math.random() * QUICK_PLAY_CABS.length)];
-          announce('Quick play — launching ' + gameLabel('quiz', cab));
-          launch('quiz', cab);
-        });
-      };
-      return tryPick(0);
-    }).catch(() => { /* quick play is a bonus — the lobby must never break */ });
+    const go = (p) => {
+      if (!p) return;
+      state.subject = p.pick.subject; state.level = p.pick.level;
+      state.board = p.pick.board; state.topic = p.pick.topic;
+      primed = null;
+      renderAll();   // syncs the URL so the return snapshot restores this mission
+      announce('Quick play — launching ' + gameLabel('quiz', p.cab));
+      launch('quiz', p.cab);
+    };
+    (primed ? Promise.resolve(primed) : prime()).then(go)
+      .catch(() => { /* quick play is a bonus — the lobby must never break */ });
   });
 })();
 
@@ -1496,6 +1631,22 @@ const _restored = (function restore() {
 _restored.then(function () { track('page_view', {}); });
 
 Arcade.mountMuteButton();
+/* Reading-time setting (Arcade.readPace, persisted in localStorage). */
+(function paceRow() {
+  const btns = document.querySelectorAll('.pace-seg button');
+  if (!btns.length || !('readPace' in Arcade)) return;
+  const NOTE = {
+    standard: 'Clocks grow with how much there is to read. Change it any time with ⏱ in a game.',
+    extra: 'Every clock gets 50% longer. Speed bonuses still count.',
+    untimed: 'No countdown. Take as long as you need — speed bonuses are off.',
+  };
+  const sync = () => {
+    btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pace === Arcade.readPace)));
+    const n = document.getElementById('pace-note'); if (n) n.textContent = NOTE[Arcade.readPace];
+  };
+  btns.forEach(b => b.addEventListener('click', () => { Arcade.readPace = b.dataset.pace; sync(); }));
+  sync();
+})();
 _restored.then(renderAll);
 var __w=document.querySelector('.wrap'); if(__w) __w.classList.add('ready');
 setTimeout(function(){var w=document.querySelector('.wrap'); if(w) w.classList.add('ready');},1500);

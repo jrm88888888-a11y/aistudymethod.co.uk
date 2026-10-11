@@ -6,7 +6,7 @@
 <title>The Pusher — Free Revision Coin-Pusher Game — AI Study Method</title>
 <meta name="description" content="Answer to mint coins, drop them through the pins, shove the pile off the ledge. A free GCSE, A-Level and IB coin-pusher revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   /* ---- The Pusher: machine canvas + live question panel ---- */
   #root { max-width: 760px; }
@@ -209,7 +209,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script src="../reels/reel-data.js"></script>
 <script src="../reels/reel-chrome.js"></script>
@@ -280,7 +280,7 @@
   // above the question panel to fill it. Injected style + chrome are guarded, so
   // normal play is untouched. Leaderboard / mission logging are skipped below.
   const REEL_CSS = [
-    'html.reel-mode .ar-mute{display:none!important}',
+    'html.reel-mode .ar-mute,html.reel-mode .ar-pace{display:none!important}',
     'html.reel-mode #root{padding:0!important;margin:0!important;max-width:none!important;',
     '  width:100%!important;height:100%!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}',
     'html.reel-mode #root>.ar-badge,html.reel-mode #root>.ar-title,',
@@ -504,7 +504,8 @@
   let sparks = [];                        // in-canvas collection sparkles (never over the quiz panel)
 
   // Quiz
-  const QUESTION_TARGET = 12, Q_MS = 15000;
+  const QUESTION_TARGET = 12, Q_MS = 15000;   // Q_MS = floor; live clock is qMs
+  let qMs = Q_MS, engaged = false;
   let qQueue = [], asked = 0, correctCount = 0, quizExhausted = false;
   let currentConcept = null, qOpts = [], qCorrectIdx = 0, qLocked = false;
   let timerCtl = null, qStartMs = 0;
@@ -1077,9 +1078,30 @@
     announce.textContent = reel
       ? ('Question ' + (asked + 1) + '. ' + reel.hero.prompt + ' Choose the correct answer.')
       : ('Question ' + (asked + 1) + '. Which is the definition of ' + currentConcept.term + '?');
-    qStartMs = performance.now();
     const fill = qp.querySelector('#qp-timer i');
-    timerCtl = Arcade.timer(fill, Q_MS, { onEnd: () => answerQuestion(-1, true) });
+    // Clock sized to the term + four options on screen (Q_MS is the floor).
+    // Reel mode keeps its fixed beat for the recorded video.
+    qMs = reel ? Q_MS : Arcade.readMs([currentConcept.term, opts], Q_MS);
+    const startClock = () => {
+      if (qLocked) return;
+      qStartMs = performance.now();
+      timerCtl = Arcade.timer(fill, qMs, { onEnd: () => answerQuestion(-1, true) });
+    };
+    // The page opens straight into question 1 (no start screen), and on phones
+    // the panel sits below the machine — so the first clock waits for the
+    // player's first tap or key press instead of running from page load.
+    if (!reel && !engaged) {
+      const go = () => {
+        engaged = true;
+        document.removeEventListener('pointerdown', go, true);
+        document.removeEventListener('keydown', go, true);
+        startClock();
+      };
+      document.addEventListener('pointerdown', go, true);
+      document.addEventListener('keydown', go, true);
+    } else {
+      startClock();
+    }
   }
 
   function answerQuestion(idx, timedOut) {
@@ -1131,7 +1153,9 @@
       announce.textContent = reel
         ? ((timedOut ? 'Time up. ' : 'Wrong. ') + reel.hero.prompt + ' ' + reel.hero.correct)
         : ((timedOut ? 'Time up. ' : 'Wrong. ') + concept.term + ' means ' + concept.def);
-      setTimeout(nextQuestion, reduced ? 900 : 1700);
+      // Reading floor for the correction (it used to be 1.7 s, and only 0.9 s
+      // under reduced motion — reduced motion must never mean less reading time).
+      setTimeout(nextQuestion, reel ? 1700 : Arcade.feedbackMs(corr.textContent, 2500));
     }
   }
 

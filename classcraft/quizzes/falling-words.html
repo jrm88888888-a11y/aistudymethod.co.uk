@@ -6,7 +6,7 @@
 <title>Falling Words — Free Vocabulary Revision Game — AI Study Method</title>
 <meta name="description" content="Match each term to its definition before it falls. A free revision game for GCSE, A-Level and IB across every subject and exam board. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   /* ============ Falling-Words-specific layer on top of arcade.css ============ */
   .screen { display:none; }
@@ -193,7 +193,7 @@
 
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script>
 'use strict';
@@ -326,6 +326,11 @@ function getMultTier() { return MULT_TIERS.find(t => aismStreak >= t.streak); }
 let fallers = [];
 let waveActive = false;   // a wave for the current question is on screen & unresolved
 let nextSpawnDist = 0;    // px of screen travel until next wave may spawn
+// Per-wave fall-speed factor (≤1) so the fastest word stays on screen long
+// enough to read this definition + the falling terms (Arcade.readMs model ×
+// a difficulty allowance). Short definitions keep the full arcade speed.
+let waveRead = 1;
+const READ_ALLOW = { easy: 1.2, medium: 1.0, hard: 0.6 };
 const WAVE_SPACING = 480; // ~px of screen travel between waves
 let bannerText = '';
 let bannerIsDef = true;   // false while showing interstitial "next one incoming"
@@ -567,6 +572,7 @@ function spawnWave() {
   const cfg = DIFF_SETTINGS[difficulty];
   bannerText = q.def;
   bannerIsDef = true;
+  const spawnTop = measureBannerBottom();
 
   // Pick wrong terms: distinct concepts other than the correct one.
   const wrongs = shuffle(CONCEPTS.filter(c => c.term !== q.term))
@@ -574,6 +580,13 @@ function spawnWave() {
     .map(c => c.term);
   const terms = shuffle([{ term: q.term, isCorrect: true }]
     .concat(wrongs.map(t => ({ term: t, isCorrect: false }))));
+
+  // Slow this wave if the definition needs it (see waveRead above).
+  const readMs = Arcade.readMs([q.def, terms.map(t => t.term)], 0);
+  const track = Math.max(160, cssH() - spawnTop - 40);              // px a word is visible for (below the banner)
+  const fastest = cfg.baseScrollPx * speed * 60 * (1 + cfg.speedVar); // px/s, fastest word
+  const wantPxS = isFinite(readMs) ? track / (readMs / 1000 * READ_ALLOW[difficulty]) : 0;
+  waveRead = isFinite(readMs) ? Math.max(0.3, Math.min(1, wantPxS / fastest)) : 0.3;
 
   // Lay out across distinct horizontal slots with jitter; stagger spawn depth
   // so the wave doesn't arrive as a single neat row.
@@ -604,7 +617,9 @@ function spawnWave() {
       golden: golden,
       qIdx: qIdx,
       x: Math.max(m.w / 2 + 4, Math.min(W - m.w / 2 - 4, x)),
-      y: -40 - i * 95 - Math.random() * 60,   // staggered above the screen
+      // Staggered just behind the banner (they used to start above the canvas
+      // and spent 7-10 s hidden behind the taller banner).
+      y: spawnTop - 20 - i * 55 - Math.random() * 35,
       w: m.w,
       h: m.h,
       speedFactor: golden ? METEOR_FALL : 1 + (Math.random() * 2 - 1) * cfg.speedVar,
@@ -672,7 +687,9 @@ function update(dt) {
     if (f.state === 'stale') {
       f.staleFade -= dt * 0.05;       // gentle fade-out for leftover wave
     }
-    f.y += scrollPx * f.speedFactor;
+    // Full speed while still hidden behind the banner; reading pace once visible.
+    const hidden = f.y + f.h / 2 < bannerBottomY;
+    f.y += scrollPx * f.speedFactor * (f.state === 'live' && !hidden ? waveRead : 1);
     if (f.y - f.h / 2 > H + 10) {
       f.offscreen = true;
       if (f.isCorrect && f.state === 'live' && f.qIdx === qIdx && waveActive) {
@@ -879,7 +896,7 @@ function draw() {
     ctx.font = '700 12px "Space Grotesk", sans-serif';
     const tw = ctx.measureText(label).width;
     const bw = tw + 24, bh = 26;
-    const bx = W - bw - 12, by = 78;
+    const bx = W - bw - 12, by = bannerBottomY + 8;   // below the (variable-height) banner
     ctx.save();
     ctx.shadowColor = tier.color;
     ctx.shadowBlur = 14;
@@ -898,14 +915,27 @@ function draw() {
   }
 }
 
+// Bottom edge (canvas px) of the definition banner for the current text.
+// Words spawn just behind it and fall at full speed until they clear it, so
+// the reading slow-down never stretches the off-screen approach.
+let bannerBottomY = 76;
+function measureBannerBottom() {
+  ctx.font = '700 14px "Space Grotesk", sans-serif';
+  const lines = wrapLines(bannerText || '', cssW() - 20 - 28, 7);
+  bannerBottomY = 10 + 32 + Math.max(1, lines.length) * 17;
+  return bannerBottomY;
+}
+
 function drawBanner(W, H, neon) {
   const pad = 10;
   const bW = W - pad * 2;
   const bX = pad, bY = pad;
 
   ctx.font = '700 14px "Space Grotesk", sans-serif';
-  const lines = wrapLines(bannerText || '', bW - 28, 2);
-  const bH = lines.length > 1 ? 66 : 48;
+  // Full definition: the banner grows (up to 7 lines) instead of cutting the
+  // definition at 2 lines — ~68% of definitions were truncated on phones.
+  const lines = wrapLines(bannerText || '', bW - 28, 7);
+  const bH = 32 + Math.max(1, lines.length) * 17;
 
   ctx.save();
   ctx.shadowColor = bannerIsDef ? neon : 'transparent';
@@ -929,7 +959,7 @@ function drawBanner(W, H, neon) {
   ctx.textBaseline = 'alphabetic';
   ctx.fillText(bannerIsDef ? (meteorLive ? '☄ GOLDEN METEOR — TRIPLE POINTS' : 'FIND THE TERM FOR') : 'GET READY', bX + 14, bY + 15);
 
-  // Definition text (max 2 lines, ellipsised)
+  // Definition text (wraps; ellipsised only beyond 7 lines)
   ctx.fillStyle = '#f2f3ff';
   ctx.font = '700 14px "Space Grotesk", sans-serif';
   ctx.textAlign = 'center';

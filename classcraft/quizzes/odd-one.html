@@ -6,7 +6,7 @@
 <title>Odd One Out — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Three statements are true, one is the odd one out. A free GCSE, A-Level and IB revision game that trains you to tell close concepts apart. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   .oo-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
   .oo-card { display:flex; flex-direction:column; gap:6px; min-height:44px; }
@@ -83,7 +83,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -353,7 +353,10 @@
     let phase = 'answer';
     let autoTimer = null;
 
-    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+    // Clock sized to the four cards actually on screen (ROUND_MS is the floor).
+    const roundMs = Arcade.readMs(round.cards.map(c => c.term + ' ' + c.def), ROUND_MS);
+    const roundT0 = performance.now();
+    timerCtl = Arcade.timer(document.getElementById('tfill'), roundMs, {
       onEnd: () => { if (phase === 'answer') settle(null, true); },
     });
 
@@ -383,13 +386,13 @@
 
       let pts = 0;
       if (correct) {
-        const usedMs = ROUND_MS - remaining;
+        const usedMs = Math.round(performance.now() - roundT0);
         if (state.fastestMs === null || usedMs < state.fastestMs) state.fastestMs = usedMs;
         state.correct++;
         state.streak++;
         state.bestStreak = Math.max(state.bestStreak, state.streak);
         const mult = state.streak >= 3 ? Math.min(2, 1.5 + 0.1 * (state.streak - 3)) : 1;
-        const speed = Math.round(50 * (remaining / ROUND_MS));
+        const speed = isFinite(roundMs) ? Math.round(50 * (remaining / roundMs)) : 0;
         pts = Math.round((100 + speed) * mult * (round.redemption ? 0.5 : 1));
         state.score += pts;
         state.grid.push(round.redemption ? '🟦' : '🟩');
@@ -445,7 +448,7 @@
         document.getElementById('nextWrap').innerHTML =
           '<button class="ar-btn big" id="next">' + (last ? 'See your score →' : 'Next →') + '</button>'
           + '<div class="ar-kbd-hint" style="margin-top:8px;">Auto-advancing…</div>';
-        autoTimer = setTimeout(advance, 1600);
+        autoTimer = setTimeout(advance, Arcade.feedbackMs(fb.textContent, 1600));
       } else {
         // Wrong or timed out — let them read the correction, advance on tap.
         document.getElementById('nextWrap').innerHTML =

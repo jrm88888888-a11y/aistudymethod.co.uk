@@ -6,7 +6,7 @@
 <title>Ghost Race — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Race the ghost of the friend who challenged you. A free GCSE, A-Level and IB speed-quiz across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   /* --- Ghost Race: the head-to-head race strip ------------------------- */
   .gr-banner {
@@ -165,7 +165,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script>
 (async function() {
@@ -400,7 +400,7 @@
   function renderHeader(metaTail) {
     const lead = racing
       ? 'Race the ghost of the mate who challenged you. Same 10 questions, same order. Answer fast and clean — beat their score, then their time.'
-      : 'Set a time on these 10 questions, then send your ghost to a mate and make them chase it. 15 seconds a question.';
+      : 'Set a time on these 10 questions, then send your ghost to a mate and make them chase it. At least 15 seconds a question — more when there is more to read.';
     return `
       <div class="ar-badge">V · Race · Ghost Race</div>
       <h1 class="ar-title">${esc(topic)}</h1>
@@ -538,7 +538,10 @@
     state.ghostCrossed = false;
     const gRec = racing ? ghost[state.idx] : null;
 
-    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+    // Clock sized to the stem + four options on screen (ROUND_MS is the floor).
+    // Same questions → same clock for you and your ghost (at the same pace setting).
+    const roundMs = Arcade.readMs([q.stemText, q.options], ROUND_MS);
+    timerCtl = Arcade.timer(document.getElementById('tfill'), roundMs, {
       onEnd: () => { if (phase === 'answer') settle(null, true); },
     });
 
@@ -562,7 +565,7 @@
       if (ghostRAF) { cancelAnimationFrame(ghostRAF); ghostRAF = null; }
       timerCtl.stop();
 
-      let elapsed = timedOut ? ROUND_MS : (performance.now() - state.qStart);
+      let elapsed = timedOut ? roundMs : (performance.now() - state.qStart);
       elapsed = Math.max(0, Math.min(elapsed, TIME_CAP_UNITS * TIME_UNIT_MS));
       const correct = !timedOut && chosen === q.correctIdx;
       state.records.push({ ms: elapsed, correct: correct });
@@ -591,8 +594,8 @@
       if (correct) {
         state.youCorrect++;
         state.youProgress++;
-        const remaining = Math.max(0, ROUND_MS - elapsed);
-        const speed = Math.round(50 * (remaining / ROUND_MS));
+        const remaining = isFinite(roundMs) ? Math.max(0, roundMs - elapsed) : 0;
+        const speed = isFinite(roundMs) ? Math.round(50 * (remaining / roundMs)) : 0;
         pts = (100 + speed) * (wasNitro ? 2 : 1);
         state.score += pts;
         state.grid.push('🟩');

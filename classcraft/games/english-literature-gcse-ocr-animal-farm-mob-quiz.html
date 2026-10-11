@@ -6,7 +6,7 @@
 <title>OCR: Animal Farm — Mob Quiz — AI Study Method</title>
 <meta name="description" content="OCR Mob Quiz for Animal Farm — multi-choice GCSE English Literature revision. Steer into the correct gate.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="../quizzes/arcade.css">
+<link rel="stylesheet" href="../quizzes/arcade.css?v=20261010b">
 <style>
   /* Mob Quiz — page-specific styles on top of the arcade design system */
   .screen { display: none; }
@@ -144,7 +144,7 @@
       <button id="btn-start" class="ar-btn big" type="button">▶ Start run</button>
 
       <div class="mq-how">
-        <b>How it works:</b> a question appears above each gate as it approaches. Drag (or use ← →, or keys 1–4) to steer into the door labelled with your answer. Correct = score + speed + combo. Wrong = lose a life. Streaks spawn ★ bonus stars — grab them for +75.
+        <b>How it works:</b> a definition is pinned at the top for each gate. Drag (or use ← →, or keys 1–4) to steer into the door with the matching term — the track slows down when there's more to read. Correct = score + speed + combo. Wrong = lose a life. Streaks spawn ★ bonus stars — grab them for +75.
       </div>
       <div class="ar-kbd-hint">Keyboard: ← → steer · 1–4 jump to a lane · M mute</div>
     </div>
@@ -175,7 +175,7 @@
 
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/arcade.js?v=20261010b"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 /* ============================================================
@@ -222,22 +222,28 @@ function buildQuestions(pairs, n) {
     const x = String(a).trim(), y = String(b).trim();
     return x === y || x.slice(0, 40) === y.slice(0, 40);
   }
+  // Oct 2026: the DEFINITION is the question (pinned, full text, at the top
+  // of the track) and the doors carry TERMS. Definitions on doors meant ~66
+  // words in 75px-wide moving boxes at 8–9px — unreadable in the time given.
+  const sameTerm = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
   const used = shuffle([...pairs]).slice(0, n);
   const out = [];
   used.forEach(p => {
-    const defs = [];
+    const terms = [];
     shuffle(pairs.filter(x => x !== p)).forEach(x => {
-      if (defs.length >= 3) return;
-      if (tooClose(x.def, p.def)) return;
-      if (defs.some(d => tooClose(d, x.def))) return;
-      defs.push(x.def);
+      if (terms.length >= 3) return;
+      if (sameTerm(x.term, p.term) || tooClose(x.def, p.def)) return;   // twin entries would make two right doors
+      if (terms.some(t => sameTerm(t, x.term))) return;
+      terms.push(x.term);
     });
-    if (!defs.length) return;   // a one-door gate answers itself — skip the item
-    const doors = shuffle([{ def: p.def, ok: true }].concat(defs.map(d => ({ def: d, ok: false }))));
+    if (!terms.length) return;   // a one-door gate answers itself — skip the item
+    const doors = shuffle([{ t: p.term, ok: true }].concat(terms.map(t => ({ t: t, ok: false }))));
     out.push({
-      q: p.term,
-      options: doors.map(d => d.def),
-      correct: doors.findIndex(d => d.ok)
+      q: p.def,
+      options: doors.map(d => d.t),
+      correct: doors.findIndex(d => d.ok),
+      term: p.term,
+      def: p.def
     });
   });
   return out;
@@ -373,29 +379,44 @@ function setupInput() {
   let dragStartX = 0;
   let dragStartPlayer = 0;
 
+  let dragMoved = 0, downAt = 0;
   function onDown(clientX) {
     if (gameState !== 'running') return;
     isDragging = true;
     dragStartX = clientX;
     dragStartPlayer = playerX;
+    dragMoved = 0; downAt = performance.now();
     hadInputThisGate = true;
     showHint(false);
   }
   function onMove(clientX) {
     if (!isDragging || gameState !== 'running') return;
     const rect = canvas.getBoundingClientRect();
+    dragMoved = Math.max(dragMoved, Math.abs(clientX - dragStartX));
     const dx = (clientX - dragStartX) / rect.width;
     playerTargetX = Math.max(0.05, Math.min(0.95, dragStartPlayer + dx));
   }
-  function onUp() { isDragging = false; }
+  // Tap a door to run straight into it (a short press that barely moved);
+  // a tap is also a commitment, so the gate rushes in (see commit-and-boost).
+  function onUp(clientX) {
+    const wasTap = isDragging && dragMoved < 8 && performance.now() - downAt < 350;
+    isDragging = false;
+    if (!wasTap || gameState !== 'running' || clientX == null) return;
+    const g = leadGate(); const n = g ? g.options.length : 4;
+    const rect = canvas.getBoundingClientRect();
+    const rel = (clientX - rect.left) / rect.width;
+    const lane = Math.max(0, Math.min(n - 1, Math.floor(rel * n)));
+    playerTargetX = Math.max(0.05, Math.min(0.95, (lane + 0.5) / n));
+    if (g) g.committed = true;
+  }
 
   canvas.addEventListener('mousedown', e => onDown(e.clientX));
   canvas.addEventListener('mousemove', e => onMove(e.clientX));
-  canvas.addEventListener('mouseup', onUp);
-  canvas.addEventListener('mouseleave', onUp);
+  canvas.addEventListener('mouseup', e => onUp(e.clientX));
+  canvas.addEventListener('mouseleave', () => onUp(null));
   canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown(e.touches[0].clientX); }, { passive: false });
   canvas.addEventListener('touchmove',  e => { e.preventDefault(); onMove(e.touches[0].clientX); }, { passive: false });
-  canvas.addEventListener('touchend',   e => { e.preventDefault(); onUp(); }, { passive: false });
+  canvas.addEventListener('touchend',   e => { e.preventDefault(); const t = e.changedTouches && e.changedTouches[0]; onUp(t ? t.clientX : null); }, { passive: false });
 
   // Keyboard: arrows nudge, 1–4 snap to a lane centre
   const kbStep = 0.05;
@@ -412,6 +433,7 @@ function setupInput() {
         e.preventDefault();
         playerTargetX = Math.max(0.05, Math.min(0.95, (laneKey + 0.5) / n));
         hadInputThisGate = true;
+        if (g) g.committed = true;   // a lane key is a decision: rush the gate in
         showHint(false);
       }
     }
@@ -590,6 +612,25 @@ document.getElementById('btn-start').addEventListener('click', startGame);
 /* ============================================================
    GATE SPAWNING
    ============================================================ */
+/* Reading-speed factor (≤1) for one gate: the scroll slows so the player has
+   at least Arcade.readMs(definition + doors) × a difficulty allowance between
+   the definition appearing and the gate arriving. The definition shows for
+   the lead gate only, so the window is the smaller of the full track and the
+   gate spacing. Short questions keep full arcade speed. */
+const READ_ALLOW = { easy: 1.2, medium: 1.0, hard: 0.6 };
+function gateReadFactor(q) {
+  const ms = Arcade.readMs([q.q, q.options], 0);
+  if (!isFinite(ms)) return 0.3;                                   // "no clock" pace
+  const viewH = canvas.height / (window.devicePixelRatio || 1);
+  const windowPx = Math.min(viewH + 40, GATE_SPACING);
+  const pxPerS = DIFF_SETTINGS[difficulty].baseScrollPx * speed * 60;
+  const want = windowPx / (ms / 1000 * READ_ALLOW[difficulty]);
+  return Math.max(0.3, Math.min(1, want / pxPerS));
+}
+const GATE_SPACING = 460;
+const COMMIT_MS = 700, BOOST = 1.6;
+let laneHeld = -1, laneHoldMs = 0;
+
 function spawnGate() {
   if (currentIdx >= questions.length) return;
   const q = questions[currentIdx];
@@ -598,14 +639,17 @@ function spawnGate() {
     q: q.q,
     options: q.options,
     correct: q.correct,
+    term: q.term || q.q,
+    def: q.def || q.options[q.correct],
+    readF: gateReadFactor(q),
     y: -120,            // start above screen
     settled: false,
     result: null
   });
   currentIdx++;
-  announce.textContent = 'Gate ' + currentIdx + ': ' + q.q + '. Options left to right: ' + q.options.join('; ') + '.';
+  announce.textContent = 'Gate ' + currentIdx + '. Which term matches: ' + q.q + '. Doors left to right: ' + q.options.join('; ') + '.';
   // Distance until next gate (in pixels of player travel)
-  nextSpawnDist = 460;
+  nextSpawnDist = GATE_SPACING;
 }
 
 /* ============================================================
@@ -660,7 +704,19 @@ function update(dt) {
 
   // Scroll: gates move down (toward player). During the post-pause grace the
   // scroll holds still so the player can re-position before play resumes.
-  const scrollPx = graceT > 0 ? 0 : DIFF_SETTINGS[difficulty].baseScrollPx * speed * dt;
+  const lead = leadGate();
+  /* Commit-and-boost: the reading brake (readF) only applies while the player
+     is still deciding. Holding one lane for COMMIT_MS (or tapping a door /
+     pressing 1-4) commits, and the gate then rushes in at BOOST× — so a player
+     who knows the answer never waits, and higher speed is felt again. */
+  if (lead && !lead.committed && hadInputThisGate && !isDragging) {
+    const n = lead.options.length;
+    const ln = Math.min(n - 1, Math.max(0, Math.floor(playerTargetX * n)));
+    if (ln === laneHeld) laneHoldMs += dt * 16.67; else { laneHeld = ln; laneHoldMs = 0; }
+    if (laneHoldMs >= COMMIT_MS) lead.committed = true;
+  }
+  const brake = lead ? (lead.committed ? BOOST : lead.readF) : 1;
+  const scrollPx = graceT > 0 ? 0 : DIFF_SETTINGS[difficulty].baseScrollPx * speed * dt * brake;
   nextSpawnDist -= scrollPx;
 
   // Move particles
@@ -734,6 +790,7 @@ function settleGate(gate) {
 
   const idle = !hadInputThisGate;
   hadInputThisGate = false;
+  laneHeld = -1; laneHoldMs = 0;
 
   // Determine which door player is in
   const numOptions = gate.options.length;
@@ -758,10 +815,10 @@ function settleGate(gate) {
     aismShake(7);
     bgPulseT = 0.7;
     bgPulseColor = AR.pink;
-    showTeachOverlay(gate.q, gate.options[gate.correct], true);
-    teachPauseT = TEACH_PAUSE_MS;
+    showTeachOverlay(gate.term, gate.def, true);
+    teachPauseT = Arcade.feedbackMs([gate.term, gate.def], TEACH_PAUSE_MS);
     if (idleGates >= 2 && lives > 0) pendingAutoPause = true;
-    announce.textContent = 'No input — gate missed. ' + gate.q + ': ' + gate.options[gate.correct]
+    announce.textContent = 'No input — gate missed. ' + gate.term + ': ' + gate.def
       + '. Lives left: ' + Math.max(0, lives) + '.';
     updateHUD();
     return;
@@ -836,8 +893,8 @@ function settleGate(gate) {
     Arcade.sfx.wrong();
     Arcade.vibrate([40, 30, 40]);
     aismShake(wasOnStreak ? 11 : 7);
-    showTeachOverlay(gate.q, gate.options[gate.correct], false, shielded);
-    teachPauseT = TEACH_PAUSE_MS;
+    showTeachOverlay(gate.term, gate.def, false, shielded);
+    teachPauseT = Arcade.feedbackMs([gate.term, gate.def], TEACH_PAUSE_MS);
     announce.textContent = 'Wrong. ' + (shielded ? 'Your shield absorbed the hit — no life lost. ' : '')
       + 'The correct answer was: ' + gate.options[gate.correct] + '. Lives left: ' + Math.max(0, lives) + '.';
     // Pink shard burst at gate centre
@@ -911,6 +968,7 @@ function draw() {
 
   // Gates
   gates.forEach(g => drawGate(g, W, H));
+  drawQuestionBanner(W);
 
   // Player trail (oldest to newest, faint to bright)
   const playerY = H - 80;
@@ -998,9 +1056,13 @@ function wrapLines(ctx, text, maxW) {
 
 function fitTextLayout(ctx, text, maxW, maxH, weight) {
   const sizes = [13, 12, 11, 10, 9, 8];
+  const words = String(text).split(/\s+/).filter(Boolean);
   for (const fs of sizes) {
     ctx.font = (weight || '700') + ' ' + fs + 'px ' + AR_FONT;
     const lineH = fs + 3;
+    // Prefer a size at which every word fits whole ("Chloroph/yll" read badly);
+    // hard breaks are only allowed at the smallest size.
+    if (fs > 8 && words.some(w => ctx.measureText(w).width > maxW)) continue;
     const lines = wrapLines(ctx, text, maxW);
     if (lines.length * lineH <= maxH) return { fs: fs, lineH: lineH, lines: lines };
   }
@@ -1016,6 +1078,48 @@ function fitTextLayout(ctx, text, maxW, maxH, weight) {
     lines[maxLines - 1] = last + '…';
   }
   return { fs: fs, lineH: lineH, lines: lines };
+}
+
+// The unsettled gate nearest the player — its definition is the one pinned.
+function leadGate() {
+  let best = null;
+  for (const g of gates) if (!g.settled && (!best || g.y > best.y)) best = g;
+  return best;
+}
+
+// Pinned definition banner: full text, 14px, wraps (up to 6 lines), drawn
+// above everything at the top of the track for the lead gate.
+function drawQuestionBanner(W) {
+  const g = leadGate();
+  if (!g) return;
+  const qW = Math.min(W - 16, 560);
+  const qX = (W - qW) / 2;
+  ctx.font = '700 14px ' + AR_FONT;
+  let lines = wrapLines(ctx, g.q, qW - 28);
+  if (lines.length > 6) {
+    lines = lines.slice(0, 6);
+    let last = lines[5];
+    while (last.length && ctx.measureText(last + '…').width > qW - 28) last = last.slice(0, -1);
+    lines[5] = last + '…';
+  }
+  const lineH = 19, bh = lines.length * lineH + 30, qY = 8;
+  ctx.fillStyle = 'rgba(6,6,15,0.94)';
+  roundRect(ctx, qX, qY, qW, bh, 10);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,229,255,0.45)';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, qX, qY, qW, bh, 10);
+  ctx.stroke();
+  ctx.fillStyle = AR.cyan;
+  ctx.font = '700 9px ' + AR_FONT;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('STEER INTO THE TERM FOR', qX + 14, qY + 15);
+  ctx.fillStyle = AR.text;
+  ctx.font = '700 14px ' + AR_FONT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  lines.forEach((l, i) => ctx.fillText(l, W / 2, qY + 30 + i * lineH));
 }
 
 function drawGate(g, W, H) {
@@ -1054,32 +1158,7 @@ function drawGate(g, W, H) {
   const prevAlpha = ctx.globalAlpha;
   ctx.globalAlpha = alpha * prevAlpha;
 
-  // Question banner (above gate) — measured wrap, max 2 lines, ellipsized.
-  if (g.y > 50 && !dissolving) {
-    const qW = Math.min(W - 24, 480);
-    const qX = (W - qW) / 2;
-    let layout = fitTextLayout(ctx, g.q, qW - 28, 2 * 19, '700');
-    // fitTextLayout starts at 13px; banner wants up to 14px when it fits on one line
-    ctx.font = '700 14px ' + AR_FONT;
-    if (ctx.measureText(g.q).width <= qW - 28) layout = { fs: 14, lineH: 19, lines: [g.q] };
-    const bh = layout.lines.length * layout.lineH + 18;
-    const qY = Math.max(8, top - bh - 10);
-
-    ctx.fillStyle = 'rgba(6,6,15,0.88)';
-    roundRect(ctx, qX, qY, qW, bh, 10);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,229,255,0.25)';
-    ctx.lineWidth = 1;
-    roundRect(ctx, qX, qY, qW, bh, 10);
-    ctx.stroke();
-
-    ctx.fillStyle = AR.text;
-    ctx.font = '700 ' + layout.fs + 'px ' + AR_FONT;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const startY = qY + bh / 2 - ((layout.lines.length - 1) / 2) * layout.lineH;
-    layout.lines.forEach((l, i) => ctx.fillText(l, W / 2, startY + i * layout.lineH));
-  }
+  // (The question lives in the pinned banner — see drawQuestionBanner.)
 
   // Doors — when dissolving, draw centred & scaled
   const cy = top + gateH / 2;
@@ -1368,9 +1447,9 @@ function endGame() {
       const q = questions[qi];
       if (q) {
         items.push('<div style="margin:7px 0;line-height:1.45;font-size:13px;">'
-          + '<strong style="color:' + AR.text + ';">' + Arcade.escapeHtml(q.q) + '</strong>'
+          + '<strong style="color:' + AR.text + ';">' + Arcade.escapeHtml(q.term || q.q) + '</strong>'
           + '<span style="color:' + AR.muted + ';"> — </span>'
-          + '<span style="color:' + AR.mint + ';">' + Arcade.escapeHtml(q.options[q.correct]) + '</span>'
+          + '<span style="color:' + AR.mint + ';">' + Arcade.escapeHtml(q.def || q.options[q.correct]) + '</span>'
           + '</div>');
       }
     });

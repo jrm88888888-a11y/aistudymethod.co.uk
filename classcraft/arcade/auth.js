@@ -183,6 +183,16 @@
       /* corner widget */
       "#aism-auth-corner{position:fixed;top:16px;right:16px;z-index:99998;font-family:var(--aism-px);touch-action:none}",
       "#aism-auth-corner.dragging,#aism-auth-corner.dragging *{cursor:grabbing !important}",
+      /* chip docked in the arcade HUD rail: same look, compact, in the layout */
+      "#aism-auth-corner.in-rail{position:relative;top:auto;right:auto;left:auto;bottom:auto;z-index:2;touch-action:auto;flex:none;order:5}",
+      "#aism-auth-corner.in-rail .aism-corner-in{gap:7px;padding:2px 11px 2px 2px;height:34px;box-sizing:border-box;box-shadow:none}",
+      "#aism-auth-corner.in-rail .aism-av-mini{width:28px;height:28px;border-width:1.5px}",
+      "#aism-auth-corner.in-rail .aism-av-mini.empty{font-size:18px}",
+      "#aism-auth-corner.in-rail .aism-coin svg{width:16px;height:16px}",
+      "#aism-auth-corner.in-rail .bal{font-size:11px}",
+      "#aism-auth-corner.in-rail .aism-corner-login{height:34px;box-sizing:border-box;padding:0 12px;gap:7px;font-size:9px;box-shadow:none;white-space:nowrap}",
+      "#aism-auth-corner.in-rail .aism-corner-login svg{width:15px;height:15px}",
+      "#aism-auth-corner.in-rail .aism-menu{z-index:200}",
       ".aism-btn{cursor:pointer;border:0;border-radius:999px;font-family:var(--aism-px);font-size:10px;letter-spacing:.5px}",
       ".aism-corner-login{display:flex;align-items:center;gap:9px;background:#1b1636;border:1px solid #f5c542;color:#f5c542;padding:11px 18px;box-shadow:0 6px 20px #0009}",
       ".aism-corner-in{display:flex;align-items:center;gap:11px;background:#1b1636;border:1px solid #3a3568;border-radius:999px;padding:5px 18px 5px 5px;box-shadow:0 6px 20px #0009;cursor:pointer;transition:border-color .15s}",
@@ -315,11 +325,16 @@
   auth.mountCorner = function (target) {
     injectCss();
     var host = document.getElementById("aism-auth-corner");
-    if (!host) { host = el("div"); host.id = "aism-auth-corner"; (target || document.body).appendChild(host); }
+    // Arcade pages have one HUD rail (quizzes/arcade.js) — the chip lives
+    // there, in the page's own layout, instead of floating over the game.
+    var rail = !target && document.querySelector(".ar-tools");
+    if (!host) { host = el("div"); host.id = "aism-auth-corner"; (target || rail || document.body).appendChild(host); }
+    else if (rail && host.parentNode !== rail) rail.appendChild(host);
+    if (rail) { host.classList.add("in-rail"); host.style.left = host.style.top = host.style.right = host.style.bottom = ""; }
 
     // Draggable: default top-right (CSS), but the user can drag it off any
-    // button and we remember where they left it.
-    (function applyPos() {
+    // button and we remember where they left it. Not inside the rail.
+    if (!host.classList.contains("in-rail")) (function applyPos() {
       var p = null; try { p = JSON.parse(localStorage.getItem("aism-corner-pos") || "null"); } catch (e) {}
       if (p && typeof p.left === "number" && typeof p.top === "number") {
         var l = Math.min(Math.max(4, p.left), Math.max(4, window.innerWidth - 64));
@@ -331,6 +346,7 @@
       host._dragInit = true;
       host.addEventListener("pointerdown", function (e) {
         if (e.button != null && e.button !== 0) return;
+        if (host.classList.contains("in-rail")) return;
         var r = host.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, ox = r.left, oy = r.top, dragging = false;
         host._dragged = false;
         var mv = function (ev) {
@@ -811,7 +827,21 @@
               if (expected > 0) note = winNote(mount, expected, (capRem == null) ? null : (capRem - expected));
               else if (worth > 0) note = capNote(mount);
             }
+            /* Optimistic balance (Oct 2026): the corner chip used to keep the
+               old balance until /award answered (seconds on a cold edge
+               script). Bump the cached wallet by the expected win now; the
+               server's wallet replaces it when /award returns, and a failed
+               award restores the previous snapshot. */
+            var before = walletSnap;
+            if (expected > 0 && walletSnap && typeof walletSnap.coins === "number") {
+              walletSnap = Object.assign({}, walletSnap, {
+                coins: walletSnap.coins + expected,
+                capRemaining: (capRem == null) ? walletSnap.capRemaining : Math.max(0, capRem - expected)
+              });
+              emit();
+            }
             auth.award(opts.pct).then(function (res) {
+              if ((!res || !res.ok) && walletSnap !== before && auth.isLoggedIn()) { walletSnap = before; emit(); }
               if (!mount) return;
               if (!res || !res.ok) {
                 // Banking failed — never leave a win claim standing that the

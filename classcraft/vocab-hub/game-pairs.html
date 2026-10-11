@@ -6,7 +6,7 @@
 <title>Flashcard Pairs | Free Vocabulary Revision Game — AI Study Method</title>
 <meta content="Play Flashcard Pairs — a free vocabulary revision game covering 3,500+ terms across 18 subjects. No login required. Try it now." name="description"/>
 <link href="../../style.css" rel="stylesheet"/>
-<link href="../quizzes/arcade.css" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
 <script src="../../script.js" defer></script>
 <style>
   /* difficulty chips */
@@ -36,7 +36,7 @@
   .pv-grid { display: grid; gap: 8px; margin-bottom: 14px; }
   .pv-card {
     background: transparent; border: none; padding: 0; cursor: pointer;
-    perspective: 800px; min-height: 96px; min-width: 0; text-align: center;
+    perspective: 800px; min-height: var(--pv-h, 96px); min-width: 0; text-align: center;
   }
   .pv-card:focus-visible { outline: 2px solid var(--ar-cyan); outline-offset: 2px; border-radius: 12px; }
   .pv-inner {
@@ -66,7 +66,7 @@
   .pv-text {
     font-family: var(--ar-font); font-weight: 600; color: var(--ar-text);
     line-height: 1.2; font-size: var(--pv-fs, 0.7rem); overflow-wrap: anywhere;
-    display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 14; -webkit-box-orient: vertical; overflow: hidden;
   }
   .pv-card.matched { cursor: default; }
   .pv-card.matched .pv-front { border-color: var(--ar-mint) !important; box-shadow: 0 0 0 2px rgba(0,255,163,0.25), 0 0 22px rgba(0,255,163,0.35); }
@@ -130,7 +130,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/arcade.js?v=20261010b"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab from sessionStorage (set by vocab-hub.html) ──
@@ -156,8 +156,10 @@ const DIFF_OPTIONS = [
   { icon:'👾', label:'Legend',    pairs:VOCAB_DATA.length },
 ];
 
-// Boards are capped at 12 pairs; bigger runs (Legend) deal successive boards.
-const MAX_BOARD_PAIRS = 12;
+// Boards are capped at 8 pairs (max 4 columns); bigger runs deal successive
+// boards. At 12 pairs the board went to 6 columns and definitions rendered at
+// 9.6px, clipped after ~100 characters — players were matching fragments.
+const MAX_BOARD_PAIRS = 8;
 const LIGHTNING_MS  = 30000;
 const LIGHTNING_PTS = 50;
 
@@ -242,7 +244,12 @@ function renderSetup() {
 function startGame() {
   if (!selectedPairs) return;
   Arcade.sfx.swoosh();
-  const pool = shuffle([...VOCAB_DATA]).slice(0, selectedPairs);
+  // Cards hold up to ~240 characters legibly (measured at 390px and 1280px).
+  // Deal card-sized definitions first; longer ones only if the topic runs out.
+  // (~19% of vocab-pack definitions are over 200 characters, ~8% over 300.)
+  const MAX_CARD_DEF = 240;
+  const fits = v => String(v.definition || '').length <= MAX_CARD_DEF;
+  const pool = shuffle(VOCAB_DATA.filter(fits)).concat(shuffle(VOCAB_DATA.filter(v => !fits(v)))).slice(0, selectedPairs);
   boards = [];
   for (let i = 0; i < pool.length; i += MAX_BOARD_PAIRS) boards.push(pool.slice(i, i + MAX_BOARD_PAIRS));
   boardIndex = 0;
@@ -265,8 +272,12 @@ function startBoard() {
   let cols;
   if (vw < 420) cols = boardPairs <= 8 ? 2 : 3;
   else if (vw < 640) cols = boardPairs <= 10 ? 3 : 4;
-  else cols = boardPairs <= 6 ? 4 : boardPairs <= 8 ? 4 : boardPairs <= 10 ? 5 : 6;
-  const fs = cols >= 6 ? '0.6rem' : cols >= 5 ? '0.66rem' : cols >= 4 ? '0.74rem' : cols >= 3 ? '0.82rem' : '0.92rem';
+  else cols = 4;
+  const fs = cols >= 4 ? '0.8rem' : cols >= 3 ? '0.84rem' : '0.92rem';
+  // Card height grows with the longest definition on this board so the full
+  // text fits instead of being cut off by the line clamp.
+  const longest = Math.max(...boardItems.map(it => String(it.definition || '').length));
+  const cardH = longest <= 90 ? 96 : Math.min(290, Math.round(60 + longest * 0.94));
 
   let cards = [];
   boardItems.forEach((item, i) => {
@@ -285,7 +296,7 @@ function startBoard() {
       ${multi ? `<div class="ar-hud-stat">Board <b>${boardIndex + 1}/${boards.length}</b></div>` : ''}
       <div class="ar-hud-stat gold">Time <b id="hudTime">${fmtTime(elapsed)}</b></div>
     </div>
-    <div class="pv-grid" id="board" style="grid-template-columns:repeat(${cols},1fr);--pv-fs:${fs};"></div>
+    <div class="pv-grid" id="board" style="grid-template-columns:repeat(${cols},1fr);--pv-fs:${fs};--pv-h:${cardH}px;"></div>
     <div id="fb"></div>
     <div class="ar-kbd-hint">Keyboard: Tab between cards · Enter flips</div>
   `;

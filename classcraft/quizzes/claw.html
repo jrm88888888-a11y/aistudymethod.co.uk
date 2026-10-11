@@ -6,7 +6,7 @@
 <title>The Claw — Free Revision Game — AI Study Method</title>
 <meta name="description" content="Grab the plushie, name the term. A free GCSE, A-Level and IB claw-machine revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   /* ---- The Claw: full-canvas cabinet + control deck ---- */
   .claw-stage { max-width: 560px; margin: 0 auto; }
@@ -33,10 +33,10 @@
   #cab-wrap.playing .claw-zone .hint { opacity: 1; }
   #cab-wrap:not(.aim) .claw-zone { pointer-events: none; }
 
-  /* question overlay — slides up over the LOWER part only, toy stays visible up top */
+  /* question overlay — slides up over most of the cabinet; the top strip (claw + toy) stays visible */
   #q-overlay {
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
-    max-height: 56%; overflow: auto;
+    max-height: 86%; overflow: auto; overscroll-behavior: contain;   /* was 56%: four definitions needed scrolling while the clock ran */
     background: linear-gradient(180deg, rgba(10,8,32,0.78) 0%, rgba(8,6,24,0.97) 30%);
     backdrop-filter: blur(3px);
     border-top: 2px solid rgba(126,109,255,0.55);
@@ -150,6 +150,7 @@
   /* During a question the mute FAB must never sit over an answer button — park it
      top-right, clear of the option list. */
   body.claw-q .ar-mute { bottom: auto; top: calc(var(--nav-h, 68px) + 10px); right: 12px; }
+  body.claw-q .ar-pace { display: none; }   /* pace changes apply from the next question anyway */
 </style>
 <link rel="canonical" href="https://aistudymethod.com/classcraft/quizzes/claw.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -202,7 +203,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script src="../reels/reel-data.js"></script>
 <script src="../reels/reel-chrome.js"></script>
@@ -276,7 +277,7 @@
   // cabinet to fill it. Injected style + chrome are guarded, so normal play is
   // untouched. The leaderboard / mission logging are skipped further below.
   const REEL_CSS = [
-    'html.reel-mode .ar-mute{display:none!important}',
+    'html.reel-mode .ar-mute,html.reel-mode .ar-pace{display:none!important}',
     'html.reel-mode #root{padding:0!important;margin:0!important;max-width:none!important;',
     '  width:100%!important;height:100%!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}',
     'html.reel-mode #root>.ar-badge,html.reel-mode #root>.ar-title,',
@@ -439,7 +440,8 @@
   let qCorrectIdx = 0, qOpts = [];
   let timerCtl = null;
   let qStartMs = 0;
-  const Q_MS = 12000;
+  const Q_MS = 12000;   // floor; the live clock is qMs = Arcade.readMs(...)
+  let qMs = Q_MS;
   let answerCorrect = false;   // outcome of the reveal, consumed by the 'reveal' state
 
   // DOUBLE GRAB — armed by every 3-streak of correct answers. The charged claw
@@ -986,7 +988,10 @@
     qStartMs = performance.now();
     const fill = ov.querySelector('#q-timer i');
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
-    timerCtl = Arcade.timer(fill, Q_MS, { onEnd: () => answerQuestion(-1, true) });
+    // Clock sized to the term + four definitions on screen (Q_MS is the floor).
+    // Reel mode keeps its fixed beat for the recorded video.
+    qMs = reel ? Q_MS : Arcade.readMs([toy.term, opts], Q_MS);
+    timerCtl = Arcade.timer(fill, qMs, { onEnd: () => answerQuestion(-1, true) });
   }
 
   function answerQuestion(idx, timedOut) {
@@ -994,7 +999,7 @@
     if (timerCtl) { timerCtl.stop(); timerCtl = null; }
     const toy = currentToy;
     const correct = !timedOut && idx === qCorrectIdx;
-    const remain = Math.max(0, Q_MS - (performance.now() - qStartMs));
+    const remain = isFinite(qMs) ? Math.max(0, qMs - (performance.now() - qStartMs)) : 0;
 
     const ov = document.getElementById('q-overlay');
     ov.querySelectorAll('.q-opt').forEach((b, i) => {
@@ -1009,7 +1014,7 @@
       streak++;
       bestStreak = Math.max(bestStreak, streak);
       if (streak % 3 === 0 && !dgCharged) armDoubleGrab();
-      const speedBonus = Math.max(0, Math.min(100, Math.round(100 * remain / Q_MS)));
+      const speedBonus = Math.max(0, Math.min(100, Math.round(100 * remain / qMs)));
       const streakMult = streak >= 3 ? Math.min(2, 1.5 + 0.25 * (streak - 3)) : 1;
       const goldF = toy.golden ? 2 : 1;
       const redeemF = wasRedeem ? 0.5 : 1;

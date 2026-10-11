@@ -6,7 +6,7 @@
 <title>Vocabulary Quiz | Free GCSE Revision Game — AI Study Method</title>
 <meta content="Test your vocabulary with this free GCSE revision quiz. 3,500+ terms across 18 subjects. No login required. Try it now." name="description"/>
 <link href="../../style.css" rel="stylesheet"/>
-<link href="../quizzes/arcade.css" rel="stylesheet"/>
+<link href="../quizzes/arcade.css?v=20261010b" rel="stylesheet"/>
 <script src="../../script.js" defer></script>
 <style>
   .vq-opt-row { display: flex; flex-direction: column; gap: 10px; }
@@ -78,7 +78,7 @@
 </div>
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="../quizzes/arcade.js"></script>
+<script src="../quizzes/arcade.js?v=20261010b"></script>
 <script src="../quizzes/share-score.js?v=20260717a"></script>
 <script>
 // ── Load vocab (set by vocab-hub.html via sessionStorage) ──
@@ -249,7 +249,10 @@ function renderQuestion() {
   const tiles = Array.from(root.querySelectorAll('.vq-opt-row .ar-tile'));
   let phase = 'answer';
 
-  timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+  // Clock sized to the prompt + four options on screen (ROUND_MS is the floor):
+  // Term→Definition mode puts four full definitions on screen and gets more time.
+  const roundMs = Arcade.readMs([q.question, q.options], ROUND_MS);
+  timerCtl = Arcade.timer(document.getElementById('tfill'), roundMs, {
     onEnd: () => { if (phase === 'answer') settle(null, true); },
   });
 
@@ -276,7 +279,7 @@ function renderQuestion() {
       state.streak++;
       state.bestStreak = Math.max(state.bestStreak, state.streak);
       const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
-      const speed = Math.round(50 * (remaining / ROUND_MS));
+      const speed = isFinite(roundMs) ? Math.round(50 * (remaining / roundMs)) : 0;
       pts = Math.round((100 + speed) * mult);
       if (q.redemption) pts = Math.round(pts / 2);   // redemption pays half
       state.score += pts;

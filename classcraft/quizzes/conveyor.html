@@ -6,7 +6,7 @@
 <title>Conveyor Belt — Free Revision Game (True or False) — AI Study Method</title>
 <meta name="description" content="Sort statements as true or false against the clock. A free GCSE, A-Level and IB revision game across every subject. No login required.">
 <link rel="stylesheet" href="../../style.css">
-<link rel="stylesheet" href="arcade.css">
+<link rel="stylesheet" href="arcade.css?v=20261010b">
 <style>
   /* ---- screens ---- */
   .screen { display: none; }
@@ -166,7 +166,7 @@
 
 <div id="announce" aria-live="polite" class="sr-only"></div>
 
-<script src="arcade.js"></script>
+<script src="arcade.js?v=20261010b"></script>
 <script src="share-score.js"></script>
 <script>
 'use strict';
@@ -475,15 +475,30 @@ function verdict(guessKind, zoneEl) {
     card.classList.add(guessKind === 'truth' ? 'out-truth' : 'out-cap');
     // The learning beat: flash the why before the next card.
     const whyEl = document.getElementById('cv-why');
-    whyEl.innerHTML = `<div class="ar-feedback no"><strong>That was a ${esc(kindLabel)}.</strong> ${esc(item.why || '')}${Arcade.statementHtml(item.item)}</div>`;
+    whyEl.innerHTML = `<div class="ar-feedback no"><strong>That was a ${esc(kindLabel)}.</strong> ${esc(item.why || '')}${Arcade.statementHtml(item.item)}<div class="ar-kbd-hint" style="margin-top:6px;display:block;">Tap or press any key to carry on</div></div>`;
     announce('Wrong. That was a ' + (item.kind === 'truth' ? 'truth' : 'misconception') + '. ' + (item.why || ''));
     updateHUD();
     maybeSpeedUp();
     clearTimeout(whyTimeout);
-    whyTimeout = setTimeout(() => {
+    // The correction stays up long enough to read (was a flat 1.6 s), capped
+    // at 5 s because the run clock keeps running; a tap or key skips ahead.
+    const dwell = Math.min(5000, Arcade.feedbackMs(whyEl.textContent, 1600));
+    let moved = false;
+    const go = () => {
+      if (moved) return; moved = true;
+      clearTimeout(whyTimeout);
+      document.removeEventListener('pointerdown', skip, true);
+      document.removeEventListener('keydown', skip, true);
       whyEl.innerHTML = '';
       nextCard();
-    }, 1600);
+    };
+    const skip = (ev) => { if (ev.type === 'keydown' && ev.repeat) return; setTimeout(go, 0); };
+    setTimeout(() => {   // arm after a beat so the mis-sort tap itself doesn't skip
+      if (moved) return;
+      document.addEventListener('pointerdown', skip, true);
+      document.addEventListener('keydown', skip, true);
+    }, 400);
+    whyTimeout = setTimeout(go, dwell);
   }
   if (zoneEl) {
     zoneEl.classList.add('hot-target');
