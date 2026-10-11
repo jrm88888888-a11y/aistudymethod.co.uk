@@ -165,6 +165,16 @@
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
   };
+  // Sum of official Daily scores since Monday 00:00 UTC of the week containing `now`.
+  function dailyWeekTotal(h, now) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const monday = new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * DAY_MS);
+    const from = utcISO(monday), to = utcISO(d);
+    let t = 0;
+    Object.keys(h || {}).forEach(k => { if (k >= from && k <= to) t += Number(h[k]) || 0; });
+    return t;
+  }
+
   function getHistory() {
     try {
       const h = JSON.parse(LS.get('aism-daily-history') || '{}');
@@ -1146,6 +1156,9 @@
     }
     const extended = newStreak > 1;
     const insight = insightText(state.score, newStreak);
+    // L5: the week's Daily total (Monday–Sunday, UTC — the leaderboard's week)
+    // goes on the weekly board; each day's official run adds to it.
+    const weekTotal = dailyWeekTotal(getHistory(), subNow);
 
     root.innerHTML = headerHtml(' · Complete') + streakStripHtml(newStreak, false) + '<div id="end-root"></div>';
 
@@ -1159,8 +1172,12 @@
       bigLabel: '🔥 day streak',
       rows: [
         { v: state.score + '/5', l: 'today’s score' },
+        { v: weekTotal, l: 'this week' },
         { v: s.totalDays || newStreak, l: 'days played' },
       ],
+      // Weekly leaderboard: the week's total so far (no personal-best key, so
+      // no "new best" badge — the board itself is the competition).
+      bestValue: weekTotal,
       emojiGrid: grid,
       insight,
       // The share is today's RESULT (score + grid), with the streak as a

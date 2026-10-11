@@ -436,6 +436,13 @@
   const HOLD_DIST = 30;
 
   let held = null;                 // toy currently gripped
+  /* GRIP (Oct 2026): where the claw closes on a toy matters. Grip = how
+     central the toy sits in the claw's mouth (1 = dead centre). Below 0.22
+     the claw only clips it; below 0.55 the toy swings on the way up and may
+     slip. A clip or a slip costs time, never a credit, so the rank (toys
+     banked by answering) still depends on knowledge, not on dexterity. */
+  const GRIP_FIRM = 0.55, GRIP_MIN = 0.22;
+  let heldGrip = 1, slipAt = null;
   let currentToy = null;          // toy in the active question
   let bankFall = null;            // toy animating down the chute
   let corrText = '';
@@ -597,6 +604,10 @@
       let d2 = dx * dx + dy * dy;
       const rr = t.r + CLAW_R;
       if (d2 >= rr * rr) continue;
+      // GRIP (Oct 2026): a toy sitting under the middle of the open claw goes
+      // INTO its mouth rather than being shoved aside — so a well-aimed drop
+      // keeps its toy centred (firm grip), an off-centre one gets pushed out.
+      if (Math.abs(dx) < t.r * 0.55 && dy > -t.r * 0.2) continue;
       let d = Math.sqrt(d2) || 0.001;
       const nx = dx / d, ny = dy / d, ov = rr - d;
       t.x += nx * ov * 0.6 * soft; t.y += ny * ov * 0.5 * soft;
@@ -786,10 +797,27 @@
         if (stateT > 0.24) resolveCatch();
         break;
 
-      case 'lifting':
+      case 'lifting': {
         winchTarget = IDLE_L; clawTarget = 0;
+        if (held && !dgPending && heldGrip < GRIP_FIRM) {
+          // a loose grip swings on the way up
+          held.px -= Math.sin(stateT * 15) * (reduced ? 0.2 : 0.7) * (1 - heldGrip);
+          const span = (GRAB_Y - RAIL_Y) - IDLE_L;
+          const prog = span > 0 ? ((GRAB_Y - RAIL_Y) - winchL) / span : 1;
+          if (slipAt != null && prog >= slipAt) {
+            slipAt = null;
+            dropHeldToPile();
+            Arcade.sfx.wrong();
+            Arcade.vibrate(25);
+            showToast('It slipped! Grab nearer the centre. No credit lost.');
+            announce.textContent = 'The toy slipped out of a loose grip. No credit lost. Try again, centred.';
+            setState('empty');
+            break;
+          }
+        }
         if (winchL <= IDLE_L + 8) { if (held) startQuestion(); }
         break;
+      }
 
       case 'question':
         winchTarget = IDLE_L; clawTarget = 0;
@@ -853,6 +881,13 @@
     Arcade.sfx.swoosh();
   }
 
+  function gripOf(t, hd) {
+    const reach = t.r + 20;
+    lastCatchDx = Math.round(t.x - hd.x);
+    return Math.max(0, 1 - Math.abs(t.x - hd.x) / reach);
+  }
+  let lastCatchDx = null;
+
   function resolveCatch() {
     const hd = clawHead();
     // DOUBLE GRAB: a charged claw seizes the TWO nearest real toys inside its
@@ -906,9 +941,22 @@
       showToast('That one is just stuffing — no credit lost.');
       announce.textContent = 'That plushie was just stuffing. No penalty. Aim for a labelled toy.';
       setState('empty');
+    } else if (best && gripOf(best, hd) < GRIP_MIN) {
+      // only the edge of the claw caught it: it is shoved aside, nothing lifted
+      best.sleep = false;
+      best.px = best.x - Math.sign(best.x - hd.x || 1) * 4; best.py = best.y - 3;
+      Arcade.sfx.wrong();
+      showToast('Clipped the edge — line up the centre. No credit lost.');
+      announce.textContent = 'The claw only clipped that toy. No credit lost. Line the claw up over the centre of a toy.';
+      setState('empty');
     } else if (best) {
+      heldGrip = gripOf(best, hd);          // measured before the toy is snapped into the claw
       held = best; best.state = 'held'; best.sleep = false;
       best.x = hd.x; best.y = hd.y + HOLD_DIST; best.px = best.x; best.py = best.y;
+      // a loose grip may slip somewhere on the way up (30–80% of the lift)
+      const slipChance = heldGrip >= GRIP_FIRM ? 0 : 0.6 * (GRIP_FIRM - heldGrip) / (GRIP_FIRM - GRIP_MIN);
+      slipAt = Math.random() < slipChance ? 0.3 + Math.random() * 0.5 : null;
+      if (heldGrip < GRIP_FIRM) { showToast('Wobbly grip…'); setTimeout(hideToast, 900); }
       Arcade.sfx.click();
       setState('lifting');
     } else {
@@ -1606,7 +1654,7 @@
     root.innerHTML =
       '<div class="ar-badge">V · Grab · The Claw</div>' +
       '<h1 class="ar-title">' + esc(topic) + '</h1>' +
-      '<p class="ar-sub">Move the claw, drop it, grab a plushie — then prove you know the term to bank it. ' + esc(topic) + ', ' + total + ' toys, 10 credits.</p>' +
+      '<p class="ar-sub">Move the claw over the middle of a plushie, drop it, grab — then prove you know the term to bank it. Off-centre grabs wobble and can slip (that costs time, not a credit). ' + esc(topic) + ', ' + total + ' toys, 10 credits.</p>' +
       '<div class="ar-meta">' + esc([level, subj].filter(Boolean).join(' · ')) + '</div>' +
       '<div class="claw-stage">' +
         '<div id="cab-wrap" class="aim playing">' +
@@ -1654,6 +1702,7 @@
   startLoop();
   if (!reel) { Arcade.logMission && Arcade.logMission({ game: 'claw', stem: stem, topic: topic }); }
 
+  let aimed = null;   // debug harness only
   /* ---- debug hook for the test harness ---- */
   if (DEBUG) {
     window.__claw = {
@@ -1700,6 +1749,21 @@
         startQuestion();
         return true;
       },
+      // test only: line the claw up dx px from a pile toy's centre and drop it
+      dropNear(dx) {   // aims only; step() to let the rope settle, then drop()
+        if (state !== 'idle') return null;
+        const pile = toys.filter(x => x.state === 'pile' && !x.stuffing);
+        if (!pile.length) return null;
+        let t = pile[0]; for (const x of pile) if (Math.abs(x.y - GRAB_Y) < Math.abs(t.y - GRAB_Y)) t = x;   // a toy at grab depth
+        gantry.x = Math.max(GANTRY_MIN, Math.min(GANTRY_MAX, t.x + dx)); gantry.vx = 0;
+        aimed = t;
+        return t.r;
+      },
+      drop() { dropClaw(); return aimed ? Math.round(aimed.x - gantry.x) : null; },
+      get grip() { return heldGrip; },
+      get lastCatchDx() { return lastCatchDx; },
+      get stateName() { return state; },
+      get heldToy() { return held; },
       forceAnswer(right) {
         if (state !== 'question') return false;
         answerQuestion(right ? qCorrectIdx : (qCorrectIdx === 0 ? 1 : 0), false);

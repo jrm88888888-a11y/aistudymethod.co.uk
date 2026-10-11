@@ -18,6 +18,7 @@
   }
   .gr-banner b { color:var(--ar-pink); }
   .gr-banner .gr-vs { color:var(--ar-cyan); font-weight:700; }
+  .gr-banner .gr-fresh { margin-left:auto; color:var(--ar-cyan); font-weight:700; text-decoration:underline; text-underline-offset:3px; white-space:nowrap; }
 
   .gr-track {
     position:sticky; top:calc(var(--nav-h, 68px) + 6px); z-index:20;
@@ -88,6 +89,8 @@
 
   /* Question stem — never uppercased: unit and symbol case is meaning (mA vs MA, μ vs Μ). */
   .gr-q  { font-size:13.5px; color:var(--ar-text2); margin-bottom:6px; line-height:1.5; }
+  .gr-stem { font-size:17px; line-height:1.45; margin-bottom:12px; }
+  @media (max-width:760px) { body.ar-play .gr-banner { padding:8px 12px; margin-bottom:8px; } body.ar-play .gr-track { padding:10px 12px; } }
   .gr-opts { display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
   .gr-opts .ar-tile { line-height:1.4; }
 
@@ -203,7 +206,8 @@
   // Low-quality banks are suppressed (see two-truths for the rationale). When
   // absent or low, the game runs on concept questions alone.
   const bankUsable = bank && bank.quality !== 'low';
-  const bankItems = bankUsable ? ((bank.items || []).filter(it => it && it.q && it.correct)) : [];
+  const bankItems = bankUsable ? ((bank.items || []).filter(it => it && it.q && it.correct
+    && [it.misconception, it.random_wrong].filter(d => d && d !== it.correct).length >= 2)) : [];   // X9: real wrong answers only
 
   // Need at least four concepts (for concept-question distractors) and a pool
   // of six-plus questions for the run to be worth racing.
@@ -282,12 +286,9 @@
         distractors = seededShuffle(concepts.filter(c => c.term !== item.term).map(c => c.def), rng).slice(0, 3);
         item.stemText = 'What does “' + item.term + '” mean?';
       } else {
-        distractors = item.distract.slice(0, 3);
-        if (distractors.length < 3) {
-          const extra = seededShuffle(concepts.map(c => c.def), rng)
-            .filter(d => d !== item.correct && distractors.indexOf(d) < 0);
-          while (distractors.length < 3 && extra.length) distractors.push(extra.shift());
-        }
+        // Only the item's own wrong answers (X9): padding a numeric or short
+        // answer with concept definitions made the extras give themselves away.
+        distractors = item.distract.filter(d => d && d !== item.correct).slice(0, 3);
       }
       const options = seededShuffle([item.correct].concat(distractors), rng);
       return { stemText: item.stemText, options, correctIdx: options.indexOf(item.correct), src: item.src || null };
@@ -344,20 +345,48 @@
     seed = (Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
   }
 
-  const questions = buildQuestions(seed);
-
   const ghostBlobIn = params.get('ghost');
-  const ghost = ghostBlobIn ? decodeGhost(ghostBlobIn, ROUNDS) : null;  // null => garbage or absent
+  let ghost = ghostBlobIn ? decodeGhost(ghostBlobIn, ROUNDS) : null;  // null => garbage or absent
+
+  /* YOUR OWN GHOST (Oct 2026): your best run on this topic is kept on this
+     device (seed + ghost blob). With no mate's ghost in the link, you race it
+     on the same 10 questions; "New questions" (?fresh=1) skips it. A better
+     run (more correct, then faster) replaces it. */
+  const SELF_KEY = 'aism-ghost-self:' + stem;
+  function readSelf() {
+    try {
+      const o = JSON.parse(localStorage.getItem(SELF_KEY) || 'null');
+      if (o && typeof o.seed === 'string' && /^[0-9a-z]+$/.test(o.seed) && decodeGhost(o.blob, ROUNDS)) return o;
+    } catch (e) {}
+    return null;
+  }
+  const selfBest = readSelf();
+  let selfRace = false;
+  if (!ghost && selfBest && params.get('fresh') !== '1' && seedParam == null) {
+    seed = parseInt(selfBest.seed, 36) >>> 0;
+    ghost = decodeGhost(selfBest.blob, ROUNDS);
+    selfRace = true;
+  }
+
+  const questions = buildQuestions(seed);
   const racing = !!ghost;
 
   const giParam = String(params.get('gi') || '').toUpperCase();
   const ghostInitials = /^[A-Z]{3}$/.test(giParam) ? giParam : '';
-  const ghostName = ghostInitials || 'YOUR MATE';
+  const ghostName = selfRace ? 'YOUR BEST' : (ghostInitials || 'YOUR MATE');
+  const ghostTag = selfRace ? 'Best' : ghostName.slice(0, 6);
+  function freshHref() {
+    const u = new URL(location.href);
+    ['ghost', 'seed', 'gi', 'fresh'].forEach(k => u.searchParams.delete(k));
+    u.searchParams.set('fresh', '1');
+    return u.pathname + u.search;
+  }
 
   // Ghost true score (what the friend actually achieved) — used for the final
   // result headline. The live strip may differ (see the racing model note).
   const ghostTrueCorrect = racing ? ghost.filter(g => g.correct).length : 0;
-  const ghostTrueTime = racing ? ghost.reduce((s, g) => s + g.ms, 0) : 0;
+  // Your own ghost keeps its exact time (the blob rounds each answer to 0.1 s).
+  const ghostTrueTime = racing ? (selfRace ? selfBest.ms : ghost.reduce((s, g) => s + g.ms, 0)) : 0;
 
   /* ---------------- racing model (documented choice) ----------------------
      Per-question HEAD-TO-HEAD, NOT wall-clock. When you START question i, the
@@ -397,11 +426,14 @@
       nitroActive: false,    // this question scores ×2 (score only, never the ghost)
       nitroCount: 0,         // nitro questions converted (for the end card line)
     };
+    Arcade.playMode && Arcade.playMode(true);
     renderQuestion();
   }
 
   function renderHeader(metaTail) {
-    const lead = racing
+    const lead = selfRace
+      ? 'Race your own best run: the same 10 questions, the same order. Beat its score, then its time.'
+      : racing
       ? 'Race the ghost of the mate who challenged you. Same 10 questions, same order. Answer fast and clean — beat their score, then their time.'
       : 'Set a time on these 10 questions, then send your ghost to a mate and make them chase it. At least 15 seconds a question — more when there is more to read.';
     return `
@@ -413,6 +445,10 @@
   }
 
   function bannerHtml() {
+    if (selfRace) {
+      return `<div class="gr-banner">👻 <span>Racing <b>your best</b>: ${ghostTrueCorrect}/${ROUNDS} in ${(ghostTrueTime / 1000).toFixed(1)}s</span>
+        <a class="gr-fresh" href="${esc(freshHref())}">🎲 New questions</a></div>`;
+    }
     if (racing) {
       return `<div class="gr-banner">👻 <span>You are racing <b>${esc(ghostName)}</b></span>
         <span class="gr-vs">· their score to beat: ${ghostTrueCorrect}/${ROUNDS} ·</span></div>`;
@@ -424,7 +460,7 @@
     const youPct = 0, ghostPct = 0;
     const ghostLane = racing ? `
       <div class="gr-lane gr-lane-ghost">
-        <span class="gr-tag">${esc(ghostName.slice(0, 6))}</span>
+        <span class="gr-tag">${esc(ghostTag)}</span>
         <div class="gr-rail"><i class="gr-runner gr-runner-ghost" id="grGhost" style="left:${ghostPct}%"></i><span class="gr-flag">🏁</span></div>
         <span class="gr-score" id="grGhostScore">0</span>
       </div>` : '';
@@ -509,10 +545,9 @@
       }).join('')}</div>
       <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
       <div class="ar-card">
-        <div class="ar-label">Question ${state.idx + 1} · tap the definition</div>
+        <div class="ar-label">Question ${state.idx + 1} of ${ROUNDS}</div>
         ${Arcade.figureHtml(q.src)}
-        <div class="gr-q">${esc(q.stemText)}</div>
-        <div class="ar-prompt">Which one is right?</div>
+        <div class="ar-prompt gr-stem">${esc(q.stemText)}</div>
         <div class="gr-opts ar-stagger" role="radiogroup" aria-label="Four options — pick the correct one">
           ${q.options.map((opt, i) => `
             <button type="button" class="ar-tile" role="radio" aria-checked="false" data-idx="${i}">${esc(showOpt(opt))}</button>
@@ -687,6 +722,7 @@
 
   function renderEnd() {
     if (ghostRAF) { cancelAnimationFrame(ghostRAF); ghostRAF = null; }
+    Arcade.playMode && Arcade.playMode(false);
     state.nitroActive = false; state.nitroArmed = false;   // strip renders clean
 
     const yourTime = state.records.reduce((s, r) => s + r.ms, 0);
@@ -706,6 +742,16 @@
       if (myInitials) u.searchParams.set('gi', myInitials);
       history.replaceState(null, '', u.toString());
     } catch (e) { /* replaceState is best-effort; share still works from opts */ }
+
+    // Keep this run as your ghost if it beats the one on this device.
+    let newBest = false;
+    try {
+      const prev = readSelf();
+      if (!prev || yourCorrect > prev.correct || (yourCorrect === prev.correct && yourTime < prev.ms)) {
+        localStorage.setItem(SELF_KEY, JSON.stringify({ seed: seed.toString(36), blob: ghostBlobOut, correct: yourCorrect, ms: Math.round(yourTime), ts: Date.now() }));
+        newBest = true;
+      }
+    } catch (e) { /* storage is best-effort */ }
 
     // Result headline. Score first (correct count), total time as tiebreak.
     let cls, head, sub;
@@ -729,7 +775,10 @@
       }
     } else {
       cls = 'draw'; head = 'TIME SET — ' + yourCorrect + '/' + ROUNDS + ' in ' + timeStr;
-      sub = 'Now send your ghost and make a mate chase it';
+      sub = newBest ? 'Saved as your ghost — next time you race it. Or send it to a mate.' : 'Now send your ghost and make a mate chase it';
+    }
+    if (selfRace) {
+      sub = newBest ? 'New best — this run is your ghost now' : 'Your ghost still holds: ' + ghostTrueCorrect + '/' + ROUNDS + ' in ' + (ghostTrueTime / 1000).toFixed(1) + 's';
     }
 
     root.innerHTML = renderHeader('Finish') + bannerHtml() + trackHtml()
@@ -747,7 +796,11 @@
     }
 
     let insight;
-    if (racing) {
+    if (selfRace) {
+      insight = (cls === 'win')
+        ? `You beat your own ghost on ${topic}. Same questions, faster and cleaner — that is retrieval getting quicker. Send this run to a mate, or take new questions.`
+        : `Your ghost held on. The questions are the same every time you race it, so the misses below are exactly what to fix before the rematch.`;
+    } else if (racing) {
       insight = (cls === 'win')
         ? `You out-raced ${ghostName}. Send your ghost straight back and see if they can take it — same 10 questions, your time to beat now.`
         : (cls === 'draw')
@@ -792,7 +845,8 @@
         statLine: shareStat,
       },
       missed: state.missed,
-      onAgain: startGame,
+      // Your own ghost (or a new one): reload so the race uses the best run saved.
+      onAgain: (racing && !selfRace) ? startGame : () => { const u = new URL(location.href); ['ghost', 'seed', 'gi', 'fresh'].forEach(k => u.searchParams.delete(k)); location.href = u.pathname + u.search; },
     });
 
     // Re-label the share button so it reads as "send your ghost".
@@ -831,6 +885,7 @@
         get questions() { return questions; },
         get seed() { return seed; },
         get racing() { return racing; },
+        get selfRace() { return selfRace; },
         get rounds() { return ROUNDS; },
         get nitroDisabled() { return nitroDisabled; },
         encodeGhost: encodeGhost,
@@ -840,7 +895,8 @@
     } catch (e) { /* debug only */ }
   }
 
-  startGame();
+  // The clock waits for Start (it used to run from page load).
+  (Arcade.readyThen || (fn => fn()))(startGame, { title: selfRace ? 'Race your best' : racing ? 'Race ' + ghostName : 'Ghost Race', text: selfRace ? 'Your best run: ' + ghostTrueCorrect + '/' + ROUNDS + ' in ' + (ghostTrueTime / 1000).toFixed(1) + 's. Same 10 questions. The clock starts when you press Start.' : 'Ten questions. The clock starts when you press Start.' });
 })();
 </script>
 
