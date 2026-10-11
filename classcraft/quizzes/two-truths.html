@@ -101,9 +101,6 @@
   const level = ((spec && spec.level) || '').toUpperCase().replace('A-LEVEL', 'A-Level');
   const subj  = ((spec && spec.subject) || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-  // Placeholder concept defs would make hollow "truths" — treat as unauthored.
-  const PLACEHOLDER_DEF_RE = /^(A central idea in |A key term you.?ll meet in |A core concept tied to |Another important idea linked to |How .+ sits within the wider |An application of the ideas in )/;
-  const concepts = ((spec && spec.concepts) || []).filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
   const bankItems = ((bank && bank.items) || []).filter(it => it && it.q && it.misconception);
   /* SAME-SHAPE ROUNDS (Oct 2026). The truths used to be glossary lines
      ("What does 'Mass, m' mean?") beside one scenario question carrying the
@@ -148,25 +145,36 @@
 
   /* Same-shape rounds need a deep bank: with only a handful of questions the
      same ones recycle, and a question seen as a truth would later give itself
-     away as a lie. Measured 10 Oct 2026: 56 of 1,337 playable topics have
-     ≥12 usable questions (IB DP, checked KS3 Chemistry). Thinner banks keep
-     the older construction — one misconception vs two glossary definitions —
-     until their banks are enlarged. */
+     away as a lie. 197 of 1,466 arcade topics qualify (10 Oct 2026; GCSE
+     sciences, IB DP Chemistry/Physics, KS3 Chemistry). The older thin-bank
+     version (one misconception vs two glossary definitions) could be won by
+     shape and length alone, so it is retired: thin topics get an honest card
+     and a route to the other games for the same topic. The lobby hides the
+     cabinet for them too (t.tt, from arcade/build-index.py — same rule). */
   const SAME_SHAPE_MIN = 12;
   const sameShape = ttPool.length >= SAME_SHAPE_MIN;
-  const legacyOk = concepts.length >= 4 && bankItems.length >= 2;
 
-  if (!spec || !bank || bankIsLowQuality || (!sameShape && !legacyOk)) {
+  if (!spec || !bank || bankIsLowQuality || !sameShape) {
+    // Lobby link with this topic pre-selected (stem = subject-level-board-slug-adventure-N).
+    let lobby = '../arcade.html';
+    if (spec && spec.subject && spec.level && spec.topic_slug) {
+      const pre = spec.subject + '-' + spec.level + '-', post = '-' + spec.topic_slug + '-adventure-';
+      const cut = stem.indexOf(post);
+      const board = (stem.indexOf(pre) === 0 && cut > pre.length) ? stem.slice(pre.length, cut) : '';
+      const q = new URLSearchParams({ subject: spec.subject, level: spec.level });
+      if (board) { q.set('board', board); q.set('topic', spec.topic_slug); }
+      lobby += '?' + q.toString();
+    }
     root.innerHTML = `
       <div class="ar-badge">V · Verify · Two Truths One Lie</div>
       <h1 class="ar-title">${esc(topic)}</h1>
-      <p class="ar-sub">This game needs a bank of researched questions and misconceptions — generic filler wouldn't earn its place on the site. Come back soon.</p>
-      <div class="ar-meta">${esc([level, subj, 'In production'].filter(Boolean).join(' · '))}</div>
+      <p class="ar-sub">Two Truths One Lie only runs where the question bank is deep enough that the lie can't be spotted by its shape.</p>
+      <div class="ar-meta">${esc([level, subj, 'Bank in progress'].filter(Boolean).join(' · '))}</div>
       <div class="ar-card" style="text-align:center;padding:40px 28px;">
         <div style="font-size:48px;line-height:1;margin-bottom:14px">🕵️</div>
-        <h2 style="font-size:1.3rem;margin:0 0 8px">Statements in production</h2>
-        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">Two Truths One Lie needs researched questions, each with a checked answer and a real misconception, for this exact topic. That set hasn't been written at the required depth yet.</p>
-        <a href="../../subjects.html" class="ar-btn ghost" style="text-decoration:none;display:inline-block;">← Back to subjects</a>
+        <h2 style="font-size:1.3rem;margin:0 0 8px">Not for this topic yet</h2>
+        <p style="color:var(--ar-text2);margin:0 0 18px;font-size:15px;">This game needs at least ${SAME_SHAPE_MIN} researched questions — each with a checked answer and a real misconception — for this exact topic. That bank is still being built. The other arcade games for this topic are ready to play.</p>
+        <a href="${esc(lobby)}" class="ar-btn" style="text-decoration:none;display:inline-block;">Pick another game for this topic →</a>
       </div>
     `;
     return;
@@ -259,7 +267,6 @@
     return pick;
   }
   function makeRound(pref) {
-    if (!sameShape) return legacyRound(pref);
     const lie = pickLie(pref);
     const truths = pickTruths(lie);
     shownAs.set(lie, 'lie'); truths.forEach(t => shownAs.set(t, 'truth'));
@@ -270,26 +277,14 @@
     ]);
     return { statements, lieIdx: statements.findIndex(s => s.lie) };
   }
-  // Thin banks: one misconception vs two glossary definitions (pre-Oct 2026).
-  function legacyRound(item) {
-    item = item || Arcade.shuffle(bankItems)[0];
-    const [c1, c2] = Arcade.shuffle(concepts);
-    const statements = Arcade.shuffle([
-      { lie: true,  prompt: item.q, claim: item.misconception, why: item.why || '', item },
-      { lie: false, prompt: `What does “${c1.term}” mean?`, claim: c1.def },
-      { lie: false, prompt: `What does “${c2.term}” mean?`, claim: c2.def },
-    ]);
-    return { statements, lieIdx: statements.findIndex(s => s.lie) };
-  }
   // Lightning extra round — same construction, never thin filler.
   function buildExtraRound() { return makeRound(null); }
   // Hand-written bank items (no `src` marker) lead as lies; MCQ-derived items
   // only backfill the remaining rounds.
   function buildRounds() {
     shownAs.clear();
-    const src = sameShape ? ttPool : bankItems;
-    const authored = Arcade.shuffle(src.filter(it => !it.src));
-    const derived  = Arcade.shuffle(src.filter(it => it.src));
+    const authored = Arcade.shuffle(ttPool.filter(it => !it.src));
+    const derived  = Arcade.shuffle(ttPool.filter(it => it.src));
     return Arcade.shuffle(authored.concat(derived).slice(0, ROUNDS)).map(makeRound);
   }
 

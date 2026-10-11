@@ -13,7 +13,7 @@ is deterministic - there is no reason to ship 356 kB so every browser can
 compute the same answer. mulberry32 + Fisher-Yates are reproduced below and
 are verified against the real JS by arcade/verify-index.js.
 """
-import json, os, time
+import json, os, re, time
 
 M32 = 0xFFFFFFFF
 def mulberry32(seed):
@@ -39,6 +39,39 @@ os.chdir(HERE)
 src = open('index.js').read()
 d = json.loads(src[src.index('{'):].rstrip().rstrip(';'))
 subs, legacy = d['subjects'], d.get('legacy', {})
+
+# Two Truths depth flag (Oct 2026): t.tt = 1 when the topic's misconception
+# bank has >= 12 usable distinct questions — the same rule as ttPool in
+# quizzes/two-truths.html (keep the two in step). Thinner topics don't get
+# the Two Truths cabinet in the lobby or in Quick Play; the game page itself
+# shows "needs a deeper bank" for them. Derived here, not stored in index.js.
+TT_MIN = 12
+OPT_RE = re.compile(r"\b(all|none|both|neither) of (the|these)\b|\b(above|below)\b|^(both|neither|all three)\b", re.I)
+YN_RE = re.compile(r"^\s*(no|yes)\b\s*[.,:;!]?\s*[-–—]?\s*", re.I)
+def tt_deep(stem):
+    p = os.path.join('..', 'evaluate', 'misconception-banks', stem + '.json')
+    try: b = json.load(open(p))
+    except Exception: return False
+    if b.get('quality') == 'low': return False
+    seen, n = set(), 0
+    for it in b.get('items') or []:
+        if not (it and it.get('q') and it.get('misconception') and it.get('correct')) or it.get('working'): continue
+        c, m = str(it['correct']), str(it['misconception'])
+        if len(YN_RE.sub('', c, count=1)) < 12: continue
+        if OPT_RE.search(c) or OPT_RE.search(m): continue
+        if c.strip().lower() == m.strip().lower(): continue
+        k = str(it['q']).strip().lower()
+        if k in seen: continue
+        seen.add(k); n += 1
+    return n >= TT_MIN
+tt_count = 0
+for sx in subs:
+    for l in sx.get('levels', []):
+        for b in l.get('boards', []):
+            for t in b.get('topics', []):
+                t.pop('tt', None)
+                if t.get('s') and tt_deep(t['s']):
+                    t['tt'] = 1; tt_count += 1
 
 os.makedirs('subjects', exist_ok=True)
 os.makedirs('legacy', exist_ok=True)
@@ -76,6 +109,7 @@ open('boot.js', 'w').write('window.ARCADE_BOOT=' + json.dumps(
 kb = lambda p: os.path.getsize(p) / 1024
 print("boot.js      %7.1f kB   subject list + %d days of TODAY (%d..%d)" % (kb('boot.js'), DAYS, day0, day0 + DAYS - 1))
 print("flat.json    %7.1f kB   %d playable topics" % (kb('flat.json'), len(quick)))
+print("two truths   %d topics deep enough (tt=1)" % tt_count)
 print("subjects/    %3d files  median %.1f kB" % (len(subs), sorted(kb('subjects/%s.json' % x['id']) for x in subs)[len(subs)//2]))
 print("legacy/      %3d files  median %.1f kB" % (len(legacy), sorted(kb('legacy/%s.json' % k.replace('|','__')) for k in legacy)[len(legacy)//2]))
 print()

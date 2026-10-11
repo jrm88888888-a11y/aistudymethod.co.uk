@@ -654,7 +654,7 @@ const CAB_ICONS = {
    recall/typing LEVEL 2, action/canvas/high-pressure games BOSS. Daily
    Drill lives in THE DAILY hero strip above the wizard, not in the grid. */
 const QUIZ_GAMES = [
-  { id:'two-truths',   n:'TWO TRUTHS<br>ONE LIE', i:'🕵️', c:'c1', d:'Three claims. One is a misconception built to fool you. Call the lie.', pill:'LEVEL 1', best: s => 'aism-tt-best:' + s },
+  { id:'two-truths',   n:'TWO TRUTHS<br>ONE LIE', i:'🕵️', c:'c1', d:'Three claims. One is a misconception built to fool you. Call the lie.', pill:'LEVEL 1', needsTT: true, best: s => 'aism-tt-best:' + s },
   { id:'odd-one',      n:'ODD ONE<br>OUT',        i:'🎯', c:'c4', d:'Four statements. One is lying to you.', pill:'LEVEL 1', best: s => 'aism-oo-best:' + s },
   { id:'connections',  n:'CONNECTIONS<br>GRID',   i:'🧩', c:'c2', d:'Six cards, four belong to your topic, two are smuggled decoys. Lock in four.', pill:'LEVEL 1' },
   { id:'sequence',     n:'SORT THE<br>SEQUENCE',  i:'🪜', c:'c3', d:'Drag the events into the one true order. One shot, one second wind.', pill:'LEVEL 2', needsSeq: true, best: s => 'aism-seq-best:' + s },
@@ -989,11 +989,15 @@ function renderCabinets() {
     const best = bestFor(g, stem);
     // Sequence needs authored ordered content — a few topics have no
     // honest ordering, so the cabinet stays locked rather than dead-ending.
-    const blocked = g.needsSeq && t && !t.q;
+    // Two Truths needs a deep misconception bank (t.tt, set by
+    // arcade/build-index.py); on thin topics the lie gave itself away.
+    const noSeq = g.needsSeq && t && !t.q;
+    const noTT = g.needsTT && t && !t.tt;
+    const blocked = noSeq || noTT;
     const on = unlocked && !blocked;
     return cabinetHtml(g, 'quiz', on,
       best != null ? `HI-SCORE ${best}` : (on ? 'NEW GAME' : 'HI-SCORE —'),
-      blocked ? 'No true order for this topic' : undefined);
+      noSeq ? 'No true order for this topic' : noTT ? 'Question bank still being deepened' : undefined);
   });
 
   if (!unlocked) {
@@ -1023,7 +1027,7 @@ function renderCabinets() {
   }
 
   document.querySelectorAll('#grid-quiz .cabinet, #grid-terms .cabinet').forEach(b =>
-    b.addEventListener('click', () => launch(b.dataset.kind, b.dataset.id)));
+    b.addEventListener('click', () => { if (b.classList.contains('enabled')) launch(b.dataset.kind, b.dataset.id); }));
 }
 
 function renderLegacy() {
@@ -1284,7 +1288,8 @@ const QUICK_PLAY_CABS = ['higher-lower', 'conveyor', 'two-truths', 'falling-word
       return loadSubject(pick.subject).then(() => {
         const t = resolveTopic(pick);
         if (!t || !t.s) return attempt < 5 ? prime(attempt + 1) : null;
-        const cab = QUICK_PLAY_CABS[Math.floor(Math.random() * QUICK_PLAY_CABS.length)];
+        const cabs = QUICK_PLAY_CABS.filter(c => c !== 'two-truths' || t.tt);   // thin bank: no Two Truths
+        const cab = cabs[Math.floor(Math.random() * cabs.length)];
         const href = 'quizzes/' + cab + '.html?spec=' + encodeURIComponent(t.s);
         warm(href);
         warmSpec(t.s, pick.subject, pick.level);
