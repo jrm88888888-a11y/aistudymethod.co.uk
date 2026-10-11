@@ -37,7 +37,14 @@
   .mq-how b { color: var(--ar-text); }
 
   /* HUD flair on top of .ar-hud-stat */
-  #hud-lives-item b { color: var(--ar-pink); letter-spacing: 1px; }
+  #hud-lives-item b { color: var(--ar-mint); letter-spacing: 0.5px; }
+  /* phones: one-row HUD during a run (speed shows as the track's pace) */
+  @media (max-width: 760px) {
+    body.ar-play #hud-speed-item { display: none; }
+    body.ar-play #screen-game .ar-hud { flex-wrap: nowrap; gap: 5px; margin-bottom: 8px; }
+    body.ar-play #screen-game .ar-hud-stat { flex: 1 1 auto; justify-content: center; padding: 5px 6px; gap: 4px; font-size: 8.5px; letter-spacing: 0.4px; min-width: 0; white-space: nowrap; }
+    body.ar-play #screen-game .ar-hud-stat b { font-size: 14.5px; }
+  }
   #hud-lives-item.critical b { animation: mqLifeBlip 0.6s ease infinite; }
   #hud-speed-item b { color: var(--ar-cyan); }
   #hud-combo-item b { transition: color 0.2s; }
@@ -118,8 +125,8 @@
   <div id="screen-start" class="screen active">
     <div class="ar-badge">V · Verify · Mob Quiz</div>
     <h1 class="ar-title" id="game-heading">Colour Theory Basics — Mob Quiz</h1>
-    <p class="ar-sub">Steer your runner into the gate matching the correct answer. Right answers speed you up and stack a combo multiplier — wrong answers cost a life.</p>
-    <div class="ar-meta">12 gates · 3 lives · combo multipliers · star bonuses</div>
+    <p class="ar-sub">Steer your mob through the door with the right term. Right answers grow the mob (more on a combo); a wrong door costs about a third of it. Reach the finish big enough to beat the rival mob.</p>
+    <div class="ar-meta">12 gates · grow your mob · rival mob at the finish · star bonuses</div>
 
     <div class="ar-card">
       <div class="ar-label">Pick your pace</div>
@@ -144,7 +151,7 @@
       <button id="btn-start" class="ar-btn big" type="button">▶ Start run</button>
 
       <div class="mq-how">
-        <b>How it works:</b> a definition is pinned at the top for each gate. Drag (or use ← →, or keys 1–4) to steer into the door with the matching term — the track slows down when there's more to read. Correct = score + speed + combo. Wrong = lose a life. Streaks spawn ★ bonus stars — grab them for +75.
+        <b>How it works:</b> a definition is pinned at the top for each gate. Drag (or use ← →, or keys 1–4) to steer into the door with the matching term — the track slows down when there's more to read. Correct = runners join + score + combo. Wrong = runners lost; lose them all and the run ends. Streaks spawn ★ bonus stars — grab them for +75 and 3 more runners. At the finish your mob meets a rival mob: the bigger crowd wins.
       </div>
       <div class="ar-kbd-hint">Keyboard: ← → steer · 1–4 jump to a lane · M mute</div>
     </div>
@@ -155,7 +162,7 @@
     <div class="ar-hud">
       <div class="ar-hud-stat">Score <b id="hud-score">0</b></div>
       <div class="ar-hud-stat gold">Gate <b id="hud-progress">0/12</b></div>
-      <div class="ar-hud-stat" id="hud-lives-item">Lives <b id="hud-lives">♥♥♥</b></div>
+      <div class="ar-hud-stat" id="hud-lives-item">Mob <b id="hud-lives">👥 10</b></div>
       <div class="ar-hud-stat" id="hud-speed-item">Speed <b id="hud-speed">×1.0</b></div>
       <div class="ar-hud-stat" id="hud-combo-item">Combo <b id="hud-combo">×1.0</b></div>
     </div>
@@ -199,6 +206,7 @@ const AR = {
   bg2:    '#0c0c1d',
   bgHot:  '#141432',
   text:   '#f2f3ff',
+  text2:  '#b9bdd9',
   muted:  '#767ca8',
   ink:    '#051418'
 };
@@ -285,7 +293,27 @@ let gameState = 'idle';  // idle | running | over
 let questions = [];
 let currentIdx = 0;
 let score = 0;
-let lives = 3;
+let lives = 3;           // kept for the AFK/teach logic: 1 while the mob stands, 0 when it is gone
+/* THE MOB (Oct 2026): a real crowd, Count-Masters style. Right doors add
+   runners (more on a combo), wrong or idle doors cost ~35% of the crowd (at
+   least 3); a crowd of 0 ends the run. At the finish the mob meets a rival
+   mob sized for a strong (about A-grade) run. The rank is still accuracy;
+   the crowd and the clash are the spectacle and the bonus points. */
+const MOB_START = { easy: 12, medium: 10, hard: 8 };
+const MOB_GAIN = 4, MOB_LOSS_FRAC = 0.35, MOB_LOSS_MIN = 3, MOB_DRAW_MAX = 70;
+let mob = 10, mobPeak = 10, mobShown = 10, rival = 0;
+let finale = null;       // { t, boss, phase } once the last gate is behind you
+let clash = null;        // result of the finale clash, for the end card
+function mobLoss() { return Math.max(MOB_LOSS_MIN, Math.round(mob * MOB_LOSS_FRAC)); }
+function addRunners(n) { mob += n; if (mob > mobPeak) mobPeak = mob; }
+function loseRunners(n) {
+  const lost = Math.min(mob, n);
+  mob -= lost;
+  // the lost runners scatter as pink sparks from the back of the crowd
+  emitParticles(playerX, 0.9, AR.pink, Math.min(30, 6 + lost * 2), 'shard');
+  if (mob <= 0) lives = 0;
+  return lost;
+}
 let speed = 1.0;        // multiplier
 let maxSpeed = 1.0;
 let correctCount = 0;
@@ -445,7 +473,7 @@ function setupInput() {
    TEACHING PAUSE + AFK PAUSE OVERLAYS (injected from JS)
    ============================================================ */
 let teachEl = null;
-function showTeachOverlay(term, def, idle, shielded) {
+function showTeachOverlay(term, def, idle, shielded, picked, lost) {
   if (!teachEl) {
     teachEl = document.createElement('div');
     teachEl.id = 'mq-teach';
@@ -457,9 +485,11 @@ function showTeachOverlay(term, def, idle, shielded) {
   teachEl.innerHTML = '<div style="max-width:540px;font-family:' + AR_FONT + ';">'
     + '<div style="font-family:monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:' + AR.pink + ';margin-bottom:12px;">'
     + (idle ? '💤 No input — gate missed' : '✗ Wrong gate — bank the correction') + '</div>'
+    + (picked ? '<div style="font-size:14px;color:' + AR.text2 + ';margin:-4px 0 10px;">You picked <b style="color:' + AR.pink + ';">' + Arcade.escapeHtml(picked) + '</b></div>' : '')
     + '<div style="font-size:24px;font-weight:700;color:' + AR.text + ';margin-bottom:12px;line-height:1.3;">' + Arcade.escapeHtml(term) + '</div>'
     + '<div style="font-size:17px;font-weight:600;line-height:1.5;color:' + AR.mint + ';">' + Arcade.escapeHtml(def) + '</div>'
-    + (shielded ? '<div style="margin-top:14px;font-size:14px;font-weight:700;color:' + AR.cyan + ';">🛡 Shield spent — life saved</div>' : '')
+    + (shielded ? '<div style="margin-top:14px;font-size:14px;font-weight:700;color:' + AR.cyan + ';">🛡 Shield spent — no runners lost</div>'
+      : (lost ? '<div style="margin-top:14px;font-size:14px;font-weight:700;color:' + AR.pink + ';">−' + lost + ' runners · mob of ' + mob + '</div>' : ''))
     + '</div>';
   teachEl.style.display = 'flex';
 }
@@ -547,6 +577,8 @@ function startGame() {
   currentIdx = 0;
   score = 0;
   lives = 3;
+  mob = mobPeak = mobShown = MOB_START[difficulty] || 10;
+  finale = null; clash = null; rival = 0;
   speed = DIFF_SETTINGS[difficulty].startSpeed;
   maxSpeed = speed;
   correctCount = 0;
@@ -589,6 +621,7 @@ function startGame() {
   Arcade.sfx.riser();
   announce.textContent = 'Run started. Steer into the gate with the correct answer.';
 
+  Arcade.playMode && Arcade.playMode(true);
   // Spawn first gate immediately
   spawnGate();
 
@@ -743,9 +776,10 @@ function update(dt) {
       if (Math.abs(pu.x - playerX) < 0.07) {
         pu.collected = true;
         score += 75;
+        addRunners(3);
         Arcade.sfx.coin();
         emitParticles(pu.x, 0.85, AR.gold, 18, 'star');
-        flashMessage('★ +75 BONUS', false);
+        flashMessage('★ +75 · +3 👥', false);
         updateHUD();
       }
     }
@@ -774,13 +808,47 @@ function update(dt) {
     spawnGate();
   }
 
-  // Check end
-  if (currentIdx >= questions.length && gates.length === 0) {
-    endGame();
+  // Last gate behind you: the rival mob comes down the track.
+  if (currentIdx >= questions.length && gates.length === 0 && !finale && mob > 0) {
+    finale = { t: 0, boss: rival = (MOB_START[difficulty] || 10) + 2 * questions.length };
+    announce.textContent = 'Finish line: a rival mob of ' + finale.boss + ' against your ' + mob + '.';
   }
+  if (finale) { updateFinale(dt); return; }
   if (lives <= 0) {
     endGame();
   }
+}
+
+// FINALE: approach (1.3 s) → clash, both crowds counting down together
+// (1.4 s) → result (1 s) → end card. Reduced motion: shorter, same result.
+const FIN_APPROACH = AISM_REDUCED ? 300 : 1300, FIN_CLASH = AISM_REDUCED ? 300 : 1400, FIN_HOLD = 1000;
+function updateFinale(dt) {
+  finale.t += dt * 16.67;
+  const t = finale.t;
+  if (t < FIN_APPROACH) return;
+  const k = Math.min(1, (t - FIN_APPROACH) / FIN_CLASH);
+  const fight = Math.min(mob, finale.boss);
+  finale.mineNow = Math.round(mob - fight * k);
+  finale.bossNow = Math.round(finale.boss - fight * k);
+  if (!finale.clashStarted) { finale.clashStarted = true; Arcade.sfx.riser && Arcade.sfx.riser(); aismShake(6); }
+  if (k >= 1 && !finale.done) {
+    finale.done = true;
+    const left = mob - finale.boss;
+    clash = { won: left > 0, left: Math.max(0, left), boss: finale.boss, mob: mob };
+    if (clash.won) {
+      score += 25 * clash.left;
+      Arcade.sfx.fanfare && Arcade.sfx.fanfare();
+      Arcade.confettiBurst && Arcade.confettiBurst({ count: 70 });
+      flashMessage('🏆 MOB WINS · ' + clash.left + ' left · +' + (25 * clash.left), false);
+      announce.textContent = 'Your mob wins the clash with ' + clash.left + ' runners left. Plus ' + (25 * clash.left) + ' points.';
+    } else {
+      Arcade.sfx.wrong();
+      flashMessage(left === 0 ? '🤝 DEAD HEAT' : '💥 OVERRUN by ' + (-left), true);
+      announce.textContent = left === 0 ? 'A dead heat at the finish.' : 'The rival mob was ' + (-left) + ' bigger.';
+    }
+    updateHUD();
+  }
+  if (t >= FIN_APPROACH + FIN_CLASH + FIN_HOLD) endGame();
 }
 
 function settleGate(gate) {
@@ -804,7 +872,7 @@ function settleGate(gate) {
     // attempted answer — it costs a life and shows the correction, but stays
     // out of the accuracy stats. Two in a row and the run pauses itself.
     idleGates++;
-    lives--;
+    const lostIdle = loseRunners(mobLoss());
     speed = Math.max(0.6, speed - 0.15);
     gate.result = 'wrong';
     gate.playerLane = -1;        // no door was truly chosen
@@ -816,11 +884,11 @@ function settleGate(gate) {
     aismShake(7);
     bgPulseT = 0.7;
     bgPulseColor = AR.pink;
-    showTeachOverlay(gate.term, gate.def, true);
+    showTeachOverlay(gate.term, gate.def, true, false, null, lostIdle);
     teachPauseT = Arcade.feedbackMs([gate.term, gate.def], TEACH_PAUSE_MS);
     if (idleGates >= 2 && lives > 0) pendingAutoPause = true;
     announce.textContent = 'No input — gate missed. ' + gate.term + ': ' + gate.def
-      + '. Lives left: ' + Math.max(0, lives) + '.';
+      + '. ' + lostIdle + ' runners lost; ' + mob + ' left.';
     updateHUD();
     return;
   }
@@ -835,6 +903,8 @@ function settleGate(gate) {
     const earned = Math.round(100 * aismMultiplier);
     score += earned;
     correctCount++;
+    const joined = Math.round(MOB_GAIN * aismMultiplier);
+    addRunners(joined);
     gateGrid.push('🟩');
     // Cap speed at 2× the starting speed so consecutive correct answers don't
     // shrink the reading window beyond the point the question is legible.
@@ -847,10 +917,10 @@ function settleGate(gate) {
     Arcade.vibrate(20);
     const tier = getMultTier();
     const msg = aismStreak >= 3
-      ? '+' + earned + ' · ' + tier.label + ' ×' + aismMultiplier
-      : '+' + earned;
+      ? '+' + joined + ' 👥 · ' + tier.label + ' ×' + aismMultiplier
+      : '+' + joined + ' 👥  +' + earned;
     flashMessage(msg, false);
-    announce.textContent = 'Correct! Plus ' + earned + ' points.' + (aismStreak >= 3 ? ' Combo ×' + aismMultiplier + '.' : '');
+    announce.textContent = 'Correct! ' + joined + ' runners join — mob of ' + mob + '. Plus ' + earned + ' points.' + (aismStreak >= 3 ? ' Combo ×' + aismMultiplier + '.' : '');
     // EVENT — SHIELD: every 4th consecutive correct gate forges a shield if
     // none is held. Telegraphed after the score flash; consumed by the next
     // wrong gate in place of a life.
@@ -882,8 +952,9 @@ function settleGate(gate) {
     // type. A held SHIELD is spent in place of the life — everything else
     // (correction, streak reset, stats, speed penalty) runs in full.
     const shielded = shield;
+    let lostWrong = 0;
     if (shielded) shield = false;
-    else lives--;
+    else lostWrong = loseRunners(mobLoss());
     speed = Math.max(0.6, speed - 0.15);
     gate.result = 'wrong';
     gateGrid.push('🟥');
@@ -894,10 +965,11 @@ function settleGate(gate) {
     Arcade.sfx.wrong();
     Arcade.vibrate([40, 30, 40]);
     aismShake(wasOnStreak ? 11 : 7);
-    showTeachOverlay(gate.term, gate.def, false, shielded);
+    showTeachOverlay(gate.term, gate.def, false, shielded, gate.options[playerLane], lostWrong);
     teachPauseT = Arcade.feedbackMs([gate.term, gate.def], TEACH_PAUSE_MS);
     announce.textContent = 'Wrong. ' + (shielded ? 'Your shield absorbed the hit — no life lost. ' : '')
-      + 'The correct answer was: ' + gate.options[gate.correct] + '. Lives left: ' + Math.max(0, lives) + '.';
+      + 'You picked ' + gate.options[playerLane] + '. The correct answer was: ' + gate.options[gate.correct] + '. '
+      + (shielded ? '' : lostWrong + ' runners lost; ') + mob + ' left.';
     // Pink shard burst at gate centre
     emitParticles(playerX, 0.85, AR.pink, 16, 'shard');
     bgPulseT = 0.7;
@@ -984,8 +1056,12 @@ function draw() {
     ctx.fill();
   });
 
-  // Player
+  // The mob (followers behind the leader), then the leader, then the count
+  mobShown += (Math.max(0, finale && finale.mineNow != null ? finale.mineNow : mob) - mobShown) * 0.25;
+  drawCrowd(pxScreen, playerY, Math.round(mobShown), finale ? AR.mint : tier.streak >= 8 ? AR.pink : tier.streak >= 5 ? AR.gold : AR.mint, 1);
   drawPlayer(pxScreen, playerY);
+  drawCount(pxScreen, playerY - 42, Math.max(0, Math.round(mobShown)), AR.mint);
+  if (finale) drawRival(W, H, playerY);
 
   // Particles
   particles.forEach(p => {
@@ -1249,6 +1325,56 @@ function drawPowerUp(pu, W, H) {
   ctx.restore();
 }
 
+// Followers in a sunflower spiral trailing behind the leader (down-screen).
+function crowdOffsets(n) {
+  const out = [];
+  for (let i = 1; i <= n; i++) {
+    const r = 7.5 * Math.sqrt(i), a = i * 2.39996;
+    out.push([r * Math.cos(a), 10 + Math.abs(r * Math.sin(a)) * 0.62]);
+  }
+  return out;
+}
+function drawCrowd(cx, cy, n, colour, dir) {
+  const draw = Math.min(MOB_DRAW_MAX, Math.max(0, n - 1));
+  const offs = crowdOffsets(draw);
+  const bob = gameState === 'running' && !AISM_REDUCED ? performance.now() / 110 : 0;
+  for (let i = offs.length - 1; i >= 0; i--) {
+    const x = cx + offs[i][0], y = cy + dir * offs[i][1] + Math.sin(bob + i) * 1.2;
+    ctx.fillStyle = colour + 'cc';
+    ctx.beginPath(); ctx.arc(x, y + 3, 5.2, 0, Math.PI * 2); ctx.fill();       // body
+    ctx.fillStyle = 'rgba(6,6,15,0.55)';
+    ctx.beginPath(); ctx.arc(x, y - 3.2, 2.6, 0, Math.PI * 2); ctx.fill();     // head
+  }
+}
+function drawCount(x, y, n, colour) {
+  const txt = '👥 ' + n;
+  ctx.font = '700 13px ' + AR_FONT;
+  const w = ctx.measureText(txt).width + 16;
+  ctx.fillStyle = 'rgba(6,6,15,0.82)';
+  roundRect(ctx, x - w / 2, y - 11, w, 22, 11); ctx.fill();
+  ctx.strokeStyle = colour; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = AR.text; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, x, y + 0.5);
+  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+}
+const RIVAL = '#ff7a3d';   // the rival mob: orange, never a colour the player's own mob wears
+function drawRival(W, H, playerY) {
+  const t = finale.t;
+  const p = Math.min(1, t / FIN_APPROACH);
+  const cx = W / 2, cy = 40 + (playerY - 120 - 40) * p;
+  const n = finale.bossNow != null ? finale.bossNow : finale.boss;
+  // rival followers trail up-screen (they run down the track toward you)
+  drawCrowd(cx, cy, n, RIVAL, -1);
+  ctx.fillStyle = RIVAL;
+  roundRect(ctx, cx - 14, cy - 18, 28, 34, 13); ctx.fill();
+  drawCount(cx, cy + 34, Math.max(0, n), RIVAL);
+  if (t < FIN_APPROACH) {
+    ctx.font = '800 15px ' + AR_FONT; ctx.fillStyle = RIVAL; ctx.textAlign = 'center';
+    ctx.fillText('RIVAL MOB', cx, Math.max(18, cy - 30));
+    ctx.textAlign = 'start';
+  }
+}
+
 function drawPlayer(x, y) {
   // Squash/stretch: when moving fast laterally, stretch horizontally.
   const sx = 1 + playerSquash * 0.3;
@@ -1347,7 +1473,7 @@ function emitParticles(nx, ny, color, n, shape) {
 function updateHUD() {
   document.getElementById('hud-score').textContent = score;
   document.getElementById('hud-progress').textContent = gatesResolved + '/' + (questions.length || TOTAL_QUESTIONS);
-  document.getElementById('hud-lives').textContent = '♥'.repeat(Math.max(0, lives)) + (shield ? '🛡' : '');
+  document.getElementById('hud-lives').textContent = '👥 ' + Math.max(0, mob) + (shield ? ' 🛡' : '');
   document.getElementById('hud-speed').textContent = '×' + speed.toFixed(1);
   document.getElementById('hud-combo').textContent = aismMultiplier === 1 ? '×1.0' : ('×' + aismMultiplier.toFixed(1));
 
@@ -1358,7 +1484,7 @@ function updateHUD() {
   else if (aismStreak >= 3) comboItem.classList.add('mult-hot');
 
   // Critical life: pulse hearts when on last life
-  document.getElementById('hud-lives-item').classList.toggle('critical', lives === 1);
+  document.getElementById('hud-lives-item').classList.toggle('critical', mob > 0 && mob <= MOB_LOSS_MIN);
 }
 
 function flashMessage(text, isWrong) {
@@ -1379,30 +1505,27 @@ function endGame() {
   hideTeachOverlay();
   if (pauseEl) pauseEl.style.display = 'none';
   autoPaused = false;
-  const accuracy = totalAnswered > 0 ? Math.round(100 * correctCount / totalAnswered) : 0;
-
-  // Rank: combines accuracy + max streak. S+ = perfect + ≥6 streak.
-  let rank = 'C';
-  if (accuracy >= 100 && aismMaxStreak >= 6) rank = 'S+';
-  else if (accuracy === 100) rank = 'S';
-  else if (accuracy >= 90 && aismMaxStreak >= 5) rank = 'A+';
-  else if (accuracy >= 85) rank = 'A';
-  else if (accuracy >= 70) rank = 'B';
+  Arcade.playMode && Arcade.playMode(false);
+  // Accuracy over every gate that reached you: an idle gate (💤) is a miss.
+  const accuracy = gatesResolved > 0 ? Math.round(100 * correctCount / gatesResolved) : 0;
+  const rank = Arcade.grade(accuracy).letter;
 
   const topic = document.getElementById('game-heading').textContent.trim();
   const diffLabel = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+  const clashLine = clash
+    ? (clash.won ? '🏆 beat the rival mob of ' + clash.boss + ' with ' + clash.left + ' to spare'
+                 : (clash.left === 0 && clash.mob === clash.boss ? '🤝 dead heat with the rival mob' : '💥 overrun by the rival mob of ' + clash.boss))
+    : '';
 
   let insight;
-  if (lives <= 0) {
-    insight = 'Rank ' + rank + ' — out of lives at gate ' + gatesResolved + ' of ' + questions.length + '. The pairs that cost you a heart are listed below — read them properly, then run it back.';
-  } else if (rank === 'S+' || rank === 'S') {
-    insight = 'Rank ' + rank + ' — flawless run at ×' + maxSpeed.toFixed(1) + ' top speed. Final boss: switch to Hard and hold the combo the whole way.';
-  } else if (rank === 'A+' || rank === 'A') {
-    insight = 'Rank ' + rank + ' — one or two gates from a perfect run. Check the answers you missed, then chase the S rank.';
-  } else if (rank === 'B') {
-    insight = 'Rank B — solid steering, but the broken combos show where recall is slow. Another run will lock those terms in.';
+  if (mob <= 0) {
+    insight = 'Rank ' + rank + ' — the mob was wiped out at gate ' + gatesResolved + ' of ' + questions.length + '. The terms that cost you runners are listed below: drill them, then run it back.';
+  } else if (clash && clash.won && accuracy >= 95) {
+    insight = 'Rank ' + rank + ' — a flawless mob of ' + mobPeak + ' at its peak, and the rival never stood a chance. Final boss: switch to Hard and hold the combo the whole way.';
+  } else if (clash && clash.won) {
+    insight = 'Rank ' + rank + ' — your mob made it and won the clash. The gates you missed are listed below; fix those and the mob gets even bigger.';
   } else {
-    insight = 'Rank ' + rank + ' — this topic fought back. Each wrong gate flashed the right answer: re-read those, slow it down on Easy, and build the streak.';
+    insight = 'Rank ' + rank + ' — the mob reached the finish but the rival was bigger. Every wrong door cost about a third of your runners: drill the misses below and keep the combo going.';
   }
 
   document.getElementById('screen-game').classList.remove('active');
@@ -1418,19 +1541,20 @@ function endGame() {
     big: score,
     bigLabel: 'points',
     rows: [
-      { v: correctCount + '/' + totalAnswered, l: 'gates' },
+      { v: correctCount + '/' + gatesResolved, l: 'gates' },
       { v: '🔥 ' + aismMaxStreak, l: 'best streak' },
-      { v: '×' + maxSpeed.toFixed(1), l: 'top speed' },
-      { v: rank, l: 'rank' }
+      { v: '👥 ' + mobPeak, l: 'peak mob' },
+      { v: clash ? (clash.won ? '🏆 won' : clash.mob === clash.boss ? '🤝 tie' : '💥 lost') : '—', l: 'finish clash' }
     ].concat(shieldsForged > 0 ? [{ v: '🛡 ' + shieldsForged, l: 'shields forged' }] : []),
-    emojiGrid: gateGrid.join(''),
+    emojiGrid: gateGrid.join('') + (clash ? (clash.won ? ' 🏆' : ' 💥') : ''),
     bestKey: 'aism-best:' + location.pathname,
     bestValue: score,
     bestSuffix: ' pts',
     insight: insight,
+    share: { statLine: correctCount + '/' + gatesResolved + ' gates  ·  👥 peak ' + mobPeak + (clashLine ? '  ·  ' + clashLine : '') },
     shareLines: [
       '🏃 Mob Quiz — ' + topic,
-      'Rank ' + rank + ' · ' + score + ' pts · 🔥 ' + aismMaxStreak + ' streak · ×' + maxSpeed.toFixed(1) + ' speed',
+      'Rank ' + rank + ' · ' + score + ' pts · 👥 peak mob ' + mobPeak + (clashLine ? ' · ' + clashLine : ''),
       gateGrid.join('')
     ],
     onAgain: restartGame,
@@ -1438,7 +1562,7 @@ function endGame() {
     missed: missedQ.map(qi => questions[qi]).filter(Boolean).map(q => q.term
       ? { term: q.term, def: q.def }
       : { q: q.q, a: q.options[q.correct] }),
-    hot: lives <= 0
+    hot: mob <= 0 || !!(clash && !clash.won)
   });
 
   // Missed gates are listed by the end card itself (opts.missed, with a drill).
@@ -1455,7 +1579,7 @@ function endGame() {
   }
 
   announce.textContent = 'Run over. Rank ' + rank + '. Score ' + score + ' points. ' +
-    correctCount + ' of ' + totalAnswered + ' gates correct — ' + accuracy + ' percent. Max streak ' + aismMaxStreak + '.';
+    correctCount + ' of ' + gatesResolved + ' gates correct — ' + accuracy + ' percent. Peak mob ' + mobPeak + '.' + (clashLine ? ' ' + clashLine + '.' : '');
 }
 
 /* ============================================================
