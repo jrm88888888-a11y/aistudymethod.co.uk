@@ -522,11 +522,27 @@ function generateAndRender() {
     // ~600 ms budget and keep the fullest; only a genuine shortfall is shown.
     let puzzle = null;
     const t0 = performance.now();
-    for (let attempt = 0; attempt < 12; attempt++) {
+    // Denser grids (Oct 2026): keep re-rolling for the whole budget and keep
+    // the fullest layout, then the most compact one (letters / bounding-box
+    // area) — it used to stop at the first full layout, however sprawling.
+    const density = p => {
+      let r0 = 1e9, r1 = -1, c0 = 1e9, c1 = -1; const cells = new Set();
+      p.forEach(w => { for (let i = 0; i < w.word.length; i++) {
+        const r = w.dir === 'down' ? w.row + i : w.row, c = w.dir === 'across' ? w.col + i : w.col;
+        cells.add(r + ',' + c); r0 = Math.min(r0, r); r1 = Math.max(r1, r); c0 = Math.min(c0, c); c1 = Math.max(c1, c); } });
+      return cells.size / ((r1 - r0 + 1) * (c1 - c0 + 1));
+    };
+    let best = -1;
+    for (let attempt = 0; attempt < 24; attempt++) {
       const vocab = shuffle(usable.slice()).slice(0, selectedWords * 2); // extra for fallback
-      const p = generateCrossword(vocab, selectedWords);
-      if (p && (!puzzle || p.length > puzzle.length)) puzzle = p;
-      if ((puzzle && puzzle.length >= selectedWords) || performance.now() - t0 > 600) break;
+      // alternate first-fit and best-fit layouts; the fullest, then tightest, wins
+      const p = generateCrossword(vocab, selectedWords, attempt % 2 ? 'best' : 'first');
+      if (p && p.length) {
+        const d = density(p);
+        if (!puzzle || p.length > puzzle.length || (p.length === puzzle.length && d > best)) { puzzle = p; best = d; }
+      }
+      if (performance.now() - t0 > 600) break;
+      if (puzzle && puzzle.length >= selectedWords && performance.now() - t0 > 250) break;   // full: a short search for a tighter one
     }
     if (!puzzle || puzzle.length === 0) {
       container.innerHTML = '<div class="generating"><div>Could not generate a crossword.<br>Try fewer words.</div></div>';
@@ -572,7 +588,7 @@ function cwClue(v) {
   if (!cwMask) cwMask = Arcade.makeMasker(VOCAB_DATA.map(x => ({ term: x.term, def: x.definition })), { strict: true });
   return cwMask(v.definition, v.fullTerm || v.term);
 }
-function generateCrossword(vocabPool, targetCount) {
+function generateCrossword(vocabPool, targetCount, mode) {
   // Prepare word list: uppercase, letters only for grid matching
   // but keep original for display
   const words = vocabPool.map(v => ({
@@ -581,7 +597,11 @@ function generateCrossword(vocabPool, targetCount) {
     clue: cwClue(v),          // X8: the answer never appears inside its own clue
     term: v.term,
     def: v.definition,
-  })).filter(w => w.word.length >= 3 && w.word.length <= 15);
+  })).filter(w => w.word.length >= 3 && w.word.length <= 15)
+    // one entry per answer: two terms that reduce to the same letters (e.g.
+    // "Oxidation" in two senses) used to be laid on the same cells, giving one
+    // grid entry two different clues
+    .filter((w, i, a) => a.findIndex(x => x.word === w.word) === i);
 
   if (words.length === 0) return [];
 
@@ -591,17 +611,18 @@ function generateCrossword(vocabPool, targetCount) {
   // Try multiple times with different shuffles
   for (let attempt = 0; attempt < 8; attempt++) {
     const shuffled = attempt === 0 ? words : shuffle(words);
-    const result = tryPlace(shuffled, targetCount);
+    const result = tryPlace(shuffled, targetCount, mode);
     if (result && result.length >= Math.min(4, targetCount)) return result;
   }
   return [];
 }
 
-function tryPlace(words, targetCount) {
+function tryPlace(words, targetCount, mode) {
   // placed: [{word, display, clue, row, col, dir}]
   let placed = [];
   // Grid map: "r,c" → letter
   let gridMap = {};
+  let gridDir = {};   // "r,c" → 'across' | 'down' | 'both' — a crossing must be perpendicular
 
   function canPlace(word, row, col, dir) {
     // Check boundaries
@@ -615,6 +636,7 @@ function tryPlace(words, targetCount) {
     }
 
     let hasIntersection = placed.length === 0; // first word always ok
+    let crossings = 0;
 
     for (let i = 0; i < len; i++) {
       const r = dir === 'down'   ? row + i : row;
@@ -624,7 +646,11 @@ function tryPlace(words, targetCount) {
 
       if (existing) {
         if (existing !== word[i]) return false; // conflict
+        // a shared cell must belong to a word running the OTHER way, or two
+        // entries would overlap in the same direction (e.g. ION inside IONIC)
+        if (gridDir[key] === dir || gridDir[key] === 'both') return false;
         hasIntersection = true;
+        crossings++;
       } else {
         // Check adjacent cells won't create accidental words
         // Only check perpendicular neighbours — parallel neighbours are fine
@@ -643,16 +669,26 @@ function tryPlace(words, targetCount) {
       if (gridMap[`${row-1},${col}`] || gridMap[`${row+len},${col}`]) return false;
     }
 
-    return hasIntersection;
+    // a number (truthy) = how many letters it shares with the grid
+    return hasIntersection ? Math.max(1, crossings) : false;
   }
 
+  let bb = null;   // bounding box of the letters placed so far
   function placeWord(word, row, col, dir) {
     for (let i = 0; i < word.word.length; i++) {
       const r = dir === 'down'   ? row + i : row;
       const c = dir === 'across' ? col + i : col;
       gridMap[`${r},${c}`] = word.word[i];
+      const k2 = `${r},${c}`;
+      gridDir[k2] = gridDir[k2] && gridDir[k2] !== dir ? 'both' : dir;
+      if (!bb) bb = { r0: r, r1: r, c0: c, c1: c };
+      else { bb.r0 = Math.min(bb.r0, r); bb.r1 = Math.max(bb.r1, r); bb.c0 = Math.min(bb.c0, c); bb.c1 = Math.max(bb.c1, c); }
     }
     placed.push({...word, row, col, dir});
+  }
+  function areaWith(len, row, col, dir) {
+    const r1 = dir === 'down' ? row + len - 1 : row, c1 = dir === 'across' ? col + len - 1 : col;
+    return (Math.max(bb.r1, r1) - Math.min(bb.r0, row) + 1) * (Math.max(bb.c1, c1) - Math.min(bb.c0, col) + 1);
   }
 
   // Place first word in centre going across
@@ -661,10 +697,13 @@ function tryPlace(words, targetCount) {
   const startRow = Math.floor(MAX_GRID / 2);
   placeWord(first, startRow, startCol, 'across');
 
-  // Try to place remaining words
-  for (let wi = 1; wi < words.length && placed.length < targetCount; wi++) {
-    const w = words[wi];
-    let bestPlacement = null;
+  // Try to place remaining words. Denser grids (Oct 2026): in 'best' mode
+  // every legal position is scored — shared letters first, then the smallest
+  // bounding box — instead of taking the first one found. In both modes,
+  // words that could not go in get a second pass once the grid has grown.
+  const pending = [];
+  const tryWord = (w) => {
+    let bestPlacement = null, bestScore = -Infinity;
 
     // Try each already-placed word's letters as intersection points
     for (const p of placed) {
@@ -691,18 +730,23 @@ function tryPlace(words, targetCount) {
             col = pC - wi2;
           }
 
-          if (canPlace(w.word, row, col, tryDir)) {
-            bestPlacement = {row, col, dir:tryDir};
-            break;
+          const x = canPlace(w.word, row, col, tryDir);
+          if (x) {
+            if (mode !== 'best') { placeWord(w, row, col, tryDir); return true; }   // first fit (the original rule)
+            const score = x * 1000 - areaWith(w.word.length, row, col, tryDir);
+            if (score > bestScore) { bestScore = score; bestPlacement = {row, col, dir:tryDir}; }
           }
         }
-        if (bestPlacement) break;
       }
-      if (bestPlacement) break;
     }
 
-    if (bestPlacement) placeWord(w, bestPlacement.row, bestPlacement.col, bestPlacement.dir);
+    if (bestPlacement) { placeWord(w, bestPlacement.row, bestPlacement.col, bestPlacement.dir); return true; }
+    return false;
+  };
+  for (let wi = 1; wi < words.length && placed.length < targetCount; wi++) {
+    if (!tryWord(words[wi])) pending.push(words[wi]);
   }
+  for (const w of pending) { if (placed.length >= targetCount) break; tryWord(w); }
 
   return placed.length >= 2 ? placed : null;
 }
