@@ -22,6 +22,8 @@
   .hl-card.mystery .hl-card-ans { color:var(--ar-muted); text-shadow:none; }
   .hl-card.mystery.revealed .hl-card-ans { color:var(--ar-mint); text-shadow:0 0 22px rgba(0,255,163,0.45); }
   .hl-card.mystery.revealed.busted .hl-card-ans { color:var(--ar-pink); text-shadow:0 0 22px rgba(255,46,136,0.5); }
+  .hl-line { font-size:15px; color:var(--ar-text2); margin:0 0 12px; line-height:1.4; }
+  .hl-line b { font-family:var(--ar-font); font-size:1.35rem; color:var(--ar-gold); text-shadow:0 0 14px rgba(255,214,10,0.35); white-space:nowrap; }
   .hl-unit { font-family:var(--ar-mono); font-size:13px; font-weight:400; letter-spacing:0.5px; color:var(--ar-text2); margin-left:7px; text-shadow:none; }
   .hl-controls { display:flex; gap:10px; margin-top:12px; }
   .hl-pill { flex:1; border:none; padding:16px 14px; border-radius:40px; font-family:var(--ar-font); font-size:15px; letter-spacing:0.5px; font-weight:700; cursor:pointer; transition:transform 0.12s ease, opacity 0.2s ease, box-shadow 0.12s ease; }
@@ -161,7 +163,20 @@
   // student to compare 1908 against 9.81 m/s² — categories only mix when
   // both cards are years or both aren't.
   const YEAR_RE = /\byear\b|\bcentury did\b|\bwhen did\b.*\b(1\d{3}|20\d{2})\b/i;
+  const THIS_YEAR = new Date().getFullYear();
+  // The card ASKS for a calendar year ("In what year…", "When did…") — not
+  // "interest for one year" or "tonnes per year".
+  const ASK_YEAR_RE = /\b(what|which)\s+year\b|\byear\s+(was|were|did|is)\b|\bwhen\s+(was|were|did|is)\b|^\W*(approximate\s+)?(traditional\s+)?(launch\s+|founding\s+|signing\s+)?year\b|\b(founding|signing|peak|launch|birth|death)\s+year\s*[:?]?\s*$/i;
+  const BCE_RE = /\b(BCE|BC)\b/;   // BCE numbers run backwards — never treated as a later/earlier year
+  const DATE_HINT_RE = /\b(when|decade|century|founded|established|signed|completed|finished|began|begun|started|born|died|invented|discovered|published|passed|introduced|launched|ended|built|opened)\b|\bin (approximately|roughly|about)\s*:?\s*$/i;
+  const DECADE_RE = /\bdecade\b/i;
+  const COUNT_RE = /\bhow (many|much)\b|\bnumber of\b|\btotal\b/i;
   function toCard(n, srcLabel) {
+    const c = toCard0(n, srcLabel);
+    if (c && c.year && /^year$/i.test(c.unit)) c.unit = '';   // "1995 year" reads oddly
+    return c;
+  }
+  function toCard0(n, srcLabel) {
     if (!n || typeof n.q !== 'string' || !n.q.trim()) return null;
     const v = Number(n.answer);
     if (!isFinite(v)) return null;
@@ -171,7 +186,12 @@
       q: n.q.trim(),
       value: v,
       unit: typeof n.unit === 'string' ? n.unit.trim() : '',
-      year: YEAR_RE.test(n.q),
+      // a calendar year (not "how many years"): whole number, not in the future
+      year: Number.isInteger(v) && v <= THIS_YEAR && !BCE_RE.test(n.q + ' ' + (n.unit || '')) && (
+        (/^(AD|CE|year)$/i.test(String(n.unit || '').trim()) && v >= 100) ||
+        (ASK_YEAR_RE.test(n.q) && v >= 100) ||
+        // "finished sequencing in approximately: 2003" — a date without the word "year"
+        (v >= 1000 && /^(|AD|CE)$/i.test(String(n.unit || '').trim()) && DATE_HINT_RE.test(n.q) && !COUNT_RE.test(n.q))),
       decs: Math.min(4, (String(n.answer).split('.')[1] || '').length),
       src: srcLabel,
     };
@@ -253,7 +273,7 @@
 
   // Backfill from the subject+level number pool (every authored numerical
   // across the subject) so a thin topic still gets a full comparison chain.
-  if (pool.length < 8 && spec && spec.subject && spec.level) {
+  if (pool.length < 12 && spec && spec.subject && spec.level) {
     try {
       const r = await fetch(`../arcade/numbers/${encodeURIComponent(spec.subject)}-${encodeURIComponent(spec.level)}.json`);
       if (r.ok) {
@@ -270,15 +290,14 @@
     } catch (e) { /* pool is optional — fall through to the gate */ }
   }
 
-  const distinctValues = new Set(pool.map(c => c.value)).size;
-  if (pool.length < 3 || distinctValues < 2) {
+  if (pool.length < 3) {
     inProduction('Higher or Lower needs at least three numerical answers from this topic and its sibling topics to build a fair comparison chain. Not enough have been authored yet.');
     return;
   }
 
   // ── Game ──────────────────────────────────────────────────────────────
   const BEST_KEY = 'aism-hl-best:' + stem;
-  const MAX_Q = 12;          // cap the run so videos stay tight
+  const MAX_Q = Math.min(12, pool.length);   // cap the run so videos stay tight; never repeat a card
   const HOT_POT = 500;       // heartbeat territory
   // ── JACKPOT VAULT (signature event) ────────────────────────────────────
   // A visible vault fills alongside the streak: each consecutive correct
@@ -297,21 +316,62 @@
   const VAULT_ARM = 5;       // consecutive correct calls to arm the jackpot
   const sameVal = (a, b) => Math.abs(a - b) < 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
 
+  /* Oct 2026 rework (review: "compares mismatched units — 0.3 N vs 40 %").
+     The game used to ask whether one question's answer was higher than a
+     DIFFERENT question's answer; nearly every topic has one authored
+     numerical and the numbers pack has no usable units, so the two numbers
+     were usually different quantities. Now each call is about ONE question:
+     is its answer higher or lower than THE LINE — a reference number in the
+     same quantity, set some way above or below the real answer (randomly
+     either side, so it gives nothing away). The reveal counts from the line
+     to the answer. Each card is used once per run (the old deck refilled
+     and repeated cards). */
   let queue = [];
-  function refill(exclude) { queue = shuffle(pool.filter(c => c !== exclude)); }
-  function takeFrom(pred) {
-    const i = queue.findIndex(pred);
-    return i > -1 ? queue.splice(i, 1)[0] : null;
+  function refill() { queue = shuffle(pool.slice()); }
+  function drawNext() { return queue.shift() || null; }
+
+  function sigRound(x, sig) {
+    if (x === 0) return 0;
+    const p = Math.pow(10, sig - 1 - Math.floor(Math.log10(Math.abs(x))));
+    return Math.round(x * p) / p;
   }
-  // Prefer a card in the same category (year vs quantity) with a different
-  // value; identical answers are skipped outright. Only mix categories when
-  // the current category has nothing left to offer.
-  function drawNext(current) {
-    const strict = c => c.year === current.year && !sameVal(c.value, current.value);
-    const loose  = c => !sameVal(c.value, current.value);
-    let c = takeFrom(strict);
-    if (!c) { refill(current); c = takeFrom(strict) || takeFrom(loose); }
-    return c;
+  function decsOf(x) {
+    const s = String(Number(x.toFixed(6)));
+    return Math.min(4, (s.split('.')[1] || '').length);
+  }
+  const PCT_RE = /%|\bper ?cent\b|\bpercentage\b/i;
+  const PROB_RE = /\bprobability\b/i;
+  // THE LINE for a card. tight = the vault's harder call (closer to the answer).
+  function lineFor(card, tight) {
+    const v = card.value;
+    let up = Math.random() < 0.5;
+    let x;
+    if (card.year) {
+      const off = DECADE_RE.test(card.q)
+        ? 10 * (tight ? 1 : 1 + Math.floor(Math.random() * 3))                                       // decades move in tens
+        : (tight ? 1 + Math.floor(Math.random() * 5) : 5 + Math.floor(Math.random() * 36));          // 1–5 or 5–40 years
+      if (v + off > THIS_YEAR) up = false;
+      x = up ? v + off : v - off;
+    } else if (Number.isInteger(v) && Math.abs(v) < 20) {
+      const off = tight ? 1 : 1 + Math.floor(Math.random() * 3);                                 // small counts: 1–3 away
+      if (v > 0 && v - off < 1) up = true;     // a positive count never gets a line of 0 or below
+      x = up ? v + off : v - off;
+    } else {
+      const fs = tight ? [1.12, 1.2, 1.25] : [1.4, 1.6, 2, 2.5, 3];
+      const f = fs[Math.floor(Math.random() * fs.length)];
+      const pct = card.unit === '%' || PCT_RE.test(card.q);
+      const prob = !pct && v > 0 && v <= 1 && PROB_RE.test(card.q);
+      const cap = pct ? 100 : (prob ? 1 : Infinity);
+      if (up && Math.abs(v) * f > cap) up = false;
+      x = sigRound(up ? v * f : v / f, 2);
+      if (Number.isInteger(v) && Math.abs(v) >= 20) x = Math.round(x);
+      if (sameVal(x, v)) x = sigRound(up ? v * f * 1.1 : v / (f * 1.1), 3);
+    }
+    if (sameVal(x, v)) x = v + (up ? 1 : -1);
+    return { q: '', value: x, unit: card.unit, year: card.year, decs: card.year ? 0 : decsOf(x), src: 'THE LINE', line: true };
+  }
+  function lineText(line) {
+    return fmt(line.value, line) + (line.unit ? ' ' + line.unit : '');
   }
 
   function fmt(v, card) {
@@ -323,9 +383,9 @@
   let state, stats, seenRun;
 
   function startGame() {
-    refill(null);
-    const left = queue.shift();
-    const right = drawNext(left);
+    refill();
+    const right = drawNext();
+    const left = lineFor(right, false);
     state = { left, right, banked: 0, pot: 0, streak: 0, qNum: 0, correctCount: 0, busy: false, vault: 0, vaultStreak: 0, crack: null };
     stats = { overshoot: 0, undershoot: 0, yearRounds: 0, yearRight: 0, lastWrongGuess: null, longestStreak: 0, biggestBurn: 0, marks: [], vaultBuilt: 0, vaultLost: 0, jackpotPaid: 0, biggestJackpot: 0, crackAsked: 0, crackRight: 0, missed: [] };
     seenRun = new Set([left, right]);
@@ -337,7 +397,7 @@
     return `
       <div class="ar-badge">V · Verify · Higher or Lower</div>
       <h1 class="ar-title">${E(topic)}</h1>
-      <p class="ar-sub">Call it: is the hidden answer higher or lower? Every correct call grows the pot — bank it, or push your luck.</p>
+      <p class="ar-sub">Each card is a real question from the syllabus. Is its answer higher or lower than the line? Every correct call grows the pot — bank it, or push your luck.</p>
       <div class="ar-meta">${E([level, subj].filter(Boolean).join(' · '))} · ${E(metaTail)} · ${pool.length} facts in play</div>
     `;
   }
@@ -393,17 +453,29 @@
     `;
   }
 
-  function cardHtml(card, mystery, extraClass) {
+  function cardHtml(card, mystery, extraClass, line) {
     const ans = mystery
       ? '<span class="hl-num">?</span>'
       : `<span class="hl-num">${E(fmt(card.value, card))}</span>${card.unit ? `<span class="hl-unit">${E(card.unit)}</span>` : ''}`;
+    const lineRow = line
+      ? `<div class="hl-line">${card.year ? 'Later or earlier than' : 'Higher or lower than'} <b>${E(lineText(line))}</b>?</div>`
+      : '';
     return `
       <article class="hl-card ${mystery ? 'mystery' : ''} ${extraClass || ''}">
         <div class="hl-card-label">${E(mystery ? '? · ' + card.src : card.src)}</div>
         <div class="hl-card-q">${E(card.q)}</div>
+        ${lineRow}
         <div class="hl-card-ans">${ans}</div>
       </article>
     `;
+  }
+  function pillsHtml(card, crackCls) {
+    const up = card.year ? '↑ LATER' : '↑ HIGHER', down = card.year ? '↓ EARLIER' : '↓ LOWER';
+    return `
+          <div class="hl-controls">
+            <button type="button" class="hl-pill ${crackCls || 'hl-higher'}" id="btnHigher" aria-label="${card.year ? 'Later' : 'Higher'} than the line">${up}</button>
+            <button type="button" class="hl-pill ${crackCls || 'hl-lower'}" id="btnLower" aria-label="${card.year ? 'Earlier' : 'Lower'} than the line">${down}</button>
+          </div>`;
   }
 
   function renderGame(enterRight) {
@@ -411,21 +483,17 @@
       ${headerHtml('Question ' + (state.qNum + 1) + ' of ' + MAX_Q)}
       ${hudHtml()}
       <div class="hl-stage" id="stage">
-        <div class="hl-col" id="colL">${cardHtml(state.left, false)}</div>
-        <div class="hl-vs" aria-hidden="true">vs</div>
         <div class="hl-col" id="colR">
-          ${cardHtml(state.right, true, enterRight ? 'enter' : '')}
-          <div class="hl-controls">
-            <button type="button" class="hl-pill hl-higher" id="btnHigher" aria-label="Guess the hidden answer is higher">↑ HIGHER</button>
-            <button type="button" class="hl-pill hl-lower" id="btnLower" aria-label="Guess the hidden answer is lower">↓ LOWER</button>
-          </div>
+          ${cardHtml(state.right, true, enterRight ? 'enter' : '', state.left)}
+          ${pillsHtml(state.right)}
         </div>
       </div>
       <div id="fb"></div>
       <div class="hl-decision" id="decision"></div>
       <button type="button" class="hl-cashout" id="btnCashout">Cash out &amp; finish — bank everything and see your results</button>
-      <div class="ar-kbd-hint">Keyboard: ↑ higher · ↓ lower · B bank · C crack the vault · Enter keep going</div>
+      <div class="ar-kbd-hint">Keyboard: ↑ ${state.right.year ? 'later' : 'higher'} · ↓ ${state.right.year ? 'earlier' : 'lower'} · B bank · C crack the vault · Enter keep going</div>
     `;
+    announce.textContent = 'Question ' + (state.qNum + 1) + '. ' + state.right.q + ' Is the answer ' + (state.right.year ? 'later or earlier' : 'higher or lower') + ' than ' + lineText(state.left) + '?';
     document.getElementById('btnHigher').addEventListener('click', () => guess('higher'));
     document.getElementById('btnLower').addEventListener('click', () => guess('lower'));
     document.getElementById('btnCashout').addEventListener('click', cashOut);
@@ -447,34 +515,36 @@
     requestAnimationFrame(tick);
   }
 
-  // One-line educational comparison of the two quantities.
+  // One-line comparison of the answer with the line (same quantity now).
   function takeaway(left, right, isHigher) {
     const rStr = fmt(right.value, right) + (right.unit ? ' ' + right.unit : '');
     const lStr = fmt(left.value, left) + (left.unit ? ' ' + left.unit : '');
     if (left.year && right.year) {
       const gap = Math.abs(Math.round(right.value - left.value));
       if (gap === 0) return rStr + ' — the very same year as ' + lStr + '.';
-      return rStr + ' is ' + gap + ' year' + (gap === 1 ? '' : 's') + ' ' + (isHigher ? 'after' : 'before') + ' ' + lStr + '.';
+      return 'The answer is ' + rStr + ' — ' + gap + ' year' + (gap === 1 ? '' : 's') + ' ' + (isHigher ? 'after' : 'before') + ' the line (' + lStr + ').';
+    }
+    const side = isHigher ? 'above' : 'below';
+    if (Number.isInteger(left.value) && Number.isInteger(right.value) && Math.abs(right.value - left.value) < 20) {
+      const d = Math.abs(right.value - left.value);
+      return 'The answer is ' + rStr + ' — ' + d + ' ' + side + ' the line (' + lStr + ').';
     }
     if (left.value > 0 && right.value > 0) {
       const ratio = right.value / left.value;
-      if (ratio >= 1.05) return rStr + ' vs ' + lStr + ' — about ' + (ratio >= 10 ? Math.round(ratio) : ratio.toFixed(1)) + '× bigger.';
-      if (ratio <= 0.95) {
-        const inv = left.value / right.value;
-        return rStr + ' vs ' + lStr + ' — about ' + (inv >= 10 ? Math.round(inv) : inv.toFixed(1)) + '× smaller.';
-      }
-      return rStr + ' vs ' + lStr + ' — nearly identical. That one was a coin flip.';
+      if (ratio >= 2) return 'The answer is ' + rStr + ' — about ' + (ratio >= 10 ? Math.round(ratio) : ratio.toFixed(1)) + '× the line (' + lStr + ').';
+      if (ratio > 1) return 'The answer is ' + rStr + ' — about ' + Math.max(1, Math.round((ratio - 1) * 100)) + '% above the line (' + lStr + ').';
+      return 'The answer is ' + rStr + ' — about ' + Math.max(1, Math.round(ratio * 100)) + '% of the line (' + lStr + ').';
     }
-    return rStr + ' vs ' + lStr + '.';
+    return 'The answer is ' + rStr + ' — ' + (isHigher ? 'above' : 'below') + ' the line (' + lStr + ').';
   }
 
   // End-card misses list: the comparison the player called wrong.
   function noteMiss(base, card, isHigher) {
     const u = c => (c.unit ? ' ' + c.unit : '');
     stats.missed.push({
-      ask: 'Higher or lower?',
-      q: '“' + card.q + '” compared with “' + base.q + '” (' + fmt(base.value, base) + u(base) + ')',
-      a: (isHigher ? 'Higher' : 'Lower') + ': ' + fmt(card.value, card) + u(card),
+      ask: card.year ? 'Later or earlier than the line?' : 'Higher or lower than the line?',
+      q: card.q + ' — ' + (card.year ? 'later or earlier' : 'higher or lower') + ' than ' + fmt(base.value, base) + u(base) + '?',
+      a: (card.year ? (isHigher ? 'Later' : 'Earlier') : (isHigher ? 'Higher' : 'Lower')) + ': ' + fmt(card.value, card) + u(card),
     });
   }
 
@@ -552,7 +622,7 @@
         const bannerHtml = offerCrack ? `
           <div class="hl-jackpot" id="jackpotBanner" role="status">
             <div class="hl-jackpot-head">💎 JACKPOT — the vault holds ${state.vault}</div>
-            <div class="hl-jackpot-sub">Crack it with <strong>one extra call</strong> — the trickiest unseen number in the deck. Right, and the whole vault drops straight into your bank. Wrong, and the vault <em>and</em> your unbanked pot go up in smoke. Or keep climbing at +500 a call — but one wrong call empties the vault.</div>
+            <div class="hl-jackpot-sub">Crack it with <strong>one extra call</strong> — a new question with the line set close to the answer. Right, and the whole vault drops straight into your bank. Wrong, and the vault <em>and</em> your unbanked pot go up in smoke. Or keep climbing at +500 a call — but one wrong call empties the vault.</div>
             <button type="button" class="hl-pill hl-crack" id="btnCrack">💎 CRACK THE VAULT — one harder call for ${state.vault}</button>
           </div>` : '';
         if (offerCrack) Arcade.sfx.heartbeat();
@@ -623,26 +693,17 @@
   // same category as the base where possible, pick the value closest to the
   // just-revealed card — a near coin-flip that only genuine number sense
   // wins. The vault pays out on a correct answer and only then.
-  function pickCrackCard(base) {
-    const cands = pool.filter(c => c !== base && c !== state.left && !sameVal(c.value, base.value));
-    if (!cands.length) return null;
-    const unseen = cands.filter(c => !seenRun.has(c));
-    let pickFrom = unseen.length ? unseen : cands;
-    const sameCat = pickFrom.filter(c => c.year === base.year);
-    if (sameCat.length) pickFrom = sameCat;
-    let best = null, bestGap = Infinity;
-    for (const c of pickFrom) {
-      const gap = Math.abs(c.value - base.value) / Math.max(1, Math.abs(base.value), Math.abs(c.value));
-      if (gap < bestGap) { bestGap = gap; best = c; }
-    }
-    return best;
+  // The crack is one extra card not yet seen this run, with a TIGHT line
+  // (1–5 years, ±1, or 12–25 % from the answer) — a genuinely harder call.
+  function pickCrackCard() {
+    return queue.length ? queue[0] : null;
   }
 
   function startCrack() {
     if (state.crack || state.vault <= 0) return;
-    const base = state.right; // already revealed on screen
-    const card = pickCrackCard(base);
+    const card = pickCrackCard();
     if (!card) return;
+    const base = lineFor(card, true);
     queue = queue.filter(c => c !== card);
     seenRun.add(card);
     state.crack = { base, card, answered: false };
@@ -653,17 +714,12 @@
       ${hudHtml()}
       <div class="hl-jackpot" style="margin-bottom:12px" role="status">
         <div class="hl-jackpot-head">💎 CRACK THE VAULT</div>
-        <div class="hl-jackpot-sub">One extra call, the trickiest number left. Call it right and <strong>${state.vault}</strong> drops straight into your bank. Call it wrong and the vault and your unbanked pot are gone.</div>
+        <div class="hl-jackpot-sub">One extra call with the line set close to the answer. Call it right and <strong>${state.vault}</strong> drops straight into your bank. Call it wrong and the vault and your unbanked pot are gone.</div>
       </div>
       <div class="hl-stage" id="stage">
-        <div class="hl-col" id="colL">${cardHtml(base, false)}</div>
-        <div class="hl-vs" aria-hidden="true">vs</div>
         <div class="hl-col" id="colR">
-          ${cardHtml(card, true, 'enter')}
-          <div class="hl-controls">
-            <button type="button" class="hl-pill hl-crack" id="btnHigher" aria-label="Guess the hidden answer is higher">↑ HIGHER</button>
-            <button type="button" class="hl-pill hl-crack" id="btnLower" aria-label="Guess the hidden answer is lower">↓ LOWER</button>
-          </div>
+          ${cardHtml(card, true, 'enter', base)}
+          ${pillsHtml(card, 'hl-crack')}
         </div>
       </div>
       <div id="fb"></div>
@@ -672,7 +728,7 @@
     `;
     document.getElementById('btnHigher').addEventListener('click', () => crackGuess('higher'));
     document.getElementById('btnLower').addEventListener('click', () => crackGuess('lower'));
-    announce.textContent = 'Jackpot question. One extra call for the vault of ' + state.vault + '. Is the hidden answer higher or lower than ' + fmt(base.value, base) + (base.unit ? ' ' + base.unit : '') + '?';
+    announce.textContent = 'Jackpot question. One extra call for the vault of ' + state.vault + '. ' + card.q + ' Is the answer ' + (card.year ? 'later or earlier' : 'higher or lower') + ' than ' + lineText(base) + '?';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -791,14 +847,14 @@
   }
 
   function advance() {
-    const next = drawNext(state.right);
-    if (!next || endedByCap()) {
-      // Pool exhausted (or cap hit) — whatever is in the pot comes home safe.
+    const next = endedByCap() ? null : drawNext();
+    if (!next) {
+      // Deck used up (or cap hit) — whatever is in the pot comes home safe.
       bankPot(false);
-      finish(!next);
+      finish(!endedByCap());
       return;
     }
-    state.left = state.right;
+    state.left = lineFor(next, false);
     state.right = next;
     seenRun.add(next);
     state.busy = false;
@@ -826,7 +882,7 @@
         ? 'Good sense for time scales, but you undershot on the quantities — some of these numbers are bigger than they feel. Note which scales surprised you.'
         : 'You undershot — the hidden number was bigger than you expected. Magnitudes in this topic run larger than intuition suggests; that surprise is worth a flashcard.';
     } else {
-      core = 'Every card here is a real numerical answer from the syllabus. The ones that surprised you are the ones worth writing down — number sense is built one calibrated guess at a time.';
+      core = 'Every card here is a real numerical question from the syllabus. The ones that surprised you are the ones worth writing down — number sense is built one calibrated guess at a time.';
     }
     if (stats.biggestBurn > 0 && stats.biggestBurn > state.banked) {
       core = `You torched more than you banked (a ${stats.biggestBurn}-point pot went up in flames). Knowing when to lock in what you've got is calibration too. ` + core;
@@ -921,6 +977,7 @@
       get state() { return state; },
       get stats() { return stats; },
       get poolSize() { return pool.length; },
+      get pool() { return pool; },
       get left() { return state.left; },
       get right() { return state.right; },
       get vault() { return state.vault; },
@@ -931,6 +988,7 @@
       correctDir() { return state.right.value > state.left.value ? 'higher' : 'lower'; },
       crackCorrectDir() { return state.crack ? (state.crack.card.value > state.crack.base.value ? 'higher' : 'lower') : null; },
       pickCrackCard: pickCrackCard,
+      lineFor: lineFor,
       _startCrack: startCrack,
       _finish: finish,
     };
