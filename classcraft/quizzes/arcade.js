@@ -1876,6 +1876,7 @@
       }
     } catch (e) {}
     Arcade.flushReading(opts && opts.gameName);
+    try { Arcade.nextCabinet(container); } catch (e) {}   // legacy template pages only
     try {
       if (Arcade.lb.enabled() && typeof opts.bestValue === 'number' && opts.bestValue > 0) {
         const inner = container.querySelector('.ar-end-inner');
@@ -1892,6 +1893,52 @@
       }
     } catch (e) { /* leaderboards must never break an end card */ }
     return out;
+  };
+
+  /* NEXT CABINET (Oct 2026) — on the six legacy template pages
+     (/classcraft/games/*.html), whose only exit used to be "More games" to
+     the whole catalogue, the end card offers two sibling games from the same
+     subject and level: the same topic in a different game first, then other
+     games. Data: arcade/legacy/_pages.json (page → list) + that list, both
+     written by arcade/build-index.py. Any failure just leaves the card out. */
+  const NEXT_KIND = {
+    'MOB QUIZ': '🏃 Mob Quiz', 'MEMORY MATCH': '🃏 Memory Match', 'SORT': '📦 Sorting Rush',
+    'QUIZ': '⚡ Quiz Gauntlet', 'TIMELINE': '🕰️ Timeline', 'DIAGRAM': '🏷️ Label It',
+  };
+  Arcade.nextCabinet = function (container) {
+    const m = location.pathname.match(/\/classcraft\/games\/([^\/]+)\.html$/);
+    if (!m || !container || container.querySelector('.ar-next-cab')) return;
+    const self = m[1];
+    const inner = container.querySelector('.ar-end-inner');
+    if (!inner) return;
+    const slot = document.createElement('div');
+    slot.className = 'ar-next-cab';
+    slot.hidden = true;
+    const after = inner.querySelector('#ar-ctas-more') || inner.querySelector('.ar-ctas');
+    if (after && after.nextSibling) inner.insertBefore(slot, after.nextSibling); else inner.appendChild(slot);
+    const base = '../arcade/legacy/';
+    fetch(base + '_pages.json').then(r => r.ok ? r.json() : null).then(ix => {
+      if (!ix || !ix.p || ix.p[self] == null) return null;
+      return fetch(base + ix.k[ix.p[self]] + '.json').then(r => r.ok ? r.json() : null);
+    }).then(list => {
+      if (!Array.isArray(list)) return;
+      const me = list.find(g => g.f === 'games/' + self + '.html');
+      const others = Arcade.shuffle(list.filter(g => g.f !== 'games/' + self + '.html' && g.f && g.t));
+      const picks = [];
+      const add = g => { if (g && picks.length < 2 && !picks.includes(g)) picks.push(g); };
+      if (me) others.filter(g => g.t === me.t && g.k !== me.k).forEach(add);     // same topic, other game
+      others.filter(g => !me || g.k !== me.k).forEach(add);                        // other games
+      others.forEach(add);
+      if (!picks.length) return;
+      const e = Arcade.escapeHtml;
+      slot.innerHTML = '<div class="ar-label" style="margin:14px 0 8px;text-align:center;">Next cabinet</div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">'
+        + picks.map(g => '<a class="ar-btn ghost" style="flex:1 1 180px;min-width:0;text-decoration:none;display:flex;flex-direction:column;gap:2px;align-items:center;padding:10px 12px;" href="../' + e(g.f) + '">'
+          + '<span style="font-weight:700;">' + e(NEXT_KIND[g.k] || g.k) + '</span>'
+          + '<span style="font-size:12px;font-weight:500;opacity:0.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;">' + e(g.t) + '</span></a>').join('')
+        + '</div>';
+      slot.hidden = false;
+    }).catch(() => {});
   };
 
   window.Arcade = Arcade;

@@ -81,6 +81,14 @@ for sx in subs:
     W('subjects/%s.json' % sx['id'], sx)
 for k, v in legacy.items():
     W('legacy/%s.json' % k.replace('|', '__'), v)
+# Page -> legacy-list index, read by the end card's "Next cabinet" on the six
+# legacy templates (Arcade.nextCabinet in quizzes/arcade.js), Oct 2026.
+pages = {}
+lkeys = [k.replace('|', '__') for k in legacy]
+for i, (k, v) in enumerate(legacy.items()):
+    for g in v:
+        pages[os.path.basename(g['f'])[:-5]] = i
+W('legacy/_pages.json', {"k": lkeys, "p": pages})
 
 # Flat list in the SAME order arcade.html built it - the order defines the daily pick.
 flat_full, quick = [], []
