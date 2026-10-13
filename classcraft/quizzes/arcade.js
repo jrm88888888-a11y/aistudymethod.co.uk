@@ -1211,8 +1211,21 @@
   // Drives an .ar-timer fill bar. Returns {stop, remaining, addTime}.
   // ms === Infinity (reading pace "No clock") → bar shown dimmed and full,
   // never ends, remaining = 0 so time-based bonuses are simply not paid.
+  let playQs = 0;   // question clocks started since the run began (X3)
   Arcade.timer = function (fillEl, ms, callbacks) {
     const cb = callbacks || {};
+    // X3: a running question clock means a run is under way — collapse the
+    // page header (rules, meta, badge) on phones and short screens. Games
+    // without a clock call Arcade.playMode(true) when their run starts; the
+    // end card turns it off again.
+    try {
+      playQs++;
+      if (!document.body.classList.contains('ar-play')) Arcade.playMode(true);
+      // Short desktop screens keep the rules on screen for the first question
+      // and drop them from the second (CSS: body.ar-play-2). Phones collapse
+      // from the first question.
+      if (playQs >= 2) document.body.classList.add('ar-play-2');
+    } catch (e) {}
     // Reading telemetry: a clock that follows Arcade.readMs() adopts that
     // question's word count; its stop()/end records one answer (see below).
     const rec = readCur; readCur = null;
@@ -1749,7 +1762,10 @@
   // the game (rules paragraph, meta line and badge hidden; CSS in arcade.css).
   // Only removes descriptive text: no heights, no overflow clamps.
   Arcade.playMode = function (on) {
-    try { document.body.classList.toggle('ar-play', !!on); } catch (e) {}
+    try {
+      document.body.classList.toggle('ar-play', !!on);
+      if (!on) { document.body.classList.remove('ar-play-2'); playQs = 0; }
+    } catch (e) {}
   };
   Arcade.isPhone = function () {
     try { return window.matchMedia('(max-width: 760px)').matches; } catch (e) { return false; }
@@ -1837,6 +1853,7 @@
   // Hook: every end card with a numeric best value gets the leaderboard UI.
   const _renderEndCard = Arcade.renderEndCard;
   Arcade.renderEndCard = function (container, opts) {
+    try { Arcade.playMode(false); } catch (e) {}   // X3: the run is over — header back
     const out = _renderEndCard(container, opts);
     // The rank stamp + count-up start now: show the card from its top.
     try {
