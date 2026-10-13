@@ -340,6 +340,7 @@
     Arcade.sfx.click();
     activeSpoke = i;
     chosenTerm = null;
+    if (sp.openedAt == null) sp.openedAt = performance.now();   // speed bonus clock (first opening only)
     spokeEls.forEach((el, j) => el.g.classList.toggle('active', j === i));
     renderQuiz();
     Arcade.bringIntoView && Arcade.bringIntoView(document.getElementById('wwQuiz'));   // question + Lock it in on screen
@@ -408,7 +409,16 @@
 
     if (chosenTerm === sp.term) {
       const firstTry = sp.tries === 1;
-      const pts = firstTry ? 100 : 50;
+      // Speed bonus (first try only): up to +50, falling to 0 over the shared
+      // reading time for this question. Scores used to cap at 600, so every
+      // perfect web tied on the leaderboard. No speed bonus under "No clock".
+      let speed = 0;
+      if (firstTry && Arcade.readMs && sp.openedAt != null) {
+        const allow = Arcade.readMs([sp.clue, sp.options], 6000);
+        if (isFinite(allow)) speed = Math.max(0, Math.round(50 * (1 - (performance.now() - sp.openedAt) / allow)));
+      }
+      state.speedBonus = (state.speedBonus || 0) + speed;
+      const pts = (firstTry ? 100 : 50) + speed;
       sp.status = 'done';
       sp.firstTry = firstTry;
       state.score += pts;
@@ -422,7 +432,7 @@
       Arcade.sfx.correct(state.filledCount + 1);
       if (correctBtn) Arcade.popTextOver(correctBtn, '+' + pts, firstTry ? '#00ffa3' : '#ffd60a');
       fb.className = 'ar-feedback ok';
-      fb.innerHTML = `<strong>Connected — +${pts}.</strong> “${escapeHtml(sp.term)}” joins the web.`;
+      fb.innerHTML = `<strong>Connected — +${pts}${speed ? ' (⚡ +' + speed + ' speed)' : ''}.</strong> “${escapeHtml(sp.term)}” joins the web.`;
       announce(`Correct. Spoke ${i + 1} filled with ${sp.term}. Score ${state.score}.`);
       fillSpoke(i, false);
     } else {
@@ -451,7 +461,7 @@
         quiz.querySelector('.ww-tries').textContent = '1 try left';
         quiz.querySelector('.ar-label').textContent = `Spoke ${i + 1} of 6 · second try +50`;
         fb.className = 'ar-feedback no';
-        fb.innerHTML = `<strong>Not that one.</strong> That term belongs on a different spoke — read the definition again, you've got one more try.`;
+        fb.innerHTML = `<strong>Not that one.</strong> Read the definition again — you've got one more try.`;
         announce(`Wrong term for spoke ${i + 1}. One try left.`);
       }
     }
@@ -558,6 +568,7 @@
         { v: `${state.firstTryCount}/6`, l: 'first try' },
         { v: String(state.retries), l: 'retries' },
         { v: fmtTime(state.elapsed), l: 'time' },
+        ...(state.speedBonus ? [{ v: '⚡ +' + state.speedBonus, l: 'speed bonus' }] : []),
       ],
       emojiGrid: emoji,
       bestKey: BEST_KEY,
@@ -594,7 +605,14 @@
     const clueMask = Arcade.makeMasker(allConcepts);   // X8: no term inside its own clue
     state = {
       spokes: picked.map(c => {
-        const distractors = Arcade.shuffle(picked.filter(o => o.term !== c.term).map(o => o.term)).slice(0, 3);
+        // Distractors come from the rest of the topic, not the other five
+        // spokes: drawn from the web, a filled spoke's term was an obvious
+        // non-answer, so elimination got easier as the web filled up. Falls
+        // back to web terms only when the topic is too small.
+        const outside = allConcepts.filter(o => !picked.includes(o) && o.term !== c.term).map(o => o.term);
+        const inside = picked.filter(o => o.term !== c.term).map(o => o.term);
+        const pool = outside.length >= 3 ? outside : outside.concat(Arcade.shuffle(inside));
+        const distractors = (outside.length >= 3 ? Arcade.shuffle(pool) : pool).filter((t, k, a) => a.indexOf(t) === k).slice(0, 3);
         return {
           term: c.term,
           def: c.def,

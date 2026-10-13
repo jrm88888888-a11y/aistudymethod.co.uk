@@ -39,6 +39,16 @@
   .wg-stmts { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
   .wg-finale-btns { display:flex; flex-direction:column; gap:12px; margin-top:18px; }
   @media (max-width:480px) { .wg-chip { min-height:64px; } .wg-chip-face { font-size:18px; } }
+  /* Fewer taps: a chip confirms itself after a short undo window (a gold
+     sweep); tap another chip to switch. No change once the choices show:
+     the stake is placed blind by design. */
+  .wg-chip { position:relative; overflow:hidden; }
+  .wg-chip.arming::after { content:''; position:absolute; left:0; bottom:0; height:4px; width:100%; background:var(--ar-gold); transform-origin:left; animation:wgArm var(--wg-arm, 900ms) linear forwards; }
+  .wg-chip.allin.arming::after { background:var(--ar-pink); }
+  @keyframes wgArm { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+  .wg-chip.arming .wg-chip-face { animation:wgShimmer 0.6s ease-in-out infinite alternate; }
+  @keyframes wgShimmer { to { filter:brightness(1.35); } }
+  @media (prefers-reduced-motion: reduce) { .wg-chip.arming .wg-chip-face { animation:none; } }
 </style>
 <link rel="canonical" href="https://aistudymethod.com/classcraft/quizzes/wager.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -303,8 +313,8 @@
               </button>
             `).join('')}
           </div>
-          <button class="ar-btn big" id="confirm-stake" disabled>Confirm stake →</button>
-          <div class="ar-kbd-hint">Keyboard: 1–5 pick a chip · Enter to confirm</div>
+          <button class="ar-btn big" id="confirm-stake" disabled>Tap a chip — it locks in by itself</button>
+          <div class="ar-kbd-hint">Keyboard: 1–5 pick a chip · Enter to confirm at once</div>
         </div>
 
         <div id="answer-phase" hidden>
@@ -339,19 +349,33 @@
     const confirmStake = document.getElementById('confirm-stake');
     let chosenChip = null;
 
+    // A chip now confirms itself after a short undo window (0.9 s, 1.4 s for
+    // ALL IN): one tap instead of chip + Confirm. Tapping another chip in the
+    // window switches; Enter or the button confirms at once.
+    let armT = null;
+    const ARM_MS = 900, ARM_ALLIN_MS = 1400;
     chipBtns.forEach(b => {
       b.addEventListener('click', () => {
         Arcade.sfx.click();
-        chipBtns.forEach(x => { x.classList.remove('selected'); x.setAttribute('aria-checked', 'false'); });
+        clearTimeout(armT);
+        chipBtns.forEach(x => { x.classList.remove('selected', 'arming'); x.setAttribute('aria-checked', 'false'); });
         b.classList.add('selected');
         b.setAttribute('aria-checked', 'true');
         chosenChip = chips[parseInt(b.dataset.i)];
         confirmStake.disabled = false;
+        confirmStake.textContent = 'Confirm stake now →';
+        const ms = chosenChip.allin ? ARM_ALLIN_MS : ARM_MS;
+        b.style.setProperty('--wg-arm', ms + 'ms');
+        void b.offsetWidth;
+        b.classList.add('arming');
+        armT = setTimeout(() => { const sp = document.getElementById('stake-phase'); if (sp && !sp.hidden && confirmStake.isConnected) confirmStake.click(); }, ms);
       });
     });
 
     confirmStake.addEventListener('click', () => {
       if (!chosenChip) return;
+      clearTimeout(armT);
+      chipBtns.forEach(x => x.classList.remove('arming'));
       Arcade.sfx.click();
       round.chip = chosenChip;
       round.stake = chosenChip.allin ? state.bank : chosenChip.face;

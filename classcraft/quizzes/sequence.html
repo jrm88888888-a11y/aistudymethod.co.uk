@@ -247,18 +247,27 @@
   const N = ITEMS.length;
   const BEST_KEY = 'aism-seq-best:' + stem;
 
-  const endLabels = built.source === 'years'
+  const endLabelsFwd = built.source === 'years'
     ? { top: '▲ Earliest', bottom: '▼ Latest' }
     : built.source === 'steps'
       ? { top: '▲ First step', bottom: '▼ Last step' }
       : { top: '▲ First / earliest / smallest', bottom: '▼ Last / latest / largest' };
 
+  // REPLAY VARIETY: every second run is a REVERSE round (sort last → first),
+  // and every run now scores a time bonus, so a replay of the same six items
+  // is a different puzzle and a faster clean run beats a slower one.
+  // Scores stay within the leaderboard cap (max 600 + 150 = 750 < 1000).
+  let runNo = 0, reverse = false;
+  const target = order => reverse ? N - 1 - order : order;
+  let endLabels = endLabelsFwd;
+  const TIME_BONUS_MAX = 150;
+
   function shuffledStart() {
     for (let t = 0; t < 12; t++) {
       const s = Arcade.shuffle(ITEMS);
-      if (s.some((it, i) => it.order !== i)) return s;
+      if (s.some((it, i) => target(it.order) !== i)) return s;
     }
-    return ITEMS.slice().reverse();
+    return reverse ? ITEMS.slice() : ITEMS.slice().reverse();
   }
 
   function fmtSecs(ms) {
@@ -277,6 +286,11 @@
   let state, hudTimerInt = null;
 
   function startGame() {
+    runNo++;
+    reverse = runNo % 2 === 0;
+    endLabels = reverse
+      ? { top: endLabelsFwd.bottom.replace('▼', '▲'), bottom: endLabelsFwd.top.replace('▲', '▼') }
+      : endLabelsFwd;
     Arcade.playMode && Arcade.playMode(true);   // X3: collapse the header during the run (no question clock here)
     if (hudTimerInt) { clearInterval(hudTimerInt); hudTimerInt = null; }
     state = {
@@ -311,8 +325,8 @@
         <div class="ar-hud-stat gold">Time <b id="hudTime">0s</b></div>
       </div>
       <div class="ar-card">
-        <div class="ar-label">Sort all ${N} · first try = 100 · second wind = 50</div>
-        <div class="ar-prompt">Put these in the right order.</div>
+        <div class="ar-label">Sort all ${N} · first try = 100 · second wind = 50 · fast clean run = up to +${TIME_BONUS_MAX}</div>
+        <div class="ar-prompt">${reverse ? '🔁 Reverse round — put these in order from LAST to FIRST.' : 'Put these in the right order.'}</div>
         <div class="seq-ends"><span>${endLabels.top}</span><span>${endLabels.bottom}</span></div>
         <ul class="seq-list ar-stagger" id="seq-list" role="listbox" aria-label="Sortable items. Drag with the handle, or focus a card and press Alt plus arrow up or down to move it.">
           ${startOrder.map(it => `
@@ -354,7 +368,7 @@
     function renormalize() {
       const all = cards();
       const slots = new Array(all.length).fill(null);
-      all.forEach(c => { if (c.classList.contains('locked')) slots[+c.dataset.order] = c; });
+      all.forEach(c => { if (c.classList.contains('locked')) slots[target(+c.dataset.order)] = c; });
       const un = all.filter(c => !c.classList.contains('locked'));
       let k = 0;
       for (let i = 0; i < slots.length; i++) if (!slots[i]) slots[i] = un[k++];
@@ -459,7 +473,7 @@
       document.getElementById('reveal').innerHTML = `
         <div class="seq-reveal">
           <div class="seq-reveal-lbl">Correct order (−30% applied)</div>
-          <ol>${ITEMS.map(it => `<li>${esc(it.term)}${it.year ? ` <span style="color:var(--ar-muted)">(${esc(it.year)})</span>` : ''}</li>`).join('')}</ol>
+          <ol>${(reverse ? ITEMS.slice().reverse() : ITEMS).map(it => `<li>${esc(it.term)}${it.year ? ` <span style="color:var(--ar-muted)">(${esc(it.year)})</span>` : ''}</li>`).join('')}</ol>
         </div>
       `;
       announce.textContent = 'Correct order revealed. Thirty percent will be deducted from your final score.';
@@ -469,7 +483,7 @@
     function firstCheck() {
       state.phase = 'reveal';
       const cs = cards();
-      const correctCards = cs.filter((c, i) => +c.dataset.order === i);
+      const correctCards = cs.filter((c, i) => target(+c.dataset.order) === i);
       correctCards.forEach(c => state.firstSet.add(+c.dataset.order));
       state.score = state.firstSet.size * 100;
       checkBtn.disabled = true;
@@ -513,14 +527,14 @@
       state.phase = 'reveal';
       checkBtn.disabled = true;
       const cs = cards();
-      const ranks = cs.map(c => +c.dataset.order);
+      const ranks = cs.map(c => target(+c.dataset.order));
       let adjacent = 0;
       for (let i = 0; i < N - 1; i++) if (ranks[i] < ranks[i + 1]) adjacent++;
 
       const pending = [];
       cs.forEach((c, i) => {
         if (c.classList.contains('locked')) return;
-        const ok = +c.dataset.order === i;
+        const ok = target(+c.dataset.order) === i;
         if (ok) state.fixedSet.add(+c.dataset.order);
         pending.push({ c, ok });
       });
@@ -533,15 +547,25 @@
           p.c.classList.add('flip', p.ok ? 'fixed' : 'wrong');
           p.c.setAttribute('tabindex', '-1');
           p.c.setAttribute('aria-disabled', 'true');
-          p.c.querySelector('.seq-tag').textContent = p.ok ? '+50 second wind' : '→ ' + (+p.c.dataset.order + 1);
+          p.c.querySelector('.seq-tag').textContent = p.ok ? '+50 second wind' : '→ ' + (target(+p.c.dataset.order) + 1);
           unmask(p.c);
         }, k * 140);
       });
 
       let score = state.firstSet.size * 100 + state.fixedSet.size * 50;
       if (state.hintUsed) score = Math.round(score * 0.7);
-      state.score = score;
       state.elapsed = Date.now() - state.t0;
+      // Time bonus: up to +150, scaled by the share locked on the first check
+      // and falling to 0 over the shared reading time for the six cards (at
+      // least 20 s). None after a hint, and none under "No clock".
+      let timeBonus = 0;
+      if (!state.hintUsed && Arcade.readMs) {
+        const allow = Arcade.readMs(ITEMS.map(it => it.mTerm), 20000);
+        if (isFinite(allow)) timeBonus = Math.round(TIME_BONUS_MAX * (state.firstSet.size / N) * Math.max(0, 1 - state.elapsed / allow));
+      }
+      state.timeBonus = timeBonus;
+      score += timeBonus;
+      state.score = score;
       if (hudTimerInt) { clearInterval(hudTimerInt); hudTimerInt = null; }
       state.result = { adjacent, score };
 
@@ -602,7 +626,7 @@
   function renderSummary() {
     const { adjacent, score } = state.result;
     const firstN = state.firstSet.size, fixedN = state.fixedSet.size;
-    const pct = Math.round((score / (N * 100)) * 100);
+    const pct = Math.round(((score - (state.timeBonus || 0)) / (N * 100)) * 100);   // rank = accuracy; the time bonus only adds points
     const emoji = ITEMS.map(it => state.firstSet.has(it.order) ? '🟩' : state.fixedSet.has(it.order) ? '🟨' : '🟥').join('');
     const secs = fmtSecs(state.elapsed);
     const speedy = state.elapsed < 30000;
@@ -627,6 +651,8 @@
         { v: String(fixedN), l: 'second wind' },
         { v: `${adjacent}/${N - 1}`, l: 'pairs in order' },
         { v: (speedy ? '⚡ ' : '') + secs, l: speedy ? 'speedrun' : 'time' },
+        ...(state.timeBonus ? [{ v: '⚡ +' + state.timeBonus, l: 'time bonus' }] : []),
+        ...(reverse ? [{ v: '🔁', l: 'reverse round' }] : []),
       ],
       emojiGrid: emoji,
       bestKey: BEST_KEY,
