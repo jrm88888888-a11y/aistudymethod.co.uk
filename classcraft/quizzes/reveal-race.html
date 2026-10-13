@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="arcade.css?v=20261010c">
 <style>
   .rv-stage { position: relative; border-radius: var(--ar-r); overflow: hidden; background: #0f1117; border: 1px solid var(--ar-border-hi); box-shadow: 0 14px 40px rgba(0,0,0,0.5); }
-  .rv-canvas { display: block; width: 100%; height: auto; }
   .rv-defstage { min-height: 200px; display: flex; align-items: center; justify-content: center; padding: 8px; }
   .rv-def { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 19px; line-height: 1.95; color: #eaeaff; padding: 22px 24px; text-align: center; max-width: 580px; }
   .rv-def .rv-mask { display: inline-block; color: transparent; background: rgba(120,130,255,0.18); border-radius: 4px; letter-spacing: -1px; user-select: none; }
@@ -23,7 +22,19 @@
 
   .rv-buzz-row { display: flex; justify-content: center; margin-top: 16px; }
   .rv-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
-  @media (max-width: 520px) { .rv-options { grid-template-columns: 1fr; } }
+  /* Phones (Oct 2026): after a buzz, options 3–4 sat below the fold (1 of 4
+     on screen at 375×667). Compact the points, definition and options so the
+     definition and all four answers fit together. */
+  @media (max-width: 560px) {
+    .rv-pts-wrap { margin: 0 0 6px; }
+    .rv-pts { font-size: 38px; }
+    .rv-defstage { min-height: 0; padding: 4px; }
+    .rv-def { font-size: 16.5px; line-height: 1.6; padding: 12px 12px; }
+    .rv-buzz-row { margin-top: 10px; }
+    .rv-options { gap: 8px; margin-top: 10px; }
+    .rv-options .ar-tile { padding: 10px 10px; font-size: 14px; min-height: 0; }
+    .rv-toggles { margin-top: 10px; }
+  }
   .rv-opt-key { font-family: var(--ar-mono); font-size: 10px; color: var(--ar-muted); margin-right: 8px; }
 
   .rv-toggles { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 14px; }
@@ -97,266 +108,6 @@ document.addEventListener('keydown', e => {
     if (b) b.click();
   }
 });
-
-/* ============================================================
-   PROCEDURAL ART GENERATOR
-   Deterministic abstract "poster" per concept term:
-   FNV-1a hash → mulberry32 PRNG → seeded shapes + subject palette
-   + a subject icon glyph at the centre.
-   ============================================================ */
-function fnv1a(str) {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
-}
-function mulberry32(seed) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/* Palette per subject family: [bg-dark, bg-darker, three accent colours, glyph tint] */
-const PALETTES = {
-  'physics':               { bg:['#1b1040','#0b0820'], cols:['#7b6fff','#22d3ee','#a78bfa'], glyph:'#cdeffd' },
-  'astronomy':             { bg:['#0c1445','#05071f'], cols:['#5b7fff','#ffd24d','#9bb5ff'], glyph:'#fde9ad' },
-  'biology':               { bg:['#0f2c1a','#07150c'], cols:['#4ade9a','#facc15','#86efac'], glyph:'#eafbd9' },
-  'environmental-science': { bg:['#10301f','#081a10'], cols:['#34d399','#a3e635','#2dd4bf'], glyph:'#e7fbe3' },
-  'chemistry':             { bg:['#2c160a','#160a05'], cols:['#fb923c','#2dd4bf','#fbbf24'], glyph:'#ffe9d1' },
-  'history':               { bg:['#2a130e','#160906'], cols:['#f59e0b','#9f1239','#d97706'], glyph:'#fbe7c0' },
-  'maths':                 { bg:['#0e1a35','#070d1d'], cols:['#3b82f6','#cbd5e1','#60a5fa'], glyph:'#e3edff' },
-  'geography':             { bg:['#0c2530','#051218'], cols:['#34d399','#38bdf8','#fbbf24'], glyph:'#d8f7ee' },
-  'english-literature':    { bg:['#2a0f1d','#150810'], cols:['#fb7185','#fcd34d','#f9a8d4'], glyph:'#ffe4ec' },
-  'english-language':      { bg:['#251031','#120818'], cols:['#c084fc','#fb7185','#fcd34d'], glyph:'#f3e3ff' },
-  'computer-science':      { bg:['#06231c','#02110d'], cols:['#22ff88','#38bdf8','#86efac'], glyph:'#d4ffe9' },
-  'design-technology':     { bg:['#1e2430','#0e1117'], cols:['#94a3b8','#fb923c','#38bdf8'], glyph:'#e6edf5' },
-  'food-technology':       { bg:['#2f140d','#180a06'], cols:['#f87171','#fcd34d','#fdba74'], glyph:'#ffe9da' },
-  'music':                 { bg:['#1e1233','#0e081a'], cols:['#a78bfa','#facc15','#f472b6'], glyph:'#efe4ff' },
-  'art-design':            { bg:['#221225','#100913'], cols:['#f472b6','#22d3ee','#facc15'], glyph:'#ffe8f4' },
-  'pe':                    { bg:['#2b0f12','#150708'], cols:['#ef4444','#fb923c','#facc15'], glyph:'#ffe1d6' },
-  'psychology':            { bg:['#1c1138','#0d081c'], cols:['#818cf8','#f472b6','#c4b5fd'], glyph:'#e8e6ff' },
-  'sociology':             { bg:['#0d2530','#061318'], cols:['#2dd4bf','#fb7185','#5eead4'], glyph:'#d9f7f2' },
-  'religious-studies':     { bg:['#231230','#110818'], cols:['#facc15','#a78bfa','#fde68a'], glyph:'#fdf3cf' },
-  'economics':             { bg:['#0e2a20','#061510'], cols:['#10b981','#fcd34d','#34d399'], glyph:'#dcfbe9' },
-  'business-studies':      { bg:['#102036','#070f1c'], cols:['#38bdf8','#fcd34d','#7dd3fc'], glyph:'#dcf2ff' },
-  'french':                { bg:['#101a3a','#080d1f'], cols:['#60a5fa','#f87171','#e2e8f0'], glyph:'#e8f0ff' },
-  'german':                { bg:['#241208','#120904'], cols:['#facc15','#ef4444','#fbbf24'], glyph:'#fdeec9' },
-  'spanish':               { bg:['#2c1408','#160a04'], cols:['#f59e0b','#ef4444','#fcd34d'], glyph:'#ffeccc' },
-};
-const PALETTE_DEFAULT = { bg:['#1a1d33','#0c0e1b'], cols:['#7b6fff','#4ade9a','#facc15'], glyph:'#e8eaf0' };
-
-/* Subject icon glyphs — simple baked SVG path data, drawn in a 100×100 box. */
-const GLYPH_PATHS = {
-  leaf:   { d:'M50 8 C22 28 12 56 22 76 C32 94 60 96 73 79 C88 60 83 26 50 8 Z M48 24 L44 78', fill:true },
-  atom:   { custom:'atom' },
-  flask:  { d:'M42 8 H58 M46 8 V36 L72 76 C76 85 70 92 61 92 H39 C30 92 24 85 28 76 L54 36 M38 62 H62', fill:false },
-  scroll: { d:'M28 14 H72 V70 C72 78 66 84 58 84 H28 C20 84 14 78 14 70 V66 H58 M38 30 H62 M38 42 H62 M38 54 H54', fill:false },
-  sigma:  { d:'M70 22 H32 L54 50 L32 78 H70 M70 22 V32 M70 78 V68', fill:false },
-  globe:  { custom:'globe' },
-  book:   { d:'M50 22 C41 14 26 14 18 18 V80 C26 76 41 76 50 84 C59 76 74 76 82 80 V18 C74 14 59 14 50 22 Z M50 22 V84', fill:false },
-  code:   { d:'M36 28 L16 50 L36 72 M64 28 L84 50 L64 72', fill:false },
-  gear:   { custom:'gear' },
-  fork:   { d:'M34 10 V40 M26 10 V32 M42 10 V32 M34 40 V90 M62 10 C56 22 56 34 62 44 V90 M62 10 C68 22 68 34 62 44', fill:false },
-  note:   { custom:'note' },
-  brush:  { d:'M70 12 L40 52 L48 60 L86 28 C90 22 80 10 70 12 Z M40 52 C30 56 30 68 22 72 C34 78 46 72 48 60', fill:true },
-  pulse:  { d:'M10 52 H30 L40 26 L54 76 L64 44 L70 52 H90', fill:false },
-  spiral: { custom:'spiral' },
-  people: { custom:'people' },
-  flame:  { d:'M50 10 C62 30 74 42 74 60 C74 76 64 88 50 88 C36 88 26 76 26 60 C26 42 38 30 50 10 Z', fill:true },
-  coin:   { custom:'coin' },
-  speech: { d:'M18 22 H82 V62 H48 L30 80 V62 H18 Z M32 36 H68 M32 48 H58', fill:false },
-  star:   { custom:'star' },
-  drop:   { d:'M50 10 C66 34 76 48 76 64 A26 26 0 0 1 24 64 C24 48 34 34 50 10 Z', fill:true },
-};
-const SUBJECT_GLYPH = {
-  'physics':'atom', 'astronomy':'star', 'biology':'leaf', 'environmental-science':'drop',
-  'chemistry':'flask', 'history':'scroll', 'maths':'sigma', 'geography':'globe',
-  'english-literature':'book', 'english-language':'book', 'computer-science':'code',
-  'design-technology':'gear', 'food-technology':'fork', 'music':'note', 'art-design':'brush',
-  'pe':'pulse', 'psychology':'spiral', 'sociology':'people', 'religious-studies':'flame',
-  'economics':'coin', 'business-studies':'coin', 'french':'speech', 'german':'speech', 'spanish':'speech',
-};
-
-function drawCustomGlyph(ctx, name) {
-  ctx.lineWidth = 5;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  if (name === 'atom') {
-    for (let i = 0; i < 3; i++) {
-      ctx.save();
-      ctx.translate(50, 50);
-      ctx.rotate((i * Math.PI) / 3);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 38, 15, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-    ctx.beginPath(); ctx.arc(50, 50, 7, 0, Math.PI * 2); ctx.fill();
-  } else if (name === 'globe') {
-    ctx.beginPath(); ctx.arc(50, 50, 36, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(50, 50, 16, 36, 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(14, 50); ctx.lineTo(86, 50); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(50, 32, 33, 10, 0, 0, Math.PI); ctx.stroke();
-  } else if (name === 'gear') {
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
-      ctx.save(); ctx.translate(50, 50); ctx.rotate(a);
-      ctx.fillRect(-5, -42, 10, 14);
-      ctx.restore();
-    }
-    ctx.beginPath(); ctx.arc(50, 50, 28, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(50, 50, 11, 0, Math.PI * 2); ctx.stroke();
-  } else if (name === 'note') {
-    ctx.beginPath(); ctx.ellipse(38, 74, 13, 10, -0.3, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(50, 71); ctx.lineTo(50, 18); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(50, 18); ctx.quadraticCurveTo(72, 24, 70, 42); ctx.stroke();
-  } else if (name === 'spiral') {
-    ctx.beginPath();
-    for (let t = 0; t <= Math.PI * 5; t += 0.1) {
-      const r = 3 + t * 2.4;
-      const x = 50 + Math.cos(t) * r, y = 50 + Math.sin(t) * r;
-      if (t === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  } else if (name === 'people') {
-    [[34, 0], [66, 0]].forEach(([cx]) => {
-      ctx.beginPath(); ctx.arc(cx, 34, 12, 0, Math.PI * 2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(cx, 84, 22, Math.PI, 0); ctx.stroke();
-    });
-  } else if (name === 'coin') {
-    ctx.beginPath(); ctx.arc(50, 50, 36, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(50, 50, 26, 0, Math.PI * 2); ctx.stroke();
-    ctx.font = '700 34px Georgia, serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('£', 50, 52);
-  } else if (name === 'star') {
-    ctx.beginPath();
-    for (let i = 0; i < 5; i++) {
-      const a1 = (i / 5) * Math.PI * 2 - Math.PI / 2;
-      const a2 = ((i + 0.5) / 5) * Math.PI * 2 - Math.PI / 2;
-      ctx.lineTo(50 + Math.cos(a1) * 38, 50 + Math.sin(a1) * 38);
-      ctx.lineTo(50 + Math.cos(a2) * 16, 50 + Math.sin(a2) * 16);
-    }
-    ctx.closePath(); ctx.fill();
-  }
-}
-
-/* Render the full poster for a concept onto an offscreen canvas. */
-function renderPoster(term, subject, W, H) {
-  const cnv = document.createElement('canvas');
-  cnv.width = W; cnv.height = H;
-  const ctx = cnv.getContext('2d');
-  const pal = PALETTES[subject] || PALETTE_DEFAULT;
-  const rnd = mulberry32(fnv1a(term + '|' + subject));
-
-  // Background gradient at a seeded angle
-  const ga = rnd() * Math.PI * 2;
-  const grad = ctx.createLinearGradient(
-    W / 2 + Math.cos(ga) * W, H / 2 + Math.sin(ga) * H,
-    W / 2 - Math.cos(ga) * W, H / 2 - Math.sin(ga) * H);
-  grad.addColorStop(0, pal.bg[0]);
-  grad.addColorStop(1, pal.bg[1]);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // Faint seeded grid texture
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-  ctx.lineWidth = 1;
-  const gridStep = 24 + Math.floor(rnd() * 30);
-  for (let x = gridStep; x < W; x += gridStep) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-  for (let y = gridStep; y < H; y += gridStep) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-
-  // 5–12 seeded abstract shapes
-  const nShapes = 5 + Math.floor(rnd() * 8);
-  for (let i = 0; i < nShapes; i++) {
-    const col = pal.cols[Math.floor(rnd() * pal.cols.length)];
-    const x = rnd() * W, y = rnd() * H;
-    const size = 30 + rnd() * 130;
-    const rot = rnd() * Math.PI * 2;
-    const alpha = 0.18 + rnd() * 0.5;
-    const kind = Math.floor(rnd() * 5);
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(x, y);
-    ctx.rotate(rot);
-    ctx.fillStyle = col;
-    ctx.strokeStyle = col;
-    if (kind === 0) {            // filled circle
-      ctx.beginPath(); ctx.arc(0, 0, size / 2, 0, Math.PI * 2); ctx.fill();
-    } else if (kind === 1) {     // ring
-      ctx.lineWidth = 4 + rnd() * 10;
-      ctx.beginPath(); ctx.arc(0, 0, size / 2, 0, Math.PI * 2); ctx.stroke();
-    } else if (kind === 2) {     // polygon (3–6 sides)
-      const sides = 3 + Math.floor(rnd() * 4);
-      ctx.beginPath();
-      for (let k = 0; k < sides; k++) {
-        const a = (k / sides) * Math.PI * 2;
-        ctx.lineTo(Math.cos(a) * size / 2, Math.sin(a) * size / 2);
-      }
-      ctx.closePath(); ctx.fill();
-    } else if (kind === 3) {     // gradient bar
-      const barG = ctx.createLinearGradient(-size, 0, size, 0);
-      barG.addColorStop(0, col + '00');
-      barG.addColorStop(0.5, col);
-      barG.addColorStop(1, col + '00');
-      ctx.fillStyle = barG;
-      ctx.fillRect(-size, -(6 + rnd() * 16) / 2, size * 2, 6 + rnd() * 16);
-    } else {                     // arc sweep
-      ctx.lineWidth = 3 + rnd() * 7;
-      ctx.beginPath(); ctx.arc(0, 0, size / 2, 0, Math.PI * (0.6 + rnd() * 1.2)); ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  // Centre icon hint: glow disc + subject glyph
-  const glyphName = SUBJECT_GLYPH[subject] || 'star';
-  const cx = W / 2, cy = H / 2;
-  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, H * 0.42);
-  glow.addColorStop(0, 'rgba(10,10,14,0.55)');
-  glow.addColorStop(1, 'rgba(10,10,14,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.save();
-  const scale = (H * 0.5) / 100;
-  ctx.translate(cx - 50 * scale, cy - 50 * scale);
-  ctx.scale(scale, scale);
-  ctx.strokeStyle = pal.glyph;
-  ctx.fillStyle = pal.glyph;
-  ctx.lineWidth = 5;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.shadowColor = pal.cols[0];
-  ctx.shadowBlur = 18;
-  const g = GLYPH_PATHS[glyphName];
-  if (g.custom) {
-    drawCustomGlyph(ctx, g.custom);
-  } else {
-    const p = new Path2D(g.d);
-    if (g.fill) ctx.fill(p);
-    ctx.stroke(p);
-  }
-  ctx.restore();
-
-  // Corner ticks — seeded accent flourish
-  ctx.strokeStyle = pal.cols[1 % pal.cols.length];
-  ctx.globalAlpha = 0.8;
-  ctx.lineWidth = 3;
-  const m = 14, t = 20;
-  [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]].forEach(([x, y, sx, sy]) => {
-    ctx.beginPath();
-    ctx.moveTo(x + t * sx, y); ctx.lineTo(x, y); ctx.lineTo(x, y + t * sy);
-    ctx.stroke();
-  });
-  ctx.globalAlpha = 1;
-  return cnv;
-}
 
 /* ============================================================
    GAME — auto-reveal, decaying points, buzz to freeze
@@ -445,7 +196,6 @@ function renderPoster(term, subject, W, H) {
   let clueMask = null;
 
   function startGame() {
-    Arcade.playMode && Arcade.playMode(true);   // X3: collapse the header during the run (no question clock here)
     Arcade.sfx.click();
     rounds = buildRounds();
     state = { idx: 0, score: 0, correct: 0, buzzFracs: [], correctFracs: [], emoji: [], missed: [] };
@@ -558,6 +308,7 @@ function renderPoster(term, subject, W, H) {
 
   /* ---- reveal engine: staged cells + continuously decaying points ---- */
   function startReveal() {
+    Arcade.playMode && Arcade.playMode(true);   // X3: collapse the header once the reveal runs (round 1 waits for Start)
     phase = 'revealing';
     revealT0 = performance.now() - revealElapsed;
     scheduleStage();
@@ -668,7 +419,7 @@ function renderPoster(term, subject, W, H) {
     const round = rounds[state.idx];
     const zone = document.getElementById('options-zone');
     zone.innerHTML = `
-      <div class="rv-options ar-stagger" role="radiogroup" aria-label="Four possible concepts — pick the one the poster shows">
+      <div class="rv-options ar-stagger" role="radiogroup" aria-label="Four possible concepts — pick the one the definition describes">
         ${round.options.map((opt, i) => `
           <button type="button" class="ar-tile" data-idx="${i}">
             <span class="rv-opt-key">${i + 1}</span>${esc(opt)}
@@ -685,6 +436,8 @@ function renderPoster(term, subject, W, H) {
       const burned = zone.querySelector(`.ar-tile[data-idx="${showOptions._dead}"]`);
       if (burned) { burned.disabled = true; burned.classList.add('wrong', 'dim'); }
     }
+    // Keep the definition and all four answers on screen (phones).
+    try { Arcade.bringIntoView([document.getElementById('deftext'), zone]); } catch (e) {}
   }
 
   function pickOption(idx, btn) {
@@ -761,7 +514,7 @@ function renderPoster(term, subject, W, H) {
       Arcade.sfx.wrong();
     }
 
-    // Show the full poster either way — the answer deserves its art.
+    // Show the full definition either way.
     revealCellsTo(1);
     updateRevealUI(1);
 
@@ -817,7 +570,7 @@ function renderPoster(term, subject, W, H) {
     let insight;
     if (pct >= 70) insight = `You're recognising ${topic} concepts from fragments — that's exactly the fast retrieval exams reward. Next run: try to beat a ${avgPct}% average buzz point.`;
     else if (pct >= 40) insight = 'Solid recognition. The rounds where you waited for the full reveal — or lost — are the terms whose mental image is still fuzzy. Re-read those definitions, then race the reveal again.';
-    else insight = `Letting the poster fully reveal is the safe play, but it means the terms aren't snapping into focus yet. Revisit the ${topic} concept list, then come back and buzz earlier — even a wrong early guess teaches you which terms blur together.`;
+    else insight = `Letting the definition fully reveal is the safe play, but it means the terms aren't snapping into focus yet. Revisit the ${topic} concept list, then come back and buzz earlier — even a wrong early guess teaches you which terms blur together.`;
 
     root.innerHTML = renderHeader('Results') + '<div id="end-root"></div>';
 
@@ -849,7 +602,7 @@ function renderPoster(term, subject, W, H) {
       onAgain: startGame,
     });
 
-    announce('Game over. ' + state.score + ' points banked, ' + state.correct + ' of ' + TOTAL_ROUNDS + ' named. You name posters at ' + avgPct + ' percent revealed on average. ' + insight);
+    announce('Game over. ' + state.score + ' points banked, ' + state.correct + ' of ' + TOTAL_ROUNDS + ' named. You name concepts at ' + avgPct + ' percent revealed on average. ' + insight);
   }
 
   // Keyboard: Space buzzes, 1–4 answer, Enter advances.

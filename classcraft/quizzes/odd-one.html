@@ -31,6 +31,18 @@
     .oo-grid { grid-template-columns:1fr; }
     .oo-def { font-size:14px; }
   }
+  /* Phones (Oct 2026): four full definitions ran to ~720 px, so card 4 (and
+     often card 3) started below the fold. Cards are clamped to 3 lines with
+     a "Show full text" switch above them (remembered), and open up fully once
+     the round is answered. Screen readers always get the full text. */
+  @media (max-width:560px) {
+    .oo-grid { gap:8px; }
+    .oo-card { gap:3px; padding:10px 12px; }
+    .oo-def { font-size:13.5px; line-height:1.42; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+    .oo-grid.full .oo-def, .oo-grid.settled .oo-def { display:block; -webkit-line-clamp:unset; overflow:visible; }
+  }
+  .oo-more { display:block; margin:-4px 0 8px auto; background:none; border:none; padding:4px 2px; cursor:pointer;
+    font-family:var(--ar-mono); font-size:11px; letter-spacing:0.8px; color:var(--ar-cyan); text-decoration:underline; text-underline-offset:3px; }
 </style>
 <link rel="canonical" href="https://aistudymethod.com/classcraft/quizzes/odd-one.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -339,6 +351,28 @@
     let phase = 'answer';
     let autoTimer = null;
 
+    // Phones: cards are clamped to 3 lines; offer the full text when any is cut.
+    const gridEl = root.querySelector('.oo-grid');
+    let fullPref = false;
+    try { fullPref = localStorage.getItem('aism-oo-full') === '1'; } catch (e) {}
+    if (fullPref) gridEl.classList.add('full');
+    const cut = tiles.filter(b => { const d = b.querySelector('.oo-def'); return d && d.scrollHeight > d.clientHeight + 2; }).length;
+    if (cut || fullPref) {
+      const more = document.createElement('button');
+      more.type = 'button'; more.className = 'oo-more';
+      const label = () => gridEl.classList.contains('full') ? '⤡ Shorter cards' : '⤢ Show full text (' + cut + ' card' + (cut === 1 ? '' : 's') + ' cut short)';
+      more.textContent = label();
+      more.addEventListener('click', () => {
+        const on = !gridEl.classList.contains('full');
+        gridEl.classList.toggle('full', on);
+        try { localStorage.setItem('aism-oo-full', on ? '1' : '0'); } catch (e) {}
+        more.textContent = label();
+      });
+      gridEl.parentNode.insertBefore(more, gridEl);
+    }
+    // Short phones: bring the timer and all four cards on screen together.
+    try { Arcade.bringIntoView([document.getElementById('tfill'), gridEl]); } catch (e) {}
+
     // Clock sized to the four cards actually on screen (ROUND_MS is the floor).
     const roundMs = Arcade.readMs(round.cards.map(c => c.term + ' ' + c.def), ROUND_MS);
     const roundT0 = performance.now();
@@ -349,6 +383,7 @@
     function settle(chosen, timedOut) {
       if (phase !== 'answer') return;
       phase = 'verdict';
+      gridEl.classList.add('settled');   // the verdict reads the full cards
       const remaining = timedOut ? 0 : timerCtl.remaining;
       timerCtl.stop();
 
