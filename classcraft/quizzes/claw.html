@@ -16,12 +16,16 @@
     border-radius: 16px; overflow: hidden;
     background: #05040f; border: 1px solid var(--ar-border-hi);
     box-shadow: 0 22px 60px rgba(0,0,0,0.55);
-    touch-action: none; user-select: none;
+    /* pan-y (was none): the cabinet fills ~64vh, so with 'none' a phone could
+       not scroll past it — and the question overlay inside it could not be
+       scrolled at all. Horizontal holds still steer; a vertical swipe scrolls
+       and cancels the hold (pointercancel). */
+    touch-action: pan-y; user-select: none;
   }
   #claw-canvas { display: block; width: 100%; height: 100%; }
 
   /* hold-to-move zones (mobile / pointer) */
-  .claw-zone { position: absolute; top: 0; height: 100%; z-index: 3; -webkit-tap-highlight-color: transparent; }
+  .claw-zone { position: absolute; top: 0; height: 100%; z-index: 3; -webkit-tap-highlight-color: transparent; touch-action: pan-y; }
   .claw-zone.left  { left: 0;  width: 34%; }
   .claw-zone.right { right: 0; width: 34%; }
   .claw-zone.mid   { left: 34%; width: 32%; }
@@ -734,7 +738,8 @@
   /* ======================================================================
      STATE MACHINE / ANIMATION (per-frame, dt seconds)
      ====================================================================== */
-  function setState(s) { state = s; stateT = 0; }
+  // DROP greys out whenever the claw is busy (it used to stay lit mid-drop).
+  function setState(s) { state = s; stateT = 0; updateDropBtn(); }
 
   function stateStep(dt) {
     stateT += dt;
@@ -1335,6 +1340,8 @@
 
   function fit() {
     const wrap = document.getElementById('cab-wrap');
+    // the end card replaces the cabinet — a resize then must not touch it
+    if (!wrap || !canvas || !canvas.isConnected) return;
     const rect = wrap.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.max(1, Math.round(rect.width * dpr));
@@ -1628,10 +1635,26 @@
     hold(left, -1); hold(right, 1);
     hold(zoneL, -1); hold(zoneR, 1);
     drop.addEventListener('click', dropClaw);
-    zoneM.addEventListener('pointerdown', e => { e.preventDefault(); dropClaw(); });
+    // click (was pointerdown): a scroll swipe that starts on the centre of the
+    // cabinet must scroll the page, not drop the claw.
+    zoneM.addEventListener('click', dropClaw);
 
+    document.getElementById('corr').addEventListener('click', dismissCorrection);
+    bindGlobalKeys();
+  }
+
+  // Document/window listeners are bound ONCE. They used to be re-added by
+  // every replay (mountGame → bindControls), so after a few runs each key
+  // press and resize ran several times over.
+  let globalsBound = false;
+  function bindGlobalKeys() {
+    if (globalsBound) return;
+    globalsBound = true;
+    window.addEventListener('resize', fit);
     document.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // end card: leave Space/Enter/arrows to the page (buttons, scrolling)
+      if (state === 'ended') return;
       if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
       if (state === 'question') {
         const n = { '1': 0, '2': 1, '3': 2, '4': 3 }[e.key];
@@ -1653,8 +1676,6 @@
       if (e.key === 'ArrowLeft' && moveDir === -1) moveDir = 0;
       if (e.key === 'ArrowRight' && moveDir === 1) moveDir = 0;
     });
-
-    document.getElementById('corr').addEventListener('click', dismissCorrection);
   }
 
   /* ======================================================================
@@ -1689,7 +1710,6 @@
     canvas = document.getElementById('claw-canvas');
     ctx = canvas.getContext('2d');
     fit();
-    window.addEventListener('resize', fit);
     bindControls();
     updateDropBtn();
   }
@@ -1725,6 +1745,7 @@
       get total() { return total; },
       get currentToy() { return currentToy; },
       get banked() { return banked.slice(); },
+      get gantryX() { return Math.round(gantry.x); },
       glass: { x0: GX0, y0: GY0, x1: GX1, y1: GY1 },
       sleepThreshold: SLEEP_SPEED,
       maxToySpeed() {

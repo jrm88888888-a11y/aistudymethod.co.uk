@@ -49,7 +49,7 @@
   #canvas-wrap { position:relative; border-radius:12px; overflow:hidden; background:#06060f; border:1px solid var(--ar-border-hi); height:min(640px, max(440px, 62vh)); }
   #game-canvas { display:block; width:100%; height:100%; touch-action:manipulation; cursor:pointer; }
 
-  .floating-msg { position:absolute; top:54%; left:50%; transform:translate(-50%,-50%) scale(0.7); padding:12px 22px; background:rgba(0,255,163,0.92); color:#051418; border-radius:14px; font-size:19px; font-weight:700; font-family:var(--ar-font); opacity:0; pointer-events:none; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); z-index:10; white-space:nowrap; max-width:90%; overflow:hidden; text-overflow:ellipsis; box-shadow:0 0 30px rgba(0,255,163,0.4); }
+  .floating-msg { position:absolute; top:54%; left:50%; transform:translate(-50%,-50%) scale(0.7); padding:12px 22px; background:rgba(0,255,163,0.92); color:#051418; border-radius:14px; font-size:19px; font-weight:700; font-family:var(--ar-font); opacity:0; pointer-events:none; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); z-index:10; white-space:normal; width:max-content; max-width:88%; text-align:center; line-height:1.25; overflow-wrap:anywhere; box-shadow:0 0 30px rgba(0,255,163,0.4); }
   .floating-msg.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
   .floating-msg.wrong { background:rgba(255,46,136,0.92); color:#fff; box-shadow:0 0 30px rgba(255,46,136,0.4); }
   @media (prefers-reduced-motion: reduce) {
@@ -901,29 +901,9 @@ function draw() {
   // Definition banner — drawn last so words slide beneath it
   drawBanner(W, H, neon);
 
-  // Combo badge — on-canvas, under the banner, glows with the tier colour
-  if (aismStreak >= 2 && gameState === 'running') {
-    const label = '×' + aismMultiplier.toFixed(1) + (tier.label ? ' ' + tier.label : '') + ' · ' + aismStreak + '🔗';
-    ctx.font = '700 12px "Space Grotesk", sans-serif';
-    const tw = ctx.measureText(label).width;
-    const bw = tw + 24, bh = 26;
-    const bx = W - bw - 12, by = bannerBottomY + 8;   // below the (variable-height) banner
-    ctx.save();
-    ctx.shadowColor = tier.color;
-    ctx.shadowBlur = 14;
-    ctx.fillStyle = 'rgba(6,6,15,0.85)';
-    roundRect(ctx, bx, by, bw, bh, 13);
-    ctx.fill();
-    ctx.strokeStyle = tier.color;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = tier.color;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, bx + bw / 2, by + bh / 2 + 1);
-    ctx.restore();
-  }
+  // Combo badge — retired (Oct 2026): drawn on the canvas just under the
+  // banner, it sat over the words spawning there (review: it covered play).
+  // The HUD's COMBO figure already shows the multiplier and glows by tier.
 }
 
 // Bottom edge (canvas px) of the definition banner for the current text.
@@ -1187,13 +1167,9 @@ function endGame() {
   const outOfLives = lives <= 0;
   if (outOfLives) Arcade.sfx.timeup();
 
-  // Rank: combines accuracy + max combo. S+ = perfect + ≥6 combo.
-  let rank = 'C';
-  if (accuracy >= 100 && aismMaxStreak >= 6) rank = 'S+';
-  else if (accuracy === 100) rank = 'S';
-  else if (accuracy >= 90 && aismMaxStreak >= 5) rank = 'A+';
-  else if (accuracy >= 85) rank = 'A';
-  else if (accuracy >= 70) rank = 'B';
+  // One rank: the end card's own (from accuracy). There used to be a second,
+  // game-specific rank row (S+/A+/…) that could disagree with the big letter.
+  const rank = Arcade.grade(accuracy).letter;
 
   const misses = Math.max(0, resolvedCount - correctCount);
   const hearts = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - Math.max(0, lives)));
@@ -1219,7 +1195,7 @@ function endGame() {
       { v: '⚡×' + aismMaxStreak, l: 'max combo' },
       { v: accuracy + '%', l: 'accuracy' },
       { v: '×' + maxSpeed.toFixed(1), l: 'top speed' },
-      { v: rank, l: 'rank' },
+      { v: correctCount + '/' + resolvedCount, l: 'caught' },
     ],
     emojiGrid: emojiGrid,
     bestKey: 'aism-falling-best:' + SPEC_STEM,

@@ -13,7 +13,19 @@
   .screen.active { display: block; }
 
   /* ---- sort stage ---- */
-  .cv-stage { position: relative; min-height: 300px; margin-bottom: 10px; }
+  /* overflow hidden: a swiped card used to widen the page, so phones scrolled sideways */
+  .cv-stage { position: relative; min-height: 300px; margin-bottom: 10px; overflow: hidden; }
+  /* A wrong sort: the card stays put, stamped with what it really was, while
+     the correction is read (it used to fly off before the why appeared). */
+  .cv-statement.stamped { animation: cvStampShake 0.35s ease both; }
+  .cv-statement.stamped.truth { border-color: var(--ar-mint); }
+  .cv-statement.stamped.misc  { border-color: var(--ar-pink); }
+  .cv-stamp { position: absolute; top: -12px; right: 12px; transform: rotate(6deg); padding: 4px 10px; border-radius: 8px;
+    font-family: var(--ar-mono); font-size: 12px; font-weight: 700; letter-spacing: 1.5px; background: var(--ar-bg2, #0b0f1a); }
+  .cv-statement.truth .cv-stamp { color: var(--ar-mint); border: 2px solid var(--ar-mint); }
+  .cv-statement.misc  .cv-stamp { color: var(--ar-pink); border: 2px solid var(--ar-pink); }
+  @keyframes cvStampShake { 0%,100% { transform: none; } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  @media (prefers-reduced-motion: reduce) { .cv-statement.stamped { animation: none; } }
   .cv-card-slot { padding: 14px 80px; min-height: 300px; display: flex; align-items: center; justify-content: center; }
   .cv-statement {
     background: var(--ar-grad-card); border: 2px solid var(--ar-border-hi);
@@ -247,7 +259,9 @@ const SPEC_STEM = new URLSearchParams(location.search).get('spec') || '';
   bankItems.forEach(it => {
     if (it.correct) {
       const t = String(it.correct).trim();
-      if (fits(t, it.q) && !truthMap.has(t)) truthMap.set(t, { ctx: String(it.q || '').trim(), why: it.why || '', item: it });
+      // The bank's "why" explains the MISCONCEPTION, so it is not shown for a
+      // truth card (review: truths showed a misconception's why).
+      if (fits(t, it.q) && !truthMap.has(t)) truthMap.set(t, { ctx: String(it.q || '').trim(), why: 'It is the accurate answer to that question.', item: it });
     }
   });
   const truths = [...truthMap.keys()].filter(t => t.length > 1);
@@ -419,7 +433,7 @@ function nextCard() {
   locked = false;
   const card = document.getElementById('cv-card');
   card.style.transform = '';
-  card.classList.remove('out-truth', 'out-cap', 'snap', 'enter');
+  card.classList.remove('out-truth', 'out-cap', 'snap', 'enter', 'stamped', 'truth', 'misc');
   void card.offsetWidth;
   // Belt speeds up every 5 sorts — cards slide in faster. During a surge the
   // whole belt runs at ×1.6.
@@ -480,7 +494,10 @@ function verdict(guessKind, zoneEl) {
     Arcade.shake();
     Arcade.vibrate([40, 30, 40]);
     if (hadCombo) Arcade.flashMsg('COMBO BROKEN 💔', '#ff2e88');
-    card.classList.add(guessKind === 'truth' ? 'out-truth' : 'out-cap');
+    card.style.transform = '';
+    card.classList.remove('enter', 'snap');
+    card.classList.add('stamped', item.kind);
+    card.insertAdjacentHTML('beforeend', '<div class="cv-stamp" aria-hidden="true">' + esc(kindLabel) + '</div>');
     // The learning beat: flash the why before the next card.
     const whyEl = document.getElementById('cv-why');
     whyEl.innerHTML = `<div class="ar-feedback no"><strong>That was a ${esc(kindLabel)}.</strong> ${esc(item.why || '')}${Arcade.statementHtml(item.item)}<div class="ar-kbd-hint" style="margin-top:6px;display:block;">Tap or press any key to carry on</div></div>`;
