@@ -886,18 +886,50 @@
     show();
   };
 
+  /* L14 (Oct 2026): the end card had up to 7 actions in one row, which
+     pushed the leaderboard and the misses below the fold. Two primaries
+     stay in .ar-ctas — Play again and Challenge a mate (plus any solid
+     button a game adds, e.g. Hangman's "Next 10") — and everything else
+     (Back to arcade, a game's ghost extras such as Vocab hub / Change
+     difficulty / Share your streak) moves to a small row under them. Games
+     append extras right after renderEndCard returns, so the row is tidied
+     now and again whenever .ar-ctas changes. */
+  const SHARE_LABEL = '🔥 Challenge a mate';
+  function tidyCtas(container) {
+    try {
+      const ctas = container.querySelector('.ar-ctas');
+      const more = container.querySelector('#ar-ctas-more');
+      if (!ctas || !more) return;
+      const move = () => {
+        [...ctas.children].forEach(el => {
+          if (el.id === 'ar-again' || el.id === 'ar-share') return;
+          if (el.matches('.ar-btn:not(.ghost)')) return;          // a game's own primary
+          el.classList.add('ar-mini');
+          more.insertBefore(el, more.querySelector('#ar-parents'));
+        });
+      };
+      move();
+      const mo = new MutationObserver(move);
+      mo.observe(ctas, { childList: true });
+    } catch (err) { /* the end card must never break */ }
+  }
+
   Arcade.renderEndCard = function (container, opts) {
     const e = Arcade.escapeHtml;
     const g = Arcade.grade(opts.pct);
     const hot = opts.hot || g.cls === 'd';
     const missed = Arcade.normMissed(opts.missed);
 
-    let best = null, newBest = false;
+    /* L15 (Oct 2026): a first run on a topic used to get "★ NEW PERSONAL
+       BEST" and a confetti burst, even at Rank D. It is now "First run —
+       your score to beat"; the badge and burst are kept for a real beat. */
+    let best = null, newBest = false, firstRun = false;
     if (opts.bestKey != null && opts.bestValue != null) {
       try { best = parseInt(localStorage.getItem(opts.bestKey)); } catch (err) {}
       if (isNaN(best)) best = null;
-      newBest = best === null || opts.bestValue > best;
-      if (newBest) { try { localStorage.setItem(opts.bestKey, String(opts.bestValue)); } catch (err) {} }
+      firstRun = best === null;
+      newBest = !firstRun && opts.bestValue > best;
+      if (firstRun || newBest) { try { localStorage.setItem(opts.bestKey, String(opts.bestValue)); } catch (err) {} }
     }
 
     /* Result log — a rolling history of runs (capped at 200, oldest dropped)
@@ -959,12 +991,13 @@
           ${opts.big != null ? `<div class="ar-end-big" id="ar-big">0</div><div class="ar-end-lbl">${e(opts.bigLabel || '')}</div>` : ''}
           ${opts.rows && opts.rows.length ? `<div class="ar-end-rows">${opts.rows.map(r => `<div class="ar-end-row"><b>${e(r.v)}</b><span>${e(r.l)}</span></div>`).join('')}</div>` : ''}
           ${opts.emojiGrid ? `<div class="ar-emoji-grid">${e(opts.emojiGrid)}</div>` : ''}
-          ${newBest ? '<div class="ar-best">★ NEW PERSONAL BEST</div>'
-            : best !== null ? `<div class="ar-best old">Personal best: ${e(best)}${opts.bestSuffix || '%'}</div>` : ''}
+          ${newBest ? `<div class="ar-best">★ NEW PERSONAL BEST <span class="ar-best-was">(was ${e(best)}${e(opts.bestSuffix || '%')})</span></div>`
+            : firstRun ? `<div class="ar-best old first">First run — your score to beat: ${e(opts.bestValue)}${e(opts.bestSuffix || '%')}</div>`
+            : best !== null ? `<div class="ar-best old">Personal best: ${e(best)}${e(opts.bestSuffix || '%')}</div>` : ''}
           ${opts.insight ? `<div class="ar-insight">${e(opts.insight)}</div>` : ''}
           <div class="ar-ctas">
             <button class="ar-btn" id="ar-again">${e(againLabel)}</button>
-            <button class="ar-btn ar-btn-share" id="ar-share">🔥 Send it — reckon they beat that?</button>
+            <button class="ar-btn ar-btn-share" id="ar-share">${e(SHARE_LABEL)}</button>
             ${(function() {
               // When the player came in from arcade.html, send them back to it
               // with their subject/level/board/topic still selected. Falls back
@@ -977,8 +1010,10 @@
               return '<a class="ar-btn ghost" href="../../subjects.html">More games</a>';
             })()}
           </div>
+          <div class="ar-ctas-more" id="ar-ctas-more">
+            <button type="button" id="ar-parents" class="ar-parents-link" style="background:none;border:none;box-shadow:none;display:inline-block;padding:4px 8px;font-family:var(--ar-mono,ui-monospace,Menlo,Consolas,monospace);font-size:11px;font-weight:600;letter-spacing:1px;color:var(--ar-muted,#8a8fa3);text-decoration:underline;text-underline-offset:3px;cursor:pointer;">📲 Show your parents</button>
+          </div>
           ${missedHtml(missed, opts.missedListed)}
-          <button type="button" id="ar-parents" class="ar-parents-link" style="background:none;border:none;box-shadow:none;display:inline-block;margin-top:12px;padding:4px 8px;font-family:var(--ar-mono,ui-monospace,Menlo,Consolas,monospace);font-size:11px;font-weight:600;letter-spacing:1px;color:var(--ar-muted,#8a8fa3);text-decoration:underline;text-underline-offset:3px;cursor:pointer;">📲 Show your parents</button>
           <div class="ar-watermark">aistudymethod.com</div>
         </div>
       </div>
@@ -995,6 +1030,7 @@
     else if (opts.pct >= 60) { Arcade.confettiBurst({ count: 50 }); Arcade.sfx.coin(); }
     else { Arcade.sfx.timeup(); }
     if (newBest) setTimeout(() => Arcade.confettiBurst({ count: 80, y: window.innerHeight * 0.25 }), 500);
+    tidyCtas(container);
 
     const moreBtn = container.querySelector('#ar-missed-more');
     if (moreBtn) moreBtn.addEventListener('click', () => {
@@ -1016,7 +1052,7 @@
     const shareBtn = container.querySelector('#ar-share');
     shareBtn.addEventListener('click', async () => {
       Arcade.sfx.click();
-      const SHARE_LABEL = '🔥 Send it — reckon they beat that?';
+      const SHARE_NOW = shareBtn.textContent;   // a game may have relabelled it (Ghost Race)
       // Modern path: build the PNG flex card via Arcade.shareScore. The opts
       // object already carries everything the card needs; games can pass an
       // `opts.share = { subject, level, total, statLine }` for extras the
@@ -1064,7 +1100,7 @@
           console.warn('[shareScore] failed', err);
           shareBtn.textContent = orig;
         } finally {
-          setTimeout(() => { shareBtn.disabled = false; shareBtn.textContent = SHARE_LABEL; }, 1800);
+          setTimeout(() => { shareBtn.disabled = false; shareBtn.textContent = SHARE_NOW; }, 1800);
         }
         return;
       }
@@ -1082,7 +1118,7 @@
       if (ok) {
         shareBtn.textContent = '✅ Sent!';
         Arcade.sfx.coin();
-        setTimeout(() => { shareBtn.textContent = SHARE_LABEL; }, 1800);
+        setTimeout(() => { shareBtn.textContent = SHARE_NOW; }, 1800);
       }
     });
 
@@ -1120,7 +1156,7 @@
       });
     }
 
-    return { grade: g, newBest };
+    return { grade: g, newBest, firstRun };
   };
 
   /* ---------------- countdown timer controller ---------------------------- */
@@ -1380,11 +1416,13 @@
       }
       return id;
     },
+    // The player's saved initials, or '' if they've never submitted (it used
+    // to default to 'AAA', so first-timers landed on the board as AAA).
     initials(v) {
       if (v !== undefined) { try { localStorage.setItem('aism-initials', v); } catch (e) {} }
-      let s = 'AAA';
-      try { s = localStorage.getItem('aism-initials') || 'AAA'; } catch (e) {}
-      return s;
+      let s = '';
+      try { s = localStorage.getItem('aism-initials') || ''; } catch (e) {}
+      return String(s).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
     },
     /* Crew code (class competition, v3 worker) — exactly 4 chars A-Z0-9 or
        empty. The server treats anything invalid as absent, so these are
@@ -1491,15 +1529,12 @@
       container.innerHTML = `
         <div class="ar-lb">
           <div class="ar-lb-title">🏆 WEEKLY LEADERBOARD</div>
-          <div class="ar-lb-sub">Enter your initials — best run this week counts</div>
-          <div class="ar-lb-picker" role="group" aria-label="Enter three initials">
-            ${[0, 1, 2].map(i => `
-              <div class="ar-lb-slot">
-                <button type="button" class="ar-lb-arrow" data-i="${i}" data-d="1" aria-label="Letter ${i + 1} up">▲</button>
-                <div class="ar-lb-letter" data-i="${i}">${e(saved[i] || 'A')}</div>
-                <button type="button" class="ar-lb-arrow" data-i="${i}" data-d="-1" aria-label="Letter ${i + 1} down">▼</button>
-              </div>`).join('')}
-            <button type="button" class="ar-btn ar-lb-go" id="ar-lb-go">SUBMIT</button>
+          <div class="ar-lb-sub">${saved.length === 3 ? 'Best run this week counts — tap your initials to change them' : 'Type your initials (3 letters) — best run this week counts'}</div>
+          <div class="ar-lb-picker" role="group" aria-label="Initials">
+            <input type="text" id="ar-lb-init" class="ar-lb-init" maxlength="3" value="${e(saved)}" placeholder="ABC"
+              autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go"
+              aria-label="Your initials, three letters or numbers">
+            <button type="button" class="ar-btn ar-lb-go" id="ar-lb-go"${saved.length === 3 ? '' : ' disabled'}>SUBMIT</button>
           </div>
           <div class="ar-lb-crew" id="ar-lb-crew-row" style="margin-top:10px;">
             <label for="ar-lb-crew" style="display:block;font-family:var(--ar-mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ar-muted);margin-bottom:4px;">Crew code (optional) — your class</label>
@@ -1510,17 +1545,24 @@
           <div class="ar-lb-board" id="ar-lb-board"></div>
         </div>`;
 
-      const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      const letters = [...container.querySelectorAll('.ar-lb-letter')];
-      container.querySelectorAll('.ar-lb-arrow').forEach(b =>
-        b.addEventListener('click', () => {
-          Arcade.sfx.tick();
-          const el = letters[+b.dataset.i];
-          const idx = (ALPHA.indexOf(el.textContent) + (+b.dataset.d) + ALPHA.length) % ALPHA.length;
-          el.textContent = ALPHA[idx];
-        }));
-
+      /* L13 (Oct 2026): tap-to-type. The ▲▼ picker had 37×21 px arrows and
+         took up to 18 taps a letter. Letters and digits only, upper-cased as
+         typed; SUBMIT arms at three; Enter submits. Keys typed here never
+         reach the game's own shortcuts (answer keys, F, M). */
       const go = container.querySelector('#ar-lb-go');
+      const initInput = container.querySelector('#ar-lb-init');
+      const cleanInit = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+      initInput.addEventListener('input', () => {
+        const v = cleanInit(initInput.value);
+        if (initInput.value !== v) initInput.value = v;
+        go.disabled = v.length !== 3;
+      });
+      initInput.addEventListener('keydown', ev => {
+        ev.stopPropagation();
+        if (ev.key === 'Enter') { ev.preventDefault(); if (!go.disabled) go.click(); }
+      });
+      initInput.addEventListener('focus', () => { try { initInput.select(); } catch (err) {} });
+
       const board = container.querySelector('#ar-lb-board');
       const crewInput = container.querySelector('#ar-lb-crew');
       // Auto-uppercase and strip anything that is not A-Z0-9 as they type.
@@ -1529,6 +1571,7 @@
           const v = String(crewInput.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
           if (crewInput.value !== v) crewInput.value = v;
         });
+        crewInput.addEventListener('keydown', ev => ev.stopPropagation());
       } catch (err) { /* cosmetic only */ }
 
       /* Board rendering — crew-aware (v3 worker) but degrades silently
@@ -1569,7 +1612,8 @@
       }
 
       go.addEventListener('click', async () => {
-        const initials = letters.map(l => l.textContent).join('');
+        const initials = cleanInit(initInput.value);
+        if (initials.length !== 3) { go.disabled = true; return; }
         go.disabled = true;
         go.textContent = '…';
         // Read + persist the optional crew code (empty clears it; anything
@@ -1614,7 +1658,7 @@
             renderBoard(res, 'all');
           }
         } catch (err) {
-          go.disabled = false;
+          go.disabled = cleanInit(initInput.value).length !== 3;
           go.textContent = 'SUBMIT';
           board.innerHTML = '<div class="ar-lb-empty">' + e(String(err.message || 'Could not reach the leaderboard.')) + '</div>';
         }

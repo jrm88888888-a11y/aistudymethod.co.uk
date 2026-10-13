@@ -754,7 +754,22 @@
    * nudging children; "Not now" is as prominent as "Create account".
    * Every outcome is a Plausible event so conversion is measured, not guessed. */
   var NUDGE_LS = "aism-signup-prompt";
-  var NUDGE_DELAY = 1800;               // after the rank reveal + confetti, before boredom
+  /* L17 (Oct 2026): the prompt used to open 1.8 s after the FIRST end card,
+     on top of the rank stamp and score count-up — the moment the card
+     exists for. Now, on any end card, it waits for the player's next move:
+     their first tap on Play again or Back/More games opens it, and "Not now"
+     carries on with that tap. From a device's second end card it may also
+     open by itself, once that card's reveal has finished. Still once per
+     device, either way. */
+  var NUDGE_DELAY = 4500;               // 2nd+ end card: after the reveal, count-up and confetti
+  var ENDS_LS = "aism-endcards-seen";
+  var endsMem = 0;                      // in-memory fallback when localStorage is unavailable
+  function bumpEnds() {
+    var n = 0;
+    try { n = (parseInt(localStorage.getItem(ENDS_LS), 10) || 0) + 1; localStorage.setItem(ENDS_LS, String(n)); }
+    catch (e) { n = ++endsMem; }
+    return n;
+  }
   var nudgeDone = false;                // in-memory fallback when localStorage is unavailable
   var _nudgedOpts = null;               // one attempt per end card
   function nudgeSeen() { if (nudgeDone) return true; try { return localStorage.getItem(NUDGE_LS) === "1"; } catch (e) { return false; } }
@@ -763,6 +778,8 @@
     if (window.AISM_NO_SIGNUP_PROMPT || auth.isLoggedIn() || nudgeSeen() || opts === _nudgedOpts) return;
     _nudgedOpts = opts;
     var pct = (opts && typeof opts.pct === "number" && isFinite(opts.pct)) ? opts.pct : null;
+    armExitPrompt(container, pct);
+    if (bumpEnds() < 2) return;           // first end card: never by itself
     setTimeout(function () {
       try {
         if (auth.isLoggedIn() || nudgeSeen()) return;
@@ -773,7 +790,27 @@
       } catch (e) { /* the prompt must never break the arcade */ }
     }, NUDGE_DELAY);
   }
-  function showSignupPrompt(pct) {
+  // The player's next move on this card (Play again, or a Back / More games
+  // link) opens the prompt first; "Not now" then carries the move out.
+  function armExitPrompt(container, pct) {
+    var card = container && container.querySelector ? container.querySelector(".ar-end") : null;
+    if (!card) return;
+    function onTap(ev) {
+      var t = ev.target && ev.target.closest ? ev.target.closest("#ar-again, a.ar-btn") : null;
+      if (!t || !card.contains(t)) return;
+      card.removeEventListener("click", onTap, true);
+      if (window.AISM_NO_SIGNUP_PROMPT || auth.isLoggedIn() || nudgeSeen() || document.getElementById("aism-auth-ov") || document.getElementById("aism-signup-ov")) return;
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button > 0) return;   // new-tab clicks pass through
+      ev.preventDefault(); ev.stopPropagation();
+      showSignupPrompt(pct, function (why) {
+        if (why === "create") return;     // registering instead; the move is dropped
+        if (t.tagName === "A") { if (t.href) location.href = t.href; }
+        else if (t.isConnected) t.click();
+      });
+    }
+    card.addEventListener("click", onTap, true);
+  }
+  function showSignupPrompt(pct, after) {
     injectCss();
     markNudge();                          // shown = spent, whatever happens next (a reload never re-asks)
     var letter = pct == null ? null : (Arcade.grade ? Arcade.grade(pct).letter : gradeLetter(pct));
@@ -805,6 +842,7 @@
       ov.remove();
       track(why === "create" ? "Arcade signup prompt: create account" : "Arcade signup prompt: not now");
       if (why === "create") auth.open("register", { source: "prompt" });
+      if (typeof after === "function") { try { after(why); } catch (e) {} }
     }
     function onKey(e) { if (e.key === "Escape") dismiss("not now"); }
     go.addEventListener("click", function () { dismiss("create"); });
