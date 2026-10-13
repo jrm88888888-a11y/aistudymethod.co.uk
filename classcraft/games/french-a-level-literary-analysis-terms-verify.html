@@ -19,6 +19,15 @@
   .mm-strip.ok { background: var(--ar-mint-dim); border-color: rgba(0,255,163,0.35); color: #b8ffe3; animation: arSlideUp 0.25s ease; }
   .mm-strip.no { background: var(--ar-pink-dim); border-color: rgba(255,46,136,0.35); color: #ffc4dd; animation: arSlideUp 0.25s ease; }
   .mm-strip strong { color: var(--ar-text); }
+  /* Phones: one-row HUD and a fixed-height feedback strip, so the board is
+     sized once and never jumps when a long definition lands in the strip. */
+  @media (max-width: 480px) {
+    #stage .ar-hud { flex-wrap: nowrap; gap: 5px; margin-bottom: 10px; }
+    #stage .ar-hud-stat { flex: 1 1 0; min-width: 0; padding: 5px 6px; gap: 4px; font-size: 9px; letter-spacing: 0.4px; justify-content: center; white-space: nowrap; }
+    #stage .ar-hud-stat b { font-size: 15px; }
+    #stage .ar-dots { margin-bottom: 8px; }
+    .mm-strip { height: 62px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-items: flex-start; font-size: 12.5px; line-height: 1.35; padding: 7px 10px; margin-bottom: 8px; }
+  }
 
   .mm-grid { display: grid; gap: 8px; margin-bottom: 12px; }
 
@@ -347,7 +356,8 @@
     });
 
     layout();
-    requestAnimationFrame(fitAll);
+    // second pass once fonts and the strip have settled
+    requestAnimationFrame(() => { layout(); fitAll(); fitBoardInView(); });
   }
 
   /* ---------- card sizing + text fitting ---------------------------------- */
@@ -361,9 +371,12 @@
     const gap = phone ? 6 : 8;
     const cardW = (grid.clientWidth - gap * (cols - 1)) / cols;
     let cardH = Math.max(86, Math.min(150, Math.round(cardW * 1.12)));
-    if (phone) {
-      // Size rows from the height budget: everything from the HUD down to the
-      // last card row must fit inside one viewport (44px minimum tap target).
+    // Size rows from the height budget on every screen (desktop used to skip
+    // this, so a 16-card board ran ~240 px below a 800 px laptop screen):
+    // the HUD plus the whole board must fit one viewport once the HUD sits
+    // just under the nav (fitBoardInView scrolls it there). Floors: 44 px
+    // tap target on phones, 72 px on desktop.
+    {
       const rows = Math.ceil(cardCount / cols);
       const hud = stage.querySelector('.ar-hud');
       const gTop = grid.getBoundingClientRect().top;
@@ -372,7 +385,7 @@
       const navH = navEl ? navEl.offsetHeight : 0;
       const avail = window.innerHeight - navH - (gTop - hTop) - 12;
       const fitH = Math.floor((avail - gap * (rows - 1)) / rows);
-      cardH = Math.max(44, Math.min(cardH, fitH));
+      cardH = Math.max(phone ? 44 : 72, Math.min(cardH, fitH));
     }
     grid.style.setProperty('--mm-cols', cols);
     grid.style.gridAutoRows = cardH + 'px';
@@ -384,14 +397,34 @@
     const t = c.el.querySelector('.mm-text');
     if (!t) return;
     t.classList.remove('clamp');
+    // Words are not broken mid-word ("electro-/negativity") while shrinking:
+    // the font steps down until the longest word fits the card's width too.
+    // Only if a word still cannot fit at the floor size may it break.
+    t.style.overflowWrap = 'normal';
     let size = c.kind === 'term' ? state.fsTerm : state.fsDef;
     t.style.fontSize = size + 'px';
-    let guard = 24;
-    while (t.scrollHeight > t.clientHeight + 1 && size > 8 && guard--) {
+    const over = () => t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1;
+    let guard = 30;
+    while (over() && size > 8 && guard--) {
       size -= 0.5;
       t.style.fontSize = size + 'px';
     }
+    if (t.scrollWidth > t.clientWidth + 1) t.style.overflowWrap = 'anywhere';
     if (t.scrollHeight > t.clientHeight + 1) t.classList.add('clamp'); // last resort
+  }
+
+  // Bring the HUD up under the nav when the board would otherwise run below
+  // the screen, so the whole board is visible without scrolling mid-game.
+  function fitBoardInView() {
+    const grid = document.getElementById('grid');
+    const hud = stage && stage.querySelector('.ar-hud');
+    if (!grid || !hud) return;
+    const gr = grid.getBoundingClientRect();
+    if (gr.bottom <= window.innerHeight) return;
+    const navEl = document.querySelector('nav');
+    const navH = navEl ? navEl.offsetHeight : 0;
+    const y = hud.getBoundingClientRect().top + window.scrollY - navH - 6;
+    if (y > 0) window.scrollTo({ top: y, behavior: 'instant' });
   }
   function fitAll() { if (state) state.cards.forEach(fitText); }
 

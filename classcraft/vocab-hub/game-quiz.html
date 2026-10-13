@@ -98,6 +98,15 @@ const BEST_KEY = `aism-best:quiz:${META.subject || ''}:${META.topic || ''}`;
 
 let selectedCount = 0;
 let selectedMode  = 'def';
+
+// Term → Definition puts four definitions on screen at once. In packs whose
+// median definition runs past 180 characters (about 30% of packs) that is
+// 700+ characters of option text per question, so the mode is switched off
+// there and the reason shown.
+const LONG_DEF_PACK = (() => {
+  const L = VOCAB_DATA.map(v => String(v.definition || v.def || '').length).sort((a, b) => a - b);
+  return L.length ? L[Math.floor(L.length / 2)] > 180 : false;
+})();
 let activeQs = [], state = null, timerCtl = null;
 
 function shuffle(arr) { return Arcade.shuffle(arr); }
@@ -144,9 +153,9 @@ function renderSetup() {
       <div class="ar-label" style="margin-top:16px;">Mode</div>
       <div class="vq-setup-row" role="group" aria-label="Quiz mode">
         <button type="button" class="vq-chip mode selected" data-mode="def">Definition → Term</button>
-        <button type="button" class="vq-chip mode" data-mode="term">Term → Definition</button>
+        <button type="button" class="vq-chip mode" data-mode="term"${LONG_DEF_PACK ? ' disabled title="This topic\'s definitions are too long to read four at a time"' : ''}>Term → Definition</button>
       </div>
-      <p style="color:var(--ar-muted);font-size:12.5px;margin:10px 0 18px;" id="mode-desc">Given the definition, choose the correct term.</p>
+      <p style="color:var(--ar-muted);font-size:12.5px;margin:10px 0 18px;" id="mode-desc">Given the definition, choose the correct term.${LONG_DEF_PACK ? ' (Term → Definition is off for this topic: its definitions are too long to read four at a time.)' : ''}</p>
       <button class="ar-btn big" id="btn-start" disabled>▶ Insert coin</button>
     </div>
   `;
@@ -170,15 +179,27 @@ function renderSetup() {
     });
     countRow.appendChild(btn);
   });
+  // Preselect 10 (or All when the topic has fewer) so Start works straight away.
+  const pre = [...countRow.querySelectorAll('.vq-chip.count:not(:disabled)')]
+    .find(b => +b.dataset.count === Math.min(10, VOCAB_DATA.length));
+  if (pre) {
+    pre.classList.add('selected');
+    selectedCount = +pre.dataset.count;
+    const start = document.getElementById('btn-start');
+    start.disabled = false;
+    start.textContent = `▶ Start — ${selectedCount} questions`;
+  }
+  selectedMode = 'def';   // a replay re-renders the chips with Definition → Term selected
   document.querySelectorAll('.vq-chip.mode').forEach(b => {
     b.addEventListener('click', () => {
       Arcade.sfx.click();
       document.querySelectorAll('.vq-chip.mode').forEach(x => x.classList.remove('selected'));
       b.classList.add('selected');
       selectedMode = b.dataset.mode;
-      document.getElementById('mode-desc').textContent = selectedMode === 'def'
+      document.getElementById('mode-desc').textContent = (selectedMode === 'def'
         ? 'Given the definition, choose the correct term.'
-        : 'Given the term, choose the correct definition.';
+        : 'Given the term, choose the correct definition.')
+        + (LONG_DEF_PACK ? ' (Term → Definition is off for this topic: its definitions are too long to read four at a time.)' : '');
     });
   });
   // Resolved at click time so the study-first overlay wrapper is picked up.

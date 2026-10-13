@@ -125,6 +125,23 @@
     .overlay.open{display:flex;}
     .q-card{background:var(--surface);border:1px solid var(--border-hi);border-radius:18px;padding:1.75rem 2rem;max-width:480px;width:100%;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow-x:hidden;overflow-y:auto;max-height:calc(100dvh - 2.5rem);overscroll-behavior:contain;}
     .q-term.is-def{font-size:1.02rem;font-weight:600;line-height:1.5;letter-spacing:0;color:var(--text);}
+    /* Long definitions (p99 434 chars, max 571) used to push the options and
+       Continue below the screen. The card is now a flex column: the definition
+       shrinks and scrolls inside itself; options and Continue always show. */
+    .q-card{display:flex;flex-direction:column;}
+    .q-card > *{flex:none;}
+    .q-card > .q-term.is-def{flex:0 1 auto;min-height:4.5em;overflow-y:auto;overscroll-behavior:contain;padding-right:4px;}
+    .q-term.is-def.scrolls{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 1.6em),rgba(0,0,0,0.35));mask-image:linear-gradient(180deg,#000 calc(100% - 1.6em),rgba(0,0,0,0.35));}
+    .q-term.is-def.scrolls.at-end{-webkit-mask-image:none;mask-image:none;}
+    @media (max-height:720px){
+      .q-card{padding:1.1rem 1.15rem;}
+      .q-badge{margin-bottom:0.45rem;}
+      .q-term.is-def{font-size:0.95rem;line-height:1.42;}
+      .q-prompt{margin-bottom:0.6rem;}
+      .q-options{margin-bottom:0.5rem;}
+      .q-option{padding:0.55rem 0.85rem;}
+    }
+    @media (max-height:600px){ .q-badge{display:none;} .q-card > .q-term.is-def{min-height:3em;} .q-option{padding:0.45rem 0.8rem;} }
     .q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));}
     @keyframes slideUp{from{opacity:0;transform:translateY(28px) scale(0.95)}to{opacity:1;transform:none}}
     .q-badge{display:inline-flex;align-items:center;gap:0.4rem;font-family:var(--font-d);font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent2);background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.3);border-radius:20px;padding:0.2rem 0.65rem;margin-bottom:0.75rem;}
@@ -1376,6 +1393,20 @@ function showQuestion(item) {
     ? (REEL.hero.prompt + ' Press A or B to answer.')
     : ('Vocab question: which term matches this definition? ' + siClue(item).replace(/_{2,}/g, 'blank') + ' Press A to D to answer.'));
   document.getElementById('overlay-q').classList.add('open');
+  siFitDef(true);
+}
+
+// Marks a definition that is taller than its box, so a fade shows there is more.
+function siFitDef(reset) {
+  const el = document.getElementById('q-term');
+  if (!el) return;
+  const check = () => {
+    el.classList.toggle('scrolls', el.scrollHeight > el.clientHeight + 2);
+    el.classList.toggle('at-end', el.scrollTop + el.clientHeight >= el.scrollHeight - 2);
+  };
+  if (reset) el.scrollTop = 0;
+  if (!el.dataset.fitBound) { el.dataset.fitBound = '1'; el.addEventListener('scroll', check, { passive: true }); }
+  requestAnimationFrame(check);
 }
 
 function answerQuestion(chosen, item, btn, cont) {
@@ -1428,6 +1459,9 @@ function answerQuestion(chosen, item, btn, cont) {
 
   updateHUD();
   document.getElementById('btn-continue').classList.add('visible');
+  siFitDef();   // Continue takes space: the definition box may now need to scroll
+  const qc = document.querySelector('#overlay-q .q-card');
+  if (qc && qc.scrollHeight > qc.clientHeight + 1) qc.scrollTop = qc.scrollHeight;   // very short screens: bring Continue into view
 }
 
 function closeQuestion() {

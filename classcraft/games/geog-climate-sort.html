@@ -116,7 +116,11 @@
     // countdown pill under the HUD. All JS-injected — the markup never changes.
     + ' body.so-frenzy .so-card { border-color:var(--ar-gold); box-shadow:0 0 0 2px rgba(255,214,10,0.35), 0 0 30px rgba(255,214,10,0.3); }'
     + ' body.so-frenzy .so-card-hint { color:var(--ar-gold); }'
-    + ' .so-frenzy-pill { display:none; align-items:center; justify-content:center; gap:6px; margin:0 0 10px; font-family:var(--ar-mono); font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--ar-gold); animation:soFrenzyPulse 0.8s ease-in-out infinite; }'
+    // The pill is a tag pinned to the card's top edge (position:absolute), so
+    // starting a frenzy no longer pushes the card and bins down mid-sort.
+    + ' .so-stage { position:relative; }'
+    + ' .so-frenzy-pill { display:none; position:absolute; top:-11px; left:50%; transform:translateX(-50%); z-index:2; white-space:nowrap; align-items:center; justify-content:center; gap:6px; padding:3px 10px; border-radius:999px; background:#1a1405; border:1px solid var(--ar-gold); font-family:var(--ar-mono); font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--ar-gold); animation:soFrenzyPulse 0.8s ease-in-out infinite; }'
+    + ' .so-deck { color:var(--ar-mint); }'
     + ' body.so-frenzy .so-frenzy-pill { display:flex; }'
     + ' @keyframes soFrenzyPulse { 50% { opacity:0.55; } }'
     + ' @media (prefers-reduced-motion: reduce) { .so-frenzy-pill { animation:none; } body.so-frenzy .so-card { box-shadow:0 0 0 2px rgba(255,214,10,0.35); } }';
@@ -128,6 +132,7 @@
   // the frenzy on the spot. Re-earnable at every 5-combo milestone.
   const FRENZY_COMBO = 5;
   const FRENZY_MS = 10000;
+  const DECK_BONUS = 500;
 
   let queue, state, timerCtl = null, heartTimer = null, locked = false;
   let frenzyEndT = null, frenzyTick = null;
@@ -168,6 +173,7 @@
       pos: 0, sorted: 0, correct: 0, combo: 0, bestCombo: 0,
       grid: [], lastMiss: null, missed: [],
       pts: 0, frenzyExtra: 0, frenzy: false, frenzyUntil: 0,
+      cleared: new Set(), decks: 0, deckBonus: 0,
     };
     endFrenzy(false);
     locked = false;
@@ -179,18 +185,18 @@
     root.innerHTML = `
       <div class="ar-badge">📦 Arcade · Sorting Rush</div>
       <h1 class="ar-title">${esc(HEADING)}</h1>
-      <p class="ar-sub">${esc(RUN_SECS)} seconds. Drop each item into the right bin. Each sort pays 100 × your combo (up to ×5) — five in a row also sparks a ×2 frenzy.</p>
+      <p class="ar-sub">${esc(RUN_SECS)} seconds. Drop each item into the right bin. Each sort pays 100 × your combo (up to ×5) — five in a row also sparks a ×2 frenzy. Sort every item right once to clear the deck for +${DECK_BONUS}.</p>
       <div class="ar-hud">
         <div class="ar-hud-stat">Score <b id="hudScore">0</b></div>
         <div class="ar-hud-stat${state.combo >= 3 ? ' hot' : ''}">Combo <b id="hudCombo">×1</b></div>
         <div class="ar-hud-stat gold">Time <b id="hudTime">${RUN_SECS}</b></div>
       </div>
-      <div class="so-frenzy-pill" aria-hidden="true">⚡ FRENZY ×2</div>
       <div class="ar-timer" aria-hidden="true"><i id="tfill"></i></div>
       <div class="so-stage">
+        <div class="so-frenzy-pill" aria-hidden="true">⚡ FRENZY ×2</div>
         <div class="so-card in" id="card">
           <div class="so-card-text" id="cardText">—</div>
-          <div class="so-card-hint">Tap the right bin below</div>
+          <div class="so-card-hint">Tap the right bin below · <span class="so-deck" id="deckCount">0/${ALL_ITEMS.length} cleared</span></div>
         </div>
       </div>
       <div class="so-bins n${n}" id="bins" role="group" aria-label="Category bins">
@@ -273,11 +279,28 @@
       if (state.combo === 5 || state.combo === 10) { Arcade.streakCall(state.combo); Arcade.confettiBurst({ count: 45 }); }
       // EVENT — FRENZY: earned at every 5-combo milestone while no frenzy runs.
       if (!state.frenzy && state.combo % FRENZY_COMBO === 0) startFrenzy();
+      // CLEAR THE DECK: every item sorted right at least once this lap pays
+      // +500 and starts a fresh lap (the run is a goal, not an endless loop).
+      state.cleared.add(item);
+      let deckDone = false;
+      if (state.cleared.size >= ALL_ITEMS.length) {
+        deckDone = true;
+        state.decks++; state.deckBonus += DECK_BONUS; state.pts += DECK_BONUS;
+        state.cleared = new Set();
+        setTimeout(() => { Arcade.flashMsg('🧹 DECK CLEARED +' + DECK_BONUS, '#00ffa3'); Arcade.confettiBurst({ count: 60 }); }, 250);
+      }
+      const dc = document.getElementById('deckCount');
+      if (dc) {
+        // after the first sort the hint is just the deck progress (one line on phones)
+        if (dc.parentElement && dc.parentElement.firstChild !== dc) dc.parentElement.replaceChildren(dc);
+        dc.textContent = 'Deck ' + state.cleared.size + '/' + ALL_ITEMS.length + (state.decks ? ' · 🧹×' + state.decks : '');
+      }
       fb.className = 'ar-feedback ok';
       fb.innerHTML = `<strong>Correct! +${gained}${inFrenzy ? ' ⚡ ×2' : (tier > 1 ? ' (×' + tier + ' combo)' : '')}</strong> “${esc(item.text)}” belongs in <em>${esc(CATEGORIES[item.cat])}</em>.`;
       announce.textContent = `Correct. ${item.text} is ${CATEGORIES[item.cat]}. Combo ${state.combo}.`
         + ' Plus ' + gained + ' points.' + (inFrenzy ? ' Frenzy doubled it.' : '')
-        + (state.frenzy && !inFrenzy ? ' Frenzy! Double points for ten seconds.' : '');
+        + (state.frenzy && !inFrenzy ? ' Frenzy! Double points for ten seconds.' : '')
+        + (deckDone ? ' Deck cleared! Plus ' + DECK_BONUS + ' points.' : '');
     } else {
       state.combo = 0;
       endFrenzy(false);   // a miss snuffs the frenzy; the full correction pause below is unchanged
@@ -358,6 +381,7 @@
         { v: pct + '%', l: 'accuracy' },
         { v: '🔥 ×' + state.bestCombo, l: 'best combo' },
         ...(state.frenzyExtra > 0 ? [{ v: '⚡ +' + state.frenzyExtra, l: 'frenzy bonus' }] : []),
+        ...(state.decks > 0 ? [{ v: '🧹 ×' + state.decks, l: 'decks cleared' }] : []),
       ],
       emojiGrid: gridStr,
       bestKey: BEST_KEY,

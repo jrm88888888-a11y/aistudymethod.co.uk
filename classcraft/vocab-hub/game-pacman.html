@@ -465,6 +465,7 @@ const POWER_CELLS  = [[1, 1], [1, 19], [21, 1], [21, 19]];
    ============================================================ */
 const GAME_DURATION = 180;     // seconds
 const MAX_VOCAB     = 20;
+const LIVE_RED      = 6;     // red dots on the board at once (was up to 20); eaten ones are replaced
 const LIVES_MAX     = 3;
 const PLAYER_SPEED  = 5.4;     // cells/s
 const GHOST_SPEED   = 4.5;     // cells/s
@@ -578,13 +579,33 @@ function initMaze() {
     for (let c = 0; c < MAZE_COLS; c++)
       if (maze[r][c] === 1) dotCells.push({ r, c });
   const vocabLeft = Math.max(0, vocabQueue.length - vocabShownCount);
-  const redCount = Math.min(MAX_VOCAB, vocabLeft, dotCells.length);
+  const redCount = Math.min(LIVE_RED, vocabLeft, dotCells.length);
   shuffle(dotCells).slice(0, redCount).forEach(({ r, c }) => { maze[r][c] = 4; });
 
   dotsRemaining = 0;
   for (let r = 0; r < MAZE_ROWS; r++)
     for (let c = 0; c < MAZE_COLS; c++)
       if (maze[r][c] === 1 || maze[r][c] === 4 || maze[r][c] === 5) dotsRemaining++;
+}
+
+// Keep up to LIVE_RED red dots live: after a question, a plain dot well away
+// from Pac-Man turns red if questions are still waiting (including missed
+// terms re-queued for this run).
+function topUpRed() {
+  if (!maze || !vocabQueue) return;
+  let live = 0; const plain = [];
+  for (let r = 0; r < MAZE_ROWS; r++)
+    for (let c = 0; c < MAZE_COLS; c++) {
+      if (maze[r][c] === 4) live++;
+      else if (maze[r][c] === 1) plain.push({ r, c });
+    }
+  const waiting = vocabQueue.length - vocabShownCount - live;
+  let add = Math.min(LIVE_RED - live, waiting, plain.length);
+  if (add <= 0) return;
+  const pr = player ? Math.floor(player.y) : 0, pc = player ? Math.floor(player.x) : 0;
+  const far = plain.filter(d => Math.abs(d.r - pr) + Math.abs(d.c - pc) >= 6);
+  const pool = shuffle(far.length >= add ? far : plain);
+  pool.slice(0, add).forEach(({ r, c }) => { maze[r][c] = 4; });
 }
 
 function resetActors() {
@@ -1180,7 +1201,11 @@ function answerQuestion(chosen, item, btn, cont) {
 
 function closeQuestion() {
   document.getElementById('overlay-q').classList.remove('open');
+  // A/D answered the question; they must not also steer once play resumes.
+  keys = {};
+  if (player) { player.queued = null; player.queuedT = 0; }
   if (state === 'question') {
+    topUpRed();
     state = 'playing';
     player.invuln = Math.max(player.invuln, 1.0);   // grace period after the modal
     lastTime = 0;
@@ -1651,6 +1676,7 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (e.key === 'm' || e.key === 'M') { muteBtn.click(); return; }
+  if (state === 'question') return;   // A–D answer the question; they must not queue a turn
   keys[e.key] = true;
   const d = KEY_TO_DIR[e.key];
   if (d && player) { player.queued = d; player.queuedT = 0; }
