@@ -51,6 +51,14 @@
 
   /* ── on-screen keyboard ── */
   .hb-kb { margin-top: 4px; }
+  /* Phones: long clues used to push the keys below the screen. The keyboard
+     now sticks to the bottom of the screen while the round card is in view. */
+  @media (max-width: 760px) {
+    .hb-kb { position: sticky; bottom: 0; z-index: 4; margin: 4px -8px 0; padding: 8px 8px 6px;
+      background: linear-gradient(180deg, rgba(10,8,32,0.82), rgba(8,6,24,0.97)); border-radius: 12px 12px 0 0;
+      box-shadow: 0 -10px 24px rgba(0,0,0,0.45); }
+  }
+  .hb-auto { font-family: var(--ar-mono); font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ar-muted); text-align: center; margin-top: 8px; }
   .hb-kb-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
   .hb-key {
     font-family: var(--ar-font); font-size: 0.85rem; font-weight: 700;
@@ -448,6 +456,8 @@ function updateHintBtn() {
 // ── WORD RESULT (educational beat: term + full definition, always) ──
 function settleWord(won) {
   document.querySelectorAll('.hb-key').forEach(k => { k.disabled = true; });
+  // round over: the keyboard stops sticking so it never covers the verdict or Next
+  const kbEl = document.getElementById('keyboard'); if (kbEl) kbEl.style.position = 'static';
   let pts = 0;
   if (won) {
     const livesLeft = MAX_WRONG - wrongCount;
@@ -495,11 +505,35 @@ function settleWord(won) {
     </div>`;
   const nextBtn = document.getElementById('next');
   nextBtn.addEventListener('click', nextWord);
-  document.getElementById('endEarly').addEventListener('click', showFinal);
+  document.getElementById('endEarly').addEventListener('click', () => { clearAutoNext(); showFinal(); });
   nextBtn.focus({ preventScroll: true });
+
+  // After a SOLVE the run moves on by itself once there has been time to read
+  // the definition (shared reading rule; never with the "No clock" setting).
+  // A miss still waits for Next, so the correction is read at the player's pace.
+  if (won && !isLast) {
+    let ms = Arcade.readMs ? Arcade.readMs([currentDef], 2500) : 3500;
+    if (isFinite(ms)) {
+      ms = Math.min(10000, ms);
+      const until = Date.now() + ms;
+      const note = document.createElement('div');
+      note.className = 'hb-auto';
+      document.getElementById('nextWrap').appendChild(note);
+      const tick = () => { note.textContent = 'Next word in ' + Math.max(1, Math.ceil((until - Date.now()) / 1000)) + 's · tap Next to go now'; };
+      tick();
+      autoNextTick = setInterval(tick, 250);
+      autoNextT = setTimeout(() => { clearAutoNext(); if (document.getElementById('next')) nextWord(); }, ms);
+    }
+  }
+}
+
+let autoNextT = null, autoNextTick = null;
+function clearAutoNext() {
+  clearTimeout(autoNextT); clearInterval(autoNextTick); autoNextT = autoNextTick = null;
 }
 
 function nextWord() {
+  clearAutoNext();
   Arcade.sfx.swoosh();
   wordIndex++;
   if (wordIndex >= wordList.length) showFinal();
@@ -508,6 +542,7 @@ function nextWord() {
 
 // ── FINAL ──
 function showFinal() {
+  clearAutoNext();
   gameActive = false;
   const attempted = Math.max(1, correct + failed);
   // Honest rank (Oct 2026): at least 5 words (or the whole run if shorter)

@@ -65,6 +65,11 @@
   .wg-mini.c { background: var(--ar-mint); color: #04251a; }
   .wg-mini.p { background: var(--ar-gold); color: #2b2300; }
   .wg-mini.a { background: var(--ar-card2); color: var(--ar-muted); }
+  .tg-hard { display: flex; gap: 10px; align-items: flex-start; text-align: left; font-size: 13px; color: var(--ar-text2); line-height: 1.45; margin: 0 0 16px; cursor: pointer; }
+  .tg-hard input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--ar-mint); flex: none; }
+  /* Touch screens: the on-screen keyboard's Enter key submits — the big
+     duplicate Submit button only pushed the keyboard down. */
+  @media (pointer: coarse) { .tg-submit { display: none; } }
 </style>
 <!-- aism-rebranded:v1 --><link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -129,6 +134,12 @@ const announce = document.getElementById('announce');
 Arcade.mountMuteButton();
 
 const MAX_GUESSES = 6;
+const RUN_LEN = 8;      // words per run (missed words still come back once as second chances)
+// HARD MODE (optional, Wordle rules): green letters must stay in place and
+// yellow letters must be reused in every later guess. Pays +50% per word.
+let hardMode = false;
+try { hardMode = localStorage.getItem('aism-termguess-hard') === '1'; } catch (e) {}
+let hardFixed = {}, hardMust = {};
 const KB_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
 
 // Wordle format only works for short single words: play the term's NAME
@@ -200,7 +211,7 @@ if (!VOCAB_DATA.length) {
 function renderIntro() {
   root.innerHTML = `
     ${headerHtml('Briefing')}
-    <p class="ar-sub">Guess the vocabulary term in 6 tries — the definition is your clue. Fewer guesses means more points, and back-to-back solves stack a streak bonus.</p>
+    <p class="ar-sub">Guess the vocabulary term in 6 tries — the definition is your clue. ${Math.min(RUN_LEN, PLAY_DATA.length)} words a run. Fewer guesses means more points, and back-to-back solves stack a streak bonus.</p>
     <div class="ar-card">
       <div class="ar-label">How the tiles talk</div>
       <div class="wg-legend">
@@ -212,9 +223,14 @@ function renderIntro() {
         ⌨️ Type or tap the keys · ↩️ Enter submits · 🔡 Spaces and hyphens are filled in for free · 🔥 Streaks add bonus points
       </div>
       ${BANK_FILTERED ? `<div style="color:var(--ar-muted);font-size:12.5px;margin:-6px 0 16px;">🔎 Playing ${PLAY_DATA.length} of ${VOCAB_DATA.length} terms. Longer terms live in Anagram and Hangman.</div>` : ''}
+      <label class="tg-hard"><input type="checkbox" id="hardToggle"${hardMode ? ' checked' : ''}> <span><strong>Hard mode</strong> — green letters stay put and yellow letters must be reused. +50% points.</span></label>
       <button class="ar-btn big" id="btn-begin">▶ Insert coin</button>
     </div>
   `;
+  document.getElementById('hardToggle').addEventListener('change', e => {
+    hardMode = e.target.checked;
+    try { localStorage.setItem('aism-termguess-hard', hardMode ? '1' : '0'); } catch (err) {}
+  });
   document.getElementById('btn-begin').addEventListener('click', () => startGame());
 }
 
@@ -222,7 +238,7 @@ function renderIntro() {
 function startGame() {
   Arcade.playMode && Arcade.playMode(true);   // X3: collapse the header during the run (no question clock here)
   Arcade.sfx.swoosh();
-  wordList = shuffle([...PLAY_DATA]);
+  wordList = shuffle([...PLAY_DATA]).slice(0, RUN_LEN);
   wordIndex = 0; score = 0; solved = 0; failed = 0; streak = 0; bestStreak = 0;
   resultGrid = []; missedWords = [];
   loadWord(0);
@@ -243,6 +259,7 @@ function loadWord(idx) {
   }
 
   currentRow = 0; currentInput = []; keyStates = {};
+  hardFixed = {}; hardMust = {};
   gameActive = true; revealing = false; resultShown = false;
 
   // Tile size: fit the longest row on a 380px screen without overflow
@@ -251,7 +268,7 @@ function loadWord(idx) {
   const size = Math.max(20, Math.min(42, Math.floor(avail / cells) - 4));
 
   root.innerHTML = `
-    ${headerHtml('Word ' + (idx + 1) + ' of ' + wordList.length + (item._redemption ? ' · second chance' : ''))}
+    ${headerHtml('Word ' + (idx + 1) + ' of ' + wordList.length + (item._redemption ? ' · second chance' : '') + (hardMode ? ' · hard mode' : ''))}
     <div class="ar-hud">
       <div class="ar-hud-stat">Score <b id="hudScore">${score}</b></div>
       <div class="ar-hud-stat${streak >= 2 ? ' hot' : ''}">Streak <b id="hudStreak">${streak}${streak >= 2 ? '🔥' : ''}</b></div>
@@ -261,7 +278,7 @@ function loadWord(idx) {
       <div class="ar-label">Definition — guess the term · ${targetLetters.length} letters</div>
       <div class="ar-prompt" style="font-size:15.5px;font-weight:600;color:var(--ar-text2);">${esc(clueOf(item))}</div>
       <div class="wg-grid" id="grid" style="--wg-size:${size}px;" aria-hidden="true"></div>
-      <button class="ar-btn big" id="btn-submit" style="margin-bottom:10px;">Submit guess ↵</button>
+      <button class="ar-btn big tg-submit" id="btn-submit" style="margin-bottom:10px;">Submit guess ↵</button>
       <div class="wg-kb" id="keyboard" role="group" aria-label="Letter keyboard"></div>
       <div class="ar-kbd-hint">Keyboard: type letters · Enter submits · Backspace deletes</div>
       <div id="fb"></div>
@@ -388,7 +405,24 @@ function submitGuess() {
   }
 
   const guess = [...currentInput];
+  if (hardMode) {
+    const why = hardBreak(guess);
+    if (why) {
+      Arcade.sfx.wrong();
+      Arcade.flashMsg(why.short, '#ffd60a');
+      shakeRow(currentRow);
+      announce.textContent = 'Hard mode: ' + why.long;
+      return;
+    }
+  }
   const result = scoreGuess(guess, targetLetters);
+  result.forEach((st, i) => {
+    if (st === 'correct') hardFixed[i] = guess[i];
+  });
+  // yellow + green counts per letter = the minimum the next guess must contain
+  const seen = {};
+  result.forEach((st, i) => { if (st !== 'absent') seen[guess[i]] = (seen[guess[i]] || 0) + 1; });
+  Object.keys(seen).forEach(ch => { hardMust[ch] = Math.max(hardMust[ch] || 0, seen[ch]); });
 
   revealRow(currentRow, guess, result, () => {
     result.forEach((state, i) => {
@@ -412,7 +446,7 @@ function submitGuess() {
       streak++;
       bestStreak = Math.max(bestStreak, streak);
       const bonus = streak >= 2 ? streak * 5 : 0;
-      const wordScore = base + bonus;
+      const wordScore = Math.round((base + bonus) * (hardMode ? 1.5 : 1));
       score += wordScore;
       solved++;
       updateHud();
@@ -442,6 +476,18 @@ function submitGuess() {
       activateRow(currentRow);
     }
   });
+}
+
+// Hard mode check: returns null when the guess keeps every revealed hint.
+function hardBreak(guess) {
+  for (const i of Object.keys(hardFixed)) {
+    if (guess[i] !== hardFixed[i]) return { short: hardFixed[i] + ' STAYS IN SLOT ' + (+i + 1), long: 'letter ' + hardFixed[i] + ' must stay in position ' + (+i + 1) + '.' };
+  }
+  for (const ch of Object.keys(hardMust)) {
+    const n = guess.filter(g => g === ch).length;
+    if (n < hardMust[ch]) return { short: 'USE THE ' + ch, long: 'the guess must contain ' + ch + (hardMust[ch] > 1 ? ' ' + hardMust[ch] + ' times' : '') + '.' };
+  }
+  return null;
 }
 
 // 'correct' | 'present' | 'absent' per letter (classic two-pass)

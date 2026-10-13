@@ -82,6 +82,23 @@
   .pv-card.deal { animation: pvDeal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
   @keyframes pvDeal { from { opacity: 0; transform: translateY(22px) scale(0.7); } to { opacity: 1; transform: none; } }
 
+  /* Sticky feedback: the match / miss line (with the full definition) pins
+     to the bottom of the screen while the board is taller than the screen,
+     instead of sitting below the board where it scrolled the page away. */
+  #fb.ar-feedback { position: sticky; bottom: 8px; z-index: 5; max-height: 34vh; overflow-y: auto; box-shadow: 0 -8px 24px rgba(0,0,0,0.45); backdrop-filter: blur(6px); }
+  /* Long-definition packs on phones: terms are dealt face up (only the
+     definitions are hidden), boards hold at most 4 pairs. */
+  .pv-card.faceup { min-height: 64px; }
+  @media (max-width: 480px) {
+    .ar-hud { flex-wrap: nowrap; gap: 5px; }
+    .ar-hud .ar-hud-stat { flex: 1 1 0; min-width: 0; padding: 5px 6px; gap: 4px; font-size: 9px; letter-spacing: 0.4px; justify-content: center; white-space: nowrap; }
+    .ar-hud .ar-hud-stat b { font-size: 15px; }
+  }
+  #fb.ar-feedback.pv-fb-dim { max-height: 3.2em; overflow: hidden; opacity: 0.6; }
+  .pv-card.faceup .pv-inner { transform: rotateY(180deg); }
+  .pv-card.faceup:not(.flipped):not(.matched) .pv-front.term { border-style: dashed; }
+  .pv-card.faceup.flipped .pv-front.term { border-color: var(--ar-cyan); box-shadow: 0 0 0 2px rgba(0,229,255,0.35); }
+
   /* lightning recall round */
   .zap-opts { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
 </style>
@@ -164,6 +181,13 @@ const DIFF_OPTIONS = [
 // boards. At 12 pairs the board went to 6 columns and definitions rendered at
 // 9.6px, clipped after ~100 characters — players were matching fragments.
 const MAX_BOARD_PAIRS = 8;
+// Phones + long definitions: a 2-column board of 290px cards ran ~2,300px
+// tall. There, boards hold 4 pairs and terms are dealt face up.
+const LONG_PACK = (() => {
+  const L = VOCAB_DATA.map(v => String(v.definition || '').length).sort((a, b) => a - b);
+  return L.length ? L[Math.floor(L.length / 2)] > 120 : false;
+})();
+const phoneNow = () => (window.innerWidth || 360) < 420;
 const LIGHTNING_MS  = 30000;
 const LIGHTNING_PTS = 50;
 
@@ -266,7 +290,8 @@ function startGame() {
   const fits = v => String(v.definition || '').length <= MAX_CARD_DEF;
   const pool = shuffle(VOCAB_DATA.filter(fits)).concat(shuffle(VOCAB_DATA.filter(v => !fits(v)))).slice(0, selectedPairs);
   boards = [];
-  for (let i = 0; i < pool.length; i += MAX_BOARD_PAIRS) boards.push(pool.slice(i, i + MAX_BOARD_PAIRS));
+  const perBoard = (LONG_PACK && phoneNow()) ? 4 : MAX_BOARD_PAIRS;
+  for (let i = 0; i < pool.length; i += perBoard) boards.push(pool.slice(i, i + perBoard));
   boardIndex = 0;
   runTotal = pool.length;
   moves = 0; totalMatched = 0;
@@ -282,6 +307,7 @@ function startBoard() {
   const boardItems = boards[boardIndex];
   boardPairs = boardItems.length;
   flipped = []; matched = new Set(); locked = false;
+  const termsUp = LONG_PACK && phoneNow();
 
   const vw = window.innerWidth || 360;
   let cols;
@@ -301,7 +327,10 @@ function startBoard() {
     if (!zapMask) zapMask = Arcade.makeMasker(VOCAB_DATA.map(v => ({ term: v.term, def: v.definition })));
     cards.push({ pairId: i, type: 'def',  text: zapMask(item.definition, item.term), item });
   });
-  cards = shuffle(cards);
+  // Terms face up: they go in a compact block on top, hidden definitions below.
+  cards = termsUp
+    ? shuffle(cards.filter(c => c.type === 'term')).concat(shuffle(cards.filter(c => c.type === 'def')))
+    : shuffle(cards);
 
   const multi = boards.length > 1;
   root.innerHTML = `
@@ -337,13 +366,18 @@ function startBoard() {
         </span>
       </span>`;
     card.addEventListener('click', () => onCardClick(card));
+    if (termsUp && c.type === 'term') {
+      card.classList.add('faceup');
+      card.setAttribute('aria-label', 'Term card, face up: ' + c.item.term);
+      seenCards.add(c.pairId + '|term');   // a face-up term is known from the start
+    }
     card.classList.add('deal');
     card.style.animationDelay = Math.min(idx * 30, 900) + 'ms';
     board.appendChild(card);
   });
 
   announce.textContent = (multi ? `Board ${boardIndex + 1} of ${boards.length} dealt: ` : 'Board dealt: ')
-    + `${boardPairs} pairs. Flip two cards to find a term and its matching definition.`;
+    + `${boardPairs} pairs. ` + (termsUp ? 'Terms are face up. Flip a definition, then tap its term.' : 'Flip two cards to find a term and its matching definition.');
 }
 
 function startClock() {
@@ -369,6 +403,8 @@ function onCardClick(card) {
     Arcade.sfx.tick && Arcade.sfx.tick();
     return;
   }
+  // a new turn: the last verdict shrinks so it covers less of the board
+  if (flipped.length === 0) { const f = document.getElementById('fb'); if (f && f.classList.contains('ar-feedback')) f.classList.add('pv-fb-dim'); }
   card.classList.add('flipped');
   card.setAttribute('aria-label', card.dataset.type === 'term'
     ? 'Term: ' + card.dataset.term
@@ -438,7 +474,7 @@ function checkMatch() {
     setTimeout(() => {
       [a, b].forEach(c => {
         c.classList.remove('flipped', 'wrong');
-        c.setAttribute('aria-label', 'Card, face down');
+        c.setAttribute('aria-label', c.classList.contains('faceup') ? 'Term card, face up: ' + c.dataset.term : 'Card, face down');
       });
       flipped = []; locked = false;
       document.getElementById('hudCombo').textContent = '0';
@@ -473,8 +509,6 @@ function startLightning() {
   // X13: the reading-time setting applies — +50% gives 45 s, no clock gives an untimed round.
   const pace = Arcade.readPace;
   Arcade.mountPaceButton && Arcade.mountPaceButton();
-  const zapMs = pace === 'untimed' ? Infinity : (pace === 'extra' ? LIGHTNING_MS * 1.5 : LIGHTNING_MS);
-  const zapSay = isFinite(zapMs) ? (zapMs / 1000) + ' seconds' : 'no clock';
   const played = boards.flat();
   if (VOCAB_DATA.length < 4 || !played.length) { endGame(); return; }
 
@@ -482,6 +516,19 @@ function startLightning() {
   const missed = shuffle(played.filter(it => missedTerms.has(it.term)));
   const clean  = shuffle(played.filter(it => !missedTerms.has(it.term)));
   const queue  = missed.concat(clean).slice(0, 10);
+  // Round length follows the reading load (it was a flat 30 s, whatever the
+  // definitions): half the shared reading time for each question's definition
+  // plus four term options — half, because every definition was already read
+  // on the board — never under 30 s. +50% and No clock apply as before.
+  let zapMs = LIGHTNING_MS;
+  if (Arcade.wordCount && Arcade.READ_WPM) {
+    const per = it => Arcade.wordCount([it.definition]) / Arcade.READ_WPM * 60000 + (Arcade.READ_DECIDE_MS || 2000)
+      + 4 * Arcade.wordCount([it.term]) / Arcade.READ_WPM * 60000;
+    zapMs = Math.max(LIGHTNING_MS, Math.ceil(queue.reduce((t, it) => t + per(it), 0) * 0.5 / 1000) * 1000);
+  }
+  if (pace === 'untimed') zapMs = Infinity;
+  else if (pace === 'extra') zapMs = Math.round(zapMs * 1.5);
+  const zapSay = isFinite(zapMs) ? (zapMs / 1000) + ' seconds' : 'no clock';
   lightningTotal = queue.length;
   lightningScore = 0; lightningHits = 0;
   let qIdx = 0, roundOver = false;
