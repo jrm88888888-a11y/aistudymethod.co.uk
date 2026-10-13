@@ -150,7 +150,7 @@
     return `
       <div class="ar-badge">⚡ Arcade · Quiz Gauntlet</div>
       <h1 class="ar-title">${esc(HEADING)}</h1>
-      <p class="ar-sub">${ROUNDS} round${ROUNDS === 1 ? '' : 's'}. ${esc(ROUND_SECS)} seconds each. Tap fast, keep the streak alive, learn from every miss.</p>
+      <p class="ar-sub">${ROUNDS} round${ROUNDS === 1 ? '' : 's'}. ${Arcade.readPace === 'untimed' ? 'No clock.' : 'At least ' + esc(Arcade.readPace === 'extra' ? Math.ceil(ROUND_SECS * 1.5) : ROUND_SECS) + ' seconds each.'} Tap fast, keep the streak alive, learn from every miss.</p>
     `;
   }
 
@@ -221,7 +221,11 @@
     let phase = 'answer';
     let autoNextT = null;
 
-    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+    // X13: the reading-time setting applies (the topic's clock is the floor;
+    // long questions get more, +50% / no clock follow the player's choice).
+    const roundMs = Arcade.readMs([r.q, r.opts], ROUND_MS);
+    const roundT0 = performance.now();
+    timerCtl = Arcade.timer(document.getElementById('tfill'), roundMs, {
       onEnd: () => { if (phase === 'answer') settle(-1, true); },
     });
 
@@ -230,7 +234,7 @@
       phase = 'verdict';
       const remaining = timedOut ? 0 : timerCtl.remaining;
       timerCtl.stop();
-      state.times.push((ROUND_MS - remaining) / 1000);
+      state.times.push(timedOut && isFinite(roundMs) ? roundMs / 1000 : (performance.now() - roundT0) / 1000);
 
       const correct = !timedOut && chosenIdx === r.answerIdx;
 
@@ -254,7 +258,7 @@
         state.streak++;
         state.bestStreak = Math.max(state.bestStreak, state.streak);
         const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
-        const speed = Math.round(50 * (remaining / ROUND_MS));
+        const speed = isFinite(roundMs) ? Math.round(50 * (remaining / roundMs)) : 0;
         pts = Math.round((100 + speed) * mult);
         if (r.redemption) pts = Math.round(pts / 2);
         if (fireRound) { pts = pts * 3; state.fire--; }   // burn a fire round: ×3

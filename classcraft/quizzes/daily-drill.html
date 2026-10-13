@@ -42,6 +42,17 @@
   .dd-countdown b { font-size: 16px; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
   .dd-back { color: var(--ar-cyan); text-decoration: none; font-family: var(--ar-mono); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; display: inline-block; margin-top: 22px; }
   .dd-back:hover { text-decoration: underline; }
+
+  /* Start card (L3) — doubles as the ready gate; the clock starts on Start */
+  .dd-start { text-align: center; }
+  .dd-start p { color: var(--ar-text2); font-size: 15px; line-height: 1.5; margin: 6px auto 16px; max-width: 46ch; }
+  .dd-start .ar-btn.big { max-width: 420px; }
+  .dd-start .dd-lock { font-family: var(--ar-mono); font-size: 10.5px; letter-spacing: 0.6px; color: var(--ar-muted); margin-top: 10px; }
+  /* In-run bar (L3): one line instead of the header, streak strip and filters */
+  .dd-runbar { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; }
+  .dd-runbar h1 { font-family: var(--ar-font); font-size: 1.15rem; margin: 0; color: var(--ar-text); }
+  .dd-runbar span { font-family: var(--ar-mono); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--ar-muted); }
+  .dd-runbar .dd-run-streak { color: var(--ar-gold); }
 </style>
 <link rel="canonical" href="https://aistudymethod.com/classcraft/quizzes/daily-drill.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -240,7 +251,7 @@
 
   /* ── URL params + filters ── */
   const params = new URLSearchParams(location.search);
-  const subjectFilter = (params.get('subject') || '').toLowerCase().trim();
+  let subjectFilter = (params.get('subject') || '').toLowerCase().trim();
   const LEVELS = ['ks3', 'gcse', 'a-level', 'ibdp'];
   /* Level (Oct 2026): the Daily used to mix KS3, GCSE, A-Level and IB for
      everyone. Precedence: ?level= in the URL → the player's own choice on a
@@ -260,6 +271,29 @@
     }
   }
   if (levelFilter === 'all' || (levelFilter && LEVELS.indexOf(levelFilter) < 0)) levelFilter = '';
+
+  /* L6 — one shot really means one shot. An official run is saved after
+     every answer ('aism-daily-progress'), so reloading after a wrong answer
+     resumes at the next question with that answer still counted, instead of
+     starting today's five again. The record pins the run's exact questions
+     (stems) and its filters: a drill started at GCSE finishes at GCSE. */
+  const PROGRESS_KEY = 'aism-daily-progress';
+  function readProgress() {
+    let p = null;
+    try { p = JSON.parse(LS.get(PROGRESS_KEY) || 'null'); } catch (e) { p = null; }
+    if (!p || typeof p !== 'object' || p.date !== today || !Array.isArray(p.stems) || p.stems.length !== 5 ||
+        !Array.isArray(p.results) || p.results.length > 5) return null;
+    p.results = p.results.filter(r => r === '🟩' || r === '🟥');
+    p.score = p.results.filter(r => r === '🟩').length;
+    p.missed = Array.isArray(p.missed) ? p.missed.filter(m => m && typeof m.q === 'string') : [];
+    p.subject = typeof p.subject === 'string' ? p.subject : '';
+    p.level = typeof p.level === 'string' && (!p.level || LEVELS.indexOf(p.level) >= 0) ? p.level : '';
+    return p;
+  }
+  function writeProgress(p) { LS.set(PROGRESS_KEY, JSON.stringify(p)); }
+  function clearProgress() { try { localStorage.removeItem(PROGRESS_KEY); } catch (e) {} }
+  let progress = readProgress();
+  if (progress) { subjectFilter = progress.subject; levelFilter = progress.level; levelSource = 'progress'; }
 
   const LEVEL_LABELS = { 'ks3': 'KS3', 'gcse': 'GCSE', 'a-level': 'A-Level', 'ibdp': 'IBDP' };
   function levelLabel(l) { return LEVEL_LABELS[String(l || '').toLowerCase()] || String(l || '').toUpperCase(); }
@@ -389,6 +423,20 @@
       <p class="ar-sub">Five questions, at least 15 seconds each — longer questions get more time. ${scopeLine} One shot — then it locks until tomorrow.</p>
       <div class="dd-date">${esc(prettyDate())}</div>
       <div class="ar-meta">${esc(filterDesc())}${metaExtra || ''}</div>
+    `;
+  }
+  // During a run: one line (title · filters · question · streak). The rules,
+  // streak strip and filter chips stay on the start card — a chip tapped
+  // mid-run used to navigate away and abandon the drill.
+  function runHeaderHtml(qLine) {
+    const st = currentStreak();
+    return `
+      <div class="dd-runbar">
+        <h1>Daily Drill #${drillNo}</h1>
+        <span>${esc(filterDesc())}</span>
+        <span>${esc(qLine)}</span>
+        ${practice ? '<span>practice · not recorded</span>' : (st ? `<span class="dd-run-streak">🔥 ${st}</span>` : '')}
+      </div>
     `;
   }
   function weekGridHtml(includeTodayPending) {
@@ -856,43 +904,83 @@
     return best ? `${best.term} — ${best.def}` : '';
   }
 
+  // One stem → today's question from it (null if the spec is missing or has
+  // no usable MCQ). The MCQ index is seeded per (date, filters, stem), so it
+  // doesn't depend on fetch order.
+  async function questionFromStem(stem, seed) {
+    const spec = await Arcade.fetchSpecJson(stem, '../adventures/_specs');
+    if (!spec) return null;
+    const mcqs = validMcqs(spec);
+    if (!mcqs.length) return null;
+    const qRng = mulberry32(xmur3(seed + '|' + stem)());
+    const m = mcqs[Math.floor(qRng() * mcqs.length)];
+    const rats = Array.isArray(m.rationales) ? m.rationales : [];
+    const opts = m.options.map((o, i) => Array.isArray(o)
+      ? { text: String(o[0]), correct: !!o[1], rationale: rats[i] || '' }
+      : { text: String(o.text), correct: !!o.correct, rationale: rats[i] || '' });
+    const correctOpt = opts.find(o => o.correct);
+    const options = Arcade.shuffle(opts); // option order is per-session only
+    return {
+      stem,
+      q: String(m.q),
+      options,
+      subject: subjectLabel(spec.subject || ''),
+      level: levelLabel(spec.level || ''),
+      topic: String(spec.topic_display || spec.title || ''),
+      // Authored explanation (science MCQs) wins; concept-def lookup is the fallback.
+      explain: m.explain || explanationFor(spec, correctOpt ? correctOpt.text : '', String(m.q)),
+      rationales: rats.length ? options.map(o => o.rationale) : null,
+      working: m.working || '',
+      figure: m.figure || null,
+      specStatement: m.specStatement || '',
+      specStatementText: m.specStatementText || '',
+    };
+  }
+  function fallbackQuestion(f) {
+    return {
+      stem: 'fb:' + f.stem,
+      q: f.q,
+      options: Arcade.shuffle(f.options.map(o => ({ text: o[0], correct: !!o[1] }))),
+      subject: subjectLabel(f.subject),
+      level: levelLabel(f.level),
+      topic: f.topic,
+      explain: f.explain || '',
+    };
+  }
+
+  /* L6 resume: rebuild exactly the five questions the run started with.
+     Returns null if any of them can't be fetched — the caller asks for a
+     retry rather than quietly swapping questions mid-drill. */
+  async function questionsForStems(stems, seed) {
+    const got = await Promise.all(stems.map(s => {
+      if (String(s).indexOf('fb:') === 0) {
+        const f = FALLBACK_QUESTIONS.find(x => x.stem === String(s).slice(3));
+        return Promise.resolve(f ? fallbackQuestion(f) : null);
+      }
+      return questionFromStem(String(s), seed);
+    }));
+    return got.every(Boolean) ? got : null;
+  }
+
+  /* L4: stems are fetched in parallel waves (they used to load one after
+     another — 3–4 s even on broadband). Each wave's results are taken in
+     seeded order, so the five chosen are exactly the first five usable stems
+     of the seeded shuffle, as before: same set for everyone. */
   async function assembleQuestions() {
     const rng = mulberry32(xmur3(seedStr)());
     const shuffled = seededShuffle(pool, rng);
     const qs = [];
     const usedStems = new Set();
-    const MAX_ATTEMPTS = 30;
-    for (let i = 0; i < shuffled.length && i < MAX_ATTEMPTS && qs.length < 5; i++) {
-      const stem = shuffled[i];
-      const spec = await Arcade.fetchSpecJson(stem, '../adventures/_specs');
-      if (!spec) continue; // failed to load — skip to the 6th, 7th, … stem
-      const mcqs = validMcqs(spec);
-      if (!mcqs.length) continue; // deterministic skip — same for every student
-      // Deterministic per-(date, stem) MCQ index, independent of fetch order
-      const qRng = mulberry32(xmur3(seedStr + '|' + stem)());
-      const mcqIndex = Math.floor(qRng() * mcqs.length);
-      const m = mcqs[mcqIndex];
-      const rats = Array.isArray(m.rationales) ? m.rationales : [];
-      const opts = m.options.map((o, i) => Array.isArray(o)
-        ? { text: String(o[0]), correct: !!o[1], rationale: rats[i] || '' }
-        : { text: String(o.text), correct: !!o.correct, rationale: rats[i] || '' });
-      const correctOpt = opts.find(o => o.correct);
-      usedStems.add(stem);
-      const options = Arcade.shuffle(opts); // option order is per-session only
-      qs.push({
-        q: String(m.q),
-        options,
-        subject: subjectLabel(spec.subject || ''),
-        level: levelLabel(spec.level || ''),
-        topic: String(spec.topic_display || spec.title || ''),
-        // Authored explanation (science MCQs) wins; concept-def lookup is the fallback.
-        explain: m.explain || explanationFor(spec, correctOpt ? correctOpt.text : '', String(m.q)),
-        rationales: rats.length ? options.map(o => o.rationale) : null,
-        working: m.working || '',
-        figure: m.figure || null,
-        specStatement: m.specStatement || '',
-        specStatementText: m.specStatementText || '',
-      });
+    const MAX_ATTEMPTS = 30, WAVE = 6;
+    const cap = Math.min(shuffled.length, MAX_ATTEMPTS);
+    for (let i = 0; i < cap && qs.length < 5; i += WAVE) {
+      const wave = shuffled.slice(i, Math.min(i + WAVE, cap));
+      const got = await Promise.all(wave.map(stem => questionFromStem(stem, seedStr).catch(() => null)));
+      for (const q of got) {
+        if (!q || qs.length >= 5) continue; // missing spec / no MCQ: skip, same for every student
+        usedStems.add(q.stem);
+        qs.push(q);
+      }
     }
     // NEVER-ERROR top-up: if the network (or the content pool) let us down and
     // fewer than five questions assembled, pad deterministically from the
@@ -910,14 +998,7 @@
         if (qs.length >= 5) break;
         if (usedStems.has(f.stem)) continue;
         usedStems.add(f.stem);
-        qs.push({
-          q: f.q,
-          options: Arcade.shuffle(f.options.map(o => ({ text: o[0], correct: !!o[1] }))),
-          subject: subjectLabel(f.subject),
-          level: levelLabel(f.level),
-          topic: f.topic,
-          explain: f.explain || '',
-        });
+        qs.push(fallbackQuestion(f));
       }
     }
     return qs;
@@ -925,6 +1006,7 @@
 
   /* ── No pool / can't-assemble fallback ── */
   function renderNoDrill(msg) {
+    Arcade.playMode(false);
     root.innerHTML = `
       ${headerHtml('')}
       ${streakStripHtml(currentStreak(), true)}
@@ -943,6 +1025,9 @@
   let missedQs = [];       // {q, a, why, figure} wrong or timed-out (end-card list)
   let practice = false;
   let qTimer = null;
+  function missEntry(q, correctIdx) {
+    return { q: q.q, a: q.options[correctIdx].text, why: q.explain || '', figure: q.figure || null };
+  }
 
   function insightText(score, streak) {
     const accLine =
@@ -966,10 +1051,9 @@
     const qMs = Arcade.readMs([q.q, q.options.map(o => o.text)], 15000);
     const clockLine = isFinite(qMs) ? (qMs / 1000) + 's on the clock' : 'no clock';
     const context = `Q${state.idx + 1} · ${q.subject} ${q.level}` + (q.topic ? ` · ${q.topic}` : '');
+    Arcade.playMode(true);
     root.innerHTML = `
-      ${headerHtml(practice ? ' · Practice replay — not recorded' : ` · Question ${state.idx + 1} of 5`)}
-      ${streakStripHtml(currentStreak(), !practice)}
-      ${filtersHtml()}
+      ${runHeaderHtml(`Question ${state.idx + 1} of 5`)}
       <div class="ar-dots" aria-hidden="true">${questions.map((_, i) =>
         `<span class="${i < results.length ? (results[i] === '🟩' ? 'done' : 'fail') : i === state.idx ? 'now' : ''}"></span>`).join('')}</div>
       <div class="ar-card">
@@ -983,7 +1067,6 @@
         <div class="ar-kbd-hint">1–${q.options.length} to answer · Enter for next · ${clockLine}</div>
       </div>
     `;
-    wireFilters();
     announce(`Question ${state.idx + 1} of 5. ${q.subject} ${q.level}${q.topic ? ', ' + q.topic : ''}. ${q.q}. ${isFinite(qMs) ? (qMs / 1000) + ' seconds.' : 'No clock.'}`);
 
     let done = false;
@@ -1000,6 +1083,13 @@
       const tiles = root.querySelectorAll('.dd-options .ar-tile');
       tiles.forEach(b => { b.disabled = true; });
       if (chosenIdx != null) tiles[chosenIdx].classList.add('selected');
+      // L6: the answer is banked the moment it's given — before the reveal —
+      // so a reload can't take it back.
+      if (!practice && progress) {
+        progress.results = results.concat(correct ? '🟩' : '🟥');
+        if (!correct) progress.missed = missedQs.concat(missEntry(q, correctIdx));
+        writeProgress(progress);
+      }
 
       // Dramatic beat before the verdict lands.
       setTimeout(() => {
@@ -1009,7 +1099,7 @@
           else b.classList.add('dim');
         });
         results.push(correct ? '🟩' : '🟥');
-        if (!correct) missedQs.push({ q: q.q, a: q.options[correctIdx].text, why: q.explain || '', figure: q.figure || null });
+        if (!correct) missedQs.push(missEntry(q, correctIdx));
         const dots = root.querySelectorAll('.ar-dots span');
         if (dots[state.idx]) { dots[state.idx].classList.remove('now'); dots[state.idx].classList.add(correct ? 'done' : 'fail'); }
 
@@ -1087,6 +1177,7 @@
 
   function completeDrill() {
     if (qTimer) qTimer.stop();
+    Arcade.playMode(false);
     const grid = results.join('');
 
     if (practice) {
@@ -1154,6 +1245,7 @@
       h[subToday] = state.score;
       saveHistory(h);
     }
+    clearProgress(); progress = null;
     const extended = newStreak > 1;
     const insight = insightText(state.score, newStreak);
     // L5: the week's Daily total (Monday–Sunday, UTC — the leaderboard's week)
@@ -1209,8 +1301,8 @@
     if (e.key === 'Enter') {
       if (inField) return;
       if (e.target && e.target.tagName === 'BUTTON') return; // native activation
-      const next = document.getElementById('next-btn');
-      if (next) { e.preventDefault(); next.click(); }
+      const next = document.getElementById('next-btn') || document.getElementById('dd-go');
+      if (next && !next.disabled) { e.preventDefault(); next.click(); }
       return;
     }
     if (inField) return;
@@ -1225,6 +1317,7 @@
   /* ── Already played today? Locked until the next drill ── */
   const storedStreak = loadStreak();
   if (storedStreak.lastResult && storedStreak.lastResult.date === today) {
+    clearProgress(); progress = null;
     const lr = storedStreak.lastResult;
     const streak = currentStreak();
     root.innerHTML = `
@@ -1291,14 +1384,60 @@
     return;
   }
 
-  root.innerHTML = headerHtml('') + '<div class="dd-loading">Assembling today’s five questions…</div>';
-  questions = await assembleQuestions();
+  /* L3: a start card first. It carries the rules, the streak and the filters
+     (the only place they can be changed), and its Start button is the ready
+     gate — no clock runs until the player says go. Questions assemble behind
+     it. A run already under way (L6) gets a Continue card instead, with the
+     filters locked to the ones it started with. */
+  const resuming = !!progress;
+  const answeredN = resuming ? progress.results.length : 0;
+  root.innerHTML = `
+    ${headerHtml(resuming ? ` · Question ${Math.min(answeredN + 1, 5)} of 5` : '')}
+    ${streakStripHtml(currentStreak(), true)}
+    ${resuming ? '' : filtersHtml()}
+    <div class="ar-card dd-start">
+      <div class="ar-label">${resuming ? 'Drill in progress' : 'Today’s five · ' + esc(filterDesc())}</div>
+      <p>${resuming
+        ? `You’ve answered ${answeredN} of 5 (${progress.score} right). Those answers are banked — carry on from question ${Math.min(answeredN + 1, 5)}.`
+        : 'Five questions from five different topics. Each has its own clock — longer questions get more time. One shot: your score locks until tomorrow.'}</p>
+      <button class="ar-btn big" id="dd-go" type="button" disabled>Assembling today’s five…</button>
+      ${resuming ? `<div class="dd-lock">${esc(filterDesc())} — level and subject stay as they were until you finish.</div>` : ''}
+      <div class="ar-kbd-hint">Enter to start · the clock starts when you do</div>
+    </div>
+  `;
+  if (!resuming) wireFilters();
+  announce(resuming ? `Drill in progress: ${answeredN} of 5 answered. Press Continue.` : 'Today’s Daily Drill. Five questions. Press Start when ready.');
+
+  const goBtn = document.getElementById('dd-go');
+  questions = resuming ? await questionsForStems(progress.stems, progress.seed || seedStr) : await assembleQuestions();
+  if (resuming && !questions) {
+    goBtn.textContent = '↻ Couldn’t reload your questions — tap to retry';
+    goBtn.disabled = false;
+    goBtn.addEventListener('click', () => location.reload());
+    return;
+  }
   if (questions.length < 5) {
     renderNoDrill(`No daily drill is available for <strong>${esc(filterDesc())}</strong> today — we couldn’t assemble five questions. Try a different subject or level, or come back tomorrow.`);
     return;
   }
-
-  renderQuestion();
+  goBtn.disabled = false;
+  goBtn.textContent = resuming ? '▶ Continue — question ' + Math.min(answeredN + 1, 5) : '▶ Start today’s drill';
+  try { goBtn.focus({ preventScroll: true }); } catch (e) {}
+  goBtn.addEventListener('click', () => {
+    Arcade.sfx.click();
+    if (resuming) {
+      results = progress.results.slice();
+      missedQs = progress.missed.slice();
+      state.idx = results.length;
+      state.score = progress.score;
+      if (state.idx >= 5) { completeDrill(); return; }
+    } else {
+      progress = { date: today, seed: seedStr, subject: subjectFilter, level: levelFilter,
+                   stems: questions.map(q => q.stem), results: [], missed: [] };
+      writeProgress(progress);
+    }
+    renderQuestion();
+  }, { once: true });
 })();
 </script>
 <script src="../../script.js" defer></script>

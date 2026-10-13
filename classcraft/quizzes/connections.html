@@ -529,7 +529,8 @@
   const ROUNDS = 4;
   const PICK = 4;
   const ROUND_MS = 35000;
-  const BEST_KEY = 'aism-connections-best:' + location.pathname;
+  let roundMs = ROUND_MS;
+  const BEST_KEY = 'aism-connections-best:' + stem;   // X12: per topic (was per page path)
 
   // Build rounds: each takes 4 random in-topic concepts and 2 decoys from
   // the subject glossary, then shuffles all six positions. Decoys are drawn
@@ -571,7 +572,7 @@
     return `
       <div class="ar-badge">V · Verify · Connections Grid</div>
       <h1 class="ar-title">${esc(topic)}</h1>
-      <p class="ar-sub">Four of these belong to ${esc(topic)}. Two are decoys smuggled in from elsewhere in ${esc(subj || 'the subject')}. 35 seconds — pick the four, lock them in.</p>
+      <p class="ar-sub">Four of these belong to ${esc(topic)}. Two are decoys smuggled in from elsewhere in ${esc(subj || 'the subject')}. ${Arcade.readPace === 'untimed' ? 'No clock' : (Arcade.readPace === 'extra' ? '53 seconds' : '35 seconds')} — pick the four, lock them in.</p>
       <div class="ar-meta">${esc([level, subj].filter(Boolean).join(' · '))} · ${esc(metaTail)}</div>
     `;
   }
@@ -619,7 +620,9 @@
     const picked = new Set();
     let phase = 'answer';
 
-    timerCtl = Arcade.timer(document.getElementById('tfill'), ROUND_MS, {
+    // X13: the reading-time setting applies (35 s floor; +50% / no clock).
+    roundMs = Arcade.readMs([round.cards.map(c => c.label)], ROUND_MS);
+    timerCtl = Arcade.timer(document.getElementById('tfill'), roundMs, {
       onEnd: () => {
         if (phase !== 'answer') return;
         Arcade.sfx.timeup();
@@ -717,7 +720,7 @@
         state.bestStreak = Math.max(state.bestStreak, state.streak);
         state.perfects++;
         const mult = Math.min(2, 1 + 0.25 * (state.streak - 1));
-        const speed = Math.round(50 * (remaining / ROUND_MS));
+        const speed = isFinite(roundMs) ? Math.round(50 * (remaining / roundMs)) : 0;
         pts = Math.round((hits * 25 + 100 + speed) * mult);
         Arcade.sfx.correct(state.streak);
         if (![3, 5, 7, 10].includes(state.streak)) Arcade.flashMsg('PERFECT GRID ✨', '#00ffa3');

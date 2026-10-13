@@ -469,6 +469,11 @@ function boardCleared() {
 
 /* ── Lightning recall: 30s, definition shown, tap the term (+50 a hit) ── */
 function startLightning() {
+  // X13: the reading-time setting applies — +50% gives 45 s, no clock gives an untimed round.
+  const pace = Arcade.readPace;
+  Arcade.mountPaceButton && Arcade.mountPaceButton();
+  const zapMs = pace === 'untimed' ? Infinity : (pace === 'extra' ? LIGHTNING_MS * 1.5 : LIGHTNING_MS);
+  const zapSay = isFinite(zapMs) ? (zapMs / 1000) + ' seconds' : 'no clock';
   const played = boards.flat();
   if (VOCAB_DATA.length < 4 || !played.length) { endGame(); return; }
 
@@ -490,13 +495,13 @@ function startLightning() {
     </div>
     <div class="ar-timer" aria-hidden="true"><i id="zapfill"></i></div>
     <div class="ar-card">
-      <div class="ar-label">⚡ Lightning recall · 30 seconds · read the definition, tap the term · +${LIGHTNING_PTS} a hit</div>
+      <div class="ar-label">⚡ Lightning recall · ${zapSay} · read the definition, tap the term · +${LIGHTNING_PTS} a hit</div>
       <div id="zap-q"></div>
     </div>
   `;
-  announce.textContent = `Lightning recall round: 30 seconds. Read the definition and tap the matching term. ${LIGHTNING_PTS} points per hit.`;
+  announce.textContent = `Lightning recall round: ${zapSay}. Read the definition and tap the matching term. ${LIGHTNING_PTS} points per hit.`;
 
-  lightningCtl = Arcade.timer(document.getElementById('zapfill'), LIGHTNING_MS, {
+  lightningCtl = Arcade.timer(document.getElementById('zapfill'), zapMs, {
     onEnd: () => finishLightning(true),
   });
 
