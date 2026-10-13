@@ -66,6 +66,20 @@
   .br-fang { position:absolute; top:0; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:11px solid #fff; }
   .br-fang.l { left:10px; } .br-fang.r { right:10px; }
   .br-boss-dead .br-pixboss { animation:br-die 1s forwards; }
+  /* Mini boss (Oct 2026): in stages 1–2 the boss lurks under the HUD and
+     visibly feeds on misses (its HP = 3 + misses), so the run's core rule —
+     your slips become its attacks — is on screen from the first question. */
+  .br-mini { display:flex; align-items:center; gap:12px; margin:-4px 0 12px; padding:6px 12px; border:1px solid rgba(123,47,247,0.45); border-radius:12px; background:rgba(123,47,247,0.08); }
+  .br-mini-boss { width:48px; height:46px; flex:none; position:relative; }
+  .br-mini-boss .br-pixboss { position:absolute; left:0; top:6px; transform:scale(0.4); transform-origin:top left; }
+  .br-mini-boss .br-pixboss.hit, .br-mini-boss .br-pixboss.attack { animation:none; }
+  .br-mini-boss.hit { animation:br-hit .32s; }
+  .br-mini-boss.attack { animation:br-mini-grow .5s; }
+  @keyframes br-mini-grow { 0%{transform:scale(1)} 35%{transform:scale(1.25)} 100%{transform:scale(1)} }
+  .br-mini-txt { display:flex; flex-direction:column; gap:1px; font-family:var(--ar-mono); font-size:10.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ar-muted); }
+  .br-mini-txt b { color:#c9b3ff; font-size:12px; letter-spacing:1.6px; }
+  .br-mini-txt b span { color:#ff6a9d; }
+  @media (prefers-reduced-motion: reduce) { .br-mini-boss.hit, .br-mini-boss.attack { animation:none; } }
   @keyframes br-die { 0%{opacity:1;transform:rotate(0) scale(1)} 100%{opacity:0;transform:rotate(18deg) scale(0.6) translateY(30px)} }
 
   /* ---- CRITICAL HIT — the 4-second crit window (boss stage only) ---- */
@@ -479,7 +493,7 @@
   function renderStage1() {
     clearTimers();
     const round = S.s1[S.idx];
-    root.innerHTML = header('Match the term to its definition. One life lost per wrong call.') + hud('Stage 1 · ' + (S.idx + 1) + '/' + S.s1.length) + `
+    root.innerHTML = header('Match the term to its definition. One life lost per wrong call.') + hud('Stage 1 · ' + (S.idx + 1) + '/' + S.s1.length) + miniBossHtml() + `
       <div class="ar-card">
         <div class="ar-label">Recognition · round ${S.idx + 1} of ${S.s1.length}</div>
         <div class="ar-prompt">What is “${esc(round.term)}”?</div>
@@ -525,12 +539,13 @@
         Arcade.sfx.wrong();
         Arcade.flashMsg('MISS · –1 LIFE', '#ff2e88');
         fb.className = 'ar-feedback no';
-        fb.innerHTML = `<strong>Wrong — that costs a life.</strong> “${esc(round.term)}” means: <em>${esc(round.def)}</em>. It joins the boss attack deck.` + stmtFor(round.term);
+        fb.innerHTML = `<strong>Wrong — that costs a life.</strong> “${esc(round.term)}” means: <em>${esc(String(round.def).replace(/[.\s]+$/, ''))}</em>. It joins the boss attack deck.` + stmtFor(round.term);
         announce.textContent = 'Wrong. Life lost. ' + round.term + ' means ' + round.def;
       }
       document.getElementById('hudScore').textContent = S.score;
       const heartsEl = document.getElementById('hearts');
       if (heartsEl) heartsEl.outerHTML = heartsHtml();
+      miniBossReact(correct);
 
       if (S.lives <= 0) { finishNext('defeat'); return; }
       finishNext(S.idx + 1 >= S.s1.length ? 'stage2' : 'next');
@@ -564,10 +579,12 @@
       roundLabel: 'Recall · round ' + (S.idx + 1) + ' of ' + S.s2.length,
       sub: 'Read the definition. Type the term it defines.',
       timed: false,
+      mini: true,
       onDone: (correct) => {
         S.tested.add(S.s2[S.idx].term);
         if (correct) { S.s2correct++; S.score += 200; S.grid.push('🟩'); }
         else { addMiss(S.s2[S.idx]); loseLife(); S.grid.push('🟥'); }
+        miniBossReact(correct);
         document.getElementById('hudScore').textContent = S.score;
         const heartsEl = document.getElementById('hearts');
         if (heartsEl) heartsEl.outerHTML = heartsHtml();
@@ -654,6 +671,23 @@
     });
   }
 
+  /* --------------------------------------------- mini boss (stages 1–2) */
+  function miniBossHtml() {
+    return `<div class="br-mini" aria-hidden="true">
+        <div class="br-mini-boss" id="brMini"><div class="br-pixboss"><div class="br-horn l"></div><div class="br-horn r"></div>
+          <div class="br-body"><div class="br-eye l"></div><div class="br-eye r"></div><div class="br-mouth"><span class="br-fang l"></span><span class="br-fang r"></span></div></div></div></div>
+        <div class="br-mini-txt"><b>Boss HP <span id="brMiniHp">${3 + S.missed.length}</span></b><span>Every miss arms it</span></div>
+      </div>`;
+  }
+  function miniBossReact(correct) {
+    const m = document.getElementById('brMini');
+    const hp = document.getElementById('brMiniHp');
+    if (hp) hp.textContent = 3 + S.missed.length;
+    if (!m) return;
+    m.classList.remove('hit', 'attack'); void m.offsetWidth;
+    m.classList.add(correct ? 'hit' : 'attack');
+  }
+
   /* ------------------------------------- shared type-the-term round renderer */
   function typeRound(cfg) {
     clearTimers();
@@ -662,7 +696,7 @@
     const critRow = cfg.bossFrame
       ? '<div class="br-critrow" id="critrow" aria-hidden="true"><span class="br-critring" id="critring"></span><span class="br-critlabel" id="critlbl">Crit window · ×2 dmg</span></div>'
       : '';
-    root.innerHTML = header(cfg.sub) + hud(cfg.stageLabel) + `
+    root.innerHTML = header(cfg.sub) + hud(cfg.stageLabel) + (cfg.mini ? miniBossHtml() : '') + `
       <div class="ar-card ${cfg.bossFrame ? 'br-boss-stage' : ''}">
         ${bossFrame}
         <div class="ar-label">${esc(cfg.roundLabel)}</div>
