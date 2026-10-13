@@ -149,7 +149,7 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1945","text":"Yalta Conference — All
     return;
   }
   document.getElementById('gameMeta').textContent =
-    ROUND + ' events · soft ' + PLACE_SECS + 's clock · streak multiplier · speed bonus';
+    ROUND + ' events · ' + (Arcade.readPace === 'untimed' ? 'no clock' : 'soft ' + (Arcade.readPace === 'extra' ? Math.ceil(PLACE_SECS * 1.5) + 's+' : PLACE_SECS + 's+') + ' clock') + ' · streak multiplier · speed bonus';
 
   let st = null;
 
@@ -269,7 +269,10 @@ const GAME_DATA = {"ALL_EVENTS":[{"year":"1945","text":"Yalta Conference — All
     game.querySelectorAll('.tl-gap').forEach(b =>
       b.addEventListener('click', () => { Arcade.sfx.click(); choose(+b.dataset.gap); }));
 
-    st.timer = Arcade.timer(document.getElementById('tfill'), PLACE_SECS * 1000, {
+    // Reading-time setting applies (Oct 2026): the topic's clock is the floor,
+    // longer events get more, +50% / no clock follow the player's choice.
+    const placeMs = Arcade.readMs([ev.text, st.placed.map(x => (x && x.text) || '')], PLACE_SECS * 1000);
+    st.timer = Arcade.timer(document.getElementById('tfill'), placeMs, {
       onEnd() {
         if (st.phase !== 'placing') return;
         Arcade.sfx.timeup();

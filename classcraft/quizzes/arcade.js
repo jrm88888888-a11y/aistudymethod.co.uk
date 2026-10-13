@@ -726,6 +726,17 @@
     (concepts || []).forEach(c => { if (c && c.def && !owner.has(c.def)) owner.set(c.def, c.term); });
     return t => owner.has(t) ? m(t, owner.get(t)) : t;
   };
+  /* Subject display names (Oct 2026). Game pages used to title-case the
+     slug, giving "Pe" and "Art Design"; these match the lobby's names. */
+  const SUBJECT_NAMES = {
+    'pe': 'PE', 'art-design': 'Art & Design',
+    'food-technology': 'Food Preparation & Nutrition', 'anthropology': 'Social & Cultural Anthropology',
+  };
+  Arcade.subjectName = function (slug) {
+    const s = String(slug || '').trim().toLowerCase();
+    return SUBJECT_NAMES[s] || s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  };
+
   Arcade.maskTerm = function (text, term) { return Arcade.makeMasker([{ term, def: text }])(text, term); };
 
   /* X9 (Oct 2026): misconceptions that can stand in as a WRONG DEFINITION.
