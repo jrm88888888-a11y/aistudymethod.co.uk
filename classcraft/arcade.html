@@ -330,6 +330,9 @@ body::after{
 }
 .revenge-card:hover{transform:translateY(-2px);border-color:var(--red)}
 .revenge-card .rg{font-family:var(--px);font-size:9px;color:var(--red)}
+.revenge-card.avenged{border-color:rgba(57,255,20,.5);cursor:default}
+.revenge-card.avenged .rg{color:var(--green);text-shadow:0 0 6px rgba(57,255,20,.5)}
+.revenge-clear{font-family:var(--vt);font-size:16px;color:var(--dim);letter-spacing:1px;margin-top:6px}
 
 /* footer + fx */
 .footer-note{text-align:center;font-family:var(--vt);font-size:18px;color:#55557f;margin-top:40px;letter-spacing:2px}
@@ -983,30 +986,13 @@ function renderNow() {
   _justPicked = null;   /* pickPop plays once, on the render right after a pick */
 }
 
-/* Selection summary chip — appears once at least one wizard choice is made
-   ("Biology · GCSE · AQA"). Every part is a jump-back button that scrolls
-   to its step so the player can change it without resetting the run. */
+/* Selection summary chip (#wiz-summary). L12 (Oct 2026): retired. The
+   choice already shows in each collapsed step (with CHANGE ▸) and in the
+   strip above the cabinets (with RESET); this third copy cost a phone
+   ~80 px above the steps. Kept as a function so existing callers still work. */
 function renderSummary() {
   const holder = $('wiz-summary');
-  if (!holder) return;
-  const parts = [];
-  const sN = node(state.subject), lN = nodeL(), bN = nodeB(), tN = nodeT();
-  if (sN) parts.push({ d: sN.d, target: 'lbl-subject' });
-  if (lN) parts.push({ d: lN.d, target: 'lbl-level' });
-  if (bN) parts.push({ d: bN.d, target: 'lbl-board' });
-  if (tN) parts.push({ d: tN.d, target: 'lbl-topic' });
-  holder.hidden = !parts.length;
-  if (!parts.length) { holder.innerHTML = ''; return; }
-  holder.innerHTML = '<div class="wiz-summary">🎯 '
-    + parts.map(p => '<button type="button" class="wiz-part" data-target="' + p.target + '">' + E(p.d) + '</button>')
-        .join('<span class="wiz-dot" aria-hidden="true">·</span>')
-    + '<span class="wiz-hint">tap any part to change it</span></div>';
-  const LBL_STEP = { 'lbl-subject': 'subject', 'lbl-level': 'level', 'lbl-board': 'board', 'lbl-topic': 'topic' };
-  holder.querySelectorAll('.wiz-part').forEach(btn =>
-    btn.addEventListener('click', () => {
-      Arcade.sfx.click();
-      expandStep(LBL_STEP[btn.dataset.target] || 'subject');
-    }));
+  if (holder) { holder.hidden = true; holder.innerHTML = ''; }
 }
 
 function syncStrip() {
@@ -1521,30 +1507,11 @@ const _restored = (function restore() {
       }
     } catch (e) { /* no breadcrumb, no chip */ }
 
-    // 🎯 TODAY — one deterministic topic per day, same for every player.
-    try {
-      const _day = Arcade.dayNumber ? Arcade.dayNumber() : 0;
-      const _row = BOOT.daily && BOOT.daily[String(_day)];
-      /* Precomputed at build time — seededShuffle(flat, dayNumber()) is
-         deterministic, so every player already gets the same pick. If the
-         table has run out, fall back to computing it live from flat.json. */
-      if (!_row) { getFlat().then(() => {}); }
-      if (_row) {
-        const pick = {
-          subject: _row[0], level: _row[1], board: _row[2], topic: _row[3],
-          topicLabel: _row[4],
-          subjectLabel: (IDX.subjects.find(x => x.id === _row[0]) || {}).d || _row[0],
-        };
-        const p = new URLSearchParams();
-        p.set('subject', pick.subject);
-        p.set('level', pick.level);
-        p.set('board', pick.board);
-        p.set('topic', pick.topic);
-        chips.push('<a class="mission-chip daily" href="' + E(location.pathname + '?' + p.toString()) + '">'
-          + pxIcon(pick.subject, 16, '🎯') + ' TODAY: '
-          + E(pick.subjectLabel) + ' — ' + E(pick.topicLabel) + '</a>');
-      }
-    } catch (e) { /* no index, no chip */ }
+    /* L10 (Oct 2026): the 🎯 TODAY chip is gone. It picked one topic from
+       the whole catalogue (so a GCSE newcomer could be sent to IB Art HL
+       coursework) and it sat next to THE DAILY, a different "today" thing.
+       The Daily is the daily habit; Quick Play already follows the player's
+       own subject and level. (boot.js still carries the table, unused.) */
 
     if (chips.length) {
       holder.innerHTML = '<div class="mission-chip-row">' + chips.join('') + '</div>';
@@ -1554,9 +1521,14 @@ const _restored = (function restore() {
 })();
 
 /* ───────────────────────── revenge rail: beat your shakiest runs ─────────
-   Reads the rolling result log written by Arcade.renderEndCard. Needs at
-   least 3 logged runs; shows the 3 lowest-scoring distinct games from the
-   most recent 50. Renders nothing on any error. */
+   Reads the rolling result log written by Arcade.renderEndCard (needs at
+   least 3 logged runs; looks at the most recent 50).
+   L11 (Oct 2026): it used to keep each game's LOWEST score ever, so a card
+   never cleared, and shared pages (word-web.html?spec=…) were lumped
+   together across topics. Now one entry per game + topic, judged on the
+   LATEST run: below 60% (Rank C/D) it stays on the rail; at 60%+ it drops
+   off, and the first time that happens the rail celebrates it once
+   ("✓ AVENGED C→A"). Each card names the game and the topic. */
 (function revengeRail() {
   try {
     const holder = $('revenge-rail');
@@ -1565,23 +1537,44 @@ const _restored = (function restore() {
     if (!Array.isArray(hist) || hist.length < 3) return;
     const recent = hist.slice(-50).filter(r =>
       r && typeof r.path === 'string' && r.path && isFinite(Number(r.pct)));
-    // shakiest run per distinct path, then the 3 lowest overall
-    const byPath = {};
+    const keyOf = r => {
+      let spec = '';
+      try { spec = new URL(r.href || r.path, location.origin).searchParams.get('spec') || ''; } catch (e) {}
+      return r.path + '|' + (spec || r.topic || '');
+    };
+    const byKey = {};                     // key → { latest, worstBefore }
     recent.forEach(r => {
-      const cur = byPath[r.path];
-      if (!cur || Number(r.pct) < Number(cur.pct)) byPath[r.path] = r;
+      const k = keyOf(r), cur = byKey[k];
+      if (!cur) { byKey[k] = { latest: r, low: r }; return; }
+      if (Number(r.pct) < Number(cur.low.pct)) cur.low = r;
+      cur.latest = r;                     // log is oldest → newest
     });
-    const worst = Object.keys(byPath).map(k => byPath[k])
-      .sort((a, b) => Number(a.pct) - Number(b.pct)).slice(0, 3);
-    if (!worst.length) return;
-    const cards = worst.map(r => {
-      const grade = Arcade.grade(Number(r.pct));
-      const label = String(r.topic || r.game || r.path);
-      const href = (typeof r.href === 'string' && r.href) ? r.href : r.path;
-      return '<a class="revenge-card" href="' + E(href) + '"><span class="rg">' + E(grade.letter) + '</span>' + E(label) + '</a>';
+    const CLEAR = 60;
+    const open = Object.keys(byKey).map(k => byKey[k]).filter(x => Number(x.latest.pct) < CLEAR)
+      .sort((a, b) => Number(a.latest.pct) - Number(b.latest.pct)).slice(0, 3);
+    let seenAv = {};
+    try { seenAv = JSON.parse(localStorage.getItem('aism-avenged-seen') || '{}') || {}; } catch (e) { seenAv = {}; }
+    const avenged = Object.keys(byKey).filter(k => {
+      const x = byKey[k];
+      return Number(x.latest.pct) >= CLEAR && Number(x.low.pct) < CLEAR && x.low !== x.latest && !seenAv[k + '|' + x.latest.ts];
+    }).slice(0, 2);
+    if (!open.length && !avenged.length) return;
+    const label = r => [r.game, r.topic].filter(Boolean).map(String).join(' · ') || String(r.path);
+    const hrefOf = r => (typeof r.href === 'string' && r.href) ? r.href : r.path;
+    const cards = open.map(x => {
+      const grade = Arcade.grade(Number(x.latest.pct));
+      return '<a class="revenge-card" href="' + E(hrefOf(x.latest)) + '"><span class="rg">' + E(grade.letter) + '</span>' + E(label(x.latest)) + '</a>';
     }).join('');
+    const wins = avenged.map(k => {
+      const x = byKey[k];
+      seenAv[k + '|' + x.latest.ts] = 1;
+      return '<span class="revenge-card avenged"><span class="rg">✓ AVENGED ' + E(Arcade.grade(Number(x.low.pct)).letter) + '→' + E(Arcade.grade(Number(x.latest.pct)).letter) + '</span>' + E(label(x.latest)) + '</span>';
+    }).join('');
+    try { localStorage.setItem('aism-avenged-seen', JSON.stringify(seenAv)); } catch (e) {}
     holder.innerHTML = '<div class="revenge-inner"><div class="revenge-head">😤 REVENGE — BEAT YOUR SHAKIEST RUNS</div>'
-      + '<div class="revenge-row">' + cards + '</div></div>';
+      + '<div class="revenge-row">' + wins + cards + '</div>'
+      + (open.length ? '' : '<div class="revenge-clear">Nothing left to avenge — every recent run is Rank B or better.</div>')
+      + '</div>';
     holder.hidden = false;
   } catch (e) { /* no data, no rail */ }
 })();
