@@ -293,11 +293,12 @@
     .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
   let _showOpt = null;   // X8: a definition option never names its own term
   const showOpt = o => (_showOpt || (_showOpt = Arcade.defOptionMasker(concepts)))(o);
-  // Distractor pool from the misconception bank — DEFINITION-shaped strings only.
-  const isDefShaped = s => typeof s === 'string' && s.trim().length >= 20 && /\s/.test(s) && !/^[\d\s.,%-]+$/.test(s);
-  const bankMisc = reel ? [] : (((bank && bank.items) || [])
-    .flatMap(it => [it && it.misconception, it && it.random_wrong])
-    .filter(isDefShaped));
+  // X9 (Oct 2026): distractors are other concepts' definitions, plus — only
+  // when the bank has one — a researched wrong answer to "what is THIS
+  // term?". Other bank answers ("Its cell wall is…", "78 °C, because…") are
+  // not definitions and used to be eliminated on sight.
+  const termMisc = (reel || !Arcade.termMisconceptions) ? new Map()
+    : Arcade.termMisconceptions((bank && bank.items) || [], concepts);
 
   // Quality gate — need at least 4 authored definitions to build a 4-way
   // question. Skipped in reel mode: the curated pack is pre-vetted.
@@ -1074,14 +1075,8 @@
     const correct = concept.def;
     const pool = [];
     const seen = new Set([correct]);
-    for (const c of Arcade.shuffle(concepts)) {
-      if (pool.length >= 2) break;
-      if (c.def !== correct && !seen.has(c.def)) { seen.add(c.def); pool.push(c.def); }
-    }
-    for (const m of Arcade.shuffle(bankMisc)) {
-      if (pool.length >= 3) break;
-      if (!seen.has(m)) { seen.add(m); pool.push(m); }
-    }
+    const own = termMisc.get(String(concept.term).toLowerCase()) || [];
+    if (own.length) { const m = own[Math.floor(Math.random() * own.length)].text; seen.add(m); pool.push(m); }
     for (const c of Arcade.shuffle(concepts)) {
       if (pool.length >= 3) break;
       if (c.def !== correct && !seen.has(c.def)) { seen.add(c.def); pool.push(c.def); }

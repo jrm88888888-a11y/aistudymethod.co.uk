@@ -249,14 +249,20 @@
     .filter(c => c && c.term && c.def && !PLACEHOLDER_DEF_RE.test(c.def));
   let _showOpt = null;   // X8: a definition option never names its own term
   const showOpt = o => (_showOpt || (_showOpt = Arcade.defOptionMasker(concepts)))(o);
-  // Distractor pool from the misconception bank — but only DEFINITION-shaped
-  // strings. Banks contain junk like "22", "44", "Phenotype", "In the cell
-  // membrane"; a good distractor must read like a definition, so require a
-  // decent length, a space, and that it is not purely numeric.
-  const isDefShaped = s => typeof s === 'string' && s.trim().length >= 20 && /\s/.test(s) && !/^[\d\s.,%-]+$/.test(s);
-  const bankMisc = reel ? [] : (((bank && bank.items) || [])
-    .flatMap(it => [it && it.misconception, it && it.random_wrong])
-    .filter(isDefShaped));
+  // X9 (Oct 2026): distractors are other concepts' definitions, plus — only
+  // when the bank has one — a researched wrong answer to "what is THIS
+  // term?". Other bank answers are not definitions: the golden toy used to
+  // pull three of them, which made it the EASIEST question in the cabinet.
+  const termMisc = (reel || !Arcade.termMisconceptions) ? new Map()
+    : Arcade.termMisconceptions((bank && bank.items) || [], concepts);
+  // Word overlap between two definitions (content words of 4+ letters).
+  function defWords(s) { return new Set((String(s).toLowerCase().match(/[a-z]{4,}/g) || [])); }
+  function defOverlap(a, b) {
+    const A = defWords(a), B = defWords(b);
+    if (!A.size || !B.size) return 0;
+    let n = 0; A.forEach(w => { if (B.has(w)) n++; });
+    return n / Math.min(A.size, B.size);
+  }
 
   // Quality gate — need at least 4 authored definitions to build a 4-way
   // question. Skipped in reel mode: the curated pack is pre-vetted.
@@ -985,20 +991,24 @@
     const correct = toy.def;
     const pool = [];
     const seen = new Set([correct]);
-    // golden toy pulls distractors from the misconception bank first
+    const own = termMisc.get(String(toy.term).toLowerCase()) || [];
     if (toy.golden) {
-      for (const m of Arcade.shuffle(bankMisc)) {
-        if (!seen.has(m)) { seen.add(m); pool.push(m); }
-        if (pool.length >= 3) break;
-      }
+      // The golden toy is the HARD question: the term's own researched wrong
+      // definitions first, then the other definitions closest in wording to
+      // the right one (but never near-identical — over half the words shared
+      // could make two options defensible).
+      Arcade.shuffle(own.slice()).forEach(m => { if (pool.length < 2 && !seen.has(m.text)) { seen.add(m.text); pool.push(m.text); } });
+      const near = concepts.filter(c => c.def !== correct && !seen.has(c.def))
+        .map(c => ({ d: c.def, o: defOverlap(c.def, correct) }))
+        .filter(x => x.o <= 0.5)
+        .sort((x, y) => y.o - x.o);
+      for (const x of near) { if (pool.length >= 3) break; seen.add(x.d); pool.push(x.d); }
+    } else if (own.length) {
+      const m = own[Math.floor(Math.random() * own.length)].text; seen.add(m); pool.push(m);
     }
     for (const c of Arcade.shuffle(concepts)) {
       if (pool.length >= 3) break;
       if (c.def !== correct && !seen.has(c.def)) { seen.add(c.def); pool.push(c.def); }
-    }
-    for (const m of Arcade.shuffle(bankMisc)) {
-      if (pool.length >= 3) break;
-      if (!seen.has(m)) { seen.add(m); pool.push(m); }
     }
     const opts = Arcade.shuffle(pool.slice(0, 3).concat([correct]));
     qCorrectIdx = opts.indexOf(correct);

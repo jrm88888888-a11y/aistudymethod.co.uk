@@ -728,6 +728,54 @@
   };
   Arcade.maskTerm = function (text, term) { return Arcade.makeMasker([{ term, def: text }])(text, term); };
 
+  /* X9 (Oct 2026): misconceptions that can stand in as a WRONG DEFINITION.
+     Misconception-bank items are wrong answers to their own questions
+     ("Its cell wall is made from cellulose fibres.", "78 °C, because…"), so
+     offered as a definition of some other term they are eliminated on sight.
+     A bank answer is only a fair distractor for TERM when its question asks
+     what TERM means ("What is meant by reduction?", "What does 'osmosis'
+     mean?", "Which statement defines electric field strength?"). Returns a
+     Map: lower-cased term → [{ text, why, item }] (misconception and
+     random_wrong, definition-shaped only). Terms with none simply fall back
+     to other concepts' definitions in the games. */
+  const TM_PRONOUN = /^(it|its|they|their|this|these|he|she)\b/i;
+  function tmDefShaped(s) {
+    s = String(s == null ? '' : s).trim();
+    return s.length >= 15 && /\s/.test(s) && !/^[\d\s.,%×x^+\-−]+$/i.test(s) && !TM_PRONOUN.test(s);
+  }
+  Arcade.termMisconceptions = function (items, concepts) {
+    const out = new Map();
+    const Q = '["\'‘’“”]?';
+    const pats = (concepts || []).map(c => {
+      const name = mkSplit(c && c.term).main;
+      if (!name || name.length < 3) return null;
+      const t = mkEsc(name);
+      const art = '(?:an? |the )?';
+      return { c, re: new RegExp('^\\s*(?:in [a-z ]{3,30}, )?(?:'
+        + 'what (?:is|are) (?:meant by )?(?:the term )?' + art + Q + t + Q + '\\s*\\??\\s*$'
+        + '|what does (?:the term )?' + Q + t + Q + ' mean\\b'
+        + '|define (?:the term )?' + art + Q + t + Q + '\\b'
+        + '|(?:which|what) (?:statement|option|definition|one of these|of these)(?: best)? (?:defines|describes|explains) (?:the term )?' + art + Q + t + Q + '\\s*[?.:]?\\s*$'
+        + '|what is (?:the|a) definition of (?:the term )?' + art + Q + t + Q + '\\s*\\??\\s*$'
+        + ')', 'i') };
+    }).filter(Boolean);
+    (items || []).forEach(it => {
+      if (!it || typeof it.q !== 'string') return;
+      const hit = pats.filter(p => p.re.test(it.q));
+      if (hit.length !== 1) return;                       // ambiguous or not a definition question
+      const c = hit[0].c, key = String(c.term).toLowerCase();
+      [it.misconception, it.random_wrong].forEach(m => {
+        if (!tmDefShaped(m)) return;
+        const text = String(m).trim();
+        if (text.toLowerCase() === String(c.def || '').trim().toLowerCase()) return;
+        if (String(it.correct || '').trim().toLowerCase() === text.toLowerCase()) return;
+        if (!out.has(key)) out.set(key, []);
+        if (!out.get(key).some(x => x.text === text)) out.get(key).push({ text, why: it.why || '', item: it });
+      });
+    });
+    return out;
+  };
+
   /* ---------------- misses list + drill (X10) -----------------------------
      Games pass opts.missed to renderEndCard: [{q, a, why?}] (question → right
      answer) or [{term, def}] (definition → term). The end card lists them

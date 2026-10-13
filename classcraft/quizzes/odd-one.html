@@ -156,33 +156,19 @@
   const TARGET_ROUNDS = 10;
 
   /* ---- odd-one card builders ------------------------------------------- */
-  // A misconception card: a real concept term paired with a genuinely-false
-  // claim drawn from the misconception bank. Only built when the misconception
-  // maps confidently to a concept AND is provably not a valid definition of it.
-  function matchConcept(item) {
-    const q = lc(item.q);
-    let best = null, bestScore = 0;
-    for (const c of concepts) {
-      const inQ = new RegExp('\\b' + escapeReg(lc(c.term)) + '\\b').test(q) ? 1 : 0;
-      const inCorrect = (lc(c.term) === lc(item.correct)) ? 1 : 0;
-      const ov = overlapRatio(c.def, item.correct);
-      const score = inQ + inCorrect + ov;
-      if (score > bestScore) { bestScore = score; best = c; }
-    }
-    return bestScore >= 0.5 ? best : null;
-  }
-
+  // X9 (Oct 2026): only a researched wrong answer to "what is THIS term?"
+  // becomes a misconception card. The old rule paired a term with any bank
+  // answer that loosely matched it ("Plasmid — Its genetic material is held
+  // inside a nucleus."), which read as "not a definition" and was spotted
+  // without knowing the term. Topics without such items use mismatch cards
+  // (a term wearing another concept's definition) — same as before.
   function buildMisconceptionCards() {
     const cards = [];
     const usedTerms = new Set();
-    // Hand-authored items (no src marker) lead; MCQ/numerical-derived backfill.
-    const ordered = bankItems.filter(it => !it.src).concat(bankItems.filter(it => it.src));
-    for (const item of ordered) {
-      const claim = String(item.misconception);
-      // Must read like a full claim, not a bare one-word distractor.
-      if (claim.length < 15 || !/\s/.test(claim)) continue;
-      const c = matchConcept(item);
-      if (!c) continue;
+    const termMisc = Arcade.termMisconceptions ? Arcade.termMisconceptions(bankItems, concepts) : new Map();
+    const ordered = [];
+    concepts.forEach(c => (termMisc.get(lc(c.term)) || []).forEach(m => ordered.push({ c, claim: m.text, item: m.item })));
+    for (const { c, claim, item } of ordered) {
       if (usedTerms.has(lc(c.term))) continue;
       // Never use a misconception that equals a true def, or is too close to
       // this concept's real def (could be accidentally true).

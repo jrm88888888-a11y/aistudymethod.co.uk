@@ -299,24 +299,21 @@
   function pick(arr, n) { return Arcade.shuffle(arr).slice(0, n); }
 
   // Stage 1: MCQ "what is TERM?" — correct def plus three distractors drawn
-  // from other concept definitions, topped up with bank misconceptions.
+  // from other concept definitions. X9 (Oct 2026): a bank misconception is
+  // used only when its question asks what THIS term means (any other bank
+  // answer — "78 °C, because…", "Its cell wall is…" — is not a definition
+  // and was eliminated on sight).
   function buildStage1() {
     const targets = pick(concepts, S1_ROUNDS);
-    // Only researched misconceptions that read as full, plausible definitions
-    // earn a spot as a distractor. Some derived bank items are bare fragments
-    // ("Heterozygous", "44") — those would give the term away or read as noise.
-    const termsLC = concepts.map(c => c.term.toLowerCase());
-    const miscTexts = bankItems.map(it => it.misconception)
-      .filter(m => m && m.length >= 25 && !termsLC.includes(m.toLowerCase()));
+    const termMisc = Arcade.termMisconceptions ? Arcade.termMisconceptions(bankItems, concepts) : new Map();
     const termOfDef = new Map(concepts.map(c => [c.def, c.term]));
     return targets.map(t => {
       const others = concepts.filter(c => c.term !== t.term).map(c => c.def);
       let distractPool = Arcade.shuffle(others.slice());
       let distractors = distractPool.slice(0, 3);
-      // Occasionally swap one plausible-but-wrong distractor for a researched
-      // misconception when the bank offers one.
-      if (miscTexts.length && distractors.length === 3 && Math.random() < 0.6) {
-        const m = miscTexts[Math.floor(Math.random() * miscTexts.length)];
+      const own = termMisc.get(t.term.toLowerCase());
+      if (own && own.length && distractors.length === 3) {
+        const m = own[Math.floor(Math.random() * own.length)].text;
         if (!distractors.includes(m) && m !== t.def) distractors[Math.floor(Math.random() * 3)] = m;
       }
       const options = Arcade.shuffle(
