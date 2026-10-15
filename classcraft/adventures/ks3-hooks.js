@@ -37,7 +37,8 @@
   'use strict';
   var REVIEW = document.documentElement.hasAttribute('data-ks3-review');
   var LESSON = (location.pathname.split('/').pop() || '').replace('-mini-lesson.html', '');
-  var LIBRARY = '680127';   // Bunny Stream library (fallback player only)
+  var LIBRARY = '680127';
+  var TAG = /-gcse-/.test(LESSON) ? 'GCSE' : 'KS3';   // analytics event prefix   // Bunny Stream library (fallback player only)
 
   function track(name, props) {
     try { if (window.plausible) window.plausible(name, { props: props || {} }); } catch (e) {}
@@ -96,7 +97,7 @@
       var sentDone = false;
       v.addEventListener('timeupdate', function () {
         if (!sentDone && v.duration && v.currentTime / v.duration >= 0.9) {
-          sentDone = true; track('KS3 hook complete', { hook: id, lesson: LESSON });
+          sentDone = true; track(TAG + ' hook complete', { hook: id, lesson: LESSON });
         }
       });
       v.addEventListener('error', function () {
@@ -117,7 +118,7 @@
       slot.replaceChild(v, btn);
       players.push(v);
       var p = v.play(); if (p && p.catch) p.catch(function () {});
-      track('KS3 hook play', { hook: id, lesson: LESSON });
+      track(TAG + ' hook play', { hook: id, lesson: LESSON });
     });
   }
 
@@ -138,7 +139,7 @@
       if (reply) reply.textContent = box.dataset.reply || 'Locked in.';
       if (fresh) {
         store('ks3-guess:' + id, c.textContent.trim());
-        track('KS3 hook guess', { hook: id, choice: c.textContent.trim().slice(0, 80) });
+        track(TAG + ' hook guess', { hook: id, choice: c.textContent.trim().slice(0, 80) });
         fillYourGuess();
       }
     }
@@ -175,7 +176,7 @@
         var b = e.target.closest && e.target.closest('.opt');
         if (!b || passed[m]) return;
         var ok = b.dataset.correct === '1';
-        if (first) { track('KS3 mission check', { mission: m, lesson: LESSON, first_try: ok ? 'yes' : 'no' }); first = false; }
+        if (first) { track(TAG + ' mission check', { mission: m, lesson: LESSON, first_try: ok ? 'yes' : 'no' }); first = false; }
         if (ok) tick(m);
       });
     });
