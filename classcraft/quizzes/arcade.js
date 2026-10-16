@@ -1066,7 +1066,7 @@
               if (ret !== null && ret !== undefined) {
                 return '<a class="ar-btn ghost" href="../arcade.html' + ret + '">Back to arcade</a>';
               }
-              return '<a class="ar-btn ghost" href="../../subjects.html">More games</a>';
+              return '<a class="ar-btn ghost" href="../arcade.html">More games</a>';
             })()}
           </div>
           <div class="ar-ctas-more" id="ar-ctas-more">

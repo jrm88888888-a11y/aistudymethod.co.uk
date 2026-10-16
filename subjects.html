@@ -275,6 +275,8 @@ table.vr-grid tbody th {
   white-space: nowrap; position: sticky; left: 0; background: var(--bg-card); z-index: 2;
 }
 table.vr-grid tbody td { padding: 4px; }
+tr.vr-row-hint th { color: var(--accent); }
+tr.vr-row-hint td .vr-cell { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .vr-cell {
   width: 100%; min-width: 64px; min-height: 40px;
   font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600;
@@ -556,7 +558,7 @@ table.vr-grid tbody td { padding: 4px; }
   </section>
 
   <!-- ============ ZONE C — spec map + VELVET rows ============ -->
-  <section class="vr-zonec" id="vrZoneC" aria-live="polite">
+  <section class="vr-zonec" id="vrZoneC" aria-live="polite" style="scroll-margin-top:84px;">
     <div class="vr-placeholder">Pick a subject to begin.</div>
   </section>
 
@@ -716,7 +718,7 @@ table.vr-grid tbody td { padding: 4px; }
 
   var MANIFEST = [];
   var BYKEY = {};
-  var state = { level: 'gcse', key: null };
+  var state = { level: 'gcse', key: null, hint: null };
 
   var elSegment = document.getElementById('vrSegment');
   var elGridScroll = document.getElementById('vrGridScroll');
@@ -831,7 +833,7 @@ table.vr-grid tbody td { padding: 4px; }
     boards.forEach(function (b) { html += '<th>' + esc(b.display) + '</th>'; });
     html += '</tr></thead><tbody>';
     subjects.forEach(function (sub) {
-      html += '<tr><th scope="row">' + esc(sub.display) + '</th>';
+      html += '<tr data-subject="' + esc(sub.subject) + '"' + (state.hint === sub.subject && !state.key ? ' class="vr-row-hint"' : '') + '><th scope="row">' + esc(sub.display) + '</th>';
       boards.forEach(function (b) {
         var k = keyOf(sub.subject, state.level, b.board);
         if (BYKEY[k]) {
@@ -858,6 +860,7 @@ table.vr-grid tbody td { padding: 4px; }
     if (state.key && BYKEY[state.key] && BYKEY[state.key].level === state.level) {
       currentSubject = BYKEY[state.key].subject;
     }
+    if (!currentSubject && state.hint && subjects.some(function (x) { return x.subject === state.hint; })) { currentSubject = state.hint; }
     if (!currentSubject && subjects.length) { currentSubject = subjects[0].subject; }
 
     var opts = '';
@@ -982,7 +985,7 @@ table.vr-grid tbody td { padding: 4px; }
               '<span class="vr-letter" aria-hidden="true">' + st.L + '</span><span class="vr-word">' + esc(st.word) + '</span>' +
               '<span class="vr-tip" role="tooltip">Confidence quiz coming soon!</span></span>';
           } else {
-            out += '<a class="vr-stage" target="_blank" rel="noopener" href="' + esc(urlFor(st.word, e, slug, sub)) +
+            out += '<a class="vr-stage" href="' + esc(urlFor(st.word, e, slug, sub)) +
               '" style="--c:' + st.color + '" aria-label="' + esc(st.word + ' — ' + label) + '">' +
               '<span class="vr-letter" aria-hidden="true">' + st.L + '</span><span class="vr-word">' + esc(st.word) + '</span></a>';
           }
@@ -1038,11 +1041,19 @@ table.vr-grid tbody td { padding: 4px; }
     MANIFEST = manifest || [];
     MANIFEST.forEach(function (e) { BYKEY[e.key] = e; });
 
-    var preKey = null;
+    var preKey = null, fromLink = false;
     var params = new URLSearchParams(window.location.search);
     var s = params.get('subject'), lv = params.get('level'), b = params.get('board');
+    var lastK = null;
+    try { lastK = localStorage.getItem('vr-last'); } catch (e5) {}
     if (s && lv && b && BYKEY[keyOf(s, lv, b)]) {
-      preKey = keyOf(s, lv, b);
+      preKey = keyOf(s, lv, b); fromLink = true;
+    } else if (s && lv && levelExists(lv) && MANIFEST.some(function (e) { return e.subject === s && e.level === lv; })) {
+      /* Subject + level without a board (links from the board-neutral revision
+         guides): reuse this browser's last board for that course if there is
+         one, otherwise open the level with that subject's row highlighted. */
+      if (lastK && BYKEY[lastK] && BYKEY[lastK].subject === s && BYKEY[lastK].level === lv) { preKey = lastK; fromLink = true; }
+      else { state.level = lv; state.hint = s; }
     } else {
       var last = null;
       try { last = localStorage.getItem('vr-last'); } catch (e3) {}
@@ -1059,7 +1070,11 @@ table.vr-grid tbody td { padding: 4px; }
     renderGrid();
     renderMobile();
 
-    if (preKey) { selectCombo(preKey); }
+    if (preKey) { selectCombo(preKey, fromLink); }
+    else if (state.hint) {
+      var row = elGridScroll.querySelector('tr[data-subject="' + state.hint + '"]');
+      try { (window.matchMedia('(max-width: 640px)').matches ? elSubjectSelect : (row || elSegment)).scrollIntoView({ block: 'center' }); } catch (e6) {}
+    }
   }
 
   Promise.all([
