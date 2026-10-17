@@ -1,3 +1,33 @@
+/* Shuffle the options of every quick-check MCQ (.opts[data-q] > button.opt) once,
+   at load, so the correct answer has no fixed position. data-correct travels with
+   the button and setupMCQ/ks3-hooks read it on click, so marking is unaffected.
+   Option sets that are purely numeric are left in their written (ascending) order.
+   Added 2026-10-17. */
+(function () {
+  "use strict";
+  var NUMERIC = /^[-+−]?\s*[\d.,]+(\s*[×x]\s*10\s*[⁰-⁹⁻\-\d]*)?\s*[a-zA-Zµ°%\/²³⁻¹\s]*$/;
+  function shuffleOpts() {
+    var boxes = document.querySelectorAll(".opts[data-q]");
+    for (var i = 0; i < boxes.length; i++) {
+      var box = boxes[i];
+      if (box.closest && box.closest(".ks3-guess")) continue;
+      var opts = [].slice.call(box.children).filter(function (el) {
+        return el.tagName === "BUTTON" && el.classList.contains("opt") && el.hasAttribute("data-correct");
+      });
+      if (opts.length < 2 || opts.length !== box.children.length) continue;
+      var allNumeric = opts.every(function (b) { return NUMERIC.test((b.textContent || "").replace(/[✅❌]/g, "").trim()); });
+      if (allNumeric) continue;
+      for (var k = opts.length - 1; k > 0; k--) {
+        var j = Math.floor(Math.random() * (k + 1));
+        var t = opts[k]; opts[k] = opts[j]; opts[j] = t;
+      }
+      for (var n = 0; n < opts.length; n++) box.appendChild(opts[n]);
+    }
+  }
+  if (document.readyState !== "loading") shuffleOpts();
+  else document.addEventListener("DOMContentLoaded", shuffleOpts);
+})();
+
 /* lesson-nav.js — persistent section rail + progress for Learn mini-lessons.
    Drop-in (like share-score.js). Auto-detects teaching screens (no per-lesson
    edits) and shows a side list that brightens as the student advances and lets

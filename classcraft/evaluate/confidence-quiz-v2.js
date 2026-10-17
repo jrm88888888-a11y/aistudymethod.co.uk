@@ -37,8 +37,23 @@
    .then(function(d){ quiz=d; boot(); })
    .catch(function(){ fail('This confidence quiz has not been authored yet.'); });
 
+  // Shuffle each MCQ's options once per load so the key has no fixed position
+  // (authored files were written key-first). answer and optionWhy move with the
+  // options. Purely numeric option sets keep their written (ascending) order.
+  var NUMERIC=/^[-+−]?\s*[\d.,]+(\s*[×x]\s*10\s*[⁰-⁹⁻\-\d]*)?\s*[a-zA-Zµ°%\/²³⁻¹\s]*$/;
+  function shuffleOptions(q){
+    if(q.type==='numeric' || !Array.isArray(q.options) || q.options.length<2 || typeof q.answer!=='number') return;
+    if(q.options.every(function(o){return NUMERIC.test(String(o).trim());})) return;
+    var idx=q.options.map(function(_,i){return i;});
+    for(var k=idx.length-1;k>0;k--){ var j=Math.floor(Math.random()*(k+1)); var t=idx[k]; idx[k]=idx[j]; idx[j]=t; }
+    q.options=idx.map(function(i){return q.options[i];});
+    if(Array.isArray(q.optionWhy)) q.optionWhy=idx.map(function(i){return q.optionWhy[i];});
+    q.answer=idx.indexOf(q.answer);
+  }
+
   function boot(){
     quiz.questions = (quiz.questions||[]);
+    quiz.questions.forEach(shuffleOptions);
     state = { i:0, ans:quiz.questions.map(function(){return {choice:null, conf:null};}) };
     renderIntro();
   }
@@ -68,6 +83,14 @@
     document.getElementById('start').onclick=function(){ state.i=0; renderQ(); window.scrollTo(0,0); };
   }
 
+  // Inline figure from an authored bank item: {figure:{svg,alt}}. SVG is repo content, not user input.
+  function figHtml(q){
+    var f=q&&q.figure; if(!f||!f.svg) return '';
+    var svg=String(f.svg);
+    if(f.alt && svg.indexOf('aria-label=')<0) svg=svg.replace(/<svg\b/,'<svg aria-label="'+esc(f.alt)+'"');
+    return '<div class="qfig">'+svg+'</div>';
+  }
+
   // ── question ──
   function renderQ(){
     var i=state.i, q=quiz.questions[i], n=quiz.questions.length, a=state.ans[i];
@@ -93,6 +116,7 @@
       +'<div class="card">'
         +'<div class="qmeta"><span class="qtype">'+(isNum?'Calculation':'Multiple choice')+'</span><span>'+esc(q.lo||'')+'</span></div>'
         +'<div class="qtext">'+esc(q.q)+'</div>'
+        +figHtml(q)
         +optsHtml
         +'<div class="conf"><div class="conf-q">How sure are you?</div>'+pills+'</div>'
       +'</div>'
@@ -171,7 +195,7 @@
     // share / challenge — proud-of-this moment (works on every level via share-score.js)
     html+='<div class="card">'
         +'<h2>👪 Show your parents</h2>'
-        +'<p class="sub" style="font-size:15px;margin:6px 0 12px">Send your result to a parent or guardian — they\'ll get a link to the full Velvet Method course (built by teachers, £25 for life).</p>'
+        +'<p class="sub" style="font-size:15px;margin:6px 0 12px">Send your result to a parent or guardian, with a link to how the Velvet Method works and how they can help.</p>'
         +'<div class="actions"><button class="btn" id="shareResult">📲 Show your parents</button>'
         +'<a class="btn ghost" href="../../velvet-method.html">About the Velvet Method</a></div></div>';
 
@@ -245,8 +269,10 @@
       var your = q.type==='numeric'? (r.a.choice==null?'—':r.a.choice+(q.unit?' '+q.unit:'')) : (q.options&&r.a.choice!=null?('ABCDEF'[r.a.choice]+') '+q.options[r.a.choice]):'—');
       var corr = q.type==='numeric'? (q.answer+(q.unit?' '+q.unit:'')) : (q.options?('ABCDEF'[q.answer]+') '+q.options[q.answer]):'');
       html+='<details class="rev"><summary><span class="tag '+(r.ok?'ok':'no')+'">'+(r.ok?'✓':'✗')+'</span><span style="flex:1">Q'+(i+1)+'. '+esc(q.q)+'</span><span class="lo-id">'+esc(CONF[(r.a.conf||1)-1].l)+'</span></summary>'
-        +'<div class="revbody"><div>Your answer: <b>'+esc(your)+'</b>'+(r.ok?'':' · Correct: <b>'+esc(corr)+'</b>')+'</div>'
-        +(q.explain?'<div style="margin-top:6px">'+esc(q.explain)+'</div>':'')+'</div></details>';
+        +'<div class="revbody">'+figHtml(q)+'<div>Your answer: <b>'+esc(your)+'</b>'+(r.ok?'':' · Correct: <b>'+esc(corr)+'</b>')+'</div>'
+        // optionWhy[i]: why option i is wrong (or right). Shown for the option the student chose when it was wrong.
+        +((!r.ok && q.type!=='numeric' && Array.isArray(q.optionWhy) && r.a.choice!=null && q.optionWhy[r.a.choice])?'<div style="margin-top:6px"><b>Why that answer doesn\'t work:</b> '+esc(q.optionWhy[r.a.choice])+'</div>':'')
+        +(q.explain?'<div style="margin-top:6px">'+(r.ok?'':'<b>The right idea:</b> ')+esc(q.explain)+'</div>':'')+'</div></details>';
     });
 
     html+='<div class="actions"><a class="btn ghost" href="../../subjects.html">← Back to all resources</a></div>';
