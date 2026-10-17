@@ -30,6 +30,8 @@
   .seq-item.locked .seq-tag { color:var(--ar-mint); }
   .seq-item.fixed .seq-tag { color:var(--ar-gold); }
   .seq-item.wrong .seq-tag { color:var(--ar-pink); }
+  .seq-by { margin:-6px 0 12px; padding:8px 12px; border-left:3px solid var(--ar-cyan); background:var(--ar-cyan-dim); border-radius:0 10px 10px 0; font-size:14.5px; line-height:1.4; color:var(--ar-text); }
+  .seq-by b { font-family:var(--ar-mono); font-size:10.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ar-cyan); margin-right:6px; }
   .seq-ends { display:flex; justify-content:space-between; font-family:var(--ar-mono); font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ar-muted); margin-bottom:8px; }
   .seq-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .seq-reveal { margin-top:14px; padding:12px 16px; background:var(--ar-card); border:1px dashed var(--ar-border-hi); border-radius:var(--ar-r); }
@@ -247,7 +249,16 @@
   const N = ITEMS.length;
   const BEST_KEY = 'aism-seq-best:' + stem;
 
-  const endLabelsFwd = built.source === 'years'
+  // "Order by" (Oct 2026): an authored sequence can say what it is ordered
+  // by — spec.sequence_by (the criterion, no direction) plus
+  // spec.sequence_ends {top, bottom} (the first and last ends of the stored
+  // order). Before, the cards showed only names and generic "first / earliest
+  // / smallest" ends, so e.g. a magnitude list could be sorted by size.
+  const ORDER_BY = (built.source === 'authored' && spec && typeof spec.sequence_by === 'string') ? spec.sequence_by.trim() : '';
+  const ENDS = (built.source === 'authored' && spec && spec.sequence_ends && spec.sequence_ends.top && spec.sequence_ends.bottom) ? spec.sequence_ends : null;
+  const endLabelsFwd = ENDS
+    ? { top: '▲ ' + String(ENDS.top).trim(), bottom: '▼ ' + String(ENDS.bottom).trim() }
+    : built.source === 'years'
     ? { top: '▲ Earliest', bottom: '▼ Latest' }
     : built.source === 'steps'
       ? { top: '▲ First step', bottom: '▼ Last step' }
@@ -327,6 +338,7 @@
       <div class="ar-card">
         <div class="ar-label">Sort all ${N} · first try = 100 · second wind = 50 · fast clean run = up to +${TIME_BONUS_MAX}</div>
         <div class="ar-prompt">${reverse ? '🔁 Reverse round — put these in order from LAST to FIRST.' : 'Put these in the right order.'}</div>
+        ${ORDER_BY ? `<div class="seq-by"><b>Order by</b> ${esc(ORDER_BY)}</div>` : ''}
         <div class="seq-ends"><span>${endLabels.top}</span><span>${endLabels.bottom}</span></div>
         <ul class="seq-list ar-stagger" id="seq-list" role="listbox" aria-label="Sortable items. Drag with the handle, or focus a card and press Alt plus arrow up or down to move it.">
           ${startOrder.map(it => `
