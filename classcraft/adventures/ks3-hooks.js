@@ -38,7 +38,7 @@
   var REVIEW = document.documentElement.hasAttribute('data-ks3-review');
   var LESSON = (location.pathname.split('/').pop() || '').replace('-mini-lesson.html', '');
   var LIBRARY = '680127';
-  var TAG = /-gcse-/.test(LESSON) ? 'GCSE' : 'KS3';   // analytics event prefix   // Bunny Stream library (fallback player only)
+  var TAG = /-ibdp-/.test(LESSON) ? 'IB' : /-gcse-/.test(LESSON) ? 'GCSE' : 'KS3';   // analytics event prefix   // Bunny Stream library (fallback player only)
 
   function track(name, props) {
     try { if (window.plausible) window.plausible(name, { props: props || {} }); } catch (e) {}
