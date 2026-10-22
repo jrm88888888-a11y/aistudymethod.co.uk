@@ -6,7 +6,7 @@
         - Coins use the arcade's grade table (95%+ 12, 80% 9, 60% 6, 40% 3,
           else 1), once per lesson per day on this device.
         - Signed in: banked on the server through Arcade.auth.award(pct), so
-          the server's 45-a-day cap and coin table apply, exactly as in games.
+          the server's 150-a-day cap and coin table apply, exactly as in games.
         - Signed out: kept on this device as UNSAVED coins (shown as such).
           They become real coins only if the student creates an account or
           logs in; they are then banked through the same /award call, never
@@ -36,7 +36,7 @@
   var SUF = "-mini-lesson.html";
   var RX = /^(.+?)-(ks3|gcse|a-level|ibdp)-(edexcel-igcse|cambridge-igcse|general|edexcel|eduqas|wjec|ccea|aqa|ocr|hl|sl|ib)-(.+)$/;
   var GRADE = [[95, 12], [80, 9], [60, 6], [40, 3]];
-  var DAILY_CAP = 45, MAX_PENDING = 60;
+  var DAILY_CAP = 150, MAX_PENDING = 60;
 
   var ME = document.currentScript || document.querySelector('script[src*="quizzes/progress.js"]');
   var BASE = ME && ME.src ? ME.src.replace(/quizzes\/progress\.js.*$/, "") : "/classcraft/";
@@ -262,7 +262,7 @@
           note.innerHTML = cr > 0
             ? '<span class="lp-big"><span class="lp-coin"></span>You won <b>' + cr + "</b> coin" + (cr === 1 ? "" : "s") + "!</span>" +
               (rem != null && rem <= 12 ? '<span class="lp-sub">' + rem + " left today</span>" : "")
-            : '<span class="lp-big"><span class="lp-coin"></span>Daily coin limit reached: <b>45/45</b></span><span class="lp-sub">Keep learning. Your coins reset tomorrow.</span>';
+            : '<span class="lp-big"><span class="lp-coin"></span>Daily coin limit reached: <b>150/150</b></span><span class="lp-sub">Keep learning. Your coins reset tomorrow.</span>';
           chip();
           return claimPending(auth);
         });
@@ -303,7 +303,7 @@
             claimPending(auth).then(function (r) {
               if (!r) { note.innerHTML = '<span class="lp-big">Signed in</span><span class="lp-sub">Your coins will be saved next time you finish a lesson.</span>'; return; }
               note.innerHTML = '<span class="lp-big"><span class="lp-coin"></span>Saved <b>' + r.saved + "</b> coin" + (r.saved === 1 ? "" : "s") + " to your account!</span>" +
-                (r.left > 0 ? '<span class="lp-sub">' + r.left + " more will be saved on another day (you can bank up to 45 coins a day).</span>" : "");
+                (r.left > 0 ? '<span class="lp-sub">' + r.left + " more will be saved on another day (you can bank up to 150 coins a day).</span>" : "");
             });
           });
           auth.open(mode, { source: "lesson" });

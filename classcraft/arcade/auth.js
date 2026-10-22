@@ -696,11 +696,11 @@
     insertTop(mount, d);
     return d;
   }
-  // Shown when a game earns 0 coins because today's 45-coin cap is already hit.
+  // Shown when a game earns 0 coins because today's 150-coin cap is already hit.
   // The point of the cap is to bound coins, never the play — so the copy says so.
   function capHtml() {
     return coinSvg(22, "aism-coin-cap")
-      + "<span>Daily coin limit reached — <b>45/45</b> today. Keep playing; your coins reset tomorrow.</span>";
+      + "<span>Daily coin limit reached — <b>150/150</b> today. Keep playing; your coins reset tomorrow.</span>";
   }
   function capNote(mount) {
     injectCss();
@@ -828,7 +828,7 @@
     body.appendChild(el("ul", "aism-nudge-list",
       "<li>Coins banked across every game you play</li>" +
       "<li>Spend them on elements for your collection</li>" +
-      "<li>Up to 45 coins a day — the limit resets daily</li>"));
+      "<li>Up to 150 coins a day — the limit resets daily</li>"));
     var row = el("div", "aism-nudge-row");
     var go = el("button", "aism-btn aism-nudge-go", "Create account"); go.type = "button"; // no "▸": Press Start 2P lacks the glyph
     var no = el("button", "aism-btn aism-nudge-no", "Not now"); no.type = "button";
