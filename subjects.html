@@ -727,6 +727,7 @@ tr.vr-row-hint td .vr-cell { border-color: var(--accent); box-shadow: 0 0 0 2px 
   var elZoneC = document.getElementById('vrZoneC');
   var LEARN = {}; /* set of existing mini-lesson filenames, from learn-manifest.json */
   var EVAL = {};  /* set of existing confidence-quiz filenames, from evaluate-manifest.json */
+  var VERIFYQ = {}; /* set of Verify-quiz filenames, from verify-manifest.json; topics without one verify in the arcade */
   /* MFL grammar-spine courses: the Learn stage is one shared grammar-spine index
      (10 grammar mini-lessons) rather than a per-theme lesson, so every theme's
      Learn icon links to the same index. Keyed by subject-level-board. */
@@ -771,7 +772,7 @@ tr.vr-row-hint td .vr-cell { border-color: var(--accent); box-shadow: 0 0 0 2px 
     switch (word) {
       case 'Evaluate':  return 'classcraft/evaluate/confidence-quiz-v2.html?' + q;
       case 'Learn':     return SPINE[keyOf(s, lv, b)] || ('classcraft/adventures/' + s + '-' + lv + '-' + b + '-' + slug + '-mini-lesson.html');
-      case 'Verify':    return 'classcraft/arcade.html?' + q + '&at=top';
+      case 'Verify':    return VERIFYQ[s + '-' + lv + '-' + b + '-' + slug + '.json'] ? ('classcraft/verify/verify-quiz.html?' + q) : ('classcraft/arcade.html?' + q + '&at=top');
       case 'Explore':   return 'classcraft/explore-launcher.html?' + q;
       case 'Transform': return 'classcraft/transform-launcher.html?' + q;
       default:          return '#';
@@ -1080,10 +1081,12 @@ tr.vr-row-hint td .vr-cell { border-color: var(--accent); box-shadow: 0 0 0 2px 
   Promise.all([
     fetch('classcraft/specs-manifest.json').then(function (r) { return r.json(); }),
     fetch('classcraft/learn-manifest.json').then(function (r) { return r.json(); }).catch(function () { return []; }),
-    fetch('classcraft/evaluate-manifest.json').then(function (r) { return r.json(); }).catch(function () { return []; })
+    fetch('classcraft/evaluate-manifest.json').then(function (r) { return r.json(); }).catch(function () { return []; }),
+    fetch('classcraft/verify-manifest.json').then(function (r) { return r.json(); }).catch(function () { return []; })
   ]).then(function (res) {
     (res[1] || []).forEach(function (f) { LEARN[f] = 1; });
     (res[2] || []).forEach(function (f) { EVAL[f] = 1; });
+    (res[3] || []).forEach(function (f) { VERIFYQ[f] = 1; });
     boot(res[0]);
   }).catch(function () {
     elZoneC.innerHTML = '<div class="vr-placeholder">Could not load the course list. Please refresh.</div>';

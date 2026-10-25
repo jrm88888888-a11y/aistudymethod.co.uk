@@ -22,6 +22,8 @@
   ];
 
   var quiz=null, state=null;
+  // fmt: text -> HTML. Quizzes that set notation:'sci' (IB sciences) get real sub/superscripts.
+  var fmt=esc;
 
   // ── load ──
   var subject=(P.get('subject')||'').toLowerCase();
@@ -52,6 +54,7 @@
   }
 
   function boot(){
+    if(quiz.notation==='sci' && window.SciNotation) fmt=window.SciNotation.html;
     quiz.questions = (quiz.questions||[]);
     quiz.questions.forEach(shuffleOptions);
     state = { i:0, ans:quiz.questions.map(function(){return {choice:null, conf:null};}) };
@@ -101,7 +104,7 @@
     } else {
       optsHtml='<div class="opts">'+ (q.options||[]).map(function(o,idx){
         var L='ABCDEF'[idx];
-        return '<button class="opt'+(a.choice===idx?' sel':'')+'" data-i="'+idx+'"><span class="lt">'+L+'</span><span>'+esc(o)+'</span></button>';
+        return '<button class="opt'+(a.choice===idx?' sel':'')+'" data-i="'+idx+'"><span class="lt">'+L+'</span><span>'+fmt(o)+'</span></button>';
       }).join('') +'</div>';
     }
     var pills='<div class="pills">'+CONF.map(function(c){
@@ -114,8 +117,8 @@
       +'<div class="pbar"><span style="width:'+Math.round((i)/n*100)+'%"></span></div>'
       +'</div>'
       +'<div class="card">'
-        +'<div class="qmeta"><span class="qtype">'+(isNum?'Calculation':'Multiple choice')+'</span><span>'+esc(q.lo||'')+'</span></div>'
-        +'<div class="qtext">'+esc(q.q)+'</div>'
+        +'<div class="qmeta"><span class="qtype">'+(isNum?'Calculation':'Multiple choice')+'</span><span>'+esc(q.lo||'')+'</span>'+(q.hl?'<span class="qhl">HL</span>':'')+'</div>'
+        +'<div class="qtext">'+fmt(q.q)+'</div>'
         +figHtml(q)
         +optsHtml
         +'<div class="conf"><div class="conf-q">How sure are you?</div>'+pills+'</div>'
@@ -268,11 +271,12 @@
       var q=r.q;
       var your = q.type==='numeric'? (r.a.choice==null?'—':r.a.choice+(q.unit?' '+q.unit:'')) : (q.options&&r.a.choice!=null?('ABCDEF'[r.a.choice]+') '+q.options[r.a.choice]):'—');
       var corr = q.type==='numeric'? (q.answer+(q.unit?' '+q.unit:'')) : (q.options?('ABCDEF'[q.answer]+') '+q.options[q.answer]):'');
-      html+='<details class="rev"><summary><span class="tag '+(r.ok?'ok':'no')+'">'+(r.ok?'✓':'✗')+'</span><span style="flex:1">Q'+(i+1)+'. '+esc(q.q)+'</span><span class="lo-id">'+esc(CONF[(r.a.conf||1)-1].l)+'</span></summary>'
-        +'<div class="revbody">'+figHtml(q)+'<div>Your answer: <b>'+esc(your)+'</b>'+(r.ok?'':' · Correct: <b>'+esc(corr)+'</b>')+'</div>'
+      html+='<details class="rev"><summary><span class="tag '+(r.ok?'ok':'no')+'">'+(r.ok?'✓':'✗')+'</span><span style="flex:1">Q'+(i+1)+'. '+fmt(q.q)+'</span><span class="lo-id">'+esc(CONF[(r.a.conf||1)-1].l)+'</span></summary>'
+        +'<div class="revbody">'+figHtml(q)+'<div>Your answer: <b>'+fmt(your)+'</b>'+(r.ok?'':' · Correct: <b>'+fmt(corr)+'</b>')+'</div>'
         // optionWhy[i]: why option i is wrong (or right). Shown for the option the student chose when it was wrong.
-        +((!r.ok && q.type!=='numeric' && Array.isArray(q.optionWhy) && r.a.choice!=null && q.optionWhy[r.a.choice])?'<div style="margin-top:6px"><b>Why that answer doesn\'t work:</b> '+esc(q.optionWhy[r.a.choice])+'</div>':'')
-        +(q.explain?'<div style="margin-top:6px">'+(r.ok?'':'<b>The right idea:</b> ')+esc(q.explain)+'</div>':'')+'</div></details>';
+        +((!r.ok && q.type!=='numeric' && Array.isArray(q.optionWhy) && r.a.choice!=null && q.optionWhy[r.a.choice])?'<div style="margin-top:6px"><b>Why that answer doesn\'t work:</b> '+fmt(q.optionWhy[r.a.choice])+'</div>':'')
+        +(q.explain?'<div style="margin-top:6px">'+(r.ok?'':'<b>The right idea:</b> ')+fmt(q.explain)+'</div>':'')
+        +(q.working?'<div style="margin-top:6px"><b>Working:</b> '+fmt(q.working)+'</div>':'')+'</div></details>';
     });
 
     html+='<div class="actions"><a class="btn ghost" href="../../subjects.html">← Back to all resources</a></div>';
