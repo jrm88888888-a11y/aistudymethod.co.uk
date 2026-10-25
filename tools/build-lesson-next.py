@@ -6,7 +6,11 @@ For every mini-lesson it records, per group (subject-level-board):
       "subject=..&level=.." when the arcade has the subject+level but not the
       board, or "" when the arcade has no matching shelf)
   t : ordered lessons [[slug, title, 1 if the arcade has this exact topic,
-                        1 if a confidence quiz exists for this topic]]
+                        1 if a confidence quiz exists for this topic(, file stem)]]
+      The 5th field is present only when the lesson file is not <group>-<slug>
+      (one file shared by two boards, e.g. IB Geography SL and HL).
+  o : (courses in GUIDE only) the slugs that follow the subject guide, in order;
+      the course's other lessons come after them as additional lessons
   af : 0 for a KS3 course whose arcade shelf has fewer topics than half its lessons
        (no course-shelf fallback for lessons without their own games)
   s, l, b : subject, level, board ids;  d : course display name
@@ -57,6 +61,32 @@ def page_title(path):
     t = html.unescape(m.group(1)) if m else ''
     return re.split(r'\s+[—–|]\s+', t)[0].strip()
 
+# Courses whose lesson list is set here, in subject guide order: (slug, title, file stem or
+# None). IB Geography (Oct 2026): the Core and Option unit lessons serve SL and HL from one
+# file named without a board; the HL extension units are named with "hl". The older
+# overview pages stay on the list after these, as additional lessons.
+_GEO_OPT = [('option-a-freshwater', 'Option A: Freshwater'),
+            ('option-b-oceans-coastal-margins', 'Option B: Oceans and coastal margins'),
+            ('option-c-extreme-environments', 'Option C: Extreme environments'),
+            ('option-d-geophysical-hazards', 'Option D: Geophysical hazards'),
+            ('option-e-leisure-tourism-sport', 'Option E: Leisure, tourism and sport'),
+            ('option-f-food-health', 'Option F: Food and health'),
+            ('option-g-urban-environments', 'Option G: Urban environments')]
+_GEO_CORE = [('core-unit-1-changing-population', 'Unit 1: Changing population'),
+             ('core-unit-2-global-climate-vulnerability-resilience', 'Unit 2: Global climate, vulnerability and resilience'),
+             ('core-unit-3-global-resource-consumption-security', 'Unit 3: Global resource consumption and security')]
+_GEO_HL = [('unit-4-power-places-networks', 'Unit 4: Power, places and networks'),
+           ('unit-5-human-development-diversity', 'Unit 5: Human development and diversity'),
+           ('unit-6-global-risks-resilience', 'Unit 6: Global risks and resilience')]
+_GEO_SHARED = ([('Geographic themes — ' + t, s, 'geography-ibdp-' + s) for s, t in _GEO_OPT]
+               + [('Core — ' + t, s, 'geography-ibdp-' + s) for s, t in _GEO_CORE])
+GUIDE = {
+    'geography-ibdp-hl': _GEO_SHARED + [('HL core extension — ' + t, s, None) for s, t in _GEO_HL]
+                         + [('Internal assessment — Fieldwork report', 'internal-assessment-fieldwork-report', None)],
+    'geography-ibdp-sl': _GEO_SHARED
+                         + [('Internal assessment — Fieldwork report', 'internal-assessment-fieldwork-report', None)],
+}
+
 EVAL = {x[:-5] for x in json.load(open(os.path.join(CC, 'evaluate-manifest.json'), encoding='utf8'))}
 SPECS = {e['key']: e for e in json.load(open(os.path.join(CC, 'specs-manifest.json'), encoding='utf8'))}
 
@@ -95,6 +125,16 @@ for (subj, level, board), slugs in sorted(groups.items()):
     else:                 a = ''
     stats['group_' + (kind or 'none')] += 1
     rows = []
+    guide = GUIDE.get(key)
+    if guide:
+        for gt, gs, gf in guide:
+            stem = gf or f'{key}-{gs}'
+            if not os.path.exists(os.path.join(ADV, stem + SUF)):
+                print('GUIDE lesson missing:', stem); continue
+            has = 1 if (kind == 'board' and gs in atopics) else 0
+            q = 1 if f'{key}-{gs}' in EVAL else 0
+            rows.append([gs, gt, has, q] + ([gf] if gf else []))
+        order = [s for s in order if s not in {g[1] for g in guide}]
     for s in order:
         nm = names.get(s)
         if nm and re.fullmatch(r'[a-z0-9-]+', nm):   # topic list gives only the slug (IB Biology): use the lesson's own title
@@ -113,6 +153,8 @@ for (subj, level, board), slugs in sorted(groups.items()):
     # topics. lesson-next.js then offers the plain arcade instead. Other levels keep the
     # course-shelf fallback (their shelves are the same subject and board).
     out = {'a': a, 's': subj, 'l': level, 'b': board, 'd': course_name(subj, level, board), 't': rows}
+    if guide:
+        out['o'] = [r[0] for r in rows if any(r[0] == g[1] for g in guide)]
     if level == 'ks3' and kind == 'board' and len(atopics) * 2 < len(rows):
         out['af'] = 0
         stats['group_course_fallback_off'] += 1

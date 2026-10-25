@@ -49,8 +49,8 @@
 
     if (rows.length > 1) {
       var last = at === rows.length - 1, nx = rows[last ? 0 : at + 1];
-      try { window.__aismNext = { u: fileFor(nx[0]), t: nx[1] }; if (window.AismProgress) window.AismProgress.noteNext(fileFor(nx[0]), nx[1]); } catch (e) {}
-      html += '<a class="lnx-main" data-lnx="lesson" href="' + esc(fileFor(nx[0])) + '"><small>' +
+      try { window.__aismNext = { u: fileFor(nx), t: nx[1] }; if (window.AismProgress) window.AismProgress.noteNext(fileFor(nx), nx[1]); } catch (e) {}
+      html += '<a class="lnx-main" data-lnx="lesson" href="' + esc(fileFor(nx)) + '"><small>' +
         (last ? "Back to the first lesson" : "Next lesson") + "</small>" + esc(nx[1]) + " ➡</a>";
     }
 
@@ -75,7 +75,8 @@
   }
 
   var group = "";
-  function fileFor(slug) { return group + "-" + slug + SUF; }
+  // row[4] names the lesson file when it isn't <group>-<slug> (one file shared by two boards)
+  function fileFor(row) { return (row[4] || group + "-" + row[0]) + SUF; }
 
   function init() {
     var fin = document.querySelector(".screen.final");
@@ -84,11 +85,14 @@
     var file = decodeURIComponent(location.pathname.split("/").pop() || "");
     if (file.slice(-SUF.length) !== SUF) return;
     var m = RX.exec(file.slice(0, -SUF.length));
-    if (!m) return;
-    group = m[1] + "-" + m[2] + "-" + m[3];
+    // IB lessons shared by SL and HL are named without a board (geography-ibdp-core-unit-1-…): follow the SL course order
+    var sh = m ? null : /^(.+?)-ibdp-((?:core|option)-.+)$/.exec(file.slice(0, -SUF.length));
+    if (!m && !sh) return;
+    group = m ? m[1] + "-" + m[2] + "-" + m[3] : sh[1] + "-ibdp-sl";
+    var slug = m ? m[4] : sh[2];
     fetch("../quizzes/lesson-next/" + group + ".json")
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (d) build(fin, d, m[4]); })
+      .then(function (d) { if (d) build(fin, d, slug); })
       .catch(function () {});
   }
 

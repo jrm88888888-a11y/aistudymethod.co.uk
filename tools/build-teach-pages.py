@@ -128,11 +128,16 @@ PAGE_JS = '''<script src="/classcraft/quizzes/progress.js?v=%s" defer></script>
 RX_NOINDEX = re.compile(r'<meta\s[^>]*name=["\']robots["\'][^>]*content=["\'][^"\']*noindex', re.I)
 RX_CANON = re.compile(r'<link\s[^>]*rel=["\']canonical["\'][^>]*href=["\']([^"\']+)["\']', re.I)
 
-def indexable(course, slug):
+def lesson_stem(course, r):
+    """File stem of a lesson row: the 5th field when the file is shared by two boards."""
+    return r[4] if len(r) > 4 and r[4] else f'{course}-{r[0]}'
+
+
+def indexable(course, slug, stem=None):
     """Teacher pages list only lessons the site itself publishes for search:
     no noindex, canonical pointing at itself. This keeps out held-back lessons
     and duplicates (e.g. phantom qualifications delisted by delist-phantoms.py)."""
-    f = f'{course}-{slug}-mini-lesson.html'
+    f = f'{stem or course + "-" + slug}-mini-lesson.html'
     try:
         h = open(os.path.join(CC, 'adventures', f), encoding='utf8', errors='ignore').read(6000)
     except OSError:
@@ -183,7 +188,7 @@ def main():
         if f.endswith('.json'):
             d = json.load(open(os.path.join(DATA, f), encoding='utf8'))
             k = f[:-5]
-            kept = [r for r in d['t'] if indexable(k, r[0])]
+            kept = [r for r in d['t'] if indexable(k, r[0], lesson_stem(k, r))]
             if len(kept) < len(d['t']):
                 print(f'{k}: {len(d["t"]) - len(kept)} held-back lesson(s) left out')
             if not kept:
@@ -200,7 +205,7 @@ def main():
     stats = collections.Counter()
     for k, d in courses.items():
         spec = SPECS.get(k)
-        spec_slugs = {s for _, s in BOARD_TOPICS.get(k, [])}
+        spec_slugs = set(d['o']) if d.get('o') else {s for _, s in BOARD_TOPICS.get(k, [])}
         rows = d['t']
         main_rows = [r for r in rows if r[0] in spec_slugs]
         extra_rows = [r for r in rows if r[0] not in spec_slugs]
@@ -215,7 +220,7 @@ def main():
 
         def item(i, r):
             slug, t, games, quiz = r[0], r[1], r[2], (r[3] if len(r) > 3 else 0)
-            lesson = f'/classcraft/adventures/{k}-{slug}-mini-lesson.html'
+            lesson = f'/classcraft/adventures/{lesson_stem(k, r)}-mini-lesson.html'
             has_session = (quiz or (games and d['a']))
             tags = ''
             if quiz: tags += '<span class="tc-tag q">Quiz</span>'
@@ -276,7 +281,7 @@ def main():
         ld = {'@context': 'https://schema.org', '@type': 'ItemList', 'name': f'{name} mini-lessons',
               'numberOfItems': n,
               'itemListElement': [{'@type': 'ListItem', 'position': i + 1, 'name': r[1],
-                                   'url': f'{SITE}/classcraft/adventures/{k}-{r[0]}-mini-lesson.html'}
+                                   'url': f'{SITE}/classcraft/adventures/{lesson_stem(k, r)}-mini-lesson.html'}
                                   for i, r in enumerate(main_rows + extra_rows)]}
         page_ld = {'@context': 'https://schema.org', '@type': 'CollectionPage', 'name': title, 'description': desc,
                    'url': canon, 'inLanguage': 'en-GB', 'isAccessibleForFree': True,

@@ -192,11 +192,11 @@
     var me = document.currentScript || document.querySelector('script[src*="lesson-nav.js"]');
     var base = me && me.src ? me.src.replace(/lesson-nav\.js.*$/, "") : "../quizzes/";
     var s = document.createElement("script");
-    s.src = base + "lesson-next.js?v=20261008b";
+    s.src = base + "lesson-next.js?v=20261025";
     s.defer = true;
     document.head.appendChild(s);
     var a = document.createElement("script");          // teacher "assign this" button
-    a.src = base + "assign.js?v=20261008";
+    a.src = base + "assign.js?v=20261025";
     a.defer = true;
     document.head.appendChild(a);
     var p = document.createElement("script");          // lesson progress, coins and ticks

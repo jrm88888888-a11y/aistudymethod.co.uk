@@ -45,11 +45,21 @@
     if (!cache[group]) {
       cache[group] = fetch(BASE + "lesson-next/" + group + ".json")
         .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) { noteFiles(group, d); return d; })
         .catch(function () { return null; });
     }
     return cache[group];
   }
-  function lessonUrl(group, slug) { return SITE + "/classcraft/adventures/" + group + "-" + slug + SUF; }
+  /* A row's 5th field names the lesson file when it isn't <group>-<slug> (one file
+     shared by two boards, e.g. IB Geography SL and HL). */
+  var FILES = {};
+  function noteFiles(group, d) {
+    var t = (d && d.t) || [];
+    for (var k = 0; k < t.length; k++) if (t[k][4]) FILES[group + "/" + t[k][0]] = t[k][4];
+  }
+  function lessonUrl(group, slug) {
+    return SITE + "/classcraft/adventures/" + (FILES[group + "/" + slug] || group + "-" + slug) + SUF;
+  }
   function sessionUrl(group, slug, ids) {
     var u = SITE + "/teach/session.html?c=" + encodeURIComponent(group) + "&t=" + encodeURIComponent(slug);
     return ids && ids.length ? u + "&s=" + ids.join(",") : u;
@@ -357,11 +367,13 @@
     var file = decodeURIComponent(location.pathname.split("/").pop() || "");
     if (file.slice(-SUF.length) !== SUF) return;
     var m = RX.exec(file.slice(0, -SUF.length));
-    if (!m) return;
+    // IB lessons shared by SL and HL are named without a board (geography-ibdp-core-unit-1-…): offer them through the SL course
+    var sh = m ? null : /^(.+?)-ibdp-((?:core|option)-.+)$/.exec(file.slice(0, -SUF.length));
+    if (!m && !sh) return;
     // Held-back lessons (noindex) are not offered to teachers and have no course page.
     var rb = document.querySelector('meta[name="robots"]');
     if (rb && /noindex/i.test(rb.getAttribute("content") || "")) return;
-    var group = m[1] + "-" + m[2] + "-" + m[3], slug = m[4];
+    var group = m ? m[1] + "-" + m[2] + "-" + m[3] : sh[1] + "-ibdp-sl", slug = m ? m[4] : sh[2];
 
     injectStyle();
     var btn = document.createElement("button");
