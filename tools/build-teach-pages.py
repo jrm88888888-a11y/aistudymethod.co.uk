@@ -186,7 +186,7 @@ def head(title, desc, canon, extra=''):
 def main():
     courses = {}
     for f in sorted(os.listdir(DATA)):
-        if f.endswith('.json'):
+        if f.endswith('.json') and f != 'index.json':   # index.json = lesson-finder list, not a course
             d = json.load(open(os.path.join(DATA, f), encoding='utf8'))
             k = f[:-5]
             kept = [r for r in d['t'] if indexable(k, r[0], lesson_stem(k, r))]
