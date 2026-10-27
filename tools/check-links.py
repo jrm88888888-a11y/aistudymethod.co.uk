@@ -10,8 +10,9 @@ resolves to a file that exists in the repo. Exits 1 if anything is broken,
 so it can gate CI.
 
 Also checks back links on mini-lessons and grammar spines: the first link in
-the top "backstrip" must lead to where the lesson is opened from, i.e. Velvet
-Revision with the course selected (subjects.html?subject=...) or the lesson's
+the top "backstrip" must lead to where the lesson is opened from: the course's
+page of mini-lessons (lessons/<course>.html, the default since Oct 2026), Velvet
+Revision with the course selected (subjects.html?subject=...), or the lesson's
 grammar spine, never a bare page the student has not seen.
 """
 import os, re, sys, glob, subprocess
@@ -56,7 +57,9 @@ for p in pages():
     if not (p.startswith("classcraft/adventures/") and p.endswith(("-mini-lesson.html", "-grammar-spine.html"))) or not os.path.exists(p):
         continue
     m = BACK.search(open(p, encoding="utf-8", errors="ignore").read())
-    if m and not (re.search(r"subjects\.html\?(?:[^\"]*&(?:amp;)?)?subject=", m.group(1)) or m.group(1).endswith("-grammar-spine.html")):
+    if m and not (re.search(r"subjects\.html\?(?:[^\"]*&(?:amp;)?)?subject=", m.group(1)) or m.group(1).endswith("-grammar-spine.html")
+                  or (m.group(1).startswith("../../lessons/") and m.group(1).endswith(".html")
+                      and os.path.basename(p).startswith(m.group(1)[len("../../lessons/"):-len(".html")].replace("-ibdp-sl", "-ibdp")))):
         bad_back.append((p, m.group(1)))
 
 print(f"scanned {scanned} pages; broken link targets: {len(broken)}")

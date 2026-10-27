@@ -184,6 +184,18 @@
   else document.addEventListener("DOMContentLoaded", init);
 })();
 
+/* Back link follows the way in: the top "← Course" link goes to the course's
+   mini-lessons page by default; a student who arrived from Velvet Revision
+   (subjects.html, course selected) is sent back there instead. */
+(function () {
+  try {
+    var ref = document.referrer, a = document.querySelector(".backstrip a");
+    if (!a || !ref || ref.indexOf(location.origin + "/subjects.html?") !== 0) return;
+    if (!/[?&]subject=/.test(ref)) return;
+    a.href = ref;
+  } catch (e) {}
+})();
+
 /* Load the "What next?" card (lesson-next.js) and the teacher assign button
    (assign.js) alongside the rail, so every mini-lesson that carries
    lesson-nav.js gets them with no per-lesson edit. */
