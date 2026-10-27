@@ -16,6 +16,15 @@ For every mini-lesson it records, per group (subject-level-board):
   s, l, b : subject, level, board ids;  d : course display name
             ("AQA GCSE Chemistry") — used by assign.js, teach/session.html and
             tools/build-teach-pages.py
+  h : {slug: [poster, question, thumb]} for lessons that open with a hook video
+      (poster path relative to classcraft/adventures/, "" while the video is still
+      to be made; question = the hook's data-title; thumb = 640px copy of the poster
+      relative to the site root, present when images/lesson-thumbs/ has one) — used by the completion card, the lesson finder and lessons.html
+  v : slugs that have a Verify quiz (classcraft/verify-manifest.json)
+Also writes lesson-next/index.json: every course as
+  {k, s, l, b, d, sd, bd, n, hn} (key, ids, course name, subject and board display
+  names, lesson count, lessons with a hook) — the data behind the lesson finder on
+  index.html and lessons.html.
 Order = spec order from classcraft/topic-slugs.js, then any extras A-Z.
 Run from the repo root:  python3 tools/build-lesson-next.py
 """
@@ -61,6 +70,21 @@ def page_title(path):
     t = html.unescape(m.group(1)) if m else ''
     return re.split(r'\s+[—–|]\s+', t)[0].strip()
 
+_HOOK = re.compile(r'<div class="ks3-hook"([^>]*)>')
+def hook_info(path):
+    """[poster, question] from the lesson's opening hook video, or None."""
+    s = open(path, encoding='utf8', errors='replace').read()
+    m = _HOOK.search(s)
+    if not m: return None
+    attrs = dict(re.findall(r'data-([a-z-]+)="([^"]*)"', m.group(1)))
+    if not attrs.get('title'): return None
+    poster = attrs.get('poster', '')                 # "" = video not made yet
+    out = [poster, html.unescape(attrs['title'])]
+    if poster:                                       # 640px copy for lists and cards (tools/make-lesson-thumbs.sh)
+        thumb = 'images/lesson-thumbs/' + os.path.basename(poster)
+        if os.path.exists(os.path.join(ROOT, thumb)): out.append(thumb)
+    return out
+
 # Courses whose lesson list is set here, in subject guide order: (slug, title, file stem or
 # None). IB Geography (Oct 2026): the Core and Option unit lessons serve SL and HL from one
 # file named without a board; the HL extension units are named with "hl". The older
@@ -88,6 +112,7 @@ GUIDE = {
 }
 
 EVAL = {x[:-5] for x in json.load(open(os.path.join(CC, 'evaluate-manifest.json'), encoding='utf8'))}
+VERIFY = {x[:-5] for x in json.load(open(os.path.join(CC, 'verify-manifest.json'), encoding='utf8'))}
 SPECS = {e['key']: e for e in json.load(open(os.path.join(CC, 'specs-manifest.json'), encoding='utf8'))}
 
 def course_name(subj, level, board):
@@ -112,7 +137,7 @@ if bad:
     print('UNPARSED:', len(bad)); [print('  ', b) for b in bad[:20]]
 
 os.makedirs(OUT, exist_ok=True)
-stats = collections.Counter(); written = set()
+stats = collections.Counter(); written = set(); index = []
 for (subj, level, board), slugs in sorted(groups.items()):
     key = f'{subj}-{level}-{board}'
     spec = board_topics.get(key, [])
@@ -146,6 +171,13 @@ for (subj, level, board), slugs in sorted(groups.items()):
         q = 1 if f'{key}-{s}' in EVAL else 0
         stats['lesson_quiz'] += q
         rows.append([s, title, has, q])
+    hooks, verify = {}, []
+    for r in rows:
+        stem = r[4] if len(r) > 4 else f'{key}-{r[0]}'
+        hi = hook_info(os.path.join(ADV, stem + SUF))
+        if hi: hooks[r[0]] = hi
+        if f'{key}-{r[0]}' in VERIFY: verify.append(r[0])
+    stats['lesson_hook'] += len(hooks)
     name = key + '.json'
     # af = 0 (KS3 only): a KS3 course such as science spans biology, chemistry and
     # physics on ONE shelf that is being filled topic by topic, so a lesson without its
@@ -155,12 +187,22 @@ for (subj, level, board), slugs in sorted(groups.items()):
     out = {'a': a, 's': subj, 'l': level, 'b': board, 'd': course_name(subj, level, board), 't': rows}
     if guide:
         out['o'] = [r[0] for r in rows if any(r[0] == g[1] for g in guide)]
+    if hooks: out['h'] = hooks
+    if verify: out['v'] = verify
     if level == 'ks3' and kind == 'board' and len(atopics) * 2 < len(rows):
         out['af'] = 0
         stats['group_course_fallback_off'] += 1
     json.dump(out, open(os.path.join(OUT, name), 'w', encoding='utf8'),
               ensure_ascii=False, separators=(',', ':'))
     written.add(name)
+    e = SPECS.get(key)
+    index.append({'k': key, 's': subj, 'l': level, 'b': board, 'd': out['d'],
+                  'sd': e['subjectDisplay'] if e else subj.replace('-', ' ').title(),
+                  'bd': e['boardDisplay'] if e else board.upper(),
+                  'n': len(rows), 'hn': len(hooks)})
+json.dump(index, open(os.path.join(OUT, 'index.json'), 'w', encoding='utf8'),
+          ensure_ascii=False, separators=(',', ':'))
+written.add('index.json')
 for old in os.listdir(OUT):
     if old.endswith('.json') and old not in written:
         print('STALE (not removed):', old)

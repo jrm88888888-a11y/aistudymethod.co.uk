@@ -42,6 +42,7 @@ NAV = '''<nav>
  </div>
  </a>
  <ul class="nav-links">
+ <li><a href="/lessons.html">Mini-lessons</a></li>
  <li><a href="/subjects.html">Velvet Revision</a></li>
  <li><a href="/gcse-revision-games.html">Games</a></li>
  <li><a href="/velvet-method.html">The Velvet Method</a></li>

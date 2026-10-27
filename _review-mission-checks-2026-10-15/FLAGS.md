@@ -1,0 +1,190 @@
+# Mission checks: where each one now sits, and flags
+
+Each mission now ends with its check, straight after the screen where the mission question is answered.
+Screens after the check are ordinary lesson content.
+
+Screen numbers [n] count from 0 in the lesson as it was BEFORE checks and dividers were added.
+
+## GCSE Science (188 lessons, 549 checks)
+
+- **gcse-bio-alveoli** · biology-gcse-ccea-breathing-respiration: Answer only implied: [11] gives 'large surface area' as an exchange-surface adaptation but never links it to having many tiny alveoli.
+- **gcse-bio-antibiotics-viruses** · biology-gcse-cambridge-igcse-diseases-immunity: The lesson's own quiz [12] (flu is viral: why won't antibiotics cure it?) re-asks almost the same question as the mission check, two screens after it. Ending at 12 instead would put the check after the lesson's own version.
+- **gcse-bio-biodiversity** · biology-gcse-eduqas-ecosystems: Population-pressure preview is taught only at [18] (food security), after two sampling activities [16-17], and links to biodiversity in one clause.
+- **gcse-bio-blood-glucose** · biology-gcse-ccea-coordination-control: Off-topic screens stay inside the mission: [11] (ruler-drop reaction time) and the auxin half of [12] sit before the diabetes teaching.
+- **gcse-bio-blood-glucose** · biology-gcse-edexcel-animal-coordination-homeostasis: 'Negative feedback' is never named for glucose: [9] shows the corrective loop without the term, and the term appears in this mission only at [13] (ADH, Higher). The previewed word is therefore not taught by answer_end.
+- **gcse-bio-blood-glucose** · biology-gcse-ocr-organism-level-systems: An off-topic screen stays inside the mission: [7] (menstrual cycle) sits between the hormones intro [5] and the answer screen [8].
+- **gcse-bio-bmi** · biology-gcse-edexcel-health-disease-medicines: Heart-disease preview rests on one line at [13] (risk factors; waist:hip and CVD risk); the full CVD screen [16] now falls after the check.
+- **gcse-bio-breeding-vs-engineering** · biology-gcse-aqa-inheritance-variation-evolution: Mission opens with variation and natural selection [14-16], unrelated to the hook.
+- **gcse-bio-breeding-vs-engineering** · biology-gcse-edexcel-natural-selection-genetic-modification: The sort activity [8] (breeding vs engineering) comes before any teaching; the matching match [14] now falls after the check, behind tissue culture [12-13].
+- **gcse-bio-cell-structure** · biology-gcse-edexcel-key-concepts-in-biology: The sort on cell features [5] now falls after the check, behind specialised cells [4].
+- **gcse-bio-competition** · biology-gcse-eduqas-ecosystems: The lesson's abiotic/biotic quick check [5] now falls after the check, separated by the unrelated sort [4].
+- **gcse-bio-cycle-clock** · biology-gcse-ccea-reproduction-fertility: The mission starts at [1], so five screens on reproduction, organs and sex hormones ([1]–[5]) play before any menstrual-cycle teaching. Only the end can be moved.
+- **gcse-bio-darwin-wallace** · biology-gcse-aqa-inheritance-variation-evolution: Preview 'natural selection, step by step' is not taught in [21-27]; it is at [15], in the previous mission.
+- **gcse-bio-digestion-breakdown** · biology-gcse-edexcel-igcse-structures-functions-in-living-organisms: Mission opens with two photosynthesis screens [15-16], unrelated to the hook.
+- **gcse-bio-eutrophication** · biology-gcse-ccea-ecological-relationships: The lesson's own eutrophication quick check [16] asks nearly the same question as the mission check and now comes after it.
+- **gcse-bio-eutrophication** · biology-gcse-edexcel-ecosystems-material-cycles: The match [15] includes eutrophication but mixes four topics, so it is left after the check.
+- **gcse-bio-eutrophication** · biology-gcse-edexcel-igcse-ecology-the-environment: Preview on nitrate uptake and nitrogen cycling by bacteria and decomposers is not taught in [20-28]. Mission also opens with air pollution [20-22].
+- **gcse-bio-mitosis-stem** · biology-gcse-eduqas-cell-biology: Mission opens with enzymes [11-12], unrelated to the hook.
+- **gcse-bio-mushroom-kingdom** · biology-gcse-cambridge-igcse-characteristics-classification: The answer is taught only on [6], flagged Supplement; the trimmed mission [6]-[7] is entirely Supplement, so core-only pupils get a mission with no core content. Vertebrates/arthropods [8]-[13] (core) now fall outside the mission.
+- **gcse-bio-nature-nurture** · biology-gcse-ccea-variation-selection: The lesson's own genetic/environmental sort [3] now comes after the check, separated from [1] by the continuous/discontinuous screen [2].
+- **gcse-bio-photo-carbon-wood** · biology-gcse-cambridge-igcse-plant-nutrition: 'From the air' is not taught by [3] (stomata letting CO₂ in is [6]); the check is still answerable because CO₂ is the only carbon-containing raw material, but the option and why say 'from the air'.
+- **gcse-bio-photo-limiting** · biology-gcse-eduqas-photosynthesis: The pondweed bubble method is only met through calc [10] before the check; the full practical teaching screen [15] (with [16]–[17]) comes after it.
+- **gcse-bio-recessive-reappears** · biology-gcse-eduqas-inheritance-variation-and-evolution: No definitions screen for dominant/recessive or homozygous/heterozygous inside the mission; the terms come only through the sort [6], [7] and the quizzes.
+- **gcse-bio-reflex** · biology-gcse-aqa-homeostasis--response: The lesson's own quiz [7] (why are reflexes fast? does not involve the conscious brain) re-asks the mission question two screens after the check; the reaction-time practical [6] sits between.
+- **gcse-bio-reflex** · biology-gcse-edexcel-igcse-structures-functions-in-living-organisms: Answer only implied on the teach screen [30] ('before you have time to think'); 'skip the conscious brain' appears only in quiz [31]'s feedback.
+- **gcse-bio-resp-oxygen-debt** · biology-gcse-aqa-bioenergetics: What repays the oxygen debt (extra oxygen to remove lactic acid) is taught only in HT text [15]-[16]; the existing override check (what did anaerobic respiration make?) stays within [11]-[16].
+- **gcse-bio-resp-oxygen-debt** · biology-gcse-eduqas-cell-biology: Answer only partly taught: [17] says lactic acid 'causes an oxygen debt' but never says what repays it; the override check covers what is taught. The mission is now a single screen.
+- **gcse-bio-transpiration** · biology-gcse-aqa-organisation: Answer only implied: AQA never says water loss from the leaves pulls water up the xylem (see concerns).
+- **gcse-bio-transpiration** · biology-gcse-eduqas-transport-systems: Answer only implied: Eduqas never says water loss from the leaves pulls water up the xylem (see concerns).
+- **gcse-bio-tropism** · biology-gcse-aqa-homeostasis--response: The lesson's quick check [25] (auxin on the shaded side) nearly duplicates the mission check and now comes after it, behind [24].
+- **gcse-bio-two-messengers** · biology-gcse-eduqas-coordination-and-control: Eduqas never says hormones reach many organs or the whole body, so an override replaces that half of the correct option and the why.
+- **gcse-bio-vaccine-memory** · biology-gcse-eduqas-health-disease-and-medicine: Mission opens with an unrelated calculation [12]. 'Each antibody fits one antigen' is not taught in [12-14], so a why override was added.
+- **gcse-chem-activation** · chemistry-gcse-cambridge-igcse-chemical-energetics: The exo/endo sort activities [11]-[12] (on the first preview) now fall after the check, behind the Supplement bond-energy screens [7]-[10].
+- **gcse-chem-activation** · chemistry-gcse-eduqas-energy-changes-in-chemistry: The lesson's own quiz [13] ('What is activation energy?') now sits after the check, behind the Higher bond-energy screens [8]-[12].
+- **gcse-chem-alkali-metals** · chemistry-gcse-edexcel-igcse-inorganic-chemistry: Previews 'how the periodic table is arranged' and 'group number tells you outer electrons' are not taught anywhere in screens 1-6; screen 1 also never says Group 1 atoms have one outer electron, which the shared 'why' states.
+- **gcse-chem-alkali-metals** · chemistry-gcse-ocr-predicting-identifying-reactions: Previews 'how the periodic table is arranged' and 'what a group number tells you' are not taught anywhere in screens 1-10.
+- **gcse-chem-atom-model** · chemistry-gcse-aqa-atomic-structure-the-periodic-table: Bounce-back appears only in the screen-7 figure text, not the body text.
+- **gcse-chem-conservation** · chemistry-gcse-ccea-formulae-equations: CCEA 13 says a gas 'leaves or joins' but never says 'open container'; the check's 'open dishes' framing is inferred, not quoted.
+- **gcse-chem-cracking** · chemistry-gcse-edexcel-separate-chemistry-2: Polymer preview is not taught in screens 11-16 (only elsewhere in the lesson); the existing override already avoids it.
+- **gcse-chem-crude-oil** · chemistry-gcse-aqa-organic-chemistry: The top/bottom-of-column sort activity (8) now falls after the check.
+- **gcse-chem-crude-oil** · chemistry-gcse-cambridge-igcse-organic-chemistry: Cambridge never calls the crude-oil hydrocarbons alkanes inside the mission, so an override swaps 'alkane' for 'hydrocarbon' in the check.
+- **gcse-chem-diffusion** · chemistry-gcse-cambridge-igcse-states-of-matter: Answer is taught only on Supplement screens 12-13; Core pupils get a check they are not taught (see concerns).
+- **gcse-chem-dynamic-eq** · chemistry-gcse-eduqas-rate-of-chemical-change-and-dynamic-equilibrium: The previewed 'changing the conditions' idea is taught only on Higher screens (16–18), so Foundation pupils meet a mission whose last three screens are HT.
+- **gcse-chem-dynamic-eq** · chemistry-gcse-ocr-monitoring-controlling-reactions: The previewed 'changing the conditions' idea is HT only (23–24).
+- **gcse-chem-early-air** · chemistry-gcse-edexcel-fuels-earth-science: The order-the-story activity (21) now falls after the check.
+- **gcse-chem-extraction** · chemistry-gcse-cambridge-igcse-metals: No screen in this mission shows the reactivity series itself; [12] gives only above/below carbon examples.
+- **gcse-chem-extraction** · chemistry-gcse-ccea-metals-reactivity-series: The reactivity series itself is taught in mission 1; this mission's [12] shows only metals above/below carbon.
+- **gcse-chem-extraction** · chemistry-gcse-eduqas-reactivity-series-and-extraction-of-metals: The reactivity series itself is taught in mission 1; this mission's [9] places metals only relative to carbon.
+- **gcse-chem-gas-volume** · chemistry-gcse-aqa-quantitative-chemistry: Screen 23 says equal moles fill equal volumes but never 'equal numbers of molecules'; the correct option relies on the mole/Avogadro constant taught earlier in the lesson (outside the mission).
+- **gcse-chem-haber** · chemistry-gcse-aqa-using-resources: Answer screen 19 is Higher tier.
+- **gcse-chem-haber** · chemistry-gcse-ccea-rates-of-reaction-equilibrium: Answer screens 13 and 16 are Higher tier.
+- **gcse-chem-haber** · chemistry-gcse-edexcel-separate-chemistry-1: Answer screen 22 is HT only.
+- **gcse-chem-haber** · chemistry-gcse-eduqas-production-use-and-disposal-of-important-chemicals-and-materials: Answer screen 2 is Higher tier.
+- **gcse-chem-haber** · chemistry-gcse-ocr-global-challenges: Answer screen 7 is HT only.
+- **gcse-chem-ionic-conduct** · chemistry-gcse-edexcel-key-concepts-in-chemistry: The lesson's own quiz [19] re-asks the mission question (why NaCl conducts only when molten or dissolved) after the check, behind giant covalent and metallic screens [14]-[18].
+- **gcse-chem-ionic-conduct** · chemistry-gcse-ocr-elements-compounds-mixtures: Answer and the 'hard to melt' preview are taught only in the summary table [20], after metallic and carbon screens [17]-[19]; the lattice screen [13] does not mention conduction.
+- **gcse-chem-ionic-formulae** · chemistry-gcse-eduqas-chemical-formulae-equations-and-amount-of-substance: Eduqas lists ion charges (1) but does not teach how to work them out from the group, which the hook previews.
+- **gcse-chem-isotopes** · chemistry-gcse-cambridge-igcse-atoms-elements-compounds: The answer (Ar as a weighted mean, 8–9) is Supplement only; the Cambridge override checks isotopes (6) instead.
+- **gcse-chem-isotopes** · chemistry-gcse-edexcel-key-concepts-in-chemistry: Screen 4 (history of the atomic model) sits inside the mission but is not previewed.
+- **gcse-chem-mole** · chemistry-gcse-aqa-quantitative-chemistry: Screen 7 is Higher tier only.
+- **gcse-chem-mole** · chemistry-gcse-cambridge-igcse-stoichiometry: Screen 9 is Supplement only.
+- **gcse-chem-mole** · chemistry-gcse-edexcel-key-concepts-in-chemistry: Screen 23 is HT only.
+- **gcse-chem-mole** · chemistry-gcse-eduqas-chemical-formulae-equations-and-amount-of-substance: Screen 9 is Higher only.
+- **gcse-chem-nox** · chemistry-gcse-cambridge-igcse-chemistry-of-the-environment: The mission's actual answer (15–16) is Supplement only; core 11 gives the source only as 'car engines', hence the Cambridge override.
+- **gcse-chem-polymers** · chemistry-gcse-aqa-organic-chemistry: Screens 15–17 at the start of the mission (alcohols, carboxylic acids) are not hook content; screen 20 is Higher tier.
+- **gcse-chem-polymers** · chemistry-gcse-cambridge-igcse-organic-chemistry: Screen 21 is Supplement only.
+- **gcse-chem-polymers** · chemistry-gcse-edexcel-separate-chemistry-2: Screens 23–24 are Higher tier only.
+- **gcse-chem-polymers** · chemistry-gcse-eduqas-carbon-compounds: Condensation on 21 is Higher tier only.
+- **gcse-chem-reactivity** · chemistry-gcse-cambridge-igcse-metals: The positive-ion answer (5) and displacement (6–7) are Supplement; Cambridge override orders metals from water/acid observations.
+- **gcse-chem-water** · chemistry-gcse-eduqas-production-use-and-disposal-of-important-chemicals-and-materials: The lesson's own quizzes [11] (potable vs pure) and [12] (treatment order, re-asking the mission question) now sit after the check, behind the purification and SP11 screens [9]-[10].
+- **gcse-phy-car-vs-cliff** · physics-gcse-eduqas-energy: Preview 'what happens when the speed doubles' is not taught as doubling: [5] teaches tripling gives nine times. Check unaffected.
+- **gcse-phy-car-vs-cliff** · physics-gcse-ocr-energy: Preview 'what happens when the speed doubles' is not taught as doubling: [8] teaches trebling gives nine times. Check unaffected.
+- **gcse-phy-echo-cliff** · physics-gcse-aqa-waves: Mission never teaches using an echo time to find a distance (AQA covers it elsewhere in the lesson, outside the mission); the AQA override asks only that an echo is reflected sound. Ultrasound uses at [14] are Physics only.
+- **gcse-phy-echo-cliff** · physics-gcse-edexcel-igcse-waves: Uses of ultrasound are not taught in this mission; [19] only defines ultrasound as above 20 kHz.
+- **gcse-phy-echo-cliff** · physics-gcse-edexcel-waves: Echo distance is taught only on a 'Separate Physics only' screen [17]-[18]; combined-science pupils meet a check on content flagged separate-only.
+- **gcse-phy-echo-cliff** · physics-gcse-eduqas-waves-in-matter: Echo distance is taught only on 'Higher tier only' screens [11]-[12]; Foundation pupils meet a check on Higher-only content.
+- **gcse-phy-fading-tracer** · physics-gcse-aqa-atomic-structure: Background and uses are taught on a 'physics only' screen [18].
+- **gcse-phy-fading-tracer** · physics-gcse-cambridge-igcse-nuclear-physics: [23], a quiz on what half-life means (the mission's own point), now falls after the check.
+- **gcse-phy-fading-tracer** · physics-gcse-edexcel-radioactivity: Uses at [22] are Physics-only (6.28P), so the 'match each radiation to its job' preview is separate-science only here.
+- **gcse-phy-fading-tracer** · physics-gcse-ocr-waves-radioactivity: Uses at [28] only list smoke detectors (alpha), tracers and radiotherapy; tracers and radiotherapy are not matched to a radiation type. [30] (irradiation quiz) now falls after the check.
+- **gcse-phy-fleeing-galaxies** · physics-gcse-eduqas-space-physics: Trimmed 4 screens. [11]-[12] CMB is marked 'extension, not on the Eduqas spec'; [13] is an unrelated orbit quiz sitting in this range; [14] (Big Bang evidence sort) now falls after the check.
+- **gcse-phy-graph-detective** · physics-gcse-aqa-forces: 'Area = distance' at [19] is Higher tier only.
+- **gcse-phy-graph-detective** · physics-gcse-ccea-motion: Velocity-time graphs [13]-[15] are Higher tier; the CCEA override check uses the distance-time graph at [11] instead.
+- **gcse-phy-graph-detective** · physics-gcse-ocr-forces: No quiz on area under the v-t graph inside the mission; area is taught at [5] only.
+- **gcse-phy-iron-vs-water** · physics-gcse-cambridge-igcse-thermal-physics: Mission opens on thermal expansion [8]-[9], unrelated to the hook; the answer is only in [10]-[11].
+- **gcse-phy-iron-vs-water** · physics-gcse-edexcel-igcse-solids-liquids-gases: Mission opens on states of matter [8]-[9], unrelated to the hook; the answer is only in [10]-[11].
+- **gcse-phy-jumping-wire** · physics-gcse-cambridge-igcse-electricity-magnetism: The mission opens with induction and the a.c. generator [23]-[24], which the hook does not preview; the motor effect only starts at [25].
+- **gcse-phy-jumping-wire** · physics-gcse-edexcel-igcse-magnetism-electromagnetism: Mission opens with [11] (force on moving charges, Paper 2 only), not previewed.
+- **gcse-phy-jumping-wire** · physics-gcse-edexcel-magnetism-the-motor-effect: Trimmed 7 screens. [20] (quiz on when the motor-effect force is biggest) now falls after the check.
+- **gcse-phy-live-case** · physics-gcse-edexcel-electricity-circuits: Earth fault and fuse are taught as separate points at [21]; the mission never says the earth-fault current blows the fuse.
+- **gcse-phy-live-case** · physics-gcse-eduqas-electricity: Earth fault [18] and fuse melting [19] are taught separately; the mission never says the earth-fault current blows the fuse.
+- **gcse-phy-long-spanner** · physics-gcse-aqa-forces: Moments screen [13] is flagged 'physics only'.
+- **gcse-phy-long-spanner** · physics-gcse-ccea-forces: Mission opens with Hooke's law [11]-[12], which the hook does not preview.
+- **gcse-phy-long-spanner** · physics-gcse-edexcel-forces-and-their-effects: Whole mission is 'Physics only' (9.6-9.8).
+- **gcse-phy-moon-never-falls** · physics-gcse-aqa-space-physics: The previewed Solar System tour is not taught in this mission's screens (it is earlier in the lesson); only the [14] 'What does it orbit?' sort touches it, and that now falls after the check.
+- **gcse-phy-moon-never-falls** · physics-gcse-ccea-space-physics: The lesson's own quiz on the answer ([6] 'Why doesn't it fly off?') now falls after the check, with orbital-speed and satellite-orbit screens [4]-[5] in between.
+- **gcse-phy-paper-stops-alpha** · physics-gcse-aqa-atomic-structure: Previewed 'what ionising means' is never defined in this mission (no 'knocks electrons off atoms'); pupils meet only 'most/least ionising'. Check unaffected. Ions are defined only in mission 1.
+- **gcse-phy-paper-stops-alpha** · physics-gcse-cambridge-igcse-nuclear-physics: Previewed 'what ionising means' is never defined in this mission (no 'knocks electrons off atoms'); pupils meet only 'most/least ionising'. Check unaffected.
+- **gcse-phy-paper-stops-alpha** · physics-gcse-ccea-atomic-nuclear-physics: Previewed 'what ionising means' is never defined in this mission (no 'knocks electrons off atoms'); pupils meet only 'most/least ionising'. Check unaffected.
+- **gcse-phy-paper-stops-alpha** · physics-gcse-edexcel-igcse-radioactivity-particles: Previewed 'what ionising means' is never defined in this mission (no 'knocks electrons off atoms'); pupils meet only 'most/least ionising'. Check unaffected.
+- **gcse-phy-paper-stops-alpha** · physics-gcse-edexcel-radioactivity: Previewed 'what ionising means' is never defined in this mission (no 'knocks electrons off atoms'); pupils meet only 'most/least ionising'. Check unaffected.
+- **gcse-phy-paper-stops-alpha** · physics-gcse-eduqas-atomic-structure: Previewed 'what ionising means' is never defined in this mission (no 'knocks electrons off atoms'); pupils meet only 'most/least ionising'. Check unaffected. Ions are defined only in mission 1.
+- **gcse-phy-paper-stops-alpha** · physics-gcse-ocr-waves-radioactivity: Previewed 'what ionising means' is never defined in this mission (no 'knocks electrons off atoms'); pupils meet only 'most/least ionising'. Check unaffected.
+- **gcse-phy-recoil** · physics-gcse-edexcel-igcse-forces-motion: Momentum is 'Paper 2 only' here.
+- **gcse-phy-recoil** · physics-gcse-eduqas-forces-and-motion: Whole momentum mission is Higher tier.
+- **gcse-phy-recoil** · physics-gcse-ocr-forces: Momentum [15] is Higher tier.
+- **gcse-phy-refuelling-spark** · physics-gcse-edexcel-igcse-electricity: Whole static mission is 'Paper 2 only'.
+- **gcse-phy-refuelling-spark** · physics-gcse-edexcel-static-electricity: Trimmed 6 screens. Uses [10] come before the danger [11], the reverse of the hook's preview order.
+- **gcse-phy-rubbed-rod** · physics-gcse-aqa-electricity: Static section is 'Physics only' (not Combined Science).
+- **gcse-phy-rubbed-rod** · physics-gcse-eduqas-electricity: Mission is now one screen. [17], a quiz on charging by losing electrons (mixed with field lines), falls after the check.
+- **gcse-phy-rubbed-rod** · physics-gcse-ocr-electricity-magnetism: Mission is now one screen. [3], a quiz on charging by losing electrons, falls after the check.
+- **gcse-phy-series-or-parallel** · physics-gcse-cambridge-igcse-electricity-magnetism: Mission opens with circuit symbols [16], not previewed.
+- **gcse-phy-spring-gives-up** · physics-gcse-aqa-forces: Mission opens with work done [9]-[10], which the hook does not preview.
+- **gcse-phy-spring-gives-up** · physics-gcse-edexcel-forces-matter: [9] (elastic or inelastic sort, on the mission's answer) now falls after the check, beyond the unpreviewed energy screens [7]-[8].
+- **gcse-phy-squeezed-syringe** · physics-gcse-edexcel-igcse-solids-liquids-gases: Answer is taught at [18]-[19]; the end runs to [22] only because [20] teaches the previewed heating effect as the kelvin pressure law.
+- **gcse-phy-squeezed-syringe** · physics-gcse-edexcel-particle-model: The lesson's own squeeze quiz [24] ('Squeezing at constant temperature') now falls after the check, with [21]-[23] in between.
+- **gcse-phy-stadium-wave** · physics-gcse-cambridge-igcse-waves: Trimmed 4. [7] (period calculation, a previewed idea) now falls after the check, behind the wave-equation screens.
+- **gcse-phy-stadium-wave** · physics-gcse-edexcel-igcse-waves: Trimmed 5. No quiz on amplitude/wavelength/frequency/period inside the mission; [7] (frequency from period) now falls after the check.
+- **gcse-phy-stadium-wave** · physics-gcse-ocr-waves-radioactivity: Trimmed 7; mission has no quiz before the check. [4] (period calculation) and [9] (transverse or longitudinal quiz) now fall after the check.
+- **gcse-phy-stair-race** · physics-gcse-edexcel-energy-forces-doing-work: Preview 'calculate power in watts' is only taught after the range ends (P = E ÷ t at screens 14-16); inside the mission power is defined in words only at [5]. Check is qualitative, so still answerable.
+- **gcse-phy-steel-ship** · physics-gcse-edexcel-forces-matter: Upthrust and floating [15]-[16] are HT only (and separate science); the check depends on them.
+- **gcse-phy-steel-ship** · physics-gcse-eduqas-forces: Upthrust and floating [14]-[15] are Higher tier; the check depends on them.
+- **gcse-phy-steel-ship** · physics-gcse-ocr-matter: Upthrust and floating [28]-[29] are Higher tier only; the check depends on them. Mission opens with atmospheric pressure [24]-[25], not previewed.
+- **gcse-phy-stuck-at-100** · physics-gcse-cambridge-igcse-thermal-physics: Previewed 'calculate specific latent heat' is taught only as extension beyond the 0625 syllabus ([12]-[13]). Check unaffected.
+- **gcse-phy-sun-holds-up** · physics-gcse-aqa-space-physics: [9] (order the Sun-like life-cycle stages, on the mission's 'what happens next') now falls after the check, behind the unpreviewed element screens [7]-[8].
+- **gcse-phy-sun-holds-up** · physics-gcse-cambridge-igcse-space-physics: Life cycle [16]-[17] is Supplement; unpreviewed galaxy/light-year screens [13]-[15] sit inside the mission before it. The override check is answerable at [12].
+- **gcse-phy-texting-driver** · physics-gcse-aqa-forces: The lesson's stopping-distance quiz [25] now falls after the check, with terminal velocity [24] in between.
+- **gcse-phy-two-trolleys** · physics-gcse-eduqas-forces-and-motion: Preview 'combine forces into a single resultant force' is only implied here ([11] thrust = drag gives zero resultant); this lesson never adds unequal forces to find a resultant. Check unaffected (resultant is given).
+
+## KS3 Maths, English, Geography, History (18 lessons, 56 checks)
+
+- **ks3-algebra-1**: Kept [7] in: it is a second simplify activity straight after quiz [6], both on [5]. Range end is [7].
+- **ks3-algebra-3**: [22] (like-terms sort) and [23] (spot the mistake in 3a + 2a) test mission 1's topic and now sit outside any mission.
+- **ks3-geometry-1**: [9] (shape-to-area-formula match) is review, not the quiz on [7], so it is left outside.
+- **ks3-geometry-3**: Kept [23] (spot the hypotenuse) in: it is a second Pythagoras quiz straight after [22].
+- **ks3-grammar-3**: [21] (word class of 'over') now falls after the check; it revisits mission 1 content, not this mission.
+- **ks3-humphys-3**: Quiz [22] already asks the hook's exact scenario (trees cleared, concrete, heavy rain), so the check uses a fresh case.
+- **ks3-humphys-3**: Kept [23] (range end): it quizzes development indicators, a previewed idea taught at [17]. A strict reading of rule 3 would end at [22].
+- **ks3-industry-3**: [20] is a date-matching game whose pairs are not visible in the text; if all its pairs come from this mission, it could join it (end 20).
+- **ks3-industry-3**: [20]-[23] are whole-unit review (dates, order, urbanisation, links between campaigns), so they now fall outside.
+- **ks3-medieval-2**: [12] (date match across the lesson) is left outside.
+- **ks3-medieval-4**: The answer is taught only on [22], the last teaching screen; most of the mission ([18]-[21]) is other content.
+- **ks3-modern-2**: The lesson never says why democracy held in Britain; it only sets Britain's widening vote [6] beside the rise of dictators [9]-[10]. The 'grew here' half is implied, so the check targets the 'not elsewhere' half.
+- **ks3-modern-4**: [24]'s order-it items are not shown in the text; assumed to be this unit's post-1945 events.
+- **ks3-modern-4**: The mission line has two parts; the check tests the 'cold' part only, as the card asks.
+- **ks3-number-3**: The lesson works out 20% of £45 (£9) but never 45% of £20; pupils must compute it with the building blocks. The answer (a tie) is reachable but never stated.
+- **ks3-place-1**: The key fact (higher altitude means cooler air; Nairobi about 1,800 m) appears only in quiz [6]'s feedback; [5] says just 'highlands' and 'tropical highland'. Consider one line on altitude in [5].
+- **ks3-place-3**: Trimmed [20]-[22] out of the mission. [22] quizzes the like-for-like trap taught at [18], a previewed idea, but it is not straight after [18]-[19], so it now sits after the check.
+- **ks3-probability-2**: The 'predict how often' preview is met only in quiz [12] (expected number = probability × trials, in its hint); no teaching screen covers it.
+- **ks3-probability-2**: [13] (place-on-the-scale game) is mission 1 content and now sits outside any mission.
+- **ks3-probability-3**: Adding probabilities is taught on [7] (mission 1); in this mission it appears only in game [20] and quiz [21].
+- **ks3-ratio-2**: [17] gives the multipliers for 'up then down' (× 1.10 × 0.90) but never works one through or says the result ends below the start; the answer is implied, not stated.
+- **ks3-ratio-3**: [25] (strand sort) and [26] (best-value quiz on the mission's own idea) fall outside; [26] is not straight after [23], so the rule leaves it out. Ending at [26] instead would put that quiz inside the mission.
+- **ks3-spoken-3**: Quiz [21] tests talk structure (myth 2 in [20]), first taught in mission 1 at [2]; kept in as the quiz straight after [20].
+- **ks3-statistics-1**: Kept [10] (average-to-use match) in: it follows quiz [9] on the same point.
+- **ks3-statistics-2**: [19] (which chart fits) is left outside.
+- **ks3-tudorstuart-1**: [8] (date match across the whole unit) is left outside.
+- **ks3-tudorstuart-3**: [20] (name the 1707 union) tests a previewed idea but is not straight after its teaching screen, so it falls outside with the unit review [21]-[23].
+- **ks3-writing-3**: 'Pulls the reader into agreeing' is stated only in quiz [20]'s feedback; [19] just names the technique and says 'used sparingly'.
+
+## KS3 Science (18 lessons; 9 checks moved earlier)
+
+- **ks3-atoms-2**: Check: reused lesson quiz. End moves 21->19: 20-21 are conservation-of-mass calculations, not needed for the answer. The reused quiz at 22 would no longer sit straight after the end; it needs moving up to follow 19 or replacing with a dedicated check.
+- **ks3-circuits-2**: Check: reused lesson quiz. End moves 30->29: 30 (DC motor) is the motor effect, not previewed on a narrow reading of 'what a current in a coil can do'; if Billy reads the motor as part of that preview, keep 30. If the end moves, the reused quiz at 31 needs moving to follow 29.
+- **ks3-cycles-2**: End moves 24->23: 24 (photosynthesis-or-respiration sort) is not on the last point (energy flow); it rehearses the mission answer, so leaving it after the check is fine, but Billy may prefer it inside.
+- **ks3-forces-1**: Check: reused lesson quiz.
+- **ks3-forces-2**: Check: reused lesson quiz. Check uses a skydiver at terminal velocity rather than the car: a fresh situation, answerable from 18.
+- **ks3-forces-3**: End moves 33->31: 32 (average speed recap) and 33 (forces come from two objects) are lesson review, unrelated to moments or pressure.
+- **ks3-genetics-2**: Answer is implied, not stated: no screen in 16-24 says a feature acquired in life (stretching) is not inherited because it does not change genes. That rule is stated only at 12 (mission 1, the scar). Pupils can still reach the correct option from 19.
+- **ks3-materials-2**: Check: reused lesson quiz. Check (hairdryer case) does not re-ask the mission question directly; 'cheap' is not taught on 16, but light, mouldable and insulating are, so it is answerable.
+- **ks3-matter-1**: Check: reused lesson quiz.
+- **ks3-matter-2**: End moves 22->17: 18-19 (diffusion, Brownian motion) and 20-22 (mass vs weight) are not previewed and not needed.
+- **ks3-particles-2**: Check: reused lesson quiz.
+- **ks3-ptable-2**: End moves 22->20: 21 (symbol Na) and 22 (group = column) are unrelated recall quizzes.
+- **ks3-pure-2**: End moves 24->20: 21-24 are an end-of-lesson review block (why not filtration, pure/mixture sort, common traps, method choice). 21 rehearses the hook's 'could filter paper catch the salt?', so Billy may prefer 21 inside.
+- **ks3-reactions-3**: End moves 26->22: 23-24 (metals with acids) and 25-26 (catalysts) are not previewed; the catalyst distractor in the check is rejectable from 21 alone.
+- **ks3-space-3**: Borderline: narration mentions the solar system only as the starting point of the zoom-out, and the lesson teaches it (24) after the light year. If Billy reads it as not previewed, the end is 23.
+- **ks3-structfn-2**: Check: reused lesson quiz.
+- **ks3-structfn-4**: End moves 35->33: 34 (exercise and asthma) and 35 (leaf gas exchange) are not previewed.
+- **ks3-waves-1**: End moves 16->13: 14-16 (loudness and pitch) are not previewed.
+- **ks3-waves-2**: End moves 31->28: 29 (absorb/reflect colour), 30 (sound-or-light sort) and 31 (refraction write-it) not previewed. The 30 sort items are not visible in the export; if they include light vs sound speed, Billy may want 30 inside. Sound's speed in air (330-340 m/s) is taught only at 10 (mission 1); 19 alone still gives 'light is much faster than sound'.

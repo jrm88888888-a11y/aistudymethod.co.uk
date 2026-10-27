@@ -23,6 +23,7 @@ Output:
     sitemaps/revise.xml      revise/
     sitemaps/adventures.xml  classcraft/adventures/
     sitemaps/teach.xml       teach/ (teacher course pages)
+    sitemaps/lessons.xml     lessons/ (student course pages)
 """
 import os, re, sys, subprocess, datetime
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
@@ -36,6 +37,7 @@ SECTIONS = {
     "revise": [("revise", True)],
     "adventures": [("classcraft/adventures", True)],
     "teach": [("teach", True)],
+    "lessons": [("lessons", True)],
 }
 SKIP = re.compile(r"(^|/)(404\.html|feedback-survey\.html|Velvet-Method-Prompt-Library\.html|.*-launcher\.html|.*\.bak|.*backup.*)$", re.I)
 
@@ -143,7 +145,7 @@ def main():
             newest = max((lm for _, lm in urls), default=today)
             fh.write(f"  <sitemap><loc>{SITE}sitemaps/{sec}.xml</loc><lastmod>{newest}</lastmod></sitemap>\n")
         fh.write("</sitemapindex>\n")
-    print("wrote sitemap.xml + sitemaps/{core,revise,adventures,teach}.xml")
+    print("wrote sitemap.xml + sitemaps/{core,revise,adventures,teach,lessons}.xml")
 
 if __name__ == "__main__":
     main()

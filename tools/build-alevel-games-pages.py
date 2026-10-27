@@ -20,7 +20,7 @@ Every number on the pages is computed here from those files, so re-run this
 whenever the arcade's A-Level shelves change. The page chrome is lifted from
 the GCSE pages at build time so the two families stay visually identical.
 """
-import html, json, os, re, sys
+import os, html, json, os, re, sys
 
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SITE = "https://aistudymethod.com/"
@@ -270,6 +270,9 @@ def subject_page(s):
                                 ("{:,}".format(s["n_terms"]), "Key terms"), (N_GAMES, "Game formats")]) + "\n" +
              '  <div class="hero-cta-row">\n'
              '   <a href="%s" class="btn-primary">Play %s games →</a>\n' % (arcade(sid), E(nm)) +
+             ('   <a href="lessons.html?level=a-level&amp;subject=%s" class="btn-outline">Mini-lessons for %s</a>\n' % (sid, E(nm))
+              if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'teach', '%s-a-level-aqa.html' % sid)) or
+                 any(f.startswith('%s-a-level-' % sid) for f in os.listdir(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'classcraft', 'quizzes', 'lesson-next'))) else '') +
              '   <a href="alevel-revision-games.html" class="btn-outline">All A-Level subjects</a>\n'
              '  </div>\n </div>\n</header>\n\n<div class="guide-body">\n\n')
     o.append(' <div class="callout"><p><strong>Why games help with A-Level %s:</strong> %s</p></div>\n\n' % (E(nm), E(why)))
