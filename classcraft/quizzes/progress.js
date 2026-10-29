@@ -137,7 +137,7 @@
     if (window.AISM_NO_SIGNUP_PROMPT === undefined) window.AISM_NO_SIGNUP_PROMPT = true;
     authP = new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = BASE + "arcade/auth.js?v=20261029";
+      s.src = BASE + "arcade/auth.js?v=20261029b";
       s.onload = function () { (window.Arcade && window.Arcade.auth) ? resolve(window.Arcade.auth) : reject(new Error("no auth")); };
       s.onerror = function () { authP = null; reject(new Error("auth load failed")); };
       document.head.appendChild(s);
@@ -348,6 +348,7 @@
     get: function (stem) { return prog().l[stem] || null; },
     last: function () { return prog().last; },
     pendingCoins: function () { return pendingTotal(); },
+    loadAuth: loadAuth,     // seasonal.js uses the same lazy loader
     mark: mark,
     // lesson-next.js reports the next lesson so the Continue strip can offer it
     noteNext: function (url, title) {

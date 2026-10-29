@@ -168,6 +168,8 @@
 
     pull: async function () { var r = await api("/pull", { method: "GET", auth: true }); if (r.ok) { walletSnap = r.data.wallet; emit(); } return r; },
     award: async function (pct) { var r = await api("/award", { body: { pct: pct }, auth: true }); if (r.ok) { walletSnap = r.data.wallet; emit(); return Object.assign({ ok: true }, r.data); } return { ok: false, error: r.error, status: r.status }; },
+    // Seasonal treat (e.g. "halloween-2026"): the server pays it at most once per account.
+    treat: async function (campaign) { var r = await api("/treat", { body: { campaign: campaign }, auth: true }); if (r.ok) { walletSnap = r.data.wallet; emit(); return Object.assign({ ok: true }, r.data); } return { ok: false, error: r.error, status: r.status }; },
     buy: async function (series, item) { var r = await api("/buy", { body: { series: series, item: item }, auth: true }); if (r.ok) { walletSnap = r.data.wallet; emit(); return Object.assign({ ok: true }, r.data); } return { ok: false, error: r.error, status: r.status }; },
 
     onChange: function (fn) { var h = function (e) { fn(e && e.detail); }; window.addEventListener("aism-auth-change", h); return function () { window.removeEventListener("aism-auth-change", h); }; },
