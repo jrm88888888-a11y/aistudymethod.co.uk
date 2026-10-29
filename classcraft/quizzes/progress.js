@@ -137,7 +137,7 @@
     if (window.AISM_NO_SIGNUP_PROMPT === undefined) window.AISM_NO_SIGNUP_PROMPT = true;
     authP = new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = BASE + "arcade/auth.js?v=20261008";
+      s.src = BASE + "arcade/auth.js?v=20261029";
       s.onload = function () { (window.Arcade && window.Arcade.auth) ? resolve(window.Arcade.auth) : reject(new Error("no auth")); };
       s.onerror = function () { authP = null; reject(new Error("auth load failed")); };
       document.head.appendChild(s);

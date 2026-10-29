@@ -4,7 +4,9 @@
 
    Public API (Arcade.auth):
      isLoggedIn(), user(), userId(), token(), wallet()
-     register(username,password) -> {ok, recoveryKey} | {ok:false, error}
+     register(username,password,refCode?) -> {ok, recoveryKey, referral} | {ok:false, error}
+     referral()                   -> {ok, code, joined, rewarded, pending, mine, ...}  (authed)
+     openInvite()                 "Invite a friend" modal (friend code + share link)
      login(username,password)     -> {ok} | {ok:false, error}
      recover(username,key,newPw)  -> {ok, recoveryKey} | {ok:false, error}
      logout()
@@ -17,6 +19,12 @@
 
    Also installs the once-per-device sign-up prompt after a logged-out
    player's first end card (see "first-game sign-up prompt" below).
+
+   Friend codes (Oct 2026): a ?ref=CODE on any page carrying this file is
+   remembered for 30 days and pre-fills the code at sign-up. The ids of
+   accounts this browser has been logged in as stay in localStorage
+   (aism-uids) and are sent ONLY with /register, so a player can't use their
+   own code on their own device. The server decides everything else.
 
    Config: window.AISM_ACCOUNTS_URL overrides the endpoint;
    window.AISM_NO_CORNER hides the corner widget; window.AISM_NO_SIGNUP_PROMPT
@@ -49,6 +57,32 @@
   })();
 
   var state = load();      // logged-in session or null
+
+  /* ---------------- friend codes: local bits ---------------- */
+  var REF_LS = "aism-ref";       // { code, at } from a ?ref= link
+  var UIDS_LS = "aism-uids";     // account ids this browser has held (sent only at /register)
+  var SHARE_URL = "https://aistudymethod.com/classcraft/arcade.html";
+  function cleanRef(v) { var c = String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); return /^[A-HJ-NP-Z2-9]{6}$/.test(c) ? c : ""; }
+  (function captureRef() {
+    try {
+      var m = /[?&]ref=([^&#]+)/i.exec(location.search || "");
+      var c = m ? cleanRef(decodeURIComponent(m[1])) : "";
+      if (c) localStorage.setItem(REF_LS, JSON.stringify({ code: c, at: Date.now() }));
+    } catch (e) {}
+  })();
+  function storedRef() {
+    try {
+      var r = JSON.parse(localStorage.getItem(REF_LS) || "null");
+      if (r && r.code && Date.now() - r.at < 30 * 86400000) return cleanRef(r.code);
+    } catch (e) {}
+    return "";
+  }
+  function clearRef() { try { localStorage.removeItem(REF_LS); } catch (e) {} }
+  function priorUids() { try { var a = JSON.parse(localStorage.getItem(UIDS_LS) || "[]"); return Array.isArray(a) ? a.slice(-20) : []; } catch (e) { return []; } }
+  function rememberUid(id) {
+    if (!id) return;
+    try { var a = priorUids().filter(function (x) { return x !== id; }); a.push(id); localStorage.setItem(UIDS_LS, JSON.stringify(a.slice(-20))); } catch (e) {}
+  }
 
   function load() { try { return JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) { return null; } }
   function save() { try { state ? localStorage.setItem(LS, JSON.stringify(state)) : localStorage.removeItem(LS); } catch (e) {} }
@@ -97,7 +131,8 @@
     }
     return { ok: true, status: res.status, data: data || {} };
   }
-  function setSession(d) { state = { token: d.token, userId: d.userId, username: d.username }; walletSnap = d.wallet || null; save(); emit(); }
+  function setSession(d) { state = { token: d.token, userId: d.userId, username: d.username }; walletSnap = d.wallet || null; rememberUid(d.userId); save(); emit(); }
+  if (state && state.userId) rememberUid(state.userId);   // sessions from before friend codes
 
   /* ---------------- client API ---------------- */
   var auth = {
@@ -108,10 +143,16 @@
     token: function () { return state ? state.token : null; },
     wallet: function () { return walletSnap; },
 
-    register: async function (username, password) {
-      var r = await api("/register", { body: { username: username, password: password } });
-      if (r.ok) { setSession(r.data); bankPendingRun(); return { ok: true, recoveryKey: r.data.recoveryKey, wallet: r.data.wallet }; }
+    register: async function (username, password, refCode) {
+      var body = { username: username, password: password };
+      if (refCode) { body.refCode = refCode; body.priorUids = priorUids(); }
+      var r = await api("/register", { body: body });
+      if (r.ok) { if (refCode) clearRef(); setSession(r.data); bankPendingRun(); return { ok: true, recoveryKey: r.data.recoveryKey, wallet: r.data.wallet, referral: r.data.referral || null }; }
       return { ok: false, error: r.error, status: r.status };
+    },
+    referral: async function () {
+      var r = await api("/referral", { method: "GET", auth: true });
+      return r.ok ? Object.assign({ ok: true }, r.data) : { ok: false, error: r.error };
     },
     login: async function (username, password) {
       var r = await api("/login", { body: { username: username, password: password } });
@@ -170,6 +211,10 @@
       "bad-credentials": "Username or password not recognised.",
       "password-required": "Enter a password.",
       "network": "Couldn't reach the server — check your connection.",
+      "ref-code-invalid": "That friend code isn't right — check it, or leave it blank.",
+      "ref-code-own": "That's your own code — share it with a friend instead.",
+      "ref-code-used-up": "That code has already earned all its bonuses. Leave it blank to carry on.",
+      "ref-code-busy": "That code has had lots of sign-ups today — try it tomorrow, or leave it blank.",
     })[code] || ("Something went wrong (" + code + ").");
   }
 
@@ -231,7 +276,7 @@
       ".aism-field{margin:0 0 13px}",
       ".aism-field label{display:block;font-family:var(--aism-px);font-size:8px;color:#8f88b8;letter-spacing:.5px;margin-bottom:6px}",
       ".aism-inrow{display:flex;gap:6px}",
-      ".aism-input{width:100%;background:#131028;border:1px solid #332a5e;border-radius:8px;color:#e8e4ff;font-family:var(--aism-vt);font-size:20px;padding:10px 12px}",
+      ".aism-input{box-sizing:border-box;width:100%;background:#131028;border:1px solid #332a5e;border-radius:8px;color:#e8e4ff;font-family:var(--aism-vt);font-size:20px;padding:10px 12px}",
       ".aism-input:focus{outline:2px solid #5ee4e0;outline-offset:1px}",
       ".aism-reroll{flex:none;background:#221b44;border:1px solid #332a5e;color:#5ee4e0;border-radius:8px;padding:0 12px;font-size:16px;cursor:pointer;font-family:var(--aism-vt)}",
       ".aism-hint{font-size:15px;color:#8f88b8;margin-top:5px}",
@@ -280,6 +325,18 @@
       ".aism-nudge-no{background:#221b44;color:#cfc9ef;border:1px solid #3a3568}",
       ".aism-nudge-no:hover{border-color:#5ee4e0;color:#fff}",
       ".aism-nudge-fine{font-size:15px;color:#8f88b8;margin-top:12px;text-align:center;line-height:1.3}",
+      /* friend codes */
+      ".aism-ref-code{font-family:var(--aism-px);font-size:22px;color:#f5c542;letter-spacing:6px;padding-left:6px}",
+      ".aism-ref-steps{list-style:none;margin:0 0 14px;padding:0}",
+      ".aism-ref-steps li{display:flex;gap:10px;align-items:center;font-size:18px;color:#e8e4ff;line-height:1.25;margin:0 0 8px}",
+      ".aism-ref-steps li b{flex:none;width:26px;height:26px;border-radius:50%;background:#221b44;border:1px solid #5ee4e0;color:#5ee4e0;font-family:var(--aism-px);font-size:9px;display:inline-flex;align-items:center;justify-content:center}",
+      ".aism-ref-stat{font-size:17px;color:#cfc9ef;text-align:center;margin:4px 0 2px}",
+      ".aism-ref-stat b{color:#f5c542}",
+      ".aism-ref-bar{height:8px;background:#131028;border:1px solid #332a5e;border-radius:99px;overflow:hidden;margin:6px 0 4px}",
+      ".aism-ref-bar i{display:block;height:100%;background:#5ee4e0}",
+      ".aism-ref-mine{background:#131028;border:1px solid #332a5e;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:16px;color:#cfc9ef;line-height:1.3}",
+      ".aism-ref-win{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 14px;font-family:var(--aism-px);font-size:11px;color:#5ee4e0;line-height:1.6;text-align:left}",
+      ".aism-ref-win b{color:#f5c542}",
     ].join("\n");
     document.head.appendChild(s);
   }
@@ -410,6 +467,7 @@
         return b;
       };
       m.appendChild(mkItem("Choose avatar", function () { m.remove(); auth.openAvatars(); }));
+      m.appendChild(mkItem("Invite a friend", function () { m.remove(); auth.openInvite(); }));
       m.appendChild(mkItem("Element shop", null, AUTH_BASE + "elements.html"));
       m.appendChild(mkItem("Log out", function () { auth.logout(); m.remove(); }));
       host.appendChild(m);
@@ -514,19 +572,37 @@
       var pf = field("Choose a password", p);
       var pErr = el("div", "aism-err", ""); pf.appendChild(pErr);
 
+      // Friend code: hidden behind a link unless a ?ref= link filled it in.
+      var pre = storedRef();
+      var rc = input("text", "e.g. K7QM2P"); rc.value = pre; rc.maxLength = 8; rc.style.textTransform = "uppercase";
+      var rf = field("Friend code (optional)", rc, "You both get 100 coins once you've won 40 coins over 2 different days.");
+      var rErr = el("div", "aism-err", ""); rf.appendChild(rErr);
+      var rLink = el("button", "aism-alt", "Got a code from a friend?"); rLink.type = "button";
+      rLink.style.cssText = "margin:0 0 12px;display:block";
+      rLink.addEventListener("click", function () { rLink.remove(); rf.style.display = ""; rc.focus(); });
+      if (!pre) rf.style.display = "none";
+
       var btn = el("button", "aism-btn aism-primary", "Create account");
       var priv = el("div", "aism-hint");
       priv.innerHTML = 'No name or email needed. Stored securely in the EU; deleted after 18 months unused. <a href="/privacy.html#student-data" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">How we handle student data</a>';
-      body.appendChild(uf); body.appendChild(pf); body.appendChild(btn); body.appendChild(priv);
+      body.appendChild(uf); body.appendChild(pf);
+      if (!pre) body.appendChild(rLink);
+      body.appendChild(rf); body.appendChild(btn); body.appendChild(priv);
 
       var go = async function () {
-        uErr.textContent = ""; pErr.textContent = "";
+        uErr.textContent = ""; pErr.textContent = ""; rErr.textContent = "";
         var pe = passwordError(p.value); if (pe) { pErr.textContent = pe; return; }
+        var raw = rc.value.trim(), code = raw ? cleanRef(raw) : "";
+        if (raw && !code) { rErr.textContent = errText("ref-code-invalid"); return; }
         busy(btn, true, "Create account");
-        var r = await auth.register(u.value.trim(), p.value);
+        var r = await auth.register(u.value.trim(), p.value, code || undefined);
         busy(btn, false, "Create account");
-        if (r.ok) { track("Arcade signup: registered", { source: openSource || "other" }); markNudge(); recoveryScreen(r.recoveryKey); }
+        if (r.ok) {
+          track("Arcade signup: registered", { source: openSource || "other", friendCode: r.referral ? "yes" : "no" });
+          markNudge(); recoveryScreen(r.recoveryKey, false, r.referral);
+        }
         else if (r.error === "username-taken" || r.error === "username-invalid") uErr.textContent = errText(r.error);
+        else if (/^ref-code-/.test(r.error || "")) { rErr.textContent = errText(r.error); if (r.error === "ref-code-used-up" || r.error === "ref-code-own") clearRef(); }
         else pErr.textContent = errText(r.error);
       };
       btn.addEventListener("click", go);
@@ -560,7 +636,7 @@
       return body;
     }
 
-    function recoveryScreen(key, rotated) {
+    function recoveryScreen(key, rotated, referral) {
       modal.innerHTML = "";
       modal.appendChild(el("h2", null, rotated ? "New recovery key" : "Save your recovery key"));
       var body = el("div", "aism-body");
@@ -573,6 +649,7 @@
       cpy.addEventListener("click", function () { try { navigator.clipboard.writeText(key); cpy.textContent = "Copied ✓"; } catch (e) { cpy.textContent = "Select & copy it"; } });
       rk.appendChild(cpy);
       body.appendChild(rk);
+      if (referral) body.appendChild(el("div", "aism-hint", "Friend code added ✓ Win " + (referral.needCoins || 40) + " coins over " + (referral.needDays || 2) + " different days and you'll both get " + (referral.bonus || 100) + " coins."));
       var lab = el("label", "aism-check");
       var cb = el("input"); cb.type = "checkbox";
       lab.appendChild(cb); lab.appendChild(document.createTextNode(" I've saved my recovery key somewhere safe."));
@@ -587,6 +664,59 @@
 
   function close() { if (auth._closeModal) { auth._closeModal(); auth._closeModal = null; } else { var o = document.getElementById("aism-auth-ov"); if (o) o.remove(); } }
   auth.close = close;
+
+  /* ---------------- invite a friend (friend codes) ---------------- */
+  auth.openInvite = function () {
+    injectCss(); close();
+    var ov = el("div", "aism-ov"); ov.id = "aism-auth-ov";
+    var modal = el("div", "aism-modal"); modal.style.position = "relative";
+    ov.appendChild(modal);
+    ov.addEventListener("mousedown", function (e) { if (e.target === ov) close(); });
+    function escI(e) { if (e.key === "Escape") close(); }
+    document.addEventListener("keydown", escI);
+    auth._closeModal = function () { document.removeEventListener("keydown", escI); ov.remove(); };
+    document.body.appendChild(ov);
+    var x = el("button", "aism-x", "✕"); x.setAttribute("aria-label", "Close"); x.addEventListener("click", close);
+    modal.appendChild(x);
+    modal.appendChild(el("h2", null, "Invite a friend"));
+    var body = el("div", "aism-body", '<div class="aism-hint">Loading your code…</div>');
+    modal.appendChild(body);
+    track("Arcade referral: invite opened");
+
+    auth.referral().then(function (d) {
+      if (!d.ok) { body.innerHTML = '<div class="aism-err">' + esc(errText(d.error)) + "</div>"; return; }
+      var link = SHARE_URL + "?ref=" + encodeURIComponent(d.code);
+      var msg = "Revise with me on the Velvet Arcade! Sign up with my code " + d.code + " and we both get " + d.bonus + " coins: " + link;
+      body.innerHTML = "";
+      body.appendChild(el("ul", "aism-ref-steps",
+        "<li><b>1</b><span>Give a friend your code</span></li>" +
+        "<li><b>2</b><span>They enter it when they make an account</span></li>" +
+        "<li><b>3</b><span>They win " + d.needCoins + " coins over " + d.needDays + " different days, then you <i>both</i> get <span style='color:#f5c542'>" + d.bonus + "</span></span></li>"));
+      var box = el("div", "aism-rk");
+      box.appendChild(el("div", "aism-ref-code", esc(d.code)));
+      var row = el("div"); row.style.cssText = "display:flex;gap:8px;justify-content:center;flex-wrap:wrap";
+      var cpy = el("button", "cpy", "Copy code"), shr = el("button", "cpy", navigator.share ? "Share link" : "Copy link");
+      cpy.addEventListener("click", function () { try { navigator.clipboard.writeText(d.code); cpy.textContent = "Copied ✓"; } catch (e) { cpy.textContent = "Select & copy it"; } track("Arcade referral: code copied"); });
+      shr.addEventListener("click", function () {
+        track("Arcade referral: link shared");
+        if (navigator.share) { navigator.share({ text: msg }).catch(function () {}); return; }
+        try { navigator.clipboard.writeText(msg); shr.textContent = "Copied ✓"; } catch (e) { shr.textContent = "Couldn't copy"; }
+      });
+      row.appendChild(cpy); row.appendChild(shr); box.appendChild(row);
+      body.appendChild(box);
+      var pct = Math.min(100, Math.round(100 * d.rewarded / d.maxRewards));
+      body.appendChild(el("div", "aism-ref-stat", "Bonuses earned: <b>" + d.rewarded + "</b> of " + d.maxRewards +
+        (d.pending ? " · " + d.pending + " friend" + (d.pending === 1 ? "" : "s") + " still to play" : "")));
+      var bar = el("div", "aism-ref-bar", '<i style="width:' + pct + '%"></i>'); body.appendChild(bar);
+      if (d.rewarded >= d.maxRewards) body.appendChild(el("div", "aism-hint", "You've earned every friend bonus — thank you for spreading the word!"));
+      if (d.mine && d.mine.status === "pending") {
+        var days = Math.min(d.mine.playDays, d.needDays), coins = Math.min(d.mine.earned, d.needCoins);
+        body.appendChild(el("div", "aism-ref-mine", "<b style='color:#5ee4e0'>Your own friend bonus</b><br>" +
+          "Days you've won coins: " + days + " of " + d.needDays + " · Coins won: " + coins + " of " + d.needCoins));
+      }
+      body.appendChild(el("div", "aism-nudge-fine", "Only share it with people you know. We never see who you send it to."));
+    });
+  };
 
   /* ---------------- avatars ---------------- */
   function loadAvatars(cb) {
@@ -912,6 +1042,12 @@
               }
               var cr = res.credited || 0;
               var rem = res.wallet ? res.wallet.capRemaining : null;
+              if (res.referralBonus > 0) {
+                injectCss();
+                var rb = el("div", "aism-ref-win", coinSvg(28, "aism-coin-win") + "<span>Friend bonus unlocked! <b>+" + res.referralBonus + "</b> coins — and your friend gets " + res.referralBonus + " too.</span>");
+                insertTop(mount, rb);
+                track("Arcade referral: bonus unlocked");
+              }
               if (cr > 0) {
                 if (note) { note.className = "aism-win"; note.innerHTML = winHtml(cr, rem); }
                 else winNote(mount, cr, rem);
