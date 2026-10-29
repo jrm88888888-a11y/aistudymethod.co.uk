@@ -52,11 +52,16 @@ for p in pages():
         broken.setdefault(t, []).append(p)
 
 BACK = re.compile(r'<div class="backstrip"><a href="([^"]*)"')
+# Standalone lessons that belong to no course (e.g. seasonal one-offs opened from the
+# homepage "Featured lesson" card): their back link goes to the homepage.
+STANDALONE = {"classcraft/adventures/halloween-science-glow-sticks-mini-lesson.html"}
 bad_back = []
 for p in pages():
     if not (p.startswith("classcraft/adventures/") and p.endswith(("-mini-lesson.html", "-grammar-spine.html"))) or not os.path.exists(p):
         continue
     m = BACK.search(open(p, encoding="utf-8", errors="ignore").read())
+    if m and p in STANDALONE and m.group(1) == "../../index.html":
+        continue
     if m and not (re.search(r"subjects\.html\?(?:[^\"]*&(?:amp;)?)?subject=", m.group(1)) or m.group(1).endswith("-grammar-spine.html")
                   or (m.group(1).startswith("../../lessons/") and m.group(1).endswith(".html")
                       and os.path.basename(p).startswith(m.group(1)[len("../../lessons/"):-len(".html")].replace("-ibdp-sl", "-ibdp")))):
