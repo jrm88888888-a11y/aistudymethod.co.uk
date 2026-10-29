@@ -215,5 +215,9 @@
     p.src = base + "progress.js?v=20261008";
     p.defer = true;
     document.head.appendChild(p);
+    var z = document.createElement("script");          // seasonal plug (seasonal.js switches itself off)
+    z.src = base + "seasonal.js?v=20261029";
+    z.defer = true;
+    document.head.appendChild(z);
   } catch (e) {}
 })();
