@@ -7,6 +7,11 @@
      register(username,password,refCode?) -> {ok, recoveryKey, referral} | {ok:false, error}
      referral()                   -> {ok, code, joined, rewarded, pending, mine, ...}  (authed)
      openInvite()                 "Invite a friend" modal (friend code + share link)
+     feedbackStatus()             -> {ok, claimed, eligible, coins}   (authed)
+     openFeedback({where})        the feedback quest: 3 questions, sent to Formspree, then
+                                  +100 coins once per account (server /feedback)
+     openReport({page,screen,heading})  "Report a mistake" on a lesson screen, sent to
+                                  Formspree with a ref; Billy pays 20 coins if confirmed
      login(username,password)     -> {ok} | {ok:false, error}
      recover(username,key,newPw)  -> {ok, recoveryKey} | {ok:false, error}
      logout()
@@ -470,6 +475,7 @@
       };
       m.appendChild(mkItem("Choose avatar", function () { m.remove(); auth.openAvatars(); }));
       m.appendChild(mkItem("Invite a friend", function () { m.remove(); auth.openInvite(); }));
+      m.appendChild(mkItem(fbDoneLocal() ? "Give feedback" : "Give feedback · +100", function () { m.remove(); auth.openFeedback({ where: "arcade menu" }); }));
       m.appendChild(mkItem("Element shop", null, AUTH_BASE + "elements.html"));
       m.appendChild(mkItem("Log out", function () { auth.logout(); m.remove(); }));
       host.appendChild(m);
@@ -717,6 +723,197 @@
           "Days you've won coins: " + days + " of " + d.needDays + " · Coins won: " + coins + " of " + d.needCoins));
       }
       body.appendChild(el("div", "aism-nudge-fine", "Only share it with people you know. We never see who you send it to."));
+    });
+  };
+
+  /* ---------------- feedback quest + mistake reports (Oct 2026) ----------------
+     Both go to the site's existing Formspree form (the feedback-survey one), with a
+     "form" field saying which is which. The feedback quest's coins come from the
+     server (/feedback): once per account, only after the account has won coins in
+     a lesson or game. The server checks the text but never stores it. Reports carry
+     a short ref; Billy pays REPORT coins through /report-bonus when he confirms one.
+     Plausible: "Feedback quest: opened" {state}, "Feedback quest: sent" {coins},
+     "Mistake report: opened", "Mistake report: sent" {signedIn}. */
+  var FORMSPREE = "https://formspree.io/f/mqevgjke";
+  var FB_DONE = "aism-fb-done";   // {<userId>: 1} once this account's quest is paid
+  function fbDoneLocal() { try { var d = JSON.parse(localStorage.getItem(FB_DONE) || "{}"); return !!(state && d[state.userId]); } catch (e) { return false; } }
+  function setFbDone() { try { var d = JSON.parse(localStorage.getItem(FB_DONE) || "{}"); if (state) { d[state.userId] = 1; localStorage.setItem(FB_DONE, JSON.stringify(d)); } } catch (e) {} }
+  // Same rule as the server's feedbackTextError: a real sentence, not one key held down.
+  function textOk(t) {
+    t = String(t || "").replace(/\s+/g, " ").trim();
+    if (t.length > 2000) return false;
+    var letters = (t.match(/[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF\u4E00-\u9FFF]/g) || []).length;
+    var words = t.split(" ").filter(function (w) { return /[A-Za-z\u00C0-\u024F\u0400-\u04FF\u4E00-\u9FFF]{2,}/.test(w); }).length;
+    var chars = t.replace(/\s/g, "").toLowerCase(), cnt = {}, most = 0, distinct = 0;
+    for (var i = 0; i < chars.length; i++) { var ch = chars[i]; if (!cnt[ch]) distinct++; cnt[ch] = (cnt[ch] || 0) + 1; if (cnt[ch] > most) most = cnt[ch]; }
+    return letters >= 25 && words >= 5 && distinct >= 8 && most <= chars.length * 0.4;
+  }
+  function sendForm(data) {
+    return fetch(FORMSPREE, { method: "POST", headers: { "content-type": "application/json", "accept": "application/json" }, body: JSON.stringify(data) })
+      .then(function (r) { return r.ok; }, function () { return false; });
+  }
+  function fbCss() {
+    if (document.getElementById("aism-fb-css")) return;
+    var s2 = document.createElement("style"); s2.id = "aism-fb-css";
+    s2.textContent =
+      ".aism-fb-q{font-size:18px;color:#cfc9ef;margin:0 0 7px;line-height:1.25}" +
+      ".aism-fb-q b{color:#5ee4e0;font-family:var(--aism-px);font-size:9px;margin-right:6px}" +
+      ".aism-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}" +
+      ".aism-chip{background:#131028;border:1px solid #332a5e;color:#e8e4ff;border-radius:999px;padding:6px 12px;font-family:var(--aism-vt);font-size:18px;cursor:pointer;line-height:1.1}" +
+      ".aism-chip:hover{border-color:#5ee4e0}" +
+      ".aism-chip.on{background:#5ee4e0;border-color:#5ee4e0;color:#131028}" +
+      ".aism-chip:focus-visible{outline:2px solid #f5c542;outline-offset:2px}" +
+      "textarea.aism-input{resize:vertical;min-height:84px;line-height:1.15}" +
+      ".aism-fb-badge{display:inline-block;background:#f5c542;color:#131028;border-radius:999px;padding:4px 10px;font-family:var(--aism-px);font-size:9px;margin:0 0 12px}" +
+      ".aism-fb-done{text-align:center;padding:6px 0 4px}" +
+      ".aism-fb-done .big{font-family:var(--aism-px);font-size:20px;color:#f5c542;margin:6px 0 10px}" +
+      ".aism-fb-done p{font-size:19px;color:#e8e4ff;line-height:1.3;margin:0 0 8px}" +
+      ".aism-fb-ref{font-family:var(--aism-px);font-size:12px;color:#f5c542;letter-spacing:1px}";
+    document.head.appendChild(s2);
+  }
+  function modalShell(title) {
+    injectCss(); fbCss(); close();
+    var ov = el("div", "aism-ov"); ov.id = "aism-auth-ov";
+    var modal = el("div", "aism-modal"); modal.style.position = "relative";
+    modal.style.maxHeight = "calc(100vh - 36px)"; modal.style.overflowY = "auto";
+    modal.setAttribute("role", "dialog"); modal.setAttribute("aria-modal", "true"); modal.setAttribute("aria-label", title);
+    ov.appendChild(modal);
+    ov.addEventListener("mousedown", function (e) { if (e.target === ov) close(); });
+    function escF(e) { if (e.key === "Escape") close(); }
+    document.addEventListener("keydown", escF);
+    auth._closeModal = function () { document.removeEventListener("keydown", escF); ov.remove(); };
+    document.body.appendChild(ov);
+    var x = el("button", "aism-x", "✕"); x.setAttribute("aria-label", "Close"); x.addEventListener("click", close);
+    modal.appendChild(x);
+    modal.appendChild(el("h2", null, esc(title)));
+    var body = el("div", "aism-body"); modal.appendChild(body);
+    return body;
+  }
+  // One-choice chip row. Returns {el, value()}.
+  function chipRow(name, opts) {
+    var row = el("div", "aism-chips"), val = "";
+    row.setAttribute("role", "radiogroup"); row.setAttribute("aria-label", name);
+    opts.forEach(function (o) {
+      var b = el("button", "aism-chip", esc(o[1])); b.type = "button";
+      b.setAttribute("role", "radio"); b.setAttribute("aria-checked", "false");
+      b.addEventListener("click", function () {
+        val = o[0];
+        [].forEach.call(row.children, function (c) { c.classList.remove("on"); c.setAttribute("aria-checked", "false"); });
+        b.classList.add("on"); b.setAttribute("aria-checked", "true");
+        if (row._onPick) row._onPick();
+      });
+      row.appendChild(b);
+    });
+    return { el: row, value: function () { return val; } };
+  }
+  function lessonFromPath() { var m = /([a-z0-9-]+)-mini-lesson\.html/.exec(location.pathname); return m ? m[1] : ""; }
+
+  auth.feedbackStatus = async function () {
+    var r = await api("/feedback", { method: "GET", auth: true });
+    if (r.ok && r.data.claimed) setFbDone();
+    return r.ok ? Object.assign({ ok: true }, r.data) : { ok: false, error: r.error, status: r.status };
+  };
+  auth.feedbackDone = function () { return fbDoneLocal(); };
+
+  auth.openFeedback = function (opts) {
+    opts = opts || {};
+    if (!auth.isLoggedIn()) { auth.open("register", { source: "feedback" }); return; }
+    var body = modalShell("Feedback quest");
+    body.innerHTML = '<div class="aism-hint">Loading…</div>';
+    auth.feedbackStatus().then(function (st) {
+      var pay = !!(st.ok && st.eligible && !st.claimed);
+      var coins = (st.ok && st.coins) || 100;
+      var state0 = !st.ok ? "error" : st.claimed ? "claimed" : st.eligible ? "open" : "locked";
+      track("Feedback quest: opened", { state: state0 });
+      body.innerHTML = "";
+      if (pay) body.appendChild(el("div", "aism-fb-badge", "+" + coins + " coins"));
+      else if (st.ok && st.claimed) body.appendChild(el("div", "aism-hint", "You've had your " + coins + " coins for feedback. Thank you! You can still send more ideas."));
+      else if (st.ok) body.appendChild(el("div", "aism-hint", "Win some coins in a lesson or an arcade game first, then come back here for your " + coins + " coins. You can still send an idea now."));
+      if (!pay) body.lastChild.style.margin = "0 0 12px";
+      body.appendChild(el("p", "aism-fb-q", "<b>1</b>What were you trying to do today?"));
+      var goal = chipRow("What were you trying to do today?", [["learn", "Learn a topic"], ["practise", "Practise questions"], ["exam", "Exam prep"], ["games", "Play games"], ["other", "Something else"]]);
+      body.appendChild(goal.el);
+      body.appendChild(el("p", "aism-fb-q", "<b>2</b>Did you manage it?"));
+      var managed = chipRow("Did you manage it?", [["yes", "Yes"], ["partly", "Partly"], ["no", "No"]]);
+      body.appendChild(managed.el);
+      body.appendChild(el("p", "aism-fb-q", "<b>3</b>One thing that would make this site better for you"));
+      var ta = el("textarea", "aism-input"); ta.rows = 3; ta.maxLength = 2000; ta.placeholder = "I wish the arcade had…";
+      ta.setAttribute("aria-label", "One thing that would make this site better for you");
+      body.appendChild(ta);
+      body.appendChild(el("div", "aism-hint", "Don't write your name or school."));
+      var err = el("div", "aism-err"); err.setAttribute("role", "alert"); body.appendChild(err);
+      var go = el("button", "aism-btn aism-primary", pay ? "Send and claim " + coins + " coins" : "Send");
+      go.type = "button"; go.style.marginTop = "10px"; body.appendChild(go);
+      if (pay) body.appendChild(el("div", "aism-nudge-fine", "Once per account."));
+      var clr = function () { err.textContent = ""; };
+      ta.addEventListener("input", clr); goal.el._onPick = clr; managed.el._onPick = clr;
+      go.addEventListener("click", function () {
+        if (!goal.value()) { err.textContent = "Pick what you were trying to do (question 1)."; return; }
+        if (!managed.value()) { err.textContent = "Pick whether you managed it (question 2)."; return; }
+        if (!textOk(ta.value)) { err.textContent = "Write a bit more: one full sentence about something you'd change or add."; ta.focus(); return; }
+        go.disabled = true; go.textContent = "Sending…";
+        var text = ta.value.replace(/\s+/g, " ").trim();
+        sendForm({
+          form: "student-feedback", _subject: "Student feedback (feedback quest)",
+          trying_to: goal.value(), managed_it: managed.value(), idea: text,
+          page: location.pathname, lesson: lessonFromPath(), opened_from: opts.where || "", coins: pay ? "claimed" : "none",
+        }).then(function (sent) {
+          if (!sent) { go.disabled = false; go.textContent = pay ? "Send and claim " + coins + " coins" : "Send"; err.textContent = "Couldn't send just now. Check your connection and try again."; return; }
+          if (!pay) { track("Feedback quest: sent", { coins: "no" }); thanks(null); return; }
+          return api("/feedback", { body: { goal: goal.value(), managed: managed.value(), text: text }, auth: true }).then(function (r) {
+            if (r.ok) { setFbDone(); walletSnap = r.data.wallet; emit(); }
+            track("Feedback quest: sent", { coins: r.ok && r.data.paid ? "yes" : "no" });
+            thanks(r.ok && r.data.paid ? r.data.coins : null, r.ok && r.data.already);
+          });
+        });
+      });
+      function thanks(paid, already) {
+        body.innerHTML = '<div class="aism-fb-done">' +
+          (paid ? '<div class="big">+' + paid + ' coins</div>' : "") +
+          "<p>Thank you! We read every idea.</p>" +
+          (already ? '<p style="color:#8f88b8;font-size:17px">You\'d already had your feedback coins on this account.</p>' : "") +
+          "</div>";
+        var ok = el("button", "aism-btn aism-primary", "Done"); ok.type = "button"; ok.addEventListener("click", close); body.appendChild(ok);
+      }
+    });
+  };
+
+  auth.openReport = function (ctx) {
+    ctx = ctx || {};
+    var body = modalShell("Report a mistake");
+    track("Mistake report: opened");
+    if (ctx.heading) body.appendChild(el("div", "aism-hint", "On: <b style='color:#e8e4ff'>" + esc(ctx.heading) + "</b>" + (ctx.screen ? " (screen " + esc(ctx.screen) + ")" : "")));
+    if (body.lastChild) body.lastChild.style.margin = "0 0 12px";
+    body.appendChild(el("p", "aism-fb-q", "What's wrong?"));
+    var kind = chipRow("What's wrong?", [["answer", "Marked answer is wrong"], ["unclear", "Typo or unclear"], ["broken", "Something doesn't work"], ["other", "Something else"]]);
+    body.appendChild(kind.el);
+    var ta = el("textarea", "aism-input"); ta.rows = 3; ta.maxLength = 2000; ta.placeholder = "The answer says … but it should be …";
+    ta.setAttribute("aria-label", "Describe the mistake");
+    body.appendChild(ta);
+    var signed = auth.isLoggedIn();
+    body.appendChild(el("div", "aism-hint", signed
+      ? "If we confirm it, you get <b style='color:#f5c542'>20 coins</b>. Your username is sent with the report so we can pay you."
+      : "Thank you for helping. Log in first if you'd like 20 coins when we confirm a mistake."));
+    var err = el("div", "aism-err"); err.setAttribute("role", "alert"); body.appendChild(err);
+    var go = el("button", "aism-btn aism-primary", "Send report"); go.type = "button"; go.style.marginTop = "10px"; body.appendChild(go);
+    ta.addEventListener("input", function () { err.textContent = ""; }); kind.el._onPick = function () { err.textContent = ""; };
+    go.addEventListener("click", function () {
+      var t = ta.value.replace(/\s+/g, " ").trim();
+      if (!kind.value()) { err.textContent = "Pick what's wrong."; return; }
+      if (t.length < 10) { err.textContent = "Tell us a little more, so we can find it."; ta.focus(); return; }
+      var ref = ""; for (var i = 0; i < 6; i++) ref += "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".charAt(Math.floor(Math.random() * 32));
+      go.disabled = true; go.textContent = "Sending…";
+      sendForm({
+        form: "mistake-report", _subject: "Mistake report " + ref + (ctx.lesson || lessonFromPath() ? " — " + (ctx.lesson || lessonFromPath()) : ""),
+        ref: ref, what: kind.value(), details: t, page: ctx.page || location.pathname, screen: ctx.screen || "", screen_heading: ctx.heading || "",
+        username: signed ? auth.user() : "(not signed in)",
+      }).then(function (sent) {
+        if (!sent) { go.disabled = false; go.textContent = "Send report"; err.textContent = "Couldn't send just now. Check your connection and try again."; return; }
+        track("Mistake report: sent", { signedIn: signed ? "yes" : "no" });
+        body.innerHTML = '<div class="aism-fb-done"><p>Thank you! We\'ll check it.</p>' +
+          '<p style="color:#8f88b8;font-size:17px">Report ref <span class="aism-fb-ref">' + ref + "</span></p></div>";
+        var ok = el("button", "aism-btn aism-primary", "Done"); ok.type = "button"; ok.addEventListener("click", close); body.appendChild(ok);
+      });
     });
   };
 

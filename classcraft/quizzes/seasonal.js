@@ -92,7 +92,7 @@
     var base = me && me.src ? me.src.replace(/quizzes\/seasonal\.js.*$/, "") : "../";
     authP = new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = base + "arcade/auth.js?v=20261029b";
+      s.src = base + "arcade/auth.js?v=20261030a";
       s.onload = function () { (window.Arcade && window.Arcade.auth) ? resolve(window.Arcade.auth) : reject(new Error("no auth")); };
       s.onerror = function () { authP = null; reject(new Error("auth load failed")); };
       document.head.appendChild(s);

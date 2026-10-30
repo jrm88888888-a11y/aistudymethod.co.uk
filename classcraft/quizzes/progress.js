@@ -28,6 +28,11 @@
    3. End screen: what the coins are for, e.g. "3 more coins for Lithium".
    4. On any page that links to mini-lessons: a tick after each finished lesson.
    5. On revise and teacher course pages: a "Continue" strip.
+   6. Feedback (Oct 2026): a "Report a mistake" flag in the lesson top bar
+      (auth.js openReport, works signed in or out), "Give feedback" in the
+      account menu, and a feedback-quest card under the end-screen coins for
+      signed-in students who haven't claimed it (auth.js openFeedback; "Not now"
+      hides the card for 7 days on this device).
 
    Storage (browser only; nothing is sent unless the student is signed in):
      aism-lp        {v:1, l:{<stem>:{b,s,f,d,t}}, last:{k,u,t,day,done,nx}}
@@ -37,7 +42,8 @@
    Plausible events: "Mini-lesson: 2nd+ in course" {course},
    "Mini-lesson: returning", "Lesson coins: unsaved", "Lesson coins: save
    pressed", "Lesson coins: saved" {coins}, "Lesson coins: mission" {state},
-   "Lesson chip: clicked" {state}. Registration itself is reported by auth.js. */
+   "Lesson chip: clicked" {state}, "Feedback quest: card shown", "Feedback quest:
+   card dismissed". Registration itself is reported by auth.js. */
 (function () {
   "use strict";
   if (window.AismProgress) return;
@@ -47,7 +53,7 @@
   var RX = /^(.+?)-(ks3|gcse|a-level|ibdp)-(edexcel-igcse|cambridge-igcse|general|edexcel|eduqas|wjec|ccea|aqa|ocr|hl|sl|ib)-(.+)$/;
   var GRADE = [[95, 12], [80, 9], [60, 6], [40, 3]];
   var DAILY_CAP = 150, MAX_PENDING = 60;
-  var AUTH_V = "20261029b";
+  var AUTH_V = "20261030a";
   var ELEMENTS = "Hydrogen,Helium,Lithium,Beryllium,Boron,Carbon,Nitrogen,Oxygen,Fluorine,Neon,Sodium,Magnesium,Aluminium,Silicon,Phosphorus,Sulfur,Chlorine,Argon,Potassium,Calcium,Scandium,Titanium,Vanadium,Chromium,Manganese,Iron,Cobalt,Nickel,Copper,Zinc,Gallium,Germanium,Arsenic,Selenium,Bromine,Krypton,Rubidium,Strontium,Yttrium,Zirconium,Niobium,Molybdenum,Technetium,Ruthenium,Rhodium,Palladium,Silver,Cadmium,Indium,Tin,Antimony,Tellurium,Iodine,Xenon,Caesium,Barium,Lanthanum,Cerium,Praseodymium,Neodymium,Promethium,Samarium,Europium,Gadolinium,Terbium,Dysprosium,Holmium,Erbium,Thulium,Ytterbium,Lutetium,Hafnium,Tantalum,Tungsten,Rhenium,Osmium,Iridium,Platinum,Gold,Mercury,Thallium,Lead,Bismuth,Polonium,Astatine,Radon,Francium,Radium,Actinium,Thorium,Protactinium,Uranium,Neptunium,Plutonium,Americium,Curium,Berkelium,Californium,Einsteinium,Fermium,Mendelevium,Nobelium,Lawrencium,Rutherfordium,Dubnium,Seaborgium,Bohrium,Hassium,Meitnerium,Darmstadtium,Roentgenium,Copernicium,Nihonium,Flerovium,Moscovium,Livermorium,Tennessine,Oganesson".split(",");
 
   var ME = document.currentScript || document.querySelector('script[src*="quizzes/progress.js"]');
@@ -130,6 +136,12 @@
       ".lp-note .lp-el{display:block;margin-top:10px;padding-top:10px;border-top:2px dashed #e3d9c6;font-size:.95rem;color:#2c2840}" +
       ".lp-note .lp-el a{font-family:'Fredoka',sans-serif;font-weight:600;color:#0a6b5e;text-decoration:none;white-space:nowrap}" +
       ".lp-note .lp-el a:hover{text-decoration:underline}" +
+      ".lp-note.lp-quest{background:#eefaf7;margin-top:12px}" +
+      "#lp-flag{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.85rem;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;border:2px solid #2c2840;" +
+        "border-radius:999px;background:#fff;color:#2c2840;padding:3px 10px;cursor:pointer;line-height:1;min-height:34px;box-sizing:border-box}" +
+      "#lp-flag:hover{background:#fff7ee}" +
+      "#lp-flag:focus-visible{outline:3px solid #0a6b5e;outline-offset:2px}" +
+      "@media (max-width:520px){#lp-flag .lp-ft{display:none}}" +
       ".lp-strip{max-width:860px;margin:1.2rem auto 0;padding:12px 16px;border:1px solid rgba(10,107,94,.3);border-radius:12px;background:rgba(10,107,94,.06);" +
         "font-size:15px;line-height:1.5;display:flex;gap:10px;align-items:center;flex-wrap:wrap}" +
       ".lp-strip a{font-weight:700;color:#0a6b5e;text-decoration:none}" +
@@ -198,6 +210,25 @@
 
   /* ---------- 2. account chip in the lesson top bar ---------- */
   function closeMenu() { var m = document.getElementById("lp-menu"); if (m) m.remove(); }
+  /* "Report a mistake" flag, just before the chip. Works signed in or out. */
+  function flag(bar, before) {
+    if (document.getElementById("lp-flag")) return;
+    var f = document.createElement("button");
+    f.type = "button"; f.id = "lp-flag";
+    f.innerHTML = '<span aria-hidden="true">⚑</span><span class="lp-ft">Report a mistake</span>';
+    f.title = "Report a mistake on this screen";
+    f.setAttribute("aria-label", "Report a mistake on this screen");
+    bar.insertBefore(f, before);
+    f.addEventListener("click", function () {
+      var screens = [].slice.call(document.querySelectorAll(".screen"));
+      var cur = document.querySelector(".screen.active") || screens[0];
+      var h = cur ? cur.querySelector("h1,h2,h3") : null;
+      var ctx = { page: location.pathname, screen: cur ? String(screens.indexOf(cur) + 1) : "",
+        heading: h ? h.textContent.replace(/\s+/g, " ").trim().slice(0, 140) : "", lesson: stemOf(location.pathname) || "" };
+      f.disabled = true;
+      loadAuth().then(function (auth) { f.disabled = false; auth.openReport(ctx); }, function () { f.disabled = false; });
+    });
+  }
   function chip() {
     var bar = document.querySelector(".topbar"); if (!bar) return;
     css();
@@ -209,6 +240,7 @@
       var sc = bar.querySelector(".score");
       if (sc && sc.parentNode === bar) bar.insertBefore(c, sc.nextSibling); else bar.appendChild(c);
       c.addEventListener("click", onChipClick);
+      if (/-mini-lesson\.html$/.test(location.pathname)) flag(bar, c);
     }
     var a = session();
     if (a && a.token) {
@@ -264,6 +296,7 @@
       '<div class="lp-ms">' + (typeof w.coins === "number" ? plural(w.coins, "coin") : "…") + " · " + owned + " collected</div>" +
       '<button type="button" role="menuitem" data-a="avatar">Choose avatar</button>' +
       '<button type="button" role="menuitem" data-a="invite">Invite a friend</button>' +
+      '<button type="button" role="menuitem" data-a="feedback">Give feedback' + (AUTH && AUTH.feedbackDone && AUTH.feedbackDone() ? "" : " · +100 coins") + '</button>' +
       '<a role="menuitem" href="' + esc(SHOP) + '">Element shop</a>' +
       '<div class="lp-sep"></div>' +
       '<button type="button" role="menuitem" data-a="logout">Log out</button>';
@@ -279,6 +312,7 @@
       loadAuth().then(function (auth) {
         if (act === "avatar") auth.openAvatars();
         else if (act === "invite") auth.openInvite();
+        else if (act === "feedback") auth.openFeedback({ where: "lesson menu" });
         else if (act === "logout") { auth.logout(); chip(); }
       });
     });
@@ -580,6 +614,37 @@
     note.innerHTML = html + elementLine();
     chip();
     wireSave(note);
+    questCard(note);
+  }
+
+  /* ---------- 6. feedback-quest card under the coins ---------- */
+  var FB_SNOOZE = "aism-fb-snooze";
+  function questCard(note) {
+    if (!signedIn() || document.querySelector(".lp-quest")) return;
+    try { if (Date.now() < Number(localStorage.getItem(FB_SNOOZE) || 0)) return; } catch (e) {}
+    loadAuth().then(function (auth) {
+      if (!auth.feedbackStatus || (auth.feedbackDone && auth.feedbackDone())) return;
+      return auth.feedbackStatus().then(function (st) {
+        if (!st || !st.ok || st.claimed || !st.eligible || document.querySelector(".lp-quest")) return;
+        var q = document.createElement("div");
+        q.className = "lp-note lp-quest";
+        q.innerHTML = '<span class="lp-big">Feedback quest: win <b>' + (st.coins || 100) + '</b> coins</span>' +
+          '<span class="lp-sub">Tell us one thing that would make this site better for you. It takes a minute.</span>' +
+          '<div class="lp-btns"><button type="button" data-q="go">Give feedback</button><button type="button" class="ghost" data-q="later">Not now</button></div>';
+        note.parentNode.insertBefore(q, note.nextSibling);
+        track("Feedback quest: card shown");
+        q.addEventListener("click", function (e) {
+          var b = e.target && e.target.closest ? e.target.closest("[data-q]") : null;
+          if (!b) return;
+          if (b.getAttribute("data-q") === "later") {
+            try { localStorage.setItem(FB_SNOOZE, String(Date.now() + 7 * 86400000)); } catch (e2) {}
+            track("Feedback quest: card dismissed"); q.remove(); return;
+          }
+          var off = auth.onChange(function () { if (auth.feedbackDone && auth.feedbackDone()) { off(); q.remove(); } });
+          auth.openFeedback({ where: "lesson end" });
+        });
+      });
+    }).catch(function () {});
   }
 
   function wireSave(note) {

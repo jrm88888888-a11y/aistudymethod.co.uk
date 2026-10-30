@@ -212,7 +212,7 @@
     a.defer = true;
     document.head.appendChild(a);
     var p = document.createElement("script");          // lesson progress, coins and ticks
-    p.src = base + "progress.js?v=20261029c";
+    p.src = base + "progress.js?v=20261030a";
     p.defer = true;
     document.head.appendChild(p);
     var z = document.createElement("script");          // seasonal plug (seasonal.js switches itself off)
