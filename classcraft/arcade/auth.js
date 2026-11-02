@@ -37,7 +37,13 @@
    'aism-auth-change' {loggedIn, user, wallet} on any state change.
    Analytics: fires Plausible custom events when window.plausible exists
    (Arcade signup prompt: shown / create account / not now; Arcade signup:
-   registered {source}). Nothing is sent if Plausible isn't on the page. */
+   registered {source}). Nothing is sent if Plausible isn't on the page.
+   Nov 2026, to see where sign-ups are lost: "Signup form: shown" {source}
+   (the REGISTER tab is showing), "Signup form: error" {source, error}
+   (error = server code, or "password-client" for the local password check),
+   "Signup form: closed" {source, step} (closed without logging in or
+   confirming the recovery key; step = register | login | recover | recovery),
+   "Signup: key confirmed" {source} ("Start playing" on the recovery-key screen). */
 (function () {
   "use strict";
   if (typeof window === "undefined") return;
@@ -182,6 +188,9 @@
     // exposed for the UI + tests
     _genUsername: genUsername,
     _passwordError: passwordError,
+    _errText: errText,
+    _storedRef: storedRef,
+    _clearRef: clearRef,
   };
 
   /* ---------------- helpers: username + password ---------------- */
@@ -503,6 +512,7 @@
     injectCss();
     close();
     openSource = (opts && opts.source) || "other";
+    var cur = mode || "login", finished = false;   // for "Signup form: closed"
     var ov = el("div", "aism-ov"); ov.id = "aism-auth-ov";
     var modal = el("div", "aism-modal");
     ov.appendChild(modal);
@@ -512,10 +522,15 @@
     render(mode || "login");
 
     function escClose(e) { if (e.key === "Escape") close(); }
-    function close2() { document.removeEventListener("keydown", escClose); ov.remove(); }
+    function close2() {
+      document.removeEventListener("keydown", escClose); ov.remove();
+      if (!finished) track("Signup form: closed", { source: openSource || "other", step: cur });
+    }
     auth._closeModal = close2;
 
     function render(m) {
+      cur = m;
+      if (m === "register") track("Signup form: shown", { source: openSource || "other" });
       modal.innerHTML = "";
       var x = el("button", "aism-x", "✕"); x.setAttribute("aria-label", "Close"); x.addEventListener("click", close); modal.appendChild(x);
       modal.appendChild(el("h2", null, m === "recover" ? "Recover account" : "Velvet Arcade"));
@@ -558,7 +573,7 @@
         err.textContent = ""; busy(btn, true, "Log in");
         var r = await auth.login(u.value.trim(), p.value);
         busy(btn, false, "Log in");
-        if (r.ok) close(); else err.textContent = errText(r.error);
+        if (r.ok) { finished = true; close(); } else err.textContent = errText(r.error);
       };
       btn.addEventListener("click", go);
       p.addEventListener("keydown", function (e) { if (e.key === "Enter") go(); });
@@ -599,7 +614,7 @@
 
       var go = async function () {
         uErr.textContent = ""; pErr.textContent = ""; rErr.textContent = "";
-        var pe = passwordError(p.value); if (pe) { pErr.textContent = pe; return; }
+        var pe = passwordError(p.value); if (pe) { pErr.textContent = pe; track("Signup form: error", { source: openSource || "other", error: "password-client" }); return; }
         var raw = rc.value.trim(), code = raw ? cleanRef(raw) : "";
         if (raw && !code) { rErr.textContent = errText("ref-code-invalid"); return; }
         busy(btn, true, "Create account");
@@ -607,9 +622,11 @@
         busy(btn, false, "Create account");
         if (r.ok) {
           track("Arcade signup: registered", { source: openSource || "other", friendCode: r.referral ? "yes" : "no" });
-          markNudge(); recoveryScreen(r.recoveryKey, false, r.referral);
+          markNudge(); cur = "recovery"; recoveryScreen(r.recoveryKey, false, r.referral);
+          return;
         }
-        else if (r.error === "username-taken" || r.error === "username-invalid") uErr.textContent = errText(r.error);
+        track("Signup form: error", { source: openSource || "other", error: String(r.error || "unknown") });
+        if (r.error === "username-taken" || r.error === "username-invalid") uErr.textContent = errText(r.error);
         else if (/^ref-code-/.test(r.error || "")) { rErr.textContent = errText(r.error); if (r.error === "ref-code-used-up" || r.error === "ref-code-own") clearRef(); }
         else pErr.textContent = errText(r.error);
       };
@@ -638,7 +655,7 @@
         busy(btn, true, "Reset password");
         var r = await auth.recover(u.value.trim(), k.value.trim(), p.value);
         busy(btn, false, "Reset password");
-        if (r.ok) recoveryScreen(r.recoveryKey, true); else err.textContent = errText(r.error);
+        if (r.ok) { finished = true; recoveryScreen(r.recoveryKey, true); } else err.textContent = errText(r.error);
       };
       btn.addEventListener("click", go);
       return body;
@@ -664,7 +681,10 @@
       body.appendChild(lab);
       var done = el("button", "aism-btn aism-primary", "Start playing"); done.disabled = true;
       cb.addEventListener("change", function () { done.disabled = !cb.checked; });
-      done.addEventListener("click", close);
+      done.addEventListener("click", function () {
+        if (!rotated) track("Signup: key confirmed", { source: openSource || "other" });
+        finished = true; close();
+      });
       body.appendChild(done);
       modal.appendChild(body);
     }

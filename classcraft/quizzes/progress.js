@@ -43,7 +43,14 @@
    "Mini-lesson: returning", "Lesson coins: unsaved", "Lesson coins: save
    pressed", "Lesson coins: saved" {coins}, "Lesson coins: mission" {state},
    "Lesson chip: clicked" {state}, "Feedback quest: card shown", "Feedback quest:
-   card dismissed". Registration itself is reported by auth.js. */
+   card dismissed". Registration itself is reported by auth.js.
+   Nov 2026: signed-out students with unsaved coins get a sign-up form right in
+   the end-screen coin note (suggested username + password), and the recovery
+   key is shown in the same box, instead of only a button to the arcade modal.
+   Its events: "Coin save form: shown", "Coin save form: started" (first key
+   in the password box), "Coin save form: error" {error}, "Lesson coins: save
+   pressed" {via: inline}, "Arcade signup: registered" {source: "lesson end"},
+   "Signup: key confirmed" {source: "lesson end"}, then "Lesson coins: saved". */
 (function () {
   "use strict";
   if (window.AismProgress) return;
@@ -53,7 +60,7 @@
   var RX = /^(.+?)-(ks3|gcse|a-level|ibdp)-(edexcel-igcse|cambridge-igcse|general|edexcel|eduqas|wjec|ccea|aqa|ocr|hl|sl|ib)-(.+)$/;
   var GRADE = [[95, 12], [80, 9], [60, 6], [40, 3]];
   var DAILY_CAP = 150, MAX_PENDING = 60;
-  var AUTH_V = "20261030a";
+  var AUTH_V = "20261102";
   var ELEMENTS = "Hydrogen,Helium,Lithium,Beryllium,Boron,Carbon,Nitrogen,Oxygen,Fluorine,Neon,Sodium,Magnesium,Aluminium,Silicon,Phosphorus,Sulfur,Chlorine,Argon,Potassium,Calcium,Scandium,Titanium,Vanadium,Chromium,Manganese,Iron,Cobalt,Nickel,Copper,Zinc,Gallium,Germanium,Arsenic,Selenium,Bromine,Krypton,Rubidium,Strontium,Yttrium,Zirconium,Niobium,Molybdenum,Technetium,Ruthenium,Rhodium,Palladium,Silver,Cadmium,Indium,Tin,Antimony,Tellurium,Iodine,Xenon,Caesium,Barium,Lanthanum,Cerium,Praseodymium,Neodymium,Promethium,Samarium,Europium,Gadolinium,Terbium,Dysprosium,Holmium,Erbium,Thulium,Ytterbium,Lutetium,Hafnium,Tantalum,Tungsten,Rhenium,Osmium,Iridium,Platinum,Gold,Mercury,Thallium,Lead,Bismuth,Polonium,Astatine,Radon,Francium,Radium,Actinium,Thorium,Protactinium,Uranium,Neptunium,Plutonium,Americium,Curium,Berkelium,Californium,Einsteinium,Fermium,Mendelevium,Nobelium,Lawrencium,Rutherfordium,Dubnium,Seaborgium,Bohrium,Hassium,Meitnerium,Darmstadtium,Roentgenium,Copernicium,Nihonium,Flerovium,Moscovium,Livermorium,Tennessine,Oganesson".split(",");
 
   var ME = document.currentScript || document.querySelector('script[src*="quizzes/progress.js"]');
@@ -137,6 +144,28 @@
       ".lp-note .lp-el a{font-family:'Fredoka',sans-serif;font-weight:600;color:#0a6b5e;text-decoration:none;white-space:nowrap}" +
       ".lp-note .lp-el a:hover{text-decoration:underline}" +
       ".lp-note.lp-quest{background:#eefaf7;margin-top:12px}" +
+      /* inline sign-up form + recovery key */
+      ".lp-save{margin:12px auto 0;max-width:380px;text-align:left}" +
+      ".lp-save .lp-f{display:block;margin:0 0 10px}" +
+      ".lp-save .lp-f>span:first-child{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:.95rem;margin-bottom:4px}" +
+      ".lp-save .lp-f small{font-family:'Nunito',sans-serif;font-weight:600;color:#6b6580;font-size:.82rem}" +
+      ".lp-save .lp-in{display:flex;gap:6px}" +
+      ".lp-save input{box-sizing:border-box;width:100%;min-width:0;font:inherit;font-size:1rem;padding:10px 12px;border:2px solid #2c2840;border-radius:12px;background:#fff;color:#2c2840}" +
+      ".lp-save input:focus{outline:3px solid #0a6b5e;outline-offset:1px}" +
+      ".lp-save .lp-rr{flex:none;padding:6px 12px;background:#fff;color:#2c2840;box-shadow:none;border-width:2px}" +
+      ".lp-save .lp-btns{justify-content:flex-start}" +
+      ".lp-save .lp-go{flex:1 1 auto}" +
+      ".lp-save .lp-err{color:#b3261e;font-weight:700;font-size:.92rem;min-height:0}" +
+      ".lp-save .lp-err:not(:empty){margin:-2px 0 8px}" +
+      ".lp-fine{display:block;margin-top:8px;font-size:.8rem;color:#6b6580}" +
+      ".lp-fine a{color:inherit}" +
+      ".lp-note button:disabled{opacity:.55;cursor:default}" +
+      ".lp-key{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:12px auto 6px;padding:10px 12px;border:2px dashed #c9971a;border-radius:12px;background:#fff;max-width:380px}" +
+      ".lp-key span{width:100%;font-family:'Fredoka',sans-serif;font-weight:600;font-size:.9rem;color:#6b6580}" +
+      ".lp-key code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.1rem;font-weight:700;letter-spacing:1px;word-break:break-all;color:#2c2840}" +
+      ".lp-key button{padding:5px 12px;font-size:.9rem;box-shadow:none;border-width:2px}" +
+      ".lp-chk{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px;font-weight:700;cursor:pointer}" +
+      ".lp-chk input{width:20px;height:20px;accent-color:#0a6b5e}" +
       "#lp-flag{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.85rem;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;border:2px solid #2c2840;" +
         "border-radius:999px;background:#fff;color:#2c2840;padding:3px 10px;cursor:pointer;line-height:1;min-height:34px;box-sizing:border-box}" +
       "#lp-flag:hover{background:#fff7ee}" +
@@ -594,8 +623,8 @@
       var pend = pendingTotal();
       html = '<span class="lp-big"><span class="lp-coin"></span>' +
         (unsaved > 0 ? "You earned <b>" + unsaved + "</b> coin" + (unsaved === 1 ? "" : "s") + (mission ? " in this lesson" : "") + "!" : "Your coins are waiting") + "</span>" +
-        '<span class="lp-sub">You have <b>' + pend + "</b> coin" + (pend === 1 ? "" : "s") + " on this device, not saved yet. Save them with a free account: just a username and password, no email.</span>" +
-        '<div class="lp-btns"><button type="button" data-lp="register">Save my coins</button><button type="button" class="ghost" data-lp="login">I have an account</button></div>';
+        '<span class="lp-sub">You have <b>' + pend + "</b> coin" + (pend === 1 ? "" : "s") + " on this device. Save them to spend in the Element shop: pick a username and password, no email needed.</span>" +
+        saveForm(pend);
     } else if (held > 0) {
       html = '<span class="lp-big"><span class="lp-coin"></span>Couldn\'t reach the coin bank just now</span>' +
         '<span class="lp-sub">Your ' + held + " coins are kept on this device and will be saved next time you finish a lesson.</span>";
@@ -614,6 +643,7 @@
     note.innerHTML = html + elementLine();
     chip();
     wireSave(note);
+    wireInline(note);
     questCard(note);
   }
 
@@ -645,6 +675,88 @@
         });
       });
     }).catch(function () {});
+  }
+
+  /* ---------- inline sign-up in the end-screen note ---------- */
+  function saveForm(pend) {
+    return '<form class="lp-save" autocomplete="off" novalidate>' +
+      '<label class="lp-f"><span>Username <small>(not your real name)</small></span><span class="lp-in">' +
+        '<input name="u" type="text" maxlength="20" autocapitalize="off" spellcheck="false" placeholder="username">' +
+        '<button type="button" class="lp-rr" title="Suggest another" aria-label="Suggest another username">↻</button></span></label>' +
+      '<label class="lp-f"><span>Password</span><input name="p" type="password" placeholder="at least 8 characters" autocomplete="new-password"></label>' +
+      '<div class="lp-err" role="alert"></div>' +
+      '<div class="lp-btns"><button type="submit" class="lp-go">Save my ' + plural(pend, "coin") + '</button>' +
+        '<button type="button" class="ghost" data-lp="login">I have an account</button></div>' +
+      '<span class="lp-fine">Stored securely in the EU; deleted after 18 months unused. <a href="/privacy.html#student-data" target="_blank" rel="noopener">How we handle student data</a></span>' +
+      "</form>";
+  }
+  var inlineShown = false;
+  function wireInline(note) {
+    var f = note.querySelector("form.lp-save");
+    if (!f) return;
+    var u = f.querySelector('[name="u"]'), p = f.querySelector('[name="p"]'), err = f.querySelector(".lp-err"), go = f.querySelector(".lp-go");
+    if (!inlineShown) { inlineShown = true; track("Coin save form: shown"); }
+    var started = false;
+    p.addEventListener("input", function () { if (!started) { started = true; track("Coin save form: started"); } });
+    var authP2 = loadAuth();
+    authP2.then(function (auth) { if (!u.value && auth._genUsername) u.value = auth._genUsername(); }, function () {});
+    f.querySelector(".lp-rr").addEventListener("click", function () {
+      authP2.then(function (auth) { if (auth._genUsername) { u.value = auth._genUsername(); err.textContent = ""; } });
+    });
+    var label = go.textContent;
+    function fail(code, text) { err.textContent = text; go.disabled = false; go.textContent = label; track("Coin save form: error", { error: code }); }
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (go.disabled) return;
+      err.textContent = "";
+      track("Lesson coins: save pressed", { via: "inline" });
+      go.disabled = true; go.textContent = "Saving…";
+      authP2.then(function (auth) {
+        var name = u.value.trim();
+        if (!/^[A-Za-z0-9-]{3,20}$/.test(name)) return fail("username-invalid", auth._errText("username-invalid"));
+        var pe = auth._passwordError(p.value);
+        if (pe) return fail("password-client", pe);
+        var ref = auth._storedRef ? auth._storedRef() : "";
+        var attempt = function (code) {
+          return auth.register(name, p.value, code || undefined).then(function (r) {
+            // a stale friend code shouldn't block saving: drop it and try once more without
+            if (!r.ok && code && /^ref-code-/.test(r.error || "")) { if (auth._clearRef) auth._clearRef(); return attempt(""); }
+            return r;
+          });
+        };
+        return attempt(ref).then(function (r) {
+          if (!r.ok) return fail(String(r.error || "unknown"), auth._errText(r.error));
+          track("Arcade signup: registered", { source: "lesson end", friendCode: r.referral ? "yes" : "no" });
+          keyStep(note, auth, name, r.recoveryKey);
+        });
+      }, function () { fail("auth-load", "Couldn't reach the coin bank just now. Your coins are still on this device; try again in a minute."); })
+        .catch(function () { fail("network", "Something went wrong. Your coins are still on this device; try again."); });
+    });
+  }
+  function keyStep(note, auth, name, key) {
+    note.innerHTML =
+      '<span class="lp-big">You\'re in, <b>' + esc(name) + '</b>!</span>' +
+      '<span class="lp-sub lp-sv"><span class="lp-coin"></span>Saving your coins…</span>' +
+      '<div class="lp-key"><span>Your recovery key</span><code>' + esc(key) + '</code><button type="button" class="ghost" data-k="copy">Copy</button></div>' +
+      '<span class="lp-sub">It\'s the only way back in if you forget your password (there\'s no email reset). Write it down or take a screenshot.</span>' +
+      '<label class="lp-chk"><input type="checkbox"> I\'ve saved my recovery key</label>' +
+      '<div class="lp-btns"><button type="button" data-k="done" disabled>Done</button></div>';
+    var sv = note.querySelector(".lp-sv"), cb = note.querySelector(".lp-chk input"), done = note.querySelector('[data-k="done"]');
+    claimPending(auth).then(function (r) {
+      if (!r) { sv.innerHTML = "Your coins will be saved next time you finish a lesson."; return; }
+      sv.innerHTML = '<span class="lp-coin"></span>Saved <b>' + r.saved + "</b> coin" + (r.saved === 1 ? "" : "s") + " to your account." +
+        (r.left > 0 ? " " + r.left + " more will be saved on another day (up to 150 a day)." : "");
+    });
+    cb.addEventListener("change", function () { done.disabled = !cb.checked; });
+    note.querySelector('[data-k="copy"]').addEventListener("click", function (e) {
+      var b = e.currentTarget;
+      try { navigator.clipboard.writeText(key).then(function () { b.textContent = "Copied ✓"; }, function () { b.textContent = "Select and copy it"; }); } catch (x) { b.textContent = "Select and copy it"; }
+    });
+    done.addEventListener("click", function () {
+      track("Signup: key confirmed", { source: "lesson end" });
+      var line = sv.innerHTML;
+      note.innerHTML = '<span class="lp-big">Account saved</span><span class="lp-sub">' + line + "</span>" + elementLine();
+    });
   }
 
   function wireSave(note) {

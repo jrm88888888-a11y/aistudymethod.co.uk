@@ -16,6 +16,16 @@
      "Mini-lesson: completed"  the completion screen opens
      "Mini-lesson next: <what>" a card link is followed: lesson, arcade, verify,
                                course (a lesson in the course list) or hub
+   Nov 2026: the card sits straight under "Mini-lesson complete!" (it used to be
+   below the fold on phones), the old static "Next: ..." line is hidden, and every
+   other way off the completion screen is counted too, as
+     "Mini-lesson next: <what>" share, restart, back (course page link in the
+                               top bar or under the card), revise (revision
+                               hub), teacher, coins (coin note link), promo
+                               (seasonal plug / another course's lesson),
+                               other (any other link; carries href)
+   "Mini-lesson: completed" carries card=yes|no (no = no course data, card absent).
+   All of these need a matching Goal in Plausible to show up on the dashboard.
    If anything is missing the card does nothing; the events still fire. */
 (function () {
   "use strict";
@@ -44,7 +54,12 @@
     var started = false, completed = false;
     function check() {
       if (!started && !first.classList.contains("active")) { started = true; track("Mini-lesson: started"); }
-      if (fin && !completed && fin.classList.contains("active")) { completed = true; track("Mini-lesson: completed"); }
+      if (fin && !completed && fin.classList.contains("active")) {
+        completed = true;
+        track("Mini-lesson: completed", { card: fin.querySelector(".lnx") ? "yes" : "no" });
+        exitsOn = true;
+        setTimeout(function () { nudge(fin); }, 700);
+      }
     }
     try {
       var mo = new MutationObserver(check);
@@ -141,13 +156,65 @@
     box.innerHTML = "<h2>What next?</h2>" + html;
     box.addEventListener("click", function (e) {
       var a = e.target && e.target.closest ? e.target.closest("a[data-lnx]") : null;
-      if (a) track("Mini-lesson next: " + a.getAttribute("data-lnx"));
+      if (a) { track("Mini-lesson next: " + a.getAttribute("data-lnx")); e.__lnx = true; }
     });
-    var anchor = fin.querySelector(".sharebox");
-    if (anchor) fin.insertBefore(box, anchor); else fin.appendChild(box);
+    // straight under the heading + stars, so the next step is on screen without scrolling
+    var head = fin.querySelector(".stars3") || fin.querySelector("h1");
+    if (head && head.parentNode === fin) fin.insertBefore(box, head.nextSibling);
+    else { var anchor = fin.querySelector(".sharebox"); if (anchor) fin.insertBefore(box, anchor); else fin.appendChild(box); }
+    // the static "Next: ..." line competes with the card (which already offers Verify, the arcade and the course page)
+    var kids = fin.children;
+    for (var j = 0; j < kids.length; j++) if (kids[j].tagName === "P" && /^\s*Next:/.test(kids[j].textContent)) kids[j].style.display = "none";
     // the static sibling-links block (REL-START/END) now repeats the course list: keep it for crawlers, hide it from students
     var rel = fin.querySelector("nav.related"); if (rel) rel.style.display = "none";
     try { if (window.AismProgress) window.AismProgress.mark(box); } catch (e) {}
+  }
+
+  /* Everything else a student can do from the completion screen. Only counted
+     while that screen is showing, and only once per page (the first choice). */
+  var exitsOn = false, exitDone = false;
+  function kindOf(el) {
+    if (el.closest(".sharebox") || el.hasAttribute("data-share")) return "share";
+    if (el.classList.contains("restart")) return "restart";
+    if (el.closest(".lnx") || el.closest("#lp-chip") || el.closest("#lp-menu")) return null;   // card already counted; coins chip has its own events
+    if (el.closest(".sz-bar") && el.tagName !== "A") return null;                              // closing the seasonal bar isn't leaving
+    if (el.closest(".sz-card") || el.closest(".sz-bar")) return "promo";                     // seasonal plug (seasonal.js counts it too)
+    if (el.closest(".lp-note")) return el.tagName === "A" ? "coins" : null;                   // coin note's shop link (its save form isn't leaving)
+    var a = el.closest("a");
+    if (!a) return /assign/i.test(el.textContent || "") ? "teacher" : null;
+    var h = a.getAttribute("href") || "";
+    if (!h || /^(#|blob:|data:|javascript:)/i.test(h)) return null;                          // in-page links and generated downloads
+    if (/\/lessons\//.test(h)) return "back";
+    if (/\/revise\//.test(h)) return "revise";
+    if (/-mini-lesson\.html/.test(h)) return group && h.indexOf(group + "-") >= 0 ? "course" : "promo";
+    if (/arcade\.html/.test(h)) return "arcade";
+    if (/verify/.test(h)) return "verify";
+    if (/\/teach/.test(h)) return "teacher";
+    return "other";
+  }
+  function watchExits() {
+    document.addEventListener("click", function (e) {
+      if (!exitsOn || exitDone || !e.isTrusted) return;   // only real clicks (share-score.js clicks a hidden download link)
+      var el = e.target && e.target.closest ? e.target.closest("a,button") : null;
+      if (!el) return;
+      var k = kindOf(el);
+      if (!k) return;
+      exitDone = k !== "share";               // sharing isn't leaving: keep listening after it
+      var extra = k === "other" ? { href: (el.getAttribute("href") || "").slice(0, 120) } : null;
+      track("Mini-lesson next: " + k, extra);
+    }, true);
+  }
+  // on small screens make sure the next-lesson button is in view once the final screen settles
+  function nudge(fin) {
+    try {
+      var main = fin.querySelector(".lnx a.lnx-main") || fin.querySelector(".lnx");
+      if (!main) return;
+      var r = main.getBoundingClientRect();
+      if (r.bottom > window.innerHeight - 8) {
+        var y = window.pageYOffset + fin.querySelector(".lnx").getBoundingClientRect().top - 110;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+      }
+    } catch (e) {}
   }
 
   function init() {
@@ -162,6 +229,7 @@
               : { course: group, subject: sh[1], level: "ibdp", board: "sl", topic: sh[2] };
     }
     watchScreens();
+    watchExits();
     var fin = document.querySelector(".screen.final");
     if (!fin || fin.querySelector(".lnx") || !ctx) return;
     fetch("../quizzes/lesson-next/" + group + ".json")
