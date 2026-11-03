@@ -8,7 +8,7 @@ Reads classcraft/quizzes/lesson-next/index.json and <course>.json (run
 tools/build-lesson-next.py first). Run from anywhere:
     python3 tools/build-lessons-hub.py
 """
-import json, os, html, collections
+import re, json, os, html, collections
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'classcraft', 'quizzes', 'lesson-next')
@@ -215,3 +215,16 @@ PAGE = f'''<!DOCTYPE html>
 '''
 open(OUT, 'w', encoding='utf8').write(PAGE)
 print(f'lessons.html: {len(index)} courses, {total} lessons, {len(PAGE)//1024} KB')
+
+# Keep the lesson/course counts on the homepage and the Velvet Method page in step
+# (markers <!-- N-LESSONS -->…<!-- /N-LESSONS --> and <!-- N-COURSES -->…; the
+# homepage meta descriptions carry the number as plain text).
+for _page in ('index.html', 'velvet-method.html'):
+    _p = os.path.join(ROOT, _page)
+    _t = open(_p, encoding='utf8').read()
+    _t2 = re.sub(r'<!-- N-LESSONS -->[\d,]*<!-- /N-LESSONS -->', f'<!-- N-LESSONS -->{total:,}<!-- /N-LESSONS -->', _t)
+    _t2 = re.sub(r'<!-- N-COURSES -->[\d,]*<!-- /N-COURSES -->', f'<!-- N-COURSES -->{len(index)}<!-- /N-COURSES -->', _t2)
+    _t2 = re.sub(r'(content="|^)([\d,]+)( free interactive mini-lessons)', lambda m: f'{m.group(1)}{total:,}{m.group(3)}', _t2, flags=re.M)
+    if _t2 != _t:
+        open(_p, 'w', encoding='utf8').write(_t2)
+        print(f'{_page}: counts -> {total:,} lessons, {len(index)} courses')
