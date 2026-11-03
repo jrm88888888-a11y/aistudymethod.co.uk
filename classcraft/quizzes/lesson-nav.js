@@ -204,15 +204,15 @@
     var me = document.currentScript || document.querySelector('script[src*="lesson-nav.js"]');
     var base = me && me.src ? me.src.replace(/lesson-nav\.js.*$/, "") : "../quizzes/";
     var s = document.createElement("script");
-    s.src = base + "lesson-next.js?v=20261102";
+    s.src = base + "lesson-next.js?v=20261103";
     s.defer = true;
     document.head.appendChild(s);
     var a = document.createElement("script");          // teacher "assign this" button
-    a.src = base + "assign.js?v=20261025";
+    a.src = base + "assign.js?v=20261103";
     a.defer = true;
     document.head.appendChild(a);
     var p = document.createElement("script");          // lesson progress, coins and ticks
-    p.src = base + "progress.js?v=20261102";
+    p.src = base + "progress.js?v=20261103";
     p.defer = true;
     document.head.appendChild(p);
     var z = document.createElement("script");          // seasonal plug (seasonal.js switches itself off)

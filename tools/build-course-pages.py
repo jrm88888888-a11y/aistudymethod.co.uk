@@ -19,8 +19,9 @@ V = '20261027'
 e = lambda s: html.escape(str(s), quote=True)
 
 SPECS = {x['key']: x for x in json.load(open(os.path.join(ROOT, 'classcraft', 'specs-manifest.json'), encoding='utf8'))}
-LEVEL_NAME = {'ks3': 'KS3', 'gcse': 'GCSE', 'a-level': 'A-Level', 'ibdp': 'IB Diploma'}
-BOARD_ORDER = ['aqa', 'edexcel', 'ocr', 'eduqas', 'wjec', 'ccea', 'cambridge-igcse', 'edexcel-igcse', 'general', 'sl', 'hl', 'ib']
+LEVEL_NAME = {'ks3': 'KS3', 'gcse': 'GCSE', 'a-level': 'A-Level', 'ibdp': 'IB Diploma', 'ap': 'AP'}
+BOARD_ORDER = ['aqa', 'edexcel', 'ocr', 'eduqas', 'wjec', 'ccea', 'cambridge-igcse', 'edexcel-igcse', 'general', 'sl', 'hl', 'ib',
+               'physics-1', 'physics-2', 'physics-c-mechanics', 'physics-c-em', 'collegeboard']   # AP courses last
 index = [c for c in json.load(open(os.path.join(DATA, 'index.json'), encoding='utf8')) if c['n'] > 0]
 by_key = {c['k']: c for c in index}
 
@@ -148,8 +149,9 @@ for c in index:
     level = LEVEL_NAME.get(c['l'], c['l'])
     n = len(rows)
     with_q = sum(1 for r in rows if r[0] in hooks)
+    ap = c['l'] == 'ap'   # AP: College Board course framework, US English, no Velvet Revision page yet
     title = f"{c['d']} mini-lessons — {n} free interactive lesson{'' if n == 1 else 's'}"
-    desc = (f"Every topic of {c['d']} as a free interactive mini-lesson, in specification order"
+    desc = (f"Every topic of {c['d']} as a free interactive mini-lesson, in {'course' if ap else 'specification'} order"
             + (f" (spec {code})" if code else "") + ". Each lesson opens with a question, then works through it in missions with checks. About 20 minutes each. No login.")
     items = []
     for i, r in enumerate(rows):
@@ -164,7 +166,7 @@ for c in index:
                       key=lambda x: BOARD_ORDER.index(x['b']) if x['b'] in BOARD_ORDER else 99)
     other_levels = sorted({x['l'] for x in index if x['s'] == c['s'] and x['l'] != c['l']}, key=lambda l: list(LEVEL_NAME).index(l))
     actions = [f'<a class="t" href="/teach/{e(c["k"])}.html">👩‍🏫 Teachers: assign this course</a>'] if os.path.exists(os.path.join(ROOT, 'teach', c['k'] + '.html')) else []
-    actions.append(f'<a href="/subjects.html?subject={e(c["s"])}&amp;level={e(c["l"])}&amp;board={e(c["b"])}">All six Velvet stages</a>')
+    if not ap: actions.append(f'<a href="/subjects.html?subject={e(c["s"])}&amp;level={e(c["l"])}&amp;board={e(c["b"])}">All six Velvet stages</a>')
     if d.get('a'): actions.append(f'<a href="/classcraft/arcade.html?{e(d["a"])}">🎮 Revision Arcade</a>')
     if guide: actions.append(f'<a href="/{e(guide)}">📖 {e(guide_name)}</a>')
     opener = "Each one opens with a question you can\u2019t yet answer" if with_q else "Each one takes a topic step by step"
@@ -205,7 +207,7 @@ for c in index:
   <p class="cp-crumbs"><a href="/lessons.html">Mini-lessons</a> › <a href="/lessons.html#{e(c['l'])}">{e(level)}</a> › <span>{e(c['sd'])}</span> › <span>{e(c['bd'])}</span></p>
   <p class="cp-meta">{e(c['d'])}{(' · spec ' + e(code)) if code else ''} · {n} mini-lesson{'' if n == 1 else 's'}</p>
   <h1>{e(c['d'])}<br><em>{n} free mini-lessons, in order.</em></h1>
-  <p class="lead">One interactive lesson for every topic in the {e(c['bd'])} specification, in the order it's taught. {opener}, then works through it in missions with checks along the way. About 20 minutes each. No login.</p>
+  <p class="lead">One interactive lesson for every topic in the {(e('College Board ' + c['d'] + ' course framework') if ap else e(c['bd']) + ' specification')}, in the order it's taught. {opener}, then works through it in missions with checks along the way. About 20 minutes each. No login.</p>
   <div class="cp-actions">{''.join(actions)}</div>
  </div>
 </section>
@@ -217,7 +219,7 @@ for c in index:
   </ol>
   <div class="cp-more">
    <h2>More {e(c['sd'])}</h2>
-   {('<p>Same subject, other exam boards:</p><p class="cp-boards">' + ''.join(f'<a href="/lessons/{e(x["k"])}.html">{e(x["d"])}</a>' for x in siblings) + '</p>') if siblings else ''}
+   {('<p>' + ('Other AP ' + e(c['sd']) + ' courses:' if ap else 'Same subject, other exam boards:') + '</p><p class="cp-boards">' + ''.join(f'<a href="/lessons/{e(x["k"])}.html">{e(x["d"])}</a>' for x in siblings) + '</p>') if siblings else ''}
    {('<p style="margin-top:10px">Other levels:</p><p class="cp-boards">' + ''.join(f'<a href="/lessons.html?level={e(l)}&amp;subject={e(c["s"])}">{e(LEVEL_NAME[l])} {e(c["sd"])}</a>' for l in other_levels) + '</p>') if other_levels else ''}
    <p style="margin-top:14px"><a href="/lessons.html">All mini-lessons, every course →</a></p>
   </div>

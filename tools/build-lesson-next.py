@@ -38,6 +38,23 @@ SUF = '-mini-lesson.html'
 BOARDS = ['edexcel-igcse', 'cambridge-igcse', 'general', 'edexcel', 'eduqas',
           'wjec', 'ccea', 'aqa', 'ocr', 'hl', 'sl', 'ib']   # longest first
 RX = re.compile(r'^(.+?)-(ks3|gcse|a-level|ibdp)-(' + '|'.join(BOARDS) + r')-(.+)$')
+# AP courses (Nov 2026). Lesson files are named <file prefix>-<slug>-mini-lesson.html; the
+# course key is <subject>-ap-<board> as in specs-manifest.json (physics-ap-physics-1), so
+# every AP row carries its file stem as the 5th field. Longest prefix first. Add a row here
+# when a new AP course gets lessons (same table in lesson-next.js, assign.js, progress.js).
+AP_COURSES = [  # (file prefix, subject, board, course name)
+    ('physics-ap-c-mechanics', 'physics', 'physics-c-mechanics', 'AP Physics C: Mechanics'),
+    ('physics-ap-c-em', 'physics', 'physics-c-em', 'AP Physics C: Electricity and Magnetism'),
+    ('physics-ap-1', 'physics', 'physics-1', 'AP Physics 1'),
+    ('physics-ap-2', 'physics', 'physics-2', 'AP Physics 2'),
+    ('chemistry-ap', 'chemistry', 'collegeboard', 'AP Chemistry'),
+]
+AP_NAME = {f'{s}-ap-{b}': n for _, s, b, n in AP_COURSES}
+def ap_match(stem):
+    for pre, s, b, _ in AP_COURSES:
+        if stem.startswith(pre + '-'):
+            return s, 'ap', b, stem[len(pre) + 1:]
+    return None
 
 def load_js_object(path, name):
     s = open(path, encoding='utf8').read()
@@ -123,16 +140,20 @@ def course_name(subj, level, board):
     if level == 'gcse':  return f'{bd} {sd}' if 'IGCSE' in bd or 'International GCSE' in bd else f'{bd} GCSE {sd}'
     if level == 'a-level': return f'{bd} A-Level {sd}'
     if level == 'ibdp':  return f'IB Diploma {sd} {bd.replace("IB ", "")}'
+    if level == 'ap':    return AP_NAME.get(f'{subj}-{level}-{board}', f'AP {sd}')
     return f'{bd} {sd}'
 
 groups = collections.defaultdict(list)
+STEM = {}   # (key, slug) -> file stem, when the file is not <key>-<slug> (AP)
 bad = []
 for f in sorted(os.listdir(ADV)):
     if not f.endswith(SUF): continue
     m = RX.match(f[:-len(SUF)])
-    if not m: bad.append(f); continue
-    subj, level, board, slug = m.groups()
+    g = m.groups() if m else ap_match(f[:-len(SUF)])
+    if not g: bad.append(f); continue
+    subj, level, board, slug = g
     groups[(subj, level, board)].append(slug)
+    if not m: STEM[(f'{subj}-{level}-{board}', slug)] = f[:-len(SUF)]
 if bad:
     print('UNPARSED:', len(bad)); [print('  ', b) for b in bad[:20]]
 
@@ -164,13 +185,14 @@ for (subj, level, board), slugs in sorted(groups.items()):
         nm = names.get(s)
         if nm and re.fullmatch(r'[a-z0-9-]+', nm):   # topic list gives only the slug (IB Biology): use the lesson's own title
             nm = None
-        title = nm or page_title(os.path.join(ADV, f'{key}-{s}{SUF}')) or s.replace('-', ' ').title()
+        stem = STEM.get((key, s))
+        title = nm or page_title(os.path.join(ADV, f'{stem or key + "-" + s}{SUF}')) or s.replace('-', ' ').title()
         has = 1 if (kind == 'board' and s in atopics) else 0
         stats['lesson_' + (kind or 'none')] += 1
         stats['lesson_topic_preset'] += has
         q = 1 if f'{key}-{s}' in EVAL else 0
         stats['lesson_quiz'] += q
-        rows.append([s, title, has, q])
+        rows.append([s, title, has, q] + ([stem] if stem else []))
     hooks, verify = {}, []
     for r in rows:
         stem = r[4] if len(r) > 4 else f'{key}-{r[0]}'
@@ -198,7 +220,7 @@ for (subj, level, board), slugs in sorted(groups.items()):
     e = SPECS.get(key)
     index.append({'k': key, 's': subj, 'l': level, 'b': board, 'd': out['d'],
                   'sd': e['subjectDisplay'] if e else subj.replace('-', ' ').title(),
-                  'bd': e['boardDisplay'] if e else board.upper(),
+                  'bd': AP_NAME.get(key) or (e['boardDisplay'] if e else board.upper()),
                   'n': len(rows), 'hn': len(hooks)})
 json.dump(index, open(os.path.join(OUT, 'index.json'), 'w', encoding='utf8'),
           ensure_ascii=False, separators=(',', ':'))

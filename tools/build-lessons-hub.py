@@ -16,8 +16,9 @@ OUT = os.path.join(ROOT, 'lessons.html')
 e = lambda s: html.escape(str(s), quote=True)
 
 LEVELS = [('gcse', 'GCSE and IGCSE', 'GCSE'), ('a-level', 'A-Level', 'A-Level'),
-          ('ibdp', 'IB Diploma', 'IB'), ('ks3', 'Key Stage 3', 'KS3')]
-BOARD_ORDER = ['aqa', 'edexcel', 'ocr', 'eduqas', 'wjec', 'ccea', 'cambridge-igcse', 'edexcel-igcse', 'general', 'sl', 'hl', 'ib']
+          ('ibdp', 'IB Diploma', 'IB'), ('ap', 'AP (Advanced Placement)', 'AP'), ('ks3', 'Key Stage 3', 'KS3')]
+BOARD_ORDER = ['aqa', 'edexcel', 'ocr', 'eduqas', 'wjec', 'ccea', 'cambridge-igcse', 'edexcel-igcse', 'general', 'sl', 'hl', 'ib',
+               'physics-1', 'physics-2', 'physics-c-mechanics', 'physics-c-em', 'collegeboard']   # AP courses last
 
 index = [c for c in json.load(open(os.path.join(DATA, 'index.json'), encoding='utf8')) if c['n'] > 0]
 # distinct lesson files (IB lessons shared by SL and HL are listed under both courses)
@@ -51,8 +52,8 @@ for lv, name, short in LEVELS:
                 for r in d['t'])
             parts.append(f'<details class="hub-course" id="{e(c["k"])}">\n<summary>{e(c["d"])} <span>{c["n"]} lesson{"" if c["n"] == 1 else "s"}</span></summary>\n'
                          f'<ol>\n{items}</ol>\n'
-                         f'<p class="hub-links"><a href="lessons/{e(c["k"])}.html"><b>Course page</b></a> · <a href="lessons.html?course={e(c["k"])}">Open in the finder</a> · '
-                         f'<a href="subjects.html?subject={e(c["s"])}&amp;level={e(c["l"])}&amp;board={e(c["b"])}">All six Velvet stages</a>'
+                         f'<p class="hub-links"><a href="lessons/{e(c["k"])}.html"><b>Course page</b></a> · <a href="lessons.html?course={e(c["k"])}">Open in the finder</a>'
+                         + (f' · <a href="subjects.html?subject={e(c["s"])}&amp;level={e(c["l"])}&amp;board={e(c["b"])}">All six Velvet stages</a>' if c['l'] != 'ap' else '')
                          + (f' · <a href="teach/{e(c["k"])}.html">Teachers: assign this course</a>' if os.path.exists(os.path.join(ROOT, 'teach', c['k'] + '.html')) else '')
                          + '</p>\n</details>\n')
         parts.append('</div>\n')
@@ -64,14 +65,14 @@ PAGE = f'''<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini-Lessons — {total:,} free interactive lessons for GCSE, A-Level, IB and KS3 | AI Study Method</title>
-<meta name="description" content="Every free mini-lesson on AI Study Method: {total:,} interactive lessons for GCSE, A-Level, IB Diploma and KS3, in exam-board order. Pick your level, subject and board and start a lesson in one click. No login.">
+<title>Mini-Lessons — {total:,} free interactive lessons for GCSE, A-Level, IB, AP and KS3 | AI Study Method</title>
+<meta name="description" content="Every free mini-lesson on AI Study Method: {total:,} interactive lessons for GCSE, A-Level, IB Diploma, AP and KS3, in exam-board and course order. Pick your level, subject and board and start a lesson in one click. No login.">
 <link rel="canonical" href="https://aistudymethod.com/lessons.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AI Study Method">
-<meta property="og:title" content="Mini-Lessons — free interactive lessons for GCSE, A-Level, IB and KS3">
+<meta property="og:title" content="Mini-Lessons — free interactive lessons for GCSE, A-Level, IB, AP and KS3">
 <meta property="og:description" content="{total:,} interactive mini-lessons in exam-board order. Pick your level, subject and board and start in one click.">
 <meta property="og:url" content="https://aistudymethod.com/lessons.html">
 <meta property="og:image" content="https://aistudymethod.com/og-share.png">
@@ -200,7 +201,7 @@ PAGE = f'''<!DOCTYPE html>
  </div>
 </footer>
 <script src="script.js"></script>
-<script src="lesson-finder.js?v=20261027" defer></script>
+<script src="lesson-finder.js?v=20261103" defer></script>
 <script src="/classcraft/quizzes/progress.js?v=20261008b" defer></script>
 <script>
 // ?course=<key> or #<key>: open that course's static list too, so the link works before the finder has loaded

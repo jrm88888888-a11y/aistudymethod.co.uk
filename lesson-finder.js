@@ -9,8 +9,9 @@
 (function () {
   "use strict";
   var DATA = "classcraft/quizzes/lesson-next/";
-  var LEVELS = [["ks3", "KS3"], ["gcse", "GCSE"], ["a-level", "A-Level"], ["ibdp", "IB"]];
-  var BOARD_ORDER = ["aqa", "edexcel", "ocr", "eduqas", "wjec", "ccea", "cambridge-igcse", "edexcel-igcse", "general", "sl", "hl", "ib"];
+  var LEVELS = [["ks3", "KS3"], ["gcse", "GCSE"], ["a-level", "A-Level"], ["ibdp", "IB"], ["ap", "AP"]];
+  var BOARD_ORDER = ["aqa", "edexcel", "ocr", "eduqas", "wjec", "ccea", "cambridge-igcse", "edexcel-igcse", "general", "sl", "hl", "ib",
+    "physics-1", "physics-2", "physics-c-mechanics", "physics-c-em", "collegeboard"];   // AP courses last
 
   function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
   function track(n, p) { try { if (window.plausible) window.plausible(n, { props: p }); } catch (e) {} }
@@ -88,7 +89,7 @@
       fetch(DATA + k + ".json").then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
         if (!d || key() !== k) return;
         var rows = d.t || [], h = d.h || {};
-        var html = '<div class="lf-head"><h3>' + esc(d.d) + "</h3><span>" + rows.length + " mini-lessons · in specification order</span></div><ol class=\"lf-list\">";
+        var html = '<div class="lf-head"><h3>' + esc(d.d) + "</h3><span>" + rows.length + " mini-lessons · in " + (d.l === "ap" ? "course" : "specification") + " order</span></div><ol class=\"lf-list\">";
         rows.forEach(function (r, i) {
           var file = "classcraft/adventures/" + (r[4] || k + "-" + r[0]) + "-mini-lesson.html", q = h[r[0]];
           html += '<li><a href="' + esc(file) + '" data-topic="' + esc(r[0]) + '"><span class="lf-i">' + (i + 1) + "</span><span class=\"lf-t\"><b>" + esc(r[1]) + "</b>" +
@@ -96,7 +97,7 @@
         });
         html += "</ol>";
         html += '<p class="lf-more"><a href="lessons/' + esc(k) + '.html">' + esc(d.d) + ' course page →</a>' +
-          (hub ? ' · <a href="subjects.html?subject=' + esc(d.s) + "&amp;level=" + esc(d.l) + "&amp;board=" + esc(d.b) + '">All six Velvet stages →</a>' +
+          (hub ? (d.l === "ap" ? "" : ' · <a href="subjects.html?subject=' + esc(d.s) + "&amp;level=" + esc(d.l) + "&amp;board=" + esc(d.b) + '">All six Velvet stages →</a>') +
                  (d.a ? ' · <a href="classcraft/arcade.html?' + esc(d.a) + '">Revision Arcade →</a>' : "")
                : ' · <a href="lessons.html">Every course →</a>') + "</p>";
         out.innerHTML = html;

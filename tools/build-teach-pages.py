@@ -27,10 +27,11 @@ BOARD_TOPICS = load_js_object(os.path.join(CC, 'topic-slugs.js'), 'window.BOARD_
 SPECS = {e['key']: e for e in json.load(open(os.path.join(CC, 'specs-manifest.json'), encoding='utf8'))}
 e = lambda s: html.escape(str(s), quote=True)
 
-LEVELS = [('ks3', 'Key Stage 3'), ('gcse', 'GCSE and IGCSE'), ('a-level', 'A-Level'), ('ibdp', 'IB Diploma')]
-LEVEL_SHORT = {'ks3': 'KS3', 'gcse': 'GCSE', 'a-level': 'A-Level', 'ibdp': 'IB Diploma'}
-BOARD_ORDER = ['general', 'aqa', 'edexcel', 'ocr', 'eduqas', 'wjec', 'ccea', 'cambridge-igcse', 'edexcel-igcse', 'hl', 'sl', 'ib']
-DOC = {'ks3': 'National Curriculum programme of study', 'ibdp': 'IB subject guide'}
+LEVELS = [('ks3', 'Key Stage 3'), ('gcse', 'GCSE and IGCSE'), ('a-level', 'A-Level'), ('ibdp', 'IB Diploma'), ('ap', 'AP (Advanced Placement)')]
+LEVEL_SHORT = {'ks3': 'KS3', 'gcse': 'GCSE', 'a-level': 'A-Level', 'ibdp': 'IB Diploma', 'ap': 'AP'}
+BOARD_ORDER = ['general', 'aqa', 'edexcel', 'ocr', 'eduqas', 'wjec', 'ccea', 'cambridge-igcse', 'edexcel-igcse', 'hl', 'sl', 'ib',
+               'physics-1', 'physics-2', 'physics-c-mechanics', 'physics-c-em', 'collegeboard']   # AP courses last
+DOC = {'ks3': 'National Curriculum programme of study', 'ibdp': 'IB subject guide', 'ap': 'College Board course framework'}
 
 NAV = '''<nav>
  <div class="nav-inner">
@@ -156,6 +157,8 @@ def board_label(level, board, spec):
         return bd.replace('IB ', '')
     if level == 'ks3':
         return 'National Curriculum'
+    if level == 'ap':   # the course name ("AP Physics 1"), from lesson-next data when the spec says "College Board"
+        return AP_LABEL.get(board) or bd
     return bd
 
 
@@ -184,6 +187,9 @@ def head(title, desc, canon, extra=''):
 '''
 
 
+AP_LABEL = {}
+
+
 def main():
     courses = {}
     for f in sorted(os.listdir(DATA)):
@@ -197,6 +203,7 @@ def main():
                 print(f'{k}: no indexable lessons, no page'); continue
             d['t'] = kept
             courses[k] = d
+            if d['l'] == 'ap': AP_LABEL[d['b']] = d['d']
     by_sl = collections.defaultdict(list)   # (subject, level) -> [course keys]
     for k, d in courses.items():
         by_sl[(d['s'], d['l'])].append(k)
@@ -262,7 +269,7 @@ def main():
         elif extra_rows:
             body += '<ol class="tc-list">' + ''.join(item(i + 1, r) for i, r in enumerate(extra_rows)) + '</ol>'
         order_txt = f', in the order of the {doc}' if main_rows else ''
-        order_note = (f"<p class=\"tc-note\">The order follows the {doc}'s topic list. Teach them in whatever order suits your scheme of work.</p>"
+        order_note = (f"<p class=\"tc-note\">The order follows the {doc}'s topic list. Teach them in whatever order suits your {'course plan' if d['l'] == 'ap' else 'scheme of work'}.</p>"
                       if main_rows else '')
 
         sibs = by_sl[(d['s'], d['l'])]
@@ -272,7 +279,7 @@ def main():
                 f'<span>{e(board_label(courses[s]["l"], courses[s]["b"], SPECS.get(s)))}</span>' if s == k else
                 f'<a href="/teach/{s}.html">{e(board_label(courses[s]["l"], courses[s]["b"], SPECS.get(s)))}</a>'
                 for s in sibs)
-            boards = f'<h2 class="tc-h2">Other exam boards</h2><div class="tc-boards">{chips}</div>'
+            boards = f'<h2 class="tc-h2">{"Other AP courses" if d["l"] == "ap" else "Other exam boards"}</h2><div class="tc-boards">{chips}</div>'
 
         uses = ('<h2 class="tc-h2">How teachers use these lessons</h2><ul class="tc-uses">'
                 '<li><b>Homework:</b> set a lesson, quiz or game. Students get instant feedback on every question.</li>'
@@ -286,7 +293,7 @@ def main():
                                    'url': f'{SITE}/classcraft/adventures/{lesson_stem(k, r)}-mini-lesson.html'}
                                   for i, r in enumerate(main_rows + extra_rows)]}
         page_ld = {'@context': 'https://schema.org', '@type': 'CollectionPage', 'name': title, 'description': desc,
-                   'url': canon, 'inLanguage': 'en-GB', 'isAccessibleForFree': True,
+                   'url': canon, 'inLanguage': 'en-US' if d['l'] == 'ap' else 'en-GB', 'isAccessibleForFree': True,
                    'audience': {'@type': 'EducationalAudience', 'educationalRole': 'teacher'},
                    'educationalLevel': LEVEL_SHORT[d['l']],
                    'isPartOf': {'@type': 'WebSite', 'name': 'AI Study Method', 'url': SITE + '/'},

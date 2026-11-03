@@ -55,6 +55,13 @@ BACK = re.compile(r'<div class="backstrip"><a href="([^"]*)"')
 # Standalone lessons that belong to no course (e.g. seasonal one-offs opened from the
 # homepage "Featured lesson" card): their back link goes to the homepage.
 STANDALONE = {"classcraft/adventures/halloween-science-glow-sticks-mini-lesson.html"}
+# AP lessons are named <file prefix>-<slug> while the course page is lessons/<subject>-ap-<board>.html
+# (AP_COURSES in tools/build-lesson-next.py).
+AP_PREFIX = {"physics-ap-physics-1": "physics-ap-1", "physics-ap-physics-2": "physics-ap-2",
+             "physics-ap-physics-c-mechanics": "physics-ap-c-mechanics", "physics-ap-physics-c-em": "physics-ap-c-em",
+             "chemistry-ap-collegeboard": "chemistry-ap"}
+def course_prefix(k):
+    return AP_PREFIX.get(k, k.replace("-ibdp-sl", "-ibdp"))
 bad_back = []
 for p in pages():
     if not (p.startswith("classcraft/adventures/") and p.endswith(("-mini-lesson.html", "-grammar-spine.html"))) or not os.path.exists(p):
@@ -64,7 +71,7 @@ for p in pages():
         continue
     if m and not (re.search(r"subjects\.html\?(?:[^\"]*&(?:amp;)?)?subject=", m.group(1)) or m.group(1).endswith("-grammar-spine.html")
                   or (m.group(1).startswith("../../lessons/") and m.group(1).endswith(".html")
-                      and os.path.basename(p).startswith(m.group(1)[len("../../lessons/"):-len(".html")].replace("-ibdp-sl", "-ibdp")))):
+                      and os.path.basename(p).startswith(course_prefix(m.group(1)[len("../../lessons/"):-len(".html")]) + "-"))):
         bad_back.append((p, m.group(1)))
 
 print(f"scanned {scanned} pages; broken link targets: {len(broken)}")

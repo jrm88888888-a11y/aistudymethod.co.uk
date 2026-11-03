@@ -29,6 +29,15 @@
   var SITE = "https://aistudymethod.com";
   var SUF = "-mini-lesson.html";
   var RX = /^(.+?)-(ks3|gcse|a-level|ibdp)-(edexcel-igcse|cambridge-igcse|general|edexcel|eduqas|wjec|ccea|aqa|ocr|hl|sl|ib)-(.+)$/;
+  // AP courses (Nov 2026): lesson files are <prefix>-<slug>; the course key is <subject>-ap-<board>
+  // (same table as AP_COURSES in tools/build-lesson-next.py). Longest prefix first.
+  var AP = [["physics-ap-c-mechanics", "physics", "physics-c-mechanics"], ["physics-ap-c-em", "physics", "physics-c-em"],
+            ["physics-ap-1", "physics", "physics-1"], ["physics-ap-2", "physics", "physics-2"], ["chemistry-ap", "chemistry", "collegeboard"]];
+  function apMatch(stem) {
+    for (var i = 0; i < AP.length; i++) if (stem.indexOf(AP[i][0] + "-") === 0)
+      return [stem, AP[i][1], "ap", AP[i][2], stem.slice(AP[i][0].length + 1)];
+    return null;
+  }
   var ORDER = ["quiz", "lesson", "games"];
 
   function track(name, props) {
@@ -366,7 +375,7 @@
   function initLesson() {
     var file = decodeURIComponent(location.pathname.split("/").pop() || "");
     if (file.slice(-SUF.length) !== SUF) return;
-    var m = RX.exec(file.slice(0, -SUF.length));
+    var m = RX.exec(file.slice(0, -SUF.length)) || apMatch(file.slice(0, -SUF.length));
     // IB lessons shared by SL and HL are named without a board (geography-ibdp-core-unit-1-…): offer them through the SL course
     var sh = m ? null : /^(.+?)-ibdp-((?:core|option)-.+)$/.exec(file.slice(0, -SUF.length));
     if (!m && !sh) return;

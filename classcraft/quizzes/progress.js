@@ -58,6 +58,15 @@
   var LSK = "aism-lp", LSC = "aism-lp-coins", AUTH_LS = "aism-auth", WALLET_LS = "aism-wallet";
   var SUF = "-mini-lesson.html";
   var RX = /^(.+?)-(ks3|gcse|a-level|ibdp)-(edexcel-igcse|cambridge-igcse|general|edexcel|eduqas|wjec|ccea|aqa|ocr|hl|sl|ib)-(.+)$/;
+  // AP courses (Nov 2026): lesson files are <prefix>-<slug>; the course key is <subject>-ap-<board>
+  // (same table as AP_COURSES in tools/build-lesson-next.py). Longest prefix first.
+  var AP = [["physics-ap-c-mechanics", "physics", "physics-c-mechanics"], ["physics-ap-c-em", "physics", "physics-c-em"],
+            ["physics-ap-1", "physics", "physics-1"], ["physics-ap-2", "physics", "physics-2"], ["chemistry-ap", "chemistry", "collegeboard"]];
+  function apMatch(stem) {
+    for (var i = 0; i < AP.length; i++) if (stem.indexOf(AP[i][0] + "-") === 0)
+      return [stem, AP[i][1], "ap", AP[i][2], stem.slice(AP[i][0].length + 1)];
+    return null;
+  }
   var GRADE = [[95, 12], [80, 9], [60, 6], [40, 3]];
   var DAILY_CAP = 150, MAX_PENDING = 60;
   var AUTH_V = "20261102";
@@ -74,7 +83,7 @@
   function track(n, p) { try { if (window.plausible) window.plausible(n, p ? { props: p } : undefined); } catch (e) {} }
   function esc(t) { return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
   function stemOf(href) { var m = /([a-z0-9-]+)-mini-lesson\.html/.exec(href || ""); return m ? m[1] : null; }
-  function groupOf(stem) { var m = RX.exec(stem || ""); return m ? m[1] + "-" + m[2] + "-" + m[3] : null; }
+  function groupOf(stem) { var m = RX.exec(stem || "") || apMatch(stem || ""); return m ? m[1] + "-" + m[2] + "-" + m[3] : null; }
   function plural(n, w) { return n + " " + w + (n === 1 ? "" : "s"); }
 
   function prog() { var p = rd(LSK, null); if (!p || p.v !== 1 || !p.l) p = { v: 1, l: {}, last: null }; return p; }
