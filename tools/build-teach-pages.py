@@ -188,6 +188,10 @@ def head(title, desc, canon, extra=''):
 
 
 AP_LABEL = {}
+try: AP_TOPICS = json.load(open(os.path.join(ROOT, 'classcraft', '_data', 'ap-topics.json'), encoding='utf8'))
+except (OSError, ValueError): AP_TOPICS = {}
+AP_TM = '<p class="ap-tm" style="max-width:860px;margin:1.2rem auto 0;font-size:12px;line-height:1.5;color:var(--text-muted);text-align:center">AP® is a trademark registered by the College Board, which is not affiliated with, and does not endorse, this website.</p>'
+
 
 
 def main():
@@ -224,13 +228,16 @@ def main():
         title = f'{name} teaching resources: free lessons to set your class'
         if d['l'] == 'ap':
             short = name.replace('Electricity and Magnetism', 'E&M')
-            title = f'Free {short} Lessons for Teachers'
+            title = f'Free {short} Lessons to Assign: Unit Review'
+            if len(title) > 60: title = f'Free {short} Lessons to Assign'
         desc = (f'Free {name} teaching resources: {n} interactive lesson{"s" if n != 1 else ""}'
                 + (f' in {doc} order' if main_rows else '')
                 + ', to set as class work, homework or cover. Assign through Teams, Google Classroom, a link or a QR code. No student login.')
         if d['l'] == 'ap':
-            desc = (f'Free {short} teaching resources: {n} interactive lessons in course framework order, '
-                    'to assign as class work or homework. No student login.')
+            desc = next(x for x in [
+                f'Free {short} lessons to assign: {n} short, curiosity-driven lessons by College Board unit and topic. Use alongside AP Classroom. No student login.',
+                f'Free {short} lessons to assign: {n} short, curiosity-driven lessons by College Board unit and topic, to use alongside AP Classroom.',
+                f'Free {short} lessons to assign: {n} short lessons by College Board unit and topic, alongside AP Classroom practice.'] if len(x) <= 155)
         canon = f'{SITE}/teach/{k}.html'
 
         def item(i, r):
@@ -240,6 +247,9 @@ def main():
             tags = ''
             if quiz: tags += '<span class="tc-tag q">Quiz</span>'
             tags += '<span class="tc-tag l">Mini-lesson</span>'
+            if d['l'] == 'ap':
+                tp = AP_TOPICS.get(lesson_stem(k, r) + '-mini-lesson.html', {})
+                tags += f'<span class="tc-tag">{e(("Topics " + tp["range"]) if tp.get("range") else "Science practices")}</span>'
             if games and d['a']: tags += '<span class="tc-tag g">Games</span>'
             act = f'<a class="tc-btn" href="{e(lesson)}">Open lesson</a>'
             if has_session:
@@ -309,12 +319,28 @@ def main():
                    'mainEntity': {k2: v2 for k2, v2 in ld.items() if k2 != '@context'}}
         extra = '<script type="application/ld+json">' + json.dumps(page_ld, ensure_ascii=False) + '</script>\n'
 
+        if d['l'] == 'ap':
+            hero_h1 = e(name.replace('AP ', 'AP\u00ae ', 1)) + ': short lessons to assign, unit by unit'
+            hero_p = (f'{n} short, curiosity-driven {e(name)} lessons in {e(doc)} order, each labeled with its College Board unit and topic numbers. '
+                      'Use them alongside AP Classroom practice: they build the understanding behind the questions, one mission (about 20 minutes) at a time. '
+                      'No student login. Press <b>Assign</b> to choose what to set (quiz, lesson or both) and share it through Google Classroom, Teams, a link or a QR code.')
+        else:
+            hero_h1 = f'{e(name)}: free lessons to set your class'
+            hero_p = (f'{n} free interactive {e(name)} lesson{"s" if n != 1 else ""}{order_txt}, for class work, homework, cover or retrieval practice. No student login. '
+                      'Press <b>Assign</b> to choose what to set (quiz, lesson, games or any mix) and share it through Teams, Google Classroom, a link or a QR code.')
+        if d['l'] == 'ap':
+            uses = ('<h2 class="tc-h2">How AP teachers use these lessons</h2><ul class="tc-uses">'
+                    '<li><b>Before a new topic:</b> assign the mission that opens it, so students arrive with a question to answer.</li>'
+                    '<li><b>Alongside AP Classroom:</b> when a progress check shows a misconception, assign the lesson for that topic number.</li>'
+                    '<li><b>Homework:</b> students get instant feedback on every question. No login or account needed.</li>'
+                    '<li><b>Absent students and sub plans:</b> students work through a lesson on their own.</li>'
+                    '</ul>')
         page = head(title, desc, canon, extra) + f'''<body data-course="{k}">{NAV}
 <div class="page-hero">
  <div class="page-hero-inner">
   <div class="tc-crumb"><a href="/teachers.html">For teachers</a> · <a href="/teachers.html#courses">All courses</a> · {e(LEVEL_SHORT[d['l']])}</div>
-  <h1>{e(name)}: free lessons to set your class</h1>
-  <p>{n} free interactive {e(name)} lesson{"s" if n != 1 else ""}{order_txt}, for class work, homework, cover or retrieval practice. No student login. Press <b>Assign</b> to choose what to set (quiz, lesson, games or any mix) and share it through Teams, Google Classroom, a link or a QR code.</p>
+  <h1>{hero_h1}</h1>
+  <p>{hero_p}</p>
  </div>
 </div>
 <section class="section">
@@ -323,7 +349,7 @@ def main():
  {order_note}
  {uses}
  {boards}
- <p class="tc-note"><a href="/teachers.html#contact" style="color:var(--accent);font-weight:600;text-decoration:none">Teaching {e(name)}? Tell us what you need →</a></p>
+ <p class="tc-note"><a href="/teachers.html#contact" style="color:var(--accent);font-weight:600;text-decoration:none">Teaching {e(name)}? Tell us what you need →</a></p>{AP_TM if d['l'] == 'ap' else ''}
  </div>
 </section>
 {FOOTER}
@@ -349,6 +375,9 @@ def main():
             chips = ''.join(f'<a href="/teach/{k}.html">{e(board_label(lv, courses[k]["b"], SPECS.get(k)) if lv != "ks3" else "All topics")}'
                             f' <small style="opacity:.7">({len(courses[k]["t"])})</small></a>' for k in ks)
             rows += f'<div class="tc-subj"><b>{e(sd)}</b><div class="tc-boards">{chips}</div></div>'
+        if lv == 'ap':   # AP: unit/topic-labeled lessons to assign alongside AP Classroom, plus the College Board notice
+            rows = ('<p style="font-size:14px;color:var(--text-secondary);margin:.2rem 0 .6rem">Short, curiosity-driven lessons labeled with College Board unit and topic numbers, to assign alongside AP Classroom practice.</p>'
+                    + rows + AP_TM)
         blocks.append(f'<details class="tc-lv"{" open" if lv == "ks3" else ""}><summary>{e(lvname)}<small>{nlv} lessons</small></summary>{rows}</details>')
     dir_html = '<div class="tc-dir">' + ''.join(blocks) + '</div>'
     tp = os.path.join(ROOT, 'teachers.html')

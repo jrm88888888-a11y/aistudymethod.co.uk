@@ -139,6 +139,16 @@ CSS = '''<style>
 </style>'''
 
 AP_SHORT = {'physics-ap-physics-c-em': 'AP Physics C: E&M'}
+# AP: College Board topic numbers per lesson (written by _dev/ap-visibility/ap_topics.py)
+try: AP_TOPICS = json.load(open(os.path.join(ROOT, 'classcraft', '_data', 'ap-topics.json'), encoding='utf8'))
+except (OSError, ValueError): AP_TOPICS = {}
+AP_TM = '<p class="ap-tm" style="max-width:860px;margin:1.4rem auto 0;padding:0 16px;font-size:12px;line-height:1.5;color:var(--text-muted);text-align:center">AP® is a trademark registered by the College Board, which is not affiliated with, and does not endorse, this website.</p>'
+AP_ASSIGN = 'Short, curiosity-driven lessons that teachers can assign: each one opens with a question you can\u2019t yet answer, then works through it in missions with AP-style checks. About 20 minutes per mission. Use them alongside AP Classroom practice. No login.'
+def ap_topic_line(stem):
+    tp = AP_TOPICS.get(stem + '-mini-lesson.html', {})
+    txt = ('College Board topics ' + tp['range']) if tp.get('range') else 'AP science practices, all units'
+    return f'<small style="font-size:12.5px;color:var(--text-muted)">{e(txt)}</small>'
+
 AP_GUIDE = {'physics-ap-physics-1': ('revise/ap-physics-1.html', 'AP Physics 1 review guide'),
             'physics-ap-physics-2': ('revise/ap-physics-2.html', 'AP Physics 2 review guide'),
             'physics-ap-physics-c-mechanics': ('revise/ap-physics-c-mechanics.html', 'AP Physics C: Mechanics review guide'),
@@ -163,9 +173,11 @@ for c in index:
             + (f" (spec {code})" if code else "") + ". Each lesson opens with a question, then works through it in missions with checks. About 20 minutes each. No login.")
     if ap:   # search-intent title and description (title tag without the site suffix, to stay under 60)
         short = AP_SHORT.get(c['k'], c['d'])
-        title_tag = f"{short} Lessons: {n} Free Interactive Lessons"
-        desc = (f"Free {short} lessons: {n} interactive lessons in College Board unit order, with video, "
-                "worked examples and practice questions. No login.")
+        title_tag = f"{short} Review: {n} Free Lessons by Unit"
+        desc = (f"Free {short} review and study guide: {n} short interactive lessons by College Board unit and topic, "
+                "with video and AP-style practice questions.")
+        if len(desc) > 155:
+            desc = f"Free {short} review: {n} short interactive lessons by College Board unit and topic, with AP-style practice questions."
     else:
         title_tag = f"{title} | AI Study Method"
     items = []
@@ -175,7 +187,7 @@ for c in index:
         items.append(
             f'<li><a href="{e(href)}"' + ('' if thumb else ' class="nothumb"') + f'><span class="cp-i">{i + 1}</span>'
             + (f'<span class="cp-th"><img src="/{e(thumb)}" alt="" width="640" height="360" loading="lazy" decoding="async"></span>' if thumb else '')
-            + f'<span class="cp-t"><b>{e(r[1])}</b>' + (f'<em>{e(h[1])}</em>' if h and h[1] else '') + '</span>'
+            + f'<span class="cp-t"><b>{e(r[1])}</b>' + (f'<em>{e(h[1])}</em>' if h and h[1] else '') + (ap_topic_line(lesson_stem(c, r)) if ap else '') + '</span>'
             + '<span class="cp-go">Start →</span></a></li>')
     siblings = sorted([x for x in index if x['s'] == c['s'] and x['l'] == c['l'] and x['k'] != c['k']],
                       key=lambda x: BOARD_ORDER.index(x['b']) if x['b'] in BOARD_ORDER else 99)
@@ -185,7 +197,14 @@ for c in index:
     if d.get('a'): actions.append(f'<a href="/classcraft/arcade.html?{e(d["a"])}">🎮 Revision Arcade</a>')
     if guide: actions.append(f'<a href="/{e(guide)}">📖 {e(guide_name)}</a>')
     opener = "Each one opens with a question you can\u2019t yet answer" if with_q else "Each one takes a topic step by step"
-    ld = {"@context": "https://schema.org", "@type": "ItemList", "name": title, "numberOfItems": n,
+    if ap:
+        hero_h1 = e(c['d'].replace('AP ', 'AP\u00ae ', 1)) + f' review<br><em>{n} free lessons, unit by unit.</em>'
+        hero_lead = e(f"Free {c['d']} review and study guide, in College Board unit order, with the course framework topic numbers on every lesson. " + AP_ASSIGN)
+    else:
+        hero_h1 = f"{e(c['d'])}<br><em>{n} free mini-lessons, in order.</em>"
+        hero_lead = (f"One interactive lesson for every topic in the {e(c['bd'])} specification, in the order it's taught. "
+                     f"{opener}, then works through it in missions with checks along the way. About 20 minutes each. No login.")
+    ld = {"@context": "https://schema.org", "@type": "ItemList", "name": title_tag if ap else title, "numberOfItems": n,
           "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": r[1],
                                "url": f"{SITE}/classcraft/adventures/{lesson_stem(c, r)}-mini-lesson.html"} for i, r in enumerate(rows)]}
     page = f'''<!DOCTYPE html>
@@ -221,8 +240,8 @@ for c in index:
  <div class="section-inner">
   <p class="cp-crumbs"><a href="/lessons.html">Mini-lessons</a> › <a href="/lessons.html#{e(c['l'])}">{e(level)}</a> › <span>{e(c['sd'])}</span> › <span>{e(c['bd'])}</span></p>
   <p class="cp-meta">{e(c['d'])}{(' · spec ' + e(code)) if code else ''} · {n} mini-lesson{'' if n == 1 else 's'}</p>
-  <h1>{e(c['d'])}<br><em>{n} free mini-lessons, in order.</em></h1>
-  <p class="lead">One interactive lesson for every topic in the {(e('College Board ' + c['d'] + ' course framework') if ap else e(c['bd']) + ' specification')}, in the order it's taught. {opener}, then works through it in missions with checks along the way. About 20 minutes each. No login.</p>
+  <h1>{hero_h1}</h1>
+  <p class="lead">{hero_lead}</p>
   <div class="cp-actions">{''.join(actions)}</div>
  </div>
 </section>
@@ -241,7 +260,7 @@ for c in index:
  </div>
 </section>
 
-{FOOTER}
+{(AP_TM + chr(10)) if ap else ''}{FOOTER}
 <script src="/script.js"></script>
 <script src="/classcraft/quizzes/progress.js?v=20261008b" defer></script>
 </body>

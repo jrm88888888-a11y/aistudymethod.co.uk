@@ -31,6 +31,17 @@ by_level = collections.defaultdict(lambda: collections.defaultdict(list))
 for c in index:
     by_level[c['l']][c['sd']].append(c)
 
+try: AP_TOPICS = json.load(open(os.path.join(ROOT, 'classcraft', '_data', 'ap-topics.json'), encoding='utf8'))
+except (OSError, ValueError): AP_TOPICS = {}
+AP_INTRO = ('<p style="font-size:15px;color:var(--text-secondary);line-height:1.6;margin:-.4rem 0 1rem">Free AP review lessons and study guides, labeled with their College Board unit and topic numbers. '
+            'Short, curiosity-driven lessons that teachers can assign; use them alongside AP Classroom practice. '
+            'Review guides: <a href="revise/ap-physics.html">AP Physics</a> · <a href="revise/ap-chemistry.html">AP Chemistry</a></p>\n')
+AP_TM = '<p class="ap-tm" style="font-size:12px;line-height:1.5;color:var(--text-muted);margin:.4rem 0 0">AP® is a trademark registered by the College Board, which is not affiliated with, and does not endorse, this website.</p>\n'
+
+def ap_top(course, row):
+    tp = AP_TOPICS.get(lesson_file(course, row).split('/')[-1], {})
+    return f' <small style="color:var(--text-muted)">· Topics {e(tp["range"])}</small>' if tp.get('range') else ''
+
 def lesson_file(course, row):
     return 'classcraft/adventures/' + (row[4] if len(row) > 4 else f"{course['k']}-{row[0]}") + '-mini-lesson.html'
 
@@ -39,7 +50,7 @@ for lv, name, short in LEVELS:
     subjects = by_level.get(lv)
     if not subjects: continue
     n_lv = sum(c['n'] for s in subjects.values() for c in s)
-    parts.append(f'<section class="hub-level" id="{lv}">\n<h2>{e(name)} <span>{n_lv} mini-lessons</span></h2>\n')
+    parts.append(f'<section class="hub-level" id="{lv}">\n<h2>{e(name)} <span>{n_lv} mini-lessons</span></h2>\n' + (AP_INTRO if lv == 'ap' else ''))
     for sd in sorted(subjects):
         courses = sorted(subjects[sd], key=lambda c: BOARD_ORDER.index(c['b']) if c['b'] in BOARD_ORDER else 99)
         parts.append(f'<div class="hub-subject">\n<h3>{e(sd)}</h3>\n')
@@ -47,17 +58,17 @@ for lv, name, short in LEVELS:
             d = json.load(open(os.path.join(DATA, c['k'] + '.json'), encoding='utf8'))
             hooks = d.get('h', {})
             items = ''.join(
-                f'<li><a href="{e(lesson_file(c, r))}">{e(r[1])}</a>'
+                f'<li><a href="{e(lesson_file(c, r))}">{e(r[1])}</a>' + (ap_top(c, r) if c['l'] == 'ap' else '')
                 + (f' <em>{e(hooks[r[0]][1])}</em>' if r[0] in hooks and hooks[r[0]][1] else '') + '</li>\n'
                 for r in d['t'])
             parts.append(f'<details class="hub-course" id="{e(c["k"])}">\n<summary>{e(c["d"])} <span>{c["n"]} lesson{"" if c["n"] == 1 else "s"}</span></summary>\n'
                          f'<ol>\n{items}</ol>\n'
                          f'<p class="hub-links"><a href="lessons/{e(c["k"])}.html"><b>Course page</b></a> · <a href="lessons.html?course={e(c["k"])}">Open in the finder</a>'
-                         + (f' · <a href="subjects.html?subject={e(c["s"])}&amp;level={e(c["l"])}&amp;board={e(c["b"])}">All six Velvet stages</a>' if c['l'] != 'ap' else '')
+                         + f' · <a href="subjects.html?subject={e(c["s"])}&amp;level={e(c["l"])}&amp;board={e(c["b"])}">All six Velvet stages</a>'
                          + (f' · <a href="teach/{e(c["k"])}.html">Teachers: assign this course</a>' if os.path.exists(os.path.join(ROOT, 'teach', c['k'] + '.html')) else '')
                          + '</p>\n</details>\n')
         parts.append('</div>\n')
-    parts.append('</section>\n')
+    parts.append((AP_TM if lv == 'ap' else '') + '</section>\n')
 directory = ''.join(parts)
 
 PAGE = f'''<!DOCTYPE html>
