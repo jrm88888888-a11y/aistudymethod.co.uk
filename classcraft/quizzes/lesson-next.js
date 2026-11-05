@@ -25,6 +25,14 @@
                                (seasonal plug / another course's lesson),
                                other (any other link; carries href)
    "Mini-lesson: completed" carries card=yes|no (no = no course data, card absent).
+   Nov 2026, missions as the unit (progress.js §7 builds the mission list and
+   dispatches window "aism-mission" events; this file names them for Plausible):
+     "Mini-lesson: started"    + via = start (Start button) | resume (Continue) |
+                               hash (#mN in the link) | open (Open on the map)
+     "Mission: started"        {mission, of, via (as above, or next = reached by Next)}
+     "Mission: completed"      {mission, of, first_try yes|no, score pct} — the
+                               Mission check answered correctly
+     "Mini-lesson: completed"  + missions_done, of (mission lessons only)
    All of these need a matching Goal in Plausible to show up on the dashboard.
    If anything is missing the card does nothing; the events still fire. */
 (function () {
@@ -61,11 +69,24 @@
     if (!screens.length) return;
     var first = screens[0], fin = document.querySelector(".screen.final");
     var started = false, completed = false;
+    var P = function () { return window.AismProgress; };
+    function via() {
+      var v = P() && P().takeVia ? P().takeVia() : null;            // progress.js saw how the welcome screen was left
+      if (v) return v;
+      // opened straight into a mission before progress.js ran (a stray #mN on a lesson without missions does nothing)
+      if (/^#m\d+$/.test(location.hash || "") && !(P() && P().missions && !P().missions().length)) return "hash";
+      return "start";
+    }
     function check() {
-      if (!started && !first.classList.contains("active")) { started = true; track("Mini-lesson: started"); }
+      if (!started && !first.classList.contains("active")) { var v = via(); started = true; track("Mini-lesson: started", { via: v }); }
       if (fin && !completed && fin.classList.contains("active")) {
         completed = true;
-        track("Mini-lesson: completed", { card: fin.querySelector(".lnx") ? "yes" : "no" });
+        var x = { card: fin.querySelector(".lnx") ? "yes" : "no" };
+        try {
+          var ms = P() && P().missions ? P().missions() : [];
+          if (ms.length) { x.missions_done = String(P().missionsDone()); x.of = String(ms.length); }
+        } catch (e) {}
+        track("Mini-lesson: completed", x);
         exitsOn = true;
         setTimeout(function () { nudge(fin); }, 700);
       }
@@ -76,6 +97,16 @@
       if (fin && fin !== first) mo.observe(fin, { attributes: true, attributeFilter: ["class"] });
     } catch (e) {}
     check();
+    // per-mission events from progress.js (§7); it queues any sent before this listener existed
+    function onMission(d) {
+      if (!d || !d.mission) return;
+      var p = { mission: String(d.mission), of: String(d.of) };
+      if (d.type === "started") { p.via = d.via || "next"; track("Mission: started", p); }
+      else if (d.type === "completed") { p.first_try = d.first_try || "no"; p.score = d.score || ""; track("Mission: completed", p); }
+    }
+    window.addEventListener("aism-mission", function (e) { onMission(e && e.detail); });
+    window.__aismMissionL = true;
+    try { (window.__aismMissionQ || []).splice(0).forEach(onMission); } catch (e) {}
   }
 
   function injectStyle() {

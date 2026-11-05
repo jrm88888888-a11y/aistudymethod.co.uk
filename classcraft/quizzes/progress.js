@@ -34,8 +34,33 @@
       signed-in students who haven't claimed it (auth.js openFeedback; "Not now"
       hides the card for 7 days on this device).
 
+   7. Missions as the unit (Nov 2026, spec: mission-fragment-navigation-spec).
+      On any lesson with a mission map (.ks3-missions + [data-mission] checks)
+      this file builds one mission list (AismProgress.missions()) from the same
+      segments the coins use, and:
+        - opens a mission from the URL fragment #mN, at load and on hashchange,
+          and writes #mN into the address bar (replaceState, never pushState)
+          whenever Next reaches a mission's first screen. Fragments are the only
+          form: no query strings, no new URLs, nothing for a crawler to index.
+        - gives each mission's first screen id="mN" (if that id is free).
+        - adds to the welcome map: "N missions · about M min", a "~M min" chip
+          and an "Open" link (href="#mN") on every mission, a tick on missions
+          finished on this device.
+        - records mission progress in aism-lp: l[stem].mm = {mN: day finished},
+          mr = highest mission started, mn = mission count. Course pages show
+          "3/8" instead of a tick for a lesson in progress, and the Continue
+          strip links straight to #mN.
+        - dispatches window CustomEvent "aism-mission" {type:"started"|
+          "completed", mission, of, via, first_try, score}; lesson-next.js turns
+          these into the Plausible events "Mission: started" / "Mission:
+          completed" with the course props.
+      Minutes: max(5, nearest 5 of words/130 + questions × 0.75).
+      The 874 newest lessons keep their own engine resume/deep-link code; this
+      file only adds what they lack and is a no-op on lessons without missions.
+
    Storage (browser only; nothing is sent unless the student is signed in):
-     aism-lp        {v:1, l:{<stem>:{b,s,f,d,t}}, last:{k,u,t,day,done,nx}}
+     aism-lp        {v:1, l:{<stem>:{b,s,f,d,t,mm,mr,mn}}, last:{k,u,t,day,done,nx}}
+                    (a lesson in progress has mm/mr/mn but no f)
      aism-lp-coins  {pend:[{k,p,c,d}], aw:{<stem> or <stem>#<mission>:day}}
    <stem> = the lesson file name without "-mini-lesson.html".
 
@@ -103,6 +128,7 @@
     s.id = "lp-style";
     s.textContent =
       ".lp-tick{display:inline-block;margin-left:6px;color:#0a6b5e;font-weight:800;font-size:.9em}" +
+      ".lp-tick.lp-part{color:#9a5a00;font-size:.8em;font-family:'Nunito',sans-serif}" +
       ".lp-coin{display:inline-block;width:.95em;height:.95em;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe28a,#f5c542 55%,#c9971a);" +
         "box-shadow:inset 0 0 0 1.5px #a87b12;vertical-align:-.12em;margin-right:5px;flex:none}" +
       /* account chip in the lesson top bar */
@@ -188,17 +214,27 @@
   }
 
   /* ---------- ticks on lesson links ---------- */
+  function finished(rec) { return !!(rec && rec.f); }
+  function missionsDoneIn(rec) { return rec && rec.mm ? Object.keys(rec.mm).length : 0; }
   function mark(root) {
     var l = prog().l, n = 0;
     (root || document).querySelectorAll('a[href*="-mini-lesson.html"]').forEach(function (a) {
       var k = stemOf(a.getAttribute("href"));
       if (!k || !l[k] || a.querySelector(".lp-tick") || a.classList.contains("tc-btn") || a.classList.contains("lnx-main")) return;
+      var rec = l[k], t = document.createElement("span");
+      if (finished(rec)) {
+        t.className = "lp-tick";
+        t.textContent = "✓";
+        t.title = "You finished this lesson";
+        t.setAttribute("aria-label", "finished");
+      } else if (rec.mn && missionsDoneIn(rec) > 0) {        // in progress: "3/8" missions done
+        var d = missionsDoneIn(rec);
+        t.className = "lp-tick lp-part";
+        t.textContent = d + "/" + rec.mn;
+        t.title = d + " of " + rec.mn + " missions done";
+        t.setAttribute("aria-label", d + " of " + rec.mn + " missions done");
+      } else return;
       css();
-      var t = document.createElement("span");
-      t.className = "lp-tick";
-      t.textContent = "✓";
-      t.title = "You finished this lesson";
-      t.setAttribute("aria-label", "finished");
       a.appendChild(t);
       n++;
     });
@@ -215,10 +251,13 @@
     var sameCourse = links.some(function (a) { var k = stemOf(a.getAttribute("href")); return k && groupOf(k) === g; });
     if (!sameCourse) return;
     var html;
-    if (last.done && last.nx && last.nx.u && !p.l[stemOf(last.nx.u)]) {
+    if (last.done && last.nx && last.nx.u && !finished(p.l[stemOf(last.nx.u)])) {
       html = '<span>✓ You finished <b>' + esc(last.t) + '</b>.</span><a href="' + esc(last.nx.u) + '">Next up: ' + esc(last.nx.t) + " →</a>";
     } else if (!last.done) {
-      html = '<span>Pick up where you left off:</span><a href="' + esc(last.u) + '">' + esc(last.t) + " →</a>";
+      var rec = p.l[last.k], at = rec && rec.mr && rec.mn ? rec.mr : 0;
+      // a lesson in progress reopens at the mission the student reached (#mN)
+      html = '<span>Pick up where you left off:</span><a href="' + esc(last.u + (at > 1 ? "#m" + at : "")) + '">' + esc(last.t) +
+        (at ? " · Mission " + at + " of " + rec.mn : "") + " →</a>";
     } else return;
     css();
     var d = document.createElement("div");
@@ -540,6 +579,7 @@
     if (!n) return null;                      // nothing answered here on this visit
     M.done[seg.id] = true;
     var pct = Math.round(100 * good / n);
+    if (seg.id !== "end") missionFinished(seg, pct, M.first[seg.key] === "good");   // 7. record + "Mission: completed"
     var p = grant(M.stem + "#" + seg.id, pct).then(function (r) {
       r.label = seg.label;
       track("Lesson coins: mission", { state: r.state });
@@ -548,6 +588,229 @@
     });
     M.results.push(p);
     return p;
+  }
+
+  /* ---------- 7. missions as the unit: model, #mN navigation, welcome map ---------- */
+  var MS = null;   // {list:[…], stem, screens, seen:{}, via:null, ready:bool}
+
+  /* Visible words in a screen: text nodes outside <svg>, <script>, <style>. */
+  function wordsIn(scr) {
+    var n = 0;
+    try {
+      var w = document.createTreeWalker(scr, NodeFilter.SHOW_TEXT, {
+        acceptNode: function (t) {
+          var p = t.parentNode;
+          while (p && p !== scr) {
+            var tag = p.nodeName.toLowerCase();
+            if (tag === "svg" || tag === "script" || tag === "style") return NodeFilter.FILTER_REJECT;
+            p = p.parentNode;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      while (w.nextNode()) { var s = w.currentNode.nodeValue.trim(); if (s) n += s.split(/\s+/).length; }
+    } catch (e) { n = (scr.textContent || "").trim().split(/\s+/).length; }
+    return n;
+  }
+  function questionsIn(scr) {
+    var n = 0;
+    [].forEach.call(scr.querySelectorAll("[data-q],[data-num],[data-t]"), function (q) {
+      if (q.closest && q.closest(".ks3-guess")) return;
+      n++;
+    });
+    return n;
+  }
+  function minutesFor(words, qs) { return Math.max(5, 5 * Math.round((words / 130 + qs * 0.75) / 5)); }
+
+  /* One list for the page, from the coin segments (so every mission lesson has
+     it, with or without data-start markers on the screens). */
+  function buildMissions(plan, screens) {
+    var list = [], map = document.querySelector(".ks3-missions");
+    plan.segs.forEach(function (seg, k) {
+      var n = parseInt(String(seg.id).replace(/^m/, ""), 10) || (k + 1);
+      var li = map ? map.querySelector('li[data-mission="' + seg.id + '"]') : null;
+      var mn = li ? li.querySelector(".ks3-mn") : null;
+      var start = -1;
+      for (var i = 0; i < screens.length; i++) if (screens[i].getAttribute("data-start") === seg.id) { start = i; break; }
+      if (start < 0) start = seg.from;
+      var words = 0, qs = 0;
+      for (var j = start; j <= seg.to && j < screens.length; j++) { words += wordsIn(screens[j]); qs += questionsIn(screens[j]); }
+      var q = li ? (li.textContent || "").replace(mn ? mn.textContent : "", "").replace(/\s+/g, " ").trim() : "";
+      list.push({ n: n, id: seg.id, label: mn ? mn.textContent.trim() : "Mission " + n, dm: li && li.dataset.dm ? li.dataset.dm : String(n),
+        question: q, start: start, check: seg.to, words: words, questions: qs, minutes: minutesFor(words, qs), li: li });
+    });
+    var tw = 0, tq = 0;
+    for (var t = plan.tail.from; t <= plan.tail.to && t < screens.length; t++) { tw += wordsIn(screens[t]); tq += questionsIn(screens[t]); }
+    var total = 0; list.forEach(function (m) { total += m.minutes; });
+    if (tw > 40 || tq) total += Math.max(0, 5 * Math.round((tw / 130 + tq * 0.75) / 5));
+    return { list: list, total: total };
+  }
+
+  function activeIndex() {
+    if (!MS) return 0;
+    for (var i = 0; i < MS.screens.length; i++) if (MS.screens[i].classList.contains("active")) return i;
+    return 0;
+  }
+  function missionByN(n) { if (!MS) return null; for (var i = 0; i < MS.list.length; i++) if (MS.list[i].n === n) return MS.list[i]; return null; }
+  function missionAt(idx) { if (!MS) return null; for (var i = 0; i < MS.list.length; i++) if (MS.list[i].start === idx) return MS.list[i]; return null; }
+  function hashMission() { var h = /^#m(\d+)$/.exec(location.hash || ""); return h ? missionByN(parseInt(h[1], 10)) : null; }
+
+  function emit(type, m, extra) {
+    var d = { type: type, mission: m.n, of: MS.list.length, label: m.label };
+    if (extra) for (var k in extra) d[k] = extra[k];
+    // lesson-next.js may load after this file (both scripts are inserted dynamically): queue until it listens
+    if (!window.__aismMissionL) { (window.__aismMissionQ = window.__aismMissionQ || []).push(d); return; }
+    try { window.dispatchEvent(new CustomEvent("aism-mission", { detail: d })); } catch (e) {}
+  }
+
+  /* Progress record for this lesson (created on first mission start, before
+     the lesson is finished; onComplete keeps these fields). */
+  function missionRec(stem, fn) {
+    var p = prog(), rec = p.l[stem];
+    if (!rec) rec = p.l[stem] = { d: today(), t: lessonTitle() };
+    fn(rec);
+    rec.mn = MS.list.length;
+    wr(LSK, p);
+  }
+  function missionStarted(m, via) {
+    if (!MS || MS.seen[m.id]) return;
+    MS.seen[m.id] = true;
+    missionRec(MS.stem, function (rec) { rec.mr = Math.max(rec.mr || 0, m.n); });
+    emit("started", m, { via: via || "next" });
+  }
+  function missionFinished(seg, pct, firstTry) {
+    if (!MS) return;
+    var m = null;
+    for (var i = 0; i < MS.list.length; i++) if (MS.list[i].id === seg.id) m = MS.list[i];
+    if (!m) return;
+    missionRec(MS.stem, function (rec) { rec.mm = rec.mm || {}; if (!rec.mm[m.id]) rec.mm[m.id] = today(); });
+    if (m.li) m.li.classList.add("lp-done");
+    emit("completed", m, { first_try: firstTry ? "yes" : "no", score: String(pct) });
+  }
+
+  /* Jump to a mission's first screen through the lesson's own show() so gating,
+     the rail and the coins stay in step. From the welcome screen of a lesson
+     that saved a place (the newest engine: restore/lsGet globals), restore the
+     saved answers first, as that engine's own "Continue" does. */
+  function openMission(m, via) {
+    if (!MS || typeof window.show !== "function") return;
+    var cur = activeIndex();
+    if (cur === 0 && typeof window.restore === "function" && typeof window.lsGet === "function") {
+      try {
+        var st = window.lsGet();
+        if (st && st.v === 1 && st.n === MS.screens.length) window.restore(st);
+      } catch (e) {}
+      var box = document.getElementById("resume"); if (box) box.hidden = true;
+    }
+    MS.via = via;
+    if (cur === m.start) { afterShow(m.start); return; }
+    try { window.show(m.start); } catch (e) {}
+  }
+  function setHash(h) {
+    try {
+      var u = location.pathname + location.search + (h ? "#" + h : "");
+      if (location.hash !== (h ? "#" + h : "")) history.replaceState(history.state, "", u);
+    } catch (e) {}
+  }
+  function missionContaining(idx) {
+    if (!MS) return null;
+    for (var i = 0; i < MS.list.length; i++) if (idx >= MS.list[i].start && idx <= MS.list[i].check) return MS.list[i];
+    return null;
+  }
+  function afterShow(i) {
+    if (!MS) return;
+    // a mission's first screen; or, straight from the welcome screen (resume / engine jump), the mission around i
+    var m = missionAt(i) || (MS.prev === 0 && i > 0 ? missionContaining(i) : null);
+    if (m) {
+      var via = MS.via || (MS.prev === 0 ? "start" : "next"); MS.via = null; MS.lastVia = via;
+      setHash("m" + m.n);
+      missionStarted(m, via);
+    } else if (i === 0) setHash("");
+    MS.prev = i;
+  }
+
+  /* Welcome map: "N missions · about M min", a minutes chip + Open link per
+     mission, ticks for missions already finished on this device. */
+  function missionsCss() {
+    if (document.getElementById("lp-mstyle")) return;
+    var s = document.createElement("style");
+    s.id = "lp-mstyle";
+    s.textContent =
+      ".lp-total{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.95rem;color:#6b6580;margin:0 0 8px}" +
+      ".lp-mmeta{display:inline-flex;align-items:center;gap:8px;margin-left:8px;vertical-align:middle;white-space:nowrap}" +
+      ".lp-min{font-family:'Nunito',sans-serif;font-weight:700;font-size:.78rem;color:#6b6580;background:#f3eee4;border-radius:999px;padding:2px 8px}" +
+      ".lp-open{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.85rem;color:#0a6b5e;border:2px solid #0a6b5e;border-radius:999px;padding:2px 10px;text-decoration:none;line-height:1.3}" +
+      ".lp-open:hover{background:#0a6b5e;color:#fff}" +
+      ".lp-open:focus-visible{outline:3px solid #0a6b5e;outline-offset:2px}" +
+      ".ks3-missions li.lp-done .lp-open{color:#6b6580;border-color:#b9b3c9}" +
+      ".ks3-missions li.lp-done .lp-open:hover{background:#b9b3c9;color:#fff}" +
+      ":root[data-theme=\"dark\"] .lp-min{background:#2a2740;color:#c9c3d9}" +
+      ":root[data-theme=\"dark\"] .lp-total{color:#c9c3d9}";
+    document.head.appendChild(s);
+  }
+  function decorateWelcome(stem) {
+    var map = document.querySelector(".ks3-missions");
+    if (!map || map.querySelector(".lp-open")) return;
+    missionsCss();
+    var rec = prog().l[stem] || {}, mm = rec.mm || {};
+    var tot = document.createElement("p");
+    tot.className = "lp-total";
+    tot.textContent = MS.list.length + " missions · about " + MS.total + " min";
+    map.parentNode.insertBefore(tot, map);
+    MS.list.forEach(function (m) {
+      if (!m.li) return;
+      var meta = document.createElement("span");
+      meta.className = "lp-mmeta";
+      meta.innerHTML = '<span class="lp-min">~' + m.minutes + ' min</span><a class="lp-open" href="#m' + m.n + '">Open</a>';
+      var a = meta.querySelector(".lp-open");
+      a.setAttribute("aria-label", "Open " + m.label);
+      a.addEventListener("click", function (e) {
+        e.stopPropagation();                      // the newest engine's own li jump would otherwise run too
+        if (location.hash === "#m" + m.n) { e.preventDefault(); openMission(m, "open"); }   // same hash: no hashchange
+        else MS.via = "open";                     // hashchange follows and opens it
+      });
+      m.li.appendChild(meta);
+      if (mm[m.id]) {
+        m.li.classList.add("lp-done", "done");    // "done" is the map's own ticked-checkbox style (ks3-hooks.css)
+        a.textContent = "Open again";
+        a.setAttribute("aria-label", "Open " + m.label + " again (finished)");
+      }
+    });
+  }
+
+  function missionsNavInit(stem, screens) {
+    if (!M || !M.plan || !M.plan.segs.length) return;
+    var b = buildMissions(M.plan, screens);
+    if (!b.list.length) return;
+    var cur0 = 0;
+    for (var c = 0; c < screens.length; c++) if (screens[c].classList.contains("active")) { cur0 = c; break; }
+    MS = { list: b.list, total: b.total, stem: stem, screens: screens, seen: {}, via: null, lastVia: null, prev: cur0 };
+    // anchors: each mission's first screen is #mN
+    MS.list.forEach(function (m) {
+      var scr = screens[m.start];
+      if (scr && !scr.id && !document.getElementById("m" + m.n)) scr.id = "m" + m.n;
+    });
+    decorateWelcome(stem);
+    // follow every navigation (Next/Back, rail, engine jumps)
+    if (typeof window.show === "function") {
+      var _s = window.show;
+      window.show = function (i) { var r = _s.apply(this, arguments); afterShow(i); return r; };
+    }
+    // the newest engine's "Continue" button: count it as a resume
+    var go = document.getElementById("resumeGo");
+    if (go) go.addEventListener("click", function () { MS.via = "resume"; }, true);
+    // #mN in the address bar: at load (the newest engine may already have opened it) and on change
+    function follow(via) {
+      var m = hashMission();
+      if (!m) return;
+      if (activeIndex() === m.start) { MS.via = via; afterShow(m.start); }
+      else openMission(m, via);
+    }
+    window.addEventListener("hashchange", function () { follow(MS.via || "hash"); });
+    follow("hash");
+    // a mission already open with no hash (engine resume before this file ran)
+    var cur = activeIndex();
+    if (cur > 0 && !hashMission()) { var m0 = missionContaining(cur); if (m0) { MS.via = "resume"; MS.prev = 0; afterShow(cur); } }
   }
 
   /* ---------- 3. what coins are for ---------- */
@@ -583,18 +846,22 @@
     var starsTxt = (document.getElementById("finalStars") || {}).textContent || "";
     var stars = (starsTxt.match(/⭐/g) || []).length;
 
-    var p = prog(), prev = p.l[stem];
+    var p = prog(), prev = p.l[stem], prevDone = finished(prev);
     var earlierDay = false, sameCourse = 0;
     Object.keys(p.l).forEach(function (k) {
       if (k === stem) return;
       if (p.l[k].d < day || p.l[k].f < day) earlierDay = true;
-      if (g && groupOf(k) === g) sameCourse++;
+      if (g && groupOf(k) === g && finished(p.l[k])) sameCourse++;
     });
-    if (prev && prev.f < day) earlierDay = true;
-    p.l[stem] = { b: Math.max(prev ? prev.b : 0, pct), s: Math.max(prev ? prev.s : 0, stars), f: prev ? prev.f : day, d: day, t: title };
+    if (prev && (prev.f < day || prev.d < day)) earlierDay = true;
+    var rec = { b: Math.max(prevDone ? prev.b : 0, pct), s: Math.max(prevDone ? prev.s : 0, stars), f: prevDone ? prev.f : day, d: day, t: title };
+    if (prev && prev.mm) rec.mm = prev.mm;          // keep mission progress (see 7.)
+    if (prev && prev.mr) rec.mr = prev.mr;
+    if (prev && prev.mn) rec.mn = prev.mn;
+    p.l[stem] = rec;
     p.last = { k: stem, u: location.pathname, t: title, day: day, done: true, nx: (p.last && p.last.k === stem && p.last.nx) || null };
     wr(LSK, p);
-    if (!prev && sameCourse >= 1 && g) track("Mini-lesson: 2nd+ in course", { course: g });
+    if (!prevDone && sameCourse >= 1 && g) track("Mini-lesson: 2nd+ in course", { course: g });
     if (earlierDay) track("Mini-lesson: returning");
 
     var fs = document.getElementById("finalScore");
@@ -807,7 +1074,9 @@
       wr(LSK, p);
     }
     if (window.__aismNext) window.AismProgress.noteNext(window.__aismNext.u, window.__aismNext.t);
-    try { missionsInit(stem, [].slice.call(document.querySelectorAll(".screen"))); } catch (e) { M = null; }
+    var screens = [].slice.call(document.querySelectorAll(".screen"));
+    try { missionsInit(stem, screens); } catch (e) { M = null; }
+    try { missionsNavInit(stem, screens); } catch (e) { MS = null; }
     chip();
     var fired = false;
     function check() {
@@ -847,6 +1116,16 @@
         p.last.nx = { u: a.pathname, t: title }; wr(LSK, p);
       } catch (e) {}
     },
+    // 7. missions as the unit
+    missions: function () {                                   // [{n,id,label,dm,question,start,check,words,questions,minutes}]
+      return MS ? MS.list.map(function (m) { var o = {}; for (var k in m) if (k !== "li") o[k] = m[k]; return o; }) : [];
+    },
+    missionTotalMinutes: function () { return MS ? MS.total : 0; },
+    missionsDone: function () {                               // finished on this page load (not the tail)
+      var n = 0; if (M) Object.keys(M.done).forEach(function (k) { if (k !== "end") n++; }); return n;
+    },
+    takeVia: function () { var v = MS ? MS.lastVia : null; if (MS) MS.lastVia = null; return v; },   // how the welcome screen was left
+    openMission: function (n, via) { var m = missionByN(n); if (m) openMission(m, via || "open"); return !!m; },
     _missionPlan: function () { return M ? M.plan : null; }   // for tests
   };
 
