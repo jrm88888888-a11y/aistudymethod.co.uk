@@ -138,6 +138,12 @@ CSS = '''<style>
  .cp-list li a{grid-template-columns:26px 1fr;gap:8px 10px;}.cp-th{grid-column:1 / -1;}.cp-go{display:none;}.cp-list li a.nothumb{grid-template-columns:26px 1fr;}}
 </style>'''
 
+AP_SHORT = {'physics-ap-physics-c-em': 'AP Physics C: E&M'}
+AP_GUIDE = {'physics-ap-physics-1': ('revise/ap-physics-1.html', 'AP Physics 1 review guide'),
+            'physics-ap-physics-2': ('revise/ap-physics-2.html', 'AP Physics 2 review guide'),
+            'physics-ap-physics-c-mechanics': ('revise/ap-physics-c-mechanics.html', 'AP Physics C: Mechanics review guide'),
+            'physics-ap-physics-c-em': ('revise/ap-physics-c-em.html', 'AP Physics C: E&M review guide'),
+            'chemistry-ap-collegeboard': ('revise/ap-chemistry.html', 'AP Chemistry review guide')}
 os.makedirs(OUT, exist_ok=True)
 written = set(); nthumb = 0
 for c in index:
@@ -146,6 +152,8 @@ for c in index:
     spec = SPECS.get(c['k'], {})
     code = spec.get('specCode') or ''
     guide, guide_name = revise_hub(c, rows)
+    if not guide and c['k'] in AP_GUIDE and os.path.exists(os.path.join(ROOT, AP_GUIDE[c['k']][0])):
+        guide, guide_name = AP_GUIDE[c['k']]
     level = LEVEL_NAME.get(c['l'], c['l'])
     n = len(rows)
     with_q = sum(1 for r in rows if r[0] in hooks)
@@ -153,6 +161,13 @@ for c in index:
     title = f"{c['d']} mini-lessons — {n} free interactive lesson{'' if n == 1 else 's'}"
     desc = (f"Every topic of {c['d']} as a free interactive mini-lesson, in {'course' if ap else 'specification'} order"
             + (f" (spec {code})" if code else "") + ". Each lesson opens with a question, then works through it in missions with checks. About 20 minutes each. No login.")
+    if ap:   # search-intent title and description (title tag without the site suffix, to stay under 60)
+        short = AP_SHORT.get(c['k'], c['d'])
+        title_tag = f"{short} Lessons: {n} Free Interactive Lessons"
+        desc = (f"Free {short} lessons: {n} interactive lessons in College Board unit order, with video, "
+                "worked examples and practice questions. No login.")
+    else:
+        title_tag = f"{title} | AI Study Method"
     items = []
     for i, r in enumerate(rows):
         href = '/classcraft/adventures/' + lesson_stem(c, r) + '-mini-lesson.html'
@@ -166,7 +181,7 @@ for c in index:
                       key=lambda x: BOARD_ORDER.index(x['b']) if x['b'] in BOARD_ORDER else 99)
     other_levels = sorted({x['l'] for x in index if x['s'] == c['s'] and x['l'] != c['l']}, key=lambda l: list(LEVEL_NAME).index(l))
     actions = [f'<a class="t" href="/teach/{e(c["k"])}.html">👩‍🏫 Teachers: assign this course</a>'] if os.path.exists(os.path.join(ROOT, 'teach', c['k'] + '.html')) else []
-    if not ap: actions.append(f'<a href="/subjects.html?subject={e(c["s"])}&amp;level={e(c["l"])}&amp;board={e(c["b"])}">All six Velvet stages</a>')
+    actions.append(f'<a href="/subjects.html?subject={e(c["s"])}&amp;level={e(c["l"])}&amp;board={e(c["b"])}">All six Velvet stages</a>')
     if d.get('a'): actions.append(f'<a href="/classcraft/arcade.html?{e(d["a"])}">🎮 Revision Arcade</a>')
     if guide: actions.append(f'<a href="/{e(guide)}">📖 {e(guide_name)}</a>')
     opener = "Each one opens with a question you can\u2019t yet answer" if with_q else "Each one takes a topic step by step"
@@ -178,14 +193,14 @@ for c in index:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{e(title)} | AI Study Method</title>
+<title>{e(title_tag)}</title>
 <meta name="description" content="{e(desc)}">
 <link rel="canonical" href="{SITE}/lessons/{e(c['k'])}.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AI Study Method">
-<meta property="og:title" content="{e(title)}">
+<meta property="og:title" content="{e(title_tag if ap else title)}">
 <meta property="og:description" content="{e(desc)}">
 <meta property="og:url" content="{SITE}/lessons/{e(c['k'])}.html">
 <meta property="og:image" content="{SITE}/og-share.png">

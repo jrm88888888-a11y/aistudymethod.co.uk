@@ -74,7 +74,7 @@
       '<div style="padding:34px 0 6px">'
       +'<span class="badge">V · Verify · Check your understanding</span>'
       +'<h1>'+esc(quiz.topicDisplay)+'</h1>'
-      +'<p class="sub">You\'ve been through Learn. Now check it stuck: <b>'+n+' new questions</b> on '+esc(quiz.boardDisplay+' '+quiz.subjectDisplay)+', none of them from the Evaluate quiz. Each answer is marked straight away, with the reasoning.</p>'
+      +'<p class="sub">You\'ve been through Learn. Now check it stuck: <b>'+n+' new questions</b> on '+esc(quiz.courseDisplay||(quiz.boardDisplay+' '+quiz.subjectDisplay))+', none of them from the Evaluate quiz. Each answer is marked straight away, with the reasoning.</p>'
       +'<div class="meta"><span><b>'+n+'</b> questions</span><span>Aim for '+Math.round(PASS*100)+'%</span>'+(ev!=null?'<span>Your Evaluate score: <b>'+ev+'%</b></span>':'')+'</div>'
       +'</div>'
       +'<div class="card"><h2>How it works</h2>'
@@ -139,7 +139,7 @@
     var miss={}, order=[];
     res.forEach(function(r){ if(!r.ok){ var id=r.q.lo||'—'; if(!miss[id]){miss[id]=0;order.push(id);} miss[id]++; } });
     var html='<div style="padding:30px 0 4px"><span class="badge">V · Verify · Your result</span>'
-      +'<h1>'+esc(quiz.topicDisplay)+'</h1><p class="sub">'+esc(quiz.levelDisplay+' '+quiz.subjectDisplay+' · '+String(quiz.boardDisplay||'').replace(/^IB /,''))+'</p></div>';
+      +'<h1>'+esc(quiz.topicDisplay)+'</h1><p class="sub">'+esc(quiz.courseDisplay||(quiz.levelDisplay+' '+quiz.subjectDisplay+' · '+String(quiz.boardDisplay||'').replace(/^IB /,'')))+'</p></div>';
     html+='<div class="card score '+cls+'"><div class="scorebig">'+pct+'%<small> ('+correct+'/'+n+')</small></div>'
       +'<div class="calib">'+verdict+cmp+'</div></div>';
     if(order.length){

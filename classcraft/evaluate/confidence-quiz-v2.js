@@ -75,7 +75,7 @@
       '<div style="padding:34px 0 6px">'
       +'<span class="badge">E · Evaluate · Confidence Quiz</span>'
       +'<h1>'+esc(quiz.topicDisplay)+'</h1>'
-      +'<p class="sub">A spec-aligned diagnostic for <b>'+esc(quiz.boardDisplay)+' '+esc(quiz.levelDisplay)+' '+esc(quiz.subjectDisplay)+'</b>. Answer each question, then rate how sure you are. At the end you get a personalised breakdown of what to revise first.</p>'
+      +'<p class="sub">A spec-aligned diagnostic for <b>'+esc(quiz.courseDisplay||(quiz.boardDisplay+' '+quiz.levelDisplay+' '+quiz.subjectDisplay))+'</b>. Answer each question, then rate how sure you are. At the end you get a personalised breakdown of what to revise first.</p>'
       +'<div class="meta"><span><b>'+n+'</b> questions</span><span>'+nq+' multiple-choice · '+nn+' calculation</span>'+(quiz.specCode?'<span>Spec '+esc(quiz.specCode)+'</span>':'')+'</div>'
       +'</div>'
       +'<div class="card">'
@@ -190,7 +190,7 @@
     // header + score
     html+='<div style="padding:30px 0 4px"><span class="badge">E · Evaluate · Your report</span>'
         +'<h1>'+esc(quiz.topicDisplay)+' — diagnostic</h1>'
-        +'<p class="sub">'+esc(quiz.boardDisplay)+' '+esc(quiz.levelDisplay)+' '+esc(quiz.subjectDisplay)+'</p></div>';
+        +'<p class="sub">'+esc(quiz.courseDisplay||(quiz.boardDisplay+' '+quiz.levelDisplay+' '+quiz.subjectDisplay))+'</p></div>';
     html+='<div class="card" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">'
         +'<div><div class="scorebig">'+pct+'%<small> ('+correct+'/'+n+')</small></div></div>'
         +'<div class="calib" style="flex:1;min-width:220px">'+calib+'</div></div>';

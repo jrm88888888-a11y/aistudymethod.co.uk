@@ -222,9 +222,15 @@ def main():
         doc = DOC.get(d['l'], 'specification')
         name = d['d']
         title = f'{name} teaching resources: free lessons to set your class'
+        if d['l'] == 'ap':
+            short = name.replace('Electricity and Magnetism', 'E&M')
+            title = f'Free {short} Lessons for Teachers'
         desc = (f'Free {name} teaching resources: {n} interactive lesson{"s" if n != 1 else ""}'
                 + (f' in {doc} order' if main_rows else '')
                 + ', to set as class work, homework or cover. Assign through Teams, Google Classroom, a link or a QR code. No student login.')
+        if d['l'] == 'ap':
+            desc = (f'Free {short} teaching resources: {n} interactive lessons in course framework order, '
+                    'to assign as class work or homework. No student login.')
         canon = f'{SITE}/teach/{k}.html'
 
         def item(i, r):
