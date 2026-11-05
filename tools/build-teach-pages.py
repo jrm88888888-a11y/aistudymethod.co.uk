@@ -249,7 +249,7 @@ def main():
             tags += '<span class="tc-tag l">Mini-lesson</span>'
             if d['l'] == 'ap':
                 tp = AP_TOPICS.get(lesson_stem(k, r) + '-mini-lesson.html', {})
-                tags += f'<span class="tc-tag">{e(("Topics " + tp["range"]) if tp.get("range") else "Science practices")}</span>'
+                tags += f'<span class="tc-tag">{e(("Topics " + (tp.get("cover") or tp["range"])) if tp.get("range") else "Science practices")}</span>'
             if games and d['a']: tags += '<span class="tc-tag g">Games</span>'
             act = f'<a class="tc-btn" href="{e(lesson)}">Open lesson</a>'
             if has_session:

@@ -146,7 +146,7 @@ AP_TM = '<p class="ap-tm" style="max-width:860px;margin:1.4rem auto 0;padding:0 
 AP_ASSIGN = 'Short, curiosity-driven lessons that teachers can assign: each one opens with a question you can\u2019t yet answer, then works through it in missions with AP-style checks. About 20 minutes per mission. Use them alongside AP Classroom practice. No login.'
 def ap_topic_line(stem):
     tp = AP_TOPICS.get(stem + '-mini-lesson.html', {})
-    txt = ('College Board topics ' + tp['range']) if tp.get('range') else 'AP science practices, all units'
+    txt = ('College Board topics ' + (tp.get('cover') or tp['range'])) if tp.get('range') else 'AP science practices, all units'
     return f'<small style="font-size:12.5px;color:var(--text-muted)">{e(txt)}</small>'
 
 AP_GUIDE = {'physics-ap-physics-1': ('revise/ap-physics-1.html', 'AP Physics 1 review guide'),
