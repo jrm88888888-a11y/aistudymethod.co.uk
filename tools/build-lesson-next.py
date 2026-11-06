@@ -21,6 +21,12 @@ For every mini-lesson it records, per group (subject-level-board):
       to be made; question = the hook's data-title; thumb = 640px copy of the poster
       relative to the site root, present when images/lesson-thumbs/ has one) — used by the completion card, the lesson finder and lessons.html
   v : slugs that have a Verify quiz (classcraft/verify-manifest.json)
+  m : {slug: [[label, question, minutes, n], ...]} for lessons with a mission map
+      (.ks3-missions + Mission checks carrying data-mission="mN"), in order —
+      used by assign.js so a teacher can assign one mission (#mN) from a course
+      page or teach/session.html, where the lesson's own DOM is not available.
+      minutes = max(5, nearest 5 of words/130 + questions × 0.75), the same
+      estimate progress.js shows on the lesson's welcome map.
 Also writes lesson-next/index.json: every course as
   {k, s, l, b, d, sd, bd, n, hn} (key, ids, course name, subject and board display
   names, lesson count, lessons with a hook) — the data behind the lesson finder on
@@ -101,6 +107,57 @@ def hook_info(path):
         thumb = 'images/lesson-thumbs/' + os.path.basename(poster)
         if os.path.exists(os.path.join(ROOT, thumb)): out.append(thumb)
     return out
+
+_SCREEN = re.compile(r'<section class="screen[^"]*"[^>]*>(.*?)</section>', re.S)
+_MAP = re.compile(r'<ol class="ks3-missions[^"]*"[^>]*>(.*?)</ol>', re.S)
+_LI = re.compile(r'<li data-mission="(m\d+)"[^>]*>(.*?)</li>', re.S)
+_GUESS = re.compile(r'<div class="ks3-guess[^"]*".*?<p class="ks3-guess-reply"[^>]*>.*?</p>\s*</div>', re.S)
+_STRIP = re.compile(r'<(script|style|svg)\b.*?</\1>', re.S)
+_TAG = re.compile(r'<[^>]+>')
+def _text(frag):
+    return html.unescape(_TAG.sub(' ', _STRIP.sub(' ', frag)))
+def _words(frag): return len(_text(frag).split())
+def _questions(frag):
+    return len(re.findall(r'\bdata-(?:q|num|t)="', _GUESS.sub(' ', frag)))
+def _minutes(words, qs):
+    import math
+    return max(5, 5 * int(math.floor((words / 130 + qs * 0.75) / 5 + 0.5)))
+def mission_info(path):
+    """[[label, question, minutes, n], ...] from a lesson's mission map and Mission
+    checks, mirroring missionPlan() + buildMissions() in progress.js; None when the
+    lesson has no missions."""
+    s = open(path, encoding='utf8', errors='replace').read()
+    mp = _MAP.search(s)
+    if not mp: return None
+    screens = [(m.group(0)[:m.group(0).find('>') + 1], m.group(1)) for m in _SCREEN.finditer(s)]   # (opening tag, body)
+    if len(screens) < 3: return None
+    fin = next((i for i, (tag, _) in enumerate(screens) if 'final' in tag), len(screens) - 1)
+    checks = {}   # mN -> last screen index carrying its Mission check
+    for i, (tag, body) in enumerate(screens):
+        if i == 0 or i >= fin: continue
+        body = re.sub(r'<li data-mission="m\d+"', '', body)        # the map on the welcome screen is not a check
+        for m in re.findall(r'data-mission="(m\d+)"', body):
+            if m not in checks or checks[m] < i: checks[m] = i
+    if not checks: return None
+    starts = {}
+    for i, (tag, _) in enumerate(screens):
+        st = re.search(r'data-start="(m\d+)"', tag)
+        if st: starts[st.group(1)] = i
+    labels = {}
+    for mid, body in _LI.findall(mp.group(1)):
+        mn = re.search(r'<span class="ks3-mn">(.*?)</span>', body, re.S)
+        label = _text(mn.group(1)).strip() if mn else 'Mission ' + mid[1:]
+        q = _text(re.sub(r'<span class="ks3-mn">.*?</span>', '', body, flags=re.S)).strip()
+        labels[mid] = (label, re.sub(r'\s+', ' ', q))
+    out, prev = [], 0
+    for mid, ci in sorted(checks.items(), key=lambda kv: kv[1]):
+        start = starts.get(mid, prev + 1)
+        seg = [b for _, b in screens[start:ci + 1]]
+        w = sum(_words(sc) for sc in seg); qs = sum(_questions(sc) for sc in seg)
+        label, q = labels.get(mid, ('Mission ' + mid[1:], ''))
+        out.append([label, q, _minutes(w, qs), int(mid[1:])])
+        prev = ci
+    return out or None
 
 # Courses whose lesson list is set here, in subject guide order: (slug, title, file stem or
 # None). IB Geography (Oct 2026): the Core and Option unit lessons serve SL and HL from one
@@ -193,11 +250,13 @@ for (subj, level, board), slugs in sorted(groups.items()):
         q = 1 if f'{key}-{s}' in EVAL else 0
         stats['lesson_quiz'] += q
         rows.append([s, title, has, q] + ([stem] if stem else []))
-    hooks, verify = {}, []
+    hooks, verify, missions = {}, [], {}
     for r in rows:
         stem = r[4] if len(r) > 4 else f'{key}-{r[0]}'
         hi = hook_info(os.path.join(ADV, stem + SUF))
         if hi: hooks[r[0]] = hi
+        mi = mission_info(os.path.join(ADV, stem + SUF))
+        if mi: missions[r[0]] = mi; stats['lesson_missions'] += 1
         if f'{key}-{r[0]}' in VERIFY: verify.append(r[0])
     stats['lesson_hook'] += len(hooks)
     name = key + '.json'
@@ -210,6 +269,7 @@ for (subj, level, board), slugs in sorted(groups.items()):
     if guide:
         out['o'] = [r[0] for r in rows if any(r[0] == g[1] for g in guide)]
     if hooks: out['h'] = hooks
+    if missions: out['m'] = missions
     if verify: out['v'] = verify
     if level == 'ks3' and kind == 'board' and len(atopics) * 2 < len(rows):
         out['af'] = 0

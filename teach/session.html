@@ -68,7 +68,7 @@
     <a id="csCourseLink" href="/teachers.html" hidden>All lessons for this course →</a>
   </div>
 </main>
-<script src="/classcraft/quizzes/assign.js?v=20261025"></script>
+<script src="/classcraft/quizzes/assign.js?v=20261106"></script>
 <script>
 (function () {
   "use strict";
@@ -96,6 +96,16 @@
     var only = (p.get("s") || "").split(",").filter(function (x) { return /^(quiz|lesson|games)$/.test(x); });
     var steps = A.sessionSteps(c, data, t, only);
     if (!steps.length) steps = A.sessionSteps(c, data, t);
+    // &m=N: the lesson step is one mission of the mini-lesson (opens at #mN)
+    var mn = parseInt(p.get("m") || "0", 10) || 0;
+    if (mn) {
+      var ms = A.missionList ? A.missionList(c, data, t) : [], mi = ms.filter(function (x) { return x.n === mn; })[0];
+      if (mi) steps.forEach(function (st) {
+        if (st.id !== "lesson") return;
+        st.url += "#m" + mn;
+        st.label += " · " + mi.label + " only" + (mi.minutes ? " (~" + mi.minutes + " min)" : "");
+      });
+    }
     document.title = "Class session: " + row[1] + " — AI Study Method";
     document.getElementById("csTitle").textContent = row[1];
     document.getElementById("csCourse").textContent = data.d;
@@ -124,7 +134,7 @@
     var tb = document.getElementById("csAssign");
     tb.hidden = false;
     tb.addEventListener("click", function () {
-      A.openFor(c, t, { preselect: steps.map(function (st) { return st.id; }) });
+      A.openFor(c, t, { preselect: steps.map(function (st) { return st.id; }), mission: mn });
     });
   });
 })();

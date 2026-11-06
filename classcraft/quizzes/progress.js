@@ -584,6 +584,7 @@
       r.label = seg.label;
       track("Lesson coins: mission", { state: r.state });
       pop(seg.label + (seg.id === "end" ? " done" : " complete"), r);
+      if (seg.id !== "end") { try { missionStrip(seg, r); } catch (e) {} }   // 7b. what next after this mission
       return r;
     });
     M.results.push(p);
@@ -684,7 +685,11 @@
     for (var i = 0; i < MS.list.length; i++) if (MS.list[i].id === seg.id) m = MS.list[i];
     if (!m) return;
     missionRec(MS.stem, function (rec) { rec.mm = rec.mm || {}; if (!rec.mm[m.id]) rec.mm[m.id] = today(); });
-    if (m.li) m.li.classList.add("lp-done");
+    if (m.li) {
+      m.li.classList.add("lp-done", "done");
+      var a = m.li.querySelector(".lp-open");
+      if (a) { a.textContent = "Open again"; a.setAttribute("aria-label", "Open " + m.label + " again (finished)"); }
+    }
     emit("completed", m, { first_try: firstTry ? "yes" : "no", score: String(pct) });
   }
 
@@ -745,7 +750,21 @@
       ".ks3-missions li.lp-done .lp-open{color:#6b6580;border-color:#b9b3c9}" +
       ".ks3-missions li.lp-done .lp-open:hover{background:#b9b3c9;color:#fff}" +
       ":root[data-theme=\"dark\"] .lp-min{background:#2a2740;color:#c9c3d9}" +
-      ":root[data-theme=\"dark\"] .lp-total{color:#c9c3d9}";
+      ":root[data-theme=\"dark\"] .lp-total{color:#c9c3d9}" +
+      /* mission-complete strip (7b) */
+      ".lp-mstrip{margin:14px 0 4px;padding:14px 16px;border:3px solid #2c2840;border-radius:18px;background:#eefaf7;" +
+        "font-family:'Nunito',sans-serif;font-size:1rem;line-height:1.45;box-shadow:0 5px 0 rgba(44,40,64,.10);animation:pop .4s cubic-bezier(.34,1.56,.64,1)}" +
+      ".lp-mstrip .lp-mshead{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.05rem;color:#2c2840}" +
+      ".lp-mstrip .lp-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}" +
+      ".lp-mstrip button{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1rem;border:3px solid #2c2840;border-radius:14px;padding:9px 14px;" +
+        "cursor:pointer;background:#0a6b5e;color:#fff;box-shadow:0 4px 0 rgba(44,40,64,.18);text-align:left;line-height:1.25;max-width:100%}" +
+      ".lp-mstrip button small{display:block;font-family:'Nunito',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:.3px;text-transform:uppercase;opacity:.85;margin-bottom:2px}" +
+      ".lp-mstrip button.ghost{background:#fff;color:#2c2840;display:inline-flex;align-items:center;gap:4px}" +
+      ".lp-mstrip button:focus-visible{outline:3px solid #0a6b5e;outline-offset:2px}" +
+      ".lp-mstrip.lp-note{text-align:left;max-width:none}" +
+      ":root[data-theme=\"dark\"] .lp-mstrip{background:#1f4a35;color:#f3eee4}" +
+      ":root[data-theme=\"dark\"] .lp-mstrip .lp-mshead{color:#f3eee4}" +
+      "@media (max-width:520px){.lp-mstrip .lp-btns{flex-direction:column}.lp-mstrip button{width:100%}}";
     document.head.appendChild(s);
   }
   function decorateWelcome(stem) {
@@ -778,6 +797,70 @@
     });
   }
 
+  /* 7b. Mission-complete strip, under the Mission check once it is answered:
+       ✅ Mission 3 complete · +9 coins (unsaved)
+       [Next: Mission 4 — "…" ~8 min]  [Save coins]  [Done for now]
+     "Save coins" is the end screen's inline sign-up (signed out, coins unsaved);
+     "Done for now" returns to the welcome map with the mission ticked, so leaving
+     is a completion, not a dropout. Once per mission per page load; never blocks
+     Next. Events: "Mission next: continue | save | leave" {mission, of}. */
+  function missionStrip(seg, r) {
+    if (!MS) return;
+    var m = null, k;
+    for (k = 0; k < MS.list.length; k++) if (MS.list[k].id === seg.id) m = MS.list[k];
+    if (!m || document.getElementById("lp-mstrip-" + m.id)) return;
+    var scr = MS.screens[m.check]; if (!scr) return;
+    var fb = seg.key ? document.getElementById("fb-" + seg.key) : null;
+    var nextM = null;
+    for (k = 0; k < MS.list.length; k++) if (MS.list[k].n > m.n && (!nextM || MS.list[k].n < nextM.n)) nextM = MS.list[k];
+    var coins;
+    if (r.state === "banked" || r.state === "saved") coins = "+" + r.coins + " coins saved";
+    else if (r.state === "unsaved") coins = "+" + r.coins + " coins (unsaved)";
+    else if (r.state === "held") coins = "+" + r.coins + " coins kept on this device";
+    else if (r.state === "cap") coins = "daily coin limit reached";
+    else coins = "coins already won today";
+    var canSave = !signedIn() && pendingTotal() > 0;
+    css(); missionsCss();
+    var d = document.createElement("div");
+    d.className = "lp-mstrip"; d.id = "lp-mstrip-" + m.id;
+    d.setAttribute("role", "status");
+    d.innerHTML =
+      '<span class="lp-mshead">✅ ' + esc(m.label) + " complete · " + esc(coins) + "</span>" +
+      '<div class="lp-btns">' +
+        (nextM
+          ? '<button type="button" data-ms="continue"><small>Next: ' + esc(nextM.label) + " · ~" + nextM.minutes + " min</small>" + esc(nextM.question || "") + " ➡</button>"
+          : '<button type="button" data-ms="continue"><small>Last mission done</small>Finish the lesson ➡</button>') +
+        (canSave ? '<button type="button" class="ghost" data-ms="save"><span class="lp-coin" aria-hidden="true"></span>Save coins</button>' : "") +
+        '<button type="button" class="ghost" data-ms="leave">Done for now</button>' +
+      "</div>";
+    // under the explanation that follows the check (#rv-<key> in the newest engine), else under the feedback line
+    var rv = seg.key ? document.getElementById("rv-" + seg.key) : null;
+    var after = (rv && rv.parentNode) ? rv : fb;
+    if (after && after.parentNode) after.parentNode.insertBefore(d, after.nextSibling); else scr.appendChild(d);
+    d.addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest("[data-ms]") : null;
+      if (!b) return;
+      var what = b.getAttribute("data-ms");
+      emit("next", m, { what: what });              // lesson-next.js: "Mission next: <what>" with the course props
+      if (what === "continue") {
+        if (nextM) { MS.via = "strip"; if (location.hash === "#m" + nextM.n) openMission(nextM, "strip"); else location.hash = "#m" + nextM.n; }
+        else if (typeof window.show === "function") { try { window.show(m.check + 1); } catch (x) {} }
+      } else if (what === "leave") {
+        if (typeof window.show === "function") { try { window.show(0); } catch (x) {} }
+        var map = document.querySelector(".ks3-missions");
+        if (map && map.scrollIntoView) setTimeout(function () { map.scrollIntoView({ behavior: "smooth", block: "center" }); }, 350);
+      } else if (what === "save") {
+        var pend = pendingTotal();
+        d.innerHTML = '<span class="lp-mshead">✅ ' + esc(m.label) + " complete · <b>" + pend + "</b> coin" + (pend === 1 ? "" : "s") +
+          " on this device. Save them to spend in the Element shop: pick a username and password, no email needed.</span>" + saveForm(pend);
+        d.classList.add("lp-note");
+        wireSave(d);                            // "I have an account"
+        wireInline(d, "mission end");           // sign-up form; registration carries source "mission end"
+      }
+    });
+    try { d.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (e) {}
+  }
+
   function missionsNavInit(stem, screens) {
     if (!M || !M.plan || !M.plan.segs.length) return;
     var b = buildMissions(M.plan, screens);
@@ -791,6 +874,7 @@
       if (scr && !scr.id && !document.getElementById("m" + m.n)) scr.id = "m" + m.n;
     });
     decorateWelcome(stem);
+    try { if (window.AismRail) window.AismRail.setMissions(window.AismProgress.missions()); } catch (e) {}   // rail headers (lesson-nav.js)
     // follow every navigation (Next/Back, rail, engine jumps)
     if (typeof window.show === "function") {
       var _s = window.show;
@@ -967,7 +1051,8 @@
       "</form>";
   }
   var inlineShown = false;
-  function wireInline(note) {
+  function wireInline(note, src) {
+    src = src || "lesson end";
     var f = note.querySelector("form.lp-save");
     if (!f) return;
     var u = f.querySelector('[name="u"]'), p = f.querySelector('[name="p"]'), err = f.querySelector(".lp-err"), go = f.querySelector(".lp-go");
@@ -1002,14 +1087,14 @@
         };
         return attempt(ref).then(function (r) {
           if (!r.ok) return fail(String(r.error || "unknown"), auth._errText(r.error));
-          track("Arcade signup: registered", { source: "lesson end", friendCode: r.referral ? "yes" : "no" });
-          keyStep(note, auth, name, r.recoveryKey);
+          track("Arcade signup: registered", { source: src, friendCode: r.referral ? "yes" : "no" });
+          keyStep(note, auth, name, r.recoveryKey, src);
         });
       }, function () { fail("auth-load", "Couldn't reach the coin bank just now. Your coins are still on this device; try again in a minute."); })
         .catch(function () { fail("network", "Something went wrong. Your coins are still on this device; try again."); });
     });
   }
-  function keyStep(note, auth, name, key) {
+  function keyStep(note, auth, name, key, src) {
     note.innerHTML =
       '<span class="lp-big">You\'re in, <b>' + esc(name) + '</b>!</span>' +
       '<span class="lp-sub lp-sv"><span class="lp-coin"></span>Saving your coins…</span>' +
@@ -1029,7 +1114,7 @@
       try { navigator.clipboard.writeText(key).then(function () { b.textContent = "Copied ✓"; }, function () { b.textContent = "Select and copy it"; }); } catch (x) { b.textContent = "Select and copy it"; }
     });
     done.addEventListener("click", function () {
-      track("Signup: key confirmed", { source: "lesson end" });
+      track("Signup: key confirmed", { source: src || "lesson end" });
       var line = sv.innerHTML;
       note.innerHTML = '<span class="lp-big">Account saved</span><span class="lp-sub">' + line + "</span>" + elementLine();
     });

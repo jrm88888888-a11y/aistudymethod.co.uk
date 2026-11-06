@@ -101,6 +101,12 @@
       ".ln-i.done .dot{background:#0a6b5e;border-color:#0a6b5e}" +
       ".ln-i.here{opacity:1;background:#eef4ff;box-shadow:inset 0 0 0 2px #2b6cb0}" +
       ".ln-i.here .dot{background:#2b6cb0;border-color:#2b6cb0}" +
+      /* mission headers (progress.js supplies the list) */
+      ".ln-m{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.72rem;letter-spacing:.4px;text-transform:uppercase;color:#6b6580;" +
+        "margin:8px 6px 2px;padding-top:6px;border-top:1px solid #ece7dc;display:flex;justify-content:space-between;gap:6px}" +
+      ".ln-m:first-child{border-top:0;margin-top:2px;padding-top:0}" +
+      ".ln-m .mn{color:#b9b3c9;font-weight:600;letter-spacing:0;text-transform:none}" +
+      ".ln-m.done{color:#0a6b5e}.ln-m.done .mn{color:#0a6b5e}" +
       "@media(max-width:1199px){" +
         ".ln-rail{top:10px;left:10px;transform:none;width:auto;max-width:90vw;padding:6px 8px}" +
         ".ln-head{cursor:pointer;margin:4px 4px}" +
@@ -155,6 +161,7 @@
 
     var ctEl = document.getElementById("ln-ct");
     var furthest = 0;
+    var missions = null, mEls = [];   // set by progress.js through AismRail.setMissions()
 
     function update() {
       var ci = currentIndex();
@@ -169,8 +176,33 @@
         else el.classList.add("ahead");
         if (n !== curOrd) el.removeAttribute("aria-current");
       });
-      if (ctEl) ctEl.textContent = (curOrd + 1) + " / " + items.length;
+      var cur = null;
+      if (missions) missions.forEach(function (m, k) {
+        if (m.start <= ci) cur = m;
+        if (mEls[k]) mEls[k].classList.toggle("done", ci > m.check);
+      });
+      if (ctEl) ctEl.textContent = (cur ? "Mission " + cur.n + " of " + missions.length + " · " : "") + (curOrd + 1) + " / " + items.length;
     }
+
+    /* Mission header rows above the first section of each mission. */
+    function setMissions(ms) {
+      if (!ms || ms.length < 2 || missions) return;
+      missions = ms;
+      mEls = ms.map(function (m) {
+        var at = -1;
+        for (var n = 0; n < items.length; n++) if (items[n].i >= m.start) { at = n; break; }
+        if (at < 0) return null;
+        var h = document.createElement("div");
+        h.className = "ln-m";
+        h.innerHTML = '<span>' + (m.label || "Mission " + m.n).replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>" +
+          (m.minutes ? '<span class="mn">~' + m.minutes + " min</span>" : "");
+        list.insertBefore(h, els[at]);
+        return h;
+      });
+      update();
+    }
+    window.AismRail = { setMissions: setMissions };
+    try { if (window.AismProgress && window.AismProgress.missions) setMissions(window.AismProgress.missions()); } catch (e) {}
 
     // React to every navigation (Next/Back and jumps) by wrapping the engine's show().
     if (typeof window.show === "function") {
@@ -204,15 +236,15 @@
     var me = document.currentScript || document.querySelector('script[src*="lesson-nav.js"]');
     var base = me && me.src ? me.src.replace(/lesson-nav\.js.*$/, "") : "../quizzes/";
     var s = document.createElement("script");
-    s.src = base + "lesson-next.js?v=20261105";
+    s.src = base + "lesson-next.js?v=20261106";
     s.defer = true;
     document.head.appendChild(s);
     var a = document.createElement("script");          // teacher "assign this" button
-    a.src = base + "assign.js?v=20261103";
+    a.src = base + "assign.js?v=20261106";
     a.defer = true;
     document.head.appendChild(a);
     var p = document.createElement("script");          // lesson progress, coins and ticks
-    p.src = base + "progress.js?v=20261105";
+    p.src = base + "progress.js?v=20261106";
     p.defer = true;
     document.head.appendChild(p);
     var z = document.createElement("script");          // seasonal plug (seasonal.js switches itself off)

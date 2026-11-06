@@ -29,10 +29,14 @@
    dispatches window "aism-mission" events; this file names them for Plausible):
      "Mini-lesson: started"    + via = start (Start button) | resume (Continue) |
                                hash (#mN in the link) | open (Open on the map)
-     "Mission: started"        {mission, of, via (as above, or next = reached by Next)}
+     "Mission: started"        {mission, of, via (as above, next = reached by Next,
+                               strip = the mission-complete strip's Next button)}
      "Mission: completed"      {mission, of, first_try yes|no, score pct} — the
                                Mission check answered correctly
      "Mini-lesson: completed"  + missions_done, of (mission lessons only)
+     "Mission next: continue | save | leave" {mission, of} — the strip under a
+                               Mission check once it is passed (via=strip on the
+                               next "Mission: started" when "continue" is used)
    All of these need a matching Goal in Plausible to show up on the dashboard.
    If anything is missing the card does nothing; the events still fire. */
 (function () {
@@ -103,6 +107,7 @@
       var p = { mission: String(d.mission), of: String(d.of) };
       if (d.type === "started") { p.via = d.via || "next"; track("Mission: started", p); }
       else if (d.type === "completed") { p.first_try = d.first_try || "no"; p.score = d.score || ""; track("Mission: completed", p); }
+      else if (d.type === "next" && d.what) track("Mission next: " + d.what, p);
     }
     window.addEventListener("aism-mission", function (e) { onMission(e && e.detail); });
     window.__aismMissionL = true;

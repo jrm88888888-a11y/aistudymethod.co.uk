@@ -16,10 +16,18 @@
      utm_source=assign&utm_medium=<copy|teams|classroom|qr>&utm_campaign=<quiz|lesson|games|session>
    so visits from assigned links show in Plausible as source "assign".
 
+   Nov 2026, missions: when the lesson has a mission map, the Mini-lesson step
+   offers "Whole lesson (~T min)" or one mission (~M min). One mission links to
+   the same lesson URL with #mN (a fragment: no new page, nothing to index);
+   in a session link it travels as &m=N and teach/session.html adds the #mN.
+   The mission list comes from the lesson's own DOM (AismProgress.missions())
+   on the lesson page, else from the course JSON's m[slug] (built by
+   tools/build-lesson-next.py).
+
    Plausible events: "Teacher: panel opened" and "Teacher: assign"
-   (props: route, kind, steps). Course data: quizzes/lesson-next/<course>.json,
-   built by tools/build-lesson-next.py. Held-back (noindex) lessons get no
-   button. If data is missing it does nothing. */
+   (props: route, kind, steps, mission = N | all). Course data:
+   quizzes/lesson-next/<course>.json, built by tools/build-lesson-next.py.
+   Held-back (noindex) lessons get no button. If data is missing it does nothing. */
 (function () {
   "use strict";
   if (window.AismAssign) return;
@@ -101,6 +109,24 @@
     });
   }
 
+  /* The lesson's missions: [{n, label, question, minutes}], or [] when it has
+     none. On the lesson page itself, progress.js's list (built from the DOM);
+     elsewhere the course JSON. */
+  function missionList(group, data, slug) {
+    var here = decodeURIComponent(location.pathname.split("/").pop() || "");
+    var stem = (FILES[group + "/" + slug] || group + "-" + slug) + SUF;
+    try {
+      if (here === stem && window.AismProgress && window.AismProgress.missions) {
+        var ms = window.AismProgress.missions();
+        if (ms.length) return ms.map(function (m) { return { n: m.n, label: m.label, question: m.question || "", minutes: m.minutes }; });
+      }
+    } catch (e) {}
+    var rows = data && data.m && data.m[slug];
+    if (!rows || !rows.length) return [];
+    return rows.map(function (r, i) { return { n: r[3] || i + 1, label: r[0], question: r[1] || "", minutes: r[2] }; });
+  }
+  function missionTotal(list) { var t = 0; list.forEach(function (m) { t += m.minutes || 0; }); return t; }
+
   /* ---------- share routes ---------- */
   var KIND_TEXT = {
     quiz: { name: "Confidence quiz", instr: "Answer every question and rate how confident you are in each answer." },
@@ -108,6 +134,11 @@
     games: { name: "Revision games", instr: "Play the revision games on this topic and try to beat your score." },
     session: { name: "Class session", instr: "Open the link and complete the steps in order. Answer every question as you go." }
   };
+  function instrFor(kind, mission) {
+    if (mission && kind === "lesson") return "Open the link, complete " + mission.label + " and answer every question as you go.";
+    if (mission && kind === "session") return "Open the link and complete the steps in order (the lesson step is " + mission.label + "). Answer every question as you go.";
+    return KIND_TEXT[kind].instr;
+  }
   function tagged(url, route, kind) {
     try {
       var u = new URL(url);
@@ -117,12 +148,12 @@
       return u.toString();
     } catch (e) { return url; }
   }
-  function teamsUrl(link, title, kind) {
+  function teamsUrl(link, title, kind, mission) {
     var p = {
       href: link,
       msgText: cut(title, 200),
       assignTitle: cut(title, 50),
-      assignInstr: cut(KIND_TEXT[kind].instr, 200),
+      assignInstr: cut(instrFor(kind, mission), 200),
       preview: "true"
     };
     var qs = Object.keys(p).map(function (k) { return k + "=" + encodeURIComponent(p[k]); }).join("&");
@@ -178,6 +209,14 @@
       ".aa-pick small{display:block;color:#5b5b70;font-size:.84rem}" +
       ".aa-pick.off{cursor:not-allowed;background:#f7f7fa;border-style:dashed}.aa-pick.off b{color:#8a8a9c}.aa-pick.off input{cursor:not-allowed}" +
       ".aa-pick:has(input:focus-visible){outline:3px solid #4a3fa0;outline-offset:2px}" +
+      /* mission choice under the Mini-lesson step */
+      ".aa-mis{margin:-2px 0 6px 32px;padding:8px 10px;border-left:3px solid #e2e0ec;display:flex;flex-direction:column;gap:4px}" +
+      ".aa-mis[hidden]{display:none}" +
+      ".aa-mis label{display:flex;align-items:flex-start;gap:9px;font-size:.9rem;line-height:1.3;cursor:pointer;padding:3px 0}" +
+      ".aa-mis input{width:17px;height:17px;margin:1px 0 0;accent-color:#0a6b5e;flex-shrink:0;cursor:pointer}" +
+      ".aa-mis b{font-weight:700}" +
+      ".aa-mis small{color:#5b5b70;font-size:.82rem;display:block}" +
+      ".aa-mis .aa-min{color:#5b5b70;font-weight:600;white-space:nowrap;margin-left:auto;padding-left:8px;font-size:.82rem}" +
       ".aa-get{margin:0 0 10px;padding:9px 12px;border-radius:10px;background:#f1f6f5;font-size:.9rem;color:#1a1a2e}" +
       ".aa-get a{color:#4a3fa0;font-weight:600}" +
       ".aa-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}" +
@@ -229,18 +268,32 @@
 
   /* ---------- panel ---------- */
   /* opts: { group, slug, title, options: stepOptions(...), course:{url,name}|null,
-             preselect: [ids] | null } */
+             preselect: [ids] | null, missions: [{n,label,question,minutes}] | null,
+             mission: N | null (preselect one mission) } */
   function open(opts) {
     injectStyle();
     var prev = document.activeElement;
     var options = opts.options;
     var pre = opts.preselect && opts.preselect.length ? opts.preselect : null;
+    var missions = opts.missions && opts.missions.length >= 2 ? opts.missions : null;
+    var preM = missions && opts.mission && missions.some(function (m) { return m.n === opts.mission; }) ? opts.mission : 0;
 
     var picks = options.map(function (o) {
       var on = o.ok && (!pre || pre.indexOf(o.id) >= 0);
-      return '<label class="aa-pick' + (o.ok ? "" : " off") + '"><input type="checkbox" value="' + o.id + '"' +
+      var h = '<label class="aa-pick' + (o.ok ? "" : " off") + '"><input type="checkbox" value="' + o.id + '"' +
         (on ? " checked" : "") + (o.ok ? "" : " disabled") + "><span><b>" + esc(o.label) + "</b><small>" +
         esc(o.ok ? o.lead : o.why) + "</small></span></label>";
+      if (o.id === "lesson" && missions) {
+        h += '<div class="aa-mis" role="radiogroup" aria-label="How much of the mini-lesson"' + (on ? "" : " hidden") + ">" +
+          '<label><input type="radio" name="aa-m" value="0"' + (preM ? "" : " checked") + "><span><b>Whole lesson</b></span>" +
+            '<span class="aa-min">~' + missionTotal(missions) + " min</span></label>" +
+          missions.map(function (m) {
+            return '<label><input type="radio" name="aa-m" value="' + m.n + '"' + (preM === m.n ? " checked" : "") + "><span><b>" +
+              esc(m.label) + " only</b>" + (m.question ? "<small>" + esc(m.question) + "</small>" : "") + "</span>" +
+              '<span class="aa-min">~' + m.minutes + " min</span></label>";
+          }).join("") + "</div>";
+      }
+      return h;
     }).join("");
 
     var html = '<button type="button" class="aa-x" aria-label="Close">×</button>' +
@@ -266,27 +319,42 @@
     var dlg = back.firstChild, msg = dlg.querySelector(".aa-msg"), get = dlg.querySelector(".aa-get");
     var shareBtns = dlg.querySelectorAll("button[data-r]");
 
-    /* What the current ticks produce: one step -> that page; 2+ -> session. */
+    /* The mission chosen under the Mini-lesson step, or null for the whole lesson. */
+    function missionPick() {
+      var r = dlg.querySelector('.aa-mis input[name="aa-m"]:checked');
+      var n = r ? parseInt(r.value, 10) : 0;
+      if (!n || !missions) return null;
+      return missions.filter(function (m) { return m.n === n; })[0] || null;
+    }
+    /* What the current ticks produce: one step -> that page; 2+ -> session.
+       A chosen mission rides as #mN on the lesson link, or &m=N on a session link. */
     function selection() {
-      var ids = [].slice.call(dlg.querySelectorAll(".aa-picks input:checked")).map(function (i) { return i.value; });
+      var ids = [].slice.call(dlg.querySelectorAll(".aa-picks > .aa-pick input:checked")).map(function (i) { return i.value; });
       ids.sort(function (a, b) { return ORDER.indexOf(a) - ORDER.indexOf(b); });
       if (!ids.length) return null;
+      var mis = ids.indexOf("lesson") >= 0 ? missionPick() : null;
       if (ids.length === 1) {
         var o = options.filter(function (x) { return x.id === ids[0]; })[0];
-        return { kind: o.id, ids: ids, url: o.url };
+        return { kind: o.id, ids: ids, url: o.url + (mis ? "#m" + mis.n : ""), mission: mis };
       }
       var all = options.filter(function (x) { return x.ok; }).map(function (x) { return x.id; });
       var subset = ids.length < all.length ? ids : null;   // full set: no &s=, shorter link
-      return { kind: "session", ids: ids, url: sessionUrl(opts.group, opts.slug, subset) };
+      return { kind: "session", ids: ids, url: sessionUrl(opts.group, opts.slug, subset) + (mis ? "&m=" + mis.n : ""), mission: mis };
     }
     function refresh() {
+      var mis = dlg.querySelector(".aa-mis"), lessonOn = dlg.querySelector('.aa-picks > .aa-pick input[value="lesson"]');
+      if (mis) mis.hidden = !(lessonOn && lessonOn.checked);
       var sel = selection();
       for (var i = 0; i < shareBtns.length; i++) shareBtns[i].disabled = !sel;
       msg.textContent = "";
       if (!sel) { get.textContent = "Tick at least one."; return; }
+      var part = sel.mission ? " (" + esc(sel.mission.label) + " of the mini-lesson, ~" + sel.mission.minutes + " min)" : "";
       if (sel.kind === "session") {
         var names = sel.ids.map(function (id) { return options.filter(function (x) { return x.id === id; })[0].label.toLowerCase(); });
-        get.innerHTML = "Students get one page with " + sel.ids.length + " steps: " + esc(names.join(", then ")) +
+        get.innerHTML = "Students get one page with " + sel.ids.length + " steps: " + esc(names.join(", then ")) + part +
+          '. <a href="' + esc(sel.url) + '" target="_blank" rel="noopener">Preview ↗</a>';
+      } else if (sel.mission) {
+        get.innerHTML = "Students go straight to <b>" + esc(sel.mission.label) + "</b> of the mini-lesson (~" + sel.mission.minutes + " min)" +
           '. <a href="' + esc(sel.url) + '" target="_blank" rel="noopener">Preview ↗</a>';
       } else {
         get.innerHTML = "Students go straight to the " + esc(KIND_TEXT[sel.kind].name.toLowerCase()) +
@@ -322,18 +390,18 @@
       var sel = selection();
       if (!sel) return;
       var route = b.getAttribute("data-r");
-      var title = KIND_TEXT[sel.kind].name + ": " + opts.title;
+      var title = KIND_TEXT[sel.kind].name + (sel.mission ? " (" + sel.mission.label + ")" : "") + ": " + opts.title;
       var link = tagged(sel.url, route, sel.kind);
-      track("Teacher: assign", { route: route, kind: sel.kind, steps: sel.ids.join("+") });
+      track("Teacher: assign", { route: route, kind: sel.kind, steps: sel.ids.join("+"), mission: sel.mission ? String(sel.mission.n) : "all" });
       if (route === "copy") {
         copyText(link).then(function () { msg.textContent = "Link copied. Paste it wherever you set work."; },
           function () { msg.textContent = "Copy didn't work here. The link is: " + link; });
       } else if (route === "teams") {
-        window.open(teamsUrl(link, title, sel.kind), "_blank", "width=700,height=600,noopener");
+        window.open(teamsUrl(link, title, sel.kind, sel.mission), "_blank", "width=700,height=600,noopener");
       } else if (route === "classroom") {
         window.open(classroomUrl(link), "_blank", "width=700,height=600,noopener");
       } else if (route === "qr") {
-        showQr(link, opts.title, "Scan to open the " + KIND_TEXT[sel.kind].name.toLowerCase());
+        showQr(link, opts.title, "Scan to open " + (sel.mission ? sel.mission.label + " of the mini-lesson" : "the " + KIND_TEXT[sel.kind].name.toLowerCase()));
       }
     });
 
@@ -353,7 +421,9 @@
         title: row[1],
         options: stepOptions(group, data, slug),
         course: extra.noCourseLink ? null : { url: courseUrl(group), name: data.d },
-        preselect: extra.preselect || null
+        preselect: extra.preselect || null,
+        missions: missionList(group, data, slug),
+        mission: extra.mission || 0
       });
     });
   }
@@ -364,6 +434,7 @@
     loadCourse: loadCourse,
     stepOptions: stepOptions,
     sessionSteps: sessionSteps,
+    missionList: missionList,
     lessonUrl: lessonUrl,
     sessionUrl: sessionUrl,
     courseUrl: courseUrl,
@@ -399,7 +470,11 @@
       wrap.appendChild(btn);
       app.insertBefore(wrap, app.firstChild);
     }
-    btn.addEventListener("click", function () { openFor(group, slug); });
+    // opened while a mission is showing (#mN in the address bar): offer that mission first
+    btn.addEventListener("click", function () {
+      var h = /^#m(\d+)$/.exec(location.hash || "");
+      openFor(group, slug, { mission: h ? parseInt(h[1], 10) : 0 });
+    });
   }
 
   if (document.readyState !== "loading") initLesson();
