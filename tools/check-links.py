@@ -69,6 +69,12 @@ for p in pages():
     m = BACK.search(open(p, encoding="utf-8", errors="ignore").read())
     if m and p in STANDALONE and m.group(1) == "../../index.html":
         continue
+    # Seasonal lessons are opened from a hub page in the same folder (e.g. winter-lessons.html,
+    # linked from the homepage card): the back link may lead to that hub if the hub lists the lesson.
+    if m and "/" not in m.group(1) and m.group(1).endswith(".html"):
+        hub = os.path.join(os.path.dirname(p), m.group(1))
+        if os.path.exists(hub) and os.path.basename(p) in open(hub, encoding="utf-8", errors="ignore").read():
+            continue
     if m and not (re.search(r"subjects\.html\?(?:[^\"]*&(?:amp;)?)?subject=", m.group(1)) or m.group(1).endswith("-grammar-spine.html")
                   or (m.group(1).startswith("../../lessons/") and m.group(1).endswith(".html")
                       and os.path.basename(p).startswith(course_prefix(m.group(1)[len("../../lessons/"):-len(".html")]) + "-"))):
