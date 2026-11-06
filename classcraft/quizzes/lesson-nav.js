@@ -195,13 +195,23 @@
         var h = document.createElement("div");
         h.className = "ln-m";
         h.innerHTML = '<span>' + (m.label || "Mission " + m.n).replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>" +
-          (m.minutes ? '<span class="mn">~' + m.minutes + " min</span>" : "");
+          (m.minutes ? '<span class="mn">' + (m.measured ? "" : "~") + m.minutes + " min</span>" : "");
         list.insertBefore(h, els[at]);
         return h;
       });
       update();
     }
-    window.AismRail = { setMissions: setMissions };
+    /* Measured minutes arrived (progress.js useMinutes): refresh the header chips. */
+    function setMinutes(ms) {
+      if (!missions) return;
+      ms.forEach(function (m, k) {
+        var h = mEls[k], mine = missions[k];
+        if (!h || !mine || mine.id !== m.id) return;
+        mine.minutes = m.minutes;
+        var mn = h.querySelector(".mn"); if (mn) mn.textContent = (m.measured ? "" : "~") + m.minutes + " min";
+      });
+    }
+    window.AismRail = { setMissions: setMissions, setMinutes: setMinutes };
     try { if (window.AismProgress && window.AismProgress.missions) setMissions(window.AismProgress.missions()); } catch (e) {}
 
     // React to every navigation (Next/Back and jumps) by wrapping the engine's show().
@@ -236,15 +246,15 @@
     var me = document.currentScript || document.querySelector('script[src*="lesson-nav.js"]');
     var base = me && me.src ? me.src.replace(/lesson-nav\.js.*$/, "") : "../quizzes/";
     var s = document.createElement("script");
-    s.src = base + "lesson-next.js?v=20261106";
+    s.src = base + "lesson-next.js?v=20261106b";
     s.defer = true;
     document.head.appendChild(s);
     var a = document.createElement("script");          // teacher "assign this" button
-    a.src = base + "assign.js?v=20261106";
+    a.src = base + "assign.js?v=20261106b";
     a.defer = true;
     document.head.appendChild(a);
     var p = document.createElement("script");          // lesson progress, coins and ticks
-    p.src = base + "progress.js?v=20261106";
+    p.src = base + "progress.js?v=20261106b";
     p.defer = true;
     document.head.appendChild(p);
     var z = document.createElement("script");          // seasonal plug (seasonal.js switches itself off)

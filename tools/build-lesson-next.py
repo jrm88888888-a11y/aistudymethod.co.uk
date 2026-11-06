@@ -21,12 +21,15 @@ For every mini-lesson it records, per group (subject-level-board):
       to be made; question = the hook's data-title; thumb = 640px copy of the poster
       relative to the site root, present when images/lesson-thumbs/ has one) — used by the completion card, the lesson finder and lessons.html
   v : slugs that have a Verify quiz (classcraft/verify-manifest.json)
-  m : {slug: [[label, question, minutes, n], ...]} for lessons with a mission map
-      (.ks3-missions + Mission checks carrying data-mission="mN"), in order —
+  m : {slug: [[label, question, minutes, n(, 1)], ...]} for lessons with a mission
+      map (.ks3-missions + Mission checks carrying data-mission="mN"), in order —
       used by assign.js so a teacher can assign one mission (#mN) from a course
       page or teach/session.html, where the lesson's own DOM is not available.
       minutes = max(5, nearest 5 of words/130 + questions × 0.75), the same
-      estimate progress.js shows on the lesson's welcome map.
+      estimate progress.js shows on the lesson's welcome map — unless
+      lesson-next/mission-minutes.json (tools/measure-mission-minutes.py) holds a
+      measured median for that mission: then minutes is the median and a 5th
+      field 1 marks it measured (the pages drop the "~").
 Also writes lesson-next/index.json: every course as
   {k, s, l, b, d, sd, bd, n, hn} (key, ids, course name, subject and board display
   names, lesson count, lessons with a hook) — the data behind the lesson finder on
@@ -159,6 +162,26 @@ def mission_info(path):
         prev = ci
     return out or None
 
+MEASURED = {}
+_mm = os.path.join(OUT, 'mission-minutes.json')
+if os.path.exists(_mm):
+    try:
+        MEASURED = json.load(open(_mm, encoding='utf8')).get('lessons', {})
+    except Exception as e:
+        print('mission-minutes.json unreadable, formula minutes only:', e)
+def with_measured(stem, rows):
+    """Swap in measured medians for this lesson's missions where they exist."""
+    got = MEASURED.get(stem)
+    if not got: return rows
+    out = []
+    for r in rows:
+        mid = 'm' + str(r[3])
+        if mid in got and got[mid].get('min'):
+            out.append([r[0], r[1], int(got[mid]['min']), r[3], 1])
+        else:
+            out.append(r)
+    return out
+
 # Courses whose lesson list is set here, in subject guide order: (slug, title, file stem or
 # None). IB Geography (Oct 2026): the Core and Option unit lessons serve SL and HL from one
 # file named without a board; the HL extension units are named with "hl". The older
@@ -256,7 +279,10 @@ for (subj, level, board), slugs in sorted(groups.items()):
         hi = hook_info(os.path.join(ADV, stem + SUF))
         if hi: hooks[r[0]] = hi
         mi = mission_info(os.path.join(ADV, stem + SUF))
-        if mi: missions[r[0]] = mi; stats['lesson_missions'] += 1
+        if mi:
+            mi = with_measured(stem, mi)
+            missions[r[0]] = mi; stats['lesson_missions'] += 1
+            stats['missions_measured'] += sum(1 for x in mi if len(x) > 4)
         if f'{key}-{r[0]}' in VERIFY: verify.append(r[0])
     stats['lesson_hook'] += len(hooks)
     name = key + '.json'
@@ -285,6 +311,7 @@ for (subj, level, board), slugs in sorted(groups.items()):
 json.dump(index, open(os.path.join(OUT, 'index.json'), 'w', encoding='utf8'),
           ensure_ascii=False, separators=(',', ':'))
 written.add('index.json')
+written.add('mission-minutes.json')
 for old in os.listdir(OUT):
     if old.endswith('.json') and old not in written:
         print('STALE (not removed):', old)

@@ -622,6 +622,7 @@
     return n;
   }
   function minutesFor(words, qs) { return Math.max(5, 5 * Math.round((words / 130 + qs * 0.75) / 5)); }
+  function minsText(m) { return (m.measured ? "" : "~") + m.minutes + " min"; }   // "~" = formula, no "~" = measured
 
   /* One list for the page, from the coin segments (so every mission lesson has
      it, with or without data-start markers on the screens). */
@@ -690,7 +691,8 @@
       var a = m.li.querySelector(".lp-open");
       if (a) { a.textContent = "Open again"; a.setAttribute("aria-label", "Open " + m.label + " again (finished)"); }
     }
-    emit("completed", m, { first_try: firstTry ? "yes" : "no", score: String(pct) });
+    var mins = clockMinutes(m.id);
+    emit("completed", m, { first_try: firstTry ? "yes" : "no", score: String(pct), mins: mins == null ? "" : String(mins) });
   }
 
   /* Jump to a mission's first screen through the lesson's own show() so gating,
@@ -732,6 +734,109 @@
       missionStarted(m, via);
     } else if (i === 0) setHash("");
     MS.prev = i;
+    var now = missionContaining(i);
+    if (now && (!MS.clock || MS.clock.id !== now.id)) startClock(now);   // 8b. time this mission
+    else if (!now && MS.clock) stopClock();
+    segBarUpdate(i);                                                     // 8a. segmented bar
+  }
+
+  /* 8b. Active minutes per mission, for the measured estimates (tools/
+     measure-mission-minutes.py): time between interactions, counting a gap only
+     when it is under 2 minutes and the page is visible, so a tab left open does
+     not count. Reported as "mins" on "Mission: completed". */
+  function startClock(m) { MS.clock = { id: m.id, acc: 0, last: Date.now(), on: !document.hidden }; }
+  function stopClock() { MS.clock = null; }
+  function clockTick() {
+    var c = MS && MS.clock; if (!c) return;
+    var now = Date.now(), gap = now - c.last;
+    if (c.on && gap > 0 && gap < 120000) c.acc += gap;
+    c.last = now;
+  }
+  function clockMinutes(id) {
+    var c = MS && MS.clock; if (!c || c.id !== id) return null;
+    clockTick();
+    return Math.min(90, Math.max(1, Math.round(c.acc / 60000)));
+  }
+  function clockInit() {
+    ["click", "keydown", "pointerdown", "scroll", "touchstart"].forEach(function (ev) {
+      document.addEventListener(ev, clockTick, { capture: true, passive: true });
+    });
+    document.addEventListener("visibilitychange", function () {
+      var c = MS && MS.clock; if (!c) return;
+      if (document.hidden) { clockTick(); c.on = false; } else { c.last = Date.now(); c.on = true; }
+    });
+  }
+
+  /* 8a. The top-bar progress bar as one segment per mission (plus a thin tail):
+     earlier missions full, the current one filling screen by screen. The
+     engine still drives its own #bar fill underneath; this overlays it. */
+  function segBarInit() {
+    var bar = document.querySelector(".topbar .bar");
+    if (!bar || !MS || MS.list.length < 2 || bar.querySelector(".lp-segs")) return;
+    missionsCss();
+    var segs = document.createElement("div");
+    segs.className = "lp-segs";
+    segs.setAttribute("aria-hidden", "true");
+    var tailFrom = MS.list[MS.list.length - 1].check + 1, finIdx = MS.screens.length - 1;
+    var hasTail = finIdx - tailFrom > 0;
+    MS.list.forEach(function (m) {
+      var s = document.createElement("span"); s.className = "lp-seg"; s.dataset.m = m.id;
+      s.innerHTML = "<i></i>"; segs.appendChild(s);
+    });
+    if (hasTail) { var t = document.createElement("span"); t.className = "lp-seg tail"; t.dataset.m = "end"; t.innerHTML = "<i></i>"; segs.appendChild(t); }
+    bar.style.position = "relative";
+    bar.classList.add("lp-hasbar");             // the segments get a full-width row of their own (the engine lets the bar shrink to nothing)
+    var tb = bar.closest(".topbar"); if (tb) tb.classList.add("lp-segbar");
+    bar.appendChild(segs);
+    MS.segs = { el: segs, tailFrom: tailFrom, finIdx: finIdx };
+    var sc = document.querySelector(".topbar .score");
+    if (sc) {
+      var lab = document.createElement("span"); lab.className = "lp-mlab"; lab.id = "lp-mlab";
+      sc.parentNode.insertBefore(lab, sc);
+      MS.segs.lab = lab;
+    }
+    segBarUpdate(activeIndex());
+  }
+  function segBarUpdate(i) {
+    var S = MS && MS.segs; if (!S) return;
+    var cur = null;
+    MS.list.forEach(function (m) {
+      var el = S.el.querySelector('.lp-seg[data-m="' + m.id + '"]'); if (!el) return;
+      var f;
+      if (i > m.check) f = 1;
+      else if (i >= m.start) { f = (i - m.start + 1) / (m.check - m.start + 1); cur = m; }
+      else f = 0;
+      el.firstChild.style.width = Math.round(f * 100) + "%";
+      el.classList.toggle("done", f >= 1);
+    });
+    var tail = S.el.querySelector('.lp-seg[data-m="end"]');
+    if (tail) {
+      var tf = i >= S.finIdx ? 1 : i >= S.tailFrom ? (i - S.tailFrom + 1) / (S.finIdx - S.tailFrom + 1) : 0;
+      tail.firstChild.style.width = Math.round(tf * 100) + "%";
+      tail.classList.toggle("done", tf >= 1);
+    }
+    if (S.lab) S.lab.textContent = cur ? "Mission " + cur.n + " of " + MS.list.length : (i >= S.tailFrom && i > 0 ? "Final questions" : "");
+  }
+
+  /* 8c. Measured minutes (from the course JSON, see lesson-next.js) replace the
+     formula on the welcome chips, the total, the rail and the strip. Shown
+     without the "~". */
+  function useMinutes(rows) {
+    if (!MS || !rows || !rows.length) return;
+    var changed = false;
+    rows.forEach(function (r, k) {
+      if (!r || r.length < 5 || !r[4]) return;                       // 5th field 1 = measured
+      var n = r[3] || k + 1, m = missionByN(n), mins = parseInt(r[2], 10);
+      if (!m || !mins) return;
+      m.minutes = mins; m.measured = true; changed = true;
+      if (m.li) { var chip = m.li.querySelector(".lp-min"); if (chip) chip.textContent = mins + " min"; }
+    });
+    if (!changed) return;
+    var total = MS.tailMinutes || 0; MS.list.forEach(function (m) { total += m.minutes; });
+    MS.total = total;
+    var tot = document.querySelector(".lp-total");
+    if (tot) tot.textContent = MS.list.length + " missions · about " + total + " min";
+    try { if (window.AismRail && window.AismRail.setMinutes) window.AismRail.setMinutes(MS.list); } catch (e) {}
   }
 
   /* Welcome map: "N missions · about M min", a minutes chip + Open link per
@@ -764,7 +869,21 @@
       ".lp-mstrip.lp-note{text-align:left;max-width:none}" +
       ":root[data-theme=\"dark\"] .lp-mstrip{background:#1f4a35;color:#f3eee4}" +
       ":root[data-theme=\"dark\"] .lp-mstrip .lp-mshead{color:#f3eee4}" +
-      "@media (max-width:520px){.lp-mstrip .lp-btns{flex-direction:column}.lp-mstrip button{width:100%}}";
+      "@media (max-width:520px){.lp-mstrip .lp-btns{flex-direction:column}.lp-mstrip button{width:100%}}" +
+      /* segmented top bar (8a) */
+      ".topbar.lp-segbar{flex-wrap:wrap;row-gap:8px}" +
+      ".topbar.lp-segbar .bar.lp-hasbar{order:99;flex:1 1 100%;min-width:0;height:14px}" +
+      ".topbar.lp-segbar .logo{flex:1 1 160px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}" +
+      ".topbar.lp-segbar .logo .spark{margin-right:6px}" +
+      ".lp-segs{position:absolute;inset:0;display:flex;gap:3px;padding:0 2px;box-sizing:border-box;background:#f0e7da;border-radius:inherit}" +
+      ".lp-seg{flex:1;position:relative;background:#e4dacb;border-radius:6px;overflow:hidden;margin:2px 0}" +
+      ".lp-seg.tail{flex:0 0 10%}" +
+      ".lp-seg i{display:block;height:100%;width:0;background:#2b6cb0;border-radius:6px;transition:width .3s}" +
+      ".lp-seg.done i{background:#0a6b5e}" +
+      ":root[data-theme=\"dark\"] .lp-segs{background:#3a3658}:root[data-theme=\"dark\"] .lp-seg{background:#2a2740}" +
+      ".lp-mlab{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.9rem;color:#6b6580;white-space:nowrap}" +
+      ".lp-mlab:empty{display:none}" +
+      "@media (max-width:1199px){.lp-mlab{display:none}}";   /* under 1200px the row is full; the rail head and the welcome map carry the count */
     document.head.appendChild(s);
   }
   function decorateWelcome(stem) {
@@ -780,7 +899,7 @@
       if (!m.li) return;
       var meta = document.createElement("span");
       meta.className = "lp-mmeta";
-      meta.innerHTML = '<span class="lp-min">~' + m.minutes + ' min</span><a class="lp-open" href="#m' + m.n + '">Open</a>';
+      meta.innerHTML = '<span class="lp-min">' + minsText(m) + '</span><a class="lp-open" href="#m' + m.n + '">Open</a>';
       var a = meta.querySelector(".lp-open");
       a.setAttribute("aria-label", "Open " + m.label);
       a.addEventListener("click", function (e) {
@@ -828,7 +947,7 @@
       '<span class="lp-mshead">✅ ' + esc(m.label) + " complete · " + esc(coins) + "</span>" +
       '<div class="lp-btns">' +
         (nextM
-          ? '<button type="button" data-ms="continue"><small>Next: ' + esc(nextM.label) + " · ~" + nextM.minutes + " min</small>" + esc(nextM.question || "") + " ➡</button>"
+          ? '<button type="button" data-ms="continue"><small>Next: ' + esc(nextM.label) + " · " + minsText(nextM) + "</small>" + esc(nextM.question || "") + " ➡</button>"
           : '<button type="button" data-ms="continue"><small>Last mission done</small>Finish the lesson ➡</button>') +
         (canSave ? '<button type="button" class="ghost" data-ms="save"><span class="lp-coin" aria-hidden="true"></span>Save coins</button>' : "") +
         '<button type="button" class="ghost" data-ms="leave">Done for now</button>' +
@@ -867,7 +986,8 @@
     if (!b.list.length) return;
     var cur0 = 0;
     for (var c = 0; c < screens.length; c++) if (screens[c].classList.contains("active")) { cur0 = c; break; }
-    MS = { list: b.list, total: b.total, stem: stem, screens: screens, seen: {}, via: null, lastVia: null, prev: cur0 };
+    var sumM = 0; b.list.forEach(function (m) { sumM += m.minutes; });
+    MS = { list: b.list, total: b.total, tailMinutes: b.total - sumM, stem: stem, screens: screens, seen: {}, via: null, lastVia: null, prev: cur0 };
     // anchors: each mission's first screen is #mN
     MS.list.forEach(function (m) {
       var scr = screens[m.start];
@@ -875,6 +995,9 @@
     });
     decorateWelcome(stem);
     try { if (window.AismRail) window.AismRail.setMissions(window.AismProgress.missions()); } catch (e) {}   // rail headers (lesson-nav.js)
+    clockInit();
+    try { segBarInit(); } catch (e) {}
+    try { if (window.__aismMinutes) useMinutes(window.__aismMinutes); } catch (e) {}   // lesson-next.js fetched the course JSON first
     // follow every navigation (Next/Back, rail, engine jumps)
     if (typeof window.show === "function") {
       var _s = window.show;
@@ -1211,6 +1334,7 @@
     },
     takeVia: function () { var v = MS ? MS.lastVia : null; if (MS) MS.lastVia = null; return v; },   // how the welcome screen was left
     openMission: function (n, via) { var m = missionByN(n); if (m) openMission(m, via || "open"); return !!m; },
+    useMinutes: useMinutes,                                   // lesson-next.js passes the course JSON's measured minutes
     _missionPlan: function () { return M ? M.plan : null; }   // for tests
   };
 

@@ -31,8 +31,9 @@
                                hash (#mN in the link) | open (Open on the map)
      "Mission: started"        {mission, of, via (as above, next = reached by Next,
                                strip = the mission-complete strip's Next button)}
-     "Mission: completed"      {mission, of, first_try yes|no, score pct} — the
-                               Mission check answered correctly
+     "Mission: completed"      {mission, of, first_try yes|no, score pct, mins =
+                               active minutes on the mission} — the Mission check
+                               answered correctly
      "Mini-lesson: completed"  + missions_done, of (mission lessons only)
      "Mission next: continue | save | leave" {mission, of} — the strip under a
                                Mission check once it is passed (via=strip on the
@@ -106,7 +107,7 @@
       if (!d || !d.mission) return;
       var p = { mission: String(d.mission), of: String(d.of) };
       if (d.type === "started") { p.via = d.via || "next"; track("Mission: started", p); }
-      else if (d.type === "completed") { p.first_try = d.first_try || "no"; p.score = d.score || ""; track("Mission: completed", p); }
+      else if (d.type === "completed") { p.first_try = d.first_try || "no"; p.score = d.score || ""; if (d.mins) p.mins = d.mins; track("Mission: completed", p); }
       else if (d.type === "next" && d.what) track("Mission next: " + d.what, p);
     }
     window.addEventListener("aism-mission", function (e) { onMission(e && e.detail); });
@@ -279,7 +280,15 @@
     if (!fin || fin.querySelector(".lnx") || !ctx) return;
     fetch("../quizzes/lesson-next/" + group + ".json")
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (d) build(fin, d, ctx.topic); })
+      .then(function (d) {
+        if (!d) return;
+        build(fin, d, ctx.topic);
+        // measured mission minutes (5th field = 1) for the welcome chips, rail and strip; progress.js may not have run yet
+        try {
+          var rows = d.m && d.m[ctx.topic];
+          if (rows) { window.__aismMinutes = rows; if (window.AismProgress && window.AismProgress.useMinutes) window.AismProgress.useMinutes(rows); }
+        } catch (e) {}
+      })
       .catch(function () {});
   }
 

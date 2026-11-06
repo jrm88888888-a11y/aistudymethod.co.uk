@@ -118,14 +118,20 @@
     try {
       if (here === stem && window.AismProgress && window.AismProgress.missions) {
         var ms = window.AismProgress.missions();
-        if (ms.length) return ms.map(function (m) { return { n: m.n, label: m.label, question: m.question || "", minutes: m.minutes }; });
+        if (ms.length) return ms.map(function (m) { return { n: m.n, label: m.label, question: m.question || "", minutes: m.minutes, measured: !!m.measured, onPage: true }; });
       }
     } catch (e) {}
     var rows = data && data.m && data.m[slug];
     if (!rows || !rows.length) return [];
-    return rows.map(function (r, i) { return { n: r[3] || i + 1, label: r[0], question: r[1] || "", minutes: r[2] }; });
+    return rows.map(function (r, i) { return { n: r[3] || i + 1, label: r[0], question: r[1] || "", minutes: r[2], measured: !!r[4] }; });
   }
-  function missionTotal(list) { var t = 0; list.forEach(function (m) { t += m.minutes || 0; }); return t; }
+  function missionTotal(list) {
+    // on the lesson page progress.js knows the whole-lesson figure (missions + final questions); elsewhere sum the missions
+    try { if (list.length && list[0].onPage && window.AismProgress && window.AismProgress.missionTotalMinutes) return window.AismProgress.missionTotalMinutes(); } catch (e) {}
+    var t = 0; list.forEach(function (m) { t += m.minutes || 0; }); return t;
+  }
+  function minsText(m) { return (m.measured ? "" : "~") + m.minutes + " min"; }
+  function totalText(list) { return (list.every(function (m) { return m.measured; }) ? "" : "~") + missionTotal(list) + " min"; }
 
   /* ---------- share routes ---------- */
   var KIND_TEXT = {
@@ -286,11 +292,11 @@
       if (o.id === "lesson" && missions) {
         h += '<div class="aa-mis" role="radiogroup" aria-label="How much of the mini-lesson"' + (on ? "" : " hidden") + ">" +
           '<label><input type="radio" name="aa-m" value="0"' + (preM ? "" : " checked") + "><span><b>Whole lesson</b></span>" +
-            '<span class="aa-min">~' + missionTotal(missions) + " min</span></label>" +
+            '<span class="aa-min">' + totalText(missions) + "</span></label>" +
           missions.map(function (m) {
             return '<label><input type="radio" name="aa-m" value="' + m.n + '"' + (preM === m.n ? " checked" : "") + "><span><b>" +
               esc(m.label) + " only</b>" + (m.question ? "<small>" + esc(m.question) + "</small>" : "") + "</span>" +
-              '<span class="aa-min">~' + m.minutes + " min</span></label>";
+              '<span class="aa-min">' + minsText(m) + "</span></label>";
           }).join("") + "</div>";
       }
       return h;
@@ -348,13 +354,13 @@
       for (var i = 0; i < shareBtns.length; i++) shareBtns[i].disabled = !sel;
       msg.textContent = "";
       if (!sel) { get.textContent = "Tick at least one."; return; }
-      var part = sel.mission ? " (" + esc(sel.mission.label) + " of the mini-lesson, ~" + sel.mission.minutes + " min)" : "";
+      var part = sel.mission ? " (" + esc(sel.mission.label) + " of the mini-lesson, " + minsText(sel.mission) + ")" : "";
       if (sel.kind === "session") {
         var names = sel.ids.map(function (id) { return options.filter(function (x) { return x.id === id; })[0].label.toLowerCase(); });
         get.innerHTML = "Students get one page with " + sel.ids.length + " steps: " + esc(names.join(", then ")) + part +
           '. <a href="' + esc(sel.url) + '" target="_blank" rel="noopener">Preview ↗</a>';
       } else if (sel.mission) {
-        get.innerHTML = "Students go straight to <b>" + esc(sel.mission.label) + "</b> of the mini-lesson (~" + sel.mission.minutes + " min)" +
+        get.innerHTML = "Students go straight to <b>" + esc(sel.mission.label) + "</b> of the mini-lesson (" + minsText(sel.mission) + ")" +
           '. <a href="' + esc(sel.url) + '" target="_blank" rel="noopener">Preview ↗</a>';
       } else {
         get.innerHTML = "Students go straight to the " + esc(KIND_TEXT[sel.kind].name.toLowerCase()) +
