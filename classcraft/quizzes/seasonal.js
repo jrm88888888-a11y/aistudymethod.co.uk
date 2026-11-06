@@ -1,9 +1,9 @@
 /* seasonal.js — a time-limited plug for a seasonal mini-lesson, and its coin treat.
    Loaded by lesson-nav.js on every mini-lesson, so no per-lesson edits.
-   Current campaign: Halloween Science, "The Glow Stick Mystery", with a one-off
-   100-coin treat for finishing it.
+   Current campaign: Winter Lessons (six seasonal mini-lessons on one hub), with a
+   one-off 100-coin treat for finishing any one of them. Previous: Halloween 2026.
 
-   On the featured lesson itself:
+   On any of the featured lessons (C.pages):
      - when the completion screen opens (the lesson only moves on once each
        mission check is answered, so this means all 3 missions are done), a
        treat card: signed in -> the server adds the treat (once per account);
@@ -14,7 +14,7 @@
        later on another lesson page.
    On every other mini-lesson (until END, local time):
      - a card on the completion screen: finish the featured lesson for the treat;
-     - on science lessons only (MATCH), a slim dismissible bar under the top bar;
+     - on KS3/GCSE lessons in the six subjects (MATCH), a slim dismissible bar under the top bar;
      - neither is shown once the featured lesson is finished on this device.
    The server (aism-accounts /treat) decides whether the treat is still open
    (until TREAT_UNTIL) and pays it at most once per account.
@@ -25,23 +25,25 @@
 (function () {
   "use strict";
   var C = {
-    id: "halloween-2026",
-    end: new Date(2026, 10, 8),               // plug off: 8 Nov 2026, 00:00 local
-    treatUntil: Date.UTC(2026, 10, 9),        // server stops paying: 9 Nov 2026, 00:00 UTC
+    id: "winter-2026",
+    end: new Date(2027, 2, 1),                // plug off: 1 Mar 2027, 00:00 local
+    treatUntil: Date.UTC(2027, 2, 1),         // server stops paying: 1 Mar 2027, 00:00 UTC
     coins: 100,
-    stem: "halloween-science-glow-sticks",
-    page: "halloween-science-glow-sticks-mini-lesson.html",
-    tag: "🎃 Halloween treat",
-    q: "Finish The Glow Stick Mystery and win 100 bonus coins",
-    sub: "How can a glow stick glow without getting hot? Three missions, a freezer experiment to try at home, and fireflies.",
-    bar: "The Glow Stick Mystery: win 100 bonus coins",
-    poster: "halloween-hooks/posters/halloween-glow-sticks-m1_16x9.jpg",
-    match: /^(science-ks3-|chemistry-gcse-|physics-gcse-|biology-gcse-)/
+    stems: ["winter-history-little-ice-age", "winter-science-snowflakes", "winter-maths-koch-snowflake",
+            "winter-geography-beast-from-the-east", "winter-english-darkling-thrush", "winter-music-vivaldi-winter"],
+    hub: "winter-lessons.html",
+    tag: "❄️ Winter treat",
+    q: "Finish any Winter Lesson and win 100 bonus coins",
+    sub: "Six winter mini-lessons: why snowflakes have six sides, the Little Ice Age, the Beast from the East, a snowflake with an infinite edge, a winter poem, and Vivaldi's Winter.",
+    bar: "Winter Lessons: finish one, win 100 bonus coins",
+    poster: "winter-hooks/posters/winter-science-snowflakes-m1_16x9.jpg",
+    match: /^(science-ks3-|chemistry-gcse-|physics-gcse-|biology-gcse-|maths-ks3-|maths-gcse-|history-ks3-|history-gcse-|geography-ks3-|geography-gcse-|english-language-ks3-|english-literature-gcse-|music-)/
   };
+  C.pages = C.stems.map(function (s) { return s + "-mini-lesson.html"; });
   var file = "";
   try { file = decodeURIComponent(location.pathname.split("/").pop() || ""); } catch (e) { return; }
   if (!/-mini-lesson\.html$/.test(file)) return;
-  var onPage = file === C.page;
+  var onPage = C.pages.indexOf(file) !== -1;
   var now = Date.now();
   if (now >= C.treatUntil && !onPage) return;
 
@@ -53,7 +55,9 @@
   function treatState() { return rd(TK) || {}; }
   function finishedHere() {
     var t = treatState(); if (t.e || t.d) return true;
-    var p = rd("aism-lp"); return !!(p && p.l && p.l[C.stem]);
+    var p = rd("aism-lp"); if (!p || !p.l) return false;
+    for (var i = 0; i < C.stems.length; i++) if (p.l[C.stems[i]]) return true;
+    return false;
   }
   function el(cls, html) { var d = document.createElement("div"); d.className = cls; d.innerHTML = html; return d; }
 
@@ -133,21 +137,21 @@
       card.innerHTML = '<span class="tb">' + big + "</span>" + (small ? '<span class="ts">' + small + "</span>" : "") + (btns || "");
     }
     function result(r, where) {
-      if (r === "paid") { say("🎃 Treat! <b>+" + C.coins + " bonus coins</b> added to your account.", "Happy Halloween. Spend them in the Revision Arcade."); track("Seasonal treat: collected", { where: where, campaign: C.id }); }
-      else if (r === "had") say("🎃 You've already had your Halloween treat on this account.", "One treat per account. Thanks for solving the mystery again!");
-      else if (r === "closed") say("🎃 The Halloween treat has ended.", "Thanks for solving The Glow Stick Mystery!");
-      else if (r === "error") say("🎃 Your <b>" + C.coins + "-coin</b> treat is waiting.", "We couldn't reach the coin bank just now. It will be added next time you open a mini-lesson while signed in.");
+      if (r === "paid") { say("❄️ Treat! <b>+" + C.coins + " bonus coins</b> added to your account.", "Spend them in the Revision Arcade."); track("Seasonal treat: collected", { where: where, campaign: C.id }); }
+      else if (r === "had") say("❄️ You've already had your Winter treat on this account.", "One treat per account. Thanks for taking another winter lesson!");
+      else if (r === "closed") say("❄️ The Winter treat has ended.", "Thanks for taking the lesson!");
+      else if (r === "error") say("❄️ Your <b>" + C.coins + "-coin</b> treat is waiting.", "We couldn't reach the coin bank just now. It will be added next time you open a mini-lesson while signed in.");
       else offer();
     }
     function offer() {
-      say("🎃 You've earned a Halloween treat: <b>" + C.coins + " bonus coins!</b>",
+      say("❄️ You've earned a Winter treat: <b>" + C.coins + " bonus coins!</b>",
         "Collect it with a free Revision Arcade account: just a username and password, no email. Your lesson coins are saved too.",
         '<div class="tbtns"><button type="button" data-t="register">Collect my treat</button><button type="button" class="ghost" data-t="login">I have an account</button></div>');
     }
-    if (t.d) { say("🎃 You've already collected your Halloween treat on this device.", "Thanks for solving the mystery again!"); return; }
+    if (t.d) { say("❄️ You've already collected your Winter treat on this device.", "Thanks for taking another winter lesson!"); return; }
     if (signedIn()) {
       track("Seasonal treat: earned", { signedIn: "yes", campaign: C.id });
-      say("🎃 Adding your Halloween treat…", "");
+      say("❄️ Adding your Winter treat…", "");
       claim().then(function (r) { result(r, "lesson"); });
       return;
     }
@@ -162,11 +166,11 @@
       [].forEach.call(card.querySelectorAll("button"), function (x) { x.disabled = true; });
       getAuth().then(function (auth) {
         [].forEach.call(card.querySelectorAll("button"), function (x) { x.disabled = false; });
-        if (auth.isLoggedIn()) { say("🎃 Adding your Halloween treat…", ""); claim().then(function (r) { result(r, "lesson"); }); return; }
+        if (auth.isLoggedIn()) { say("❄️ Adding your Winter treat…", ""); claim().then(function (r) { result(r, "lesson"); }); return; }
         var off = auth.onChange(function (d) {
           if (!d || !d.loggedIn) return;
           off();
-          say("🎃 Adding your Halloween treat…", "");
+          say("❄️ Adding your Winter treat…", "");
           claim().then(function (r) { result(r, "lesson"); });
         });
         // The lesson-coins note's own button saves the lesson's coins as well; use it when it is there.
@@ -174,7 +178,7 @@
         if (lp && !lp.disabled) lp.click(); else auth.open(mode, { source: "seasonal treat" });
       }, function () {
         [].forEach.call(card.querySelectorAll("button"), function (x) { x.disabled = false; });
-        say("🎃 Your <b>" + C.coins + "-coin</b> treat is waiting.", "Couldn't open sign-in just now. Try again in a moment; your treat is remembered on this device.");
+        say("❄️ Your <b>" + C.coins + "-coin</b> treat is waiting.", "Couldn't open sign-in just now. Try again in a moment; your treat is remembered on this device.");
       });
     });
   }
@@ -188,7 +192,7 @@
       track("Seasonal treat: collected", { where: "later", campaign: C.id });
       var top = document.querySelector(".topbar");
       if (!top) return;
-      var bar = el("sz-bar", '<span class="t"><b>🎃 Halloween treat collected:</b> +' + C.coins + " bonus coins added to your account.</span>" +
+      var bar = el("sz-bar", '<span class="t"><b>❄️ Winter treat collected:</b> +' + C.coins + " bonus coins added to your account.</span>" +
         '<button type="button" aria-label="Dismiss">×</button>');
       bar.setAttribute("role", "status");
       bar.querySelector("button").addEventListener("click", function () { bar.remove(); });
@@ -199,7 +203,7 @@
   /* ---------- other lessons: the plug ---------- */
   function seen() { try { return localStorage.getItem("aism-seasonal:" + C.id) === "x"; } catch (e) { return false; } }
   function hide() { try { localStorage.setItem("aism-seasonal:" + C.id, "x"); } catch (e) {} }
-  var href = C.page;      // lessons live in the same folder
+  var href = C.hub;       // the hub lives in the same folder as the lessons
   function addBar() {
     if (seen() || !C.match.test(file)) return;
     var top = document.querySelector(".topbar");

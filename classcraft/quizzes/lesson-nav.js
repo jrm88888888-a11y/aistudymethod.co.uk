@@ -258,7 +258,7 @@
     p.defer = true;
     document.head.appendChild(p);
     var z = document.createElement("script");          // seasonal plug (seasonal.js switches itself off)
-    z.src = base + "seasonal.js?v=20261029b";
+    z.src = base + "seasonal.js?v=20261106";
     z.defer = true;
     document.head.appendChild(z);
   } catch (e) {}
