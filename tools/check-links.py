@@ -59,7 +59,8 @@ STANDALONE = {"classcraft/adventures/halloween-science-glow-sticks-mini-lesson.h
 # (AP_COURSES in tools/build-lesson-next.py).
 AP_PREFIX = {"physics-ap-physics-1": "physics-ap-1", "physics-ap-physics-2": "physics-ap-2",
              "physics-ap-physics-c-mechanics": "physics-ap-c-mechanics", "physics-ap-physics-c-em": "physics-ap-c-em",
-             "chemistry-ap-collegeboard": "chemistry-ap"}
+             "chemistry-ap-collegeboard": "chemistry-ap",
+             "biology-ap-collegeboard": "biology-ap"}
 def course_prefix(k):
     return AP_PREFIX.get(k, k.replace("-ibdp-sl", "-ibdp"))
 bad_back = []
