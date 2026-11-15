@@ -57,6 +57,8 @@ AP_COURSES = [  # (file prefix, subject, board, course name)
     ('physics-ap-1', 'physics', 'physics-1', 'AP Physics 1'),
     ('physics-ap-2', 'physics', 'physics-2', 'AP Physics 2'),
     ('chemistry-ap', 'chemistry', 'collegeboard', 'AP Chemistry'),
+    ('religion-ap-world-history', 'world-religions', 'world-history', 'AP World History: World Religions'),
+    ('biology-ap', 'biology', 'collegeboard', 'AP Biology'),
 ]
 AP_NAME = {f'{s}-ap-{b}': n for _, s, b, n in AP_COURSES}
 def ap_match(stem):

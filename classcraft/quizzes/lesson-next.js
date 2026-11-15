@@ -47,7 +47,7 @@
   // AP courses (Nov 2026): lesson files are <prefix>-<slug>; the course key is <subject>-ap-<board>
   // (same table as AP_COURSES in tools/build-lesson-next.py). Longest prefix first.
   var AP = [["physics-ap-c-mechanics", "physics", "physics-c-mechanics"], ["physics-ap-c-em", "physics", "physics-c-em"],
-            ["physics-ap-1", "physics", "physics-1"], ["physics-ap-2", "physics", "physics-2"], ["chemistry-ap", "chemistry", "collegeboard"]];
+            ["physics-ap-1", "physics", "physics-1"], ["physics-ap-2", "physics", "physics-2"], ["chemistry-ap", "chemistry", "collegeboard"], ["religion-ap-world-history", "world-religions", "world-history"], ["biology-ap", "biology", "collegeboard"]];
   function apMatch(stem) {
     for (var i = 0; i < AP.length; i++) if (stem.indexOf(AP[i][0] + "-") === 0)
       return [stem, AP[i][1], "ap", AP[i][2], stem.slice(AP[i][0].length + 1)];

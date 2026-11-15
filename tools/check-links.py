@@ -60,7 +60,8 @@ STANDALONE = {"classcraft/adventures/halloween-science-glow-sticks-mini-lesson.h
 AP_PREFIX = {"physics-ap-physics-1": "physics-ap-1", "physics-ap-physics-2": "physics-ap-2",
              "physics-ap-physics-c-mechanics": "physics-ap-c-mechanics", "physics-ap-physics-c-em": "physics-ap-c-em",
              "chemistry-ap-collegeboard": "chemistry-ap",
-             "biology-ap-collegeboard": "biology-ap"}
+             "biology-ap-collegeboard": "biology-ap",
+             "world-religions-ap-world-history": "religion-ap-world-history"}
 def course_prefix(k):
     return AP_PREFIX.get(k, k.replace("-ibdp-sl", "-ibdp"))
 bad_back = []
