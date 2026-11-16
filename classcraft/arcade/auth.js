@@ -225,6 +225,7 @@
       "password-too-common": "That password is too common — pick something harder to guess.",
       "password-too-long": "That password's too long.",
       "bad-credentials": "Username or password not recognised.",
+      "too-many-attempts": "Too many wrong tries on this account. Wait 15 minutes, then try again.",
       "password-required": "Enter a password.",
       "network": "Couldn't reach the server — check your connection.",
       "ref-code-invalid": "That friend code isn't right — check it, or leave it blank.",
