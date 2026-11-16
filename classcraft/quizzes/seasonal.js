@@ -100,7 +100,7 @@
     var base = me && me.src ? me.src.replace(/quizzes\/seasonal\.js.*$/, "") : "../";
     authP = new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = base + "arcade/auth.js?v=20261030a";
+      s.src = base + "arcade/auth.js?v=20261116";
       s.onload = function () { (window.Arcade && window.Arcade.auth) ? resolve(window.Arcade.auth) : reject(new Error("no auth")); };
       s.onerror = function () { authP = null; reject(new Error("auth load failed")); };
       document.head.appendChild(s);
@@ -234,7 +234,17 @@
     if (share) fin.insertBefore(a, share); else fin.appendChild(a);
   }
 
+  /* One-time apology credit (Nov 2026): auth.js claims it and shows the message when it boots.
+     Lessons load auth.js lazily, so load it now for a signed-in student who has not had an answer yet. */
+  function sorryNudge() {
+    var a = rd("aism-auth");
+    if (!a || !a.token || !a.userId || Date.now() >= C.treatUntil) return;
+    try { if (localStorage.getItem("aism-note:winter-sorry-2026:" + a.userId)) return; } catch (e) { return; }
+    getAuth().catch(function () {});
+  }
+
   function init() {
+    sorryNudge();
     if (onPage) {
       collectLater();
       var fin = document.querySelector(".screen.final");

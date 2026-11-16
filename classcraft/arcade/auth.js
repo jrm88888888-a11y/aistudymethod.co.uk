@@ -1289,11 +1289,62 @@
     return true;
   }
 
+  /* ---------------- one-time apology credit (Nov 2026) ----------------
+     The winter treat was not being paid 10-16 Nov 2026. Every account that existed when it was
+     fixed gets 100 coins once (server campaign "winter-sorry-2026", /treat) and sees this message
+     once, on whichever device first asks. Other devices get paid:false and show nothing.
+     Safe to delete after 1 Mar 2027, together with the sorryCheck() calls. */
+  var SORRY = { id: "winter-sorry-2026", until: Date.UTC(2027, 2, 1), hub: "/classcraft/adventures/winter-lessons.html" };
+  var sorryBusy = false;
+  function sorryCheck() {
+    if (sorryBusy || !state || !state.token || !state.userId || Date.now() >= SORRY.until) return;
+    var key = "aism-note:" + SORRY.id + ":" + state.userId;
+    try { if (localStorage.getItem(key)) return; } catch (e) { return; }
+    sorryBusy = true;
+    auth.treat(SORRY.id).then(function (r) {
+      sorryBusy = false;
+      if (r && (r.ok || r.status === 410)) { try { localStorage.setItem(key, "1"); } catch (e) {} }   // answered for good
+      if (r && r.ok && r.paid) sorryShow(r.coins || 100);
+      // 400 = the server has not been published with this campaign yet: ask again on the next page.
+    }, function () { sorryBusy = false; });
+  }
+  function sorryShow(coins) {
+    if (!document.body || document.querySelector(".aism-sorry")) return;
+    var css = document.createElement("style");
+    css.textContent =
+      ".aism-sorry{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(27,26,58,.6);font-family:'Nunito',system-ui,sans-serif}" +
+      ".aism-sorry .bx{max-width:440px;width:100%;background:#2B2A55;color:#fff;border:3px solid #fff;border-radius:22px;padding:22px 20px 18px;text-align:center;box-shadow:0 10px 0 rgba(0,0,0,.25)}" +
+      ".aism-sorry h2{font-family:'Fredoka','Nunito',system-ui,sans-serif;font-weight:600;font-size:1.45rem;line-height:1.25;margin:0 0 10px;color:#fff}" +
+      ".aism-sorry p{font-size:1rem;line-height:1.45;margin:0 0 10px;color:#e4e0f5}.aism-sorry p b{color:#FFC83D}" +
+      ".aism-sorry .bt{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}" +
+      ".aism-sorry a,.aism-sorry button{font-family:'Fredoka','Nunito',system-ui,sans-serif;font-weight:600;font-size:1rem;border:3px solid #fff;border-radius:14px;padding:9px 14px;cursor:pointer;text-decoration:none}" +
+      ".aism-sorry a{background:#FFC83D;color:#2c2840}.aism-sorry button{background:transparent;color:#fff}";
+    document.head.appendChild(css);
+    var d = document.createElement("div");
+    d.className = "aism-sorry"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-labelledby", "aism-sorry-h");
+    d.innerHTML = '<div class="bx"><h2 id="aism-sorry-h">Sorry, our mistake</h2>' +
+      "<p>From 10 to 16 November the Winter treat was not being added when it should have been.</p>" +
+      "<p>To put it right, we have added <b>" + coins + " bonus coins</b> to every account, including yours.</p>" +
+      "<p>It is fixed now. Finish any Winter Lesson to win the <b>100-coin Winter treat</b>.</p>" +
+      '<div class="bt"><a href="' + SORRY.hub + '">See the Winter Lessons</a><button type="button">OK</button></div></div>';
+    function close() { document.removeEventListener("keydown", onKey); d.remove(); }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    d.querySelector("button").addEventListener("click", close);
+    d.querySelector("a").addEventListener("click", function () { track("Apology credit: winter lessons opened"); });
+    d.addEventListener("click", function (e) { if (e.target === d) close(); });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(d);
+    try { d.querySelector("button").focus(); } catch (e) {}
+    track("Apology credit: shown");
+  }
+
   /* ---------------- boot ---------------- */
   function boot() {
     if (!installEndCardHook()) { var n = 0, t = function () { if (installEndCardHook() || ++n > 40) return; setTimeout(t, 50); }; setTimeout(t, 50); }
     if (!window.AISM_NO_CORNER) { try { auth.mountCorner(); } catch (e) {} }
     if (auth.isLoggedIn()) { auth.pull(); loadAvatars(function () { emit(); }); } // refresh from server + load avatar art
+    sorryCheck();
+    auth.onChange(function (d) { if (d && d.loggedIn) setTimeout(sorryCheck, 1500); });   // after a log-in on this device
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 

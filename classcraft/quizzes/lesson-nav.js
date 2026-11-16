@@ -254,11 +254,11 @@
     a.defer = true;
     document.head.appendChild(a);
     var p = document.createElement("script");          // lesson progress, coins and ticks
-    p.src = base + "progress.js?v=20261106b";
+    p.src = base + "progress.js?v=20261116";
     p.defer = true;
     document.head.appendChild(p);
     var z = document.createElement("script");          // seasonal plug (seasonal.js switches itself off)
-    z.src = base + "seasonal.js?v=20261116";
+    z.src = base + "seasonal.js?v=20261116b";
     z.defer = true;
     document.head.appendChild(z);
   } catch (e) {}
