@@ -47,7 +47,11 @@
   var now = Date.now();
   if (now >= C.treatUntil && !onPage) return;
 
-  var TK = "aism-treat:" + C.id;                // {e: day finished, d: 1 once collected}
+  var TK = "aism-treat:" + C.id;                // {e: day finished, d: 2 once the server has answered for good}
+  /* d: 1 is the old "collected" mark. It was also written when the server did not know the
+     campaign yet (10-16 Nov 2026: the winter treat was not published), so it is not trusted:
+     only d: 2 stops the device asking. A device left at d: 1 asks once more and is paid. */
+  function settled(t) { return !!t && t.d === 2; }
   function rd(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }
   function wr(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   function track(name, props) { try { if (window.plausible) window.plausible(name, { props: props || {} }); } catch (e) {} }
@@ -116,8 +120,9 @@
       }).then(function (r) { return r.json().then(function (d) { return r.ok ? Object.assign({ ok: true }, d) : { ok: false, status: r.status, error: d && d.error }; }); })
         .then(function (res) { if (res.ok && auth.pull) auth.pull(); return res; });
       return call.then(function (res) {
-        if (res && res.ok) { wr(TK, { e: treatState().e || 1, d: 1 }); return res.paid ? "paid" : "had"; }
-        if (res && (res.status === 410 || res.status === 400)) { wr(TK, { e: treatState().e || 1, d: 1 }); return "closed"; }
+        if (res && res.ok) { wr(TK, { e: treatState().e || 1, d: 2 }); return res.paid ? "paid" : "had"; }
+        if (res && res.status === 410) { wr(TK, { e: treatState().e || 1, d: 2 }); return "closed"; }   // window over
+        // 400 = the server does not know this campaign (not published yet): keep the treat waiting.
         if (res && res.status === 401) return "out";
         return "error";
       });
@@ -148,7 +153,7 @@
         "Collect it with a free Revision Arcade account: just a username and password, no email. Your lesson coins are saved too.",
         '<div class="tbtns"><button type="button" data-t="register">Collect my treat</button><button type="button" class="ghost" data-t="login">I have an account</button></div>');
     }
-    if (t.d) { say("❄️ You've already collected your Winter treat on this device.", "Thanks for taking another winter lesson!"); return; }
+    if (settled(t)) { say("❄️ You've already collected your Winter treat on this device.", "Thanks for taking another winter lesson!"); return; }
     if (signedIn()) {
       track("Seasonal treat: earned", { signedIn: "yes", campaign: C.id });
       say("❄️ Adding your Winter treat…", "");
@@ -186,7 +191,7 @@
   /* ---------- finished earlier, signed in now: collect quietly ---------- */
   function collectLater() {
     var t = treatState();
-    if (!t.e || t.d || !signedIn() || Date.now() >= C.treatUntil) return;
+    if (!t.e || settled(t) || !signedIn() || Date.now() >= C.treatUntil) return;
     claim().then(function (r) {
       if (r !== "paid") return;
       track("Seasonal treat: collected", { where: "later", campaign: C.id });
