@@ -8,7 +8,7 @@
      At launch, set VW_MODE = "full" in elements.html. */
   var FULL = window.VW_MODE !== "collection";
   var BASE = "/velvet-worlds/";
-  document.getElementById("vw-app").innerHTML = "<div class=\"wrap\" id=\"lobby\">\n  <a class=\"back\" href=\"/classcraft/arcade.html\">&larr; Arcade</a>\n  <header class=\"marquee\">\n    <div class=\"over\">AI STUDY METHOD PRESENTS</div>\n    <h1 id=\"mTitle\">VELVET WORLDS</h1>\n    <div class=\"sub\" id=\"mSub\">COLLECT AN ELEMENT &middot; OPEN ITS WORLD &middot; BUILD YOUR WEAPONS</div>\n  </header>\n\n  <div class=\"hud\">\n    <div class=\"cell coins\"><span id=\"coinGlyph\" aria-hidden=\"true\"></span><div><div class=\"k\">Velvet Coins</div><div class=\"v\" id=\"hCoins\">0</div></div></div>\n    <div class=\"cell prog\"><div class=\"top\"><span class=\"k\">Elements collected</span><span class=\"v\" id=\"hOwned\">0 / 118</span></div><div class=\"bar\"><i id=\"hBar\"></i></div><div class=\"cap\" id=\"hCap\"></div></div>\n    <div class=\"cell\" id=\"cellParts\"><div><div class=\"k\">Particles</div><div class=\"parts\" id=\"hParts\"></div></div></div>\n    <div class=\"acts\" id=\"acts\"><button type=\"button\" data-k=\"open:forge\">The Forge</button><button type=\"button\" data-k=\"open:bank\">Particle Bank</button></div>\n  </div>\n\n  <div id=\"note\" role=\"status\"></div>\n\n  <div class=\"cell\" id=\"notComputer\" style=\"display:none;margin-bottom:14px\"><div>\n    <b>The worlds need a computer.</b> You can collect elements here, but playing a world needs a keyboard and a mouse.\n    <a href=\"#\" id=\"tryAnyway\">I am on a computer: let me play</a></div>\n  </div>\n\n  <section class=\"hero\" id=\"hero\">\n    <img id=\"heroArt\" src=\"/classcraft/arcade/assets/elements/001-h.webp\" alt=\"\" width=\"96\" height=\"96\">\n    <div class=\"txt\">\n      <div class=\"lab\">World 1 &middot; Hydrogen</div>\n      <h2>The Castle</h2>\n      <p>Collect the eight metals of <b>the reactivity series</b> and put them in order. Search every corner for hidden particles.</p>\n      <p class=\"soft\">AQA GCSE Chemistry (8462), 4.4.1.2 &nbsp;&middot;&nbsp; <span id=\"heroFound\"></span></p>\n    </div>\n    <div class=\"play\">\n      <button class=\"go\" id=\"playBtn\" type=\"button\">Play</button>\n      <p class=\"soft\" id=\"playNote\" style=\"margin-top:8px\">First load is about 14 MB</p>\n    </div>\n  </section>\n\n  <section class=\"mapcard\">\n    <h2 id=\"mapTitle\">The map</h2>\n    <p class=\"soft\" id=\"mapLead\">Every element is a world. Collect an element with Velvet Coins from mini-lessons and the arcade (price = atomic number). Worlds are being built one at a time.</p>\n    <div class=\"filters\" id=\"filters\" role=\"group\" aria-label=\"Show elements\"></div>\n    <div class=\"map\" id=\"map\" role=\"group\" aria-label=\"Periodic table of worlds\"></div>\n    <div class=\"key\"><span id=\"keyWorld\"><b style=\"color:var(--yellow)\">Glowing</b> = a world you can play</span><span><b style=\"color:var(--yellow)\">Dashed</b> = you can afford it</span><span>Picture = collected</span><span class=\"wideonly\">Numbers above are groups (GCSE: 1 to 7 and 0); numbers at the side are periods</span></div>\n    <div class=\"legend\" id=\"legend\"></div>\n  </section>\n\n  <p class=\"credits\" id=\"credits\">Castle models: KayKit Dungeon Pack. Robot: Quaternius Sci-Fi Essentials Kit. Blasters and sounds: Kenney (kenney.nl). Music: &ldquo;Loopable Dungeon Ambience&rdquo; by JaggedStone. All released under CC0. Built with Godot. Lanthanum and actinium are shown in the main table, with elements 58 to 71 and 90 to 103 below, as on GCSE data sheets.</p>\n  <p class=\"credits\">Bracketed masses are the mass number of the longest-lived isotope (no stable isotopes exist). A trailing * marks a predicted state: that element has never been observed in bulk. Elements in the middle block and the two lower rows show no group number.</p>\n</div>\n\n<aside id=\"drawer\" aria-label=\"Details\"></aside>\n\n<div id=\"stage\">\n  <canvas id=\"canvas\" tabindex=\"0\">Your browser does not support the canvas tag.</canvas>\n  <button id=\"exit\" type=\"button\">Leave game</button>\n  <div class=\"over\" id=\"loadPanel\"><div class=\"panel\">\n    <h2 id=\"loadTitle\">Loading the castle&hellip;</h2>\n    <p class=\"soft\" id=\"loadText\">The first visit takes longest.</p>\n    <progress id=\"loadBar\" max=\"100\" value=\"0\"></progress>\n    <div class=\"row\" id=\"loadRow\" style=\"display:none\"><button type=\"button\" onclick=\"location.reload()\">Back</button></div>\n  </div></div>\n  <div class=\"over\" id=\"endPanel\"><div class=\"panel\">\n    <h2 id=\"endTitle\"></h2>\n    <p id=\"endText\"></p>\n    <p class=\"soft\" id=\"endSave\"></p>\n    <div class=\"row\">\n      <button class=\"go\" type=\"button\" id=\"againBtn\">Play again</button>\n      <button type=\"button\" id=\"labBtn\">Back to the map</button>\n    </div>\n    <p class=\"soft\"><a id=\"endLesson\" href=\"/classcraft/adventures/chemistry-gcse-aqa-chemical-changes-mini-lesson.html\">Earn coins: Chemical changes mini-lesson</a></p>\n  </div></div>\n</div>\n<div id=\"vwToast\" role=\"status\" aria-live=\"polite\"></div>\n<div id=\"sharePrompt\" role=\"status\" aria-live=\"polite\"></div>\n";
+  document.getElementById("vw-app").innerHTML = "<div class=\"wrap\" id=\"lobby\">\n  <a class=\"back\" href=\"/classcraft/arcade.html\">&larr; Arcade</a>\n  <header class=\"marquee\">\n    <div class=\"over\">AI STUDY METHOD PRESENTS</div>\n    <h1 id=\"mTitle\">VELVET WORLDS</h1>\n    <div class=\"sub\" id=\"mSub\">COLLECT AN ELEMENT &middot; OPEN ITS WORLD &middot; BUILD YOUR WEAPONS</div>\n  </header>\n\n  <div class=\"hud\">\n    <div class=\"cell coins\"><span id=\"coinGlyph\" aria-hidden=\"true\"></span><div><div class=\"k\">Velvet Coins</div><div class=\"v\" id=\"hCoins\">0</div></div></div>\n    <div class=\"cell prog\"><div class=\"top\"><span class=\"k\">Elements collected</span><span class=\"v\" id=\"hOwned\">0 / 118</span></div><div class=\"bar\"><i id=\"hBar\"></i></div><div class=\"cap\" id=\"hCap\"></div></div>\n    <div class=\"cell\" id=\"cellParts\"><div><div class=\"k\">Particles</div><div class=\"parts\" id=\"hParts\"></div></div></div>\n    <div class=\"acts\" id=\"acts\"><button type=\"button\" data-k=\"open:forge\">The Forge</button><button type=\"button\" data-k=\"open:bank\">Particle Bank</button><button type=\"button\" class=\"fbbtn\" data-k=\"fb\" id=\"fbBtn\">Give feedback &middot; +100</button></div>\n  </div>\n\n  <div id=\"note\" role=\"status\"></div>\n\n  <div class=\"cell\" id=\"notComputer\" style=\"display:none;margin-bottom:14px\"><div>\n    <b>The worlds need a computer.</b> You can collect elements here, but playing a world needs a keyboard and a mouse.\n    <a href=\"#\" id=\"tryAnyway\">I am on a computer: let me play</a></div>\n  </div>\n\n  <section class=\"hero\" id=\"hero\">\n    <img id=\"heroArt\" src=\"/classcraft/arcade/assets/elements/001-h.webp\" alt=\"\" width=\"96\" height=\"96\">\n    <div class=\"txt\">\n      <div class=\"wtabs\" id=\"worldTabs\"></div>\n      <div class=\"lab\" id=\"heroLab\">World 1 &middot; Hydrogen</div>\n      <h2 id=\"heroName\">The Castle</h2>\n      <p id=\"heroText\"></p>\n      <p class=\"soft\"><span id=\"heroSpec\"></span> &nbsp;&middot;&nbsp; <span id=\"heroFound\"></span></p>\n    </div>\n    <div class=\"play\">\n      <button class=\"go\" id=\"playBtn\" type=\"button\">Play</button>\n      <p class=\"soft\" id=\"playNote\" style=\"margin-top:8px\">First load is about 17 MB</p>\n    </div>\n  </section>\n\n  <section class=\"mapcard\">\n    <h2 id=\"mapTitle\">The map</h2>\n    <p class=\"soft\" id=\"mapLead\">Every element is a world. Collect an element with Velvet Coins from mini-lessons and the arcade (price = atomic number). Worlds are being built one at a time.</p>\n    <div class=\"filters\" id=\"filters\" role=\"group\" aria-label=\"Show elements\"></div>\n    <div class=\"map\" id=\"map\" role=\"group\" aria-label=\"Periodic table of worlds\"></div>\n    <div class=\"key\"><span id=\"keyWorld\"><b style=\"color:var(--yellow)\">Glowing</b> = a world you can play</span><span><b style=\"color:var(--yellow)\">Dashed</b> = you can afford it</span><span>Picture = collected</span><span class=\"wideonly\">Numbers above are groups (GCSE: 1 to 7 and 0); numbers at the side are periods</span></div>\n    <div class=\"legend\" id=\"legend\"></div>\n  </section>\n\n  <p class=\"credits\" id=\"credits\">Castle models: KayKit Dungeon Pack. Robot: Quaternius Sci-Fi Essentials Kit. Blasters and sounds: Kenney (kenney.nl). Music: &ldquo;Loopable Dungeon Ambience&rdquo; by JaggedStone. All released under CC0. Built with Godot. Lanthanum and actinium are shown in the main table, with elements 58 to 71 and 90 to 103 below, as on GCSE data sheets.</p>\n  <p class=\"credits\">Bracketed masses are the mass number of the longest-lived isotope (no stable isotopes exist). A trailing * marks a predicted state: that element has never been observed in bulk. Elements in the middle block and the two lower rows show no group number.</p>\n</div>\n\n<aside id=\"drawer\" aria-label=\"Details\"></aside>\n\n<div id=\"stage\">\n  <canvas id=\"canvas\" tabindex=\"0\">Your browser does not support the canvas tag.</canvas>\n  <button id=\"exit\" type=\"button\">Leave game</button>\n  <div class=\"over\" id=\"loadPanel\"><div class=\"panel\">\n    <h2 id=\"loadTitle\">Loading the castle&hellip;</h2>\n    <p class=\"soft\" id=\"loadText\">The first visit takes longest.</p>\n    <progress id=\"loadBar\" max=\"100\" value=\"0\"></progress>\n    <div class=\"row\" id=\"loadRow\" style=\"display:none\"><button type=\"button\" onclick=\"location.reload()\">Back</button></div>\n  </div></div>\n  <div class=\"over\" id=\"endPanel\"><div class=\"panel\">\n    <h2 id=\"endTitle\"></h2>\n    <p id=\"endText\"></p>\n    <p class=\"soft\" id=\"endSave\"></p>\n    <div class=\"row\">\n      <button class=\"go\" type=\"button\" id=\"againBtn\">Play again</button>\n      <button type=\"button\" id=\"labBtn\">Back to the map</button>\n      <button type=\"button\" class=\"fbbtn\" id=\"endFb\">Give feedback &middot; +100 coins</button>\n    </div>\n    <p class=\"soft\"><a id=\"endLesson\" href=\"/classcraft/adventures/chemistry-gcse-aqa-chemical-changes-mini-lesson.html\">Earn coins: Chemical changes mini-lesson</a></p>\n  </div></div>\n</div>\n<div id=\"fbModal\" class=\"fbm\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Feedback\"></div>\n<div id=\"vwToast\" role=\"status\" aria-live=\"polite\"></div>\n<div id=\"sharePrompt\" role=\"status\" aria-live=\"polite\"></div>\n";
   if (!FULL) {
     ["hero", "notComputer", "cellParts", "acts", "stage", "keyWorld", "credits"].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); });
     document.getElementById("mTitle").textContent = "VELVET ELEMENTS";
@@ -22,12 +22,13 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261116f";               // change whenever index.pck changes
-  var VW_SIZES = { wasm: 39514754, pck: 4402404 };
+  var VW_BUILD = "20261117b";               // change whenever index.pck changes
+  var VW_SIZES = { wasm: 39514754, pck: 6028928 };
 
   /* ---- these four tables must match the accounts server (game-test.mjs checks them) ---- */
   var GAME_WORLDS = {
     "1": { p: 14, n: 10, e: 14 },
+    "2": { p: 14, n: 12, e: 14 },
   };
   var GAME_ATOMS = {
     H: { z: 1, n: 0 },
@@ -42,15 +43,20 @@
   var PARTICLE_PRICE = 2;
 
   /* ---- the worlds that exist so far (key = atomic number) ---- */
-  var WORLD_INFO = { "1": { name: "The Castle", mission: "Collect the reactivity series", spec: "AQA GCSE Chemistry (8462), 4.4.1.2" } };
-  var WORLD = "1";                               // the world the Play button starts
+  var WORLD_INFO = {
+    "1": { name: "The Castle", mission: "Collect the reactivity series", spec: "AQA GCSE Chemistry (8462), 4.4.1.2", enemies: "robots",
+      hero: "Collect the eight metals of <b>the reactivity series</b> and put them in order. Search every corner for hidden particles." },
+    "2": { name: "Pirate Island", mission: "Collect the noble gases", spec: "AQA GCSE Chemistry (8462), 4.1.2.4", enemies: "sand crabs",
+      hero: "Collect the six <b>noble gases</b> and put them in order of boiling point. Sand crabs lie buried in the beach, and particles are hidden all over the island." }
+  };
+  var WORLD = "1";                               // the world the Play button starts (the player can switch)
   var ATOM_OF = { 1: "H", 6: "C", 8: "O" };      // atomic number -> key in GAME_ATOMS
   var ATOM_ISO = { H: "hydrogen-1", C: "carbon-12", O: "oxygen-16" };
   var WEAPON_INFO = {
     "blaster-starter": { name: "Starter Blaster", blurb: "Yours from the start. 20 ammo." },
     "weapon-methane": { name: "Methane Flare", formula: "CH<sub>4</sub>", blurb: "Fires nearly twice as fast." },
     "weapon-water": { name: "Water Cannon", formula: "H<sub>2</sub>O", blurb: "Starts with 40 ammo and carries 90." },
-    "weapon-glucose": { name: "Glucose Gun", formula: "C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>", blurb: "One shot pops a robot. Slow, and each shot uses 2 ammo." },
+    "weapon-glucose": { name: "Glucose Gun", formula: "C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>", blurb: "One shot pops a robot or a sand crab. Slow, and each shot uses 2 ammo." },
     "blaster-supporter": { name: "Supporter Blaster", blurb: "A thank-you for supporting the site. Same power as the Starter." }
   };
   var PNAME = { p: "Protons", n: "Neutrons", e: "Electrons" };
@@ -102,11 +108,13 @@
   function ownedCount() { var w = wallet(); return w ? (w.owned || []).filter(function (o) { return o.series === "periodic-table"; }).length : 0; }
   function coins() { var w = wallet(); return w ? (w.coins || 0) : 0; }
   function worldOpen(n) { return !!GAME_WORLDS[String(n)] && (ownsEl(n) || n === 1); }   // the Hydrogen world is open to everyone
+  function setWorld(id) { if (GAME_WORLDS[id]) { WORLD = String(id); lsSet("vw-world", WORLD); } }
   function inBank() { return !!(signedIn() && game && bankOn); }
-  function localFound() { var l = lsGet(LS_LOCAL, {}); var w = (l.worlds && l.worlds[WORLD]) || {}; return { p: +w.p || 0, n: +w.n || 0, e: +w.e || 0 }; }
+  function localFound(id) { id = id || WORLD; var l = lsGet(LS_LOCAL, {}); var w = (l.worlds && l.worlds[id]) || {}; return { p: +w.p || 0, n: +w.n || 0, e: +w.e || 0 }; }
   function setLocalFound(f) { var l = lsGet(LS_LOCAL, {}); l.worlds = l.worlds || {}; l.worlds[WORLD] = f; lsSet(LS_LOCAL, l); }
-  function found() {
-    var a = localFound(), b = (game && game.worlds && game.worlds[WORLD]) || {}, s = GAME_WORLDS[WORLD], o = {};
+  function found(id) {
+    id = id || WORLD;
+    var a = localFound(id), b = (game && game.worlds && game.worlds[id]) || {}, s = GAME_WORLDS[id], o = {};
     ["p", "n", "e"].forEach(function (t) { o[t] = Math.min(s[t], Math.max(a[t], +b[t] || 0)); });
     return o;
   }
@@ -132,11 +140,15 @@
   }
   async function refresh() {
     game = null;
+    if (!started) { var sv = String(lsGet("vw-world", "1")); WORLD = worldOpen(+sv) ? sv : "1"; }   // back to the world last played, if it is still open
     if (FULL && signedIn()) {
       var r = await api("GET");
       if (r.ok) {   // bank anything found on this device before signing in
-        var f = found(), g = (game.worlds && game.worlds[WORLD]) || { p: 0, n: 0, e: 0 };
-        if (f.p > (g.p || 0) || f.n > (g.n || 0) || f.e > (g.e || 0)) await api("POST", { op: "collect", world: WORLD, p: f.p, n: f.n, e: f.e });
+        for (var id in GAME_WORLDS) {
+          if (!worldOpen(+id)) continue;
+          var f = found(id), g = (game.worlds && game.worlds[id]) || { p: 0, n: 0, e: 0 };
+          if (f.p > (g.p || 0) || f.n > (g.n || 0) || f.e > (g.e || 0)) await api("POST", { op: "collect", world: id, p: f.p, n: f.n, e: f.e });
+        }
       } else if (r.error === "network") note("Could not reach the particle bank. Check your connection and reload.", true);
     }
     render();
@@ -214,6 +226,63 @@
     sp.className = "show"; clearTimeout(shareTimer); shareTimer = setTimeout(function () { sp.className = ""; }, 8000);
   }
 
+  /* ---- test feedback (Nov 2026): a short form sent through Formspree without the username, then 100 coins once per account ---- */
+  var FORMSPREE = "https://formspree.io/f/mqevgjke", FB_CAMPAIGN = "velvet-test-2026", LS_RUNS = "vw-runs";
+  var FB_Q = [
+    ["level", "What are you studying?", [["ks3", "KS3"], ["gcse", "GCSE"], ["alevel", "A-level or IB"], ["other", "Something else"]]],
+    ["fun", "How much fun was the game?", [["1", "1 &middot; none"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5 &middot; loads"]]],
+    ["clear", "How easy was it to work out what to do?", [["1", "1 &middot; very hard"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5 &middot; very easy"]]],
+    ["speed", "How did it run on your computer?", [["smooth", "Smoothly"], ["jerky", "A bit jerky"], ["slow", "Too slow to play"]]],
+    ["forge", "Did you make a weapon in The Forge?", [["yes", "Yes"], ["stuck", "I tried but got stuck"], ["no", "I did not try"]]],
+    ["lessons", "Would you do mini-lessons to earn coins for new worlds?", [["yes", "Yes"], ["maybe", "Maybe"], ["no", "No"]]]
+  ];
+  var FB_MORE = [["worlds", "More worlds"], ["weapons", "More weapons"], ["monsters", "More kinds of enemy"], ["harder", "Harder levels"], ["easier", "Easier levels"], ["moreq", "More questions"], ["fewerq", "Fewer questions"]];
+  var fbAns = {}, fbTicks = {}, fbBusy = false;
+  function fbKey() { return "vw-fb:" + ((auth && auth.userId()) || ""); }
+  function fbState() { try { return localStorage.getItem(fbKey()) || ""; } catch (e) { return ""; } }      // "" | "sent" | "paid"
+  function setFbState(v) { try { localStorage.setItem(fbKey(), v); } catch (e) {} }
+  function runs() { var r = lsGet(LS_RUNS, {}); return { runs: +r.runs || 0, wins: +r.wins || 0 }; }
+  function browserName() { var u = navigator.userAgent; return /Edg\//.test(u) ? "Edge" : /OPR\//.test(u) ? "Opera" : /Firefox\//.test(u) ? "Firefox" : /Chrome\//.test(u) ? "Chrome" : /Safari\//.test(u) ? "Safari" : "other"; }
+  function fbClose() { $("fbModal").classList.remove("show"); }
+  function fbRender(done) {
+    var m = $("fbModal"), h = '<div class="fbx"><button type="button" class="x" data-k="fbclose" aria-label="Close">&times;</button>';
+    if (done) h += "<h2>Thank you!</h2><p>" + done + '</p><div class="row" style="justify-content:center">' + btn("fbclose", "Close", "go") + "</div>";
+    else if (!signedIn()) h += "<h2>Tell us what you think</h2><p>Sign in first, so we can add your 100 coins.</p>" + '<div class="row" style="justify-content:center">' + btn("signin", "Sign in or make an account", "go") + "</div>";
+    else if (!runs().runs) h += "<h2>Tell us what you think</h2><p>Play a world first, then come back and tell us about it. It takes about a minute, and we add <b>100 coins</b> to your account.</p>" + '<div class="row" style="justify-content:center">' + btn("fbclose", "OK", "go") + "</div>";
+    else {
+      h += "<h2>Tell us what you think</h2><p class=\"soft\">Six taps and one box. It is sent without your username. Then we add <b>100 coins</b> to your account.</p>";
+      FB_Q.forEach(function (q) { h += '<p class="fq">' + q[1] + '</p><div class="chips" role="radiogroup">' + q[2].map(function (o) { return '<button type="button" class="chip" data-k="fa:' + q[0] + ":" + o[0] + '" aria-pressed="' + (fbAns[q[0]] === o[0]) + '">' + o[1] + "</button>"; }).join("") + "</div>"; });
+      h += '<p class="fq">What should we add next? <span class="soft">(pick any)</span></p><div class="chips">' + FB_MORE.map(function (o) { return '<button type="button" class="chip" data-k="ft:' + o[0] + '" aria-pressed="' + !!fbTicks[o[0]] + '">' + o[1] + "</button>"; }).join("") + "</div>";
+      h += '<p class="fq"><label for="fbText">Anything confusing, broken or missing? Any ideas? <span class="soft">(optional)</span></label></p><textarea id="fbText" maxlength="1500" rows="3"></textarea>';
+      h += '<p class="soft" id="fbMsg"></p><div class="row" style="justify-content:center">' + btn("fbsend", "Send and get 100 coins", "go") + "</div>";
+    }
+    var keep = $("fbText") ? $("fbText").value : "";
+    m.innerHTML = h + "</div>"; m.classList.add("show");
+    if ($("fbText") && keep) $("fbText").value = keep;
+  }
+  function fbOpen(where) { if (fbState()) { toast("You have already sent your feedback. Thank you!"); return; } track("feedback opened", { where: where }); fbRender(); }
+  async function fbClaim(show) {
+    var r = await auth.treat(FB_CAMPAIGN);
+    if (r && r.ok) { setFbState("paid"); if (show) fbRender(r.paid ? "Your answers are on their way to us, and <b>" + (r.coins || 100) + " coins</b> have been added to your account." : "Your answers are on their way to us."); render(); return true; }
+    if (show) fbRender("Your answers are on their way to us. Your 100 coins will be added the next time you open this page.");
+    return false;
+  }
+  async function fbSend() {
+    if (fbBusy) return;
+    var missing = FB_Q.filter(function (q) { return !fbAns[q[0]]; });
+    if (missing.length) { $("fbMsg").textContent = "Please answer: " + missing[0][1]; return; }
+    fbBusy = true; $("fbMsg").textContent = "Sending...";
+    var r = runs(), data = { form: "Velvet Worlds test", page: location.pathname, more: Object.keys(fbTicks).filter(function (k) { return fbTicks[k]; }).join(", "), ideas: ($("fbText").value || "").trim(),
+      runs: r.runs, wins: r.wins, weapons_made: (game && game.weapons ? game.weapons.length : 0), elements: ownedCount(), weapon_in_hand: picked(), browser: browserName(), screen: window.innerWidth + "x" + window.innerHeight };
+    FB_Q.forEach(function (q) { data[q[0]] = fbAns[q[0]]; });
+    var ok = false;
+    try { var res = await fetch(FORMSPREE, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify(data) }); ok = res.ok; } catch (e) {}
+    fbBusy = false;
+    if (!ok) { $("fbMsg").textContent = "That did not send. Check your connection and try again."; track("feedback failed"); return; }
+    setFbState("sent"); track("feedback sent", { fun: data.fun, clear: data.clear, forge: data.forge, lessons: data.lessons, level: data.level });
+    await fbClaim(true);
+  }
+
   /* ---- drawing ---- */
   function btn(key, label, cls, disabled) { return '<button type="button" data-k="' + key + '"' + (cls ? ' class="' + cls + '"' : "") + (disabled ? " disabled" : "") + ">" + label + "</button>"; }
   function plural(n, w) { return n + " " + w + (n === 1 ? "" : "s"); }
@@ -267,9 +336,9 @@
     if (!FULL) return h;
     h += "<h3>Its world</h3>";
     if (w && wi) {
-      var f = found();
+      var f = found(String(n));
       h += "<p><b>" + esc(wi.name) + ".</b> " + esc(wi.mission) + '. <span class="soft">' + esc(wi.spec) + '</span></p><div class="counts">' + partsHtml(f, w) + "</div>";
-      h += '<div class="row">' + (worldOpen(n) ? btn("play", "Play this world", "go", !canPlay) : '<span class="soft">Collect ' + esc(el.name) + " to open it.</span>") + "</div>";
+      h += '<div class="row">' + (worldOpen(n) ? btn("play:" + n, "Play this world", "go", !canPlay) : '<span class="soft">Collect ' + esc(el.name) + " to open it.</span>") + "</div>";
     } else h += '<p class="soft">This world has not been built yet. Worlds are being added one at a time.</p>';
     var a = ATOM_OF[n];
     if (a) {
@@ -318,7 +387,15 @@
     $("hCap").innerHTML = !signedIn() ? '<a href="#" data-k="signin">Log in</a> to start collecting. Your coins and elements save to your account.' :
       (w && typeof w.capRemaining === "number" ? "Earnable today: <b>" + w.capRemaining + "</b> / " + (w.dailyCap || 150) + " coins" : "");
     if (FULL) {
+      var fs = fbState(); $("fbBtn").style.display = fs ? "none" : ""; if ($("endFb")) $("endFb").style.display = fs ? "none" : "";
       $("hParts").innerHTML = ["p", "n", "e"].map(function (t) { return '<span title="' + PNAME[t] + '"><span class="dot ' + t + '"></span>' + hd[t] + "</span>"; }).join("");
+      var wi = WORLD_INFO[WORLD], wel = ELS[+WORLD - 1];
+      $("heroLab").textContent = "World " + WORLD + " \u00b7 " + wel.name; $("heroName").textContent = wi.name; $("heroText").innerHTML = wi.hero; $("heroSpec").textContent = wi.spec;
+      $("heroArt").src = ART + velvetArtPath(wel);
+      $("worldTabs").innerHTML = Object.keys(GAME_WORLDS).map(function (id) {
+        var open = worldOpen(+id), e2 = ELS[+id - 1];
+        return '<button type="button" data-k="world:' + id + '" class="' + (id === WORLD ? "cur" : "") + (open ? "" : " locked") + '">' + id + " \u00b7 " + esc(WORLD_INFO[id].name) + (open ? "" : ' <span class="soft">\u00b7 collect ' + esc(e2.name) + " to open</span>") + "</button>";
+      }).join("");
       $("heroFound").textContent = "Found here: " + f.p + "/" + s.p + " protons, " + f.n + "/" + s.n + " neutrons, " + f.e + "/" + s.e + " electrons";
     }
     renderMap(); renderDrawer();
@@ -327,9 +404,15 @@
     var b = ev.target.closest && ev.target.closest("[data-k]"); if (!b || b.disabled) return;
     var k = b.getAttribute("data-k"), parts = k.split(":");
     if (k === "close") { drawer = null; sure = ""; render(); return; }
+    if (k === "fb") { fbOpen("lobby"); return; }
+    if (k === "fbclose") { fbClose(); return; }
+    if (k === "fbsend") { fbSend(); return; }
+    if (parts[0] === "fa") { fbAns[parts[1]] = parts[2]; fbRender(); return; }
+    if (parts[0] === "ft") { fbTicks[parts[1]] = !fbTicks[parts[1]]; fbRender(); return; }
     if (parts[0] === "open") { drawer = { kind: parts[1] }; sure = ""; track("drawer", { which: parts[1] }); render(); return; }
     if (parts[0] === "el") { drawer = { kind: "el", n: +parts[1] }; sure = ""; render(); return; }
-    if (k === "play") { drawer = null; render(); play(); return; }
+    if (k.indexOf("play:") === 0) { if (worldOpen(+k.slice(5))) { setWorld(k.slice(5)); drawer = null; render(); play(); } return; }
+    if (k.indexOf("world:") === 0) { var wn = k.slice(6); if (worldOpen(+wn)) { setWorld(wn); track("world picked", { world: wn }); render(); } else { drawer = { kind: "el", n: +wn }; render(); } return; }
     if (k === "signin") { ev.preventDefault(); track("sign in click"); if (auth) auth.open("register", { source: FULL ? "velvet worlds" : "elements" }); return; }
     if (parts[0] === "pick") { lsSet(LS_PICK, parts[1]); track("weapon chosen", { item: parts[1] }); render(); return; }
     if (parts[0] === "buyel") { b.disabled = true; sfxClick(); collectElement(+parts[1]); return; }
@@ -357,8 +440,9 @@
     if (m.event === "particles") { var f = { p: +p.p || 0, n: +p.n || 0, e: +p.e || 0 }; setLocalFound(f); pendingSend = f; sendFound(false); }
     else if (m.event === "run_started") { $("endPanel").classList.remove("show"); $("exit").style.display = "none"; track("run started", { blaster: String(p.blaster), signed_in: signedIn() ? "yes" : "no" }); }
     else if (m.event === "run_finished") {
+      var rc = runs(); lsSet(LS_RUNS, { runs: rc.runs + 1, wins: rc.wins + (p.result === "win" ? 1 : 0) });
       var f2 = { p: +p.p || 0, n: +p.n || 0, e: +p.e || 0 }; setLocalFound(f2); pendingSend = f2; sendFound(true);
-      $("endTitle").textContent = p.result === "win" ? "Collection complete!" : "The robots got you";
+      $("endTitle").textContent = p.result === "win" ? "Collection complete!" : "The " + WORLD_INFO[WORLD].enemies + " got you";
       $("endText").textContent = "Particles found this run: " + (+p.particles_this_run || 0) + ". In this world so far: " + f2.p + " protons, " + f2.n + " neutrons, " + f2.e + " electrons.";
       $("endSave").textContent = signedIn() && bankOn ? "Saved to your account." : "Kept on this device. Sign in to save them to your account.";
       $("endPanel").classList.add("show"); $("exit").style.display = "block";
@@ -370,6 +454,7 @@
 
   /* ---- starting the game ---- */
   function startState() { return { blaster: picked(), world: WORLD, collected: found() }; }
+  
   function fail(msg, code) {
     $("loadTitle").textContent = "The game could not start"; $("loadText").textContent = msg; $("loadBar").style.display = "none"; $("loadRow").style.display = "flex";
     track("load failed", { error: code });
@@ -381,7 +466,7 @@
     window.vwState = startState();
     document.body.classList.add("vw-playing");
     $("loadPanel").classList.add("show");
-    track("play", { blaster: window.vwState.blaster, signed_in: signedIn() ? "yes" : "no" });
+    track("play", { blaster: window.vwState.blaster, world: WORLD, signed_in: signedIn() ? "yes" : "no" });
     var t0 = Date.now(), packUrl = VW_PACK + "?v=" + VW_BUILD;
     var boot = async function (base) {
       if (!window.Engine) await loadScript(base + ".js");
@@ -420,6 +505,7 @@
   });
   function leave() { sendFound(true); setTimeout(function () { location.reload(); }, 400); }
   $("labBtn").addEventListener("click", leave);
+  $("endFb").addEventListener("click", function () { fbOpen("end panel"); });
   $("exit").addEventListener("click", leave);
   // "Leave game" shows whenever the mouse is free during a run (after Esc).
   document.addEventListener("pointerlockchange", function () { if (started && !$("loadPanel").classList.contains("show")) $("exit").style.display = document.pointerLockElement ? "none" : "block"; });
@@ -431,12 +517,13 @@
     canPlay = false;
     $("notComputer").style.display = "flex"; $("playBtn").disabled = true; $("playNote").textContent = "Needs a keyboard and mouse";
     track("not a computer");
-    $("tryAnyway").addEventListener("click", function (ev) { ev.preventDefault(); canPlay = true; $("notComputer").style.display = "none"; $("playBtn").disabled = false; $("playNote").textContent = "First load is about 14 MB"; render(); });
+    $("tryAnyway").addEventListener("click", function (ev) { ev.preventDefault(); canPlay = true; $("notComputer").style.display = "none"; $("playBtn").disabled = false; $("playNote").textContent = "First load is about 17 MB"; render(); });
   }
   })();
 
   buildMap();
   buildFilters();
+  if (FULL && auth) setTimeout(function () { if (signedIn() && fbState() === "sent") fbClaim(false); }, 2500);   // feedback sent earlier but the coins were not added yet
   if (auth) auth.onChange(function () { if (!started) refresh(); });
   render();
   refresh();

@@ -1339,13 +1339,57 @@
     track("Apology credit: shown");
   }
 
+  /* ---------------- Velvet Worlds test invitation (Nov 2026) ----------------
+     One pop-up per account per device, for signed-in players on a computer, shown on the arcade
+     lobby and the Element Shop only (never in the middle of a game). It stops by itself on
+     VW_INVITE.until. Safe to delete after that, together with the vwInviteCheck() calls.
+     Plausible: "Velvet Worlds invite: shown" / "opened" / "not now". */
+  var VW_INVITE = { id: "vw-test-2026", until: Date.UTC(2026, 11, 1), url: "/velvet-worlds/" };
+  function vwInviteCheck() {
+    if (!state || !state.token || !state.userId || Date.now() >= VW_INVITE.until) return;
+    if (!/\/classcraft\/(arcade|arcade\/elements)(\.html)?$/.test(location.pathname)) return;
+    try { if (!window.matchMedia("(pointer: fine)").matches || window.innerWidth < 800) return; } catch (e) { return; }   // the game needs a keyboard and mouse
+    if (!document.body || document.querySelector(".aism-sorry, .aism-vwinv, #aism-auth-ov")) return;                    // another dialog is up: ask again on the next page
+    var key = "aism-note:" + VW_INVITE.id + ":" + state.userId;
+    try { if (localStorage.getItem(key)) return; localStorage.setItem(key, "1"); } catch (e) { return; }
+    var active = !!(walletSnap && walletSnap.earned > 0);
+    var css = document.createElement("style");
+    css.textContent =
+      ".aism-vwinv{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,6,28,.72);font-family:'Nunito',system-ui,sans-serif}" +
+      ".aism-vwinv .bx{max-width:460px;width:100%;background:#10103a;color:#e9e9ff;border:3px solid #ffd83d;border-radius:22px;padding:22px 20px 18px;text-align:center;box-shadow:0 8px 0 #02020c,0 0 30px rgba(255,216,61,.25)}" +
+      ".aism-vwinv .tg{display:inline-block;font-family:'Fredoka','Nunito',system-ui,sans-serif;font-weight:600;font-size:.8rem;letter-spacing:2px;color:#ff2d95;margin-bottom:6px}" +
+      ".aism-vwinv h2{font-family:'Fredoka','Nunito',system-ui,sans-serif;font-weight:700;font-size:1.55rem;line-height:1.2;margin:0 0 10px;color:#fff}" +
+      ".aism-vwinv p{font-size:1.02rem;line-height:1.45;margin:0 0 10px;color:#d9d9f5}.aism-vwinv p b{color:#ffd83d}" +
+      ".aism-vwinv .bt{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}" +
+      ".aism-vwinv a,.aism-vwinv button{font-family:'Fredoka','Nunito',system-ui,sans-serif;font-weight:600;font-size:1.05rem;border:3px solid #fff3b0;border-radius:14px;padding:10px 16px;cursor:pointer;text-decoration:none;box-shadow:0 4px 0 #02020c}" +
+      ".aism-vwinv a{background:#ffd83d;color:#1a1300}.aism-vwinv button{background:transparent;color:#e9e9ff;border-color:#2e2e7c}";
+    document.head.appendChild(css);
+    var d = document.createElement("div");
+    d.className = "aism-vwinv"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-labelledby", "aism-vwinv-h");
+    d.innerHTML = '<div class="bx"><div class="tg">NEW &middot; TEST VERSION</div><h2 id="aism-vwinv-h">Will you test our new game?</h2>' +
+      "<p>" + (active ? "You are one of our active players, and we would really value your opinion." : "Thank you for playing here. We would really value your opinion.") + "</p>" +
+      "<p><b>Velvet Worlds</b> is a new kind of game for this site: explore a world, find hidden particles and build your own weapons.</p>" +
+      "<p>Play it, tell us what you think, and we will add <b>100 bonus coins</b> to your account.</p>" +
+      '<div class="bt"><a href="' + VW_INVITE.url + '">Try Velvet Worlds</a><button type="button">Not now</button></div></div>';
+    function shut(why) { document.removeEventListener("keydown", onKey); d.remove(); if (why) track("Velvet Worlds invite: " + why); }
+    function onKey(e) { if (e.key === "Escape") shut("not now"); }
+    d.querySelector("button").addEventListener("click", function () { shut("not now"); });
+    d.querySelector("a").addEventListener("click", function () { track("Velvet Worlds invite: opened"); });
+    d.addEventListener("click", function (e) { if (e.target === d) shut("not now"); });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(d);
+    try { d.querySelector("a").focus(); } catch (e) {}
+    track("Velvet Worlds invite: shown", { active: active ? "yes" : "no" });
+  }
+
   /* ---------------- boot ---------------- */
   function boot() {
     if (!installEndCardHook()) { var n = 0, t = function () { if (installEndCardHook() || ++n > 40) return; setTimeout(t, 50); }; setTimeout(t, 50); }
     if (!window.AISM_NO_CORNER) { try { auth.mountCorner(); } catch (e) {} }
     if (auth.isLoggedIn()) { auth.pull(); loadAvatars(function () { emit(); }); } // refresh from server + load avatar art
     sorryCheck();
-    auth.onChange(function (d) { if (d && d.loggedIn) setTimeout(sorryCheck, 1500); });   // after a log-in on this device
+    setTimeout(vwInviteCheck, 3000);   // after the wallet has arrived and any apology note has shown
+    auth.onChange(function (d) { if (d && d.loggedIn) { setTimeout(sorryCheck, 1500); setTimeout(vwInviteCheck, 4000); } });   // after a log-in on this device
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 
