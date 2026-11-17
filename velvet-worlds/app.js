@@ -369,9 +369,7 @@
   };
 
   /* ---- starting the game ---- */
-  // Tester's shortcut, to be removed before launch: /velvet-worlds/?try=weapon-glucose starts with that weapon.
-  var TRY = (function () { try { var t = new URLSearchParams(location.search).get("try"); return t && WEAPON_INFO[t] ? t : ""; } catch (e) { return ""; } })();
-  function startState() { return { blaster: TRY || picked(), world: WORLD, collected: found() }; }
+  function startState() { return { blaster: picked(), world: WORLD, collected: found() }; }
   function fail(msg, code) {
     $("loadTitle").textContent = "The game could not start"; $("loadText").textContent = msg; $("loadBar").style.display = "none"; $("loadRow").style.display = "flex";
     track("load failed", { error: code });
