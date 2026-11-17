@@ -22,13 +22,14 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261117b";               // change whenever index.pck changes
-  var VW_SIZES = { wasm: 39514754, pck: 6028928 };
+  var VW_BUILD = "20261117d";               // change whenever index.pck changes
+  var VW_SIZES = { wasm: 39514754, pck: 6552460 };
 
   /* ---- these four tables must match the accounts server (game-test.mjs checks them) ---- */
   var GAME_WORLDS = {
     "1": { p: 14, n: 10, e: 14 },
     "2": { p: 14, n: 12, e: 14 },
+    "3": { p: 15, n: 13, e: 15 },
   };
   var GAME_ATOMS = {
     H: { z: 1, n: 0 },
@@ -47,7 +48,9 @@
     "1": { name: "The Castle", mission: "Collect the reactivity series", spec: "AQA GCSE Chemistry (8462), 4.4.1.2", enemies: "robots",
       hero: "Collect the eight metals of <b>the reactivity series</b> and put them in order. Search every corner for hidden particles." },
     "2": { name: "Pirate Island", mission: "Collect the noble gases", spec: "AQA GCSE Chemistry (8462), 4.1.2.4", enemies: "sand crabs",
-      hero: "Collect the six <b>noble gases</b> and put them in order of boiling point. Sand crabs lie buried in the beach, and particles are hidden all over the island." }
+      hero: "Collect the six <b>noble gases</b> and put them in order of boiling point. Sand crabs lie buried in the beach, and particles are hidden all over the island." },
+    "3": { name: "The Moon", mission: "Collect the alkali metals", spec: "AQA GCSE Chemistry (8462), 4.1.2.5", enemies: "aliens",
+      hero: "Collect five <b>alkali metals</b> and put them in order of reactivity. Gravity is one sixth of Earth's, so jump for the particles floating overhead. The stars are in their real places." }
   };
   var WORLD = "1";                               // the world the Play button starts (the player can switch)
   var ATOM_OF = { 1: "H", 6: "C", 8: "O" };      // atomic number -> key in GAME_ATOMS
