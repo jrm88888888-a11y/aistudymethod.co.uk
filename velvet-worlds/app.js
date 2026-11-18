@@ -8,7 +8,7 @@
      At launch, set VW_MODE = "full" in elements.html. */
   var FULL = window.VW_MODE !== "collection";
   var BASE = "/velvet-worlds/";
-  document.getElementById("vw-app").innerHTML = "<div class=\"wrap\" id=\"lobby\">\n  <a class=\"back\" href=\"/classcraft/arcade.html\">&larr; Arcade</a>\n  <header class=\"marquee\">\n    <div class=\"over\">AI STUDY METHOD PRESENTS</div>\n    <h1 id=\"mTitle\">VELVET WORLDS</h1>\n    <div class=\"sub\" id=\"mSub\">COLLECT AN ELEMENT &middot; OPEN ITS WORLD &middot; BUILD YOUR WEAPONS</div>\n  </header>\n\n  <div class=\"hud\">\n    <div class=\"cell coins\"><span id=\"coinGlyph\" aria-hidden=\"true\"></span><div><div class=\"k\">Velvet Coins</div><div class=\"v\" id=\"hCoins\">0</div></div></div>\n    <div class=\"cell prog\"><div class=\"top\"><span class=\"k\">Elements collected</span><span class=\"v\" id=\"hOwned\">0 / 118</span></div><div class=\"bar\"><i id=\"hBar\"></i></div><div class=\"cap\" id=\"hCap\"></div></div>\n    <div class=\"cell\" id=\"cellParts\"><div><div class=\"k\">Particles</div><div class=\"parts\" id=\"hParts\"></div></div></div>\n    <div class=\"acts\" id=\"acts\"><button type=\"button\" data-k=\"open:forge\">The Forge</button><button type=\"button\" data-k=\"open:bank\">Particle Bank</button><button type=\"button\" class=\"fbbtn\" data-k=\"fb\" id=\"fbBtn\">Give feedback &middot; +100</button></div>\n  </div>\n\n  <div id=\"note\" role=\"status\"></div>\n\n  <div class=\"cell\" id=\"notComputer\" style=\"display:none;margin-bottom:14px\"><div>\n    <b>The worlds need a computer.</b> You can collect elements here, but playing a world needs a keyboard and a mouse.\n    <a href=\"#\" id=\"tryAnyway\">I am on a computer: let me play</a></div>\n  </div>\n\n  <section class=\"hero\" id=\"hero\">\n    <img id=\"heroArt\" src=\"/classcraft/arcade/assets/elements/001-h.webp\" alt=\"\" width=\"96\" height=\"96\">\n    <div class=\"txt\">\n      <div class=\"wtabs\" id=\"worldTabs\"></div>\n      <div class=\"lab\" id=\"heroLab\">World 1 &middot; Hydrogen</div>\n      <h2 id=\"heroName\">The Castle</h2>\n      <p id=\"heroText\"></p>\n      <p class=\"soft\"><span id=\"heroSpec\"></span> &nbsp;&middot;&nbsp; <span id=\"heroFound\"></span></p>\n    </div>\n    <div class=\"play\">\n      <button class=\"go\" id=\"playBtn\" type=\"button\">Play</button>\n      <p class=\"soft\" id=\"playNote\" style=\"margin-top:8px\">First load is about 16 MB</p>\n    </div>\n  </section>\n\n  <section class=\"mapcard\">\n    <h2 id=\"mapTitle\">The map</h2>\n    <p class=\"soft\" id=\"mapLead\">Every element is a world. Collect an element with Velvet Coins from mini-lessons and the arcade (price = atomic number). Worlds are being built one at a time.</p>\n    <div class=\"filters\" id=\"filters\" role=\"group\" aria-label=\"Show elements\"></div>\n    <div class=\"map\" id=\"map\" role=\"group\" aria-label=\"Periodic table of worlds\"></div>\n    <div class=\"key\"><span id=\"keyWorld\"><b style=\"color:var(--yellow)\">Glowing</b> = a world you can play</span><span><b style=\"color:var(--yellow)\">Dashed</b> = you can afford it</span><span>Picture = collected</span><span class=\"wideonly\">Numbers above are groups (GCSE: 1 to 7 and 0); numbers at the side are periods</span></div>\n    <div class=\"legend\" id=\"legend\"></div>\n  </section>\n\n  <p class=\"credits\" id=\"credits\">Castle models: KayKit Dungeon Pack. Robots and sand crabs: Quaternius Sci-Fi Essentials Kit. Aliens and monsters: Quaternius Ultimate Monsters, Modular Sci-Fi MegaKit, Cyberpunk Game Kit and Cute Fish Pack. Trees and rocks in worlds 5 to 9: Quaternius Stylized Nature MegaKit. Farm: Quaternius Crops, Farm Buildings and Animated Animals packs, Kenney Car Kit. Island models, blasters and sounds: Kenney (kenney.nl). Star positions on the Moon: Yale Bright Star Catalogue. Earth map: Natural Earth. Music: &ldquo;Loopable Dungeon Ambience&rdquo; by JaggedStone. All released under CC0 or in the public domain. Built with Godot. Lanthanum and actinium are shown in the main table, with elements 58 to 71 and 90 to 103 below, as on GCSE data sheets.</p>\n  <p class=\"credits\">Bracketed masses are the mass number of the longest-lived isotope (no stable isotopes exist). A trailing * marks a predicted state: that element has never been observed in bulk. Elements in the middle block and the two lower rows show no group number.</p>\n</div>\n\n<aside id=\"drawer\" aria-label=\"Details\"></aside>\n\n<div id=\"stage\">\n  <canvas id=\"canvas\" tabindex=\"0\">Your browser does not support the canvas tag.</canvas>\n  <button id=\"exit\" type=\"button\">Leave game</button>\n  <div class=\"over\" id=\"loadPanel\"><div class=\"panel\">\n    <h2 id=\"loadTitle\">Loading the castle&hellip;</h2>\n    <p class=\"soft\" id=\"loadText\">The first visit takes longest.</p>\n    <progress id=\"loadBar\" max=\"100\" value=\"0\"></progress>\n    <div class=\"row\" id=\"loadRow\" style=\"display:none\"><button type=\"button\" onclick=\"location.reload()\">Back</button></div>\n  </div></div>\n  <div class=\"over\" id=\"endPanel\"><div class=\"panel\">\n    <h2 id=\"endTitle\"></h2>\n    <p id=\"endText\"></p>\n    <p class=\"soft\" id=\"endSave\"></p>\n    <div class=\"row\">\n      <button class=\"go\" type=\"button\" id=\"againBtn\">Play again</button>\n      <button type=\"button\" id=\"labBtn\">Back to the map</button>\n      <button type=\"button\" class=\"fbbtn\" id=\"endFb\">Give feedback &middot; +100 coins</button>\n    </div>\n    <p class=\"soft\"><a id=\"endLesson\" href=\"/classcraft/adventures/chemistry-gcse-aqa-chemical-changes-mini-lesson.html\">Earn coins: Chemical changes mini-lesson</a></p>\n  </div></div>\n</div>\n<div id=\"fbModal\" class=\"fbm\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Feedback\"></div>\n<div id=\"vwToast\" role=\"status\" aria-live=\"polite\"></div>\n<div id=\"sharePrompt\" role=\"status\" aria-live=\"polite\"></div>\n";
+  document.getElementById("vw-app").innerHTML = "<div class=\"wrap\" id=\"lobby\">\n  <a class=\"back\" href=\"/classcraft/arcade.html\">&larr; Arcade</a>\n  <header class=\"marquee\">\n    <div class=\"over\">AI STUDY METHOD PRESENTS</div>\n    <h1 id=\"mTitle\">VELVET WORLDS</h1>\n    <div class=\"sub\" id=\"mSub\">COLLECT AN ELEMENT &middot; OPEN ITS WORLD &middot; BUILD YOUR WEAPONS</div>\n  </header>\n\n  <div class=\"hud\">\n    <div class=\"cell coins\"><span id=\"coinGlyph\" aria-hidden=\"true\"></span><div><div class=\"k\">Velvet Coins</div><div class=\"v\" id=\"hCoins\">0</div></div></div>\n    <div class=\"cell prog\"><div class=\"top\"><span class=\"k\">Elements collected</span><span class=\"v\" id=\"hOwned\">0 / 118</span></div><div class=\"bar\"><i id=\"hBar\"></i></div><div class=\"cap\" id=\"hCap\"></div></div>\n    <div class=\"cell\" id=\"cellParts\"><div><div class=\"k\">Particles</div><div class=\"parts\" id=\"hParts\"></div></div></div>\n    <div class=\"acts\" id=\"acts\"><button type=\"button\" data-k=\"open:forge\">The Forge</button><button type=\"button\" data-k=\"open:bank\">Particle Bank</button><button type=\"button\" class=\"fbbtn\" data-k=\"fb\" id=\"fbBtn\">Give feedback &middot; +100</button></div>\n  </div>\n\n  <div id=\"note\" role=\"status\"></div>\n\n  <div class=\"cell\" id=\"notComputer\" style=\"display:none;margin-bottom:14px\"><div>\n    <b>The worlds need a computer.</b> You can collect elements here, but playing a world needs a keyboard and a mouse.\n    <a href=\"#\" id=\"tryAnyway\">I am on a computer: let me play</a></div>\n  </div>\n\n  <section class=\"hero\" id=\"hero\">\n    <img id=\"heroArt\" src=\"/classcraft/arcade/assets/elements/001-h.webp\" alt=\"\" width=\"96\" height=\"96\">\n    <div class=\"txt\">\n      <div class=\"wtabs\" id=\"worldTabs\"></div>\n      <div class=\"lab\" id=\"heroLab\">World 1 &middot; Hydrogen</div>\n      <h2 id=\"heroName\">The Castle</h2>\n      <p id=\"heroText\"></p>\n      <p class=\"soft\"><span id=\"heroSpec\"></span> &nbsp;&middot;&nbsp; <span id=\"heroFound\"></span></p>\n    </div>\n    <div class=\"play\">\n      <button class=\"go\" id=\"playBtn\" type=\"button\">Play</button>\n      <p class=\"soft\" id=\"playNote\" style=\"margin-top:8px\">First load is about 16 MB</p>\n    </div>\n  </section>\n\n  <section class=\"mapcard\">\n    <h2 id=\"mapTitle\">The map</h2>\n    <p class=\"soft\" id=\"mapLead\">Every element is a world. Collect an element with Velvet Coins from mini-lessons and the arcade (price = atomic number). Worlds are being built one at a time.</p>\n    <div class=\"filters\" id=\"filters\" role=\"group\" aria-label=\"Show elements\"></div>\n    <div class=\"map\" id=\"map\" role=\"group\" aria-label=\"Periodic table of worlds\"></div>\n    <div class=\"key\"><span id=\"keyWorld\"><b style=\"color:var(--yellow)\">Glowing</b> = a world you can play</span><span><b style=\"color:var(--yellow)\">Dashed</b> = you can afford it</span><span>Picture = collected</span><span class=\"wideonly\">Numbers above are groups (GCSE: 1 to 7 and 0); numbers at the side are periods</span></div>\n    <div class=\"legend\" id=\"legend\"></div>\n  </section>\n\n  <p class=\"credits\" id=\"credits\">Castle models: KayKit Dungeon Pack. Robots and sand crabs: Quaternius Sci-Fi Essentials Kit. Aliens and monsters: Quaternius Ultimate Monsters, Modular Sci-Fi MegaKit, Cyberpunk Game Kit and Cute Fish Pack. Dinosaurs: Quaternius Animated Dinosaur Pack. Trees and rocks in worlds 5 to 9: Quaternius Stylized Nature MegaKit. Farm: Quaternius Crops, Farm Buildings and Animated Animals packs, Kenney Car Kit. Island models, blasters and sounds: Kenney (kenney.nl). Star positions on the Moon: Yale Bright Star Catalogue. Earth map: Natural Earth. Music: &ldquo;Loopable Dungeon Ambience&rdquo; by JaggedStone. All released under CC0 or in the public domain. Built with Godot. Lanthanum and actinium are shown in the main table, with elements 58 to 71 and 90 to 103 below, as on GCSE data sheets.</p>\n  <p class=\"credits\">Bracketed masses are the mass number of the longest-lived isotope (no stable isotopes exist). A trailing * marks a predicted state: that element has never been observed in bulk. Elements in the middle block and the two lower rows show no group number.</p>\n</div>\n\n<aside id=\"drawer\" aria-label=\"Details\"></aside>\n\n<div id=\"stage\">\n  <canvas id=\"canvas\" tabindex=\"0\">Your browser does not support the canvas tag.</canvas>\n  <button id=\"exit\" type=\"button\">Leave game</button>\n  <div class=\"over\" id=\"loadPanel\"><div class=\"panel\">\n    <h2 id=\"loadTitle\">Loading the castle&hellip;</h2>\n    <p class=\"soft\" id=\"loadText\">The first visit takes longest.</p>\n    <progress id=\"loadBar\" max=\"100\" value=\"0\"></progress>\n    <div class=\"shuttle\" id=\"loadShuttle\" style=\"display:none\" role=\"progressbar\" aria-label=\"Setting the level up\"><i></i></div>\n    <div class=\"row\" id=\"loadRow\" style=\"display:none\"><button type=\"button\" onclick=\"location.reload()\">Back</button></div>\n  </div></div>\n  <div class=\"over\" id=\"endPanel\"><div class=\"panel\">\n    <h2 id=\"endTitle\"></h2>\n    <p id=\"endText\"></p>\n    <p class=\"soft\" id=\"endSave\"></p>\n    <div class=\"row\">\n      <button class=\"go\" type=\"button\" id=\"againBtn\">Play again</button>\n      <button type=\"button\" id=\"labBtn\">Back to the map</button>\n      <button type=\"button\" class=\"fbbtn\" id=\"endFb\">Give feedback &middot; +100 coins</button>\n    </div>\n    <p class=\"soft\"><a id=\"endLesson\" href=\"/classcraft/adventures/chemistry-gcse-aqa-chemical-changes-mini-lesson.html\">Earn coins: Chemical changes mini-lesson</a></p>\n  </div></div>\n</div>\n<div id=\"fbModal\" class=\"fbm\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Feedback\"></div>\n<div id=\"vwToast\" role=\"status\" aria-live=\"polite\"></div>\n<div id=\"sharePrompt\" role=\"status\" aria-live=\"polite\"></div>\n";
   if (!FULL) {
     ["hero", "notComputer", "cellParts", "acts", "stage", "keyWorld", "credits"].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); });
     document.getElementById("mTitle").textContent = "VELVET ELEMENTS";
@@ -22,8 +22,8 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261117h";               // change whenever index.pck changes
-  var VW_SIZES = { wasm: 39514754, pck: 4590728, worlds: { "2": 3597492, "3": 551780, "4": 2454616, "5": 1247836, "6": 701796, "7": 1806860, "8": 934348, "9": 2508708, "10": 1539732, "11": 2324860, "12": 780044, "13": 290472, "14": 397124 } };   // each world after the first has its own pack, fetched when it is opened
+  var VW_BUILD = "20261118d";               // change whenever index.pck changes
+  var VW_SIZES = { wasm: 39514754, pck: 4801048, worlds: { "2": 3597492, "3": 551780, "4": 2454616, "5": 1247836, "6": 701796, "7": 1806860, "8": 934348, "9": 2508708, "10": 1539732, "11": 2324860, "12": 780044, "13": 290472, "14": 397124, "15": 440088, "16": 425332, "17": 534904, "18": 268380, "19": 528356, "20": 457520, "21": 410728, "22": 229484, "23": 572656, "24": 1635344 } };   // each world after the first has its own pack, fetched when it is opened
 
   /* ---- these four tables must match the accounts server (game-test.mjs checks them) ---- */
   var GAME_WORLDS = {
@@ -41,6 +41,16 @@
     "12": { p: 19, n: 18, e: 19 },
     "13": { p: 20, n: 18, e: 20 },
     "14": { p: 20, n: 19, e: 20 },
+    "15": { p: 21, n: 19, e: 21 },
+    "16": { p: 21, n: 20, e: 21 },
+    "17": { p: 22, n: 20, e: 22 },
+    "18": { p: 22, n: 21, e: 22 },
+    "19": { p: 23, n: 21, e: 23 },
+    "20": { p: 23, n: 22, e: 23 },
+    "21": { p: 24, n: 22, e: 24 },
+    "22": { p: 24, n: 23, e: 24 },
+    "23": { p: 25, n: 23, e: 25 },
+    "24": { p: 25, n: 24, e: 25 },
   };
   var GAME_ATOMS = {
     H: { z: 1, n: 0 },
@@ -53,6 +63,24 @@
     "weapon-glucose": { C: 6, H: 12, O: 6 },
   };
   var PARTICLE_PRICE = 2;
+
+  /* ---- courses: the worlds are the same for everyone; the mission pack (pieces, final task, questions)
+     changes with the course. Packs are built from the site's banks by _dev/velvet-worlds/build_packs.py
+     into /velvet-worlds/packs/<library>/ (index.json lists the worlds that have a pack; wN.json is the pack). ---- */
+  var PACKS = BASE + "packs/", PACKS_V = "20261117c", LS_COURSE = "vw-course", LS_WINS = "vw-wins";
+  var LEVELS = [
+    { id: "ks3", label: "KS3", subjects: { chemistry: "ks3-science" }, note: "Chemistry topics only so far." },
+    { id: "gcse", label: "GCSE", subjects: { biology: "gcse-biology", chemistry: "gcse-chemistry", physics: "gcse-physics" }, boards: [["aqa", "AQA"], ["other", "Another board"]], tiers: [["foundation", "Foundation"], ["higher", "Higher"]],
+      note: "These questions follow the AQA specifications. Much of the content is shared with other boards, but some of it will differ from yours." },
+    { id: "ib", label: "IB Diploma", subjects: { biology: "ib-biology", chemistry: "ib-chemistry", physics: "ib-physics" }, tiers: [["foundation", "SL"], ["higher", "HL"]] },
+    { id: "alevel", label: "A-level", subjects: { biology: "alevel-biology", chemistry: "alevel-chemistry", physics: "alevel-physics" }, boardLibs: true,
+      boards: [["aqa", "AQA"], ["ocr", "OCR A"], ["edexcel", "Edexcel"], ["eduqas", "Eduqas"], ["ccea", "CCEA"]] },   // one library per board: alevel-<subject>-<board>
+    { id: "ap", label: "AP", subjects: { biology: "ap-biology", chemistry: "ap-chemistry", "physics-1": "ap-physics-1", "physics-2": "ap-physics-2", "physics-c-mechanics": "ap-physics-c-mechanics", "physics-c-em": "ap-physics-c-em" } }
+  ];
+  var SUBJECT_NAMES = { biology: "Biology", chemistry: "Chemistry", physics: "Physics", "physics-1": "Physics 1", "physics-2": "Physics 2", "physics-c-mechanics": "Physics C: Mechanics", "physics-c-em": "Physics C: E&M" };
+  var LS_STARS = "vw-stars";   // best stars per course library and world, on this device
+  var BAKED_LIB = "gcse-chemistry";   // this course's first worlds are built into the game (WORLD_INFO gives their mission)
+  var course = normCourse(lsGet(LS_COURSE, null)), courseIndex = null, courseIndexFor = "", curPack = null, packTaken = false;
 
   /* ---- the worlds that exist so far (key = atomic number) ---- */
   var WORLD_INFO = {
@@ -83,7 +111,18 @@
     "13": { name: "The Scrapyard", mission: "Collect the steps for extracting aluminium", spec: "AQA GCSE Chemistry (8462), 4.4.3.3", enemies: "scrap robots",
       hero: "Collect five steps in <b>the extraction of aluminium by electrolysis</b> and put them in order. Conveyor belts carry you along whether you like it or not." },
     "14": { name: "Inside the Computer", mission: "Collect four molecules by number of bonds", spec: "AQA GCSE Chemistry (8462), 4.2.1.4", enemies: "glitch bugs",
-      hero: "Collect four molecules and put them in order of <b>the number of covalent bonds</b> in each. Teleport pads come in pairs: step on one and you arrive at the other." }
+      hero: "Collect four molecules and put them in order of <b>the number of covalent bonds</b> in each. Teleport pads come in pairs: step on one and you arrive at the other." },
+    /* Worlds 15 onwards have no mission of their own: every course, AQA GCSE Chemistry included, plays its pack there. tip = the world's twist. */
+    "15": { name: "The Match Works", enemies: "demons", tip: "Fire strips flare up every few seconds: cross when they are out." },
+    "16": { name: "The Volcano", enemies: "rock creatures", tip: "Lava burns. Steam vents throw you into the air, where some particles hang." },
+    "17": { name: "The Water Park", enemies: "pool pests", tip: "Water slides carry you along." },
+    "18": { name: "The Welding Shop", enemies: "robots", tip: "The lights cut out every few seconds. Your torch comes on when they do." },
+    "19": { name: "The Banana Jungle", enemies: "jungle creatures", tip: "Mud slows you down. Vine pads throw you up to the particles overhead." },
+    "20": { name: "The Bone Dig", enemies: "dinosaurs", tip: "The dinosaurs come in three waves." },
+    "21": { name: "The Stadium at Night", enemies: "pitch invaders", tip: "Sprint along the running track to move faster." },
+    "22": { name: "The Airfield", enemies: "drones", tip: "Jet engines blow in gusts and push you across the wind lanes." },
+    "23": { name: "The Spring Works", enemies: "orcs", tip: "Spring pads throw you onto the machines, where some particles are hidden." },
+    "24": { name: "The Chrome Garage", enemies: "shell robots", tip: "Cars cross the two lanes: look before you step out." }
   };
   var WORLD = "1";                               // the world the Play button starts (the player can switch)
   var ATOM_OF = { 1: "H", 6: "C", 8: "O" };      // atomic number -> key in GAME_ATOMS
@@ -118,6 +157,75 @@
   function note(text, bad) { var n = $("note"); n.textContent = text || ""; n.className = bad ? "bad" : ""; n.style.display = text ? "block" : "none"; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
   function vcoin(size) { return (auth && auth._coin) ? auth._coin(size) : ""; }
+
+  /* ---- the course the player is studying ---- */
+  function levelOf(id) { for (var i = 0; i < LEVELS.length; i++) if (LEVELS[i].id === id) return LEVELS[i]; return null; }
+  function normCourse(c) {
+    c = c || {};
+    var lv = levelOf(c.level);
+    if (!lv || lv.soon) lv = levelOf("gcse");
+    var subject = lv.subjects[c.subject] ? c.subject : (lv.subjects.chemistry ? "chemistry" : Object.keys(lv.subjects)[0]);
+    return { level: lv.id, subject: subject, board: lv.boards ? (lv.boards.some(function (b) { return b[0] === c.board; }) ? c.board : lv.boards[0][0]) : "", tier: lv.tiers ? (c.tier === "higher" ? "higher" : "foundation") : "", chosen: !!c.chosen };
+  }
+  function courseLib() { var lv = levelOf(course.level), lib = lv.subjects[course.subject]; return lv.boardLibs ? lib + "-" + course.board : lib; }
+  function boardLabel() { var lv = levelOf(course.level), b = lv.boards && lv.boards.filter(function (x) { return x[0] === course.board; })[0]; return b ? b[1] : ""; }
+  /* Stars for a won run: one for winning, one for the final task right first time, one for at least 80% of questions right first time. */
+  function starsFor(p) { return p.result !== "win" ? 0 : 1 + (+p.attempts === 1 ? 1 : 0) + (+p.asked > 0 && +p.right / +p.asked >= 0.8 ? 1 : 0); }
+  function starsHere(n) { var a = lsGet(LS_STARS, {})[courseLib()], b = game && game.stars && game.stars[courseLib()]; return Math.max((a && +a[String(n)]) || 0, (b && +b[String(n)]) || 0); }
+  function starText(k) { return "\u2605\u2605\u2605".slice(0, k) + "\u2606\u2606\u2606".slice(0, 3 - k); }
+  function courseName() {
+    var lv = levelOf(course.level), t = lv.tiers && lv.tiers.filter(function (x) { return x[0] === course.tier; })[0];
+    return (lv.id === "gcse" && course.board === "aqa" ? "AQA " : lv.id === "alevel" ? boardLabel() + " " : "") + lv.label + " " + (lv.id === "ks3" ? "Science" : SUBJECT_NAMES[course.subject]) + (t ? " \u00b7 " + t[1] : "") + (lv.id === "gcse" && course.board !== "aqa" ? " \u00b7 AQA questions" : "");
+  }
+  function setCourse(change) {
+    course = normCourse(Object.assign({}, course, change, { chosen: true }));
+    lsSet(LS_COURSE, course);
+    saveCourse();
+    track("course chosen", { course: courseLib(), tier: course.tier || "none", board: course.board || "none" });
+    loadCourseIndex();
+  }
+  function loadCourseIndex() {
+    var lib = courseLib();
+    if (courseIndexFor === lib) return;
+    courseIndexFor = lib; courseIndex = null;
+    fetch(PACKS + lib + "/index.json?v=" + PACKS_V).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function (data) { if (courseIndexFor === lib) { courseIndex = data; render(); } })
+      .catch(function () { if (courseIndexFor === lib) { courseIndex = { name: "", worlds: {}, failed: true }; render(); } });
+  }
+  /* What world n holds for the chosen course: { title, spec, hero, baked }, or null if it has nothing yet. */
+  function missionFor(n) {
+    var id = String(n), wi = WORLD_INFO[id], lib = courseLib();
+    if (!wi) return null;
+    if (lib === BAKED_LIB && wi.spec) return { title: wi.mission, spec: wi.spec, hero: wi.hero, baked: true };
+    var w = courseIndex && courseIndex.worlds && courseIndex.worlds[id];
+    if (!w) return null;
+    return { title: "Match the key terms: " + w.title, spec: courseIndex.name + ", " + w.spec, baked: false,
+      hero: "Find the four key terms of <b>" + esc(w.title) + "</b> and match each one to its definition at the base. Answer questions at the terminals for ammo and health." + (wi.tip ? " " + esc(wi.tip) : "") };
+  }
+  function wonHere(n) { var w = lsGet(LS_WINS, {})[courseLib()], g = game && game.wins && game.wins[courseLib()]; return !!((w && w[String(n)]) || (g && g[String(n)])); }
+  function saveCourse() { if (signedIn() && bankOn) api("POST", { op: "course", level: course.level, subject: course.subject, board: course.board, tier: course.tier }); }   // an older accounts script answers bad-op: harmless
+  async function syncCourse() {   // after signing in: take the course from the account if none was chosen here, and send up wins made on this device
+    if (game.course && !course.chosen) { course = normCourse(Object.assign({}, game.course, { chosen: true })); lsSet(LS_COURSE, course); loadCourseIndex(); }
+    else if (course.chosen && !game.course) await api("POST", { op: "course", level: course.level, subject: course.subject, board: course.board, tier: course.tier });
+    var local = lsGet(LS_WINS, {});
+    for (var lib in local) for (var w in local[lib]) {
+      if (game && game.wins && game.wins[lib] && game.wins[lib][w]) continue;
+      var r = await api("POST", { op: "win", lib: lib, world: w, stars: +((lsGet(LS_STARS, {})[lib] || {})[w]) || 1 });
+      if (!r.ok && r.error === "bad-op") return;   // the accounts script does not know wins yet
+    }
+  }
+  function coursePanel() {
+    var lv = levelOf(course.level), ids = Object.keys(GAME_WORLDS), ready = ids.filter(function (id) { return !!missionFor(+id); }).length;
+    var pick = function (group, key, label, on, off) { return '<button type="button" class="chip" data-k="course:' + group + ":" + key + '" aria-pressed="' + on + '"' + (off ? " disabled" : "") + ">" + label + "</button>"; };
+    var h = '<h2>Your course</h2><p class="soft">Every world can be played for any course. The questions and the pieces you collect change with it. Your elements, particles and weapons stay the same.</p>';
+    h += '<h3>Level</h3><div class="row">' + LEVELS.map(function (l) { return pick("level", l.id, l.label + (l.soon ? " (soon)" : ""), l.id === course.level, l.soon); }).join("") + "</div>";
+    h += '<h3>Subject</h3><div class="row">' + Object.keys(lv.subjects).map(function (sub) { return pick("subject", sub, lv.id === "ks3" ? "Science" : SUBJECT_NAMES[sub], sub === course.subject); }).join("") + "</div>";
+    if (lv.boards) h += '<h3>Exam board</h3><div class="row">' + lv.boards.map(function (b) { return pick("board", b[0], b[1], b[0] === course.board); }).join("") + "</div>";
+    if (lv.tiers) h += "<h3>" + (lv.id === "ib" ? "SL or HL" : "Tier") + '</h3><div class="row">' + lv.tiers.map(function (t) { return pick("tier", t[0], t[1], t[0] === course.tier); }).join("") + "</div>";
+    if (lv.note && (lv.id !== "gcse" || course.board !== "aqa")) h += '<p class="soft">' + lv.note + "</p>";
+    h += "<p><b>" + esc(courseName()) + ".</b> " + (courseIndex ? (courseIndex.failed && courseLib() !== BAKED_LIB ? "The list of worlds for this course could not be loaded. Check your connection and reload." : ready + " of the " + ids.length + " worlds built so far are ready for this course.") : "Checking which worlds are ready\u2026") + "</p>";
+    return h + '<div class="row">' + btn("close", "Done", "go") + "</div>";
+  }
 
   /* ---- where an element sits in the table: [row, column]. Rows 1-7 are the periods; rows 9 and 10
      hold elements 58-71 and 90-103. Lanthanum and actinium sit in the main table, as on GCSE data sheets. */
@@ -180,6 +288,7 @@
     if (FULL && signedIn()) {
       var r = await api("GET");
       if (r.ok) {   // bank anything found on this device before signing in
+        await syncCourse();
         for (var id in GAME_WORLDS) {
           if (!worldOpen(+id)) continue;
           var f = found(id), g = (game.worlds && game.worlds[id]) || { p: 0, n: 0, e: 0 };
@@ -373,8 +482,9 @@
     h += "<h3>Its world</h3>";
     if (w && wi) {
       var f = found(String(n));
-      h += "<p><b>" + esc(wi.name) + ".</b> " + esc(wi.mission) + '. <span class="soft">' + esc(wi.spec) + '</span></p><div class="counts">' + partsHtml(f, w) + "</div>";
-      h += '<div class="row">' + (worldOpen(n) ? btn("play:" + n, "Play this world", "go", !canPlay) : '<span class="soft">Collect ' + esc(el.name) + " to open it.</span>") + "</div>";
+      var ms = missionFor(n);
+      h += "<p><b>" + esc(wi.name) + ".</b> " + (ms ? esc(ms.title) + '. <span class="soft">' + esc(ms.spec) + "</span>" + (wonHere(n) ? " <b>\u2713 Completed " + starText(starsHere(n) || 1) + "</b>" : "") : '<span class="soft">Not ready for ' + esc(courseName()) + " yet.</span>") + '</p><div class="counts">' + partsHtml(f, w) + "</div>";
+      h += '<div class="row">' + (worldOpen(n) ? btn("play:" + n, "Play this world", "go", !canPlay || !ms) : '<span class="soft">Collect ' + esc(el.name) + " to open it.</span>") + "</div>";
     } else h += '<p class="soft">This world has not been built yet. Worlds are being added one at a time.</p>';
     var a = ATOM_OF[n];
     if (a) {
@@ -413,7 +523,7 @@
     var d = $("drawer");
     document.body.classList.toggle("vw-drawer", !!drawer);
     if (!drawer) { d.classList.remove("open"); return; }
-    d.innerHTML = '<div class="dnav">' + (!FULL ? "" : '<button type="button" data-k="open:forge"' + (drawer.kind === "forge" ? ' class="cur"' : "") + '>The Forge</button><button type="button" data-k="open:bank"' + (drawer.kind === "bank" ? ' class="cur"' : "") + '>Particle Bank</button>') + '<button type="button" class="x" data-k="close" aria-label="Close">&times;</button></div>' + (drawer.kind === "el" ? elementPanel(drawer.n) : drawer.kind === "forge" ? forgePanel() : bankPanel());
+    d.innerHTML = '<div class="dnav">' + (!FULL ? "" : '<button type="button" data-k="open:forge"' + (drawer.kind === "forge" ? ' class="cur"' : "") + '>The Forge</button><button type="button" data-k="open:bank"' + (drawer.kind === "bank" ? ' class="cur"' : "") + '>Particle Bank</button>') + '<button type="button" class="x" data-k="close" aria-label="Close">&times;</button></div>' + (drawer.kind === "el" ? elementPanel(drawer.n) : drawer.kind === "forge" ? forgePanel() : drawer.kind === "course" ? coursePanel() : bankPanel());
     d.classList.add("open");
   }
   function render() {
@@ -426,7 +536,12 @@
       var fs = fbState(); $("fbBtn").style.display = fs ? "none" : ""; if ($("endFb")) $("endFb").style.display = fs ? "none" : "";
       $("hParts").innerHTML = ["p", "n", "e"].map(function (t) { return '<span title="' + PNAME[t] + '"><span class="dot ' + t + '"></span>' + hd[t] + "</span>"; }).join("");
       var wi = WORLD_INFO[WORLD], wel = ELS[+WORLD - 1];
-      $("heroLab").textContent = "World " + WORLD + " \u00b7 " + wel.name; $("heroName").textContent = wi.name; $("heroText").innerHTML = wi.hero; $("heroSpec").textContent = wi.spec;
+      $("heroLab").textContent = "World " + WORLD + " \u00b7 " + wel.name; $("heroName").textContent = wi.name; var ms = missionFor(+WORLD);
+      $("heroText").innerHTML = ms ? ms.hero : (courseIndex ? "This world is <b>not ready for your course yet</b>. Choose another world, or change your course." : "Loading your course\u2026");
+      $("heroSpec").textContent = ms ? ms.spec : courseName();
+      if (!$("courseChip")) { var chip = document.createElement("div"); chip.id = "courseChip"; chip.className = "coursechip"; $("worldTabs").parentNode.insertBefore(chip, $("worldTabs")); }
+      $("courseChip").innerHTML = '<span class="soft">Your course:</span> <b>' + esc(courseName()) + "</b> " + btn("open:course", course.chosen ? "Change" : "Choose your course", course.chosen ? "" : "pick");
+      if (canPlay && !started) { $("playBtn").disabled = !ms; $("playNote").textContent = ms ? "First load is about 16 MB" : "Not ready for your course yet"; }
       $("heroArt").src = ART + velvetArtPath(wel);
       $("worldTabs").innerHTML = Object.keys(GAME_WORLDS).map(function (id) {
         var open = worldOpen(+id), e2 = ELS[+id - 1];
@@ -445,6 +560,7 @@
     if (k === "fbsend") { fbSend(); return; }
     if (parts[0] === "fa") { fbAns[parts[1]] = parts[2]; fbRender(); return; }
     if (parts[0] === "ft") { fbTicks[parts[1]] = !fbTicks[parts[1]]; fbRender(); return; }
+    if (parts[0] === "course") { var change = {}; change[parts[1]] = parts[2]; setCourse(change); render(); return; }
     if (parts[0] === "open") { drawer = { kind: parts[1] }; sure = ""; track("drawer", { which: parts[1] }); render(); return; }
     if (parts[0] === "el") { drawer = { kind: "el", n: +parts[1] }; sure = ""; render(); return; }
     if (k.indexOf("play:") === 0) { if (worldOpen(+k.slice(5))) { setWorld(k.slice(5)); drawer = null; render(); play(); } return; }
@@ -473,37 +589,62 @@
   window.vwEvent = function (text) {
     var m; try { m = JSON.parse(text); } catch (e) { return; }
     var p = m.props || {};
-    if (m.event === "particles") { var f = { p: +p.p || 0, n: +p.n || 0, e: +p.e || 0 }; setLocalFound(f); pendingSend = f; sendFound(false); }
+    if (m.event === "pack") { packTaken = !!p.from_page; if (p.refused) track("pack refused", { reason: String(p.refused).slice(0, 60), course: courseLib(), world: WORLD }); }
+    else if (m.event === "run_started" && curPack && !packTaken) {   // the game did not take this course's pack (an older game file, or a pack it refused): stop, do not play another course's mission
+      $("loadPanel").classList.add("show"); fail("This world could not load the questions for your course. Reload the page and try again.", "pack not taken");
+    }
+    else if (m.event === "level_ready") { if (+p.restart > 0 && restartTimer !== null) { var took = Date.now() - (window.vwRestartAsked || Date.now()); restartDone();
+      track("restarted", { seconds: took < 2000 ? "under 2" : took < 5000 ? "2 to 4" : took < 10000 ? "5 to 9" : "10+", world: WORLD }); } }
+    else if (m.event === "particles") { var f = { p: +p.p || 0, n: +p.n || 0, e: +p.e || 0 }; setLocalFound(f); pendingSend = f; sendFound(false); }
     else if (m.event === "run_started") { $("endPanel").classList.remove("show"); $("exit").style.display = "none"; track("run started", { blaster: String(p.blaster), signed_in: signedIn() ? "yes" : "no" }); }
     else if (m.event === "run_finished") {
       var rc = runs(); lsSet(LS_RUNS, { runs: rc.runs + 1, wins: rc.wins + (p.result === "win" ? 1 : 0) });
+      if (p.result === "win") { var ws = lsGet(LS_WINS, {}), lib = courseLib(); ws[lib] = ws[lib] || {}; ws[lib][WORLD] = 1; lsSet(LS_WINS, ws);
+        var got = starsFor(p), st = lsGet(LS_STARS, {}); st[lib] = st[lib] || {}; st[lib][WORLD] = Math.max(+st[lib][WORLD] || 0, got); lsSet(LS_STARS, st);
+        if (signedIn() && bankOn) api("POST", { op: "win", lib: lib, world: WORLD, stars: got }); }   // on this device, and on the account when signed in
       var f2 = { p: +p.p || 0, n: +p.n || 0, e: +p.e || 0 }; setLocalFound(f2); pendingSend = f2; sendFound(true);
       $("endTitle").textContent = p.result === "win" ? "Collection complete!" : "The " + WORLD_INFO[WORLD].enemies + " got you";
       $("endText").textContent = "Particles found this run: " + (+p.particles_this_run || 0) + ". In this world so far: " + f2.p + " protons, " + f2.n + " neutrons, " + f2.e + " electrons.";
+      if (p.result === "win") $("endText").textContent += " Stars: " + starText(starsFor(p)) + " (win; final task right first time; 8 in 10 questions right first time).";
       $("endSave").textContent = signedIn() && bankOn ? "Saved to your account." : "Kept on this device. Sign in to save them to your account.";
       $("endPanel").classList.add("show"); $("exit").style.display = "block";
       var mins = Math.floor((+p.seconds || 0) / 60);
-      track("run finished", { result: String(p.result), blaster: String(p.blaster), minutes: mins >= 10 ? "10+" : String(mins), pieces: p.pieces + "/" + p.pieces_total,
+      track("run finished", { course: courseLib(), result: String(p.result), blaster: String(p.blaster), minutes: mins >= 10 ? "10+" : String(mins), pieces: p.pieces + "/" + p.pieces_total,
         first_try: p.asked ? Math.round(100 * p.right / p.asked / 10) * 10 + "%" : "none", particles: String(+p.particles_this_run || 0) });
     }
   };
 
   /* ---- starting the game ---- */
-  function startState() { return { blaster: picked(), world: WORLD, collected: found() }; }
+  function startState() { var st = { blaster: picked(), world: WORLD, collected: found() }; if (curPack) st.pack = curPack; return st; }
   
   function fail(msg, code) {
+    if ($("loadTips")) $("loadTips").style.display = "none";
     $("loadTitle").textContent = "The game could not start"; $("loadText").textContent = msg; $("loadBar").style.display = "none"; $("loadRow").style.display = "flex";
     track("load failed", { error: code });
   }
   function loadScript(src) { return new Promise(function (ok, bad) { var s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = function () { bad(new Error("script")); }; document.head.appendChild(s); }); }
   play = async function () {
-    if (started) return;
+    var ms = missionFor(+WORLD);
+    if (started || !ms) return;
     started = true;
-    window.vwState = startState();
     document.body.classList.add("vw-playing");
     $("loadTitle").textContent = "Loading " + WORLD_INFO[WORLD].name + "\u2026";
     $("loadPanel").classList.add("show");
-    track("play", { blaster: window.vwState.blaster, world: WORLD, signed_in: signedIn() ? "yes" : "no" });
+    var tips = $("loadTips");   // what to do, shown while the game loads (the first feedback forms: one player of two did not know)
+    if (!tips) { tips = document.createElement("ul"); tips.id = "loadTips"; tips.className = "howto"; $("loadBar").parentNode.insertBefore(tips, $("loadBar")); }
+    tips.style.display = "";
+    tips.innerHTML = "<li>Find the pieces hidden around the world.</li><li>Answer questions at the terminals for ammo and health.</li><li>Take the pieces to the base and " + (ms.baked ? "put them in order" : "match each term to its definition") + ".</li><li>Protons, neutrons and electrons are hidden everywhere, some inside crates.</li>";
+    curPack = null; packTaken = false;
+    if (!ms.baked) {   // this course's pack for this world: fetched now and handed to the game in window.vwState
+      try {
+        var pr = await fetch(PACKS + courseLib() + "/w" + WORLD + ".json?v=" + PACKS_V);
+        if (!pr.ok) throw new Error("http " + pr.status);
+        curPack = await pr.json();
+        if (course.tier !== "higher") curPack.questions = curPack.questions.filter(function (q) { return q.tier !== "higher"; });   // Higher and HL questions only for those who chose them
+      } catch (e0) { fail("The questions for this world could not be loaded. Check your connection and try again.", "pack"); return; }
+    }
+    window.vwState = startState();
+    track("play", { blaster: window.vwState.blaster, world: WORLD, signed_in: signedIn() ? "yes" : "no", course: courseLib() });
     var t0 = Date.now(), packUrl = VW_PACK + "?v=" + VW_BUILD;
     var boot = async function (base) {
       if (!window.Engine) await loadScript(base + ".js");
@@ -526,6 +667,9 @@
         await boot(VW_ENGINE_SITE);
       }
       await engine.start({ args: ["--main-pack", "index.pck"] });
+      var holdFor = lsGet("vw-howto", 0) ? 0 : Math.max(0, 6000 - (Date.now() - t0));   // first run on this device: leave the instructions up for at least six seconds
+      await new Promise(function (go) { setTimeout(go, holdFor); });
+      lsSet("vw-howto", 1);
       $("loadPanel").classList.remove("show");
       $("canvas").focus();
       var secs = Math.round((Date.now() - t0) / 1000);
@@ -536,11 +680,21 @@
     }
   };
   $("playBtn").addEventListener("click", play);
+  /* Play again: the game rebuilds the level, and while it does the page cannot respond. Put a
+     panel up first (its bar is a CSS transform animation, which keeps moving while the page is
+     busy), let the browser paint it, then tell the game. The game says "level_ready" when done. */
+  var restartTimer = null;
+  function restartDone() { if (restartTimer === null) return; clearTimeout(restartTimer); restartTimer = null;
+    $("loadPanel").classList.remove("show"); $("loadShuttle").style.display = "none"; $("loadBar").style.display = ""; $("canvas").focus(); }
   $("againBtn").addEventListener("click", function () {
     window.vwState = startState();
     $("endPanel").classList.remove("show"); $("exit").style.display = "none";
-    if (typeof window.vwRestart === "function") window.vwRestart(); else location.reload();
-    $("canvas").focus();
+    if (typeof window.vwRestart !== "function") { location.reload(); return; }
+    $("loadTitle").textContent = "Setting the level up again\u2026"; $("loadText").textContent = "This takes a few seconds.";
+    $("loadBar").style.display = "none"; $("loadShuttle").style.display = ""; $("loadRow").style.display = "none"; $("loadPanel").classList.add("show");
+    clearTimeout(restartTimer); restartTimer = setTimeout(restartDone, 20000);   // never leave the panel up if the game says nothing
+    var t0 = Date.now();
+    requestAnimationFrame(function () { requestAnimationFrame(function () { setTimeout(function () { window.vwRestartAsked = t0; window.vwRestart(); }, 30); }); });
   });
   function leave() { sendFound(true); setTimeout(function () { location.reload(); }, 400); }
   $("labBtn").addEventListener("click", leave);
@@ -560,6 +714,7 @@
   }
   })();
 
+  if (FULL) loadCourseIndex();
   buildMap();
   buildFilters();
   if (FULL && auth) setTimeout(function () { if (signedIn() && fbState() === "sent") fbClaim(false); }, 2500);   // feedback sent earlier but the coins were not added yet

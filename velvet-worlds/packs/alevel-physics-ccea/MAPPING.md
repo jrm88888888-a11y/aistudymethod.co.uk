@@ -1,0 +1,58 @@
+# CCEA A-level Physics: world mapping
+
+Source status: mission-lesson scripts of Oct-Nov 2026 (reviewed by AI reviewers; not signed off by a person). Built by `_dev/velvet-worlds/build_packs.py` and `assemble_final.py`. Every matching set below passed an independent set review on 17 Nov 2026; worlds whose set failed, or was not reviewed, are left out (0 and 11).
+
+| World | Kind | Spec | Title | Terms to match | Questions (all / higher only) |
+|---|---|---|---|---|---|
+| 1 | unit | 1.1.1, 1.1.2, 1.1.3; 1.2.1, 1.2.2, 1.2.3; 1.2.4, 1.6.1; ... | SI units and prefixes; Scalars and vectors; Newton's first law and equilibrium; Moments and static equilibrium | Newton; Scalar; Vector; Components | 10 / 0 |
+| 2 | unit | 1.3.2; 1.4.1 | Systems and centre of mass; Describing motion | Acceleration; Displacement; Average speed; Distance | 5 / 0 |
+| 3 | review | 1.1.1, 1.1.2, 1.1.3; 1.2.1, 1.2.2, 1.2.3; 1.2.4, 1.6.1; ... | Review: SI units and prefixes; Scalars and vectors; Newton's first law and equilibrium; Moments and static equilibrium; Systems and centre of mass; Describing motion | Derived unit; Equilibrium; Resultant; Prefix | 12 / 0 |
+| 4 | unit | 1.4.2, 1.4.3; 1.4.3, 6.1.2, APP4-1 | Constant-acceleration equations; Experimental methods and practical skills | Control variables; Independent variable; Conclusion; Free fall | 7 / 0 |
+| 5 | unit | 1.4.4; 1.5.1, 1.5.2, 1.5.3; 1.6.1, 1.6.2, 1.6.3, 1.7.9; ... | Motion graphs; Projectile motion; Newton's second law; Newton's third law; Forces and free-body diagrams | Mass; Range; Acceleration; Weight | 7 / 0 |
+| 6 | review | 1.4.2, 1.4.3; 1.4.3, 6.1.2, APP4-1; 1.4.4; ... | Review: Constant-acceleration equations; Experimental methods and practical skills; Motion graphs; Projectile motion; Newton's second law; Newton's third law; Forces and free-body diagrams | Distance; Tension; Horizontal component; Friction | 12 / 0 |
+| 7 | unit | 1.7.1, 1.7.2, 1.7.3, 1.7.4 and others | Momentum and its conservation | Momentum; Newton's third law; Explosion; Kinetic energy | 4 / 0 |
+| 8 | unit | 1.7.6, 1.7.7, 1.7.8, 1.7.9; 1.8.1, 1.8.2, 1.8.3 | Impulse and force–time graphs; Work done | Component; Crumple zone; Impulse; Joule | 4 / 0 |
+| 9 | review | 1.7.1, 1.7.2, 1.7.3, 1.7.4 and others; 1.7.6, 1.7.7, 1.7.8, 1.7.9; 1.8.1, 1.8.2, 1.8.3 | Review: Momentum and its conservation; Impulse and force–time graphs; Work done | Momentum; Newton's third law; Component; Crumple zone | 8 / 0 |
+| 10 | unit | 1.8.1, 1.8.4, 1.8.5; 1.8.6 | Kinetic and potential energy; conservation; Work–energy theorem and dissipative forces | Mechanical energy; Gravitational potential energy; Kinetic energy; Internal energy | 4 / 0 |
+| 11 | unit | 1.8.7, 1.8.8; 1.9.1 | Power and efficiency; Charge and current | Power; Current; Watt; Coulomb | 5 / 0 |
+| 12 | review | 1.8.1, 1.8.4, 1.8.5; 1.8.6; 1.8.7, 1.8.8; ... | Review: Kinetic and potential energy; conservation; Work–energy theorem and dissipative forces; Power and efficiency; Charge and current | Power; Current; Mechanical energy; Gravitational potential energy | 9 / 0 |
+| 13 | unit | 1.9.2, 1.9.3, 1.9.4, 1.9.5; 1.9.2, 1.10.3 | Potential difference and emf; Electrical power and energy | Power; Volt; Series; Heating effect | 7 / 0 |
+| 14 | unit | 1.10.1, 1.10.2, 1.12.3 | Series and parallel circuits; Kirchhoff's laws | Ammeter; Open circuit; Short circuit; Voltmeter | 6 / 0 |
+| 15 | review | 1.9.2, 1.9.3, 1.9.4, 1.9.5; 1.9.2, 1.10.3; 1.10.1, 1.10.2, 1.12.3 | Review: Potential difference and emf; Electrical power and energy; Series and parallel circuits; Kirchhoff's laws | Power; Ammeter; Open circuit; Volt | 12 / 0 |
+| 16 | unit | 1.10.3, 1.10.8, 1.10.9, 1.10.10 and others; 1.10.10, 1.10.11, 1.10.12, 1.10.13 | Resistance and I–V characteristics | Resistance; Diode; Lattice ions; Heating effect | 6 / 0 |
+| 17 | unit | 1.10.4, 1.10.5, 1.10.12; 1.10.6, 1.10.7, 1.10.12; 1.11.1, 1.11.2, 1.11.3 | Resistivity; EMF and internal resistance | Resistance; Crocodile clip; Voltmeter; Resistivity | 10 / 0 |
+| 18 | review | 1.10.3, 1.10.8, 1.10.9, 1.10.10 and others; 1.10.10, 1.10.11, 1.10.12, 1.10.13; 1.10.4, 1.10.5, 1.10.12; ... | Review: Resistance and I–V characteristics; Resistivity; EMF and internal resistance | emf; Reverse bias; NTC thermistor; Short circuit | 12 / 0 |
+| 19 | unit | 1.12.1, 1.12.2, 1.12.3 | Potential dividers | NTC thermistor; LDR; Potentiometer; Potential divider | 5 / 0 |
+| 20 | unit | 2.1.1, 2.1.2, 2.1.3, 2.1.5; 2.1.3 | Progressive waves | Amplitude; In phase; Longitudinal wave; Phase difference | 5 / 0 |
+| 21 | review | 1.12.1, 1.12.2, 1.12.3; 2.1.1, 2.1.2, 2.1.3, 2.1.5; 2.1.3 | Review: Potential dividers; Progressive waves | NTC thermistor; LDR; Amplitude; In phase | 10 / 0 |
+| 22 | unit | 2.1.4; 2.1.6, 2.1.7, 2.1.8; 2.2.1, 2.2.2 | Polarisation; Electromagnetic spectrum; Reflection and refraction | Transmission axis; Wavefront; Refraction; Normal | 4 / 0 |
+| 23 | unit | 2.2.3, 2.2.4, 2.2.5, 2.2.6; 2.3.1, 2.3.2, 2.3.3, 2.3.4 and others | Total internal reflection and optical fibres; Lenses | Focal length; Virtual image; Real image; Partial reflection | 6 / 0 |
+| 24 | review | 2.1.4; 2.1.6, 2.1.7, 2.1.8; 2.2.1, 2.2.2; ... | Review: Polarisation; Electromagnetic spectrum; Reflection and refraction; Total internal reflection and optical fibres; Lenses | Ray; Critical angle; Total internal reflection; Longitudinal wave | 10 / 0 |
+| 25 | unit | 2.3.3, 2.3.6, 2.3.7, 2.3.8; 2.3.6, 2.3.7 | Lenses; Physics of the eye | Dioptre; Near point; Hypermetropia; Diverging lens | 8 / 0 |
+| 26 | unit | 2.3.7, 2.3.6 | Physics of the eye | Range of vision; Virtual image; Near point; Far point | 4 / 0 |
+| 27 | review | 2.3.3, 2.3.6, 2.3.7, 2.3.8; 2.3.6, 2.3.7; 2.3.7, 2.3.6 | Review: Lenses; Physics of the eye | Doublet; Myopia; Lens power; Accommodation | 12 / 0 |
+| 28 | unit | 2.4.1, 2.4.7, 2.4.8 | Superposition, interference and coherence | Constructive interference; Path difference; Destructive interference; Principle of superposition | 4 / 0 |
+| 29 | unit | 2.4.8, 2.4.7, 2.4.1; 2.4.2, 2.4.3, 2.4.4, 2.4.5 and others; 2.4.6 | Superposition, interference and coherence; Stationary waves and harmonics | Monochromatic; Node; Laser; Antiphase | 4 / 0 |
+| 30 | review | 2.4.1, 2.4.7, 2.4.8; 2.4.8, 2.4.7, 2.4.1; 2.4.2, 2.4.3, 2.4.4, 2.4.5 and others; ... | Review: Superposition, interference and coherence; Stationary waves and harmonics | Monochromatic; Constructive interference; Node; Path difference | 8 / 0 |
+| 31 | unit | 2.4.9, 2.4.10; 2.4.11, 2.4.12 | Young's double slit; Single-slit diffraction | Travelling microscope; Coherent sources; Diffraction; Laser | 5 / 0 |
+| 32 | unit | 2.4.13, 2.4.14 | Diffraction grating | Slit spacing; Zero order; Path difference; Diffraction grating | 4 / 0 |
+| 33 | review | 2.4.9, 2.4.10; 2.4.11, 2.4.12; 2.4.13, 2.4.14 | Review: Young's double slit; Single-slit diffraction; Diffraction grating | Diffraction; Fringe spacing; Single slit; Wavelength | 9 / 0 |
+| 34 | unit | 2.5.1, 2.5.2, 2.5.3; 2.5.4, 2.5.5, 2.5.7 | Photons and the photoelectric effect; Energy levels and spectra | Continuous spectrum; Threshold frequency; Electronvolt; Emission line spectrum | 5 / 0 |
+| 35 | unit | 2.5.6; 2.5.7; 2.5.8; ... | Lasers; Diagnostic X-ray production and detection; Wave–particle duality; Doppler effect; Expanding universe and cosmology | Thermionic emission; de Broglie wavelength; Electron gun; Intensifying screen | 10 / 0 |
+| 36 | review | 2.5.1, 2.5.2, 2.5.3; 2.5.4, 2.5.5, 2.5.7; 2.5.6; ... | Review: Photons and the photoelectric effect; Energy levels and spectra; Lasers; Diagnostic X-ray production and detection; Wave–particle duality; Doppler effect; Expanding universe and cosmology | Recession speed; Hubble's law; Ground state; Planck constant | 12 / 0 |
+| 37 | unit | APP1-MC4g; APP4-1 | Uncertainties and errors; Graphs and data analysis; Density | y-intercept; Tangent; Top-pan balance; Resolution | 4 / 0 |
+| 38 | unit | 4.1.1; 4.1.2, 4.1.3; 4.1.4, 4.1.5, 4.1.7 | Springs and Hooke's law; Stress–strain and force–extension behaviour; Stress, strain and Young modulus | Natural length; Tensile strain; Tensile stress; Elastic limit | 5 / 0 |
+| 39 | review | APP1-MC4g; APP4-1; 4.1.1; ... | Review: Uncertainties and errors; Graphs and data analysis; Density; Springs and Hooke's law; Stress–strain and force–extension behaviour; Stress, strain and Young modulus | Extension; Density; Gradient; Compression | 9 / 0 |
+| 40 | unit | 4.1.6; 4.2.1, 4.2.2, 4.2.3; 4.2.4, 4.2.7 | Elastic strain energy; Gas laws and ideal gas equation; Temperature, internal energy, thermal equilibrium | Limit of proportionality; Elastic strain energy; Absolute zero; Internal energy | 11 / 0 |
+| 41 | unit | 4.2.6; 4.2.5; 4.2.8, 4.2.9; ... | Kinetic theory of gases; Specific heat capacity and latent heat; Angular measures and uniform circular motion | Elastic collision; rms speed; Internal energy; Ideal gas | 11 / 0 |
+| 42 | review | 4.1.6; 4.2.1, 4.2.2, 4.2.3; 4.2.4, 4.2.7; ... | Review: Elastic strain energy; Gas laws and ideal gas equation; Temperature, internal energy, thermal equilibrium; Kinetic theory of gases; Specific heat capacity and latent heat; Angular measures and uniform circular motion | Period; Frequency; Thermal equilibrium; Centripetal acceleration | 12 / 0 |
+| 43 | unit | 4.3.3; 4.4.1, 4.4.2, 4.4.5 | Centripetal force; Simple harmonic motion: definition and graphs | Amplitude; Friction; Restoring force; Tangent | 4 / 0 |
+| 44 | unit | 4.4.2; 4.4.3, 4.4.4; 4.4.6, 4.4.7, 4.4.8 | Simple harmonic motion: definition and graphs; Mass–spring and pendulum; Damping, forced oscillations and resonance | Isochronous oscillator; Forced oscillation; Antiphase; Pendulum | 6 / 0 |
+| 45 | review | 4.3.3; 4.4.1, 4.4.2, 4.4.5; 4.4.2; ... | Review: Centripetal force; Simple harmonic motion: definition and graphs; Mass–spring and pendulum; Damping, forced oscillations and resonance | Equilibrium position; Natural frequency; Free oscillation; Phase difference | 10 / 0 |
+| 46 | unit | 4.4.7, 4.4.8; 4.5.1 | Damping, forced oscillations and resonance; Rutherford scattering and atomic models | Nucleus; Neutron; Light damping; Electron | 6 / 0 |
+| 47 | unit | 4.5.2, 4.5.3; 4.6.1, 4.6.2 | Nuclear radius and density; Radioactive decay: types and properties | Beta-minus particle; Alpha particle; Gamma ray; Nucleon number | 6 / 0 |
+| 48 | review | 4.4.7, 4.4.8; 4.5.1; 4.5.2, 4.5.3; ... | Review: Damping, forced oscillations and resonance; Rutherford scattering and atomic models; Nuclear radius and density; Radioactive decay: types and properties | Atom; Nuclear radius; Nuclear density; Nucleon number | 12 / 0 |
+| 49 | unit | 4.6.2; 4.6.3, 4.6.4, 4.6.5, 4.6.6 and others; 4.6.5, 4.6.8; ... | Nuclear structure and notation; Decay law and half-life; Mass defect and binding energy; Fission and reactors; Fusion | Nucleon number; Proton number; Neutron number; Decay constant | 12 / 0 |
+| 50 | unit | 5.1.1, 5.2.1, 5.2.2, 5.2.3 and others; 5.1.1, 5.3.7 | Newton's law of gravitation and field strength | Vector; Gravitational field strength; Uniform field; Inverse-square law | 5 / 0 |
+| 51 | unit | 5.4.1, 5.4.2, 5.4.3, 5.4.4 and others; 5.4.5; 5.4.6, 5.4.8, 5.4.9 | Capacitance and capacitor energy; Capacitor charging and discharging | Current; Charge; Capacitor; Exponential decay | 5 / 0 |
+| 52 | review | 5.7.1, 5.7.2; 5.7.3; 5.8.1, 5.8.3, 5.8.4; ... | Review: Particle accelerators and detectors; Particles, antiparticles and classification; Pair production and annihilation; Fundamental interactions and exchange particles; Conservation laws in particle interactions; Estimation and orders of magnitude | Negative pion; Baryon; Beta-minus decay; Gravitational interaction | 12 / 0 |
