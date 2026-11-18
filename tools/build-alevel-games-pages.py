@@ -157,6 +157,22 @@ def arcade(sid, board=None, topic=None):
     if topic: q += "&amp;topic=" + topic
     return "classcraft/arcade.html?" + q + "&amp;at=top"
 
+
+# ---------------------------------------------------------------- site icon set (Nov 2026 redesign)
+# Subject tiles and the "No catch" cards use images/icons/sl-icons.svg, not emoji.
+def sl_ic(n):
+    return '<svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#%s"/></svg>' % n
+_SL_RULES = [(r'physic','physics'),(r'chem','chemistry'),(r'biolog','biology'),(r'math','maths'),(r'english lit','book'),(r'english','pencil'),
+ (r'geograph','geography'),(r'histor','history'),(r'relig|^re$','religious-studies'),(r'psych','psychology'),(r'sociol','sociology'),
+ (r'comput','computer-science'),(r'business','business'),(r'econom','economics'),(r'^pe\b|sport','pe'),(r'french|german|spanish|language','languages'),
+ (r'environ','environmental-science'),(r'astronom|space','astronomy'),(r'\bart\b','art'),(r'music','music'),(r'design|d&t','design-technology'),
+ (r'food|nutrition','food'),(r'drama','drama')]
+def sl_subject_icon(name, fallback):
+    n = name.strip().lower()
+    for pat, sym in _SL_RULES:
+        if re.search(pat, n): return sl_ic(sym)
+    return fallback
+
 # ---------------------------------------------------------------- chrome from the GCSE pages
 def chrome(path):
     s = open(path, encoding="utf-8").read()
@@ -179,7 +195,7 @@ HUB_CHROME = chrome("gcse-revision-games.html")
 def head(c, title, desc, url, og_title, og_desc, tw_desc, style_extra="", ld=None):
     if len(desc) > 165:
         print("  ! description %d chars: %s" % (len(desc), url))
-    out = ['<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n'
+    out = ['<!DOCTYPE html>\n<html lang="en" class="sl">\n<head>\n<meta charset="UTF-8">\n'
            '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n',
            '<title>%s</title>\n' % E(title),
            '<meta name="description" content="%s">\n' % E(desc),
@@ -200,7 +216,7 @@ def head(c, title, desc, url, og_title, og_desc, tw_desc, style_extra="", ld=Non
            c["plausible"] + "\n"]
     if ld:
         out.append('<script type="application/ld+json">\n%s\n</script>\n' % json.dumps(ld, ensure_ascii=False, indent=1))
-    out.append("</head>\n<body>\n")
+    out.append('<script src="/site-account.js?v=20261118" defer></script>\n</head>\n<body>\n')
     return "".join(out)
 
 def faq_ld(qas):
@@ -436,10 +452,10 @@ def hub_page():
     <h2 class="section-title">Genuinely free. <em>Genuinely</em> no sign-up.</h2>
     <p class="section-body">A lot of &ldquo;free&rdquo; revision sites ask for an email before you can do anything. These don't.</p>
     <div class="vp">
-      <div class="v"><div class="vi">&#128275;</div><h4>No account</h4><p>No login, no email, no password. Open a game and start.</p></div>
-      <div class="v"><div class="vi">&#128241;</div><h4>Any device</h4><p>Runs in any browser on phone, tablet or laptop. Nothing to install.</p></div>
-      <div class="v"><div class="vi">&#127891;</div><h4>Your board</h4><p>Topics for ''' + E(boards) + ''' &mdash; you choose the board and topic.</p></div>
-      <div class="v"><div class="vi">&#129504;</div><h4>Actually effective</h4><p>Built on retrieval practice, not just points for their own sake.</p></div>
+      <div class="v"><div class="vi"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#lock"/></svg></div><h4>No account</h4><p>No login, no email, no password. Open a game and start.</p></div>
+      <div class="v"><div class="vi"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#device"/></svg></div><h4>Any device</h4><p>Runs in any browser on phone, tablet or laptop. Nothing to install.</p></div>
+      <div class="v"><div class="vi"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#levels"/></svg></div><h4>Your board</h4><p>Topics for ''' + E(boards) + ''' &mdash; you choose the board and topic.</p></div>
+      <div class="v"><div class="vi"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#psychology"/></svg></div><h4>Actually effective</h4><p>Built on retrieval practice, not just points for their own sake.</p></div>
     </div>
   </div>
 </section>
@@ -455,7 +471,7 @@ def hub_page():
     for sid in order:
         s = BYID[sid]
         o.append('<a href="%s"><span class="e">%s</span><span class="t">%s<small>%d topics &middot; %d board%s</small></span></a>'
-                 % (s["file"], s["icon"], E(s["name"]), s["n_topics"], len(s["boards"]), "s" if len(s["boards"]) != 1 else ""))
+                 % (s["file"], sl_subject_icon(s["name"], s["icon"]), E(s["name"]), s["n_topics"], len(s["boards"]), "s" if len(s["boards"]) != 1 else ""))
     o.append('''</div>
     <div style="margin-top:1.8rem;"><a href="classcraft/arcade.html" class="btn-outline">Browse everything in the Arcade &rarr;</a></div>
     <p class="alt-level">Taking GCSEs? <a href="gcse-revision-games.html">Free GCSE revision games by subject &rarr;</a></p>

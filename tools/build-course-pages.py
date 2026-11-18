@@ -48,13 +48,12 @@ NAV = '''<nav>
  </a>
  <ul class="nav-links">
  <li><a href="/lessons.html" class="active">Mini-lessons</a></li>
- <li><a href="/subjects.html">Velvet Revision</a></li>
  <li><a href="/gcse-revision-games.html">Games</a></li>
- <li><a href="/velvet-method.html">The Velvet Method</a></li>
+ <li><a href="/subjects.html">Velvet Revision</a></li>
  <li><a href="/teachers.html">Teachers</a></li>
  </ul>
  <div class="nav-right">
- <a href="/velvet-method.html#prompt-library" class="btn-primary">Free Prompt Library →</a>
+ <a href="/classcraft/arcade.html#log-in" class="btn-primary">Log in</a>
  </div>
  </div>
 </nav>'''
@@ -143,7 +142,7 @@ AP_SHORT = {'physics-ap-physics-c-em': 'AP Physics C: E&M'}
 try: AP_TOPICS = json.load(open(os.path.join(ROOT, 'classcraft', '_data', 'ap-topics.json'), encoding='utf8'))
 except (OSError, ValueError): AP_TOPICS = {}
 AP_TM = '<p class="ap-tm" style="max-width:860px;margin:1.4rem auto 0;padding:0 16px;font-size:12px;line-height:1.5;color:var(--text-muted);text-align:center">AP® is a trademark registered by the College Board, which is not affiliated with, and does not endorse, this website.</p>'
-AP_ASSIGN = 'Short, curiosity-driven lessons that teachers can assign: each one opens with a question you can\u2019t yet answer, then works through it in missions with AP-style checks. About 20 minutes per mission. Use them alongside AP Classroom practice. No login.'
+AP_ASSIGN = 'Short, curiosity-driven lessons that teachers can assign: each one opens with a question you can\u2019t yet answer, then works through it in missions with AP-style checks. About 20 minutes per mission. Use them alongside AP Classroom practice. No login needed.'
 def ap_topic_line(stem):
     tp = AP_TOPICS.get(stem + '-mini-lesson.html', {})
     txt = ('College Board topics ' + (tp.get('cover') or tp['range'])) if tp.get('range') else 'AP science practices, all units'
@@ -170,7 +169,7 @@ for c in index:
     ap = c['l'] == 'ap'   # AP: College Board course framework, US English, no Velvet Revision page yet
     title = f"{c['d']} mini-lessons — {n} free interactive lesson{'' if n == 1 else 's'}"
     desc = (f"Every topic of {c['d']} as a free interactive mini-lesson, in {'course' if ap else 'specification'} order"
-            + (f" (spec {code})" if code else "") + ". Each lesson opens with a question, then works through it in missions with checks. About 20 minutes each. No login.")
+            + (f" (spec {code})" if code else "") + ". Each lesson opens with a question, then works through it in missions with checks. About 20 minutes each. No login needed.")
     if ap:   # search-intent title and description (title tag without the site suffix, to stay under 60)
         short = AP_SHORT.get(c['k'], c['d'])
         title_tag = f"{short} Review: {n} Free Lessons by Unit"
@@ -192,10 +191,10 @@ for c in index:
     siblings = sorted([x for x in index if x['s'] == c['s'] and x['l'] == c['l'] and x['k'] != c['k']],
                       key=lambda x: BOARD_ORDER.index(x['b']) if x['b'] in BOARD_ORDER else 99)
     other_levels = sorted({x['l'] for x in index if x['s'] == c['s'] and x['l'] != c['l']}, key=lambda l: list(LEVEL_NAME).index(l))
-    actions = [f'<a class="t" href="/teach/{e(c["k"])}.html">👩‍🏫 Teachers: assign this course</a>'] if os.path.exists(os.path.join(ROOT, 'teach', c['k'] + '.html')) else []
+    actions = [f'<a class="t" href="/teach/{e(c["k"])}.html"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#assign"/></svg>Teachers: assign this course</a>'] if os.path.exists(os.path.join(ROOT, 'teach', c['k'] + '.html')) else []
     actions.append(f'<a href="/subjects.html?subject={e(c["s"])}&amp;level={e(c["l"])}&amp;board={e(c["b"])}">All six Velvet stages</a>')
-    if d.get('a'): actions.append(f'<a href="/classcraft/arcade.html?{e(d["a"])}">🎮 Revision Arcade</a>')
-    if guide: actions.append(f'<a href="/{e(guide)}">📖 {e(guide_name)}</a>')
+    if d.get('a'): actions.append(f'<a href="/classcraft/arcade.html?{e(d["a"])}"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#gamepad"/></svg>Revision Arcade</a>')
+    if guide: actions.append(f'<a href="/{e(guide)}"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#book"/></svg>{e(guide_name)}</a>')
     opener = "Each one opens with a question you can\u2019t yet answer" if with_q else "Each one takes a topic step by step"
     if ap:
         hero_h1 = e(c['d'].replace('AP ', 'AP\u00ae ', 1)) + f' review<br><em>{n} free lessons, unit by unit.</em>'
@@ -203,12 +202,12 @@ for c in index:
     else:
         hero_h1 = f"{e(c['d'])}<br><em>{n} free mini-lessons, in order.</em>"
         hero_lead = (f"One interactive lesson for every topic in the {e(c['bd'])} specification, in the order it's taught. "
-                     f"{opener}, then works through it in missions with checks along the way. About 20 minutes each. No login.")
+                     f"{opener}, then works through it in missions with checks along the way. About 20 minutes each. No login needed.")
     ld = {"@context": "https://schema.org", "@type": "ItemList", "name": title_tag if ap else title, "numberOfItems": n,
           "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": r[1],
                                "url": f"{SITE}/classcraft/adventures/{lesson_stem(c, r)}-mini-lesson.html"} for i, r in enumerate(rows)]}
     page = f'''<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="sl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -225,6 +224,8 @@ for c in index:
 <meta property="og:image" content="{SITE}/og-share.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/fonts/lesson-fonts.css?v=20261116">
+<link rel="stylesheet" href="/site-lesson.css?v=20261118">
 <!-- Privacy-friendly analytics by Plausible -->
 <script async src="https://plausible.io/js/pa-y_3K19wHddzHShFk02JEm.js"></script>
 <script>
@@ -233,6 +234,7 @@ for c in index:
 </script>
 <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>
 {CSS}
+<script src="/site-account.js?v=20261118" defer></script>
 </head>
 <body>{NAV}
 

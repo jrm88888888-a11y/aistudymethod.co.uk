@@ -27,6 +27,10 @@ for _c in index:
     for _r in json.load(open(os.path.join(DATA, _c['k'] + '.json'), encoding='utf8'))['t']:
         _stems.add(_r[4] if len(_r) > 4 else f"{_c['k']}-{_r[0]}")
 total = len(_stems)
+
+def about(n):
+    """Site-wide lesson total as shown to visitors: rounded to the nearest 500 ("about 3,000")."""
+    return f"{round(n / 500) * 500:,}"
 by_level = collections.defaultdict(lambda: collections.defaultdict(list))
 for c in index:
     by_level[c['l']][c['sd']].append(c)
@@ -72,23 +76,25 @@ for lv, name, short in LEVELS:
 directory = ''.join(parts)
 
 PAGE = f'''<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="sl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini-Lessons — {total:,} free interactive lessons for GCSE, A-Level, IB, AP and KS3 | AI Study Method</title>
-<meta name="description" content="Every free mini-lesson on AI Study Method: {total:,} interactive lessons for GCSE, A-Level, IB Diploma, AP and KS3, in exam-board and course order. Pick your level, subject and board and start a lesson in one click. No login.">
+<title>Mini-Lessons — about {about(total)} free interactive lessons for GCSE, A-Level, IB, AP and KS3 | AI Study Method</title>
+<meta name="description" content="Every free mini-lesson on AI Study Method: about {about(total)} interactive lessons for GCSE, A-Level, IB Diploma, AP and KS3, in exam-board and course order. Pick your level, subject and board and start a lesson in one click. No login needed.">
 <link rel="canonical" href="https://aistudymethod.com/lessons.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AI Study Method">
 <meta property="og:title" content="Mini-Lessons — free interactive lessons for GCSE, A-Level, IB, AP and KS3">
-<meta property="og:description" content="{total:,} interactive mini-lessons in exam-board order. Pick your level, subject and board and start in one click.">
+<meta property="og:description" content="About {about(total)} interactive mini-lessons in exam-board order. Pick your level, subject and board and start in one click.">
 <meta property="og:url" content="https://aistudymethod.com/lessons.html">
 <meta property="og:image" content="https://aistudymethod.com/og-share.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="/fonts/lesson-fonts.css?v=20261116">
+<link rel="stylesheet" href="/site-lesson.css?v=20261118">
 <!-- Privacy-friendly analytics by Plausible -->
 <script async src="https://plausible.io/js/pa-y_3K19wHddzHShFk02JEm.js"></script>
 <script>
@@ -126,6 +132,7 @@ PAGE = f'''<!DOCTYPE html>
 .hub-links a{{color:var(--accent);font-weight:600;}}
 @media (max-width:600px){{.hub-hero{{padding:calc(var(--nav-h) + 24px) 1rem 20px;}}.hub-dir{{padding:28px 1rem 50px;}}}}
 </style>
+<script src="/site-account.js?v=20261118" defer></script>
 </head>
 <body><nav>
  <div class="nav-inner">
@@ -138,13 +145,12 @@ PAGE = f'''<!DOCTYPE html>
  </a>
  <ul class="nav-links">
  <li><a href="/lessons.html" class="active">Mini-lessons</a></li>
- <li><a href="subjects.html">Velvet Revision</a></li>
  <li><a href="/gcse-revision-games.html">Games</a></li>
- <li><a href="velvet-method.html">The Velvet Method</a></li>
+ <li><a href="subjects.html">Velvet Revision</a></li>
  <li><a href="teachers.html">Teachers</a></li>
  </ul>
  <div class="nav-right">
- <a href="velvet-method.html#prompt-library" class="btn-primary">Free Prompt Library →</a>
+ <a href="/classcraft/arcade.html#log-in" class="btn-primary">Log in</a>
  </div>
  </div>
 </nav>
@@ -153,8 +159,8 @@ PAGE = f'''<!DOCTYPE html>
  <div class="section-inner">
   <div class="section-label">Mini-lessons</div>
   <div class="section-divider"></div>
-  <h1>{total:,} free mini-lessons.<br><em>Find yours in three taps.</em></h1>
-  <p class="lead">Every topic of every course, in the order your exam board teaches it. Each lesson opens with a question you can't yet answer, then works through it in missions with checks along the way. About 20 minutes. No login.</p>
+  <h1>About {about(total)} free mini-lessons.<br><em>Find yours in three taps.</em></h1>
+  <p class="lead">Every topic of every course, in the order your exam board teaches it. Each lesson opens with a question you can't yet answer, then works through it in missions with checks along the way. About 20 minutes. No login needed.</p>
   <div class="lf" data-lf data-hub></div>
  </div>
 </section>
@@ -234,9 +240,9 @@ print(f'lessons.html: {len(index)} courses, {total} lessons, {len(PAGE)//1024} K
 for _page in ('index.html', 'velvet-method.html'):
     _p = os.path.join(ROOT, _page)
     _t = open(_p, encoding='utf8').read()
-    _t2 = re.sub(r'<!-- N-LESSONS -->[\d,]*<!-- /N-LESSONS -->', f'<!-- N-LESSONS -->{total:,}<!-- /N-LESSONS -->', _t)
+    _t2 = re.sub(r'<!-- N-LESSONS -->[\d,]*<!-- /N-LESSONS -->', f'<!-- N-LESSONS -->{about(total)}<!-- /N-LESSONS -->', _t)
     _t2 = re.sub(r'<!-- N-COURSES -->[\d,]*<!-- /N-COURSES -->', f'<!-- N-COURSES -->{len(index)}<!-- /N-COURSES -->', _t2)
-    _t2 = re.sub(r'(content="|^)([\d,]+)( free interactive mini-lessons)', lambda m: f'{m.group(1)}{total:,}{m.group(3)}', _t2, flags=re.M)
+    _t2 = re.sub(r'(content="(?:About )?|^)([\d,]+)( free interactive mini-lessons)', lambda m: f'{m.group(1)}{about(total)}{m.group(3)}', _t2, flags=re.M)
     if _t2 != _t:
         open(_p, 'w', encoding='utf8').write(_t2)
         print(f'{_page}: counts -> {total:,} lessons, {len(index)} courses')

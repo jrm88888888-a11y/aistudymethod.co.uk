@@ -44,13 +44,12 @@ NAV = '''<nav>
  </a>
  <ul class="nav-links">
  <li><a href="/lessons.html">Mini-lessons</a></li>
- <li><a href="/subjects.html">Velvet Revision</a></li>
  <li><a href="/gcse-revision-games.html">Games</a></li>
- <li><a href="/velvet-method.html">The Velvet Method</a></li>
+ <li><a href="/subjects.html">Velvet Revision</a></li>
  <li><a href="/teachers.html" class="active">Teachers</a></li>
  </ul>
  <div class="nav-right">
- <a href="/velvet-method.html#prompt-library" class="btn-primary">Free Prompt Library →</a>
+ <a href="/classcraft/arcade.html#log-in" class="btn-primary">Log in</a>
  </div>
  </div>
 </nav>'''
@@ -164,7 +163,7 @@ def board_label(level, board, spec):
 
 def head(title, desc, canon, extra=''):
     return f'''<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="sl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -181,9 +180,12 @@ def head(title, desc, canon, extra=''):
 <meta property="og:image" content="{SITE}/og-share.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/fonts/lesson-fonts.css?v=20261116">
+<link rel="stylesheet" href="/site-lesson.css?v=20261118">
 <link rel="stylesheet" href="/teach/teach.css?v={V}">
 {PLAUSIBLE}
-{extra}</head>
+{extra}<script src="/site-account.js?v=20261118" defer></script>
+</head>
 '''
 
 
@@ -232,10 +234,10 @@ def main():
             if len(title) > 60: title = f'Free {short} Lessons to Assign'
         desc = (f'Free {name} teaching resources: {n} interactive lesson{"s" if n != 1 else ""}'
                 + (f' in {doc} order' if main_rows else '')
-                + ', to set as class work, homework or cover. Assign through Teams, Google Classroom, a link or a QR code. No student login.')
+                + ', to set as class work, homework or cover. Assign through Teams, Google Classroom, a link or a QR code. No student login needed.')
         if d['l'] == 'ap':
             desc = next(x for x in [
-                f'Free {short} lessons to assign: {n} short, curiosity-driven lessons by College Board unit and topic. Use alongside AP Classroom. No student login.',
+                f'Free {short} lessons to assign: {n} short, curiosity-driven lessons by College Board unit and topic. Use alongside AP Classroom. No student login needed.',
                 f'Free {short} lessons to assign: {n} short, curiosity-driven lessons by College Board unit and topic, to use alongside AP Classroom.',
                 f'Free {short} lessons to assign: {n} short lessons by College Board unit and topic, alongside AP Classroom practice.'] if len(x) <= 155)
         canon = f'{SITE}/teach/{k}.html'
@@ -323,10 +325,10 @@ def main():
             hero_h1 = e(name.replace('AP ', 'AP\u00ae ', 1)) + ': short lessons to assign, unit by unit'
             hero_p = (f'{n} short, curiosity-driven {e(name)} lessons in {e(doc)} order, each labeled with its College Board unit and topic numbers. '
                       'Use them alongside AP Classroom practice: they build the understanding behind the questions, one mission (about 20 minutes) at a time. '
-                      'No student login. Press <b>Assign</b> to choose what to set (quiz, lesson or both) and share it through Google Classroom, Teams, a link or a QR code.')
+                      'No student login needed. Press <b>Assign</b> to choose what to set (quiz, lesson or both) and share it through Google Classroom, Teams, a link or a QR code.')
         else:
             hero_h1 = f'{e(name)}: free lessons to set your class'
-            hero_p = (f'{n} free interactive {e(name)} lesson{"s" if n != 1 else ""}{order_txt}, for class work, homework, cover or retrieval practice. No student login. '
+            hero_p = (f'{n} free interactive {e(name)} lesson{"s" if n != 1 else ""}{order_txt}, for class work, homework, cover or retrieval practice. No student login needed. '
                       'Press <b>Assign</b> to choose what to set (quiz, lesson, games or any mix) and share it through Teams, Google Classroom, a link or a QR code.')
         if d['l'] == 'ap':
             uses = ('<h2 class="tc-h2">How AP teachers use these lessons</h2><ul class="tc-uses">'
@@ -383,7 +385,7 @@ def main():
     tp = os.path.join(ROOT, 'teachers.html')
     t = open(tp, encoding='utf8').read()
     t2 = re.sub(r'(<!-- COURSES-START -->).*?(<!-- COURSES-END -->)', lambda m: m.group(1) + dir_html + m.group(2), t, flags=re.S)
-    t2 = re.sub(r'<!-- N-LESSONS -->[\d,]*<!-- /N-LESSONS -->', f'<!-- N-LESSONS -->{stats["lessons"]:,}<!-- /N-LESSONS -->', t2)
+    t2 = re.sub(r'<!-- N-LESSONS -->[\d,]*<!-- /N-LESSONS -->', f'<!-- N-LESSONS -->{round(stats["lessons"] / 500) * 500:,}<!-- /N-LESSONS -->', t2)   # shown as "about 3,000"
     t2 = re.sub(r'<!-- N-COURSES -->[\d,]*<!-- /N-COURSES -->', f'<!-- N-COURSES -->{stats["pages"]}<!-- /N-COURSES -->', t2)
     if t2 != t:
         open(tp, 'w', encoding='utf8').write(t2)
@@ -443,7 +445,7 @@ def link_revise_pages(courses):
             links = ' · '.join(f'<a href="/teach/{k}.html" style="font-weight:600">{e(board_label(lv, courses[k]["b"], SPECS.get(k)))}</a>' for k in ks)
         block = (f'{TL_START}<div class="teach-link" style="max-width:860px;margin:2rem auto;padding:14px 18px;border:1px solid rgba(124,92,191,.25);'
                  f'border-radius:12px;background:rgba(124,92,191,.05);font-size:15px;line-height:1.6">'
-                 f'<b>Teaching {e(who)}?</b> Free interactive lessons to set as class work, homework or cover. No student login. {links}</div>'
+                 f'<b>Teaching {e(who)}?</b> Free interactive lessons to set as class work, homework or cover. No student login needed. {links}</div>'
                  f'<script src="/classcraft/quizzes/progress.js?v={V}" defer></script>{TL_END}')
         if old:
             s2 = s[:old.start()] + block + s[old.end():]
