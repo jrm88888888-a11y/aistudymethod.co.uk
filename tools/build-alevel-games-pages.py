@@ -280,7 +280,7 @@ def subject_page(s):
     o.append('<header class="guide-hero">\n <div class="guide-wrap">\n'
              '  <div class="guide-kicker">Free Revision Games · A-Level %s</div>\n' % E(nm) +
              '  <h1 class="guide-h1">Free A-Level %s Revision Games — No Login, No Sign-Up</h1>\n' % E(nm) +
-             '  <p class="guide-standfirst">%s These games turn that into quick retrieval practice: %d game formats, %d topic%s for %s. No account, no email, no download.</p>\n'
+             '  <p class="guide-standfirst">%s These games turn that into quick retrieval practice: %d game formats, %d topic%s for %s. No account needed, no email, no download.</p>\n'
              % (E(hook), N_GAMES, nt, "s" if nt != 1 else "", E(board_phrase)) +
              '  ' + stats_html([(nt, "Topics"), (nb, "Exam board" + ("s" if nb != 1 else "")),
                                 ("{:,}".format(s["n_terms"]), "Key terms"), (N_GAMES, "Game formats")]) + "\n" +
@@ -321,7 +321,7 @@ def subject_page(s):
     else:
         p += 'the <a href="velvet-method.html">Velvet Method</a> shows you how to use AI to explain a tricky idea, quiz you and mark your answers — the games stay free either way.</p>\n'
     o.append(p)
-    o.append('\n <div class="cta-box">\n  <h3>No account. No email. Just play.</h3>\n'
+    o.append('\n <div class="cta-box">\n  <h3>No account needed. No email. Just play.</h3>\n'
              '  <p>Jump into the %s games now, or explore free games for every other A-Level subject.</p>\n'
              '  <div class="cta-row">\n   <a href="%s" class="btn-primary">Play %s games →</a>\n'
              '   <a href="alevel-revision-games.html" class="btn-outline">All A-Level subjects</a>\n  </div>\n </div>\n'
@@ -367,7 +367,7 @@ def hub_page():
     qas = [("Are the A-Level games really free?",
             "Yes — completely free. There's no payment, and you don't need an account or an email to play."),
            ("Do I need to sign up or log in?",
-            "No. There's no login, no sign-up and no download. Open the Arcade, pick your subject, board and topic, and start playing."),
+            "No. Open the Arcade, pick your subject, board and topic, and start playing, with nothing to download. An account is optional: it needs only a username and a password (no email), and it saves your coins, your collection and your game progress."),
            ("Which A-Level subjects and exam boards are covered?",
             "%d A-Level subjects — %s — with topics for %s. Which boards a subject covers varies; each subject page lists its boards and every topic."
             % (ns, and_list(x["name"] for x in sorted(SUBJECTS, key=lambda x: x["name"])), boards)),
@@ -387,7 +387,7 @@ def hub_page():
     <div>
       <span class="label"><span style="width:6px;height:6px;background:var(--accent);border-radius:50%;display:inline-block;"></span> Free A-Level Revision Games</span>
       <h1>A-Level revision that doesn't <em>feel</em> like revision.</h1>
-      <p class="lead">''' + "%d quick game formats that turn A-Level topics into retrieval practice you'll actually want to do — %d subjects, with topics for %s. No login, no sign-up, no email &mdash; just pick a subject and play." % (N_GAMES, ns, E(boards)) + '''</p>
+      <p class="lead">''' + "%d quick game formats that turn A-Level topics into retrieval practice you'll actually want to do — %d subjects, with topics for %s. No login or sign-up needed, and no email &mdash; just pick a subject and play." % (N_GAMES, ns, E(boards)) + '''</p>
       <div class="g-cta">
         <a href="classcraft/arcade.html" class="btn-primary">Play the Arcade &rarr;</a>
         <a href="#browse-subjects" class="btn-secondary">Pick your subject</a>
@@ -399,7 +399,7 @@ def hub_page():
         <div class="sep"></div>
         <div class="s"><span class="n">''' + "{:,}".format(TOTAL_TOPICS) + '''</span><span class="l">Topics, all boards</span></div>
         <div class="sep"></div>
-        <div class="s"><span class="n">&pound;0</span><span class="l">No login</span></div>
+        <div class="s"><span class="n">&pound;0</span><span class="l">No login needed</span></div>
       </div>
     </div>
     <div class="cab">
@@ -449,10 +449,10 @@ def hub_page():
   <div class="section-inner">
     <div class="section-label">No catch</div>
     <div class="section-divider"></div>
-    <h2 class="section-title">Genuinely free. <em>Genuinely</em> no sign-up.</h2>
+    <h2 class="section-title">Genuinely free. <em>Genuinely</em> no sign-up needed.</h2>
     <p class="section-body">A lot of &ldquo;free&rdquo; revision sites ask for an email before you can do anything. These don't.</p>
     <div class="vp">
-      <div class="v"><div class="vi"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#lock"/></svg></div><h4>No account</h4><p>No login, no email, no password. Open a game and start.</p></div>
+      <div class="v"><div class="vi"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#lock"/></svg></div><h4>No account needed</h4><p>Open a game and start: you are not asked for a login, an email or a password. An account is optional — you never need one to play.</p></div>
       <div class="v"><div class="vi"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#device"/></svg></div><h4>Any device</h4><p>Runs in any browser on phone, tablet or laptop. Nothing to install.</p></div>
       <div class="v"><div class="vi"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#levels"/></svg></div><h4>Your board</h4><p>Topics for ''' + E(boards) + ''' &mdash; you choose the board and topic.</p></div>
       <div class="v"><div class="vi"><svg class="sl-ic" aria-hidden="true" focusable="false"><use href="/images/icons/sl-icons.svg#psychology"/></svg></div><h4>Actually effective</h4><p>Built on retrieval practice, not just points for their own sake.</p></div>
