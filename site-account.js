@@ -13,7 +13,7 @@
        Give feedback (these three and Log out use auth.js, loaded at that
        moment), Revision Arcade, Velvet Worlds, Log out. With scripts off, or
        a new-tab click, the link still goes to the arcade.
-     - The launch note (19 Nov 2026 to 20 Dec 2026): a signed-in visitor sees one
+     - The launch note (19 Nov 2026 to 26 Nov 2026, one week): a signed-in visitor sees one
        short pop-up, once per account per device, thanking them for their ideas
        and pointing to Velvet Worlds. Not on the game page itself. The arcade
        lobby loads this file for it. Safe to delete after NOTE.until, with the
@@ -186,7 +186,7 @@
   });
 
   /* ---- the launch note: thanks for the ideas, and Velvet Worlds is here ---- */
-  var NOTE = { id: "launch-2026-11", until: Date.UTC(2026, 11, 20), url: "/velvet-worlds/" };
+  var NOTE = { id: "launch-2026-11", until: Date.UTC(2026, 10, 26), url: "/velvet-worlds/" };
   function noteCheck() {
     var s = session();
     if (!s || !s.userId || Date.now() >= NOTE.until || !document.body) return;
