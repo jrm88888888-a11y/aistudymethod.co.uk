@@ -13,6 +13,11 @@
        Give feedback (these three and Log out use auth.js, loaded at that
        moment), Revision Arcade, Velvet Worlds, Log out. With scripts off, or
        a new-tab click, the link still goes to the arcade.
+     - The launch note (19 Nov 2026 to 20 Dec 2026): a signed-in visitor sees one
+       short pop-up, once per account per device, thanking them for their ideas
+       and pointing to Velvet Worlds. Not on the game page itself. The arcade
+       lobby loads this file for it. Safe to delete after NOTE.until, with the
+       noteCheck() calls. Plausible: "Launch note: shown" / "opened" / "not now".
    Reads localStorage "aism-auth" and "aism-wallet" only; sends nothing itself.
    Plausible (if on the page): "Header log in: opened" {page};
    "Header account menu: opened" {page}; "Header account menu: chosen" {item}. */
@@ -180,8 +185,54 @@
       .catch(function () { location.href = href; });
   });
 
-  window.addEventListener("aism-auth-change", function () { if (!session()) closeMenu(false); paint(); });
+  /* ---- the launch note: thanks for the ideas, and Velvet Worlds is here ---- */
+  var NOTE = { id: "launch-2026-11", until: Date.UTC(2026, 11, 20), url: "/velvet-worlds/" };
+  function noteCheck() {
+    var s = session();
+    if (!s || !s.userId || Date.now() >= NOTE.until || !document.body) return;
+    if (/^\/velvet-worlds\//.test(location.pathname)) return;                                              // already there
+    if (document.querySelector(".sa-note, #aism-auth-ov, .aism-sorry, .aism-modal")) return;                // another box is up: ask again on the next page
+    var key = "aism-note:" + NOTE.id + ":" + s.userId;
+    try { if (localStorage.getItem(key)) return; localStorage.setItem(key, "1"); } catch (e) { return; }   // once per account on this device
+    if (!document.getElementById("sa-note-css")) {
+      var st = document.createElement("style"); st.id = "sa-note-css";
+      st.textContent = ".sa-note{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(26,26,46,.6);font-family:'Nunito','DM Sans',system-ui,sans-serif}" +
+        ".sa-note .bx{box-sizing:border-box;width:100%;max-width:440px;max-height:calc(100vh - 32px);overflow:auto;background:#fff;color:#2a2740;border:3px solid #2a2740;border-radius:20px;box-shadow:0 6px 0 #2a2740;padding:22px 22px 18px;text-align:left}" +
+        ".sa-note .tg{font-size:12px;font-weight:800;letter-spacing:2px;color:#0a6b5e;margin-bottom:4px}" +
+        ".sa-note h2{font-family:'Fredoka','Nunito',system-ui,sans-serif;font-size:26px;font-weight:700;line-height:1.15;margin:0 0 10px;color:#2a2740}" +
+        ".sa-note p{font-size:16px;line-height:1.45;margin:0 0 8px;color:#2a2740}" +
+        ".sa-note ul{margin:0 0 10px;padding:0 0 0 20px}.sa-note li{font-size:16px;line-height:1.4;margin:0 0 6px;color:#2a2740}" +
+        ".sa-note .bt{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}" +
+        ".sa-note a,.sa-note button{font:700 16px 'Nunito','DM Sans',system-ui,sans-serif;border:3px solid #2a2740;border-radius:14px;padding:10px 18px;cursor:pointer;text-decoration:none;box-shadow:0 4px 0 #2a2740}" +
+        ".sa-note a{background:#f7c948;color:#2a2740}.sa-note button{background:#fff;color:#2a2740}" +
+        ".sa-note a:focus-visible,.sa-note button:focus-visible{outline:3px solid #4a3fa0;outline-offset:2px}";
+      document.head.appendChild(st);
+    }
+    var d = document.createElement("div"), back = document.activeElement;
+    d.className = "sa-note"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-labelledby", "sa-note-h");
+    d.innerHTML = '<div class="bx"><div class="tg">THANK YOU</div><h2 id="sa-note-h">You asked. We built it.</h2>' +
+      "<p>Ideas you sent us:</p><ul>" +
+      "<li><b>An FPS game:</b> Velvet Worlds is here. The Element Shop is now part of it.</li>" +
+      "<li><b>A new look for the site:</b> done.</li>" +
+      "<li><b>A racing game:</b> on its way. We hope before Christmas.</li></ul>" +
+      "<p>We shape this site around your feedback, so please keep it coming.</p>" +
+      '<div class="bt"><a href="' + NOTE.url + '">Try Velvet Worlds</a><button type="button">Not now</button></div></div>';
+    function shut(why) { document.removeEventListener("keydown", onKey, true); d.remove(); track("Launch note: " + why, { page: location.pathname }); try { if (back && back.focus) back.focus(); } catch (e) {} }
+    function onKey(e) {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); shut("not now"); }
+      else if (e.key === "Tab") { var f = d.querySelectorAll("a,button"), i = Array.prototype.indexOf.call(f, document.activeElement); e.preventDefault(); f[(i + (e.shiftKey ? f.length - 1 : 1)) % f.length].focus(); }   // keep the keys inside the box
+    }
+    d.querySelector("button").addEventListener("click", function () { shut("not now"); });
+    d.querySelector("a").addEventListener("click", function () { track("Launch note: opened", { page: location.pathname }); });
+    d.addEventListener("click", function (e) { if (e.target === d) shut("not now"); });
+    document.addEventListener("keydown", onKey, true);
+    document.body.appendChild(d);
+    try { d.querySelector("a").focus(); } catch (e) {}
+    track("Launch note: shown", { page: location.pathname });
+  }
+
+  window.addEventListener("aism-auth-change", function () { if (!session()) closeMenu(false); else { setTimeout(noteCheck, 1500); setTimeout(noteCheck, 7000); } paint(); });   // after a log-in on this device (twice: the log-in box may still be closing)
   window.addEventListener("storage", function (e) { if (e.key === "aism-auth" || e.key === "aism-wallet") paint(); });
-  function start() { paint(); setTimeout(paint, 0); setTimeout(paint, 400); }
+  function start() { paint(); setTimeout(paint, 0); setTimeout(paint, 400); setTimeout(noteCheck, 1200); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();
