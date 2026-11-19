@@ -22,8 +22,8 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261119a";               // change whenever index.pck changes
-  var VW_SIZES = { wasm: 39514754, pck: 4810564, worlds: { "2": 3597492, "3": 551780, "4": 2454616, "5": 1247836, "6": 701796, "7": 1806860, "8": 934348, "9": 2508708, "10": 1539732, "11": 2324860, "12": 780044, "13": 290472, "14": 397124, "15": 440088, "16": 425332, "17": 534904, "18": 268380, "19": 528356, "20": 457520, "21": 410728, "22": 229484, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
+  var VW_BUILD = "20261119b";               // change whenever index.pck changes
+  var VW_SIZES = { wasm: 39514754, pck: 4836600, worlds: { "2": 3597492, "3": 551780, "4": 2454616, "5": 1247836, "6": 701796, "7": 1806860, "8": 934348, "9": 2508708, "10": 1539732, "11": 2324860, "12": 780044, "13": 290472, "14": 397124, "15": 440088, "16": 425332, "17": 534904, "18": 268380, "19": 528356, "20": 457520, "21": 410728, "22": 229484, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
     music: { "sailors-chant": 822794, "spacelife-14": 781949, "town-theme": 898921, "lasso-lady": 736725, "snowfall": 490840, "underwater-theme": 1079810, "creepy": 946048, "midnight-drive": 947137, "carnival-rides": 271701, "rhythm-factory": 1174949, "chiptune-level-1": 870810, "factory-ambiance": 952644, "fire-level": 966584, "funky-house": 786640, "joyful-jungle": 1074353, "mysterious": 965289, "beach-sports-theme": 375654, "hyperflight-racing": 665883, "fridge-is-hungry": 915000, "winning-the-race": 1107855 } };   // bytes of each world music track (game/music/<name>.ogg)
   /* The music each world plays (worlds 1 and 6 use the track inside the main pack). The names must match "music" in the
      game's WORLDS table (game.gd); _dev/velvet-worlds/check_music.py compares the two and the files. A track is a plain
@@ -79,7 +79,7 @@
   /* ---- courses: the worlds are the same for everyone; the mission pack (pieces, final task, questions)
      changes with the course. Packs are built from the site's banks by _dev/velvet-worlds/build_packs.py
      into /velvet-worlds/packs/<library>/ (index.json lists the worlds that have a pack; wN.json is the pack). ---- */
-  var PACKS = BASE + "packs/", PACKS_V = "20261118g", LS_COURSE = "vw-course", LS_WINS = "vw-wins";
+  var PACKS = BASE + "packs/", PACKS_V = "20261119a", LS_COURSE = "vw-course", LS_WINS = "vw-wins";
   var LEVELS = [
     { id: "ks3", label: "KS3", subjects: { chemistry: "ks3-science" }, note: "Chemistry topics only so far." },
     { id: "gcse", label: "GCSE", subjects: { biology: "gcse-biology", chemistry: "gcse-chemistry", physics: "gcse-physics" }, boards: [["aqa", "AQA"], ["other", "Another board"]], tiers: [["foundation", "Foundation"], ["higher", "Higher"]],
@@ -90,7 +90,13 @@
     { id: "ap", label: "AP", subjects: { biology: "ap-biology", chemistry: "ap-chemistry", "physics-1": "ap-physics-1", "physics-2": "ap-physics-2", "physics-c-mechanics": "ap-physics-c-mechanics", "physics-c-em": "ap-physics-c-em" } }
   ];
   var SUBJECT_NAMES = { biology: "Biology", chemistry: "Chemistry", physics: "Physics", "physics-1": "Physics 1", "physics-2": "Physics 2", "physics-c-mechanics": "Physics C: Mechanics", "physics-c-em": "Physics C: E&M" };
-  var LS_STARS = "vw-stars";   // best stars per course library and world, on this device
+  var LS_STARS = "vw-stars";   // the best grade (1 bronze, 2 silver, 3 gold) per course library and world, on this device; levels 2 and 3 under "world.2" and "world.3"
+  /* Levels (19 Nov 2026): a world has up to three levels, one star for each, and the star is bronze, silver or gold.
+     VW_LEVELS lists the worlds whose levels 2 and 3 are built (the game's maps_wings.gd); every other world has level 1 only. */
+  var VW_LEVELS = { "6": 3, "20": 3 };
+  var LEVEL = 1;   // the level being played
+  var LEVEL_NAMES = ["", "Find the pieces", "Hunt the enemies that carry the pieces, in the new wing", "Survive three waves in the far wing"];
+  var GRADES = ["", "Bronze", "Silver", "Gold"];
   var BAKED_LIB = "gcse-chemistry";   // this course's first worlds are built into the game (WORLD_INFO gives their mission)
   var course = normCourse(lsGet(LS_COURSE, null)), courseIndex = null, courseIndexFor = "", curPack = null, packTaken = false;
 
@@ -183,8 +189,16 @@
   function boardLabel() { var lv = levelOf(course.level), b = lv.boards && lv.boards.filter(function (x) { return x[0] === course.board; })[0]; return b ? b[1] : ""; }
   /* Stars for a won run: one for winning, one for the final task right first time, one for at least 80% of questions right first time. */
   function starsFor(p) { return p.result !== "win" ? 0 : 1 + (+p.attempts === 1 ? 1 : 0) + (+p.asked > 0 && +p.right / +p.asked >= 0.8 ? 1 : 0); }
-  function starsHere(n) { var a = lsGet(LS_STARS, {})[courseLib()], b = game && game.stars && game.stars[courseLib()]; return Math.max((a && +a[String(n)]) || 0, (b && +b[String(n)]) || 0); }
-  function starText(k) { return "\u2605\u2605\u2605".slice(0, k) + "\u2606\u2606\u2606".slice(0, 3 - k); }
+  function starKey(n, level) { return String(n) + (level > 1 ? "." + level : ""); }
+  function starsAt(n, level) {   // the grade on this device or on the account, whichever is better
+    var a = lsGet(LS_STARS, {})[courseLib()], srv = game && (level === 1 ? game.stars : game["stars" + level]), b = srv && srv[courseLib()];
+    return Math.max((a && +a[starKey(n, level)]) || 0, (b && +b[String(n)]) || 0);
+  }
+  function gradeAt(n, level) { return starsAt(n, level) || (level === 1 && wonHere(n) ? 1 : 0); }   // a win from before stars were kept counts as bronze
+  function levelsOf(n) { return VW_LEVELS[String(n)] || 1; }
+  function levelOpen(n, level) { return level === 1 || (level <= levelsOf(n) && gradeAt(n, level - 1) > 0); }   // each level opens when the one before is finished
+  function levelPack(n, level) { var lp = courseIndex && courseIndex.levelPacks && courseIndex.levelPacks[String(n)]; return !!(level > 1 && lp && lp.indexOf(level) >= 0); }   // does this course have its own pack for this level?
+  function starHtml(g) { return '<span class="lstar g' + g + '">' + (g ? "\u2605" : "\u2606") + '</span><span class="soft">' + (g ? GRADES[g] : "No star yet") + "</span>"; }
   function courseName() {
     var lv = levelOf(course.level), t = lv.tiers && lv.tiers.filter(function (x) { return x[0] === course.tier; })[0];
     return (lv.id === "gcse" && course.board === "aqa" ? "AQA " : lv.id === "alevel" ? boardLabel() + " " : "") + lv.label + " " + (lv.id === "ks3" ? "Science" : SUBJECT_NAMES[course.subject]) + (t ? " \u00b7 " + t[1] : "") + (lv.id === "gcse" && course.board !== "aqa" ? " \u00b7 AQA questions" : "");
@@ -248,6 +262,13 @@
       if (game && game.wins && game.wins[lib] && game.wins[lib][w]) continue;
       var r = await api("POST", { op: "win", lib: lib, world: w, stars: +((lsGet(LS_STARS, {})[lib] || {})[w]) || 1 });
       if (!r.ok && r.error === "bad-op") return;   // the accounts script does not know wins yet
+    }
+    var kept = lsGet(LS_STARS, {});   // then the stars of levels 2 and 3 earned on this device, level 2 first (the account refuses level 3 without it)
+    for (var lv = 2; lv <= 3; lv++) for (var lib2 in kept) for (var key in kept[lib2]) {
+      var m = /^(\d+)\.(\d)$/.exec(key); if (!m || +m[2] !== lv) continue;
+      var srv = game && game["stars" + lv] && game["stars" + lv][lib2];
+      if (srv && +srv[m[1]] >= +kept[lib2][key]) continue;
+      await api("POST", { op: "win", lib: lib2, world: m[1], level: lv, stars: +kept[lib2][key] });
     }
   }
   function coursePanel() {
@@ -519,8 +540,13 @@
     if (w && wi) {
       var f = found(String(n));
       var ms = missionFor(n);
-      h += "<p><b>" + esc(wi.name) + ".</b> " + (ms ? esc(ms.title) + '. <span class="soft">' + esc(ms.spec) + "</span>" + (wonHere(n) ? " <b>\u2713 Completed " + starText(starsHere(n) || 1) + "</b>" : "") : '<span class="soft">Not ready for ' + esc(courseName()) + " yet.</span>") + '</p><div class="counts">' + partsHtml(f, w) + "</div>";
-      h += '<div class="row">' + (worldOpen(n) ? btn("play:" + n, "Play this world", "go", !canPlay || !ms) : '<span class="soft">Collect ' + esc(el.name) + " to open it.</span>") + "</div>";
+      h += "<p><b>" + esc(wi.name) + ".</b> " + (ms ? esc(ms.title) + '. <span class="soft">' + esc(ms.spec) + "</span>" + (wonHere(n) ? " <b>\u2713 Completed</b>" : "") : '<span class="soft">Not ready for ' + esc(courseName()) + " yet.</span>") + '</p><div class="counts">' + partsHtml(f, w) + "</div>";
+      h += '<div class="levels">' + [1, 2, 3].map(function (L) {   // one row for each level: its star, and Play (level 1 keeps the key "play:N")
+        var built = L <= levelsOf(n), g = built ? gradeAt(n, L) : 0;
+        var act = !built ? '<span class="soft">Coming soon</span>' : !worldOpen(n) ? (L === 1 ? '<span class="soft">Collect ' + esc(el.name) + " to open it.</span>" : "") :
+          levelOpen(n, L) ? btn("play:" + n + (L > 1 ? ":" + L : ""), L === 1 ? "Play this world" : "Play level " + L, "go", !canPlay || !ms) : '<span class="soft">Finish level ' + (L - 1) + " first</span>";
+        return '<div class="lrow' + (built ? "" : " soon") + '"><div class="lname"><b>Level ' + L + '</b> <span class="soft">' + LEVEL_NAMES[L] + '</span></div><div class="lgrade">' + (built ? starHtml(g) : "") + '</div><div class="lact">' + act + "</div></div>";
+      }).join("") + "</div>";
       if (ms) h += '<div class="learn">' + learnHtml(n, "drawer") + "</div>";
     } else h += '<p class="soft">This world has not been built yet. Worlds are being added one at a time.</p>';
     var a = ATOM_OF[n];
@@ -601,7 +627,7 @@
     if (parts[0] === "course") { var change = {}; change[parts[1]] = parts[2]; setCourse(change); render(); return; }
     if (parts[0] === "open") { drawer = { kind: parts[1] }; sure = ""; track("drawer", { which: parts[1] }); render(); return; }
     if (parts[0] === "el") { drawer = { kind: "el", n: +parts[1] }; sure = ""; render(); return; }
-    if (k.indexOf("play:") === 0) { if (worldOpen(+k.slice(5))) { setWorld(k.slice(5)); drawer = null; render(); play(); } return; }
+    if (parts[0] === "play") { var pl = +parts[2] || 1; if (worldOpen(+parts[1]) && pl <= levelsOf(+parts[1]) && levelOpen(+parts[1], pl)) { setWorld(parts[1]); LEVEL = pl; drawer = null; render(); play(); } return; }
     if (k.indexOf("world:") === 0) { var wn = k.slice(6); if (worldOpen(+wn)) { setWorld(wn); track("world picked", { world: wn }); render(); } else { drawer = { kind: "el", n: +wn }; render(); } return; }
     if (k === "signin") { ev.preventDefault(); track("sign in click"); if (auth) auth.open("register", { source: FULL ? "velvet worlds" : "elements" }); return; }
     if (parts[0] === "pick") { lsSet(LS_PICK, parts[1]); track("weapon chosen", { item: parts[1] }); render(); return; }
@@ -638,25 +664,28 @@
     else if (m.event === "run_finished") {
       var rc = runs(); lsSet(LS_RUNS, { runs: rc.runs + 1, wins: rc.wins + (p.result === "win" ? 1 : 0) });
       if (p.result === "win") { var ws = lsGet(LS_WINS, {}), lib = courseLib(); ws[lib] = ws[lib] || {}; ws[lib][WORLD] = 1; lsSet(LS_WINS, ws);
-        var got = starsFor(p), st = lsGet(LS_STARS, {}); st[lib] = st[lib] || {}; st[lib][WORLD] = Math.max(+st[lib][WORLD] || 0, got); lsSet(LS_STARS, st);
-        if (signedIn() && bankOn) api("POST", { op: "win", lib: lib, world: WORLD, stars: got }); }   // on this device, and on the account when signed in
+        var lvl = Math.min(3, Math.max(1, +p.level || LEVEL)), sk = starKey(WORLD, lvl);
+        var got = starsFor(p), st = lsGet(LS_STARS, {}); st[lib] = st[lib] || {}; st[lib][sk] = Math.max(+st[lib][sk] || 0, got); lsSet(LS_STARS, st);
+        if (signedIn() && bankOn) api("POST", lvl > 1 ? { op: "win", lib: lib, world: WORLD, level: lvl, stars: got } : { op: "win", lib: lib, world: WORLD, stars: got }); }   // on this device, and on the account when signed in
       var f2 = { p: +p.p || 0, n: +p.n || 0, e: +p.e || 0 }; setLocalFound(f2); pendingSend = f2; sendFound(true);
       $("endTitle").textContent = p.result === "win" ? "Collection complete!" : "The " + WORLD_INFO[WORLD].enemies + " got you";
       $("endText").textContent = "Particles found this run: " + (+p.particles_this_run || 0) + ". In this world so far: " + f2.p + " protons, " + f2.n + " neutrons, " + f2.e + " electrons.";
-      if (p.result === "win") $("endText").textContent += " Stars: " + starText(starsFor(p)) + " (win; final task right first time; 8 in 10 questions right first time).";
+      if (p.result === "win") { var lv2 = Math.min(3, Math.max(1, +p.level || LEVEL));
+        $("endText").textContent += " Level " + lv2 + ": " + GRADES[starsFor(p)] + " star. (Bronze for finishing; silver with the final task right first time or 8 in 10 questions right first time; gold with both.)" +
+          (lv2 < levelsOf(+WORLD) ? " Level " + (lv2 + 1) + " is now open: leave the game and choose it in " + ELS[+WORLD - 1].name + "'s panel." : ""); }
       var first = lessonsFor(+WORLD)[0];   // the world's own lesson (was one fixed link for every world and course)
       $("endLessonRow").style.display = first ? "" : "none";
       if (first) { $("endLesson").href = first.url; $("endLesson").setAttribute("data-w", WORLD); $("endLesson").textContent = "Earn coins: " + first.lesson + (first.mission ? ", Mission " + first.mission : "") + " mini-lesson"; }
       $("endSave").textContent = signedIn() && bankOn ? "Saved to your account." : "Kept on this device. Sign in to save them to your account.";
       $("endPanel").classList.add("show"); $("exit").style.display = "block";
       var mins = Math.floor((+p.seconds || 0) / 60);
-      track("run finished", { course: courseLib(), result: String(p.result), blaster: String(p.blaster), minutes: mins >= 10 ? "10+" : String(mins), pieces: p.pieces + "/" + p.pieces_total,
+      track("run finished", { course: courseLib(), level: String(+p.level || LEVEL), result: String(p.result), blaster: String(p.blaster), minutes: mins >= 10 ? "10+" : String(mins), pieces: p.pieces + "/" + p.pieces_total,
         first_try: p.asked ? Math.round(100 * p.right / p.asked / 10) * 10 + "%" : "none", particles: String(+p.particles_this_run || 0) });
     }
   };
 
   /* ---- starting the game ---- */
-  function startState() { var st = { blaster: picked(), world: WORLD, collected: found(), friends: curFriends }; if (curPack) st.pack = curPack; return st; }
+  function startState() { var st = { blaster: picked(), world: WORLD, level: LEVEL, collected: found(), friends: curFriends }; if (curPack) st.pack = curPack; return st; }
   
   function fail(msg, code) {
     if ($("loadTips")) $("loadTips").style.display = "none";
@@ -674,19 +703,26 @@
     var tips = $("loadTips");   // what to do, shown while the game loads (the first feedback forms: one player of two did not know)
     if (!tips) { tips = document.createElement("ul"); tips.id = "loadTips"; tips.className = "howto"; $("loadBar").parentNode.insertBefore(tips, $("loadBar")); }
     tips.style.display = "";
-    tips.innerHTML = "<li>Find the pieces hidden around the world.</li><li>Answer questions at the terminals for ammo and health.</li><li>Take the pieces to the base and " + (ms.baked ? "put them in order" : "match each term to its definition") + ".</li><li>Protons, neutrons and electrons are hidden everywhere, some inside crates.</li>";
+    tips.innerHTML = "";
+    if (LEVEL > levelsOf(+WORLD) || !levelOpen(+WORLD, LEVEL)) LEVEL = 1;
     curPack = null; packTaken = false;
-    if (!ms.baked) {   // this course's pack for this world: fetched now and handed to the game in window.vwState
+    var ownPack = levelPack(+WORLD, LEVEL);   // a pack written for this level of this course; otherwise the level uses the world's level 1 pack
+    if (!ms.baked || ownPack) {   // this course's pack for this world: fetched now and handed to the game in window.vwState
       try {
-        var pr = await fetch(PACKS + courseLib() + "/w" + WORLD + ".json?v=" + PACKS_V);
+        var pr = await fetch(PACKS + courseLib() + "/" + (ownPack ? "l" + LEVEL + "-" : "") + "w" + WORLD + ".json?v=" + PACKS_V);   // a level's own pack is lN-wM.json
         if (!pr.ok) throw new Error("http " + pr.status);
         curPack = await pr.json();
         if (course.tier !== "higher") curPack.questions = curPack.questions.filter(function (q) { return q.tier !== "higher"; });   // Higher and HL questions only for those who chose them
       } catch (e0) { fail("The questions for this world could not be loaded. Check your connection and try again.", "pack"); return; }
     }
+    var task = curPack ? String((curPack.assemble || {}).type) : (ms.baked ? "order" : "match");
+    tips.innerHTML = (LEVEL === 2 ? "<li>Level 2: go through the open gate into the new wing. The enemies with a green cube over them carry the pieces: pop them and pick the pieces up.</li>" :
+        LEVEL === 3 ? "<li>Level 3: go through both gates to the far wing. Three waves come, and pieces arrive each time you clear one.</li>" : "<li>Find the pieces hidden around the world.</li>") +
+      "<li>Answer questions at the terminals for ammo and health.</li><li>Take the pieces to the base and " + (task === "order" ? "put them in order" : task === "group" ? "sort them into their groups" : "match each term to its definition") +
+      ".</li><li>Protons, neutrons and electrons are hidden everywhere, some inside crates.</li>";
     curFriends = drawFriends();
     window.vwState = startState();
-    track("play", { blaster: window.vwState.blaster, world: WORLD, signed_in: signedIn() ? "yes" : "no", course: courseLib() });
+    track("play", { blaster: window.vwState.blaster, world: WORLD, level: String(LEVEL), signed_in: signedIn() ? "yes" : "no", course: courseLib() });
     var t0 = Date.now(), packUrl = VW_PACK + "?v=" + VW_BUILD;
     var boot = async function (base) {
       if (!window.Engine) await loadScript(base + ".js");
@@ -727,7 +763,7 @@
       fail("Something went wrong while loading. Check your connection and try again.", String((e && e.message) || e).slice(0, 80));
     }
   };
-  $("playBtn").addEventListener("click", play);
+  $("playBtn").addEventListener("click", function () { LEVEL = 1; play(); });   // the lobby's button plays level 1; levels 2 and 3 are chosen in the element's panel
   /* Play again: the game rebuilds the level, and while it does the page cannot respond. Put a
      panel up first (its bar is a CSS transform animation, which keeps moving while the page is
      busy), let the browser paint it, then tell the game. The game says "level_ready" when done. */
