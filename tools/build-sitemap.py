@@ -33,7 +33,7 @@ CHECK = "--check" in sys.argv
 
 # section name -> list of (root dir, recurse?)
 SECTIONS = {
-    "core": [(".", False), ("guides", True), ("games", True), ("classcraft", False)],
+    "core": [(".", False), ("guides", True), ("games", True), ("classcraft", False), ("velvet-worlds", False)],   # velvet-worlds: the game page (public since 19 Nov 2026)
     "revise": [("revise", True)],
     "adventures": [("classcraft/adventures", True)],
     "teach": [("teach", True)],

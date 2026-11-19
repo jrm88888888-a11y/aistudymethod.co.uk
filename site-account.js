@@ -6,14 +6,21 @@
        (classcraft/arcade/auth.js, loaded only at that moment). If that file
        cannot load, the link simply goes to the arcade, where logging in works.
      - Signed in: the link shows the username and coin balance from this
-       device's saved session and leads to the arcade lobby (account menu).
+       device's saved session, with the avatar they chose in front of it
+       (the avatar list, classcraft/arcade/avatars-data.js, is fetched only
+       for a signed-in visitor who has one). A press opens a small menu under it (19 Nov
+       2026; it used to lead to the arcade): Choose avatar, Invite a friend,
+       Give feedback (these three and Log out use auth.js, loaded at that
+       moment), Revision Arcade, Velvet Worlds, Log out. With scripts off, or
+       a new-tab click, the link still goes to the arcade.
    Reads localStorage "aism-auth" and "aism-wallet" only; sends nothing itself.
-   Plausible (if on the page): "Header log in: opened" {page}. */
+   Plausible (if on the page): "Header log in: opened" {page};
+   "Header account menu: opened" {page}; "Header account menu: chosen" {item}. */
 (function () {
   "use strict";
   if (typeof window === "undefined" || window.__aismSiteAccount) return;
   window.__aismSiteAccount = true;
-  var AUTH_SRC = "/classcraft/arcade/auth.js?v=20261116";
+  var AUTH_SRC = "/classcraft/arcade/auth.js?v=20261119";
   var SEL = 'a[href$="#log-in"]';
 
   function read(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }
@@ -23,18 +30,50 @@
     if (w && s && w.uid === s.userId && w.w && typeof w.w.coins === "number") return w.w.coins;
     return null;
   }
+  /* The chosen avatar: its number is in the saved wallet; the picture's file name needs the avatar list. */
+  var AV_SRC = "/classcraft/arcade/avatars-data.js", avP = null;
+  function avatarId(s) { var w = read("aism-wallet"); return w && s && w.uid === s.userId && w.w && w.w.avatar ? parseInt(w.w.avatar, 10) : null; }
+  function avatarUrl(id) {
+    var list = window.VELVET_AVATARS || [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return "/classcraft/arcade/assets/avatars/256/" + String(list[i].id).padStart(2, "0") + "-" + list[i].slug + ".webp";
+    return "";
+  }
+  function loadAvatars() {   // once; if auth.js (or anything else) is already fetching the list, wait for that fetch instead of starting another
+    if (window.VELVET_AVATARS) return Promise.resolve();
+    if (avP) return avP;
+    avP = new Promise(function (done) {
+      var s = document.querySelector('script[src*="avatars-data.js"]');
+      if (!s) { s = document.createElement("script"); s.src = AV_SRC; s.async = false; document.head.appendChild(s); }
+      s.addEventListener("load", done); s.addEventListener("error", function () { avP = null; done(); });
+    });
+    return avP;
+  }
   function paint() {
     var s = session(), els = document.querySelectorAll(SEL);
     for (var i = 0; i < els.length; i++) {
       var a = els[i];
       if (s) {
-        var c = coins(s);
-        a.textContent = s.username + (c === null ? "" : " · " + c + " coins");
-        a.setAttribute("aria-label", "Your account: " + s.username + (c === null ? "" : ", " + c + " coins"));
+        var c = coins(s), av = avatarId(s), url = av ? avatarUrl(av) : "", text = s.username + (c === null ? "" : " · " + c + " coins"), key = url + "|" + text;
+        if (av && !url && !window.VELVET_AVATARS) loadAvatars().then(paint);   // the list is not here yet: paint again when it is
+        if (a.getAttribute("data-sa-key") !== key) {   // only when something changed, so the picture is not fetched again on every paint
+          a.textContent = "";
+          if (url) {
+            var img = document.createElement("img");
+            img.src = url; img.alt = ""; img.width = 28; img.height = 28; img.className = "sa-av";
+            img.style.cssText = "width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;margin:-4px 8px -4px -6px;vertical-align:middle;border:2px solid currentColor;background:#fff";
+            img.onerror = function () { if (this.parentNode) this.parentNode.removeChild(this); };
+            a.appendChild(img);
+          }
+          a.appendChild(document.createTextNode(text));
+          a.setAttribute("data-sa-key", key);
+        }
+        a.setAttribute("aria-label", "Your account: " + s.username + (c === null ? "" : ", " + c + " coins") + ". Opens a menu.");
+        a.setAttribute("aria-haspopup", "menu");
+        a.setAttribute("aria-expanded", menu && menuFor === a ? "true" : "false");
         a.setAttribute("data-sa", "in");
       } else {
-        a.textContent = "Log in";
-        a.removeAttribute("aria-label");
+        a.textContent = "Log in"; a.removeAttribute("data-sa-key");
+        a.removeAttribute("aria-label"); a.removeAttribute("aria-haspopup"); a.removeAttribute("aria-expanded");
         a.setAttribute("data-sa", "out");
       }
     }
@@ -56,10 +95,84 @@
     return authP;
   }
 
+  /* ---- the account menu (signed in) ---- */
+  var menu = null, menuFor = null;
+  var ITEMS = [
+    ["Choose avatar", function (auth) { auth.openAvatars(); }],
+    ["Invite a friend", function (auth) { auth.openInvite(); }],
+    ["Give feedback", function (auth) { auth.openFeedback({ where: "site header" }); }],
+    ["Revision Arcade", "/classcraft/arcade.html"],
+    ["Velvet Worlds", "/velvet-worlds/"],
+    ["Log out", function (auth) { auth.logout(); }]
+  ];
+  function track(name, props) { try { if (window.plausible) window.plausible(name, { props: props }); } catch (err) {} }
+  function css() {
+    if (document.getElementById("sa-menu-css")) return;
+    var st = document.createElement("style"); st.id = "sa-menu-css";
+    st.textContent = ".sa-menu{position:fixed;z-index:2147483000;min-width:220px;max-width:calc(100vw - 16px);box-sizing:border-box;padding:8px;background:#fff;border:3px solid #2a2740;border-radius:16px;box-shadow:0 5px 0 #2a2740;font:600 16px/1.2 'Nunito','DM Sans',system-ui,sans-serif}" +
+      ".sa-menu a,.sa-menu button{display:block;width:100%;box-sizing:border-box;margin:0;padding:11px 14px;border:0;border-radius:10px;background:none;color:#2a2740;font:inherit;text-align:left;text-decoration:none;cursor:pointer}" +
+      ".sa-menu a:hover,.sa-menu button:hover,.sa-menu a:focus-visible,.sa-menu button:focus-visible{background:#f7c948;outline:none}" +
+      ".sa-menu .sa-sep{height:2px;margin:6px 8px;background:#e7e3da}";
+    document.head.appendChild(st);
+  }
+  function place() {
+    if (!menu || !menuFor) return;
+    var r = menuFor.getBoundingClientRect(), w = menu.offsetWidth, h = menu.offsetHeight;
+    var left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
+    var top = r.bottom + 10; if (top + h > window.innerHeight - 8 && r.top - h - 10 >= 8) top = r.top - h - 10;   // above the button if there is no room below
+    if (r.width === 0 || r.right <= 0 || r.left >= window.innerWidth || r.bottom <= 0 || r.top >= window.innerHeight) {   // the link has gone from view (on a phone the drawer shuts when it is pressed): sit under the header, at the right
+      var hd = document.querySelector("header, nav"), hb = hd ? hd.getBoundingClientRect().bottom : 0;
+      left = Math.max(8, window.innerWidth - w - 8); top = Math.max(8, Math.min(hb, window.innerHeight * 0.4) + 8);
+    }
+    menu.style.left = left + "px"; menu.style.top = top + "px";
+  }
+  function closeMenu(focusBack) {
+    if (!menu) return;
+    var a = menuFor; menu.remove(); menu = null; menuFor = null;
+    if (a) { a.setAttribute("aria-expanded", "false"); if (focusBack) a.focus(); }
+  }
+  function choose(item, href) {
+    track("Header account menu: chosen", { item: item[0] });
+    closeMenu(false);
+    loadAuth().then(function (auth) { item[1](auth); }).catch(function () { location.href = href; });   // auth.js would not load: the arcade has the same choices
+  }
+  function openMenu(a) {
+    css(); closeMenu(false);
+    menu = document.createElement("div"); menu.className = "sa-menu"; menu.setAttribute("role", "menu"); menu.setAttribute("aria-label", "Your account");
+    ITEMS.forEach(function (item, i) {
+      if (i === ITEMS.length - 1) { var sep = document.createElement("div"); sep.className = "sa-sep"; menu.appendChild(sep); }
+      var b;
+      if (typeof item[1] === "string") { b = document.createElement("a"); b.href = item[1]; b.addEventListener("click", function () { track("Header account menu: chosen", { item: item[0] }); }); }
+      else { b = document.createElement("button"); b.type = "button"; b.addEventListener("click", function () { choose(item, a.getAttribute("href")); }); }
+      b.setAttribute("role", "menuitem"); b.textContent = item[0];
+      menu.appendChild(b);
+    });
+    document.body.appendChild(menu); menuFor = a; a.setAttribute("aria-expanded", "true");
+    place(); setTimeout(place, 80); setTimeout(place, 450);   // again once a closing drawer has finished moving
+    var first = menu.querySelector("[role=menuitem]"); if (first) first.focus();
+    track("Header account menu: opened", { page: location.pathname });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (!menu) return;
+    if (e.key === "Escape") { e.preventDefault(); closeMenu(true); return; }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
+    var its = menu.querySelectorAll("[role=menuitem]"), at = Array.prototype.indexOf.call(its, document.activeElement);
+    e.preventDefault();
+    its[e.key === "Home" ? 0 : e.key === "End" ? its.length - 1 : (at + (e.key === "ArrowDown" ? 1 : its.length - 1)) % its.length].focus();
+  });
+  window.addEventListener("resize", place);
+  window.addEventListener("scroll", place, true);
+
   document.addEventListener("click", function (e) {
     var a = e.target && e.target.closest ? e.target.closest(SEL) : null;
-    if (!a || session()) return;            // signed in: follow the link to the arcade lobby
+    if (menu && !a && !(e.target.closest && e.target.closest(".sa-menu"))) closeMenu(false);   // a press anywhere else closes the menu
+    if (!a) return;
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    if (session()) {                        // signed in: the account menu, not a trip to the arcade
+      e.preventDefault();
+      if (menu && menuFor === a) closeMenu(false); else openMenu(a);
+      return;
+    }
     e.preventDefault();
     var href = a.getAttribute("href");
     try { if (window.plausible) window.plausible("Header log in: opened", { props: { page: location.pathname } }); } catch (err) {}
@@ -67,7 +180,7 @@
       .catch(function () { location.href = href; });
   });
 
-  window.addEventListener("aism-auth-change", paint);
+  window.addEventListener("aism-auth-change", function () { if (!session()) closeMenu(false); paint(); });
   window.addEventListener("storage", function (e) { if (e.key === "aism-auth" || e.key === "aism-wallet") paint(); });
   function start() { paint(); setTimeout(paint, 0); setTimeout(paint, 400); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
