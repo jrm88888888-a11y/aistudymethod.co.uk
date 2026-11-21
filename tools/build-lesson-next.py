@@ -59,6 +59,8 @@ AP_COURSES = [  # (file prefix, subject, board, course name)
     ('chemistry-ap', 'chemistry', 'collegeboard', 'AP Chemistry'),
     ('religion-ap-world-history', 'world-religions', 'world-history', 'AP World History: World Religions'),
     ('biology-ap', 'biology', 'collegeboard', 'AP Biology'),
+    ('economics-ap-microeconomics', 'economics', 'microeconomics', 'AP Microeconomics'),
+    ('economics-ap-macroeconomics', 'economics', 'macroeconomics', 'AP Macroeconomics'),
 ]
 AP_NAME = {f'{s}-ap-{b}': n for _, s, b, n in AP_COURSES}
 def ap_match(stem):
