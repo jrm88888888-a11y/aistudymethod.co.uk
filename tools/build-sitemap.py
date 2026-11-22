@@ -33,7 +33,7 @@ CHECK = "--check" in sys.argv
 
 # section name -> list of (root dir, recurse?)
 SECTIONS = {
-    "core": [(".", False), ("guides", True), ("games", True), ("classcraft", False), ("velvet-worlds", False)],   # velvet-worlds: the game page (public since 19 Nov 2026)
+    "core": [(".", False), ("guides", True), ("games", True), ("classcraft", False), ("classcraft/arcade/elements.html", False), ("velvet-worlds", False)],   # one named file: the Element Shop (22 Nov 2026). velvet-worlds: the page that sends players to velvetworlds.com
     "revise": [("revise", True)],
     "adventures": [("classcraft/adventures", True)],
     "teach": [("teach", True)],
@@ -87,6 +87,8 @@ def classify(path):
     return "canonical-elsewhere", canon
 
 def walk(root, recurse):
+    if os.path.isfile(root):          # a single named page, not a folder
+        yield os.path.normpath(root); return
     for dirpath, dirs, files in os.walk(root):
         if not recurse:
             dirs[:] = []
