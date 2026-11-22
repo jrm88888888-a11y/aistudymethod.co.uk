@@ -93,7 +93,7 @@
   /* ---- courses: the worlds are the same for everyone; the mission pack (pieces, final task, questions)
      changes with the course. Packs are built from the site's banks by _dev/velvet-worlds/build_packs.py
      into /velvet-worlds/packs/<library>/ (index.json lists the worlds that have a pack; wN.json is the pack). ---- */
-  var PACKS = BASE + "packs/", PACKS_V = "20261119a", LS_COURSE = "vw-course", LS_WINS = "vw-wins";
+  var PACKS = BASE + "packs/", PACKS_V = "20261122c", LS_COURSE = "vw-course", LS_WINS = "vw-wins";
   var LEVELS = [
     { id: "ks3", label: "KS3", subjects: { chemistry: "ks3-science" }, note: "Chemistry topics only so far." },
     { id: "gcse", label: "GCSE", subjects: { biology: "gcse-biology", chemistry: "gcse-chemistry", physics: "gcse-physics" }, boards: [["aqa", "AQA"], ["other", "Another board"]], tiers: [["foundation", "Foundation"], ["higher", "Higher"]],
