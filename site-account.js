@@ -107,6 +107,7 @@
     ["Invite a friend", function (auth) { auth.openInvite(); }],
     ["Give feedback", function (auth) { auth.openFeedback({ where: "site header" }); }],
     ["Revision Arcade", "/classcraft/arcade.html"],
+    ["Element Shop", "/classcraft/arcade/elements.html"],
     ["Velvet Worlds", "/velvet-worlds/"],
     ["Log out", function (auth) { auth.logout(); }]
   ];
@@ -212,7 +213,7 @@
     d.className = "sa-note"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-labelledby", "sa-note-h");
     d.innerHTML = '<div class="bx"><div class="tg">THANK YOU</div><h2 id="sa-note-h">You asked. We built it.</h2>' +
       "<p>Ideas you sent us:</p><ul>" +
-      "<li><b>An FPS game:</b> Velvet Worlds is here. The Element Shop is now part of it.</li>" +
+      "<li><b>An FPS game:</b> Velvet Worlds is here.</li>" +
       "<li><b>A new look for the site:</b> done.</li>" +
       "<li><b>A racing game:</b> on its way. We hope before Christmas.</li></ul>" +
       "<p>We shape this site around your feedback, so please keep it coming.</p>" +

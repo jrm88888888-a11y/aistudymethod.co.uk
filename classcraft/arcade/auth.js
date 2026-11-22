@@ -52,6 +52,10 @@
 
   var API = String(window.AISM_ACCOUNTS_URL || "https://aism-accounts-7aktx.bunny.run").replace(/\/+$/, "");
   var LS = "aism-auth"; // { token, userId, username }
+  /* The game has its own domain, velvetworlds.com (22 Nov 2026). Its page loads this same file and sets
+     window.AISM_SITE = "https://aistudymethod.com", so that links back to the site are whole addresses.
+     On aistudymethod.com AISM_SITE is not set and SITE is "". */
+  var SITE = String(window.AISM_SITE || "").replace(/\/+$/, "");
   var WLS = "aism-wallet"; // { uid, w: <wallet snapshot> } — instant-paint cache
   // Directory of THIS file (…/classcraft/arcade/), so avatar art + the avatar
   // dataset resolve correctly whether we're on the lobby, a game page or the
@@ -486,7 +490,9 @@
       m.appendChild(mkItem("Choose avatar", function () { m.remove(); auth.openAvatars(); }));
       m.appendChild(mkItem("Invite a friend", function () { m.remove(); auth.openInvite(); }));
       m.appendChild(mkItem(fbDoneLocal() ? "Give feedback" : "Give feedback · +100", function () { m.remove(); auth.openFeedback({ where: "arcade menu" }); }));
-      m.appendChild(mkItem("Velvet Worlds", null, "/velvet-worlds/"));   // the Element Shop became part of Velvet Worlds at its launch (19 Nov 2026)
+      // The Element Shop is on aistudymethod.com; the game is on velvetworlds.com, reached from the site through /velvet-worlds/ (22 Nov 2026).
+      m.appendChild(mkItem("Element Shop", null, SITE + "/classcraft/arcade/elements.html"));
+      m.appendChild(mkItem("Velvet Worlds", null, SITE ? "/" : "/velvet-worlds/"));
       m.appendChild(mkItem("Log out", function () { auth.logout(); m.remove(); }));
       host.appendChild(m);
       // Place the menu on whichever side keeps it on screen (the chip may have been dragged anywhere).
@@ -608,7 +614,7 @@
 
       var btn = el("button", "aism-btn aism-primary", "Create account");
       var priv = el("div", "aism-hint");
-      priv.innerHTML = 'No name or email needed. Stored securely in the EU; deleted after 18 months unused. <a href="/privacy.html#student-data" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">How we handle student data</a>';
+      priv.innerHTML = 'No name or email needed. Stored securely in the EU; deleted after 18 months unused. <a href="' + SITE + '/privacy.html#student-data" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">How we handle student data</a>';
       body.appendChild(uf); body.appendChild(pf);
       if (!pre) body.appendChild(rLink);
       body.appendChild(rf); body.appendChild(btn); body.appendChild(priv);
@@ -1301,7 +1307,7 @@
      fixed gets 100 coins once (server campaign "winter-sorry-2026", /treat) and sees this message
      once, on whichever device first asks. Other devices get paid:false and show nothing.
      Safe to delete after 1 Mar 2027, together with the sorryCheck() calls. */
-  var SORRY = { id: "winter-sorry-2026", until: Date.UTC(2027, 2, 1), hub: "/classcraft/adventures/winter-lessons.html" };
+  var SORRY = { id: "winter-sorry-2026", until: Date.UTC(2027, 2, 1), hub: SITE + "/classcraft/adventures/winter-lessons.html" };
   var sorryBusy = false;
   function sorryCheck() {
     if (sorryBusy || !state || !state.token || !state.userId || Date.now() >= SORRY.until) return;

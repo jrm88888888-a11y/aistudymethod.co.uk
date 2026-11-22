@@ -99,7 +99,7 @@
 
   var ME = document.currentScript || document.querySelector('script[src*="quizzes/progress.js"]');
   var BASE = ME && ME.src ? ME.src.replace(/quizzes\/progress\.js.*$/, "") : "/classcraft/";
-  var SHOP = "/velvet-worlds/";   // where coins are spent: the Element Shop became part of Velvet Worlds at its launch (19 Nov 2026)
+  var SHOP = "/classcraft/arcade/elements.html";   // where coins are spent: the Element Shop (the game, Velvet Worlds, moved to its own domain on 22 Nov 2026)
 
   function worth(p) { for (var i = 0; i < GRADE.length; i++) if (p >= GRADE[i][0]) return GRADE[i][1]; return 1; }
   function today() { return Math.floor(Date.now() / 86400000); }   // UTC day, as the server counts it
@@ -374,7 +374,7 @@
       '<button type="button" role="menuitem" data-a="avatar">Choose avatar</button>' +
       '<button type="button" role="menuitem" data-a="invite">Invite a friend</button>' +
       '<button type="button" role="menuitem" data-a="feedback">Give feedback' + (AUTH && AUTH.feedbackDone && AUTH.feedbackDone() ? "" : " · +100 coins") + '</button>' +
-      '<a role="menuitem" href="' + esc(SHOP) + '">Velvet Worlds</a>' +
+      '<a role="menuitem" href="' + esc(SHOP) + '">Element Shop</a>' +
       '<div class="lp-sep"></div>' +
       '<button type="button" role="menuitem" data-a="logout">Log out</button>';
     document.body.appendChild(m);
@@ -971,7 +971,7 @@
       } else if (what === "save") {
         var pend = pendingTotal();
         d.innerHTML = '<span class="lp-mshead">✅ ' + esc(m.label) + " complete · <b>" + pend + "</b> coin" + (pend === 1 ? "" : "s") +
-          " on this device. Save them to collect elements in Velvet Worlds: pick a username and password, no email needed.</span>" + saveForm(pend);
+          " on this device. Save them to collect elements in the Element Shop: pick a username and password, no email needed.</span>" + saveForm(pend);
         d.classList.add("lp-note");
         wireSave(d);                            // "I have an account"
         wireInline(d, "mission end");           // sign-up form; registration carries source "mission end"
@@ -1033,7 +1033,7 @@
       return '<span class="lp-el">' + (w.coins >= n
         ? "You can buy <b>" + esc(name) + "</b> now (" + plural(n, "coin") + "). "
         : "<b>" + plural(n - w.coins, "more coin") + "</b> for <b>" + esc(name) + "</b>. ") +
-        '<a href="' + esc(SHOP) + '">Velvet Worlds →</a></span>';
+        '<a href="' + esc(SHOP) + '">Element Shop →</a></span>';
     }
     return '<span class="lp-el">Coins buy elements for your collection. <b>Helium</b> costs 2. <a href="' + esc(SHOP) + '">See the elements →</a></span>';
   }
@@ -1106,7 +1106,7 @@
       var pend = pendingTotal();
       html = '<span class="lp-big"><span class="lp-coin"></span>' +
         (unsaved > 0 ? "You earned <b>" + unsaved + "</b> coin" + (unsaved === 1 ? "" : "s") + (mission ? " in this lesson" : "") + "!" : "Your coins are waiting") + "</span>" +
-        '<span class="lp-sub">You have <b>' + pend + "</b> coin" + (pend === 1 ? "" : "s") + " on this device. Save them to collect elements in Velvet Worlds: pick a username and password, no email needed.</span>" +
+        '<span class="lp-sub">You have <b>' + pend + "</b> coin" + (pend === 1 ? "" : "s") + " on this device. Save them to collect elements in the Element Shop: pick a username and password, no email needed.</span>" +
         saveForm(pend);
     } else if (held > 0) {
       html = '<span class="lp-big"><span class="lp-coin"></span>Couldn\'t reach the coin bank just now</span>' +
