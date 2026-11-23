@@ -36,7 +36,7 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261123b";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
+  var VW_BUILD = "20261123c";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
   var VW_SIZES = { wasm: 39514754, pck: 4853672, worlds: { "2": 3597492, "3": 551780, "4": 2671776, "5": 1430088, "6": 701796, "7": 1806860, "8": 1207880, "9": 2508708, "10": 1539732, "11": 2324860, "12": 983096, "13": 600696, "14": 397124, "15": 440088, "16": 816392, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 552792, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
     music: { "sailors-chant": 822794, "spacelife-14": 781949, "town-theme": 898921, "lasso-lady": 736725, "snowfall": 490840, "underwater-theme": 1079810, "creepy": 946048, "midnight-drive": 947137, "carnival-rides": 271701, "rhythm-factory": 1174949, "chiptune-level-1": 870810, "factory-ambiance": 952644, "fire-level": 966584, "funky-house": 786640, "joyful-jungle": 1074353, "mysterious": 965289, "beach-sports-theme": 375654, "hyperflight-racing": 665883, "fridge-is-hungry": 915000, "winning-the-race": 1107855 } };   // bytes of each world music track (game/music/<name>.ogg)
   /* The music each world plays (worlds 1 and 6 use the track inside the main pack). The names must match "music" in the
@@ -874,7 +874,9 @@
   };
 
   /* ---- starting the game ---- */
-  function startState() { var st = { blaster: picked(), world: WORLD, level: LEVEL, collected: found(), friends: curFriends }; if (curPack) st.pack = curPack;
+  /* The guns this account owns: the game lets the player change between them during a run (G, 1 to 9, the wheel). */
+  function ownedWeapons() { return Object.keys(GAME_WEAPONS).concat(["blaster-supporter"]).filter(ownsWeapon); }
+  function startState() { var st = { blaster: picked(), weapons: ownedWeapons(), world: WORLD, level: LEVEL, collected: found(), friends: curFriends }; if (curPack) st.pack = curPack;
     if (shopOn()) { st.items = carried(); st.boosts = boostsOn(); st.looks = looksInUse(); }   // the Shop: thrown items carried, boosts ticked, looks in use
     return st; }
   
