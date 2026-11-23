@@ -1,7 +1,7 @@
 /* seasonal.js — a time-limited plug for a seasonal mini-lesson, and its coin treat.
    Loaded by lesson-nav.js on every mini-lesson, so no per-lesson edits.
    Current campaign: Winter Lessons (six seasonal mini-lessons on one hub), with a
-   one-off 100-coin treat for finishing any one of them. Previous: Halloween 2026.
+   one-off 20-coin treat (100 until 23 Nov 2026) for finishing any one of them. Previous: Halloween 2026.
 
    On any of the featured lessons (C.pages):
      - when the completion screen opens (the lesson only moves on once each
@@ -28,14 +28,14 @@
     id: "winter-2026",
     end: new Date(2027, 2, 1),                // plug off: 1 Mar 2027, 00:00 local
     treatUntil: Date.UTC(2027, 2, 1),         // server stops paying: 1 Mar 2027, 00:00 UTC
-    coins: 100,
+    coins: 20,
     stems: ["winter-history-little-ice-age", "winter-science-snowflakes", "winter-maths-koch-snowflake",
             "winter-geography-beast-from-the-east", "winter-english-darkling-thrush", "winter-music-vivaldi-winter"],
     hub: "winter-lessons.html",
     tag: "❄️ Winter treat",
-    q: "Finish any Winter Lesson and win 100 bonus coins",
+    q: "Finish any Winter Lesson and win 20 bonus coins",
     sub: "Six winter mini-lessons: why snowflakes have six sides, the Little Ice Age, the Beast from the East, a snowflake with an infinite edge, a winter poem, and Vivaldi's Winter.",
-    bar: "Winter Lessons: finish one, win 100 bonus coins",
+    bar: "Winter Lessons: finish one, win 20 bonus coins",
     poster: "winter-hooks/posters/winter-science-snowflakes-m1_16x9.jpg",
     match: /^(science-ks3-|chemistry-gcse-|physics-gcse-|biology-gcse-|maths-ks3-|maths-gcse-|history-ks3-|history-gcse-|geography-ks3-|geography-gcse-|english-language-ks3-|english-literature-gcse-|music-)/
   };

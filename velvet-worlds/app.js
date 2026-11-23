@@ -13,7 +13,7 @@
      On aistudymethod.com AISM_SITE is not set and SITE is "". */
   var SITE = String(window.AISM_SITE || "").replace(/\/+$/, "");
   var GAME_URL = "/velvet-worlds/";   // on aistudymethod.com: the page that sends a student to the game's domain
-  document.getElementById("vw-app").innerHTML = "<div class=\"wrap\" id=\"lobby\">\n  <a class=\"back\" href=\"/\">&larr; AI Study Method</a>\n  <header class=\"marquee\">\n    <div class=\"over\">AI STUDY METHOD PRESENTS</div>\n    <h1 id=\"mTitle\">VELVET WORLDS</h1>\n    <div class=\"sub\" id=\"mSub\">COLLECT AN ELEMENT &middot; OPEN ITS WORLD &middot; BUILD YOUR WEAPONS</div>\n  </header>\n\n  <div class=\"hud\">\n    <div class=\"cell start\" id=\"cellPlay\"><button class=\"go\" id=\"playBtn\" type=\"button\">Play</button><div class=\"cap\" id=\"playNote\"></div></div>\n    <div class=\"cell\" id=\"cellCourse\"><div><div class=\"k\">Your course</div><div class=\"coursechip\" id=\"courseChip\"></div></div></div>\n    <div class=\"cell coins\"><span id=\"coinGlyph\" aria-hidden=\"true\"></span><div><div class=\"k\">Velvet Coins</div><div class=\"v\" id=\"hCoins\">0</div></div></div>\n    <div class=\"cell prog\"><div class=\"top\"><span class=\"k\">Elements collected</span><span class=\"v\" id=\"hOwned\">0 / 118</span></div><div class=\"bar\"><i id=\"hBar\"></i></div><div class=\"cap\" id=\"hCap\"></div></div>\n    <div class=\"cell\" id=\"cellParts\"><div><div class=\"k\">Particles</div><div class=\"parts\" id=\"hParts\"></div></div></div>\n    <div class=\"acts\" id=\"acts\"><button type=\"button\" data-k=\"open:forge\">The Forge</button><button type=\"button\" data-k=\"open:shop\">The Shop</button><button type=\"button\" class=\"fbbtn\" data-k=\"fb\" id=\"fbBtn\">Give feedback &middot; +100</button></div>\n  </div>\n\n  <div id=\"note\" role=\"status\"></div>\n\n  <div class=\"cell\" id=\"notComputer\" style=\"display:none;margin-bottom:14px\"><div>\n    <b>The worlds need a computer.</b> You can collect elements here, but playing a world needs a keyboard and a mouse.\n    <a href=\"#\" id=\"tryAnyway\">I am on a computer: let me play</a></div>\n  </div>\n\n  <section class=\"mapcard\">\n    <h2 id=\"mapTitle\">The map</h2>\n    <p class=\"soft\" id=\"mapLead\">Every element is a world. Collect an element with Velvet Coins from mini-lessons and the arcade (price = atomic number). Worlds are being built one at a time.</p>\n    <div class=\"filters\" id=\"filters\" role=\"group\" aria-label=\"Show elements\"></div>\n    <div class=\"map\" id=\"map\" role=\"group\" aria-label=\"Periodic table of worlds\"></div>\n    <div class=\"key\"><span id=\"keyWorld\"><b style=\"color:var(--yellow)\">Glowing</b> = a world you can play</span><span><b style=\"color:var(--yellow)\">Dashed</b> = you can afford it</span><span>Picture = collected</span><span class=\"wideonly\">Numbers above are groups (GCSE: 1 to 7 and 0); numbers at the side are periods</span></div>\n    <div class=\"legend\" id=\"legend\"></div>\n  </section>\n\n  <p class=\"credits\" id=\"credits\">Castle models: KayKit Dungeon Pack. Robots and sand crabs: Quaternius Sci-Fi Essentials Kit. Aliens and monsters: Quaternius Ultimate Monsters, Modular Sci-Fi MegaKit, Cyberpunk Game Kit and Cute Fish Pack. Dinosaurs: Quaternius Animated Dinosaur Pack. People, animals and fish that wander the worlds: Quaternius Ultimate Animated Character Pack, Ultimate Animated Animals, Ultimate Monsters, Cute Animated Monsters, Ultimate Space Kit, Animated Fish, Cute Fish and Easy Animated Enemy packs. Trees and rocks in worlds 5 to 9: Quaternius Stylized Nature MegaKit. Farm: Quaternius Crops, Farm Buildings and Animated Animals packs, Kenney Car Kit. Island models, blasters and sounds: Kenney (kenney.nl). Star positions on the Moon: Yale Bright Star Catalogue. Earth map: Natural Earth. Music: &ldquo;Loopable Dungeon Ambience&rdquo; by JaggedStone; world music from OpenGameArt.org by Thimras, yd, The Cynic Project, congusbongus, Kistol, Cleyton Kauffman, TokyoGeisha, &Eacute;crivain, Zane Little Music, Juhani Junkala, Julie Damsgaard (Spring Spring), Of Far Different Nature, MintoDog, nene, Trex0n and section31. All released under CC0 or in the public domain. Built with Godot. Lanthanum and actinium are shown in the main table, with elements 58 to 71 and 90 to 103 below, as on GCSE data sheets.</p>\n  <p class=\"credits\">Bracketed masses are the mass number of the longest-lived isotope (no stable isotopes exist). A trailing * marks a predicted state: that element has never been observed in bulk. Elements in the middle block and the two lower rows show no group number.</p>\n</div>\n\n<aside id=\"drawer\" aria-label=\"Details\"></aside>\n\n<div id=\"stage\">\n  <canvas id=\"canvas\" tabindex=\"0\">Your browser does not support the canvas tag.</canvas>\n  <button id=\"exit\" type=\"button\">Leave game</button>\n  <div class=\"over\" id=\"loadPanel\"><div class=\"panel\">\n    <h2 id=\"loadTitle\">Loading the castle&hellip;</h2>\n    <p class=\"soft\" id=\"loadText\">The first visit takes longest.</p>\n    <progress id=\"loadBar\" max=\"100\" value=\"0\"></progress>\n    <div class=\"shuttle\" id=\"loadShuttle\" style=\"display:none\" role=\"progressbar\" aria-label=\"Setting the level up\"><i></i></div>\n    <div class=\"row\" id=\"loadRow\" style=\"display:none\"><button type=\"button\" onclick=\"location.reload()\">Back</button></div>\n  </div></div>\n  <div class=\"over\" id=\"endPanel\"><div class=\"panel\">\n    <h2 id=\"endTitle\"></h2>\n    <p id=\"endText\"></p>\n    <p class=\"soft\" id=\"endSave\"></p>\n    <div class=\"row\">\n      <button class=\"go\" type=\"button\" id=\"nextBtn\" style=\"display:none\">Next level</button>\n      <button class=\"go\" type=\"button\" id=\"againBtn\">Play again</button>\n      <button type=\"button\" id=\"labBtn\">Back to the map</button>\n      <button type=\"button\" class=\"fbbtn\" id=\"endFb\">Give feedback &middot; +100 coins</button>\n    </div>\n    <p class=\"soft\" id=\"endLessonRow\" style=\"display:none\"><a id=\"endLesson\" href=\"#\" target=\"_blank\" rel=\"noopener\" data-lesson=\"end panel\"></a></p>\n  </div></div>\n</div>\n<div id=\"fbModal\" class=\"fbm\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Feedback\"></div>\n<div id=\"vwToast\" role=\"status\" aria-live=\"polite\"></div>\n<div id=\"sharePrompt\" role=\"status\" aria-live=\"polite\"></div>\n";
+  document.getElementById("vw-app").innerHTML = "<div class=\"wrap\" id=\"lobby\">\n  <a class=\"back\" href=\"/\">&larr; AI Study Method</a>\n  <header class=\"marquee\">\n    <div class=\"over\">AI STUDY METHOD PRESENTS</div>\n    <h1 id=\"mTitle\">VELVET WORLDS</h1>\n    <div class=\"sub\" id=\"mSub\">COLLECT AN ELEMENT &middot; OPEN ITS WORLD &middot; BUILD YOUR WEAPONS</div>\n  </header>\n\n  <div class=\"hud\">\n    <div class=\"cell start\" id=\"cellPlay\"><button class=\"go\" id=\"playBtn\" type=\"button\">Play</button><div class=\"cap\" id=\"playNote\"></div></div>\n    <div class=\"cell\" id=\"cellCourse\"><div><div class=\"k\">Your course</div><div class=\"coursechip\" id=\"courseChip\"></div></div></div>\n    <div class=\"cell coins\"><span id=\"coinGlyph\" aria-hidden=\"true\"></span><div><div class=\"k\">Velvet Coins</div><div class=\"v\" id=\"hCoins\">0</div></div></div>\n    <div class=\"cell prog\"><div class=\"top\"><span class=\"k\">Elements collected</span><span class=\"v\" id=\"hOwned\">0 / 118</span></div><div class=\"bar\"><i id=\"hBar\"></i></div><div class=\"cap\" id=\"hCap\"></div></div>\n    <div class=\"cell\" id=\"cellParts\"><div><div class=\"k\">Particles</div><div class=\"parts\" id=\"hParts\"></div></div></div>\n    <div class=\"acts\" id=\"acts\"><button type=\"button\" data-k=\"open:forge\">The Forge</button><button type=\"button\" data-k=\"open:shop\">The Shop</button><button type=\"button\" class=\"fbbtn\" data-k=\"fb\" id=\"fbBtn\">Give feedback &middot; +20</button></div>\n  </div>\n\n  <div id=\"note\" role=\"status\"></div>\n\n  <div class=\"cell\" id=\"notComputer\" style=\"display:none;margin-bottom:14px\"><div>\n    <b>The worlds need a computer.</b> You can collect elements here, but playing a world needs a keyboard and a mouse.\n    <a href=\"#\" id=\"tryAnyway\">I am on a computer: let me play</a></div>\n  </div>\n\n  <section class=\"mapcard\">\n    <h2 id=\"mapTitle\">The map</h2>\n    <p class=\"soft\" id=\"mapLead\">Every element is a world. Collect an element with Velvet Coins from mini-lessons and the arcade (price = atomic number). Worlds are being built one at a time.</p>\n    <div class=\"filters\" id=\"filters\" role=\"group\" aria-label=\"Show elements\"></div>\n    <div class=\"map\" id=\"map\" role=\"group\" aria-label=\"Periodic table of worlds\"></div>\n    <div class=\"key\"><span id=\"keyWorld\"><b style=\"color:var(--yellow)\">Glowing</b> = a world you can play</span><span><b style=\"color:var(--yellow)\">Dashed</b> = you can afford it</span><span>Picture = collected</span><span class=\"wideonly\">Numbers above are groups (GCSE: 1 to 7 and 0); numbers at the side are periods</span></div>\n    <div class=\"legend\" id=\"legend\"></div>\n  </section>\n\n  <p class=\"credits\" id=\"credits\">Castle models: KayKit Dungeon Pack. Robots and sand crabs: Quaternius Sci-Fi Essentials Kit. Aliens and monsters: Quaternius Ultimate Monsters, Modular Sci-Fi MegaKit, Cyberpunk Game Kit and Cute Fish Pack. Dinosaurs: Quaternius Animated Dinosaur Pack. People, animals and fish that wander the worlds: Quaternius Ultimate Animated Character Pack, Ultimate Animated Animals, Ultimate Monsters, Cute Animated Monsters, Ultimate Space Kit, Animated Fish, Cute Fish and Easy Animated Enemy packs. Trees and rocks in worlds 5 to 9: Quaternius Stylized Nature MegaKit. Farm: Quaternius Crops, Farm Buildings and Animated Animals packs, Kenney Car Kit. Island models, blasters and sounds: Kenney (kenney.nl). Star positions on the Moon: Yale Bright Star Catalogue. Earth map: Natural Earth. Music: &ldquo;Loopable Dungeon Ambience&rdquo; by JaggedStone; world music from OpenGameArt.org by Thimras, yd, The Cynic Project, congusbongus, Kistol, Cleyton Kauffman, TokyoGeisha, &Eacute;crivain, Zane Little Music, Juhani Junkala, Julie Damsgaard (Spring Spring), Of Far Different Nature, MintoDog, nene, Trex0n and section31. All released under CC0 or in the public domain. Built with Godot. Lanthanum and actinium are shown in the main table, with elements 58 to 71 and 90 to 103 below, as on GCSE data sheets.</p>\n  <p class=\"credits\">Bracketed masses are the mass number of the longest-lived isotope (no stable isotopes exist). A trailing * marks a predicted state: that element has never been observed in bulk. Elements in the middle block and the two lower rows show no group number.</p>\n</div>\n\n<aside id=\"drawer\" aria-label=\"Details\"></aside>\n\n<div id=\"stage\">\n  <canvas id=\"canvas\" tabindex=\"0\">Your browser does not support the canvas tag.</canvas>\n  <button id=\"exit\" type=\"button\">Leave game</button>\n  <div class=\"over\" id=\"loadPanel\"><div class=\"panel\">\n    <h2 id=\"loadTitle\">Loading the castle&hellip;</h2>\n    <p class=\"soft\" id=\"loadText\">The first visit takes longest.</p>\n    <progress id=\"loadBar\" max=\"100\" value=\"0\"></progress>\n    <div class=\"shuttle\" id=\"loadShuttle\" style=\"display:none\" role=\"progressbar\" aria-label=\"Setting the level up\"><i></i></div>\n    <div class=\"row\" id=\"loadRow\" style=\"display:none\"><button type=\"button\" onclick=\"location.reload()\">Back</button></div>\n  </div></div>\n  <div class=\"over\" id=\"endPanel\"><div class=\"panel\">\n    <h2 id=\"endTitle\"></h2>\n    <p id=\"endText\"></p>\n    <p class=\"soft\" id=\"endSave\"></p>\n    <div class=\"row\">\n      <button class=\"go\" type=\"button\" id=\"nextBtn\" style=\"display:none\">Next level</button>\n      <button class=\"go\" type=\"button\" id=\"againBtn\">Play again</button>\n      <button type=\"button\" id=\"labBtn\">Back to the map</button>\n      <button type=\"button\" class=\"fbbtn\" id=\"endFb\">Give feedback &middot; +20 coins</button>\n    </div>\n    <p class=\"soft\" id=\"endLessonRow\" style=\"display:none\"><a id=\"endLesson\" href=\"#\" target=\"_blank\" rel=\"noopener\" data-lesson=\"end panel\"></a></p>\n  </div></div>\n</div>\n<div id=\"fbModal\" class=\"fbm\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Feedback\"></div>\n<div id=\"vwToast\" role=\"status\" aria-live=\"polite\"></div>\n<div id=\"sharePrompt\" role=\"status\" aria-live=\"polite\"></div>\n";
   /* On the game's domain the page sits under a hub (velvetworlds.com/) that lists the game types. The page sets
      window.VW_HUB_URL (the hub's address) and window.VW_GAME_NAME (this game's name there, "Velvet Blaster"). */
   if (SITE) {
@@ -36,7 +36,7 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261123e";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
+  var VW_BUILD = "20261123f";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
   var VW_SIZES = { wasm: 39514754, pck: 4853672, worlds: { "2": 3597492, "3": 551780, "4": 2671776, "5": 1430088, "6": 701796, "7": 1806860, "8": 1207880, "9": 2508708, "10": 1539732, "11": 2324860, "12": 983096, "13": 600696, "14": 397124, "15": 440088, "16": 816392, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 552792, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
     music: { "sailors-chant": 822794, "spacelife-14": 781949, "town-theme": 898921, "lasso-lady": 736725, "snowfall": 490840, "underwater-theme": 1079810, "creepy": 946048, "midnight-drive": 947137, "carnival-rides": 271701, "rhythm-factory": 1174949, "chiptune-level-1": 870810, "factory-ambiance": 952644, "fire-level": 966584, "funky-house": 786640, "joyful-jungle": 1074353, "mysterious": 965289, "beach-sports-theme": 375654, "hyperflight-racing": 665883, "fridge-is-hungry": 915000, "winning-the-race": 1107855 } };   // bytes of each world music track (game/music/<name>.ogg)
   /* The music each world plays (worlds 1 and 6 use the track inside the main pack). The names must match "music" in the
@@ -103,8 +103,8 @@
   var PARTICLE_PRICE = 2;
   // The Shop (Nov 2026): the same table as GAME_ITEMS on the accounts server. Never rename an id.
   var GAME_ITEMS = {
-    "item-pop": { recipe: { H: 2 }, makes: 1 },
-    "item-flash": { recipe: { Mg: 1 }, makes: 5 },
+    "item-pop": { recipe: { H: 2 }, makes: 1, price: 8 },
+    "item-flash": { recipe: { Mg: 1 }, makes: 5, price: 6, needs: "12" },
     "boost-ammo": { price: 5 },
     "boost-shield": { price: 10 },
     "boost-life": { price: 15 },
@@ -203,12 +203,12 @@
     "24": { name: "The Chrome Garage", enemies: "shell robots", tip: "Cars cross the two lanes: look before you step out." }
   };
   var WORLD = "1";                               // the world being played (chosen in an element's panel, or by the top bar's Play / Continue)
-  var ATOM_OF = { 1: "H", 6: "C", 7: "N", 8: "O", 11: "Na", 12: "Mg", 16: "S", 17: "Cl" };      // atomic number -> key in GAME_ATOMS
+  var ATOM_OF = { 1: "H", 6: "C", 7: "N", 8: "O", 11: "Na", 16: "S", 17: "Cl" };      // atomic number -> key in GAME_ATOMS (thrown items are bought with coins since 23 Nov 2026, so magnesium atoms are no longer built)
   var ATOM_ISO = { H: "hydrogen-1", C: "carbon-12", O: "oxygen-16", Mg: "magnesium-24", N: "nitrogen-14", Na: "sodium-23", S: "sulfur-32", Cl: "chlorine-35" };
   // The Shop's words. `swatch` is the colour shown beside a look (the game holds the same colours: game.gd).
   var SHOP_INFO = {
-    "item-pop": { name: "Hydrogen Pop", formula: "H<sub>2</sub>", blurb: "Throw it. Everything close to where it goes off takes 3 hits, and crates break. Hydrogen gas burns with a squeaky pop: that is the test for it." },
-    "item-flash": { name: "Magnesium Flash", formula: "Mg", blurb: "Throw it. Enemies near the flash are stunned for 4 seconds (a boss for less). Magnesium burns with a bright white flame." },
+    "item-pop": { name: "Hydrogen Pop", formula: "H<sub>2</sub>", what: "hydrogen gas", blurb: "Throw it. Everything close to where it goes off takes 3 hits, and crates break. Hydrogen gas burns with a squeaky pop: that is the test for it." },
+    "item-flash": { name: "Magnesium Flash", formula: "Mg", what: "magnesium metal", blurb: "Throw it. Enemies near the flash are stunned for 4 seconds (a boss for less). Magnesium burns with a bright white flame." },
     "boost-ammo": { name: "Ammo pack", blurb: "Start the run with 20 more ammo." },
     "boost-shield": { name: "Shield", blurb: "Takes the first 50 damage of the run." },
     "boost-life": { name: "Extra life", blurb: "Once in the run, come back at half health." },
@@ -424,18 +424,6 @@
   function looksInUse() { var l = lsGet(LS_LOOKS, {}), out = []; LOOK_GROUPS.forEach(function (g) { if (l[g[0]] && ownsLook(l[g[0]])) out.push(l[g[0]]); }); return out; }
   function boostsOn() { var b = lsGet(LS_BOOSTS, {}); return Object.keys(GAME_ITEMS).filter(function (id) { return id.indexOf("boost-") === 0 && b[id] && itemCount(id) > 0; }); }
   function carried() { var o = {}; Object.keys(CARRY_MAX).forEach(function (id) { o[id] = Math.min(CARRY_MAX[id], itemCount(id)); }); return o; }
-  /* What making one batch of a thrown item takes from here: the atoms still to build, the particles still to
-     buy for them, and what those cost. `element` is the atomic number of an element that must be collected first. */
-  function makePlan(id) {
-    var recipe = GAME_ITEMS[id].recipe, at = (game && game.atoms) || {}, hd = hand(), need = { p: 0, n: 0, e: 0 }, atoms = {}, element = 0;
-    Object.keys(recipe).forEach(function (s) {
-      var short = Math.max(0, recipe[s] - (+at[s] || 0)); if (!short) return;
-      atoms[s] = short; need.p += GAME_ATOMS[s].z * short; need.n += GAME_ATOMS[s].n * short; need.e += GAME_ATOMS[s].z * short;
-      if (GAME_ATOM_NEEDS[s] && !ownsEl(+GAME_ATOM_NEEDS[s])) element = +GAME_ATOM_NEEDS[s];
-    });
-    var buy = { p: Math.max(0, need.p - hd.p), n: Math.max(0, need.n - hd.n), e: Math.max(0, need.e - hd.e) }, count = buy.p + buy.n + buy.e;
-    return { atoms: atoms, buy: buy, count: count, coins: count * PARTICLE_PRICE, element: element, full: itemCount(id) + (GAME_ITEMS[id].makes || 1) > ITEM_HOLD_MAX };
-  }
   function ownsWeapon(id) {
     if (id === "blaster-starter") return true;
     if (id === "blaster-supporter") { var w = wallet(); return !!(w && (w.extras || []).some(function (o) { return o.series === "supporter"; })); }
@@ -477,27 +465,13 @@
     "world-locked": "You need this world's element first.", "network": "Could not reach the server. Try again.",
     "signed-out": "Sign in first.", "need-element": "Collect that element first.", "full": "You are holding as many of those as an account can."
   };
-  /* The Shop: make one batch of a thrown item in one press. Buys the particles that are short (the button said
-     how many coins), builds the atoms that are short, then makes the item. Each step is its own request; if one
-     is refused the steps before it stand (particles or atoms are kept), and the reason is shown. */
-  async function makeItem(id) {
-    var plan = makePlan(id), r = { ok: true }, step = "craft";
-    if (plan.count) { step = "particles"; r = await api("POST", { op: "particles", p: plan.buy.p, n: plan.buy.n, e: plan.buy.e }); }
-    for (var s in plan.atoms) { if (!r.ok) break; step = "atom"; r = await api("POST", { op: "atom", el: s, count: plan.atoms[s] }); }
-    if (r.ok) { step = "craft"; r = await api("POST", { op: "craft", item: id, count: 1 }); }
-    sure = "";
-    if (r.ok) { note(""); track("item made", { item: id, coins: String(plan.coins) }); }
-    else { note(ERR[r.error] || "That did not work. Try again.", true); track("refused", { op: step, reason: String(r.error || r.status) }); }
-    if (plan.count && auth) auth.pull();   // coins were spent: bring the balance up to date
-    render();
-  }
-  async function shopBuy(id) {
-    var r = await api("POST", { op: "shop", item: id, count: 1 });
+  async function shopBuy(id, count) {
+    var r = await api("POST", { op: "shop", item: id, count: count || 1 });
     sure = "";
     if (r.ok) {
-      note(""); track(GAME_ITEMS[id].keep ? "look bought" : "boost bought", { item: id });
+      note(""); track(GAME_ITEMS[id].keep ? "look bought" : id.indexOf("boost-") === 0 ? "boost bought" : "item bought", { item: id, count: String(count || 1) });
       if (GAME_ITEMS[id].keep) { var l = lsGet(LS_LOOKS, {}); l[lookKind(id)] = id; lsSet(LS_LOOKS, l); }   // a look just bought goes straight into use
-      else { var b = lsGet(LS_BOOSTS, {}); b[id] = true; lsSet(LS_BOOSTS, b); }                               // a boost just bought is ticked for the next run
+      else if (id.indexOf("boost-") === 0) { var b = lsGet(LS_BOOSTS, {}); b[id] = true; lsSet(LS_BOOSTS, b); }   // a boost just bought is ticked for the next run
       if (auth) auth.pull();
     } else { note(ERR[r.error] || "That did not work. Try again.", true); track("refused", { op: "shop", reason: String(r.error || r.status) }); }
     render();
@@ -569,7 +543,7 @@
     sp.className = "show"; clearTimeout(shareTimer); shareTimer = setTimeout(function () { sp.className = ""; }, 8000);
   }
 
-  /* ---- test feedback (Nov 2026): a short form sent through Formspree without the username, then 100 coins once per account ---- */
+  /* ---- test feedback (Nov 2026): a short form sent through Formspree without the username, then 20 coins once per account (100 until 23 Nov 2026) ---- */
   var FORMSPREE = "https://formspree.io/f/mqevgjke", FB_CAMPAIGN = "velvet-test-2026", LS_RUNS = "vw-runs";
   var FB_Q = [
     ["level", "What are you studying?", [["ks3", "KS3"], ["gcse", "GCSE"], ["alevel", "A-level or IB"], ["other", "Something else"]]],
@@ -590,14 +564,14 @@
   function fbRender(done) {
     var m = $("fbModal"), h = '<div class="fbx"><button type="button" class="x" data-k="fbclose" aria-label="Close">&times;</button>';
     if (done) h += "<h2>Thank you!</h2><p>" + done + '</p><div class="row" style="justify-content:center">' + btn("fbclose", "Close", "go") + "</div>";
-    else if (!signedIn()) h += "<h2>Tell us what you think</h2><p>Sign in first, so we can add your 100 coins.</p>" + '<div class="row" style="justify-content:center">' + btn("signin", "Sign in or make an account", "go") + "</div>";
-    else if (!runs().runs) h += "<h2>Tell us what you think</h2><p>Play a world first, then come back and tell us about it. It takes about a minute, and we add <b>100 coins</b> to your account.</p>" + '<div class="row" style="justify-content:center">' + btn("fbclose", "OK", "go") + "</div>";
+    else if (!signedIn()) h += "<h2>Tell us what you think</h2><p>Sign in first, so we can add your 20 coins.</p>" + '<div class="row" style="justify-content:center">' + btn("signin", "Sign in or make an account", "go") + "</div>";
+    else if (!runs().runs) h += "<h2>Tell us what you think</h2><p>Play a world first, then come back and tell us about it. It takes about a minute, and we add <b>20 coins</b> to your account.</p>" + '<div class="row" style="justify-content:center">' + btn("fbclose", "OK", "go") + "</div>";
     else {
-      h += "<h2>Tell us what you think</h2><p class=\"soft\">Six taps and one box. It is sent without your username. Then we add <b>100 coins</b> to your account.</p>";
+      h += "<h2>Tell us what you think</h2><p class=\"soft\">Six taps and one box. It is sent without your username. Then we add <b>20 coins</b> to your account.</p>";
       FB_Q.forEach(function (q) { h += '<p class="fq">' + q[1] + '</p><div class="chips" role="radiogroup">' + q[2].map(function (o) { return '<button type="button" class="chip" data-k="fa:' + q[0] + ":" + o[0] + '" aria-pressed="' + (fbAns[q[0]] === o[0]) + '">' + o[1] + "</button>"; }).join("") + "</div>"; });
       h += '<p class="fq">What should we add next? <span class="soft">(pick any)</span></p><div class="chips">' + FB_MORE.map(function (o) { return '<button type="button" class="chip" data-k="ft:' + o[0] + '" aria-pressed="' + !!fbTicks[o[0]] + '">' + o[1] + "</button>"; }).join("") + "</div>";
       h += '<p class="fq"><label for="fbText">Anything confusing, broken or missing? Any ideas? <span class="soft">(optional)</span></label></p><textarea id="fbText" maxlength="1500" rows="3"></textarea>';
-      h += '<p class="soft" id="fbMsg"></p><div class="row" style="justify-content:center">' + btn("fbsend", "Send and get 100 coins", "go") + "</div>";
+      h += '<p class="soft" id="fbMsg"></p><div class="row" style="justify-content:center">' + btn("fbsend", "Send and get 20 coins", "go") + "</div>";
     }
     var keep = $("fbText") ? $("fbText").value : "";
     m.innerHTML = h + "</div>"; m.classList.add("show");
@@ -606,8 +580,8 @@
   function fbOpen(where) { if (fbState()) { toast("You have already sent your feedback. Thank you!"); return; } track("feedback opened", { where: where }); fbRender(); }
   async function fbClaim(show) {
     var r = await auth.treat(FB_CAMPAIGN);
-    if (r && r.ok) { setFbState("paid"); if (show) fbRender(r.paid ? "Your answers are on their way to us, and <b>" + (r.coins || 100) + " coins</b> have been added to your account." : "Your answers are on their way to us."); render(); return true; }
-    if (show) fbRender("Your answers are on their way to us. Your 100 coins will be added the next time you open this page.");
+    if (r && r.ok) { setFbState("paid"); if (show) fbRender(r.paid ? "Your answers are on their way to us, and <b>" + (r.coins || 20) + " coins</b> have been added to your account." : "Your answers are on their way to us."); render(); return true; }
+    if (show) fbRender("Your answers are on their way to us. Your 20 coins will be added the next time you open this page.");
     return false;
   }
   async function fbSend() {
@@ -726,25 +700,23 @@
       h += '<div class="item' + (id === cur ? " on" : "") + '"><img src="' + BASE + "img/" + id + '.webp" alt="" width="300" height="84"><h4>' + info.name + "</h4>" +
         (r ? '<p><span class="formula">' + info.formula + "</span> &nbsp;" + recipeText(r) + "</p>" : "") + "<p>" + info.blurb + '</p><div class="row">' + b + "</div></div>";
     });
-    return h + '<p class="soft" style="margin-top:14px">Build atoms by choosing an element on the map: ' + Object.keys(GAME_ATOMS).map(function (s) { return BYSYM[s].name.toLowerCase(); }).join(", ") + '. Thrown items, boosts and looks are in the Shop.</p>';
+    return h + '<p class="soft" style="margin-top:14px">Build atoms by choosing an element on the map: ' + Object.keys(ATOM_OF).map(function (n) { return BYSYM[ATOM_OF[n]].name.toLowerCase(); }).join(", ") + '. Thrown items, boosts and looks are in the Shop.</p>';
   }
   /* The Shop (Nov 2026). It took the Particle Bank's place: the counts and the particle buttons are here now. */
   function shopPanel() {
-    var bal = coins(), h = '<h2>The Shop</h2><p class="soft">Each world hides a fixed number of protons, neutrons and electrons. Spend them, and your Velvet Coins, here.</p>' +
+    var bal = coins(), h = '<h2>The Shop</h2><p class="soft">Spend your Velvet Coins here. The protons, neutrons and electrons you find build atoms for the Forge.</p>' +
       '<div class="counts"><div><b>' + bal + "</b>Velvet Coins</div>" + partsHtml(hand()) + "</div>";
     if (!signedIn()) return h + '<p><b>Sign in to keep your particles on your account and to use the Shop.</b> Until then your particles are kept on this device only.</p><div class="row">' + btn("signin", "Sign in or make an account") + "</div>";
     if (!inBank()) return h + '<p class="soft">The Shop is not switched on yet. You can still play, and what you find is kept on this device.</p>';
     if (!shopOn()) return h + particlesPart(bal);   // an accounts server from before the Shop: particles only, as the Particle Bank was
     // thrown items
-    h += '<h3>Thrown items</h3><p class="soft">Made from atoms. In a world, press F to throw and Q to change item. You only use one up when you throw it.</p>';
+    h += '<h3>Thrown items</h3><p class="soft">In a world, press F to throw and Q to change item. You only use one up when you throw it.</p>';
     Object.keys(CARRY_MAX).forEach(function (id) {
-      var info = SHOP_INFO[id], spec = GAME_ITEMS[id], plan = makePlan(id), k = "craft:" + id, label = "Make " + spec.makes, b;
-      if (plan.element) b = btn("el:" + plan.element, "Collect " + esc(ELS[plan.element - 1].name) + " first &middot; " + plan.element + " coins");
-      else if (plan.full) b = btn("", "You cannot hold more", "", true);
-      else if (!plan.count) b = btn(k, label, "pick");
-      else if (sure === k) b = btn(k, "Spend " + plan.coins + " coins?", "sure");
-      else b = btn(k, label + " &middot; buy " + plural(plan.count, "particle") + " for " + plan.coins + " coins", "", bal < plan.coins);
-      h += '<div class="item"><h4>' + info.name + ' <span class="have">You have ' + itemCount(id) + "</span></h4><p><span class=\"formula\">" + info.formula + "</span> &nbsp;" + recipeText(spec.recipe) + (spec.makes > 1 ? " makes " + spec.makes : "") +
+      var info = SHOP_INFO[id], spec = GAME_ITEMS[id], n = itemCount(id), need = spec.needs && !ownsEl(+spec.needs) ? +spec.needs : 0, b;
+      if (need) b = btn("el:" + need, "Collect " + esc(ELS[need - 1].name) + " first &middot; " + need + " coins");   // the Flash is sold only to an account that owns Magnesium
+      else if (n >= ITEM_HOLD_MAX) b = btn("", "You cannot hold more", "", true);
+      else b = btn("shopbuy:" + id, "Buy 1 &middot; " + spec.price + " coins", "", bal < spec.price) + (n + 5 <= ITEM_HOLD_MAX ? btn("shopbuy:" + id + ":5", "Buy 5 &middot; " + 5 * spec.price + " coins", "", bal < 5 * spec.price) : "");
+      h += '<div class="item"><h4>' + info.name + ' <span class="have">You have ' + n + "</span></h4><p><span class=\"formula\">" + info.formula + "</span> &nbsp;" + info.what +
         "</p><p>" + info.blurb + '</p><p class="soft">A run carries up to ' + CARRY_MAX[id] + '.</p><div class="row">' + b + "</div></div>";
     });
     // boosts
@@ -819,13 +791,9 @@
     if (parts[0] === "f") { if (parts[1] === "cat") fCat = parts[2]; else fView = parts[2]; track("filter", { which: parts[2] }); buildFilters(); renderMap(); return; }
     if (parts[0] === "atom") { b.disabled = true; act({ op: "atom", el: parts[1], count: 1 }, "atom built", { el: parts[1] }); return; }
     if (parts[0] === "make") { b.disabled = true; act({ op: "make", item: parts[1] }, "weapon made", { item: parts[1] }); return; }
-    if (parts[0] === "craft") {   // a thrown item: when particles have to be bought, the first click asks and the second spends
-      if (makePlan(parts[1]).count && sure !== k) { sure = k; render(); return; }
-      b.disabled = true; makeItem(parts[1]); return;
-    }
-    if (parts[0] === "shopbuy") {   // a look asks first; a boost (5 to 15 coins) is bought at once
+    if (parts[0] === "shopbuy") {   // a look asks first; a thrown item or a boost (a few coins each) is bought at once
       if (GAME_ITEMS[parts[1]].keep && sure !== k) { sure = k; render(); return; }
-      b.disabled = true; shopBuy(parts[1]); return;
+      b.disabled = true; shopBuy(parts[1], +parts[2] || 1); return;
     }
     if (parts[0] === "boost") { var bo = lsGet(LS_BOOSTS, {}); bo[parts[1]] = !bo[parts[1]]; lsSet(LS_BOOSTS, bo); track("boost ticked", { item: parts[1], on: bo[parts[1]] ? "yes" : "no" }); render(); return; }
     if (parts[0] === "look") { var lo = lsGet(LS_LOOKS, {}), lk = lookKind(parts[1]); lo[lk] = lo[lk] === parts[1] ? "" : parts[1]; lsSet(LS_LOOKS, lo); track("look chosen", { item: lo[lk] || "none" }); render(); return; }

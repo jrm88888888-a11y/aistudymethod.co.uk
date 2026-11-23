@@ -373,7 +373,7 @@
       '<div class="lp-ms">' + (typeof w.coins === "number" ? plural(w.coins, "coin") : "…") + " · " + owned + " collected</div>" +
       '<button type="button" role="menuitem" data-a="avatar">Choose avatar</button>' +
       '<button type="button" role="menuitem" data-a="invite">Invite a friend</button>' +
-      '<button type="button" role="menuitem" data-a="feedback">Give feedback' + (AUTH && AUTH.feedbackDone && AUTH.feedbackDone() ? "" : " · +100 coins") + '</button>' +
+      '<button type="button" role="menuitem" data-a="feedback">Give feedback' + (AUTH && AUTH.feedbackDone && AUTH.feedbackDone() ? "" : " · +30 coins") + '</button>' +
       '<a role="menuitem" href="' + esc(SHOP) + '">Element Shop</a>' +
       '<div class="lp-sep"></div>' +
       '<button type="button" role="menuitem" data-a="logout">Log out</button>';
@@ -1141,7 +1141,7 @@
         if (!st || !st.ok || st.claimed || !st.eligible || document.querySelector(".lp-quest")) return;
         var q = document.createElement("div");
         q.className = "lp-note lp-quest";
-        q.innerHTML = '<span class="lp-big">Feedback quest: win <b>' + (st.coins || 100) + '</b> coins</span>' +
+        q.innerHTML = '<span class="lp-big">Feedback quest: win <b>' + (st.coins || 30) + '</b> coins</span>' +
           '<span class="lp-sub">Tell us one thing that would make this site better for you. It takes a minute.</span>' +
           '<div class="lp-btns"><button type="button" data-q="go">Give feedback</button><button type="button" class="ghost" data-q="later">Not now</button></div>';
         note.parentNode.insertBefore(q, note.nextSibling);

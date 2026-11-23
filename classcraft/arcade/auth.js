@@ -9,7 +9,7 @@
      openInvite()                 "Invite a friend" modal (friend code + share link)
      feedbackStatus()             -> {ok, claimed, eligible, coins}   (authed)
      openFeedback({where})        the feedback quest: 3 questions, sent to Formspree, then
-                                  +100 coins once per account (server /feedback)
+                                  +30 coins once per account (server /feedback)
      openReport({page,screen,heading})  "Report a mistake" on a lesson screen, sent to
                                   Formspree with a ref; Billy pays 20 coins if confirmed
      login(username,password)     -> {ok} | {ok:false, error}
@@ -489,7 +489,7 @@
       };
       m.appendChild(mkItem("Choose avatar", function () { m.remove(); auth.openAvatars(); }));
       m.appendChild(mkItem("Invite a friend", function () { m.remove(); auth.openInvite(); }));
-      m.appendChild(mkItem(fbDoneLocal() ? "Give feedback" : "Give feedback · +100", function () { m.remove(); auth.openFeedback({ where: "arcade menu" }); }));
+      m.appendChild(mkItem(fbDoneLocal() ? "Give feedback" : "Give feedback · +30", function () { m.remove(); auth.openFeedback({ where: "arcade menu" }); }));
       // The Element Shop is on aistudymethod.com; the game is on velvetworlds.com, reached from the site through /velvet-worlds/ (22 Nov 2026).
       m.appendChild(mkItem("Element Shop", null, SITE + "/classcraft/arcade/elements.html"));
       m.appendChild(mkItem("Velvet Worlds", null, SITE ? "/" : "/velvet-worlds/"));
@@ -605,7 +605,7 @@
       // Friend code: hidden behind a link unless a ?ref= link filled it in.
       var pre = storedRef();
       var rc = input("text", "e.g. K7QM2P"); rc.value = pre; rc.maxLength = 8; rc.style.textTransform = "uppercase";
-      var rf = field("Friend code (optional)", rc, "You both get 100 coins once you've won 40 coins over 2 different days.");
+      var rf = field("Friend code (optional)", rc, "You both get 50 coins once you've won 40 coins over 2 different days.");
       var rErr = el("div", "aism-err", ""); rf.appendChild(rErr);
       var rLink = el("button", "aism-alt", "Got a code from a friend?"); rLink.type = "button";
       rLink.style.cssText = "margin:0 0 12px;display:block";
@@ -681,7 +681,7 @@
       cpy.addEventListener("click", function () { try { navigator.clipboard.writeText(key); cpy.textContent = "Copied ✓"; } catch (e) { cpy.textContent = "Select & copy it"; } });
       rk.appendChild(cpy);
       body.appendChild(rk);
-      if (referral) body.appendChild(el("div", "aism-hint", "Friend code added ✓ Win " + (referral.needCoins || 40) + " coins over " + (referral.needDays || 2) + " different days and you'll both get " + (referral.bonus || 100) + " coins."));
+      if (referral) body.appendChild(el("div", "aism-hint", "Friend code added ✓ Win " + (referral.needCoins || 40) + " coins over " + (referral.needDays || 2) + " different days and you'll both get " + (referral.bonus || 50) + " coins."));
       var lab = el("label", "aism-check");
       var cb = el("input"); cb.type = "checkbox";
       lab.appendChild(cb); lab.appendChild(document.createTextNode(" I've saved my recovery key somewhere safe."));
