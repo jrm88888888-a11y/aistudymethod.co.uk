@@ -36,8 +36,8 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261122a";               // change whenever index.pck changes
-  var VW_SIZES = { wasm: 39514754, pck: 4850536, worlds: { "2": 3597492, "3": 551780, "4": 2454616, "5": 1247836, "6": 701796, "7": 1806860, "8": 934348, "9": 2508708, "10": 1539732, "11": 2324860, "12": 780044, "13": 290472, "14": 397124, "15": 440088, "16": 425332, "17": 534904, "18": 268380, "19": 528356, "20": 457520, "21": 410728, "22": 229484, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
+  var VW_BUILD = "20261122b";               // change whenever index.pck changes
+  var VW_SIZES = { wasm: 39514754, pck: 4851352, worlds: { "2": 3597492, "3": 551780, "4": 3537968, "5": 1247836, "6": 701796, "7": 1806860, "8": 1112740, "9": 2508708, "10": 1539732, "11": 2324860, "12": 780044, "13": 290472, "14": 397124, "15": 440088, "16": 425332, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 229484, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
     music: { "sailors-chant": 822794, "spacelife-14": 781949, "town-theme": 898921, "lasso-lady": 736725, "snowfall": 490840, "underwater-theme": 1079810, "creepy": 946048, "midnight-drive": 947137, "carnival-rides": 271701, "rhythm-factory": 1174949, "chiptune-level-1": 870810, "factory-ambiance": 952644, "fire-level": 966584, "funky-house": 786640, "joyful-jungle": 1074353, "mysterious": 965289, "beach-sports-theme": 375654, "hyperflight-racing": 665883, "fridge-is-hungry": 915000, "winning-the-race": 1107855 } };   // bytes of each world music track (game/music/<name>.ogg)
   /* The music each world plays (worlds 1 and 6 use the track inside the main pack). The names must match "music" in the
      game's WORLDS table (game.gd); _dev/velvet-worlds/check_music.py compares the two and the files. A track is a plain
