@@ -36,7 +36,7 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261123c";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
+  var VW_BUILD = "20261123e";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
   var VW_SIZES = { wasm: 39514754, pck: 4853672, worlds: { "2": 3597492, "3": 551780, "4": 2671776, "5": 1430088, "6": 701796, "7": 1806860, "8": 1207880, "9": 2508708, "10": 1539732, "11": 2324860, "12": 983096, "13": 600696, "14": 397124, "15": 440088, "16": 816392, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 552792, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
     music: { "sailors-chant": 822794, "spacelife-14": 781949, "town-theme": 898921, "lasso-lady": 736725, "snowfall": 490840, "underwater-theme": 1079810, "creepy": 946048, "midnight-drive": 947137, "carnival-rides": 271701, "rhythm-factory": 1174949, "chiptune-level-1": 870810, "factory-ambiance": 952644, "fire-level": 966584, "funky-house": 786640, "joyful-jungle": 1074353, "mysterious": 965289, "beach-sports-theme": 375654, "hyperflight-racing": 665883, "fridge-is-hungry": 915000, "winning-the-race": 1107855 } };   // bytes of each world music track (game/music/<name>.ogg)
   /* The music each world plays (worlds 1 and 6 use the track inside the main pack). The names must match "music" in the
@@ -83,12 +83,22 @@
     C: { z: 6, n: 6 },
     O: { z: 8, n: 8 },
     Mg: { z: 12, n: 12 },
+    N: { z: 7, n: 7 },
+    Na: { z: 11, n: 12 },
+    S: { z: 16, n: 16 },
+    Cl: { z: 17, n: 18 },
   };
-  var GAME_ATOM_NEEDS = { Mg: "12" };   // an atom only an account owning its element can build
+  var GAME_ATOM_NEEDS = { Mg: "12", N: "7", Na: "11", S: "16", Cl: "17" };   // an atom only an account owning its element can build
   var GAME_WEAPONS = {
     "weapon-methane": { C: 1, H: 4 },
     "weapon-water": { H: 2, O: 1 },
     "weapon-glucose": { C: 6, H: 12, O: 6 },
+    "weapon-co2": { C: 1, O: 2 },
+    "weapon-h2s": { H: 2, S: 1 },
+    "weapon-nacl": { Na: 1, Cl: 1 },
+    "weapon-h2so4": { H: 2, S: 1, O: 4 },
+    "weapon-epibatidine": { C: 11, H: 13, Cl: 1, N: 2 },
+    "weapon-capsaicin": { C: 18, H: 27, N: 1, O: 3 },
   };
   var PARTICLE_PRICE = 2;
   // The Shop (Nov 2026): the same table as GAME_ITEMS on the accounts server. Never rename an id.
@@ -193,8 +203,8 @@
     "24": { name: "The Chrome Garage", enemies: "shell robots", tip: "Cars cross the two lanes: look before you step out." }
   };
   var WORLD = "1";                               // the world being played (chosen in an element's panel, or by the top bar's Play / Continue)
-  var ATOM_OF = { 1: "H", 6: "C", 8: "O", 12: "Mg" };      // atomic number -> key in GAME_ATOMS
-  var ATOM_ISO = { H: "hydrogen-1", C: "carbon-12", O: "oxygen-16", Mg: "magnesium-24" };
+  var ATOM_OF = { 1: "H", 6: "C", 7: "N", 8: "O", 11: "Na", 12: "Mg", 16: "S", 17: "Cl" };      // atomic number -> key in GAME_ATOMS
+  var ATOM_ISO = { H: "hydrogen-1", C: "carbon-12", O: "oxygen-16", Mg: "magnesium-24", N: "nitrogen-14", Na: "sodium-23", S: "sulfur-32", Cl: "chlorine-35" };
   // The Shop's words. `swatch` is the colour shown beside a look (the game holds the same colours: game.gd).
   var SHOP_INFO = {
     "item-pop": { name: "Hydrogen Pop", formula: "H<sub>2</sub>", blurb: "Throw it. Everything close to where it goes off takes 3 hits, and crates break. Hydrogen gas burns with a squeaky pop: that is the test for it." },
@@ -214,6 +224,13 @@
     "weapon-methane": { name: "Methane Flare", formula: "CH<sub>4</sub>", blurb: "Fires nearly twice as fast." },
     "weapon-water": { name: "Water Cannon", formula: "H<sub>2</sub>O", blurb: "Starts with 40 ammo and carries 90." },
     "weapon-glucose": { name: "Glucose Gun", formula: "C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>", blurb: "One shot pops most enemies; the biggest take more. Slow, and each shot uses 2 ammo." },
+    "weapon-capsaicin": { name: "Chilli Cannon", formula: "C<sub>18</sub>H<sub>27</sub>NO<sub>3</sub>", blurb: "Fires chillies in an arc. A hit makes the enemy overheat: for 3 seconds it runs about, cannot hurt you and loses health. Each shot uses 2 ammo." },
+    // soon: the server knows the recipe, but the game does not have the gun yet, so it cannot be made from here.
+    "weapon-epibatidine": { name: "Frog Launcher", formula: "C<sub>11</sub>H<sub>13</sub>ClN<sub>2</sub>", soon: true },
+    "weapon-h2so4": { name: "Acid Sprayer", formula: "H<sub>2</sub>SO<sub>4</sub>", soon: true },
+    "weapon-nacl": { name: "Salt Scatter", formula: "NaCl", soon: true },
+    "weapon-co2": { name: "Dry Ice Blaster", formula: "CO<sub>2</sub>", soon: true },
+    "weapon-h2s": { name: "Rotten Egg Blaster", formula: "H<sub>2</sub>S", soon: true },
     "blaster-supporter": { name: "Supporter Blaster", blurb: "A thank-you for supporting the site. Same power as the Starter." }
   };
   var PNAME = { p: "Protons", n: "Neutrons", e: "Electrons" };
@@ -695,18 +712,21 @@
     return h;
   }
   function forgePanel() {
-    var ids = ["blaster-starter"].concat(Object.keys(GAME_WEAPONS)), cur = picked(), h = '<h2>The Forge</h2><p class="soft">Bond atoms into a compound to make its weapon. A weapon you make works in every world.</p>';
+    var all = Object.keys(GAME_WEAPONS).filter(function (id) { return WEAPON_INFO[id]; });   // guns that can be made first, then those still to come
+    var ids = ["blaster-starter"].concat(all.filter(function (id) { return !WEAPON_INFO[id].soon; })), cur = picked(), h = '<h2>The Forge</h2><p class="soft">Bond atoms into a compound to make its weapon. A weapon you make works in every world.</p>';
     if (ownsWeapon("blaster-supporter")) ids.push("blaster-supporter");
+    ids = ids.concat(all.filter(function (id) { return WEAPON_INFO[id].soon; }));
     if (inBank()) { var at = game.atoms || {}; h += '<p>Your atoms: ' + Object.keys(GAME_ATOMS).map(function (s) { return "<b>" + (at[s] || 0) + "</b> " + BYSYM[s].name.toLowerCase(); }).join(", ") + ".</p>"; }
     else h += '<div class="row">' + (signedIn() ? '<span class="soft">The Shop is not switched on yet.</span>' : btn("signin", "Sign in to make weapons")) + "</div>";
     ids.forEach(function (id) {
       var info = WEAPON_INFO[id], r = GAME_WEAPONS[id], mine = ownsWeapon(id), b;
+      if (info.soon) { h += '<div class="item"><h4>' + info.name + ' <span class="have">Coming soon</span></h4><p><span class="formula">' + info.formula + "</span> &nbsp;" + recipeText(r) + "</p></div>"; return; }
       if (mine) b = id === cur ? btn("", "In your hand", "", true) : btn("pick:" + id, "Use this", "pick");
       else b = btn("make:" + id, "Make it", "", !(inBank() && Object.keys(r).every(function (s) { return ((game.atoms || {})[s] || 0) >= r[s]; })));
       h += '<div class="item' + (id === cur ? " on" : "") + '"><img src="' + BASE + "img/" + id + '.webp" alt="" width="300" height="84"><h4>' + info.name + "</h4>" +
         (r ? '<p><span class="formula">' + info.formula + "</span> &nbsp;" + recipeText(r) + "</p>" : "") + "<p>" + info.blurb + '</p><div class="row">' + b + "</div></div>";
     });
-    return h + '<p class="soft" style="margin-top:14px">Build atoms by choosing hydrogen, carbon, oxygen or magnesium on the map. Thrown items, boosts and looks are in the Shop.</p>';
+    return h + '<p class="soft" style="margin-top:14px">Build atoms by choosing an element on the map: ' + Object.keys(GAME_ATOMS).map(function (s) { return BYSYM[s].name.toLowerCase(); }).join(", ") + '. Thrown items, boosts and looks are in the Shop.</p>';
   }
   /* The Shop (Nov 2026). It took the Particle Bank's place: the counts and the particle buttons are here now. */
   function shopPanel() {
