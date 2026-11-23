@@ -13,7 +13,7 @@
      On aistudymethod.com AISM_SITE is not set and SITE is "". */
   var SITE = String(window.AISM_SITE || "").replace(/\/+$/, "");
   var GAME_URL = "/velvet-worlds/";   // on aistudymethod.com: the page that sends a student to the game's domain
-  document.getElementById("vw-app").innerHTML = "<div class=\"wrap\" id=\"lobby\">\n  <a class=\"back\" href=\"/\">&larr; AI Study Method</a>\n  <header class=\"marquee\">\n    <div class=\"over\">AI STUDY METHOD PRESENTS</div>\n    <h1 id=\"mTitle\">VELVET WORLDS</h1>\n    <div class=\"sub\" id=\"mSub\">COLLECT AN ELEMENT &middot; OPEN ITS WORLD &middot; BUILD YOUR WEAPONS</div>\n  </header>\n\n  <div class=\"hud\">\n    <div class=\"cell start\" id=\"cellPlay\"><button class=\"go\" id=\"playBtn\" type=\"button\">Play</button><div class=\"cap\" id=\"playNote\"></div></div>\n    <div class=\"cell\" id=\"cellCourse\"><div><div class=\"k\">Your course</div><div class=\"coursechip\" id=\"courseChip\"></div></div></div>\n    <div class=\"cell coins\"><span id=\"coinGlyph\" aria-hidden=\"true\"></span><div><div class=\"k\">Velvet Coins</div><div class=\"v\" id=\"hCoins\">0</div></div></div>\n    <div class=\"cell prog\"><div class=\"top\"><span class=\"k\">Elements collected</span><span class=\"v\" id=\"hOwned\">0 / 118</span></div><div class=\"bar\"><i id=\"hBar\"></i></div><div class=\"cap\" id=\"hCap\"></div></div>\n    <div class=\"cell\" id=\"cellParts\"><div><div class=\"k\">Particles</div><div class=\"parts\" id=\"hParts\"></div></div></div>\n    <div class=\"acts\" id=\"acts\"><button type=\"button\" data-k=\"open:forge\">The Forge</button><button type=\"button\" data-k=\"open:bank\">Particle Bank</button><button type=\"button\" class=\"fbbtn\" data-k=\"fb\" id=\"fbBtn\">Give feedback &middot; +100</button></div>\n  </div>\n\n  <div id=\"note\" role=\"status\"></div>\n\n  <div class=\"cell\" id=\"notComputer\" style=\"display:none;margin-bottom:14px\"><div>\n    <b>The worlds need a computer.</b> You can collect elements here, but playing a world needs a keyboard and a mouse.\n    <a href=\"#\" id=\"tryAnyway\">I am on a computer: let me play</a></div>\n  </div>\n\n  <section class=\"mapcard\">\n    <h2 id=\"mapTitle\">The map</h2>\n    <p class=\"soft\" id=\"mapLead\">Every element is a world. Collect an element with Velvet Coins from mini-lessons and the arcade (price = atomic number). Worlds are being built one at a time.</p>\n    <div class=\"filters\" id=\"filters\" role=\"group\" aria-label=\"Show elements\"></div>\n    <div class=\"map\" id=\"map\" role=\"group\" aria-label=\"Periodic table of worlds\"></div>\n    <div class=\"key\"><span id=\"keyWorld\"><b style=\"color:var(--yellow)\">Glowing</b> = a world you can play</span><span><b style=\"color:var(--yellow)\">Dashed</b> = you can afford it</span><span>Picture = collected</span><span class=\"wideonly\">Numbers above are groups (GCSE: 1 to 7 and 0); numbers at the side are periods</span></div>\n    <div class=\"legend\" id=\"legend\"></div>\n  </section>\n\n  <p class=\"credits\" id=\"credits\">Castle models: KayKit Dungeon Pack. Robots and sand crabs: Quaternius Sci-Fi Essentials Kit. Aliens and monsters: Quaternius Ultimate Monsters, Modular Sci-Fi MegaKit, Cyberpunk Game Kit and Cute Fish Pack. Dinosaurs: Quaternius Animated Dinosaur Pack. People, animals and fish that wander the worlds: Quaternius Ultimate Animated Character Pack, Ultimate Animated Animals, Ultimate Monsters, Cute Animated Monsters, Ultimate Space Kit, Animated Fish, Cute Fish and Easy Animated Enemy packs. Trees and rocks in worlds 5 to 9: Quaternius Stylized Nature MegaKit. Farm: Quaternius Crops, Farm Buildings and Animated Animals packs, Kenney Car Kit. Island models, blasters and sounds: Kenney (kenney.nl). Star positions on the Moon: Yale Bright Star Catalogue. Earth map: Natural Earth. Music: &ldquo;Loopable Dungeon Ambience&rdquo; by JaggedStone; world music from OpenGameArt.org by Thimras, yd, The Cynic Project, congusbongus, Kistol, Cleyton Kauffman, TokyoGeisha, &Eacute;crivain, Zane Little Music, Juhani Junkala, Julie Damsgaard (Spring Spring), Of Far Different Nature, MintoDog, nene, Trex0n and section31. All released under CC0 or in the public domain. Built with Godot. Lanthanum and actinium are shown in the main table, with elements 58 to 71 and 90 to 103 below, as on GCSE data sheets.</p>\n  <p class=\"credits\">Bracketed masses are the mass number of the longest-lived isotope (no stable isotopes exist). A trailing * marks a predicted state: that element has never been observed in bulk. Elements in the middle block and the two lower rows show no group number.</p>\n</div>\n\n<aside id=\"drawer\" aria-label=\"Details\"></aside>\n\n<div id=\"stage\">\n  <canvas id=\"canvas\" tabindex=\"0\">Your browser does not support the canvas tag.</canvas>\n  <button id=\"exit\" type=\"button\">Leave game</button>\n  <div class=\"over\" id=\"loadPanel\"><div class=\"panel\">\n    <h2 id=\"loadTitle\">Loading the castle&hellip;</h2>\n    <p class=\"soft\" id=\"loadText\">The first visit takes longest.</p>\n    <progress id=\"loadBar\" max=\"100\" value=\"0\"></progress>\n    <div class=\"shuttle\" id=\"loadShuttle\" style=\"display:none\" role=\"progressbar\" aria-label=\"Setting the level up\"><i></i></div>\n    <div class=\"row\" id=\"loadRow\" style=\"display:none\"><button type=\"button\" onclick=\"location.reload()\">Back</button></div>\n  </div></div>\n  <div class=\"over\" id=\"endPanel\"><div class=\"panel\">\n    <h2 id=\"endTitle\"></h2>\n    <p id=\"endText\"></p>\n    <p class=\"soft\" id=\"endSave\"></p>\n    <div class=\"row\">\n      <button class=\"go\" type=\"button\" id=\"againBtn\">Play again</button>\n      <button type=\"button\" id=\"labBtn\">Back to the map</button>\n      <button type=\"button\" class=\"fbbtn\" id=\"endFb\">Give feedback &middot; +100 coins</button>\n    </div>\n    <p class=\"soft\" id=\"endLessonRow\" style=\"display:none\"><a id=\"endLesson\" href=\"#\" target=\"_blank\" rel=\"noopener\" data-lesson=\"end panel\"></a></p>\n  </div></div>\n</div>\n<div id=\"fbModal\" class=\"fbm\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Feedback\"></div>\n<div id=\"vwToast\" role=\"status\" aria-live=\"polite\"></div>\n<div id=\"sharePrompt\" role=\"status\" aria-live=\"polite\"></div>\n";
+  document.getElementById("vw-app").innerHTML = "<div class=\"wrap\" id=\"lobby\">\n  <a class=\"back\" href=\"/\">&larr; AI Study Method</a>\n  <header class=\"marquee\">\n    <div class=\"over\">AI STUDY METHOD PRESENTS</div>\n    <h1 id=\"mTitle\">VELVET WORLDS</h1>\n    <div class=\"sub\" id=\"mSub\">COLLECT AN ELEMENT &middot; OPEN ITS WORLD &middot; BUILD YOUR WEAPONS</div>\n  </header>\n\n  <div class=\"hud\">\n    <div class=\"cell start\" id=\"cellPlay\"><button class=\"go\" id=\"playBtn\" type=\"button\">Play</button><div class=\"cap\" id=\"playNote\"></div></div>\n    <div class=\"cell\" id=\"cellCourse\"><div><div class=\"k\">Your course</div><div class=\"coursechip\" id=\"courseChip\"></div></div></div>\n    <div class=\"cell coins\"><span id=\"coinGlyph\" aria-hidden=\"true\"></span><div><div class=\"k\">Velvet Coins</div><div class=\"v\" id=\"hCoins\">0</div></div></div>\n    <div class=\"cell prog\"><div class=\"top\"><span class=\"k\">Elements collected</span><span class=\"v\" id=\"hOwned\">0 / 118</span></div><div class=\"bar\"><i id=\"hBar\"></i></div><div class=\"cap\" id=\"hCap\"></div></div>\n    <div class=\"cell\" id=\"cellParts\"><div><div class=\"k\">Particles</div><div class=\"parts\" id=\"hParts\"></div></div></div>\n    <div class=\"acts\" id=\"acts\"><button type=\"button\" data-k=\"open:forge\">The Forge</button><button type=\"button\" data-k=\"open:bank\">Particle Bank</button><button type=\"button\" class=\"fbbtn\" data-k=\"fb\" id=\"fbBtn\">Give feedback &middot; +100</button></div>\n  </div>\n\n  <div id=\"note\" role=\"status\"></div>\n\n  <div class=\"cell\" id=\"notComputer\" style=\"display:none;margin-bottom:14px\"><div>\n    <b>The worlds need a computer.</b> You can collect elements here, but playing a world needs a keyboard and a mouse.\n    <a href=\"#\" id=\"tryAnyway\">I am on a computer: let me play</a></div>\n  </div>\n\n  <section class=\"mapcard\">\n    <h2 id=\"mapTitle\">The map</h2>\n    <p class=\"soft\" id=\"mapLead\">Every element is a world. Collect an element with Velvet Coins from mini-lessons and the arcade (price = atomic number). Worlds are being built one at a time.</p>\n    <div class=\"filters\" id=\"filters\" role=\"group\" aria-label=\"Show elements\"></div>\n    <div class=\"map\" id=\"map\" role=\"group\" aria-label=\"Periodic table of worlds\"></div>\n    <div class=\"key\"><span id=\"keyWorld\"><b style=\"color:var(--yellow)\">Glowing</b> = a world you can play</span><span><b style=\"color:var(--yellow)\">Dashed</b> = you can afford it</span><span>Picture = collected</span><span class=\"wideonly\">Numbers above are groups (GCSE: 1 to 7 and 0); numbers at the side are periods</span></div>\n    <div class=\"legend\" id=\"legend\"></div>\n  </section>\n\n  <p class=\"credits\" id=\"credits\">Castle models: KayKit Dungeon Pack. Robots and sand crabs: Quaternius Sci-Fi Essentials Kit. Aliens and monsters: Quaternius Ultimate Monsters, Modular Sci-Fi MegaKit, Cyberpunk Game Kit and Cute Fish Pack. Dinosaurs: Quaternius Animated Dinosaur Pack. People, animals and fish that wander the worlds: Quaternius Ultimate Animated Character Pack, Ultimate Animated Animals, Ultimate Monsters, Cute Animated Monsters, Ultimate Space Kit, Animated Fish, Cute Fish and Easy Animated Enemy packs. Trees and rocks in worlds 5 to 9: Quaternius Stylized Nature MegaKit. Farm: Quaternius Crops, Farm Buildings and Animated Animals packs, Kenney Car Kit. Island models, blasters and sounds: Kenney (kenney.nl). Star positions on the Moon: Yale Bright Star Catalogue. Earth map: Natural Earth. Music: &ldquo;Loopable Dungeon Ambience&rdquo; by JaggedStone; world music from OpenGameArt.org by Thimras, yd, The Cynic Project, congusbongus, Kistol, Cleyton Kauffman, TokyoGeisha, &Eacute;crivain, Zane Little Music, Juhani Junkala, Julie Damsgaard (Spring Spring), Of Far Different Nature, MintoDog, nene, Trex0n and section31. All released under CC0 or in the public domain. Built with Godot. Lanthanum and actinium are shown in the main table, with elements 58 to 71 and 90 to 103 below, as on GCSE data sheets.</p>\n  <p class=\"credits\">Bracketed masses are the mass number of the longest-lived isotope (no stable isotopes exist). A trailing * marks a predicted state: that element has never been observed in bulk. Elements in the middle block and the two lower rows show no group number.</p>\n</div>\n\n<aside id=\"drawer\" aria-label=\"Details\"></aside>\n\n<div id=\"stage\">\n  <canvas id=\"canvas\" tabindex=\"0\">Your browser does not support the canvas tag.</canvas>\n  <button id=\"exit\" type=\"button\">Leave game</button>\n  <div class=\"over\" id=\"loadPanel\"><div class=\"panel\">\n    <h2 id=\"loadTitle\">Loading the castle&hellip;</h2>\n    <p class=\"soft\" id=\"loadText\">The first visit takes longest.</p>\n    <progress id=\"loadBar\" max=\"100\" value=\"0\"></progress>\n    <div class=\"shuttle\" id=\"loadShuttle\" style=\"display:none\" role=\"progressbar\" aria-label=\"Setting the level up\"><i></i></div>\n    <div class=\"row\" id=\"loadRow\" style=\"display:none\"><button type=\"button\" onclick=\"location.reload()\">Back</button></div>\n  </div></div>\n  <div class=\"over\" id=\"endPanel\"><div class=\"panel\">\n    <h2 id=\"endTitle\"></h2>\n    <p id=\"endText\"></p>\n    <p class=\"soft\" id=\"endSave\"></p>\n    <div class=\"row\">\n      <button class=\"go\" type=\"button\" id=\"nextBtn\" style=\"display:none\">Next level</button>\n      <button class=\"go\" type=\"button\" id=\"againBtn\">Play again</button>\n      <button type=\"button\" id=\"labBtn\">Back to the map</button>\n      <button type=\"button\" class=\"fbbtn\" id=\"endFb\">Give feedback &middot; +100 coins</button>\n    </div>\n    <p class=\"soft\" id=\"endLessonRow\" style=\"display:none\"><a id=\"endLesson\" href=\"#\" target=\"_blank\" rel=\"noopener\" data-lesson=\"end panel\"></a></p>\n  </div></div>\n</div>\n<div id=\"fbModal\" class=\"fbm\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Feedback\"></div>\n<div id=\"vwToast\" role=\"status\" aria-live=\"polite\"></div>\n<div id=\"sharePrompt\" role=\"status\" aria-live=\"polite\"></div>\n";
   /* On the game's domain the page sits under a hub (velvetworlds.com/) that lists the game types. The page sets
      window.VW_HUB_URL (the hub's address) and window.VW_GAME_NAME (this game's name there, "Velvet Blaster"). */
   if (SITE) {
@@ -36,8 +36,8 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261119b";               // change whenever index.pck changes
-  var VW_SIZES = { wasm: 39514754, pck: 4836600, worlds: { "2": 3597492, "3": 551780, "4": 2454616, "5": 1247836, "6": 701796, "7": 1806860, "8": 934348, "9": 2508708, "10": 1539732, "11": 2324860, "12": 780044, "13": 290472, "14": 397124, "15": 440088, "16": 425332, "17": 534904, "18": 268380, "19": 528356, "20": 457520, "21": 410728, "22": 229484, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
+  var VW_BUILD = "20261122a";               // change whenever index.pck changes
+  var VW_SIZES = { wasm: 39514754, pck: 4850536, worlds: { "2": 3597492, "3": 551780, "4": 2454616, "5": 1247836, "6": 701796, "7": 1806860, "8": 934348, "9": 2508708, "10": 1539732, "11": 2324860, "12": 780044, "13": 290472, "14": 397124, "15": 440088, "16": 425332, "17": 534904, "18": 268380, "19": 528356, "20": 457520, "21": 410728, "22": 229484, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
     music: { "sailors-chant": 822794, "spacelife-14": 781949, "town-theme": 898921, "lasso-lady": 736725, "snowfall": 490840, "underwater-theme": 1079810, "creepy": 946048, "midnight-drive": 947137, "carnival-rides": 271701, "rhythm-factory": 1174949, "chiptune-level-1": 870810, "factory-ambiance": 952644, "fire-level": 966584, "funky-house": 786640, "joyful-jungle": 1074353, "mysterious": 965289, "beach-sports-theme": 375654, "hyperflight-racing": 665883, "fridge-is-hungry": 915000, "winning-the-race": 1107855 } };   // bytes of each world music track (game/music/<name>.ogg)
   /* The music each world plays (worlds 1 and 6 use the track inside the main pack). The names must match "music" in the
      game's WORLDS table (game.gd); _dev/velvet-worlds/check_music.py compares the two and the files. A track is a plain
@@ -106,10 +106,21 @@
   var SUBJECT_NAMES = { biology: "Biology", chemistry: "Chemistry", physics: "Physics", "physics-1": "Physics 1", "physics-2": "Physics 2", "physics-c-mechanics": "Physics C: Mechanics", "physics-c-em": "Physics C: E&M" };
   var LS_STARS = "vw-stars";   // the best grade (1 bronze, 2 silver, 3 gold) per course library and world, on this device; levels 2 and 3 under "world.2" and "world.3"
   /* Levels (19 Nov 2026): a world has up to three levels, one star for each, and the star is bronze, silver or gold.
-     VW_LEVELS lists the worlds whose levels 2 and 3 are built (the game's maps_wings.gd); every other world has level 1 only. */
-  var VW_LEVELS = { "6": 3, "20": 3 };
+     VW_LEVELS lists the worlds whose levels 2 and 3 are built, with the kind of challenge of each (the game's
+     maps_wings.gd; tools/build_wings.py prints this line); every other world has level 1 only.
+     KINDS (22 Nov 2026): the name of each kind, what the player does, and the tip shown while the game loads. */
+  var VW_LEVELS = { "4": ["search", "boss"], "6": ["hunt", "waves"], "7": ["gauntlet", "rescue"], "8": ["hunt", "boss"], "20": ["hunt", "boss"] };
+  var KINDS = {
+    hunt: ["Hunt", "enemies in the new wing carry the pieces", "go through the open gate into the new wing. The enemies with a green cube over them carry the pieces: pop them and pick the pieces up."],
+    search: ["Search", "the pieces are hidden in crates in the new wing", "go through the open gate into the new wing. The pieces are hidden inside some of the crates there: break the crates open to find them."],
+    gauntlet: ["Gauntlet", "the pieces lie deep in the new wing", "go through the open gate into the new wing. The pieces lie at its far side: get through to them."],
+    waves: ["Waves", "survive three waves in the far wing", "go through both gates to the far wing. Three waves come, and pieces arrive each time you clear one."],
+    boss: ["Boss", "a boss in the far wing holds every piece", "go through both gates to the far wing. A boss holds every piece and drops one each time you wear it down. It calls for help twice."],
+    rescue: ["Rescue", "free the friends locked in pens in the far wing", "go through both gates to the far wing. Friends are locked in pens: shoot the gold lock on each pen and the friend hands over pieces. Opening a pen sets off an alarm."]
+  };
+  function kindOf(n, level) { var k = VW_LEVELS[String(n)]; return (level > 1 && k && KINDS[k[level - 2]]) || null; }
+  function levelName(n, level) { var k = kindOf(n, level); return level === 1 ? "Find the pieces" : k ? k[0] + ": " + k[1] : level === 2 ? "A new wing opens" : "The far wing opens"; }
   var LEVEL = 1;   // the level being played
-  var LEVEL_NAMES = ["", "Find the pieces", "Hunt the enemies that carry the pieces, in the new wing", "Survive three waves in the far wing"];
   var GRADES = ["", "Bronze", "Silver", "Gold"];
   var BAKED_LIB = "gcse-chemistry";   // this course's first worlds are built into the game (WORLD_INFO gives their mission)
   var course = normCourse(lsGet(LS_COURSE, null)), courseIndex = null, courseIndexFor = "", curPack = null, packTaken = false;
@@ -209,7 +220,7 @@
     return Math.max((a && +a[starKey(n, level)]) || 0, (b && +b[String(n)]) || 0);
   }
   function gradeAt(n, level) { return starsAt(n, level) || (level === 1 && wonHere(n) ? 1 : 0); }   // a win from before stars were kept counts as bronze
-  function levelsOf(n) { return VW_LEVELS[String(n)] || 1; }
+  function levelsOf(n) { return VW_LEVELS[String(n)] ? 3 : 1; }
   function levelOpen(n, level) { return level === 1 || (level <= levelsOf(n) && gradeAt(n, level - 1) > 0); }   // each level opens when the one before is finished
   function levelPack(n, level) { var lp = courseIndex && courseIndex.levelPacks && courseIndex.levelPacks[String(n)]; return !!(level > 1 && lp && lp.indexOf(level) >= 0); }   // does this course have its own pack for this level?
   /* The top bar's Play / Continue (19 Nov 2026, when the lobby box went): the first level not yet finished, going through the
@@ -578,7 +589,7 @@
         var built = L <= levelsOf(n), g = built ? gradeAt(n, L) : 0;
         var act = !built ? '<span class="soft">Coming soon</span>' : !worldOpen(n) ? (L === 1 ? '<span class="soft">Collect ' + esc(el.name) + " to open it.</span>" : "") :
           levelOpen(n, L) ? btn("play:" + n + (L > 1 ? ":" + L : ""), L === 1 ? "Play this world" : "Play level " + L, "go", !canPlay || !ms) : '<span class="soft">Finish level ' + (L - 1) + " first</span>";
-        return '<div class="lrow' + (built ? "" : " soon") + '"><div class="lname"><b>Level ' + L + '</b> <span class="soft">' + LEVEL_NAMES[L] + '</span></div><div class="lgrade">' + (built ? starHtml(g) : "") + '</div><div class="lact">' + act + "</div></div>";
+        return '<div class="lrow' + (built ? "" : " soon") + '"><div class="lname"><b>Level ' + L + '</b> <span class="soft">' + levelName(n, L) + '</span></div><div class="lgrade">' + (built ? starHtml(g) : "") + '</div><div class="lact">' + act + "</div></div>";
       }).join("") + "</div>";
       if (ms) h += '<div class="learn" id="heroLearn">' + learnHtml(n, "drawer") + "</div>";
     } else h += '<p class="soft">This world has not been built yet. Worlds are being added one at a time.</p>';
@@ -696,7 +707,10 @@
       $("endText").textContent = "Particles found this run: " + (+p.particles_this_run || 0) + ". In this world so far: " + f2.p + " protons, " + f2.n + " neutrons, " + f2.e + " electrons.";
       if (p.result === "win") { var lv2 = Math.min(3, Math.max(1, +p.level || LEVEL));
         $("endText").textContent += " Level " + lv2 + ": " + GRADES[starsFor(p)] + " star. (Bronze for finishing; silver with the final task right first time or 8 in 10 questions right first time; gold with both.)" +
-          (lv2 < levelsOf(+WORLD) ? " Level " + (lv2 + 1) + " is now open: leave the game and choose it in " + ELS[+WORLD - 1].name + "'s panel." : ""); }
+          (lv2 < levelsOf(+WORLD) ? " Level " + (lv2 + 1) + " is now open." : ""); }
+      var nk = p.result === "win" && LEVEL < levelsOf(+WORLD) && levelOpen(+WORLD, LEVEL + 1) ? kindOf(+WORLD, LEVEL + 1) : null;   // the next level, straight from the end panel
+      $("nextBtn").style.display = nk ? "" : "none"; $("againBtn").className = nk ? "" : "go";
+      if (nk) $("nextBtn").textContent = "Next: level " + (LEVEL + 1) + " \u00b7 " + nk[0];
       var first = lessonsFor(+WORLD)[0];   // the world's own lesson (was one fixed link for every world and course)
       $("endLessonRow").style.display = first ? "" : "none";
       if (first) { $("endLesson").href = siteUrl(first.url); $("endLesson").setAttribute("data-w", WORLD); $("endLesson").textContent = "Earn coins: " + first.lesson + (first.mission ? ", Mission " + first.mission : "") + " mini-lesson"; }
@@ -717,6 +731,21 @@
     track("load failed", { error: code });
   }
   function loadScript(src) { return new Promise(function (ok, bad) { var s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = function () { bad(new Error("script")); }; document.head.appendChild(s); }); }
+  /* The questions and pieces of WORLD at LEVEL, into curPack (null where the game's built-in collection is used). False if they could not be fetched. */
+  async function loadPack(ms) {
+    curPack = null; packTaken = false;
+    var ownPack = levelPack(+WORLD, LEVEL);   // a pack written for this level of this course; otherwise the level uses the world's level 1 pack
+    if (!ms.baked || ownPack) {   // this course's pack for this world: fetched now and handed to the game in window.vwState
+      try {
+        var pr = await fetch(PACKS + courseLib() + "/" + (ownPack ? "l" + LEVEL + "-" : "") + "w" + WORLD + ".json?v=" + PACKS_V);   // a level's own pack is lN-wM.json
+        if (!pr.ok) throw new Error("http " + pr.status);
+        var got = await pr.json();
+        if (course.tier !== "higher") got.questions = got.questions.filter(function (q) { return q.tier !== "higher"; });   // Higher and HL questions only for those who chose them
+        curPack = got;
+      } catch (e0) { return false; }
+    }
+    return true;
+  }
   play = async function () {
     var ms = missionFor(+WORLD);
     if (started || !ms) return;
@@ -729,19 +758,10 @@
     tips.style.display = "";
     tips.innerHTML = "";
     if (LEVEL > levelsOf(+WORLD) || !levelOpen(+WORLD, LEVEL)) LEVEL = 1;
-    curPack = null; packTaken = false;
-    var ownPack = levelPack(+WORLD, LEVEL);   // a pack written for this level of this course; otherwise the level uses the world's level 1 pack
-    if (!ms.baked || ownPack) {   // this course's pack for this world: fetched now and handed to the game in window.vwState
-      try {
-        var pr = await fetch(PACKS + courseLib() + "/" + (ownPack ? "l" + LEVEL + "-" : "") + "w" + WORLD + ".json?v=" + PACKS_V);   // a level's own pack is lN-wM.json
-        if (!pr.ok) throw new Error("http " + pr.status);
-        curPack = await pr.json();
-        if (course.tier !== "higher") curPack.questions = curPack.questions.filter(function (q) { return q.tier !== "higher"; });   // Higher and HL questions only for those who chose them
-      } catch (e0) { fail("The questions for this world could not be loaded. Check your connection and try again.", "pack"); return; }
-    }
+    if (!(await loadPack(ms))) { fail("The questions for this world could not be loaded. Check your connection and try again.", "pack"); return; }
     var task = curPack ? String((curPack.assemble || {}).type) : (ms.baked ? "order" : "match");
-    tips.innerHTML = (LEVEL === 2 ? "<li>Level 2: go through the open gate into the new wing. The enemies with a green cube over them carry the pieces: pop them and pick the pieces up.</li>" :
-        LEVEL === 3 ? "<li>Level 3: go through both gates to the far wing. Three waves come, and pieces arrive each time you clear one.</li>" : "<li>Find the pieces hidden around the world.</li>") +
+    var kd = kindOf(+WORLD, LEVEL);
+    tips.innerHTML = (kd ? "<li>Level " + LEVEL + ", " + kd[0] + ": " + kd[2] + "</li>" : "<li>Find the pieces hidden around the world.</li>") +
       "<li>Answer questions at the terminals for ammo and health.</li><li>Take the pieces to the base and " + (task === "order" ? "put them in order" : task === "group" ? "sort them into their groups" : "match each term to its definition") +
       ".</li><li>Protons, neutrons and electrons are hidden everywhere, some inside crates.</li>";
     curFriends = drawFriends();
@@ -794,15 +814,31 @@
   var restartTimer = null;
   function restartDone() { if (restartTimer === null) return; clearTimeout(restartTimer); restartTimer = null;
     $("loadPanel").classList.remove("show"); $("loadShuttle").style.display = "none"; $("loadBar").style.display = ""; $("canvas").focus(); }
-  $("againBtn").addEventListener("click", function () {
+  function restartGame(title) {
     window.vwState = startState();
     $("endPanel").classList.remove("show"); $("exit").style.display = "none";
     if (typeof window.vwRestart !== "function") { location.reload(); return; }
-    $("loadTitle").textContent = "Setting the level up again\u2026"; $("loadText").textContent = "This takes a few seconds.";
+    if ($("loadTips")) $("loadTips").style.display = "none";
+    $("loadTitle").textContent = title; $("loadText").textContent = "This takes a few seconds.";
     $("loadBar").style.display = "none"; $("loadShuttle").style.display = ""; $("loadRow").style.display = "none"; $("loadPanel").classList.add("show");
     clearTimeout(restartTimer); restartTimer = setTimeout(restartDone, 20000);   // never leave the panel up if the game says nothing
     var t0 = Date.now();
     requestAnimationFrame(function () { requestAnimationFrame(function () { setTimeout(function () { window.vwRestartAsked = t0; window.vwRestart(); }, 30); }); });
+  }
+  $("againBtn").addEventListener("click", function () { restartGame("Setting the level up again\u2026"); });
+  /* Next level (22 Nov 2026): the same game, restarted at the next level of this world, with that level's own pack if the course has one. */
+  var nextBusy = false;
+  $("nextBtn").addEventListener("click", async function () {
+    var nl = LEVEL + 1, ms = missionFor(+WORLD);
+    if (nextBusy || !ms || nl > levelsOf(+WORLD) || !levelOpen(+WORLD, nl)) return;
+    if (typeof window.vwRestart !== "function") { location.reload(); return; }
+    nextBusy = true; LEVEL = nl;
+    var ok = await loadPack(ms);
+    nextBusy = false;
+    if (!ok) { LEVEL = nl - 1; await loadPack(ms); $("endText").textContent = "The questions for level " + nl + " could not be loaded. Check your connection and try again."; return; }
+    var kd = kindOf(+WORLD, LEVEL);
+    track("next level", { world: WORLD, level: String(LEVEL), kind: kd ? kd[0] : "", course: courseLib() });
+    restartGame("Setting up level " + LEVEL + (kd ? ": " + kd[0] : "") + "\u2026");
   });
   function leave() { sendFound(true); setTimeout(function () { location.reload(); }, 400); }
   $("labBtn").addEventListener("click", leave);
