@@ -555,11 +555,18 @@
       if (FULL && el.n === 1 && newPlayer()) cls += " start";
       if (drawer && drawer.kind === "el" && drawer.n === el.n) cls += " sel";
       if (!matches(el)) cls += " dim";
-      var want = (own ? "o" : "x");
+      /* Stars on the tile (23 Nov 2026): once a level of this world is finished, one star for each level built, along the bottom,
+         in the colour of its grade; a level not yet finished is a hollow star. For the course chosen, as in the element's panel. */
+      var gs = FULL && GAME_WORLDS[String(el.n)] ? [1, 2, 3].slice(0, levelsOf(el.n)).map(function (L) { return gradeAt(el.n, L); }) : [];
+      if (!gs.some(function (g) { return g > 0; })) gs = [];
+      var want = (own ? "o" : "x") + gs.join("");
       if (t.getAttribute("data-s") !== want) {
         t.setAttribute("data-s", want);
-        t.innerHTML = (own ? '<img loading="lazy" alt="" src="' + ART + velvetArtPath(el) + '">' : "") + '<span class="no">' + el.n + '</span><span class="sy">' + el.sym + "</span>";
+        t.innerHTML = (own ? '<img loading="lazy" alt="" src="' + ART + velvetArtPath(el) + '">' : "") + '<span class="no">' + el.n + '</span><span class="sy">' + el.sym + "</span>" +
+          (gs.length ? '<span class="tstars" aria-hidden="true">' + gs.map(function (g) { return '<i class="g' + g + '">' + (g ? "\u2605" : "\u2606") + "</i>"; }).join("") + "</span>" : "");
       }
+      var lab = el.name + (gs.length ? ". Stars: " + gs.map(function (g, i) { return "level " + (i + 1) + " " + (g ? GRADES[g].toLowerCase() : "not finished"); }).join(", ") : "");
+      if (t.getAttribute("aria-label") !== lab) t.setAttribute("aria-label", lab);
       t.className = cls;
     });
   }
