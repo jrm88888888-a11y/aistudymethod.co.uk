@@ -820,6 +820,19 @@
     ids.forEach(function (id) { useQueue = useQueue.then(function () { return api("POST", { op: "use", item: id, count: 1 }); }); });
     useQueue = useQueue.then(function () { if (started) window.vwState = startState(); });
   }
+  /* Play time for this game session (one page load: "Leave game" reloads the page). Counts only while a run is going and the page is on screen.
+     Sent once, as "play time", when the page closes or reloads, so runs quit part-way through are counted too ("run finished" misses those). */
+  var playMs = 0, runFrom = 0, runsStarted = 0, runsFinished = 0, inRun = false, playSent = false;
+  function playPause() { if (runFrom) { playMs += Date.now() - runFrom; runFrom = 0; } }
+  function playResume() { if (inRun && !runFrom && document.visibilityState === "visible") runFrom = Date.now(); }
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") playResume(); else playPause(); });
+  window.addEventListener("pagehide", function () {
+    playPause(); if (playSent || !runsStarted) return; playSent = true;
+    var m = playMs / 60000;
+    track("play time", { played: m < 1 ? "under 1 min" : m < 5 ? "1 to 4 min" : m < 15 ? "5 to 14 min" : m < 30 ? "15 to 29 min" : m < 60 ? "30 to 59 min" : "60+ min",
+      runs: runsStarted >= 10 ? "10+" : String(runsStarted), finished: runsFinished >= 10 ? "10+" : String(runsFinished),
+      quit_mid_run: inRun ? "yes" : "no", signed_in: signedIn() ? "yes" : "no", world: String(WORLD) });
+  });
   window.vwEvent = function (text) {
     var m; try { m = JSON.parse(text); } catch (e) { return; }
     var p = m.props || {};
@@ -830,10 +843,11 @@
     else if (m.event === "level_ready") { if (+p.restart > 0 && restartTimer !== null) { var took = Date.now() - (window.vwRestartAsked || Date.now()); restartDone();
       track("restarted", { seconds: took < 2000 ? "under 2" : took < 5000 ? "2 to 4" : took < 10000 ? "5 to 9" : "10+", world: WORLD }); } }
     else if (m.event === "particles") { var f = { p: +p.p || 0, n: +p.n || 0, e: +p.e || 0 }; setLocalFound(f); pendingSend = f; sendFound(false); }
-    else if (m.event === "run_started") { $("endPanel").classList.remove("show"); $("exit").style.display = "none"; track("run started", { blaster: String(p.blaster), signed_in: signedIn() ? "yes" : "no", boosts: String(p.boosts || "none") });
+    else if (m.event === "run_started") { inRun = true; runsStarted++; playResume(); $("endPanel").classList.remove("show"); $("exit").style.display = "none"; track("run started", { blaster: String(p.blaster), signed_in: signedIn() ? "yes" : "no", boosts: String(p.boosts || "none") });
       useItems(String(p.boosts || "").split(",").filter(function (id) { return id.indexOf("boost-") === 0 && GAME_ITEMS[id]; })); }   // the boosts taken into this run are used up now
     else if (m.event === "item_used") { if (CARRY_MAX[p.item]) useItems([String(p.item)]); }   // a Pop or a Flash was thrown
     else if (m.event === "run_finished") {
+      playPause(); inRun = false; runsFinished++;   // play time: this run is over
       var rc = runs(); lsSet(LS_RUNS, { runs: rc.runs + 1, wins: rc.wins + (p.result === "win" ? 1 : 0) });
       if (p.result === "win") { var ws = lsGet(LS_WINS, {}), lib = courseLib(); ws[lib] = ws[lib] || {}; ws[lib][WORLD] = 1; lsSet(LS_WINS, ws);
         var lvl = Math.min(3, Math.max(1, +p.level || LEVEL)), sk = starKey(WORLD, lvl);
