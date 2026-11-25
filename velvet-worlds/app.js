@@ -36,8 +36,9 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261123g";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
-  var VW_SIZES = { wasm: 39514754, pck: 4853672, worlds: { "2": 3597492, "3": 551780, "4": 2671776, "5": 1430088, "6": 701796, "7": 1806860, "8": 1207880, "9": 2508708, "10": 1539732, "11": 2324860, "12": 983096, "13": 600696, "14": 397124, "15": 440088, "16": 816392, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 552792, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
+  var VW_BUILD = "20261125a";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
+  var VW_SIZES = { wasm: 39514754, pck: 5153752, worlds: { "2": 3597492, "3": 551780, "4": 2671776, "5": 1430088, "6": 701796, "7": 1806860, "8": 1207880, "9": 2508708, "10": 1539732, "11": 2324860, "12": 983096, "13": 600696, "14": 397124, "15": 440088, "16": 816392, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 552792, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
+    ambience: {"airfield": 291505, "bones": 399308, "castle": 358983, "cave": 252803, "chip": 295328, "desert": 338798, "fair": 330231, "farm": 351373, "garage": 366957, "harbour": 366054, "island": 349150, "jungle": 379059, "match": 363359, "moon": 298011, "neon": 350261, "reef": 217051, "scrap": 346810, "spring": 391524, "stadium": 350076, "swamp": 350777, "tundra": 353828, "volcano": 269993, "water": 351656, "weld": 396631},   // bytes of each world ambience loop (game/ambience/<theme>.ogg)
     music: { "sailors-chant": 822794, "spacelife-14": 781949, "town-theme": 898921, "lasso-lady": 736725, "snowfall": 490840, "underwater-theme": 1079810, "creepy": 946048, "midnight-drive": 947137, "carnival-rides": 271701, "rhythm-factory": 1174949, "chiptune-level-1": 870810, "factory-ambiance": 952644, "fire-level": 966584, "funky-house": 786640, "joyful-jungle": 1074353, "mysterious": 965289, "beach-sports-theme": 375654, "hyperflight-racing": 665883, "fridge-is-hungry": 915000, "winning-the-race": 1107855 } };   // bytes of each world music track (game/music/<name>.ogg)
   /* The music each world plays (worlds 1 and 6 use the track inside the main pack). The names must match "music" in the
      game's WORLDS table (game.gd); _dev/velvet-worlds/check_music.py compares the two and the files. A track is a plain
@@ -49,6 +50,9 @@
   var FRIEND_SIZES = {"Apatosaurus": 237692, "Astronaut_BarbaraTheBee": 313908, "Astronaut_FernandoTheFlamingo": 296496, "Astronaut_FinnTheFrog": 315664, "Astronaut_RaeTheRedPanda": 303176, "Betta": 137248, "Bull": 259680, "ButterflyFish": 132912, "Casual2_Female": 283584, "Casual2_Male": 199392, "Casual3_Female": 325328, "Casual3_Male": 237072, "Casual_Female": 282096, "Casual_Male": 277644, "Cat": 108068, "Chef_Male": 253640, "Chicken": 124164, "Cowboy_Female": 285184, "Cowboy_Male": 198860, "Cowfish": 131380, "Deer": 232416, "Dog": 98836, "Dolphin": 91684, "Donkey": 252656, "Fox": 231980, "Goldfish": 140376, "Horse_White": 262956, "Husky": 231760, "Koi": 136908, "OldClassy_Female": 290040, "OldClassy_Male": 252688, "Parasaurolophus": 183668, "Penguin": 229292, "Pigeon": 111520, "Pirate_Female": 350848, "Pirate_Male": 190172, "Puffer": 164640, "Rat": 283532, "ShibaInu": 221736, "Stag": 281296, "Stegosaurus": 254332, "Suit_Female": 286700, "Suit_Male": 280168, "Wizard": 278544, "Wolf": 237568, "Worker_Female": 261488, "Worker_Male": 182348};
   var curFriends = [];
   function drawFriends() { var pool = (WORLD_FRIENDS[WORLD] || []).slice(), out = []; while (pool.length && out.length < 3) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]); return out; }
+  /* The ambience loop each world plays (game/ambience/<theme>.ogg; ElevenLabs, 25 Nov 2026). The names are each world's
+     "theme" in the game's WORLDS table (game.gd); the game reads the file as ambience-<theme>.ogg. */
+  var WORLD_AMBIENCE = {"1": "castle", "2": "island", "3": "moon", "4": "farm", "5": "desert", "6": "cave", "7": "tundra", "8": "reef", "9": "swamp", "10": "neon", "11": "harbour", "12": "fair", "13": "scrap", "14": "chip", "15": "match", "16": "volcano", "17": "water", "18": "weld", "19": "jungle", "20": "bones", "21": "stadium", "22": "airfield", "23": "spring", "24": "garage"};
   var WORLD_MUSIC = { "2": "sailors-chant", "3": "spacelife-14", "4": "town-theme", "5": "lasso-lady", "7": "snowfall", "8": "underwater-theme", "9": "creepy", "10": "midnight-drive", "11": "sailors-chant", "12": "carnival-rides", "13": "rhythm-factory", "14": "chiptune-level-1", "15": "factory-ambiance", "16": "fire-level", "17": "funky-house", "18": "rhythm-factory", "19": "joyful-jungle", "20": "mysterious", "21": "beach-sports-theme", "22": "hyperflight-racing", "23": "fridge-is-hungry", "24": "winning-the-race" };
 
   /* ---- these four tables must match the accounts server (game-test.mjs checks them) ---- */
@@ -934,12 +938,15 @@
       if (worldPack) sizes[worldUrl] = VW_SIZES.worlds[WORLD] || 0;
       var music = WORLD_MUSIC[WORLD], musicUrl = music && BASE + "game/music/" + music + ".ogg?v=" + VW_BUILD;
       if (music) sizes[musicUrl] = VW_SIZES.music[music] || 0;
+      var amb = WORLD_AMBIENCE[WORLD], ambUrl = amb && BASE + "game/ambience/" + amb + ".ogg?v=" + VW_BUILD;
+      if (amb) sizes[ambUrl] = VW_SIZES.ambience[amb] || 0;
       var friendUrl = function (k) { return BASE + "game/friends/friend-" + k + ".pck?v=" + VW_BUILD; };
       curFriends.forEach(function (k) { sizes[friendUrl(k)] = FRIEND_SIZES[k] || 0; });
       engine = new window.Engine({ canvas: $("canvas"), executable: base, canvasResizePolicy: 2, focusCanvas: true, fileSizes: sizes, args: [],
         onProgress: function (cur, tot) { if (tot > 0) $("loadBar").value = Math.min(100, Math.round(100 * cur / tot)); } });
       await Promise.all([engine.init(base), engine.preloadFile(packUrl, "index.pck")].concat(worldPack ? [engine.preloadFile(worldUrl, worldPack)] : [])
         .concat(music ? [engine.preloadFile(musicUrl, "music-" + music + ".ogg").catch(function (e) { track("music failed", { track: music, world: WORLD }); })] : [])
+        .concat(amb ? [engine.preloadFile(ambUrl, "ambience-" + amb + ".ogg").catch(function (e) { track("ambience failed", { theme: amb, world: WORLD }); })] : [])   // no ambience is better than no game
         .concat(curFriends.map(function (k) { return engine.preloadFile(friendUrl(k), "friend-" + k + ".pck").catch(function (e) { track("friend failed", { kind: k, world: WORLD }); }); })));   // a world without one of its characters is better than no game   // no music is better than no game
     };
     try {
