@@ -49,9 +49,12 @@
     <div class="sub">OUR GAME FOR AFTER YOUR REVISION</div>
   </header>
   <main class="card">
-    <p>Velvet Worlds has its own home now: <b>velvetworlds.com</b>.</p>
-    <p>Every element you collect in the <a href="/classcraft/arcade/elements.html">Element Shop</a> opens a world to explore. It is made for home, on a computer with a keyboard and a mouse.</p>
-    <a class="go" id="goGame" href="https://velvetworlds.com/">Play Velvet Worlds</a>
+    <p>Velvet Worlds has its own home now: <b>velvetworlds.com</b>. It is made for home, on a computer with a keyboard and a mouse.</p>
+    <ul style="text-align:left;max-width:560px;margin:0 auto 16px;padding-left:22px;font-size:17px;line-height:1.5">
+      <li style="margin-bottom:6px"><a data-ho href="https://velvetworlds.com/blaster/">Velvet Blaster</a>: every element you collect in the <a href="/classcraft/arcade/elements.html">Element Shop</a> opens a 3D world to explore.</li>
+      <li><a data-ho href="https://velvetworlds.com/golf/">Velvet Golf</a>: mini-golf through the Standard Model, one course for each particle.</li>
+    </ul>
+    <a class="go" id="goGame" data-ho href="https://velvetworlds.com/">Play Velvet Worlds</a>
     <p class="soft" id="goNote">Your coins and elements come with you.</p>
   </main>
 </div>
@@ -59,21 +62,24 @@
 <script src="/classcraft/arcade/auth.js?v=20261122a"></script>
 <script>
 (function () {
-  var GAME = "https://velvetworlds.com/";
-  var a = document.getElementById("goGame"), busy = false;
-  function track(signedIn, carried) { try { if (typeof window.plausible === "function") window.plausible("Velvet Worlds: go to game", { props: { signed_in: signedIn ? "yes" : "no", carried: carried ? "yes" : "no" } }); } catch (e) {} }
+  /* Every link marked data-ho (the Play button and the two game links) carries a signed-in student across with a one-use code. */
+  var busy = false;
+  function track(signedIn, carried, dest) { try { if (typeof window.plausible === "function") window.plausible("Velvet Worlds: go to game", { props: { signed_in: signedIn ? "yes" : "no", carried: carried ? "yes" : "no", dest: dest } }); } catch (e) {} }
+  [].forEach.call(document.querySelectorAll("a[data-ho]"), function (a) {
+  var GAME = a.href, dest = a.pathname;
   a.addEventListener("click", function (ev) {
     var auth = window.Arcade && window.Arcade.auth;
-    if (!auth || !auth.isLoggedIn()) { track(false, false); return; }          // not signed in: the plain link
+    if (!auth || !auth.isLoggedIn()) { track(false, false, dest); return; }          // not signed in: the plain link
     ev.preventDefault();
     if (busy) return; busy = true; a.setAttribute("aria-busy", "true");
     var url = GAME, done = false;
-    function leave(carried) { if (done) return; done = true; track(true, carried); location.href = url; }
+    function leave(carried) { if (done) return; done = true; track(true, carried, dest); location.href = url; }
     setTimeout(function () { leave(false); }, 4000);                           // a slow server must not strand the student here
     fetch(auth.API + "/handoff", { method: "POST", headers: { authorization: "Bearer " + auth.token() } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { if (d && d.code) { url = GAME + "#ho=" + encodeURIComponent(d.code); leave(true); } else leave(false); })
       .catch(function () { leave(false); });
+  });
   });
 })();
 </script>
