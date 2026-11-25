@@ -36,8 +36,9 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261125g";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
-  var VW_SIZES = { wasm: 39514754, pck: 8150768, worlds: { "2": 3597492, "3": 551780, "4": 2671776, "5": 1430088, "6": 701796, "7": 1806860, "8": 1207880, "9": 2508708, "10": 1539732, "11": 2324860, "12": 983096, "13": 600696, "14": 397124, "15": 440088, "16": 816392, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 552792, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
+  var VW_BUILD = "20261125h";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
+  var VW_SIZES = { wasm: 39514754, pck: 8159292, worlds: { "2": 3597492, "3": 551780, "4": 2671776, "5": 1430088, "6": 701796, "7": 1806860, "8": 1207880, "9": 2508708, "10": 1539732, "11": 2324860, "12": 983096, "13": 600696, "14": 397124, "15": 440088, "16": 816392, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 552792, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
+    voice: {"common": 892719, "subject-biology": 588834, "subject-chemistry": 546722, "subject-physics": 704295, "world-01": 351811, "world-02": 358427, "world-03": 401542, "world-04": 463966, "world-05": 494303, "world-06": 345887, "world-07": 370316, "world-08": 447381, "world-09": 378403, "world-10": 313617, "world-11": 338998, "world-12": 463656, "world-13": 478437, "world-14": 335934, "world-15": 338837, "world-16": 479738, "world-17": 314797, "world-18": 316774, "world-19": 324960, "world-20": 481034, "world-21": 331513, "world-22": 426335, "world-23": 327041, "world-24": 337347},   // bytes of each voice bundle (game/voice/<name>.zip)
     ambience: {"airfield": 291505, "bones": 399308, "castle": 358983, "cave": 252803, "chip": 295328, "desert": 338798, "fair": 330231, "farm": 351373, "garage": 366957, "harbour": 366054, "island": 349150, "jungle": 379059, "match": 363359, "moon": 298011, "neon": 350261, "reef": 217051, "scrap": 346810, "spring": 391524, "stadium": 350076, "swamp": 350777, "tundra": 353828, "volcano": 269993, "water": 351656, "weld": 396631},   // bytes of each world ambience loop (game/ambience/<theme>.ogg)
     music: { "sailors-chant": 822794, "spacelife-14": 781949, "town-theme": 898921, "lasso-lady": 736725, "snowfall": 490840, "underwater-theme": 1079810, "creepy": 946048, "midnight-drive": 947137, "carnival-rides": 271701, "rhythm-factory": 1174949, "chiptune-level-1": 870810, "factory-ambiance": 952644, "fire-level": 966584, "funky-house": 786640, "joyful-jungle": 1074353, "mysterious": 965289, "beach-sports-theme": 375654, "hyperflight-racing": 665883, "fridge-is-hungry": 915000, "winning-the-race": 1107855 } };   // bytes of each world music track (game/music/<name>.ogg)
   /* The music each world plays (worlds 1 and 6 use the track inside the main pack). The names must match "music" in the
@@ -887,7 +888,7 @@
       if (usedUp.length) $("endText").textContent += " Thrown this run: " + usedUp.join(", ") + ".";
       $("endSave").textContent = signedIn() && bankOn ? "Saved to your account." : "Kept on this device. Sign in to save them to your account.";
       $("endPanel").classList.add("show"); $("exit").style.display = "block";
-      if (p.result === "win") { var starSnd = ["", "star-bronze", "star-silver", "star-gold"][starsFor(p)] || "star-bronze"; setTimeout(function () { snd(starSnd); }, 1500); }   // after the game's own level-complete jingle
+      if (p.result === "win") { var starSnd = ["", "star-bronze", "star-silver", "star-gold"][starsFor(p)] || "star-bronze"; setTimeout(function () { snd(starSnd); }, 3500); }   // after the game's level-complete jingle and Velvet One's closing call
       var mins = Math.floor((+p.seconds || 0) / 60);
       track("run finished", { course: courseLib(), level: String(+p.level || LEVEL), result: String(p.result), blaster: String(p.blaster), minutes: mins >= 10 ? "10+" : String(mins), pieces: p.pieces + "/" + p.pieces_total,
         first_try: p.asked ? Math.round(100 * p.right / p.asked / 10) * 10 + "%" : "none", particles: String(+p.particles_this_run || 0), pops: String(+p.pops || 0), flashes: String(+p.flashes || 0) });
@@ -897,7 +898,7 @@
   /* ---- starting the game ---- */
   /* The guns this account owns: the game lets the player change between them during a run (G, 1 to 9, the wheel). */
   function ownedWeapons() { return Object.keys(GAME_WEAPONS).concat(["blaster-supporter"]).filter(ownsWeapon); }
-  function startState() { var st = { blaster: picked(), weapons: ownedWeapons(), world: WORLD, level: LEVEL, collected: found(), friends: curFriends }; if (curPack) st.pack = curPack;
+  function startState() { var st = { blaster: picked(), weapons: ownedWeapons(), world: WORLD, level: LEVEL, collected: found(), friends: curFriends, subject: course.subject || "chemistry" }; if (curPack) st.pack = curPack;
     if (shopOn()) { st.items = carried(); st.boosts = boostsOn(); st.looks = looksInUse(); }   // the Shop: thrown items carried, boosts ticked, looks in use
     return st; }
   
@@ -955,6 +956,11 @@
       if (music) sizes[musicUrl] = VW_SIZES.music[music] || 0;
       var amb = WORLD_AMBIENCE[WORLD], ambUrl = amb && BASE + "game/ambience/" + amb + ".ogg?v=" + VW_BUILD;
       if (amb) sizes[ambUrl] = VW_SIZES.ambience[amb] || 0;
+      /* Voices (25 Nov 2026): this world's lines, the course subject's pool and the shared lines; the game reads them as voice-<part>.zip. */
+      var subj = ["chemistry", "physics", "biology"].indexOf(course.subject) >= 0 ? course.subject : "chemistry";
+      var voiceParts = { world: "world-" + ("0" + WORLD).slice(-2), subject: "subject-" + subj, common: "common" };
+      var voiceUrl = function (part) { return BASE + "game/voice/" + voiceParts[part] + ".zip?v=" + VW_BUILD; };
+      Object.keys(voiceParts).forEach(function (part) { if (VW_SIZES.voice[voiceParts[part]]) sizes[voiceUrl(part)] = VW_SIZES.voice[voiceParts[part]]; });
       var friendUrl = function (k) { return BASE + "game/friends/friend-" + k + ".pck?v=" + VW_BUILD; };
       curFriends.forEach(function (k) { sizes[friendUrl(k)] = FRIEND_SIZES[k] || 0; });
       engine = new window.Engine({ canvas: $("canvas"), executable: base, canvasResizePolicy: 2, focusCanvas: true, fileSizes: sizes, args: [],
@@ -962,6 +968,7 @@
       await Promise.all([engine.init(base), engine.preloadFile(packUrl, "index.pck")].concat(worldPack ? [engine.preloadFile(worldUrl, worldPack)] : [])
         .concat(music ? [engine.preloadFile(musicUrl, "music-" + music + ".ogg").catch(function (e) { track("music failed", { track: music, world: WORLD }); })] : [])
         .concat(amb ? [engine.preloadFile(ambUrl, "ambience-" + amb + ".ogg").catch(function (e) { track("ambience failed", { theme: amb, world: WORLD }); })] : [])   // no ambience is better than no game
+        .concat(Object.keys(voiceParts).filter(function (part) { return VW_SIZES.voice[voiceParts[part]]; }).map(function (part) { return engine.preloadFile(voiceUrl(part), "voice-" + part + ".zip").catch(function (e) { track("voice failed", { part: voiceParts[part], world: WORLD }); }); }))   // no voice is better than no game
         .concat(curFriends.map(function (k) { return engine.preloadFile(friendUrl(k), "friend-" + k + ".pck").catch(function (e) { track("friend failed", { kind: k, world: WORLD }); }); })));   // a world without one of its characters is better than no game   // no music is better than no game
     };
     try {
