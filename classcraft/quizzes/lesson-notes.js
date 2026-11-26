@@ -34,14 +34,31 @@
    (utm_source=assign, or from teach/session.html): those students do the
    lesson.
 
+   Spec references (courses in SPEC_COURSES, data in quizzes/lesson-spec/):
+     each mission row on the welcome map gets a "Spec 4.5.1.1 · …" chip that
+     opens to the section titles; a footer links to the board's specification
+     page; the notes view lists the sections under each mission heading and an
+     "Also in this lesson" block for screens after the last mission. Section
+     numbers and titles only, never the board's statement wording. Drawn on
+     the map only after progress.js has built its mission list.
+
    Plausible events (goals must exist in Plausible to show on the dashboard):
      "Notes: opened"        {via: button | hash}
      "Notes: printed"       {via: button | shortcut}
      "Notes: start lesson"  "Start the lesson" in the notes view
+     "Spec: opened"         a spec chip opened (no goal yet)
    #notes in the URL opens the notes view at load.
 */
 (function () {
   "use strict";
+
+  /* Spec references (Nov 2026). Courses with a mission -> spec-section map in
+     quizzes/lesson-spec/<course>.json. Only these are fetched (no 404s
+     elsewhere). Shown: reference + section title, linked to the board's own
+     specification page; the board's statement wording is not reproduced. */
+  var SPEC_COURSES = ["physics-gcse-aqa"];
+  var ME = document.currentScript;
+  var BASE = ME && ME.src ? ME.src.replace(/lesson-notes\.js.*$/, "") : "../quizzes/";
 
   function isQuestionScreen(scr) {
     return !!scr.querySelector(
@@ -161,6 +178,20 @@
       "#lnotes .lnf{text-align:center;margin-top:16px;padding-top:14px;border-top:2px solid #efe2d2}" +
       "#lnotes .lnf p{color:#6b6580;font-size:.92rem;margin-bottom:10px}" +
       "#lnotes .lnsrc{font-size:.78rem;color:#6b6580;margin-top:14px}" +
+      ".lsp{margin:5px 0 1px;font-size:.8rem;color:#6b6580;flex-basis:100%;width:100%}" +
+      ".lsp summary{cursor:pointer;display:inline-block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:.74rem;letter-spacing:.2px;" +
+        "color:#4a3fa0;background:#f1efff;border:1.5px solid #cfc9f3;border-radius:10px;padding:1px 9px;list-style:none}" +
+      ".lsp summary::-webkit-details-marker{display:none}" +
+      ".lsp summary:hover{background:#e6e2ff}" +
+      ".lsp .lsp-list{margin:6px 0 2px 2px;line-height:1.35;font-family:'Nunito',sans-serif;font-weight:600;font-size:.8rem;color:#4a4560}" +
+      ".lsp .lsp-row{margin:0 0 3px;padding-left:10px;border-left:2px solid #cfc9f3}" +
+      ".lsp b{font-family:'Fredoka',sans-serif;font-weight:600;color:#2c2840}" +
+      ".lsp-foot{font-size:.8rem;color:#6b6580;margin:8px 0 0}" +
+      ".lsp-foot a{color:#4a3fa0}" +
+      "#lnotes .lnm-spec{margin-top:6px;font-size:.82rem;color:#2c2840;line-height:1.4}" +
+      "#lnotes .lnm-spec b{font-family:'Fredoka',sans-serif;font-weight:600;color:#4a3fa0}" +
+      "#lnotes .lnm.tail{background:#f6f4ff;border-color:#cfc9f3}" +
+      "#lnotes .lnm.tail .k{color:#4a3fa0}" +
       "@media print{" +
         "body.ln-notes-on{background:#fff!important;padding:0!important;display:block!important}" +
         "body.ln-notes-on>*:not(.app){display:none!important}" +
@@ -243,6 +274,84 @@
     else if (last && /\bStart\b/.test(last.textContent) && last.parentNode === welcome) welcome.insertBefore(pv, last);
     else welcome.appendChild(pv);
 
+    /* 1b. spec references: fetched for mapped courses only; drawn on the
+       mission map once progress.js has built its mission list (it reads the
+       question text from the map rows once, so nothing is added before that). */
+    var SP = null;
+    function specLines(ids) {
+      if (!SP || !ids || !ids.length) return null;
+      var dv = document.createElement("div");
+      dv.className = "lnm-spec";
+      ids.forEach(function (id, i) {
+        if (i) dv.appendChild(document.createTextNode(" · "));
+        var b = document.createElement("b"); b.textContent = id;
+        dv.appendChild(b);
+        dv.appendChild(document.createTextNode(" " + (SP.d.sections[id] || "")));
+      });
+      return dv;
+    }
+    function specDetails(ids, label) {
+      var det = document.createElement("details");
+      det.className = "lsp";
+      var sum = document.createElement("summary");
+      sum.textContent = label + " " + ids.join(" · ");
+      var ul = document.createElement("div");          // divs, not li: the mission map styles every li
+      ul.className = "lsp-list";
+      ids.forEach(function (id) {
+        var li = document.createElement("div");
+        li.className = "lsp-row";
+        var b = document.createElement("b"); b.textContent = id;
+        li.appendChild(b); li.appendChild(document.createTextNode(" " + (SP.d.sections[id] || "")));
+        ul.appendChild(li);
+      });
+      det.appendChild(sum); det.appendChild(ul);
+      det.addEventListener("toggle", function () { if (det.open) track("Spec: opened"); });
+      return det;
+    }
+    function drawSpecOnMap() {
+      if (!SP || !map || map.getAttribute("data-spec")) return;
+      map.setAttribute("data-spec", "1");
+      all(map, "li[data-mission]").forEach(function (li) {
+        var ids = SP.l[li.getAttribute("data-mission")];
+        if (ids && ids.length) li.appendChild(specDetails(ids, "Spec"));
+      });
+      var foot = document.createElement("div");
+      foot.className = "lsp-foot";
+      if (SP.l.tail && SP.l.tail.length) foot.appendChild(specDetails(SP.l.tail, "Also in this lesson:"));
+      var p = document.createElement("p");
+      p.className = "lsp-foot";
+      p.appendChild(document.createTextNode("Spec numbers are sections of the " + SP.d.spec + " specification. "));
+      var a = document.createElement("a"); a.href = SP.d.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "View the specification ↗";
+      p.appendChild(a);
+      foot.appendChild(p);
+      map.parentNode.insertBefore(foot, map.nextSibling);
+    }
+    function whenMissionsReady(fn) {
+      var tries = 0;
+      (function wait() {
+        var ok = false;
+        try { ok = !!(window.AismProgress && window.AismProgress.missions && window.AismProgress.missions().length); } catch (e) {}
+        if (ok || ++tries > 40) fn(); else setTimeout(wait, 150);
+      })();
+    }
+    (function loadSpec() {
+      var m = location.pathname.match(/([^\/]+)-mini-lesson\.html$/);
+      if (!m || !window.fetch) return;
+      var key = m[1], course = null;
+      SPEC_COURSES.forEach(function (c) { if (key.indexOf(c + "-") === 0 && (!course || c.length > course.length)) course = c; });
+      if (!course) return;
+      fetch(BASE + "lesson-spec/" + course + ".json?v=20261126").then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+        if (!d || !d.lessons || !d.lessons[key]) return;
+        SP = { d: d, l: d.lessons[key] };
+        if (map) whenMissionsReady(drawSpecOnMap);
+        if (box) {                                     // notes already built: rebuild with the spec lines
+          var on = document.body.classList.contains("ln-notes-on");
+          box.remove(); box = null; fitted = false;
+          if (on) { build(); try { requestAnimationFrame(fitSteps); } catch (e) {} }
+        }
+      }).catch(function () {});
+    })();
+
     /* 2. notes view (built on first open) */
     var box = null, printed = false;
     function build() {
@@ -262,6 +371,12 @@
       var ips = intro.querySelectorAll("p");
       if (ips.length && /\bStart\b/.test(ips[ips.length - 1].textContent)) ips[ips.length - 1].remove();
       if (spec) { var sp = document.createElement("p"); sp.className = "lnsrc"; sp.textContent = spec; intro.insertBefore(sp, intro.firstChild); }
+      if (SP) {
+        var sr = document.createElement("p"); sr.className = "lnsrc";
+        sr.appendChild(document.createTextNode("Spec references below are section numbers from the " + SP.d.spec + " specification: "));
+        var sa = document.createElement("a"); sa.href = SP.d.url; sa.target = "_blank"; sa.rel = "noopener"; sa.textContent = SP.d.url.replace(/^https?:\/\//, "");
+        sr.appendChild(sa); intro.appendChild(sr);
+      }
       intro.className = "lns";
       box.appendChild(intro);
 
@@ -285,12 +400,22 @@
           var li = document.querySelector('.ks3-missions li[data-mission="m' + m.n + '"]');
           if (li) {                                   // keeps typeset maths (KaTeX) intact
             var lc = li.cloneNode(true);
-            drop(lc, ".ks3-mn, .lp-mmeta, .lp-tick, a, button");
+            drop(lc, ".ks3-mn, .lp-mmeta, .lp-tick, a, button, .lsp");
             q.innerHTML = lc.innerHTML.trim();
           }
           if (!q.textContent.trim()) q.textContent = m.q;
           d.appendChild(k); if (q.textContent.trim()) d.appendChild(q);
+          var sl = specLines(SP && SP.l["m" + m.n]);
+          if (sl) d.appendChild(sl);
           box.appendChild(d);
+        }
+        if (!m && missions.length && SP && SP.l.tail && !shown.tail && t.i > missions[missions.length - 1].check) {
+          shown.tail = true;                          // screens after the last mission
+          var td = document.createElement("div");
+          td.className = "lnm tail";
+          var tk = document.createElement("div"); tk.className = "k"; tk.textContent = "Also in this lesson";
+          td.appendChild(tk); td.appendChild(specLines(SP.l.tail));
+          box.appendChild(td);
         }
         var c = cloneForNotes(t.scr, n + 1);
         c.className = "lns";
