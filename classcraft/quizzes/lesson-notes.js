@@ -1,29 +1,44 @@
-/* lesson-notes.js — "In this lesson" preview + "Read as notes" view for the
-   older sectioned mini-lessons (Nov 2026).
+/* lesson-notes.js — "Read as notes" view (print / save as PDF) for every
+   mini-lesson, plus an "In this lesson" list on the older sectioned lessons.
 
-   Why: search visitors landing on an old lesson saw one sentence, a small
-   diagram and a Start button; everything else sat behind Start. This file
-   shows them what the lesson contains and lets them read it as notes (and
-   print / save as PDF) without leaving the page.
+   Why (Nov 2026): search visitors landing on a lesson saw little before Start.
+   This lets them read the lesson as notes, print it or save it as a PDF, and
+   still start the lesson from there.
 
-   Scope: ONLY lessons without a mission map (.ks3-missions). Mission lessons
-   are untouched. Loaded by lesson-nav.js, so no per-lesson edits.
+   Loaded by lesson-nav.js, so no per-lesson edits.
 
-   What it does:
-     1. Welcome screen: a numbered "In this lesson" list of the teaching
-        sections and a secondary "Read as notes" button. Start stays the main
-        button.
-     2. Notes view: the welcome text plus every teaching screen, stacked.
-        Question screens (anything lesson-nav.js treats as a question screen:
-        .activity, [data-q], [data-num], [data-t], share, trophy) are left out,
-        so no answers are shown. Buttons and inputs are stripped from clones.
-     3. Print / save as PDF: print CSS that prints only the notes.
-     4. #notes in the URL opens the notes view at load.
+   Old sectioned lessons (no .ks3-missions):
+     welcome screen gets a numbered "In this lesson" list of the teaching
+     sections and a secondary "Read as notes" button.
+   Mission lessons (.ks3-missions):
+     welcome screen gets only the "Read as notes" button, under the mission map
+     (the map already lists the missions). Notes are grouped by mission, each
+     headed "Mission N" + the mission question (AismProgress.missions(), else
+     the screens tagged .tag.mission).
+
+   Notes content: the welcome intro plus every teaching screen. Left out:
+     - question screens (anything lesson-nav.js treats as one: .activity,
+       [data-q], [data-num], [data-t], share, trophy), so no answers to checks;
+     - hook videos and guess prompts (.ks3-hook, .ks3-guess, .ks3-yourguess);
+     - buttons, inputs, scripts, audio clips, hidden boxes.
+   Turned into print-friendly form:
+     - stepped diagrams (figure.dg-fig[data-steps]): every step side by side;
+     - before/after diagrams (.dg-reveal): both shown;
+     - worked examples (.excard): every step and the answer shown;
+     - economics graph labs (.eg-lab): title and graph at the starting values,
+       controls and prediction questions removed.
+   Every id in a copy gets a suffix (url(#id) / href="#id" rewritten) so SVG
+   gradients, markers and clip paths keep working.
+
+   Not shown at all when the visit comes from a teacher's assignment link
+   (utm_source=assign, or from teach/session.html): those students do the
+   lesson.
 
    Plausible events (goals must exist in Plausible to show on the dashboard):
      "Notes: opened"        {via: button | hash}
      "Notes: printed"       {via: button | shortcut}
-     "Notes: start lesson"  the "Start the lesson" button in the notes view
+     "Notes: start lesson"  "Start the lesson" in the notes view
+   #notes in the URL opens the notes view at load.
 */
 (function () {
   "use strict";
@@ -41,30 +56,66 @@
   function track(name, props) {
     try { if (window.plausible) window.plausible(name, props ? { props: props } : undefined); } catch (e) {}
   }
+  function all(root, sel) { return [].slice.call(root.querySelectorAll(sel)); }
+  function drop(root, sel) { all(root, sel).forEach(function (x) { x.remove(); }); }
 
-  /* Clone a node for the notes view: drop interactive bits, and give every id a
-     suffix (rewriting url(#id) / href="#id" inside the clone) so SVG gradients,
-     markers and clip paths keep working while the originals are hidden. */
-  var STRIP = "button, input, select, textarea, .opts, .activity, .feedback, .nav, .ln-rail, .lp-coinnote, script, [data-q]";
+  /* Give every id under root a suffix and rewrite references inside root. */
+  function renameIds(root, suffix) {
+    var map = {};
+    all(root, "[id]").forEach(function (x) { map[x.id] = x.id + suffix; x.id = x.id + suffix; });
+    if (!Object.keys(map).length) return;
+    all(root, "*").forEach(function (x) {
+      for (var i = 0; i < x.attributes.length; i++) {
+        var a = x.attributes[i], v = a.value;
+        if (v.indexOf("#") < 0) continue;
+        var nv = v.replace(/url\(\s*['"]?#([^'")\s]+)['"]?\s*\)/g, function (m, id) { return map[id] ? "url(#" + map[id] + ")" : m; });
+        if ((a.name === "href" || a.name === "xlink:href") && nv.charAt(0) === "#" && map[nv.slice(1)]) nv = "#" + map[nv.slice(1)];
+        if (nv !== v) x.setAttribute(a.name, nv);
+      }
+    });
+  }
+
+  /* Stepped diagram -> one copy per step, side by side. */
+  function expandSteps(fig, n) {
+    var svg = fig.querySelector("svg");
+    if (!svg) return;
+    var hi = +fig.getAttribute("data-hi") || +fig.getAttribute("data-steps") || 1;
+    var lo = +fig.getAttribute("data-lo") || 1;
+    if (hi <= lo) return;
+    var row = document.createElement("div");
+    row.className = "lnn-steps";
+    for (var k = lo; k <= hi; k++) {
+      var cell = document.createElement("div");
+      cell.className = "lnn-step";
+      var lab = document.createElement("div");
+      lab.className = "lnn-steplab";
+      lab.textContent = "Step " + (k - lo + 1);
+      var c = svg.cloneNode(true);
+      all(c, "[data-step]").forEach(function (g) {
+        var a = +g.getAttribute("data-step"), u = g.hasAttribute("data-until") ? +g.getAttribute("data-until") : 1e9;
+        g.style.display = (a <= k && k <= u) ? "inline" : "none";
+      });
+      renameIds(c, "-s" + n + "-" + k);
+      cell.appendChild(lab); cell.appendChild(c); row.appendChild(cell);
+    }
+    svg.parentNode.replaceChild(row, svg);
+  }
+
+  var STRIP = ".ks3-hook, .ks3-guess, .ks3-yourguess, .ks3-missions, .lp-total, #resume, .resume, .dg-steps, .ex-ctl, " +
+    ".eg-pred, .eg-ctrls, .eg-actions, .eg-fb, .eg-read, .eg-config, .fr-audio, [data-clip], audio, video, noscript, " +
+    "button, input, select, textarea, .opts, .activity, .feedback, .nav, .ln-rail, .lp-coinnote, script, [data-q], .lnp";
+
   function cloneForNotes(node, n) {
     var c = node.cloneNode(true);
     c.removeAttribute("id");
+    c.removeAttribute("data-teach"); c.removeAttribute("data-test"); c.removeAttribute("data-m"); c.removeAttribute("data-start");
     c.classList.remove("screen", "active");
-    [].slice.call(c.querySelectorAll(STRIP)).forEach(function (x) { x.remove(); });
-    var suffix = "-ln" + n;
-    var map = {};
-    [].slice.call(c.querySelectorAll("[id]")).forEach(function (x) { map[x.id] = x.id + suffix; x.id = x.id + suffix; });
-    if (Object.keys(map).length) {
-      [].slice.call(c.querySelectorAll("*")).forEach(function (x) {
-        for (var i = 0; i < x.attributes.length; i++) {
-          var a = x.attributes[i], v = a.value;
-          if (v.indexOf("#") < 0) continue;
-          var nv = v.replace(/url\(\s*['"]?#([^'")\s]+)['"]?\s*\)/g, function (m, id) { return map[id] ? "url(#" + map[id] + ")" : m; });
-          if ((a.name === "href" || a.name === "xlink:href") && nv.charAt(0) === "#" && map[nv.slice(1)]) nv = "#" + map[nv.slice(1)];
-          if (nv !== v) x.setAttribute(a.name, nv);
-        }
-      });
-    }
+    all(c, "figure.dg-fig[data-steps]").forEach(function (f, i) { expandSteps(f, n + "-" + i); });
+    all(c, ".dg-reveal").forEach(function (x) { x.hidden = false; x.removeAttribute("hidden"); x.classList.add("lnn-after"); });
+    all(c, ".ex-hide").forEach(function (x) { x.classList.remove("ex-hide"); });
+    drop(c, STRIP);
+    all(c, "[hidden]").forEach(function (x) { x.remove(); });
+    renameIds(c, "-ln" + n);
     return c;
   }
 
@@ -74,6 +125,7 @@
     s.id = "lnotes-style";
     s.textContent =
       ".lnp{margin:16px 0 4px;background:#fffaf0;border:2px solid #efe2d2;border-radius:16px;padding:12px 14px}" +
+      ".lnp.lnp-m{background:none;border:0;padding:0;margin:12px 0 4px}" +
       ".lnp h3{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.8rem;letter-spacing:.5px;text-transform:uppercase;color:#6b6580;margin:0 0 6px}" +
       ".lnp ol{margin:0 0 0 1.3em;padding:0;columns:2;column-gap:22px;font-size:.92rem;line-height:1.35}" +
       ".lnp li{margin:0 0 4px;break-inside:avoid}" +
@@ -92,12 +144,20 @@
       "#lnotes .lnh .bt{display:flex;flex-wrap:wrap;gap:8px}" +
       "#lnotes .lns{padding:6px 0 14px;border-bottom:1px dashed #efe2d2;margin-bottom:12px}" +
       "#lnotes .lns:last-of-type{border-bottom:0}" +
+      "#lnotes .lnm{margin:18px 0 10px;padding:10px 14px;border-radius:14px;background:#eef4ff;border:2px solid #2b6cb0}" +
+      "#lnotes .lnm .k{font-family:'Fredoka',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:.5px;text-transform:uppercase;color:#2b6cb0}" +
+      "#lnotes .lnm .q{font-family:'Fredoka',sans-serif;font-weight:700;font-size:1.15rem;color:#2c2840;margin-top:2px}" +
       "#lnotes h1{font-size:1.7rem;margin:0 0 10px}" +
       "#lnotes h2{font-size:1.25rem;margin:4px 0 8px}" +
       "#lnotes ul,#lnotes ol{margin:6px 0 6px 1.3em}" +
       "#lnotes li{margin:0 0 6px;line-height:1.45}" +
       "#lnotes p{margin:6px 0;line-height:1.5}" +
       "#lnotes figure{margin:10px 0}#lnotes svg{max-width:100%;height:auto}" +
+      "#lnotes .lnn-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:start}" +
+      "#lnotes .lnn-step{text-align:center;border:1.5px solid #efe2d2;border-radius:12px;padding:6px}" +
+      "#lnotes .lnn-step svg{width:100%;display:block;margin:0 auto}" +
+      "#lnotes .lnn-steplab{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.8rem;color:#6b6580;margin-bottom:4px}" +
+      "#lnotes .lnn-after{margin-top:10px}" +
       "#lnotes .lnf{text-align:center;margin-top:16px;padding-top:14px;border-top:2px solid #efe2d2}" +
       "#lnotes .lnf p{color:#6b6580;font-size:.92rem;margin-bottom:10px}" +
       "#lnotes .lnsrc{font-size:.78rem;color:#6b6580;margin-top:14px}" +
@@ -108,24 +168,46 @@
         "body.ln-notes-on .app{max-width:none}" +
         "#lnotes{border:0!important;box-shadow:none!important;padding:0!important;margin:0!important}" +
         "#lnotes .lnh .bt,#lnotes .lnf{display:none!important}" +
-        "#lnotes .lns{break-inside:auto}#lnotes li,#lnotes figure,#lnotes .note{break-inside:avoid}" +
-        "#lnotes h2{break-after:avoid}" +
+        "#lnotes .lns{break-inside:auto}#lnotes li,#lnotes figure,#lnotes .note,#lnotes .lnn-step,#lnotes table,#lnotes .excard{break-inside:avoid}" +
+        "#lnotes h2,#lnotes .lnm{break-after:avoid}" +
         "*{-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
       "}";
     document.head.appendChild(s);
   }
 
+  /* Mission list: [{n, question, start, check}] from progress.js, else from the
+     screens tagged as mission starts. */
+  function missionList(screens) {
+    try {
+      var ms = window.AismProgress && window.AismProgress.missions && window.AismProgress.missions();
+      if (ms && ms.length) return ms.map(function (m) { return { n: m.n, q: m.question || "", start: m.start, check: m.check }; });
+    } catch (e) {}
+    var out = [];
+    var items = all(document, ".ks3-missions li");
+    screens.forEach(function (scr, i) {
+      if (i === 0 && items.length) { out.push({ n: 1, q: cleanLabel(items[0]).replace(/^Mission\s*1\s*/i, "").replace(/~?\d+\s*min.*$/i, "").trim(), start: 1 }); return; }
+      if (scr.querySelector(".ks3-hook") && scr.querySelector(".tag.mission")) {
+        var h = scr.querySelector("h2");
+        out.push({ n: out.length + 1, q: h ? cleanLabel(h) : "", start: i });
+      }
+    });
+    for (var k = 0; k < out.length; k++) out[k].check = k + 1 < out.length ? out[k + 1].start - 1 : 1e9;
+    return out;
+  }
+
   function init() {
-    if (document.querySelector(".ks3-missions")) return;          // mission lessons: not ours
-    var screens = [].slice.call(document.querySelectorAll(".screen"));
+    if (/[?&]utm_source=assign\b/.test(location.search) || /\/teach\/session\.html/.test(document.referrer || "")) return;
+    var screens = all(document, ".screen");
     if (screens.length < 4) return;
     var welcome = screens[0];
+    var missionMode = !!welcome.querySelector(".ks3-missions") || !!document.querySelector(".ks3-missions");
     var teach = [];
     screens.forEach(function (scr, i) {
       if (i === 0 || scr.classList.contains("final") || isQuestionScreen(scr)) return;
+      if (scr.querySelector(".ks3-hook")) return;                 // mission start: becomes a divider
       var h = scr.querySelector("h2") || scr.querySelector("h1");
       if (!h || !cleanLabel(h)) return;
-      teach.push({ scr: scr, label: cleanLabel(h) });
+      teach.push({ scr: scr, i: i, label: cleanLabel(h) });
     });
     if (teach.length < 2) return;
     var app = document.querySelector(".app") || (welcome.closest && welcome.closest(".stage") || welcome).parentNode;
@@ -136,24 +218,29 @@
     var specEl = document.querySelector(".spec");
     var spec = specEl ? specEl.textContent.trim() : "";
 
-    /* 1. welcome preview */
+    /* 1. welcome screen */
     var pv = document.createElement("div");
-    pv.className = "lnp";
-    var h3 = document.createElement("h3");
-    h3.textContent = "In this lesson · " + teach.length + " sections";
-    var ol = document.createElement("ol");
-    teach.forEach(function (t) { var li = document.createElement("li"); li.textContent = t.label; ol.appendChild(li); });
+    pv.className = missionMode ? "lnp lnp-m" : "lnp";
+    if (!missionMode) {
+      var h3 = document.createElement("h3");
+      h3.textContent = "In this lesson · " + teach.length + " sections";
+      var ol = document.createElement("ol");
+      teach.forEach(function (t) { var li = document.createElement("li"); li.textContent = t.label; ol.appendChild(li); });
+      pv.appendChild(h3); pv.appendChild(ol);
+    }
     var row = document.createElement("div");
     row.className = "lnp-row";
     var rb = document.createElement("button");
     rb.type = "button"; rb.className = "lnp-btn"; rb.textContent = "📄 Read as notes";
     var hint = document.createElement("span");
-    hint.className = "lnp-hint"; hint.textContent = "All sections on one page — print or save as PDF";
+    hint.className = "lnp-hint"; hint.textContent = "The whole lesson on one page — print or save as PDF";
     row.appendChild(rb); row.appendChild(hint);
-    pv.appendChild(h3); pv.appendChild(ol); pv.appendChild(row);
+    pv.appendChild(row);
+    var map = welcome.querySelector(".ks3-missions");
     var ps = welcome.querySelectorAll("p");
     var last = ps.length ? ps[ps.length - 1] : null;
-    if (last && /\bStart\b/.test(last.textContent) && last.parentNode === welcome) welcome.insertBefore(pv, last);
+    if (map && map.parentNode) map.parentNode.insertBefore(pv, map.nextSibling);
+    else if (last && /\bStart\b/.test(last.textContent) && last.parentNode === welcome) welcome.insertBefore(pv, last);
     else welcome.appendChild(pv);
 
     /* 2. notes view (built on first open) */
@@ -171,14 +258,40 @@
       box.appendChild(head);
 
       var intro = cloneForNotes(welcome, 0);
-      [].slice.call(intro.querySelectorAll(".lnp, .tag")).forEach(function (x) { x.remove(); });
+      drop(intro, ".tag");
       var ips = intro.querySelectorAll("p");
       if (ips.length && /\bStart\b/.test(ips[ips.length - 1].textContent)) ips[ips.length - 1].remove();
       if (spec) { var sp = document.createElement("p"); sp.className = "lnsrc"; sp.textContent = spec; intro.insertBefore(sp, intro.firstChild); }
       intro.className = "lns";
       box.appendChild(intro);
 
+      var missions = missionMode ? missionList(screens) : [];
+      var shown = {};
+      function missionFor(i) {
+        for (var k = 0; k < missions.length; k++) {
+          var m = missions[k], end = m.check != null ? m.check : 1e9;
+          if (i >= m.start && i <= end) return m;
+        }
+        return null;
+      }
       teach.forEach(function (t, n) {
+        var m = missionFor(t.i);
+        if (m && !shown[m.n]) {
+          shown[m.n] = true;
+          var d = document.createElement("div");
+          d.className = "lnm";
+          var k = document.createElement("div"); k.className = "k"; k.textContent = "Mission " + m.n;
+          var q = document.createElement("div"); q.className = "q";
+          var li = document.querySelector('.ks3-missions li[data-mission="m' + m.n + '"]');
+          if (li) {                                   // keeps typeset maths (KaTeX) intact
+            var lc = li.cloneNode(true);
+            drop(lc, ".ks3-mn, .lp-mmeta, .lp-tick, a, button");
+            q.innerHTML = lc.innerHTML.trim();
+          }
+          if (!q.textContent.trim()) q.textContent = m.q;
+          d.appendChild(k); if (q.textContent.trim()) d.appendChild(q);
+          box.appendChild(d);
+        }
         var c = cloneForNotes(t.scr, n + 1);
         c.className = "lns";
         box.appendChild(c);
@@ -208,9 +321,31 @@
       if (stage && stage.parentNode === app) app.insertBefore(box, stage);
       else app.appendChild(box);
     }
+    /* Crop each step of a stepped diagram to what it shows, keeping the scale of
+       the original drawing (so steps still line up visually). Needs layout, so
+       it runs once the notes are on screen. */
+    var fitted = false;
+    function fitSteps() {
+      if (fitted || !box) return;
+      fitted = true;
+      all(box, ".lnn-step > svg").forEach(function (svg) {
+        try {
+          var live = svg.viewBox && svg.viewBox.baseVal;   // live object: copy before changing viewBox
+          var vb = live ? { x: live.x, y: live.y, width: live.width, height: live.height } : null;
+          var b = svg.getBBox();
+          if (!vb || !vb.width || !b.width || !b.height) return;
+          var p = 6, x = Math.max(vb.x, b.x - p), y = Math.max(vb.y, b.y - p);
+          var w = Math.min(vb.x + vb.width, b.x + b.width + p) - x, h = Math.min(vb.y + vb.height, b.y + b.height + p) - y;
+          if (w <= 0 || h <= 0) return;
+          svg.setAttribute("viewBox", x + " " + y + " " + w + " " + h);
+          svg.style.width = Math.min(100, 100 * w / vb.width).toFixed(1) + "%";
+        } catch (e) {}
+      });
+    }
     function open(via) {
       if (!box) build();
       document.body.classList.add("ln-notes-on");
+      try { requestAnimationFrame(fitSteps); } catch (e) { fitSteps(); }
       window.scrollTo({ top: 0 });
       track("Notes: opened", { via: via });
     }
