@@ -36,8 +36,8 @@
   var VW_ENGINE_SITE = BASE + "game/index";                                                          // the same files on this site, used if Bunny cannot be reached
   var VW_ENGINE = VW_ENGINE_CDN;
   var VW_PACK = BASE + "game/index.pck";
-  var VW_BUILD = "20261125k";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
-  var VW_SIZES = { wasm: 39514754, pck: 10993208, worlds: { "2": 3597492, "3": 551780, "4": 2671776, "5": 1430088, "6": 701796, "7": 1806860, "8": 1207880, "9": 2508708, "10": 1539732, "11": 2324860, "12": 983096, "13": 600696, "14": 397124, "15": 440088, "16": 816392, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 552792, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
+  var VW_BUILD = "20261126a";   // (app.js itself: the ?v= in blaster/index.html)               // change whenever index.pck changes
+  var VW_SIZES = { wasm: 39514754, pck: 11054864, worlds: { "2": 3597492, "3": 551780, "4": 2671776, "5": 1430088, "6": 701796, "7": 1806860, "8": 1207880, "9": 2508708, "10": 1539732, "11": 2324860, "12": 983096, "13": 600696, "14": 397124, "15": 440088, "16": 816392, "17": 534904, "18": 268380, "19": 528356, "20": 645480, "21": 410728, "22": 552792, "23": 572656, "24": 1635344 },   // each world after the first has its own pack, fetched when it is opened
     voice: {"common": 892719, "subject-biology": 588834, "subject-chemistry": 546722, "subject-physics": 704295, "world-01": 351811, "world-02": 358427, "world-03": 401542, "world-04": 463966, "world-05": 494303, "world-06": 345887, "world-07": 370316, "world-08": 447381, "world-09": 378403, "world-10": 313617, "world-11": 338998, "world-12": 463656, "world-13": 478437, "world-14": 335934, "world-15": 338837, "world-16": 479738, "world-17": 314797, "world-18": 316774, "world-19": 324960, "world-20": 481034, "world-21": 331513, "world-22": 426335, "world-23": 327041, "world-24": 337347},   // bytes of each voice bundle (game/voice/<name>.zip)
     ambience: {"airfield": 291505, "bones": 399308, "castle": 358983, "cave": 252803, "chip": 295328, "desert": 338798, "fair": 330231, "farm": 351373, "garage": 366957, "harbour": 366054, "island": 349150, "jungle": 379059, "match": 363359, "moon": 298011, "neon": 350261, "reef": 217051, "scrap": 346810, "spring": 391524, "stadium": 350076, "swamp": 350777, "tundra": 353828, "volcano": 269993, "water": 351656, "weld": 396631},   // bytes of each world ambience loop (game/ambience/<theme>.ogg)
     music: { "sailors-chant": 822794, "spacelife-14": 781949, "town-theme": 898921, "lasso-lady": 736725, "snowfall": 490840, "underwater-theme": 1079810, "creepy": 946048, "midnight-drive": 947137, "carnival-rides": 271701, "rhythm-factory": 1174949, "chiptune-level-1": 870810, "factory-ambiance": 952644, "fire-level": 966584, "funky-house": 786640, "joyful-jungle": 1074353, "mysterious": 965289, "beach-sports-theme": 375654, "hyperflight-racing": 665883, "fridge-is-hungry": 915000, "winning-the-race": 1107855 } };   // bytes of each world music track (game/music/<name>.ogg)
@@ -166,6 +166,33 @@
   var course = normCourse(lsGet(LS_COURSE, null)), courseIndex = null, courseIndexFor = "", curPack = null, packTaken = false;
 
   /* ---- the worlds that exist so far (key = atomic number) ---- */
+  // A gun tip for each world (Nov 2026): which gun suits its monsters. Kept true to the game (player.gd BLASTERS).
+  var WORLD_TIPS = {
+    "1": "The drones are metal: the Acid Sprayer corrodes them.",
+    "2": "The sand crabs are robots, so metal: try the Acid Sprayer.",
+    "3": "Low gravity: shots that arc, like the Chilli Cannon's and the Frog Launcher's, fly much further.",
+    "4": "Bees are quick: the Methane Flare fires fastest. For the giant rat, the Frog Launcher stuns it.",
+    "5": "A crowd? Gas them with a Rotten Egg cloud, then light it with the Methane Flare.",
+    "6": "Bats are quick: the Methane Flare fires fastest.",
+    "7": "The yetis hit hard: a Dry Ice breath slows them, and its fog on the floor slows the next ones too.",
+    "8": "Fish come in fast: the Dry Ice fog on the floor slows them. The Frog Launcher stuns the kraken.",
+    "9": "Blobs split when popped: a Dry Ice breath or the Salt Scatter catches the little ones together.",
+    "10": "The drones are metal: the Acid Sprayer corrodes them.",
+    "11": "The salt crabs are robots: try the Acid Sprayer. On narrow docks, a Rotten Egg cloud blocks the way.",
+    "12": "A Rotten Egg cloud keeps the crowd off while you chase; light it with the Methane Flare.",
+    "13": "Every monster here is metal: the Acid Sprayer was made for this world.",
+    "14": "Monsters in a line? The Water Cannon's stream goes through two. The Methane Flare fires fastest.",
+    "15": "Gas them with a Rotten Egg cloud, then light it with the Methane Flare.",
+    "16": "The giant spider is quick: the Frog Launcher stuns it, and Dry Ice fog slows its helpers.",
+    "17": "Pools and long lanes: the Water Cannon's stream goes through two monsters in a line.",
+    "18": "The robots and drones are metal: the Acid Sprayer corrodes them.",
+    "19": "Birds are quick: the Methane Flare fires fastest.",
+    "20": "A Dry Ice breath slows a herd; the Frog Launcher stuns the big ones.",
+    "21": "A long open pitch: the Glucose Gun hits hardest from a distance.",
+    "22": "Drones, crushers and the mech are all metal: try the Acid Sprayer.",
+    "23": "The orcs come in groups: a Rotten Egg cloud, then the Methane Flare.",
+    "24": "The shellbots are metal: the Acid Sprayer corrodes them."
+  };
   var WORLD_INFO = {
     "1": { name: "The Castle", mission: "Collect the reactivity series", spec: "AQA GCSE Chemistry (8462), 4.4.1.2", enemies: "robots",
       hero: "Collect the eight metals of <b>the reactivity series</b> and put them in order. Search every corner for hidden particles." },
@@ -226,16 +253,16 @@
   var LS_LOOKS = "vw-looks", LS_BOOSTS = "vw-boosts";   // the looks in use {shot, pop, skin} and the boosts ticked for the next run, on this device
   var WEAPON_INFO = {
     "blaster-starter": { name: "Starter Blaster", blurb: "Yours from the start. 20 ammo." },
-    "weapon-methane": { name: "Methane Flare", formula: "CH<sub>4</sub>", blurb: "Fires nearly twice as fast." },
-    "weapon-water": { name: "Water Cannon", formula: "H<sub>2</sub>O", blurb: "Starts with 40 ammo and carries 90." },
-    "weapon-glucose": { name: "Glucose Gun", formula: "C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>", blurb: "One shot pops most enemies; the biggest take more. Slow, and each shot uses 2 ammo." },
+    "weapon-methane": { name: "Methane Flare", formula: "CH<sub>4</sub>", blurb: "Fires nearly twice as fast. Shoot through a Rotten Egg stink cloud to set it alight: every enemy inside takes 3 and is left burning." },
+    "weapon-water": { name: "Water Cannon", formula: "H<sub>2</sub>O", blurb: "Starts with 40 ammo and carries 90. Its stream goes through the first monster to hit the one behind." },
+    "weapon-glucose": { name: "Glucose Gun", formula: "C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>", blurb: "One shot pops most enemies; the biggest take more. Slow, and each shot uses 3 ammo." },
     "weapon-capsaicin": { name: "Chilli Cannon", formula: "C<sub>18</sub>H<sub>27</sub>NO<sub>3</sub>", blurb: "Fires chillies in an arc. A hit makes the enemy overheat: for 3 seconds it runs about, cannot hurt you and loses health. Each shot uses 2 ammo." },
     // soon: (when set) the server knows the recipe, but the game does not have the gun yet, so it cannot be made from here.
-    "weapon-epibatidine": { name: "Frog Launcher", formula: "C<sub>11</sub>H<sub>13</sub>ClN<sub>2</sub>", blurb: "Launches a poison dart frog in an arc. A hit stuns the enemy for 3 seconds. The frog is never hurt: it hops away. Each shot uses 2 ammo." },
-    "weapon-h2so4": { name: "Acid Sprayer", formula: "H<sub>2</sub>SO<sub>4</sub>", blurb: "Sprays a fast stream of acid. A hit makes the enemy corrode, losing health for 3 seconds; robots, being metal, corrode for 5. Starts with 30 ammo and carries 90." },
+    "weapon-epibatidine": { name: "Frog Launcher", formula: "C<sub>11</sub>H<sub>13</sub>ClN<sub>2</sub>", blurb: "Launches a poison dart frog in an arc. A hit stuns the enemy for 3 seconds, then the frog hops on to stun the nearest other one too. The frog is never hurt. Each shot uses 2 ammo." },
+    "weapon-h2so4": { name: "Acid Sprayer", formula: "H<sub>2</sub>SO<sub>4</sub>", blurb: "Sprays a fast stream of acid. Acid reacts with metals, so robots and mechs it hits corrode, losing health for 5 seconds. Starts with 30 ammo and carries 90." },
     "weapon-nacl": { name: "Salt Scatter", formula: "NaCl", blurb: "Fires six salt crystals at once in a spread. Strong up close, and each hit throws the enemy back. Each shot uses 2 ammo." },
-    "weapon-co2": { name: "Dry Ice Blaster", formula: "CO<sub>2</sub>", blurb: "Breathes out freezing fog. Every enemy within 7 metres in front of you takes a hit and moves at half speed for 4 seconds. Each breath uses 2 ammo." },
-    "weapon-h2s": { name: "Rotten Egg Blaster", formula: "H<sub>2</sub>S", blurb: "Lobs an egg that bursts into a stinking cloud for 3 seconds. Enemies in the cloud run away from you and cannot hurt you for 4 seconds. Each shot uses 2 ammo." },
+    "weapon-co2": { name: "Dry Ice Blaster", formula: "CO<sub>2</sub>", blurb: "Breathes out freezing fog. Every enemy within 9 metres in front of you takes a hit and moves at half speed for 4 seconds. The fog sinks and lies on the floor for 8 seconds, slowing anything that walks into it. Each breath uses 2 ammo." },
+    "weapon-h2s": { name: "Rotten Egg Blaster", formula: "H<sub>2</sub>S", blurb: "Lobs an egg that bursts into a huge stinking cloud for 18 seconds. Enemies will not go into it, and any inside run out. Light it with the Methane Flare. Each shot uses 2 ammo." },
     "blaster-supporter": { name: "Supporter Blaster", blurb: "A thank-you for supporting the site. Same power as the Starter." }
   };
   var PNAME = { p: "Protons", n: "Neutrons", e: "Electrons" };
@@ -686,6 +713,7 @@
       h += '<p><b id="heroName">' + esc(wi.name) + "</b>" + (ms && wonHere(n) ? " <b>\u2713 Completed</b>" : "") + "</p>";
       h += '<p id="heroText">' + (ms ? ms.hero : !courseIndex ? "Loading your course\u2026" : "<b>Not ready for " + esc(courseName()) + " yet.</b> Choose another world, or change your course.") + "</p>";
       h += '<p class="soft" id="heroSpec">' + esc(ms ? ms.spec : courseName()) + '</p><div class="counts" id="heroFound">' + partsHtml(f, w) + "</div>";
+      if (WORLD_TIPS[String(n)]) h += '<p class="tip"><b>Gun tip:</b> ' + esc(WORLD_TIPS[String(n)]) + "</p>";
       h += '<div class="levels">' + [1, 2, 3].map(function (L) {   // one row for each level: its star, and Play (level 1 keeps the key "play:N")
         var built = L <= levelsOf(n), g = built ? gradeAt(n, L) : 0;
         var act = !built ? '<span class="soft">Coming soon</span>' : !worldOpen(n) ? (L === 1 ? '<span class="soft">Collect ' + esc(el.name) + " to open it.</span>" : "") :
