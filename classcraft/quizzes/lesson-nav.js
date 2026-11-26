@@ -258,7 +258,7 @@
     p.defer = true;
     document.head.appendChild(p);
     var nt = document.createElement("script");         // notes view on older (non-mission) lessons; no-op on mission lessons
-    nt.src = base + "lesson-notes.js?v=20261126d";
+    nt.src = base + "lesson-notes.js?v=20261126e";
     nt.defer = true;
     document.head.appendChild(nt);
     var z = document.createElement("script");          // seasonal plug (seasonal.js switches itself off)

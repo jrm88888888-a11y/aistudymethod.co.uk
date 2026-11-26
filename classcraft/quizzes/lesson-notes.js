@@ -34,6 +34,13 @@
    (utm_source=assign, or from teach/session.html): those students do the
    lesson.
 
+   Diagram preview (Nov 2026): when the welcome screen has no diagram of its
+     own, the lesson's first labelled figure (svg with aria-label or <title>,
+     viewBox at least 150x80, not an icon, maths glyph, hook poster or graph
+     lab; stepped diagrams at their last step) is shown on the welcome screen,
+     captioned "From Mission N · <screen heading> · Read the notes →".
+     Clicking it opens the notes at that screen ("Notes: opened" via=diagram).
+
    Spec references (courses in SPEC_COURSES, data in quizzes/lesson-spec/):
      each mission row on the welcome map gets a "Spec 4.5.1.1 · …" chip that
      opens to the section titles; a footer links to the board's specification
@@ -120,7 +127,7 @@
 
   var STRIP = ".ks3-hook, .ks3-guess, .ks3-yourguess, .ks3-missions, .lp-total, #resume, .resume, .dg-steps, .ex-ctl, " +
     ".eg-pred, .eg-ctrls, .eg-actions, .eg-fb, .eg-read, .eg-config, .fr-audio, [data-clip], audio, video, noscript, " +
-    "button, input, select, textarea, .opts, .activity, .feedback, .nav, .ln-rail, .lp-coinnote, script, [data-q], .lnp";
+    "button, input, select, textarea, .opts, .activity, .feedback, .nav, .ln-rail, .lp-coinnote, script, [data-q], .lnp, .lnpv, .lsp-foot";
 
   function cloneForNotes(node, n) {
     var c = node.cloneNode(true);
@@ -178,6 +185,14 @@
       "#lnotes .lnf{text-align:center;margin-top:16px;padding-top:14px;border-top:2px solid #efe2d2}" +
       "#lnotes .lnf p{color:#6b6580;font-size:.92rem;margin-bottom:10px}" +
       "#lnotes .lnsrc{font-size:.78rem;color:#6b6580;margin-top:14px}" +
+      ".lnpv{margin:14px 0 10px;padding:12px 12px 10px;background:#fff;border:2.5px solid #2c2840;border-radius:18px;box-shadow:0 5px 0 rgba(44,40,64,.10);cursor:pointer;text-align:center;transition:transform .12s}" +
+      ".lnpv:hover{transform:translateY(-2px)}" +
+      ".lnpv:focus{outline:3px solid #ffc83d;outline-offset:2px}" +
+      ".lnpv svg{display:block;margin:0 auto;width:100%;max-width:520px;max-height:300px;height:auto}" +
+      ".lnpv figcaption{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:center;margin-top:8px;font-size:.85rem}" +
+      ".lnpv-from{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.72rem;letter-spacing:.5px;text-transform:uppercase;color:#6b6580}" +
+      ".lnpv-t{font-family:'Fredoka',sans-serif;font-weight:600;color:#2c2840}" +
+      ".lnpv-go{font-family:'Fredoka',sans-serif;font-weight:600;color:#0a6b5e}" +
       ".lsp{margin:5px 0 1px;font-size:.8rem;color:#6b6580;flex-basis:100%;width:100%}" +
       ".lsp summary{cursor:pointer;display:inline-block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:.74rem;letter-spacing:.2px;" +
         "color:#4a3fa0;background:#f1efff;border:1.5px solid #cfc9f3;border-radius:10px;padding:1px 9px;list-style:none}" +
@@ -273,6 +288,67 @@
     if (map && map.parentNode) map.parentNode.insertBefore(pv, map.nextSibling);
     else if (last && /\bStart\b/.test(last.textContent) && last.parentNode === welcome) welcome.insertBefore(pv, last);
     else welcome.appendChild(pv);
+
+    /* 1a. diagram preview: when the welcome screen has no diagram of its own,
+       show the lesson's first real figure there, captioned with the screen it
+       comes from. Clicking it opens the notes at that screen. */
+    var preview = null;
+    (function diagramPreview() {
+      function real(x) {                                                            // a picture, not an icon (no layout needed)
+        if (x.closest(".ks3-hook, button, .katex")) return false;
+        if (x.tagName.toLowerCase() === "img") return true;
+        var vb = x.viewBox && x.viewBox.baseVal;
+        return !!(vb && vb.width >= 150 && vb.height >= 80);
+      }
+      if (all(welcome, "svg, img").some(real)) return;                             // welcome already has a diagram
+      var pick = null;
+      for (var i = 0; i < teach.length && !pick; i++) {
+        all(teach[i].scr, "svg").some(function (svg) {
+          if (svg.closest(".katex, button, .opts, .activity, .ks3-hook, .eg-lab, .lnn-steps, .codecard")) return false;
+          var vb = svg.viewBox && svg.viewBox.baseVal;
+          if (!vb || vb.width < 150 || vb.height < 80) return false;                // icons, inline glyphs
+          var labelled = svg.getAttribute("aria-label") || svg.querySelector("title");
+          if (!labelled) return false;
+          pick = { svg: svg, t: teach[i] };
+          return true;
+        });
+      }
+      if (!pick) return;
+      var c = pick.svg.cloneNode(true);
+      var fig = pick.svg.closest("figure.dg-fig[data-steps]");
+      if (fig) {                                                                    // stepped: the last step is the fullest picture
+        var hi = +fig.getAttribute("data-hi") || +fig.getAttribute("data-steps") || 1;
+        all(c, "[data-step]").forEach(function (g) {
+          var a = +g.getAttribute("data-step"), u = g.hasAttribute("data-until") ? +g.getAttribute("data-until") : 1e9;
+          g.style.display = (a <= hi && hi <= u) ? "inline" : "none";
+        });
+      }
+      renameIds(c, "-pv");
+      c.removeAttribute("width"); c.removeAttribute("height");
+      var box = document.createElement("figure");
+      box.className = "lnpv";
+      box.setAttribute("role", "button");
+      box.setAttribute("tabindex", "0");
+      var cap = document.createElement("figcaption");
+      var lab = document.createElement("span"); lab.className = "lnpv-from"; lab.textContent = "From the lesson";
+      var ttl = document.createElement("span"); ttl.className = "lnpv-t"; ttl.textContent = pick.t.label;
+      var go = document.createElement("span"); go.className = "lnpv-go"; go.textContent = "Read the notes →";
+      cap.appendChild(lab); cap.appendChild(ttl); cap.appendChild(go);
+      box.appendChild(c); box.appendChild(cap);
+      var before = welcome.querySelector(".lp-total, .ks3-missions, .lnp");          // after any hook video/guess, before the map
+      if (before && before.parentNode) before.parentNode.insertBefore(box, before);
+      else welcome.appendChild(box);
+      function openAt() { open("diagram", pick.t.i); }
+      box.addEventListener("click", openAt);
+      box.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAt(); } });
+      preview = { box: box, lab: lab, t: pick.t };
+      if (missionMode) whenMissionsReady(function () {                             // "From Mission 2" once the ranges are known
+        try {
+          var ms = window.AismProgress.missions();
+          ms.forEach(function (m) { if (pick.t.i >= m.start && pick.t.i <= m.check) lab.textContent = "From Mission " + m.n; });
+        } catch (e) {}
+      });
+    })();
 
     /* 1b. spec references: fetched for mapped courses only; drawn on the
        mission map once progress.js has built its mission list (it reads the
@@ -419,6 +495,7 @@
         }
         var c = cloneForNotes(t.scr, n + 1);
         c.className = "lns";
+        c.setAttribute("data-lni", t.i);
         box.appendChild(c);
       });
 
@@ -467,11 +544,13 @@
         } catch (e) {}
       });
     }
-    function open(via) {
+    function open(via, at) {
       if (!box) build();
       document.body.classList.add("ln-notes-on");
       try { requestAnimationFrame(fitSteps); } catch (e) { fitSteps(); }
-      window.scrollTo({ top: 0 });
+      var target = at != null ? box.querySelector('[data-lni="' + at + '"]') : null;
+      if (target) setTimeout(function () { try { target.scrollIntoView({ block: "start" }); } catch (e) {} }, 60);
+      else window.scrollTo({ top: 0 });
       track("Notes: opened", { via: via });
     }
     function close() {
