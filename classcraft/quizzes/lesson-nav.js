@@ -257,6 +257,10 @@
     p.src = base + "progress.js?v=20261123";
     p.defer = true;
     document.head.appendChild(p);
+    var nt = document.createElement("script");         // notes view on older (non-mission) lessons; no-op on mission lessons
+    nt.src = base + "lesson-notes.js?v=20261126";
+    nt.defer = true;
+    document.head.appendChild(nt);
     var z = document.createElement("script");          // seasonal plug (seasonal.js switches itself off)
     z.src = base + "seasonal.js?v=20261123";
     z.defer = true;
