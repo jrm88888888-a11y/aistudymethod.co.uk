@@ -80,13 +80,13 @@ PAGE = f'''<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini-Lessons — about {about(total)} free interactive lessons for GCSE, A-Level, IB, AP and KS3 | AI Study Method</title>
-<meta name="description" content="Every free mini-lesson on AI Study Method: about {about(total)} interactive lessons for GCSE, A-Level, IB Diploma, AP and KS3, in exam-board and course order. Pick your level, subject and board and start a lesson in one click. No login needed.">
+<title>Mini-Lessons — about {about(total)} free interactive lessons for GCSE, A-Level, IB, AP and KS3 | Velvet Study</title>
+<meta name="description" content="Every free mini-lesson on Velvet Study: about {about(total)} interactive lessons for GCSE, A-Level, IB Diploma, AP and KS3, in exam-board and course order. Pick your level, subject and board and start a lesson in one click. No login needed.">
 <link rel="canonical" href="https://aistudymethod.com/lessons.html">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="AI Study Method">
+<meta property="og:site_name" content="Velvet Study">
 <meta property="og:title" content="Mini-Lessons — free interactive lessons for GCSE, A-Level, IB, AP and KS3">
 <meta property="og:description" content="About {about(total)} interactive mini-lessons in exam-board order. Pick your level, subject and board and start in one click.">
 <meta property="og:url" content="https://aistudymethod.com/lessons.html">
@@ -139,7 +139,7 @@ PAGE = f'''<!DOCTYPE html>
  <a href="/" class="logo">
  <div class="logo-mark">V</div>
  <div class="logo-text">
- <span class="logo-primary">AI Study Method</span>
+ <span class="logo-primary">Velvet Study</span>
  <span class="logo-secondary">The Velvet Method®</span>
  </div>
  </a>
@@ -183,7 +183,7 @@ PAGE = f'''<!DOCTYPE html>
  <a href="/" class="logo">
  <div class="logo-mark">V</div>
  <div class="logo-text">
- <span class="logo-primary">AI Study Method</span>
+ <span class="logo-primary">Velvet Study</span>
  <span class="logo-secondary">The Velvet Method®</span>
  </div>
  </a>
@@ -211,7 +211,7 @@ PAGE = f'''<!DOCTYPE html>
  </div>
  </div>
  <div class="footer-bottom">
- <p>© 2026 AI Study Method · aistudymethod.com · All rights reserved · <a href="privacy.html" style="color:inherit;text-decoration:underline;">Privacy</a> · <a href="terms.html" style="color:inherit;text-decoration:underline;">Terms</a></p>
+ <p>© 2026 Velvet Study · aistudymethod.com · All rights reserved · <a href="privacy.html" style="color:inherit;text-decoration:underline;">Privacy</a> · <a href="terms.html" style="color:inherit;text-decoration:underline;">Terms</a></p>
  <div class="footer-velvet">Powered by <span>The Velvet Method®</span></div>
  <div class="footer-legal"><p>The Velvet Method<sup>®</sup> is a UK registered trade mark (UK00004394182).</p></div>
  </div>

@@ -63,11 +63,11 @@
     var link = url.toString();
     var scoreStr = opts.score != null ? (opts.total != null ? opts.score + '/' + opts.total : String(opts.score)) : null;
     var topicBit = opts.topic ? (' ' + opts.topic) : '';
-    var msg = '📚 I’ve been revising' + topicBit + ' on AI Study Method'
+    var msg = '📚 I’ve been revising' + topicBit + ' on Velvet Study'
       + (scoreStr ? ' and just scored ' + scoreStr : '')
       + '. Here’s how it works:';
     if (navigator.share) {
-      try { await navigator.share({ title: 'AI Study Method', text: msg, url: link }); return { ok: true, method: 'native-share' }; }
+      try { await navigator.share({ title: 'Velvet Study', text: msg, url: link }); return { ok: true, method: 'native-share' }; }
       catch (err) { if (err && err.name === 'AbortError') return { ok: false, cancelled: true }; }
     }
     try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(msg + '\n' + link); if (window.Arcade.toast) Arcade.toast('Link copied — send it to a parent'); return { ok: true, method: 'clipboard' }; } } catch (err) {}
@@ -177,7 +177,7 @@
     ctx.lineWidth = 6;
     drawCornerBrackets(ctx, 36, 36, W - 72, H - 72, 56);
 
-    /* ---------- 5. Header: V badge + "AI STUDY METHOD" wordmark -----------
+    /* ---------- 5. Header: V badge + "VELVET STUDY" wordmark -----------
        Compact header band: V badge at top-left of a centred group, wordmark
        to the right, sub-line beneath. Sized so it never crowds the marquee. */
     const badgeY = 70;
@@ -190,7 +190,7 @@
     ctx.textBaseline = 'top';
     ctx.fillStyle = PAL.text;
     ctx.font = '900 36px ' + ARCADE_HEAD;
-    ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
+    ctx.fillText('VELVET STUDY', headerStartX + badgeSize + 18, badgeY + 6);
     ctx.fillStyle = PAL.cyan;
     ctx.font = '700 17px ' + MONO;
     ctx.fillText('THE VELVET METHOD®', headerStartX + badgeSize + 18, badgeY + 54);
@@ -373,7 +373,7 @@
     ctx.textBaseline = 'top';
     ctx.fillStyle = PAL.text;
     ctx.font = '900 36px ' + ARCADE_HEAD;
-    ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
+    ctx.fillText('VELVET STUDY', headerStartX + badgeSize + 18, badgeY + 6);
     ctx.fillStyle = PAL.cyan;
     ctx.font = '700 17px ' + MONO;
     ctx.fillText('THE VELVET METHOD®', headerStartX + badgeSize + 18, badgeY + 54);
@@ -532,7 +532,7 @@
     ctx.textBaseline = 'top';
     ctx.fillStyle = PAL.text;
     ctx.font = '900 36px ' + ARCADE_HEAD;
-    ctx.fillText('AI STUDY METHOD', headerStartX + badgeSize + 18, badgeY + 6);
+    ctx.fillText('VELVET STUDY', headerStartX + badgeSize + 18, badgeY + 6);
     ctx.fillStyle = PAL.cyan;
     ctx.font = '700 17px ' + MONO;
     ctx.fillText('THE VELVET METHOD®', headerStartX + badgeSize + 18, badgeY + 54);

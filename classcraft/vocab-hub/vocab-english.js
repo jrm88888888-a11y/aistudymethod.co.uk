@@ -1,5 +1,5 @@
 // ============================================================
-// AI Study Method English Vocabulary Data
+// Velvet Study English Vocabulary Data
 // Structure: VOCAB['english'][examType][frequencyBand] = [{term, definition, hint, example}]
 //
 // Exam types:

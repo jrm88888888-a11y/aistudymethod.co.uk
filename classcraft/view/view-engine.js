@@ -1,5 +1,5 @@
 /* ============================================================
-   AI Study Method — Shared utilities for View-stage engines
+   Velvet Study — Shared utilities for View-stage engines
    ============================================================ */
 
 window.VW = (function(){
@@ -137,7 +137,7 @@ window.VW = (function(){
     document.getElementById('vw-crumb').textContent = `${curriculum.subjectDisplay} · ${curriculum.levelDisplay}`;
     document.getElementById('vw-title').textContent = `${curriculum.subjectDisplay} — ${engineName}`;
     document.getElementById('vw-sub').textContent = engineBlurb;
-    document.title = `${curriculum.subjectDisplay} ${curriculum.levelDisplay} — ${engineName} — AI Study Method`;
+    document.title = `${curriculum.subjectDisplay} ${curriculum.levelDisplay} — ${engineName} — Velvet Study`;
   }
 
   function toast(text, kind) {

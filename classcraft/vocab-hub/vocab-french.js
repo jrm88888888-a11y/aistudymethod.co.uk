@@ -1,5 +1,5 @@
 // ============================================================
-// AI Study Method French Vocabulary Data
+// Velvet Study French Vocabulary Data
 // Structure: VOCAB['french'][level][topic] = [{term, definition, hint}]
 //
 // Levels:

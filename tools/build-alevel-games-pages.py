@@ -202,7 +202,7 @@ def head(c, title, desc, url, og_title, og_desc, tw_desc, style_extra="", ld=Non
            '<meta name="robots" content="index,follow">\n',
            '<link rel="canonical" href="%s">\n' % url,
            '<link rel="icon" type="image/svg+xml" href="/favicon.svg">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n',
-           '<meta property="og:type" content="website">\n<meta property="og:site_name" content="AI Study Method">\n',
+           '<meta property="og:type" content="website">\n<meta property="og:site_name" content="Velvet Study">\n',
            '<meta property="og:title" content="%s">\n' % E(og_title),
            '<meta property="og:description" content="%s">\n' % E(og_desc),
            '<meta property="og:url" content="%s">\n' % url,
@@ -251,7 +251,7 @@ def subject_page(s):
     nb, nt = len(s["boards"]), s["n_topics"]
     board_phrase = and_list(bnames)
     hook, why = COPY[sid]
-    title = "Free A-Level %s Revision Games — No Login, No Sign-Up — AI Study Method" % nm
+    title = "Free A-Level %s Revision Games — No Login, No Sign-Up — Velvet Study" % nm
     desc = "Free A-Level %s revision games — no login, no download. %d topics for %s, through %d quick game formats." % (nm, nt, board_phrase, N_GAMES)
     if len(desc) > 160:
         desc = "Free A-Level %s revision games — no login, no download. %d topics across %d exam boards, %d game formats." % (nm, nt, nb, N_GAMES)
@@ -360,7 +360,7 @@ def hub_page():
     url = SITE + "alevel-revision-games.html"
     ns = len(SUBJECTS)
     boards = and_list(ALL_BOARDS)
-    title = "Free A-Level Revision Games — No Login, No Sign-Up — AI Study Method"
+    title = "Free A-Level Revision Games — No Login, No Sign-Up — Velvet Study"
     desc = "Free A-Level revision games — no login, no sign-up, no download. %d game formats across %d subjects and %s topics. Just click and play." % (N_GAMES, ns, "{:,}".format(TOTAL_TOPICS))
     og_title = "Free A-Level Revision Games — No Login, No Sign-Up"
     og_desc = "%d free A-Level revision game formats — no account, no email, no download. %d subjects, %s board-specific topics, on any device." % (N_GAMES, ns, "{:,}".format(TOTAL_TOPICS))

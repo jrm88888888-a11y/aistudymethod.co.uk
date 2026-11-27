@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ARCADE — shared engine for AI Study Method quiz games.
+   ARCADE — shared engine for Velvet Study quiz games.
    Zero dependencies. Exposes a single global: window.Arcade
 
    API
@@ -588,13 +588,13 @@
       ? (opts.total != null ? opts.score + '/' + opts.total : String(opts.score))
       : null;
     const topicBit = opts.topic ? (' ' + opts.topic) : '';
-    const msg = '📚 I’ve been revising' + topicBit + ' on AI Study Method'
+    const msg = '📚 I’ve been revising' + topicBit + ' on Velvet Study'
       + (scoreStr ? ' and just scored ' + scoreStr : '')
       + '. Here’s how it works:';
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'AI Study Method', text: msg, url: link });
+        await navigator.share({ title: 'Velvet Study', text: msg, url: link });
         return { ok: true, method: 'native-share' };
       } catch (err) {
         if (err && err.name === 'AbortError') return { ok: false, cancelled: true };

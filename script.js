@@ -1,5 +1,5 @@
 // ============================================
-// AI Study Method — Shared JS
+// Velvet Study — Shared JS
 // ============================================
 
 // Mark active nav link based on current page

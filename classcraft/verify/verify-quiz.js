@@ -57,7 +57,7 @@
     if(!quiz.questions.length){ fail('There is no Verify quiz for this topic yet.'); return; }
     quiz.questions.forEach(shuffleOptions);
     state={ i:0, ans:quiz.questions.map(function(){return null;}) };
-    document.title='Verify — '+quiz.topicDisplay+' · AI Study Method';
+    document.title='Verify — '+quiz.topicDisplay+' · Velvet Study';
     renderIntro();
   }
 

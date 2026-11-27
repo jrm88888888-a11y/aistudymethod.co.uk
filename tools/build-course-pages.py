@@ -42,7 +42,7 @@ NAV = '''<nav>
  <a href="/" class="logo">
  <div class="logo-mark">V</div>
  <div class="logo-text">
- <span class="logo-primary">AI Study Method</span>
+ <span class="logo-primary">Velvet Study</span>
  <span class="logo-secondary">The Velvet Method®</span>
  </div>
  </a>
@@ -65,7 +65,7 @@ FOOTER = '''<footer>
  <a href="/" class="logo">
  <div class="logo-mark">V</div>
  <div class="logo-text">
- <span class="logo-primary">AI Study Method</span>
+ <span class="logo-primary">Velvet Study</span>
  <span class="logo-secondary">The Velvet Method®</span>
  </div>
  </a>
@@ -93,7 +93,7 @@ FOOTER = '''<footer>
  </div>
  </div>
  <div class="footer-bottom">
- <p>© 2026 AI Study Method · aistudymethod.com · All rights reserved · <a href="/privacy.html" style="color:inherit;text-decoration:underline;">Privacy</a> · <a href="/terms.html" style="color:inherit;text-decoration:underline;">Terms</a></p>
+ <p>© 2026 Velvet Study · aistudymethod.com · All rights reserved · <a href="/privacy.html" style="color:inherit;text-decoration:underline;">Privacy</a> · <a href="/terms.html" style="color:inherit;text-decoration:underline;">Terms</a></p>
  <div class="footer-velvet">Powered by <span>The Velvet Method®</span></div>
  <div class="footer-legal"><p>The Velvet Method<sup>®</sup> is a UK registered trade mark (UK00004394182).</p></div>
  </div>
@@ -178,7 +178,7 @@ for c in index:
         if len(desc) > 155:
             desc = f"Free {short} review: {n} short interactive lessons by College Board unit and topic, with AP-style practice questions."
     else:
-        title_tag = f"{title} | AI Study Method"
+        title_tag = f"{title} | Velvet Study"
     items = []
     for i, r in enumerate(rows):
         href = '/classcraft/adventures/' + lesson_stem(c, r) + '-mini-lesson.html'
@@ -217,7 +217,7 @@ for c in index:
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="AI Study Method">
+<meta property="og:site_name" content="Velvet Study">
 <meta property="og:title" content="{e(title_tag if ap else title)}">
 <meta property="og:description" content="{e(desc)}">
 <meta property="og:url" content="{SITE}/lessons/{e(c['k'])}.html">

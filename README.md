@@ -2,7 +2,7 @@
 
 Free GCSE, A-Level, IB and KS3 revision resources: written topic guides, interactive
 mini-lessons, the Revision Arcade (quiz games with accounts, coins and avatars), parent
-guides and simulations. Built by AI Study Method around the Velvet Method study system.
+guides and simulations. Built by Velvet Study around the Velvet Method study system.
 
 **This repository is the live site.** GitHub Pages serves the `main` branch at
 https://aistudymethod.com (see `CNAME`). Anything committed to `main` is public within

@@ -1,5 +1,5 @@
 // ============================================================
-// AI Study Method German Vocabulary Data
+// Velvet Study German Vocabulary Data
 // Structure: VOCAB[subject][level][topic] = [{term, definition, hint}]
 // Levels: ks3, aqa-gcse, aqa-alevel
 // ============================================================
